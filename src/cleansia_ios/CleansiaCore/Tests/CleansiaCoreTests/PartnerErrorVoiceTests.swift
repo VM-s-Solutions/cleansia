@@ -50,6 +50,107 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails")
     ]
 
+    /// Every `BusinessErrorMessage` a partner mobile controller's command can answer with — its own
+    /// validator or handler, or a shared validator/service it calls. `CoreL10nCatalogTests` enumerates the
+    /// keys the catalog already HAS, so it goes green on a key missing from all five locales; this roster
+    /// comes from the backend side instead, which is the only direction that sees one.
+    ///
+    /// Excluded on purpose: `payment.json_payload_required` / `payment.stripe_signature_required`. They
+    /// sit on `/api/Payment/webhook`, which only Stripe's server posts to, so carrying them would read as
+    /// coverage of a refusal no app can provoke.
+    private static let partnerReachable: [String: String] = [
+        "auth.account_locked": "LoginValidator",
+        "auth.apple_type_error": "AuthTypeErrorMessages",
+        "auth.external_type_error": "AuthTypeErrorMessages",
+        "auth.google_type_error": "AuthTypeErrorMessages",
+        "auth.insufficient_privileges": "MobilePartnerLogin",
+        "auth.internal_type_error": "AuthTypeErrorMessages",
+        "auth.invalid_confirmation_code": "ConfirmUserEmail",
+        "auth.invalid_google_token": "GoogleAuth",
+        "auth.invalid_refresh_token": "RefreshToken",
+        "auth.refresh_token_reused": "RefreshToken",
+        "auth.too_many_attempts": "ConfirmUserEmail",
+        "common.max_length": "AddOrderNote, BaseAuthValidator, ReportOrderIssue +7 more",
+        "common.required": "AddOrderNote, BaseAuthValidator, CompleteOrder +37 more",
+        "company.not_found": "ReceiptService",
+        "country.not_existing_id": "UpdateAddressInfo, UpdateEmployee, UpdateIdentificationInfo",
+        "country.not_serviced": "UpdateAddressInfo, UpdateEmployee",
+        "device.invalid_platform": "RegisterDevice",
+        "device.not_found": "RevokeDevice",
+        "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",
+        "email.invalid_format": "BaseAuthValidator, UserEmailValidator",
+        "employee.not_allowed_to_update": "UpdateAddressInfo, UpdateAvailability, UpdateBankDetails +4 more",
+        "employee.not_approved": "CompleteOrder, MarkCashCollected, StartOrder +1 more",
+        "employee.not_found": "GetAvailableJobsPreview, GetDashboardStats, GetEarningsAnalytics +14 more",
+        "employee.profile_incomplete": "CompleteOrder, TakeOrder",
+        "employee_document.not_found": "DownloadMyDocument",
+        "employee_document.not_owned": "DeleteMyDocument",
+        "employee_document.unauthorized": "DownloadMyDocument",
+        "file.content_type_doesnt_match": "ImageFileValidator",
+        "file.count_exceeded": "SaveMyDocuments, SaveOrderPhotos, UpdateEmployee",
+        "file.invalid_file_type": "DocumentFileValidator, UploadOrderPhoto",
+        "file.required": "SaveOrderPhotos, UploadOrderPhoto",
+        "file.size_exceeded": "DocumentFileValidator, ImageFileValidator, SaveOrderPhotos +1 more",
+        "file.type_not_allowed": "DocumentFileValidator",
+        "gdpr.consent_already_granted": "GrantConsent",
+        "gdpr.consent_not_found": "WithdrawConsent",
+        "gdpr.deletion_already_pending": "GdprDeletionService",
+        "gdpr.deletion_blocked_by_invoice": "GdprDeletionService",
+        "gdpr.deletion_blocked_by_order": "GdprDeletionService",
+        "general.not_found": "DeleteMyDocument, DeleteOrderIssue, DeleteOrderNote +5 more",
+        "language.not_found": "ReceiptService",
+        "language.not_supported": "LanguageValidator, UpdateCurrentUser",
+        "order.after_photos.required": "CompleteOrder",
+        "order.card_payment_already_settled": "MarkCashCollected",
+        "order.card_payment_in_progress": "MarkCashCollected",
+        "order.card_payment_unverified": "MarkCashCollected",
+        "order.cash_already_collected": "MarkCashCollected",
+        "order.cash_not_collected": "CompleteOrder",
+        "order.completion_notes.too_long": "CompleteOrder",
+        "order.employee_already_assigned": "TakeOrder",
+        "order.employee_already_has_order_in_progress": "StartOrder",
+        "order.employee_not_assigned": "AddOrderNote, CompleteOrder, DeleteOrderIssue +9 more",
+        "order.issue.description_required": "UpdateOrderIssue",
+        "order.no_available_spots": "TakeOrder",
+        "order.not_confirmed": "NotifyOnTheWay, StartOrder",
+        "order.not_found": "AddOrderNote, CompleteOrder, DeleteOrderIssue +13 more",
+        "order.not_in_progress": "CompleteOrder, MarkCashCollected",
+        "order.not_takeable": "TakeOrder",
+        "order.note.content_required": "UpdateOrderNote",
+        "order.payment_not_confirmed": "CompleteOrder",
+        "order.take.already_cancelled": "TakeOrder",
+        "order.take.already_completed": "TakeOrder",
+        "order.time_conflict": "TakeOrder",
+        "order.weekly_limit_reached": "TakeOrder",
+        "payout.not_found": "GetMyPayoutDetails",
+        "payroll.invoice.not_found": "DownloadInvoice, GetInvoiceById",
+        "payroll.pay_period.not_found": "GetPeriodPays",
+        "receipt.not_found": "DownloadOrderReceipt",
+        "user.email_confirmed": "ResendConfirmationEmail",
+        "user.existing_email": "Register, RegisterEmployee",
+        "user.existing_phone_number": "UpdateCurrentUser",
+        "user.not_allowed_to_update": "UpdateCurrentUser",
+        "user.not_existing_email": "CheckCurrentEmployee, GdprDeletionService, LoginValidator +3 more",
+        "user.not_found": "ExportUserData, GetMyDocuments, RegisterDevice +1 more",
+        "validation.date_must_be_in_past": "UpdateCurrentUser",
+        "validation.invalid_age": "UpdateCurrentUser",
+        "validation.invalid_availability_format": "UpdateAvailability, UpdateEmployee",
+        "validation.invalid_date": "UpdateCurrentUser",
+        "validation.invalid_password": "GoogleAuth, Login, LoginValidator +1 more",
+        "validation.payout.account_number_required": "PayoutDetailsValidator",
+        "validation.payout.country_not_supported": "PayoutDetailsValidator, UpdateBankDetails",
+        "validation.payout.iban_country_mismatch": "PayoutDetailsValidator",
+        "validation.payout.iban_mismatch": "PayoutDetailsValidator",
+        "validation.payout.invalid_account_number": "PayoutDetailsValidator",
+        "validation.payout.invalid_account_prefix": "PayoutDetailsValidator",
+        "validation.payout.invalid_bank_code": "PayoutDetailsValidator",
+        "validation.payout.invalid_iban": "PayoutDetailsValidator",
+        "validation.payout.invalid_swift": "PayoutDetailsValidator",
+        "validation.payout.looks_like_card": "PayoutDetailsValidator",
+        "validation.payout.scheme_not_supported": "PayoutDetailsValidator",
+        "validation.payout.swift_required": "PayoutDetailsValidator"
+    ]
+
     /// The words the customer catalog uses for an appointment the reader booked. A cleaner did not book
     /// anything, so any of these in a partner-only key is copy lifted from the customer voice.
     private static let reservationVocabulary = [
@@ -92,6 +193,19 @@ final class PartnerErrorVoiceTests: XCTestCase {
     override func tearDown() {
         CoreL10n.bundle = .module
         super.tearDown()
+    }
+
+    func testEveryPartnerReachableKeyResolvesInAllFiveLocales() {
+        var gaps: [String] = []
+        for locale in Self.locales {
+            for (key, emitters) in Self.partnerReachable {
+                let resolved = resolve(key, locale: locale)
+                if resolved == key || resolved.isEmpty {
+                    gaps.append("\(key) · \(locale) · emitted by \(emitters), shows the raw key")
+                }
+            }
+        }
+        assertNoViolations(gaps, "partner-reachable error keys with no Core catalog entry")
     }
 
     func testEveryPartnerOnlyKeyResolvesToASentenceInAllFiveLocales() {

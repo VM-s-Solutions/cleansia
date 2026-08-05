@@ -4,6 +4,29 @@ import XCTest
 
 @MainActor
 final class BookingCodesViewModelTests: XCTestCase {
+    private static let languages = ["en", "cs", "sk", "uk", "ru"]
+
+    /// `PromoCode/Validate` and `Referral/Validate` answer HTTP **200** carrying a stringified enum, not
+    /// ProblemDetails, so `ApiErrorLocalizer` is never on this path and Core's `error.*` catalog is never
+    /// consulted. These keys are the only thing between a rejected code and a raw token in the sheet, and
+    /// `L10n.localized` echoes the key back when a locale is missing one.
+    private static let codeRefusalKeys = [
+        "booking_promo_code_error_not_found",
+        "booking_promo_code_error_inactive",
+        "booking_promo_code_error_expired",
+        "booking_promo_code_error_not_yet_valid",
+        "booking_promo_code_error_global_limit",
+        "booking_promo_code_error_used",
+        "booking_promo_code_error_min_order",
+        "booking_promo_code_error_currency",
+        "booking_promo_code_error_generic",
+        "error_referral_not_found",
+        "error_referral_self_referral",
+        "error_referral_already_referred",
+        "error_referral_inactive",
+        "error_referral_generic"
+    ]
+
     private func makeVM(
         extra: FakeExtraClient = FakeExtraClient(),
         promo: FakePromoCodeClient = FakePromoCodeClient(),
@@ -224,6 +247,34 @@ final class BookingCodesViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.referralState, .idle)
         XCTAssertEqual(vm.state.referralCode, "")
+    }
+
+    func testEveryCodeRefusalIsLocalizedInAllFiveLocales() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        var gaps: [String] = []
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            for key in Self.codeRefusalKeys {
+                let value = L10n.localized(key)
+                if value == key || value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    gaps.append("  • \(key) · \(language)")
+                }
+            }
+        }
+
+        XCTAssertTrue(
+            gaps.isEmpty,
+            "\(gaps.count) code refusals render the raw key:\n\(gaps.sorted().joined(separator: "\n"))"
+        )
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 
     func testApplyAddressPopulatesStreetCityZipAndCoords() {

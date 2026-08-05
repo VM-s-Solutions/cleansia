@@ -895,6 +895,27 @@ partner sees when they lose a race for a job. Two rules follow:
   (the account-number mod-11 checksum reads "almost always a typo", not "invalid"; the IBAN mismatch names
   the empty-IBAN fallback that derives it from the parts) is a **pin**, not prose — one small
   `contains`-per-locale assertion beside the roster, so a re-word on one client cannot land silently.
+- **A roster that proves VOICE cannot prove PRESENCE — pin the keys the client can RECEIVE, per locale.**
+  The audience-exclusive rosters above, `CoreL10nCatalogTests` and `StringCatalogCompletenessTests` all
+  enumerate keys the catalog **already has**, so a key missing from **all five** locales is invisible to
+  every one of them: locale parity is *satisfied* by a key that is absent everywhere. So each iOS app
+  also carries a roster built from the other direction — every `BusinessErrorMessage` its own mobile
+  host's commands can answer with, the command's own validator/handler **and** any shared
+  validator/service it calls, each asserted to resolve to a sentence in en/cs/sk/uk/ru. Two construction
+  rules keep it honest: reachability is computed from that host's **`Controllers/`** alone (a feature
+  named in a Swagger schema filter is not an endpoint — that one false edge put the whole customer
+  booking surface on the partner roster), and a key **no client can provoke stays out** — the two
+  `payment.*` keys guarding the Stripe webhook signature are the standing example, because a roster
+  entry nothing can reach later reads as coverage. Mutation that proves the pair: delete one key from one
+  locale (red, naming key + locale), then delete a key outright — the completeness suites stay green and
+  only this roster goes red.
+  **Enforced by:** `CustomerErrorVoiceTests.testEveryCustomerReachableKeyResolvesInAllFiveLocales` +
+  `PartnerErrorVoiceTests.testEveryPartnerReachableKeyResolvesInAllFiveLocales` (CleansiaCore), run by
+  `xcodebuild -scheme CleansiaCore … build test` (`.github/workflows/ios-ci.yml:171-177`) — **T1-CI**.
+  **Scope, stated because it is narrower than the paragraph:** the rosters are hand-maintained, so a
+  backend key added after they were written is not caught until someone re-derives them.
+  *(Cross-stack note, descriptive — not a rule for Android: the Android lane reached the same shape in
+  the same week, after a customer was shown the literal `recurring_booking.membership_required`.)*
 
 **A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
 the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and

@@ -1,13 +1,26 @@
 # ADR-0042 — The shared wire-enum declaration is **generated from the NSwag output, inside the owner's regen command**, and the hand-written mirror is deleted; the three per-host clients keep emitting their own copies, because that multiplicity is the per-host seam and not the defect
 
-- **Status:** `proposed` — 2026-08-04, **author mode**. The **owner has ruled the WHAT** (see §0); that
-  half is not open to challenge. **The HOW is the architect's and is open** — one challenger round is
-  requested on §D1/§D2 (the placement) and §D3 (why the clients keep their copies). Ticket **T-0546**
-  carries the round; **T-0547** carries the refactor and does not start until this ADR is `accepted`.
-  *(Both ids are **proposed**, not allocated — the PM owns `backlog/tickets/`. `T-0545` was the highest on
-  disk when this was written; if the PM allocates other ids, those bind and this line is the only place
-  that needs correcting.)*
-- **Date:** 2026-08-04
+> ⚠️ **The two bolded clauses in the title above were ruled unsound by the 2026-08-05 panel and must not
+> be quoted as settled.** *"generated from the NSwag output"* names an authority that cannot detect the
+> defect this ADR was written for, and *"inside the owner's regen command"* places the only gate at the
+> moment that drift is **repaired** rather than created (§V.1, §V.2). A title is frozen on acceptance,
+> which is one of the reasons this one was not accepted. The clause that **did** survive is the last one:
+> the three per-host clients keep emitting their own copies (§D3 ground (i), unbroken).
+
+- **Status:** `proposed` — **RETURNED TO AUTHOR, mechanism rebuild required.** The defense panel **ran on
+  2026-08-05** (one challenger lane + lead) and did **not** reach consensus: four blocking findings, and
+  the ADR's central control — a generator that compares the three clients **to each other** — is vacuous
+  on the command it lives inside and blind to the incident the ADR cites as its evidence.
+  **See `## Verdict` for the operative state.** In one line: **the diagnosis and the shape survive; the
+  value authority and the placement are inverted, not amended.** Until a revised draft clears a second
+  panel, **nothing may be built against this ADR** — §3 is void as written, the §7 catalog edit does not
+  land, and no ticket may be opened or closed against it. This ADR was never `accepted`, so the author
+  revises *this* draft in place; no superseding number is needed.
+- **Panel:** author (2026-08-04) · challenger `challenges/0042-generation.md` (`4dea53ef`, 2026-08-05) ·
+  lead ruling 2026-08-05, a third instance, neither author nor challenger. **The `## Defense` section is
+  empty** — the lead constructed and tested the author's strongest available defense before sustaining
+  (§V.0, §V.9 RB-2).
+- **Date:** 2026-08-04 (drafted)
 - **Answers:** **`Q-ENUM-01`** (`agents/backlog/questions/open.md`) — *"Three generated clients each emit
   their own `OrderStatus`/`PaymentStatus`. Which declaration is canonical, and should the per-app copies
   stop being emitted?"*
@@ -535,13 +548,450 @@ That paragraph states the rule this ADR replaces. It is **replaced in full** by:
 
 ## Challenge
 
-*(Panel challenger — one round requested on §D1/§D2 placement and §D3. **§0 is owner-ruled and is not in
-scope.** T-0546 carries the round.)*
+**Filed 2026-08-05 — `agents/backlog/adr/challenges/0042-generation.md` (`4dea53ef`).** One round on
+§D1/§D2 (placement + contents), §D3 (the three copies) and §D4/§7 (enforcement). §0 was out of scope and
+was not touched. Headline: *"the diagnosis is excellent and I could not break it; the mechanism does not
+survive, in four places."* Eight findings — **CH-G1** (the generator compares three renderings of one C#
+declaration, so it cannot fire on `generate-clients` and is blind to all-clients-stale), **CH-G2** (`T1-CI
+at the regen` is not a tier this catalog has), **CH-G3** (the backstop sits on a cached, affected-gated Nx
+jest target whose declared inputs exclude the files it reads), **CH-G4** (D1's `exit 1` contradicts D3's
+own observability argument and couples three hosts to one host's regen) — all four filed blocking; plus
+**CH-G5** (three citations do not hold at HEAD, two of which commission work), **CH-G6** (a taken ticket
+id), **CH-G7** (the mobile residue is wrong in both directions), **CH-G8** (shared parser + jest as a host).
 
 ## Defense
 
-*(Author.)*
+**Not filed.** The author did not respond before the panel convened. Under `process/deliberation.md` §5
+an undefended challenge stands; the lead nonetheless constructed and tested the strongest defense
+available from the ADR's own text for each blocking finding before sustaining it, and carried the one
+surviving half forward as a constraint on the replacement (`## Verdict` §V.0, §V.9 RB-2).
 
-## Verdict
+## Verdict — **RETURNED TO AUTHOR. The decision's shape survives; its central mechanism is inverted, not amended.** *(lead, 2026-08-05)*
 
-*(Panel lead — a different instance from the author. Not yet convened; this ADR is `proposed`.)*
+> **Operative state, so nobody has to infer it.** This ADR is **`proposed` and not buildable.**
+> **No ticket may be opened or closed against it.** §3 (the refactor spec) is **void as written** — its
+> steps 1, 2, 5 build the mechanism this verdict returns, step 4 contains a delete that is already done,
+> and step 6's `MANUAL_STEP` is **withdrawn** (§V.7). The §7 catalog edit **does not land**; the
+> paragraph it would replace stays in force *and is itself factually wrong in one sentence*, which is
+> routed as a separate, immediate correction (§V.11). The living doc
+> `agents/architecture/decisions/generated-client-contract.md` carries the same state and has had its
+> four known-false rows corrected in the same change as this verdict.
+>
+> **What is safe to reuse right now, unchanged:** §1.2, §1.3, §1.4 (the diagnosis), §D1.1 (discovery
+> from the `nswag-*.json` `output` keys), §D2's membership rule, §D3, and the `SortDirection` finding.
+> They survived both the challenger and me.
+
+### V.0 — Why not `accepted`, not `accepted with amendments`, not `rejected` — and a note on the empty Defense
+
+`accepted` is foreclosed. Four blocking findings, and the ADR's flagship claim — *"a disagreement
+between them is impossible to ship"* (§D3), *"a cross-host disagreement becomes unshippable"* (§4) —
+describes a check that **cannot fail on `generate-clients`**, the command the owner runs most, and that
+would **not have caught** the one incident the ADR cites as its justification. A control that certifies
+green on the defect class it was written for is the exact failure this panel format exists to catch.
+
+`accepted with amendments` is the verdict I looked hardest for and cannot reach. Amendments bolt onto a
+frozen artifact. What must change here is (i) the **title**, (ii) the **"One decision"** box, (iii) **D1**
+in both of its halves, (iv) **D4**'s host, (v) **§7**'s enforcement tier, and (vi) **§6**'s disposition of
+Alternative C. Title and the one-decision sentence are precisely what acceptance freezes; amending them
+after acceptance would need a superseding ADR within days of writing this one.
+
+`rejected` is wrong and would be expensive. §1.1–§1.5 is the best-evidenced context section this panel
+has read this sprint, §1.3 is a genuinely load-bearing insight (no compiler anywhere checks these
+integers), and D3 survived two independent attempts to break it. Rejecting would re-litigate all of that
+into the same answer.
+
+**On the empty `## Defense`.** The author did not defend, so under `process/deliberation.md` §"What
+'defended' means" every challenge would stand by default. I declined to rule that cheaply: for each
+blocking finding I constructed the strongest defense available from the ADR's own text and tested it.
+**One of those constructed defenses survived in part and is carried forward as a constraint on the
+replacement** (§V.9 RB-2) — it is a real cost in the challenger's preferred repair that the challenge
+does not price. The rest did not survive. Where I upheld a challenge I say what I tried; where the
+challenger over- or under-stated, I say so (§V.3, §V.4, §V.6).
+
+---
+
+### V.1 — Ruling 1: **the mechanism failure reaches the decision.** This is an inversion, not an amendment
+
+The panel asked me to be precise about the difference, so I will state the test I used:
+
+> **An amendment changes how a decision is carried out while the sentence that names the decision stays
+> true. An inversion is when the sentence that names the decision becomes false.**
+
+ADR-0042's naming sentence is its own §"One decision" box: *"where the shared, cross-app declaration of a
+wire enum comes from. It comes from a **generator that reads the NSwag output** and **runs inside
+`npm run generate-*-client`**."* Two claims. **Both become false under any repair that answers CH-G1.**
+
+**(a) The value authority flips.** The clients are three renderings of one C# declaration in an assembly
+every host shares — the ADR asserts that premise itself at D3.1. I verified the consequence rather than
+inheriting it: at one backend commit the three renderings cannot disagree, so `client_A ≠ client_B` is
+provable *only* when they were generated against different backend commits. The check is therefore a
+**staleness-skew detector**, not an enum-correctness detector, and the ADR's own §4/§D3 language claims
+the second. Under a repair, "the values come from the NSwag output" becomes "membership comes from the
+NSwag output; the integers come from `Cleansia.Core.Domain.Enums`" — the artifact that can be wrong stops
+being the authority. That is not a different implementation of the same sentence; it is a different
+sentence.
+
+**(b) The placement flips, and for a deeper reason than the challenger gives.** D1 closes with *"it is
+ADR-0031 D1's argument on a second surface — put the check where the defect is created."* **The ADR
+mis-identifies where this defect is created.** ADR-0031's defect (a regen breaks 122 call sites) is
+genuinely *created by the regen*, so guarding the regen is prevention. ADR-0042's defect — a shared
+integer table that disagrees with the domain, which is what the fossil was and what §1.1 argues from — is
+created by a **backend commit that changes an enum**. The regen is the moment that drift is **repaired**.
+Placing the only gate at the repair moment guards the one instant when the drift is already being fixed,
+and leaves the entire window between creation and repair unguarded *by construction* — a window that, in
+a repo where regen is owner-only and rare, is the normal state. So the ADR-0031 analogy, correctly
+applied, argues for the **opposite** placement here. That is an inversion of D1's own stated rationale,
+reached from D1's own premise.
+
+**What this does not mean.** It does not mean the ADR was wasted, and it does not mean "just do
+Alternative C". §0's owner ruling, §1.2–§1.5, D1.1, D2's membership rule and D3 all survive; the rebuild
+edits roughly the second half of the Decision section. It also means the rebuild moves *toward* the
+owner's own second sentence — *"consider using backend enums on frontend instead of generating your
+own"* — which §6 routed to Alternative C and rejected against a cost model this repo has already
+falsified (§V.9 RB-1). **I am not adopting the challenger's design.** §V.9 states what a replacement must
+satisfy; the author chooses the mechanism and a second panel checks it.
+
+---
+
+### V.2 — CH-G1 and CH-G4 are **one** structural defect, not two: the check is vacuous exactly where it is safe and harmful exactly where it fires. **SUSTAINED**
+
+Both are sustained. But the panel should record them as a single pincer, because that is what makes them
+unanswerable by tuning:
+
+| Path the owner runs | Does the agreement check fire? | Consequence |
+|---|---|---|
+| `generate-clients` (all three, one backend) | **Never** — three renderings of one declaration, generated in one command against one host set | The flagship command carries a check that cannot fail |
+| `generate-partner-client` (one host, backend moved) | **Yes** — partner is fresh, admin/customer are stale | `exit 1`; `&&` short-circuits, so the ADR-0031 typecheck never runs; the tree holds a fresh client and a stale shared file; the command cannot be made green without booting Admin `:5001` and Customer `:5003` |
+
+So every firing is a false alarm about the *enum* and a true statement about *staleness*, delivered as a
+hard stop in an owner-only command with no documented recovery — and every non-firing is unconditional.
+There is no tuning of thresholds that escapes this, because the two branches have opposite causes.
+
+I tried two defenses for the author here.
+
+- *"The owner normally runs `generate-clients`, so CH-G4's hazard is rare."* — This defeats itself: on
+  that path the check is provably vacuous. The defense trades the blocking finding for the other one.
+- *"Firing on skew is legitimate — a stale client is a real defect."* — It is. But then §4 and §D3 must
+  say **that**, not *"a cross-host disagreement becomes unshippable"*, and D1 must state the operator
+  procedure, because *"three of five hosts must be running to complete one host's regen"* is a coupling
+  through the build pipeline between hosts that `CLAUDE.md`'s per-audience seam exists to keep apart. D1's
+  reassurance — *"the owner's command surface does not change… nothing new to learn"* — is then false at
+  the level that matters: the names do not change, the preconditions do.
+
+**Ruling:** CH-G1 **sustained** (blocking). CH-G4 **sustained** (blocking), and reclassified as the second
+face of CH-G1 rather than an independent contradiction — see §V.5 for the part of CH-G4 that *is* about
+D3.
+
+---
+
+### V.3 — Ruling 2 (the tier): **`T1-CI at the regen` is not an available label. SUSTAINED — and the challenger's fallback is also wrong**
+
+`conventions.md:231` defines `T1-CI` as *"fails a CI job on the offending change."* The generator appears
+in no workflow file; it runs on the owner's machine before a commit exists. My own charter states the
+operative rule: *a mechanism that cannot fail a build is `T2-ADVISORY` however it is labelled.* The
+label is **not available**. CH-G2 is sustained, and its second leg is sustained too: `conventions.md:237-242`
+makes `T1-CI` **required** when the rule is mechanically expressible and the baseline is zero, and the
+challenger verified — as did I, spot-checking `OrderStatus` and `SortDirection` against
+`OrderStatus.cs` / `Sorting/Common/SortDirection.cs` — that the baseline **is** zero. So the ADR does not
+merely mislabel; it declares a tier it does not build while the conditions that mandate a real one hold.
+
+**Where the challenger is wrong, and it matters for what the author writes next.** CH-G2's remedy (a)
+offers *"`T2-ADVISORY` for the regen-time generator"*. That is **also** not an available label:
+`conventions.md:232` defines `T2-ADVISORY` as *"runs on demand, reports, **never sets the exit code**"*,
+and the whole point of D1.4 is that it exits 1 and breaks the owner's chain. A regen-time gate is
+**stronger than T2 on one path and absent everywhere else**, and this taxonomy has no token for it.
+
+**Ruling.** The §7 entry may not be published in any of the three forms so far proposed. Two honest exits
+exist, and the author picks one in the rebuild:
+
+1. **Build a CI leg that can go red** (§V.4), and let the `T1-CI` token be earned *by that leg*, with the
+   regen-time step described in prose as early warning and **carrying no tier of its own**. Given a zero
+   baseline, this is the exit `conventions.md:237-242` actually asks for.
+2. If the rebuild ships without a CI leg, the nearest honest token is **`(gate pending: <ticket>)`** naming
+   the CI ticket — not `T1-CI`, not `T2-ADVISORY` — and the entry says in-line that the regen-time step is
+   a local gate, not a CI one.
+
+**Routed, not ruled here:** the taxonomy's missing token for *"a gate that blocks an owner-run local
+command"* is a real gap that this ADR is the second artifact to trip over. Fixing it is an amendment to
+**ADR-0032**'s taxonomy and belongs to that ADR's own panel, not to a lead ruling on ADR-0042. Recorded so
+the next author does not invent a token again.
+
+---
+
+### V.4 — Ruling 3 (the cache hazard): **CONFIRMED, sharpened — and I have a verified finding that closes the escape hatch D4 records as available**
+
+I opened `src/Cleansia.App/nx.json` and `libs/shared/models/project.json` rather than inheriting the
+claim. Both hold: `namedInputs.default` is `["{projectRoot}/**/*", "sharedGlobals"]` with
+`"sharedGlobals": []`; `@nx/jest:jest` takes `["default", "^production", "{workspaceRoot}/jest.preset.js"]`;
+`models` declares `scope:shared`/`type:util`, a `test` and a `lint` target, and **no**
+`implicitDependencies`. The three client files are inputs to nothing that `nx test models` hashes.
+
+**Sharpening — the true statement is stronger than "cached".** These are two independent holes and they
+compose into a third:
+
+1. **Affected-gating** (§1.4's point): a client-only commit does not select `models`, so the spec does not
+   run.
+2. **Cache replay** (CH-G3's point): on any invocation that *does* select `models` without `models`' own
+   files changing — `nx run-many -t test`, a developer's local `nx test models` after pulling a regen, a
+   restored cache across branches — Nx replays a **PASS it computed over different client bytes**.
+3. **Therefore the spec is only ever genuinely executed when `libs/shared/models`' own files change.**
+   Which means D4's first bullet (someone hand-edited `wire-enums.generated.ts`) is covered, and D4's
+   second bullet (someone regenerated a client outside the wrapper) is **not merely unclaimed — it is
+   structurally unreachable**. The ADR's own residue 2 concedes exactly that case. D4's body and residue 2
+   contradict each other, and residue 2 is the true one.
+
+**The finding neither the author nor the challenger has, and it disposes of Alternative E properly.** D4
+records `implicitDependencies` as *"cheap, but needs its own verification"* and E rejects it as needing
+`enforce-module-boundaries` work. I verified it, and it is worse than unverified — **it is a project-graph
+cycle**:
+
+```
+models --(proposed implicitDependency)--> partner-services
+partner-services --> partner-stores      (libs/core/partner-services/.../loading.interceptor.ts imports '@cleansia/partner-stores')
+partner-stores   --> models              (libs/data-access/partner-stores/.../{user,order,loading,dashboard}.{state,actions}.ts import '@cleansia/models')
+```
+
+`tsconfig.base.json:182-186` maps all three aliases to three separate Nx projects. So adding the edge
+D4 records as available re-creates the **circular-dependency class whose repair (13 cycles) created the
+`scope:shared` boundary that forced a shared copy to exist in the first place**. The admin leg is the
+same shape via `admin-stores`.
+
+**Ruling.** CH-G3 **sustained** (blocking). The committed-state check must leave `nx test models`. No
+Nx-hosted variant rescues it: affected-gating and cache-replay each defeat it independently, and the one
+recorded workaround is a graph cycle. The two committed workflow headers
+(`.github/workflows/offerability-parity.yml`, `.github/workflows/nx-project-registration.yml`) name this
+hazard verbatim as the reason not to host a guard this way, and this ADR cites neither — that omission is
+sustained as an alternatives-table defect, not just a citation gap: **the shape this sprint standardized
+(a dependency-free Node checker outside the Nx workspace + its own repo-root workflow + a self-test that
+runs first) is never considered**, and Alternative F rejects the one mechanism this repo has already
+labelled *"the counter-example, not the model."* Rejecting F is correct and is not *considering* a CI
+gate.
+
+§1.4 must also gain the cache half. As written it teaches the next reader that "affected" is the whole
+problem, and the next guard gets hosted in an Nx project again.
+
+---
+
+### V.5 — Ruling 4 (the internal contradiction): **SUSTAINED, with a precision the challenger did not draw**
+
+It is not a *formal* contradiction — you can keep three files diffable and still fail a check over them.
+The defect is sharper and worse:
+
+> **D3 argues that a divergence between the clients is *information worth preserving*. D1 acts as though
+> the same divergence is an *error worth halting on*. The ADR assigns opposite normative status to one
+> observation and never notices it is doing so.**
+
+That is why "keep three copies so drift stays observable" and "`exit 1` inside the regen when they
+differ" cannot both be right *as stated*: if a host being a commit behind is a legitimate state of the
+world — and D3 ground (i) rests entirely on it being legitimate and legible — then halting the owner's
+single-host regen on it converts legitimate information into an outage (§V.2). Conversely if it is an
+error, D3's *"collapsing removes the evidence of the drift, not the drift"* loses its force, because an
+error that is always fatal at creation leaves no evidence to preserve.
+
+**Ruling.** Both cannot stand as written. **D3 survives; D1's response to divergence does not.** The
+rebuild reconciles them explicitly — it must say, in one sentence, what a client-to-client divergence
+*is* in this design (evidence, or defect) and then act consistently. Note the reconciliation the
+challenger observed and I confirm: under a C#-authority design, a single-host regen against a newer
+backend is **not a disagreement at all** — the shared file is rewritten from the domain and the two stale
+clients are *named as stale*, which is the true statement and preserves exactly the observability D3
+wants. That is one route, not the mandated one.
+
+---
+
+### V.6 — Ruling 5 (the other two clients): the ADR must **exclude them explicitly, on the true ground.** Residue 3 is wrong in both directions — verified myself
+
+The panel's framing — *"an enum contract holding on one of three clients is not a contract"* — is the
+right instinct and the wrong premise for **this** artifact, and I checked rather than reasoned:
+
+```swift
+// src/cleansia_ios/CleansiaPartnerApi/Models/OrderStatus.swift:13-21
+public enum OrderStatus: Int, Codable, CaseIterable { case _0 = 0 … case _6 = 6 }
+```
+```kotlin
+// src/cleansia_android/partner-app/build/generated/openapi/…/model/OrderStatus.kt:28-49
+enum class OrderStatus(val value: kotlin.Int) { @SerialName("0") _0(0) … @SerialName("6") _6(6); }
+```
+
+`_N = N` is an identity map with **no semantic content**. There is no name→integer table in the mobile
+generated clients, so the object this ADR governs — *a name bound to an integer* — **does not exist on
+mobile**, and the fossil's failure mode (a name bound to the wrong integer) is structurally impossible
+there. Residue 3's *"the same 12 enums exist a third and fourth time"* is false of the object under
+decision. And *"nothing compares them to the web ones"* is false too:
+`agents/tools/check-available-status-parity.mjs` already compares `OrderStatus` ordinals across eight
+surfaces including two Android and two iOS files, against the canonical C#, in its own repo-root
+workflow triggered on all four trees. CH-G7 is **sustained** (non-blocking, but it must be fixed before
+acceptance because it is the residue a future reader turns into a ticket, and that ticket would have
+nothing to compare).
+
+**Ruling — what the ADR must say.** Explicit exclusion, on the true ground, in three parts:
+
+1. **The web is the only stack whose generated client declares a name→integer table.** State that, with
+   the two citations above. That is *why* the generator's scope is the web, and it is a structural
+   reason rather than a scheduling one.
+2. **The equivalent mobile risk is a different artifact** — the hand-written presentation/action mapping
+   (`OrderStatusPresentation.kt`, `OrderPrimaryAction.swift`) — and it is **partially covered**:
+   `check-available-status-parity.mjs` gates `OrderStatus` there today and **nothing gates the other
+   eleven enums** on any stack. Say that in one sentence; it is the true residue and it is a legitimate
+   future ticket, unlike the one residue 3 currently invites.
+3. **The two artifacts differ in kind and the residue must not blur them:** the iOS file is committed
+   source; the Android file is a Gradle build output re-derived from the committed spec. Their drift
+   profiles are not the same.
+
+**And one constraint the rebuild inherits from this ruling** (§V.9 RB-5): if the replacement makes the C#
+declaration an authority, then the web tool and `check-available-status-parity.mjs` become two parsers
+reading the same `.cs` files. Two parsers over one source is a new drift surface of exactly the kind this
+ADR exists to close. The rebuild must state which tool owns C#-to-client parity, or justify the second
+parser.
+
+---
+
+### V.7 — CH-G5 / CH-G6: **sustained.** Three citations do not hold, and two of them commissioned work
+
+- **(a) The fifth client is already deleted.** I globbed
+  `src/Cleansia.App/libs/core/services/**/client/**` — **no files**. So **§D5 is a no-op**, §3 step 4's
+  delete is done, §V7's *"the only client-shaped file that changes"* is void, and Alternative H's *"has
+  been sitting in the tree"* must go to the past tense. The **argumentative** consequence is the one that
+  matters and the challenger is right about it: the single real incident this ADR leans on was found by a
+  human measuring five copies against the C# source and closed by a `git rm` — not by anything D1
+  proposes, and (per D1.1's own definitional exclusion of that file) not by anything D1 *could* propose.
+  §1.1 stays as evidence — the incident was real and it is the best argument in the document — but it must
+  be told in the past tense and it must stop implying that the mechanism under decision would have caught
+  it. **Alternative H's disposition is rewritten in the same pass.**
+- **(b) The `CLAUDE.md` claim is false at HEAD.** `CLAUDE.md:34-35` applies *"NSwag-generated API
+  clients"* to `core/{partner,admin,customer}-services/` and labels `core/services/` **"(hand-written)"**.
+  The map says the correct thing. **The `MANUAL_STEP` in §D5 and residue 5 in §4 are WITHDRAWN.** A
+  manual step that asks the owner to fix a correct line spends owner attention and teaches the next agent
+  that the map is untrustworthy. The claim was inherited verbatim from ADR-0031 residue #5(a) and
+  re-asserted here under a *"verified against the tree"* header — **an inherited citation is not a
+  verified one**, and that is the lesson the rebuild should carry, not the step.
+- **(c) The living-doc "correction" §1.5 offers has already landed** (`generated-client-contract.md`
+  invariant 10 / gap 4b, corrected 2026-08-04). The underlying fact the ADR states is right; only the
+  *"still says"* is stale. Drop the parenthetical.
+- **CH-G6 — ticket ids.** `T-0546` is taken (`agents/backlog/tickets/T-0546-four-customer-libs-cannot-run-jest.md`)
+  and is cited from committed CI (`.github/workflows/nx-project-registration.yml:6-7`). *"T-0545 was the
+  highest on disk"* is false — T-0546, T-0548, T-0549 exist. **The rebuild names no ticket id**; it says
+  "the PM allocates." I allocate none here.
+
+**Blocking, editorially: sustained.** Two of the three commissioned work that must not be done, and this
+is the third ADR this sprint whose *"verified in the working tree"* header carried a false citation. An
+artifact about to become immutable may not carry three.
+
+---
+
+### V.8 — What I attacked and could not break *(silence is not assent, and this is why the rebuild is cheap)*
+
+- **§1.3 — the shared enum is a constant table, not a type.** I re-read the three pipes' signatures and
+  the widening arm. The conclusion holds and it is the single most valuable sentence in the document: no
+  compiler anywhere checks these integers, which is why every "declare it once + add a parity spec" answer
+  is a detector rather than a fix. It is also why Alternative G is correctly rejected.
+- **§1.4's affected-gating** — verified independently (§V.4). Correct, and incomplete rather than wrong.
+- **§1.2's `SortDirection` finding** — a third hand-mirror, older than the guarded one and with no spec
+  at all. Real, and it is the best *un-argued* reason for this refactor.
+- **§D1.1 — discovery from the `nswag-*.json` `output` keys, hard-failing on a missing output.** This is
+  the part of D1 I would defend hardest and it survives the inversion **unchanged**: it decides
+  *membership*, and only the *value authority* moves. It is also what makes *"is this file a generated
+  client?"* mechanically decidable instead of a matter of opinion — which is the durable lesson from the
+  fossil.
+- **§D2's intersection-not-union rule, and "import, do not re-export".** Both correct; the second is not
+  pedantry (`sort-types.models.ts` needs the symbol in two places, and `models/index.ts` exports both
+  files).
+- **§D3 ground (i)** — I attacked this from the collapse side and could not break it. If all three clients
+  imported one symbol, a client regenerated against a host one commit behind would *claim* the current
+  contract and the skew would become structurally unobservable. **Nothing in this verdict argues for
+  Alternative B or for collapsing to one declaration.** D3 stands.
+- **§3.8 — no CRC card.** Correct. A build tool is not a role; nothing new knows anything.
+- **§0's owner ruling** — out of scope and untouched. The hand-written mirror still goes.
+
+---
+
+### V.9 — What a replacement must satisfy *(constraints, not a design — I do not invent the repair)*
+
+The challenger named a strong candidate (values from `Cleansia.Core.Domain/Enums/*.cs`, membership from
+the clients; the technique is shipped at `agents/tools/check-available-status-parity.mjs:134-165` and
+gated by `.github/workflows/offerability-parity.yml`). **I am not ratifying it.** Adopting and ratifying
+a repair in one pass is the move this panel exists to prevent, and the constructed defense in RB-2 shows
+the candidate is not free. The author designs; a second panel rules.
+
+- **RB-1 — the authority must be able to be wrong.** Whatever the shared file's integers are derived
+  from, the mechanism must be able to detect the case *"the shared table disagrees with what the backend
+  actually emits."* A comparison among artifacts that are all renderings of one declaration cannot do
+  this, on any path. If the rebuild keeps client-to-client comparison, it must state what that comparison
+  detects (*"three clients generated against different backend commits"*) and stop claiming more.
+- **RB-2 — price the failure posture, because the cheap repair is not free.** *(This is the surviving
+  half of the defense I constructed for the author; the challenge does not price it.)* The shared table
+  must match what the **deployed** API emits, and C# HEAD is not that. A hard failure on *"the clients
+  disagree with C# HEAD"* means **any backend enum change reddens CI until the owner runs an owner-only
+  command** — converting a `manual_step` into a merge blocker for everyone. Neither design pins to the
+  deployed contract; HEAD is nonetheless the repo's declared intent (`nswag-regen` is bound to a DTO
+  change by `quality-gates.md`). So the replacement must state its posture explicitly and defend it. The
+  house precedent for exactly this tension is the `--baseline` ratchet on
+  `check-available-status-parity.mjs`; using it, or rejecting it, is a decision the rebuild must make on
+  the record.
+- **RB-3 — the gate must be able to go red in CI, on the commit that creates the drift.** Per §V.1(b)
+  that commit is a **backend** commit, so the trigger must cover `src/Cleansia.Core.Domain/**` as well as
+  `src/Cleansia.App/**` if the C# source is an authority. `conventions.md:237-242` with a zero baseline
+  makes this obligatory, not optional (§V.3).
+- **RB-4 — the check may not be hosted in an Nx task.** Affected-gating, cache replay, and a project-graph
+  cycle in the one recorded workaround each defeat it independently (§V.4). If the rebuild proposes an
+  Nx host anyway, it must answer all three by name.
+- **RB-5 — one parser per source.** If C# becomes an authority, name which tool owns C#-to-client parity
+  rather than growing a second parser over `Cleansia.Core.Domain/Enums/*.cs` (§V.6).
+- **RB-6 — the regen-time step, if kept, is early warning and carries no tier.** It may not be the only
+  gate (RB-3) and it may not hard-fail a single-host regen for a cross-host reason without a documented
+  operator procedure (§V.2). "Report loudly and refuse to rewrite" is one shape; there are others.
+- **RB-7 — anti-vacuity survives and extends.** D1.7's exits are right and match house discipline. Add
+  the one the current design lacks: a run in which the authority itself was not read (zero C# enums
+  parsed, or zero clients discovered) is `exit 1`, not a pass.
+
+---
+
+### V.10 — What the second panel checks
+
+1. Title and the "One decision" box state the mechanism the rebuild actually chose (§V.1).
+2. §4 and §D3 no longer claim *"a disagreement… impossible to ship"* beyond what the mechanism detects.
+3. RB-1 … RB-7 each answered on the record, RB-2 with a stated failure posture.
+4. §6 re-disposes **Alternative C** against the shipped technique (`check-available-status-parity.mjs`),
+   not against assembly reflection or a new enum-only endpoint; and the alternatives table gains *"a
+   dependency-free Node checker outside the Nx workspace + a repo-root workflow + a self-test"* with a
+   real disposition.
+5. §7's entry carries an available tier token, earned by the thing that sets the exit code (§V.3).
+6. §1.1 in the past tense; Alternative H's disposition rewritten; §D5, its `MANUAL_STEP` and residue 5
+   deleted; §1.5's parenthetical deleted; no ticket id named (§V.7).
+7. §1.4 gains the cache half; residue 3 rewritten per §V.6; residue 2 and D4's body reconciled.
+8. Whatever survives of D4 states plainly which of its two bullets it actually covers.
+
+---
+
+### V.11 — Routed (outside this lane; I did not edit these)
+
+- **`agents/knowledge/patterns-frontend.md:657-667` is factually wrong at HEAD, independently of this
+  ADR's fate.** It states: *"A regen that renumbers a member then **fails `nx test models`** instead of
+  silently giving shared code a different contract."* §1.4 and §V.4 prove it does not — a regen-only
+  commit does not select `models`, and any selection without a `models` file change replays a cached
+  pass. Because the §7 replacement is bound to an acceptance that has not happened, that sentence stays in
+  force while being false. **This is a small, immediate factual correction, not a new decision**, and it
+  should be a ticket now rather than waiting on the rebuild. Proposed minimal edit: replace *"then fails
+  `nx test models`"* with *"then fails `nx test models` **only on a commit that also touches
+  `libs/shared/models`** — a regen-only commit does not select that project and Nx may replay a cached
+  pass over changed client bytes (ADR-0042 §1.4 + Verdict §V.4), so this spec is a backstop, not a gate"*,
+  and leave the `Q-ENUM-01` pointer, correcting it to say the answer is `proposed` and returned.
+- **`agents/backlog/questions/open.md` Q-ENUM-01 needs two corrections** (PM/author lane — I may not edit
+  it): (i) `:1231` points at `adr/0041-shared-wire-enums-…`, a filename that does not exist; `0041` is the
+  partner-agreements ADR, so a reader following it lands mid-panel on a different decision. (ii) `:1257-1258`
+  records **"Answer: the shared declaration is GENERATED from the NSwag output at regen time"** as settled
+  and instructs the PM to move the entry to `answered.md`. **That answer is the clause this panel
+  returned.** Until the rebuild clears a second panel the entry stays open, and the "PM: move to
+  answered.md" instruction must be struck. The owner's half (§0) remains settled and can be recorded as
+  such.
+- **`CLAUDE.md`** — no step is owed (§V.7(b)). The previously proposed `MANUAL_STEP` is withdrawn.
+- **Ticket ids** — none allocated by this verdict. The challenger round's id and the refactor's id are the
+  PM's; `T-0546` is taken.
+- **`conventions.md` / ADR-0032** — the missing tier token for a gate that blocks an owner-run local
+  command (§V.3). Belongs to ADR-0032's panel, not to this one.
+
+---
+
+**Consensus:** not reached. Four blocking findings sustained (CH-G1, CH-G2, CH-G3, CH-G4), one sustained
+editorially (CH-G5), two sustained non-blocking (CH-G6, CH-G7), and CH-G8 dissolves with §V.4. **Nothing
+is escalated to the owner** — every open point is an architect's mechanism choice, and §0's owner ruling
+is untouched and still binding. The author revises this draft; a second panel rules against §V.10.

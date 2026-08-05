@@ -27,9 +27,11 @@ One subscription, one resource group `rg-cleansia-weu-dev`, containing:
 | 10 | App Insights | `appi-cleansia-weu-dev` | workspace-backed |
 | 11 | Log Analytics | `log-cleansia-weu-dev` | 30-day retention (dev) |
 
-The deployment also creates: 5 blob containers (`order-photos`, `employee-documents`,
-`generated-receipts`, `generated-invoices`, `user-files`), 12 queues (6 base + 6 `-poison`), the
-`Cleansia` database, the Postgres firewall rules, and the managed-identity role grants.
+The deployment also creates: 6 blob containers (`order-photos`, `employee-documents`,
+`generated-receipts`, `generated-invoices`, `user-files`, `dispute-evidence`), 14 queues
+(7 base + 7 `-poison`), the `Cleansia` database, the Postgres firewall rules, and the
+managed-identity role grants. Both lists are `storage.bicep`'s; the queue set mirrors `QueueNames.cs`
+and `QueueListenerInventoryTests` fails the build if the two drift again.
 
 > ### ⓘ Naming rule: the name encodes the REGION, not the COUNTRY/market (ADR-0017)
 >

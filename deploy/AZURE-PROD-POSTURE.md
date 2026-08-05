@@ -36,6 +36,16 @@ Vault references would swap a broken instance into production.
   with production for the same Storage Queue messages (double-consumption). Functions deploys stay
   the container-set + restart they are today.
 - S1 supports 5 slots per app; B-series rejects slot creation, which is why dev stays `false`.
+- **Slots are not coming to dev, and "upgrade dev to Standard so it can have them" is the wrong fix —
+  it is both the expensive option and the worse one.** The intuitive cure for a cold dev host is a
+  staging slot, so this is written down rather than left to be re-derived. Standard is the lowest tier
+  that accepts a slot, and the step from dev's **B2 (2 vCPU / 3.5 GB)** to **S1 (1 vCPU / 1.75 GB)**
+  *halves both the RAM and the CPU* of the plan that already holds 7 always-on processes — on the very
+  hosts whose cold start prompted the question. Paying more for less memory to fix a memory-sensitive
+  symptom is a net loss before the invoice is even opened. (The monthly delta is a pricing-table lookup
+  and is deliberately not quoted here; the SKU arithmetic above is the decisive part and does not go
+  stale.) Always On plus the post-deploy warm probe already close the dev gap at **€0** — see the Always
+  On note above and `.github/workflows/deploy-azure.yml`'s *Warm the deployed site* step.
 - **Slots are NOT Always On** (hardcoded `alwaysOn: false` on the slot resource): Always On is on
   Azure's not-swapped (slot-sticky) settings list, so a warm slot buys zero swap benefit — the CI
   workflow warms the slot explicitly before swapping. Mirroring the parent's prod `alwaysOn: true`

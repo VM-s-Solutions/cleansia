@@ -1,18 +1,18 @@
 ---
 id: T-0502
 title: Dev cold start — Always On is off, the existing warm loop does not point at dev, and every deploy restarts 7 sites twice
-status: draft
+status: in_review
 size: M
 owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
 adrs: [0015]
 layers: [architect, backend]
 security_touching: false
-manual_steps: []
+manual_steps: [azure-deploy]
 sprint: 15
 ---
 
@@ -117,6 +117,16 @@ measurement (AC6) **holds** until it has run.
 `deploy/AZURE-PROD-POSTURE.md` in full, `.github/workflows/deploy-azure.yml`, **ADR-0015**.
 
 ## Status log
+- 2026-08-05 — **in_review (backend, on the architect's ticket).** **AC1, AC3 and AC4 were already shipped**
+  by `2012b014` and are re-verified at file:line. Added this pass: **AC5's refusal recorded in the repo**
+  (`AZURE-PROD-POSTURE.md` §1, argued on SKU arithmetic rather than a price that goes stale) and
+  `DeployWarmProbeCoverageTests` — which converts AC4's unguarded copy-paste hazard into a test
+  (per-host coverage, the SSR-`/` subtlety, dev-vs-slot path agreement, and `alwaysOn` never conditional),
+  mutation-proved twice with both artifacts restored byte-identical. **A premise correction that matters for
+  sizing: dev is B2 (2 vCPU / 3.5 GB); the S1 / 1.75 GB figure is the authored PROD plan, never deployed.**
+  **AC6 holds open** — TTFB needs a deploy and no numbers were invented; note the "before" is likely no
+  longer obtainable, since the first post-merge deploy is what applied Always On. **AC2's second half —
+  whether 7 always-on processes fit 3.5 GB — is unfalsified, not answered.**
 - 2026-08-02 — **draft (created by pm from the cold-start / deploy investigation).** **Four of the
   five findings PM-verified first-hand** at file:line — the `alwaysOn: env == 'prod'` conditional in
   two places, the module default, the B-series slot rejection, and the existing warm-probe machinery
@@ -125,3 +135,114 @@ measurement (AC6) **holds** until it has run.
   expensive option is also the worse one, and that finding is worth more than the fix.
 
 ## Review
+
+### Gate 0 — AC1, AC3 and AC4 were ALREADY DONE before this ticket was picked up
+
+`2012b014` (2026-08-02 17:31, on `master`) shipped all three. Re-verified at `c15e295e`:
+
+- **AC1.** `main.bicep:574` (the five-API loop) and `:677` (SSR) both read **`alwaysOn: true`**,
+  unconditional. The `env == 'prod'` fence the ticket quotes is gone, and the replacement comment carries
+  the €0 sentence the AC asked for (*"It costs nothing on a plan that is already paid for by the hour"*).
+- **AC3.** The double restart reproduced and is closed by a **fingerprint gate**, not a path filter
+  (`deploy-azure.yml:346-390`). The gate is right for the reason the commit gives: dev is dispatch-only, so
+  a path diff means nothing on a button press days after the merge. The fingerprint covers
+  `deploy/bicep/**` **plus the three secret-presence flags**, which closes the hole a path filter leaves —
+  setting a secret for the first time changes no file but must still re-wire app settings. It fails **open**
+  (missing tag / unreadable RG → provision) and stamps the tag only after Bicep succeeds (`:437-441`), so a
+  half-applied provision is not recorded as done.
+- **AC4.** The warm probe points at dev: `if: inputs.env != 'prod'`, one per web host, 30 attempts × 10 s,
+  failing the job if the site never answers. Targets verified at `:703`, `:773`, `:840`, `:907`, `:974`
+  (`/health`) and `:1102` (SSR, `/`).
+
+### AC4 — one honest deviation, and what I did about it instead of pretending
+
+The AC said *"reuse the code path; do not write a second warm loop"*. What shipped is a **copy**: six jobs ×
+two loops = **12 near-identical shell blocks**. The substance the AC was protecting *was* carried correctly —
+the SSR probe hits `/` and the five API probes hit `/health` — but the drift risk the AC named is real and
+unguarded.
+
+I did **not** refactor it into a composite action. A GitHub Actions refactor cannot be exercised locally,
+the deploy pipeline is the one path where a mistake is expensive, and there is no runtime signal to catch a
+regression. Instead I converted the hazard into a **test**, which is the part that can be verified here:
+
+`src/Cleansia.Tests/Configuration/DeployWarmProbeCoverageTests.cs` parses `deploy-azure.yml` and pins
+
+- every one of the six web hosts has a dev warm probe (the set is asserted by name — five-of-six is a hole);
+- the SSR probes `/` and every API probes `/health`, with the *reason* in the failure message;
+- **the dev loop and the prod slot loop agree on the path for every host** — the exact drift the AC feared;
+- (AC1) `main.bicep` sets `alwaysOn` only to `true`, never to a conditional.
+
+**Mutation-proved twice**, each edit reverted immediately and the files confirmed byte-identical to HEAD
+afterwards (`git status` clean on `.github/` and `deploy/`):
+
+- `alwaysOn: true` → `alwaysOn: env == 'prod'` → red (*Expected "true", Actual "env == 'prod'"*).
+- one API dev probe `/health` → `/` → **two** tests red, including the dev-vs-slot disagreement.
+
+### AC2 — the capacity arithmetic, and a correction to a premise that was handed to me
+
+**The dev plan is B2 — 2 vCPU / 3.5 GB — not S1/1.75 GB.** `main.bicep:33-34` (`appServicePlanSku = 'B2'`,
+*"Dev = B2 (ADR-0015 D2 owner override); prod = S1"*) and `weu.dev.bicepparam` (`param appServicePlanSku =
+'B2'`). **S1 / 1 vCPU / 1.75 GB is the authored PROD SKU and prod has never been deployed.** Anyone sizing
+the only live environment against 1.75 GB is working with half the real memory; `AZURE-PROD-POSTURE.md:43-49`
+is where the 1.75 GB figure legitimately lives, and it is explicitly about the prod plan.
+
+So: **7 resident processes on 3.5 GB** (5 APIs + SSR + Functions; no slots on B-series). The arithmetic and
+the watch item are recorded at `AZURE-PROD-POSTURE.md:20-24`.
+
+**Not verified, and it cannot be from here: the per-site resident footprint.** That needs a live memory
+reading, and there is no telemetry path to me. What I can say is that the change made the plan *more* likely
+to be memory-bound, not less, and the observable symptom to watch for is named in the posture doc
+(memory-driven recycling → 502/503 + worker restarts). **This is the one place where the AC's warning — a
+blanket flag that pushes the plan into paging makes cold start worse — remains unfalsified rather than
+answered.** T-0503's EF warm-up pushes marginally the same way (~2 s of model graph resident per host,
+already resident once the host serves a request).
+
+### AC5 — slots are explicitly NOT adopted on dev, recorded in the repo
+
+`deploy/AZURE-PROD-POSTURE.md` §1 previously carried only the *technical* reason (*"B-series rejects slot
+creation, which is why dev stays false"*), which reads as a limitation to be worked around. The refusal is
+now recorded as a refusal, with the arithmetic that makes it decisive rather than a price quote that goes
+stale: Standard is the lowest tier that accepts a slot, and **B2 (2 vCPU / 3.5 GB) → S1 (1 vCPU / 1.75 GB)
+halves both RAM and CPU** on the plan that already holds 7 always-on processes — paying more for less memory
+to fix a memory-sensitive symptom.
+
+**I deliberately did not quote the €35–45/month figure.** I cannot verify a price from the repo, and the SKU
+arithmetic is both checkable and non-perishable. That is stated in the doc so the omission reads as a choice.
+
+### AC6 — NOT MEASURED, and it cannot be from here
+
+Time-to-first-byte before/after needs a deploy against the live dev environment. **`manual_steps:
+azure-deploy`.** This AC **holds open**. I am flagging rather than fabricating: six invented numbers would be
+worse than none, and a cold-start ticket that ships with fake timings is exactly the unfalsifiable outcome
+the AC exists to prevent.
+
+Note the sequencing: the first `Deploy to DEV` run after `2012b014` merged is the one that applied Always
+On, because the fingerprint tag was absent then. So the "after" state may already be live — the missing
+measurement is the **before**, which is no longer obtainable. Realistically AC6 is best discharged as a
+*current* cold/warm TTFB reading plus the statement that the host no longer unloads.
+
+### AC7 — no portal change
+
+Everything is in Bicep or the workflow. My own edits: **no net workflow change** (both mutations reverted and
+verified), one line in `deploy/bicep/modules/storage.bicep` (a missing queue — see T-0499), and the AC5
+paragraph in `AZURE-PROD-POSTURE.md`.
+
+### AC8 — repo vs live, and what could not be verified without a deploy
+
+**Verified in the repo, at file:line:** the `alwaysOn: true` on both web-host module invocations; the module
+default and the slot's hardcoded `alwaysOn: false`; the B2 dev SKU in both `main.bicep` and the dev param
+file; the fingerprint gate and its fail-open/stamp-after-success behaviour; all six dev warm probes and
+their paths; the six prod slot probes and their paths. All now under test.
+
+**NOT verified — needs the live environment:**
+
+- that Always On is actually **applied** in Azure (it needs the provision run; the repo can only assert intent);
+- the real per-site memory footprint, hence whether 7 always-on processes fit 3.5 GB (AC2's open half);
+- cold/warm TTFB per host (AC6);
+- the observed restart count per deploy before/after (AC3's *"before/after restart count from a real deploy"*
+  clause — the *mechanism* is verified in the workflow, the *count* is not).
+
+### Gate 0.5 — suites
+
+Baselines re-measured locally at `c15e295e` before any edit: **3129 / 144 / 135**, all exit 0 (the ticket
+header's 2295 / 108 / 75 are stale). After: **3146 / 144 / 135**.

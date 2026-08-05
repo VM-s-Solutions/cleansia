@@ -59,6 +59,11 @@ public static class DbContextBindingExtensions
         }
 
         services.AddSingleton(dataSource);
+        // Registration order is load-bearing: IHostedService.StartAsync runs sequentially, and
+        // NpgsqlTypeCatalogInitializer awaits a retry loop that can span ~2 minutes while a migration is
+        // in flight. Registered after it, the warm-up would be queued behind exactly the slow boot it
+        // exists to help. It yields immediately, so it delays the initializer by nothing.
+        services.AddHostedService<EfModelWarmupService>();
         services.AddHostedService<NpgsqlTypeCatalogInitializer>();
         services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);

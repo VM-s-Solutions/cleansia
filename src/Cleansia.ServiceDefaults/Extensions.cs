@@ -54,13 +54,7 @@ public static class Extensions
                     .AddSentry();
             });
 
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(
-            configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
-        if (useOtlpExporter)
-        {
-            services.AddOpenTelemetry().UseOtlpExporter();
-        }
+        AddTelemetryExporters(services, configuration);
 
         services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
@@ -135,35 +129,41 @@ public static class Extensions
                     .AddHttpClientInstrumentation();
             });
 
-        AddOpenTelemetryExporters(builder);
+        AddTelemetryExporters(builder.Services, builder.Configuration);
 
         return builder;
     }
 
-    private static IHostApplicationBuilder AddOpenTelemetryExporters(IHostApplicationBuilder builder)
+    /// <summary>
+    /// Where the OTel pipeline is SHIPPED, for both <c>AddServiceDefaults</c> overloads.
+    ///
+    /// It lives here, taking the two things either overload can supply, because the exporter previously
+    /// hung off the <see cref="IHostApplicationBuilder"/> path alone — which no host in this solution
+    /// calls. The five APIs use the Startup-class pattern, so they reach service registration with an
+    /// <see cref="IServiceCollection"/> and nothing else, and every API host therefore collected
+    /// telemetry in-process and exported it nowhere for as long as the exporter had existed. Anything
+    /// added to one overload and not the other repeats that, silently.
+    ///
+    /// Both exporters stay guarded on their own configuration value so a host with neither configured
+    /// (local dev, the test hosts) registers no exporter at all.
+    /// </summary>
+    private static void AddTelemetryExporters(IServiceCollection services, IConfiguration configuration)
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(
-            builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
-        if (useOtlpExporter)
+        if (!string.IsNullOrWhiteSpace(configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
         {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            services.AddOpenTelemetry().UseOtlpExporter();
         }
 
-        // Export the OTel pipeline (traces/metrics/logs) to Application Insights when a connection string
-        // is configured (the Bicep sets APPLICATIONINSIGHTS_CONNECTION_STRING on every API host). Without
-        // this the OTel data was collected but never shipped — API failures were invisible in App Insights.
-        // Guarded on the connection string so local dev (no App Insights) is unaffected.
-        var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+        var appInsightsConnectionString = configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        if (string.IsNullOrWhiteSpace(appInsightsConnectionString))
         {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
-            {
-                options.ConnectionString = appInsightsConnectionString;
-            });
+            return;
         }
 
-        return builder;
+        services.AddOpenTelemetry().UseAzureMonitor(options =>
+        {
+            options.ConnectionString = appInsightsConnectionString;
+        });
     }
 
     public static IHostApplicationBuilder AddDefaultHealthChecks(this IHostApplicationBuilder builder)

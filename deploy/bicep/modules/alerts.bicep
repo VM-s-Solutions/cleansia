@@ -188,7 +188,11 @@ resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
 
 // ---------------------------------------------------------------------------------------------------
 // App Insights exceptions spike — ONE alert over the shared component, so it covers server-side
-// exceptions from all five APIs, the SSR, and the Functions host in a single signal.
+// exceptions from every host that PRODUCES to that component: the five APIs (since T-0500) and the
+// Functions host. It has never covered the SSR — that host is Node and reads the connection string in
+// no environment — and between the exporter landing and T-0500 it covered Functions alone while this
+// comment claimed otherwise. A host absent from App Insights cannot move this metric, so widening the
+// claim without widening the producer set is how the alert reads as coverage it does not have.
 // ---------------------------------------------------------------------------------------------------
 
 resource exceptionsAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
@@ -196,7 +200,7 @@ resource exceptionsAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   location: 'global'
   tags: tags
   properties: {
-    description: 'Server exceptions across the APIs/SSR/Functions exceeded ${exceptionsThreshold} in ${windowSize}.'
+    description: 'Server exceptions across the five APIs and the Functions host exceeded ${exceptionsThreshold} in ${windowSize}.'
     severity: exceptionsSeverity
     enabled: true
     scopes: [resourceId('Microsoft.Insights/components', appInsightsName)]

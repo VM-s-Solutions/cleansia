@@ -163,8 +163,9 @@ committed environment file — `environment.ts`, `environment.staging.ts`, `envi
 all three apps — sets `sentryDsn: ''`. The **customer** app carries the property but has no Sentry
 initialization at all.
 
-So a browser exception today is reported to nothing. The same is true server-side; see
-[Infrastructure → Observability](/architecture/infrastructure#observability).
+So a browser exception today is reported to nothing. **Server-side this is no longer true** — the five
+APIs export exceptions and error logs to Application Insights (T-0500), so the gap is now browser-only.
+See [Infrastructure → Observability](/architecture/infrastructure#observability).
 :::
 
 ::: warning Dev `apiBaseUrl` is relative on purpose

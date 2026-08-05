@@ -151,11 +151,11 @@ fixed at `0.2` in code. A blank or absent DSN leaves the SDK uninitialized, whic
 guard that stops a DSN-less host from failing to boot.
 
 **Every committed `appsettings*.json` across the five APIs sets `"Dsn": ""`.** In Azure the value is a
-Key Vault reference (`main.bicep:467`) fed by the `SENTRY_DSN` GitHub secret, and the DEV runbook
-directs that it stay empty (`deploy/AZURE-DEV-RUNBOOK.md:239`). Since DEV is the only deployed
-environment, **Sentry is not collecting anywhere right now**. See
-[Infrastructure → Observability](/architecture/infrastructure#observability) for what does still
-alert.
+Key Vault reference fed by the `SENTRY_DSN` GitHub secret, and the DEV runbook treats it as optional on
+dev. Since DEV is the only deployed environment, **Sentry is not collecting anywhere right now** — that
+remains true after T-0500, which turned on Application Insights and left Sentry untouched. See
+[Infrastructure → Sentry](/architecture/infrastructure#sentry) for why the two are complementary rather
+than redundant, and what setting the DSN would cost.
 :::
 
 ### Logging

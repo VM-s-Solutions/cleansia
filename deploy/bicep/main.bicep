@@ -466,6 +466,10 @@ var apiBaseSettings = union({
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: mapboxTokenKvRef
+  // Read by Cleansia.ServiceDefaults `AddTelemetryExporters`, which registers the Azure Monitor OTel
+  // exporter only when this is non-empty. It was inert on every API host until T-0500: the exporter
+  // existed but hung off an AddServiceDefaults overload no host calls, so the value arrived and nothing
+  // read it. Deleting it now silently disables API error tracking; it is not decoration.
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
   // ADR-0003 D3: the app refuses to boot in non-Development unless it's told which proxy network to
   // trust for X-Forwarded-For. Behind App Service the only hop is the App Service front end, which
@@ -662,6 +666,12 @@ module ssr 'modules/appService.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
     appSettings: {
+      // DEAD CONFIG on this host, deliberately kept — unlike the five .NET APIs, nothing here reads it.
+      // The SSR app is Node and ships no telemetry client, and the App Service Node auto-instrumentation
+      // agent is off (it needs ApplicationInsightsAgent_EXTENSION_VERSION, which no host sets). So this
+      // site is the one place the setting still means nothing. Turning it on is an owner decision, not a
+      // template one: either add the `applicationinsights` npm package to apps/cleansia.app/server.ts or
+      // set the agent app setting here (T-0500).
       APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
       // server.ts fronts Mapbox forward-geocoding at /api/mapbox/geocode so the token never reaches
       // the browser (the Mapbox REST API authenticates ONLY via an `access_token` query parameter,

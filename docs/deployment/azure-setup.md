@@ -132,10 +132,13 @@ These are estimates based on typical usage patterns. Actual costs vary based on 
 
 ::: warning Two known gaps in these tables
 **Application Insights and Log Analytics are not line items in either table**, although both are
-provisioned (`deploy/bicep/modules/appInsights.bicep`) and Log Analytics bills per GB ingested. Today
-the Functions host is the only telemetry producer, so it is the only contributor to that ingestion —
-the five APIs and the SSR host send nothing. The DEV workspace carries a 1 GB/day ingestion cap and
-prod defaults to 5 GB/day.
+provisioned (`deploy/bicep/modules/appInsights.bicep`) and Log Analytics bills per GB ingested. **The
+producer set changed in August 2026 and these estimates predate it**: the Functions host used to be the
+only contributor, and since T-0500 the five APIs export as well (the SSR host still sends nothing). The
+DEV workspace carries a 1 GB/day ingestion cap and prod defaults to 5 GB/day — and that cap is a
+breaker, not a budget: when it trips, ingestion stops until the next UTC day, exceptions included. The
+volume trade-off is written up under
+[Infrastructure → Volume and cost](/architecture/infrastructure#volume-and-cost).
 
 **The `Monitoring (Sentry)` line is a forecast for a subscription that is not active.** Sentry is
 disabled in every deployed environment because the DSN is empty. See

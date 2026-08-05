@@ -238,7 +238,7 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `SendGrid--PeriodClosedTemplateId` | `d-75a0f9cfdcc44eabb617de12e28d784d` |
   | `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `SendGrid--PeriodEndReminderTemplateId` | `d-d8428c5ffff14355a59d0a35023445da` |
   | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `SendGrid--OrderStatusUpdateTemplateId` | your `d-…` id (from your user-secrets) |
-  | `SENTRY_DSN` | `Sentry--Dsn` | leave EMPTY for dev (Sentry off); real DSN in prod |
+  | `SENTRY_DSN` | `Sentry--Dsn` | **optional on dev, and no longer the only error tracking.** Since T-0500 the five APIs export exceptions and error logs to Application Insights, so an empty DSN is a supported posture rather than a blind one. Set a real DSN (Sentry's free tier is enough for dev) only if you want to be **told about the first occurrence** — App Insights alerting is threshold-based and will not mail you about a single 500. Prod: set it. |
   | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
   | `FISCAL_CZECH_EET2_API_KEY` | `Fiscal--CzechEet2--ApiKey` | leave UNSET until fiscal go-live — setting BOTH fiscal secrets flips `fiscalSecretProvisioned` and wires the KV references |
   | `FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD` | `Fiscal--CzechEet2--CertificatePassword` | leave UNSET until fiscal go-live (see above) |
@@ -427,6 +427,21 @@ Paste those into `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` / `_ADMIN` (step 4), 
 - [ ] Both SPAs load + reach their API (CORS correct).
 - [ ] Storage pipeline: a payment → `generate-receipt` queue → Functions → a PDF lands in `generated-receipts`.
 - [ ] Migrations applied (the app starts without a schema error).
+- [ ] **API telemetry is arriving** (T-0500 — this is the check that the exporter is actually reached;
+      it was written and unreachable through every deploy since 2026-07-02 and nothing failed). Wait
+      ~3 minutes after the
+      hosts are up, then in App Insights `appi-cleansia-weu-dev` → Logs:
+
+      ```kql
+      union requests, traces, exceptions
+      | where timestamp > ago(30m)
+      | summarize count() by cloud_RoleName, itemType
+      ```
+
+      Expect a row per API host, not the Functions host alone. `cloud_RoleName` is the host's application
+      name. **No rows means the exporter did not register** — check `APPLICATIONINSIGHTS_CONNECTION_STRING`
+      is present on the site (Configuration → Application settings) and restart it; App Service caches
+      settings from process start.
 
 When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the stable base URLs the
 **iOS apps point at** — the whole reason for this wave.
@@ -519,7 +534,7 @@ work the YAML cannot do. Do it **in this order**:
 | `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `d-…` | KV push |
 | `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `d-…` | KV push |
 | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `d-…` | KV push |
-| `SENTRY_DSN` | the **real** prod DSN (dev leaves this empty; prod is where Sentry is on) | KV push → `Sentry--Dsn` |
+| `SENTRY_DSN` | the **real** prod DSN. Application Insights already carries prod exceptions (T-0500), so Sentry is here for what it does better: first-occurrence alerting, issue grouping and regression detection. Dev may leave it empty | KV push → `Sentry--Dsn` |
 | `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
 
 > The 2 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`)

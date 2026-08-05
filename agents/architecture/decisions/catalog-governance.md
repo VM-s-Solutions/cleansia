@@ -101,6 +101,25 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    > so one reviewer fires test 2 while another (correctly) sees a prescription for a different subject
    > that yields nothing here. Until L1 lands, routing on a general sentence rests on the reviewer's
    > **paraphrase** of it — the same defect CH-1 removed from the other half of the clause.
+   >
+   > 🟡 **A repair is in flight and NOT ratified** — `backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`
+   > (author's draft, 2026-08-05; number deliberately unallocated; challenger + lead rounds pending).
+   > It proposes the **conflicting-instance test** — *a sentence `S` governs entry `E` iff a reader can
+   > name one concrete artifact both reach on which their verdicts differ* — in preference to the lead's
+   > nominated *"applied to this entry's subject"* wording, on the ground that the latter relocates the
+   > indeterminacy from the sentence's meaning to the entry's **subject granularity**, which is the thing
+   > the two Case-β reviewers actually differ on. Ten real entries were run against it, ten determinate,
+   > including T-0473. **Nothing here changes until that panel closes.**
+   >
+   > ⚠️ **A caveat on Case β's evidence, found by that draft and worth knowing now.**
+   > `patterns-mobile.md:517-525` — the entry holding the candidate governing sentence `:520-522` —
+   > **cites T-0473 inside itself** (`:522-524`, *"because a resolver test does not cover the call site
+   > (the T-0473 rule)"*). So at least part of it post-dates T-0473, and if **all** of it does, `:520-522`
+   > was never a candidate governing sentence for that entry and Case β is a live *hypothetical* about
+   > today's catalog rather than a historical mis-routing. L1 stands either way — one reproducible
+   > indeterminacy on the current text is a counter-example — but the evidence is weaker than
+   > §Ruling 1 presents it. Neither the lead pass nor the draft had a shell; **`git log -p --
+   > agents/knowledge/patterns-mobile.md` settles it in one command** and nobody has run it.
 3. **Claiming the floor costs one grep, and the default is route.** The author records the catalog
    file(s) + term searched in `## Review`, symmetric with test 1's code sweep. **A floor claimed with
    no search is not claimed.**
@@ -178,7 +197,8 @@ reviewer who is actually told to look.
 | No floor (C5's unfloored test 2) | everything routes | the inline lane dies; `conventions.md`'s harvest loop closes |
 | Floor on "previously **permitted**" | nothing | undecidable — the catalog prescribes, so "permitted" collapses into "silent" |
 | Floor on the **topic** ("has the catalog discussed X?") | nothing | every sub-case is a fresh topic if you pick the vocabulary; T-0451 escapes as "theme-invariant surfaces" |
-| **Floor on a governing *sentence* at any level of generality** ← **chosen** | one grep, recorded | **two** residuals: the author may search at the wrong level of generality (mitigated by route-by-default), and **"governs" is itself undefined** (finding L1 — not mitigated) |
+| **Floor on a governing *sentence* at any level of generality** ← **chosen** | one grep, recorded | **two** residuals: the author may search at the wrong level of generality (mitigated by route-by-default), and **"governs" is itself undefined** (finding L1 — repair drafted 2026-08-05, **not ratified**) |
+| …with **"governs" = a nameable conflicting artifact** ← **PROPOSED, in panel** | one grep **+ one artifact when a reviewer objects** | residual moves from *"what is the subject?"* (ungrounded, and what the two Case-β reviewers actually differ on) to *"can an artifact be named?"* — narrower, checkable, and a reviewer can supply the artifact an author missed. Not zero: an author who cannot imagine the conflicting file still writes "none nameable". Untested against very broad sentences (*"never duplicate a `:core` component"*), where conflicts are easy to find and test 2 may over-fire |
 | Route every first statement (Alternative B) | the harvest loop | rejected in the original panel; nobody argued for it in the re-check |
 
 **The eighth retro case, produced by the lead pass — the first one where the "any level of generality"
@@ -198,6 +218,28 @@ which is the whole content of M1 and was previously supported only by row 3 — 
 carried by an assertion. It is also the counterweight to L1: the limb works when the governing sentence,
 applied to the entry's subject, yields a prescription the entry contradicts. When it does not (T-0473),
 the limb goes indeterminate. Same test, two outcomes, and the ADR does not name the difference.
+
+**The corpus is now ten cases (L1 draft, 2026-08-05) — the first pass to run a candidate definition
+rather than re-read the record.** Rows 1–8 reproduce ADR-0033's table and the lead pass's Cases α/β;
+rows 9–10 are new. Under the draft's conflicting-instance test **all ten are determinate**, seven agree
+with history, ADR-0033's two owned divergences (T-0397 row 1, T-0379 `format: date`) are unmoved, and
+**one new divergence appears — and it is the interesting one:**
+
+| | **T-0449** `patterns-mobile.md:320-329` — *"the guard is released by a successful render"* |
+|---|---|
+| Governing sentence | `:562-565` (T-0448, **Android**) — *"refetch the profile once, **guarded by the `fileName` already retried**"* |
+| Conflicting artifact | an Android `ProfileViewModel` whose retry watermark is set once and **never cleared**: `:562-565` rules it compliant; the entry rules it *"drops the avatar to initials permanently"* |
+| Routes to | **Architect** |
+| Actual | **inline** (`T-0449-…md:316`) |
+
+That is a **narrowing that shipped inline** — an entry withdrawing a form the catalog described, on the
+*other* platform, with no Architect. Neither the accepted floor nor the lead's nominated disambiguator
+catches it, because both turn on whether `:562-565` "governs the subject", and the subject paraphrases
+either way (*iOS avatar caching* vs *SAS-backed image retry*). Two caveats stated with it: its **test-1
+column is unknown** (if Android lacked `onAvatarLoadSucceeded` at the time, test 1 fires first and the
+question is moot), and the same entry **independently fires test 3** — filed as **N1**. Whether row 9's
+shape is a *case* or a *rate* is the number that decides whether the draft is a repair or a tax on the
+stack that harvests most, and no round so far has had a shell to measure it.
 
 ---
 
@@ -271,16 +313,17 @@ ADR-0033 replaces.
 |---|---|---|
 | ~~The floor on ADR-0033's test 2 needs one adversarial round~~ — **CLOSED 2026-08-05** (T-0471): challenged, amended M1–M6, `accepted` | architect panel | ADR-0033 §Verdict · `adr/challenges/0033-floor.md` |
 | ~~AC1 — the round needs a lead distinct from the challenger~~ — **CLOSED 2026-08-05**: third instance ran it; ADR-0033 §"Independent lead adjudication" | architect | ADR-0033, appended section |
-| 🔴 **L1 — M1 defines *silence* but never defines *governs*.** The missing operational sentence (*"a sentence governs this subject iff, applied to it, it yields a prescription the entry contradicts"*) is what makes T-0473 determinate. **A new ADR refining ADR-0033 D1, with its own panel — a lead may not author it.** Allocate the number when the panel spawns | PM → architect panel | ADR-0033 §Ruling 1 |
+| 🟡 **L1 — M1 defines *silence* but never defines *governs*.** **AUTHOR'S DRAFT FILED 2026-08-05, NOT RATIFIED** — `adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`. It proposes the **conflicting-instance test** (name one artifact both sentences reach on which their verdicts differ) and **rejects** the lead's nominated *"applied to this entry's subject"* wording as relocating rather than removing the indeterminacy. Retro-validated on **10** real entries, **10 determinate** (T-0473 included), **1 new divergence found** (T-0449 — a cross-platform harvest that narrows the other platform's shipped entry and shipped inline). **Challenger + lead rounds pending; number unallocated on purpose.** | architect panel (in progress) | the draft · ADR-0033 §Ruling 1 |
 | 🔴 **L2 — FT-11 is the remainder of the decision and has no ticket.** File FT-11/FT-12/FT-8 as `INDEX.md` rows, FT-8 behind FT-11, **and widen FT-11 to `conventions.md:122-127`** — the author's page teaches the superseded axis too | PM → architect + docs | this doc, "not in force" box |
-| 🔴 **L3 — Block C as specified installs a contradiction into `conventions.md`** (appends the new test, leaves `:122-127`'s reversed limb standing). **FT-8 must not be applied as specified.** Fold into L1's panel | PM → architect panel | this doc, trade-off space |
+| 🟡 **L3 — Block C as specified installs a contradiction into `conventions.md`** (appends the new test, leaves `:122-127`'s reversed limb standing). **FT-8 must not be applied as specified.** **Draft repair filed (Block C′): REPLACE `conventions.md:120-130` in full — not append — and state the reversal in the page itself.** The draft adds two findings L3 did not carry: **bullet 1 (`:122-124`) is wrong too** (it scopes the inline lane to *"a small clarification/addition to an **existing** rule"*, which excludes the first statement the floor sends inline — the floor opens a third category neither bullet describes), and **ADR-0033 D1 test 4 mis-cites itself** as *"unchanged from step 2, first bullet"*, which is why an editor in good faith would append. The *"does not reverse"* header claim is confirmed false and **does not qualify for the erratum lane** (`adr/README.md:16-26` — meaning, not digits): it rides a dated appended section on ADR-0033 | architect panel (in progress) | the draft §D4 / §Block C′ |
 | **FT-11 — land the named enforcer (Block D):** reviewer-check 5 "Catalog-edit routing" in `.claude/agents/reviewer.md` + a Gate 1 pointer. **Blocks FT-8.** Until it lands, ADR-0033 is `(guidance — no gate)` in fact | architect + docs | ADR-0033 §Block D / §Follow-ups |
 | **FT-12 — record the check id in `enforcement.md`** so dropping reviewer-check 5 is a visible regression | architect + docs | ADR-0033 §Follow-ups |
 | **FT-8 — Block C into `conventions.md`** — **blocked twice**: behind FT-11, and behind L3's ruling on `:122-127` | architect + docs | ADR-0033 §Block C |
 | **F1 — ADR-0032 carries TWO stale statements**, not one: `:23-25` (0031 *is* on `master`, `acf2f0bc`/PR #175) **and `:14`** (*"ADR-0033 is `proposed`, not accepted"*, made stale by the T-0471 round itself). `accepted` ⇒ one **signed erratum** covering both (`adr/README.md:16-26`) | PM → architect | ADR-0032 `:14`, `:23-25` |
 | **F2 — ADR-0032's Block A was never applied**; `**Enforced by:**` has 0 instances in `patterns-mobile.md`, so FT-4 has nothing to build on | PM → ios lane | ADR-0032 §Block A |
 | **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier. **Its test-1/test-2 question is now answered in part** by the lead pass: the candidate governing sentence is `:520-522` and the entry **routes inline**, so the suspected mis-routing is *not* established; what stands is the missing enforcer + tier and the unrun sweep. **Recorded, not re-opened** — T-0274 precedent | PM | ADR-0033 §Ruling 1, Case β |
-| **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test. Confirmed real with better evidence: `T-0397-…md:70` shows the architect ruling *"carries a real trade-off — should it be an ADR, not a catalog row? Ruling: no trade-off survives"* — a ground actually used **and answered**. **Fold into L1's panel** (a fourth test is the same decision as defining "governs") | PM → architect panel | CH-6 / F4 |
+| 🟡 **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test. Folded into L1's panel as asked. **The draft ACCEPTS the framing (same decision) and REJECTS the substance: no fourth test.** Three grounds, all evidenced: (a) `T-0397-…md:70` shows the **Architect** asking the question **after** routing — it is a *catalog-row-vs-ADR* question, not a *who-ratifies* one; (b) both constructible triggers fail — *"two live forms"* is **subsumed by test 1**, and *"the entry states a cost of the form it chooses"* is **contradicted in both directions** (it fires on `patterns-mobile.md:559-561`, harvested inline; it does not fire on either of ADR-0033's Architect-routed divergences); (c) it does **not** close the greenfield residual, because a first statement on a new stack has no competitor to price. F4 gets **one line in the Architect's routed-edit procedure** instead of a test. **Flagged by the author as the draft's weakest limb — a challenger who builds a surviving trigger closes retro rows 6 and 7** | architect panel (in progress) | the draft §D3 |
+| 🔴 **N1 — `patterns-mobile.md:320-329` (T-0449) carries a PRESCRIPTIVE cross-stack claim with no file:line.** *"**Both platforms** plumb the pair through **every** surface that draws the disc"* is an obligation on Android, written from an **iOS** ticket (`T-0449-…md:316` records the harvest as inline), and `Android onAvatarLoadSucceeded` is cited with no file:line. That is ADR-0033 **D2** — the exact defect Block B/FT-9 fixes on the T-0441 sentence, **second live instance**, and evidence that D2 is as unenforced today as ADR-0032's `Enforced by:` label was. **Recorded, not re-opened** (T-0274/T-0473 precedent) | PM → ios/android lane, with FT-9 | the draft §Retro row 9 / N-E |
 | ~~**F5 — `patterns-mobile.md` still grants the `.medium` detent**~~ — **FIXED 2026-08-05** by the lead pass. Confirmed real at `:1241` (cited `:1230` before drift) against the withdrawal at `:996-1001` (cited `:985-990`), **and factually stale**: shipped is `CodeSheetShell.swift:29` `.fixedSize(horizontal:false, vertical:true)` + `:36` `.presentationDetents([.height(contentHeight)])` + `:78` `CodeSheetHeightKey: PreferenceKey`. The withdrawal survives; the grant is retracted with a dated in-place erratum note | closed | `patterns-mobile.md:1241` |
 | FT-1 verify the `NOT RUN` banner on merge of `fix/tooling-false-green-and-broken-docs` | tooling | ADR-0032 §Follow-ups |
 | FT-2 `custom_rules` bootstrap + `CleansiaWeb` overclaim + widen `included:` | ios | ADR-0032 §Follow-ups |
@@ -337,3 +380,20 @@ ADR-0033 replaces.
   support the AC1 argument it was offered for** — which is exactly why the composition fix was needed.
   **F5 fixed in the same pass.** L1/L3 are routed to a **new panel**, not written by this lead: inventing
   the repair and ratifying it is the defect T-0471 exists to repair, and it binds a second lead too.
+- **2026-08-05 (later still) — the L1/L3/F4 panel opens; AUTHOR'S DRAFT filed, nothing ratified.**
+  A fourth instance (did not write ADR-0033, did not challenge it, did not adjudicate it) filed
+  `adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`. **Number deliberately unallocated** — the
+  PM allocates when the panel closes; highest on disk is 0042 and two architects collided on 0041 this
+  sprint by grepping correctly at the same moment. What it proposes: **D1** the conflicting-instance
+  test for *"governs"*; **D2** the reviewer's symmetric burden (firing test 2 costs a **named artifact**,
+  not a named sentence — the completion of M2 on the other side, and what stops test 2 becoming a
+  one-way ratchet); **D3** F4 answered as *no fourth test*, with the trade-off question relocated to the
+  Architect's post-routing procedure; **D4/Block C′** the corrected `conventions.md` edit — **replace
+  `:120-130`, do not append** — with the reversal of limb 1 stated in the developer-facing page instead
+  of denied in an ADR header. Evidence: **10 real entries run, 10 determinate**, 7 agreeing with history.
+  **Declared limitation, and it is the same one that hobbled the lead pass: no shell.** The brief
+  asserted one was available; the invocation had `Read`/`Write`/`Edit`/`Glob`/`Grep` and no `Bash`, so
+  **again no catalog edit was read as a diff** — every case is reconstructed from entry text + ticket +
+  grep. Follow-up **N-F** is the one-command measurement (`git log -p` over the catalog files) that
+  converts ten cases into a rate **and** settles whether Case β is historical or hypothetical. Challenger
+  and lead rounds pending; **`deliberation.md` §6 — nothing is finalized and no ticket may cite this yet.**

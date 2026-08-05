@@ -29,7 +29,29 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.selected_services.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.selected_package.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.preferred_employee.not_eligible", emitters: "CreateOrder"),
-        CustomerOnlyKey("order.total_price.not_match", emitters: "CreateOrder")
+        CustomerOnlyKey("order.total_price.not_match", emitters: "CreateOrder"),
+        CustomerOnlyKey(
+            "recurring_booking.not_found",
+            emitters: "UpdateRecurringBooking, SetRecurringBookingActive, DeleteRecurringBooking"
+        ),
+        CustomerOnlyKey(
+            "recurring_booking.not_owned_by_user",
+            emitters: "UpdateRecurringBooking, SetRecurringBookingActive, DeleteRecurringBooking"
+        ),
+        CustomerOnlyKey(
+            "recurring_booking.saved_address_not_found",
+            emitters: "CreateRecurringBooking, UpdateRecurringBooking"
+        ),
+        CustomerOnlyKey(
+            "recurring_booking.no_services_or_packages",
+            emitters: "CreateRecurringBooking, UpdateRecurringBooking"
+        ),
+        CustomerOnlyKey("recurring_booking.starts_on_in_past", emitters: "CreateRecurringBooking"),
+        CustomerOnlyKey(
+            "recurring_booking.ends_on_before_start",
+            emitters: "CreateRecurringBooking, UpdateRecurringBooking"
+        ),
+        CustomerOnlyKey("recurring_booking.membership_required", emitters: "CreateRecurringBooking")
     ]
 
     /// The word for the express slot in each locale, as the booking summary already spells it.

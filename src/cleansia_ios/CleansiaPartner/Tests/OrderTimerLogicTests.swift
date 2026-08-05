@@ -145,4 +145,95 @@ final class OrderTimerLogicTests: XCTestCase {
         XCTAssertEqual(OrderTimer.elapsedClock(seconds: 6128), "1:42:08")
         XCTAssertEqual(OrderTimer.elapsedClock(seconds: -5), "00:00")
     }
+
+    // MARK: - Tracker
+
+    /// The bar under the timer text is the second half of the same hero block, and it was a
+    /// re-derivation rather than a port: four segments where Android has five, no step counter, no
+    /// current phase, and Cancelled rendering as an all-muted bar indistinguishable from a brand new
+    /// order. These pin it against `ContinuousProgressBar.kt`.
+    func testTheTrackerCarriesFivePhasesNotFour() {
+        XCTAssertEqual(OrderTrackerProgress.stepCount, 5)
+        for status in OrderStatus.allCases where status != ._6 {
+            guard case let .steps(segments, _) = OrderTrackerProgress.state(for: status) else {
+                return XCTFail("\(status) dropped the segmentation")
+            }
+            XCTAssertEqual(segments.count, 5, "\(status) renders \(segments.count) segments")
+        }
+    }
+
+    func testNewAndPendingSitOnTheFirstPhase() {
+        for status in [OrderStatus._0, ._1] {
+            XCTAssertEqual(
+                OrderTrackerProgress.state(for: status),
+                .steps(segments: [.current, .future, .future, .future, .future], stepNumber: 1)
+            )
+        }
+    }
+
+    func testEachLiveStatusAdvancesExactlyOnePhase() {
+        XCTAssertEqual(
+            OrderTrackerProgress.state(for: ._2),
+            .steps(segments: [.past, .current, .future, .future, .future], stepNumber: 2)
+        )
+        XCTAssertEqual(
+            OrderTrackerProgress.state(for: ._3),
+            .steps(segments: [.past, .past, .current, .future, .future], stepNumber: 3)
+        )
+        XCTAssertEqual(
+            OrderTrackerProgress.state(for: ._4),
+            .steps(segments: [.past, .past, .past, .current, .future], stepNumber: 4)
+        )
+    }
+
+    /// Completed fills every phase rather than leaving the last one sweeping — a finished job must not
+    /// read as still working, which is exactly what an `index <= step` fill produces.
+    func testCompletedFillsEveryPhase() {
+        XCTAssertEqual(
+            OrderTrackerProgress.state(for: ._5),
+            .steps(segments: [.past, .past, .past, .past, .past], stepNumber: 5)
+        )
+    }
+
+    func testCancelledDropsTheSegmentation() {
+        XCTAssertEqual(OrderTrackerProgress.state(for: ._6), .cancelled)
+    }
+
+    func testExactlyOnePhaseSweepsUntilTheJobIsDone() {
+        for status in OrderStatus.allCases where status != ._5 && status != ._6 {
+            guard case let .steps(segments, _) = OrderTrackerProgress.state(for: status) else {
+                return XCTFail("\(status) dropped the segmentation")
+            }
+            XCTAssertEqual(
+                segments.filter { $0 == .current }.count,
+                1,
+                "\(status) has no single sweeping phase"
+            )
+        }
+        guard case let .steps(segments, _) = OrderTrackerProgress.state(for: ._5) else {
+            return XCTFail("Completed dropped the segmentation")
+        }
+        XCTAssertFalse(segments.contains(.current), "a completed job still sweeps")
+    }
+
+    /// Through the BUILT bundle, not the `.xcstrings` source: a key present in the catalog but absent
+    /// from a shipped `.lproj` renders as its own name on screen.
+    func testTheStepCounterResolvesInEveryLanguage() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for language in ["en", "cs", "sk", "uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            let rendered = L10n.Orders.trackerStepCounter(3, 5)
+            XCTAssertNotEqual(rendered, "tracker_step_counter", "unresolved in \(language)")
+            XCTAssertTrue(rendered.contains("3"), "\(language) drops the step: \(rendered)")
+            XCTAssertTrue(rendered.contains("5"), "\(language) drops the total: \(rendered)")
+        }
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
+    }
 }

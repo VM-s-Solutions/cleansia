@@ -345,6 +345,10 @@ extension L10n {
             format("tracker_finished_at", dateTime)
         }
 
+        static func trackerStepCounter(_ step: Int, _ total: Int) -> String {
+            format("tracker_step_counter", step, total)
+        }
+
         static func durationHoursMinutes(_ hours: Int, _ minutes: Int) -> String {
             format("duration_hours_minutes", hours, minutes)
         }

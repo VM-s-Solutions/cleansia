@@ -15150,6 +15150,40 @@
         }
       }
     },
+    "tracker_step_counter": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krok %1$d / %2$d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %1$d / %2$d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шаг %1$d / %2$d"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krok %1$d / %2$d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Крок %1$d / %2$d"
+          }
+        }
+      }
+    },
     "tracker_subtitle_on_the_way_arriving": {
       "localizations": {
         "cs": {

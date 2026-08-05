@@ -4444,6 +4444,41 @@
         }
       }
     },
+    "error.recurring_booking.membership_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opakované úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si předplatné aktivujte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярные уборки — преимущество Cleansia Plus. Оформите подписку, чтобы настроить расписание."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opakované upratovania sú výhodou Cleansia Plus — na ich nastavenie si aktivujte predplatné."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярні прибирання — перевага Cleansia Plus. Оформіть підписку, щоб налаштувати розклад."
+          }
+        }
+      }
+    },
     "error.recurring_booking.no_services_or_packages" : {
       "extractionState" : "manual",
       "localizations" : {

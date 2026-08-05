@@ -1226,9 +1226,11 @@ Two corollaries this shape makes cheap:
 
 ## A rule that REJECTS cheaply runs before any rule that MATERIALIZES the payload
 
-**Enforced by:** `Cleansia.Tests/Common/Validators/ImageFileValidatorTests` — `T1-CI`. Closed roster:
-it gates `ImageFileValidator` and `FileValidator`, the two `AbstractValidator<BlobFileDto>` siblings.
-The other base64 intake paths are enumerated on T-0548's sweep and are **not** covered by it.
+**Enforced by:** `Cleansia.Tests/Common/Validators/ImageFileValidatorTests` +
+`DocumentFileValidatorTests` — `T1-CI`. Closed roster: the three `AbstractValidator<BlobFileDto>`
+siblings, `ImageFileValidator`, `FileValidator` and `DocumentFileValidator` (T-0556). The remaining
+base64 intake paths are enumerated on T-0548's sweep — `SaveOrderPhotos` still carries its own copy of
+the limit and `UpdateEmployee` still stores a client-declared content type — and are **not** covered.
 
 Ordering inside a `Cascade(CascadeMode.Stop)` chain is a **cost** decision as well as a message
 decision. `ImageFileValidator`'s magic-byte rule allocates the decoded payload twice
@@ -1257,6 +1259,39 @@ corollaries are what make it stick:
 - **A client-side cap is a UX affordance, never a control** — and if the UI *prints* the number, the
   server must enforce **that** number. A tighter server cap recreates the same defect with the sign
   flipped; a looser one makes the printed promise a lie.
+- **A per-item cap over an unbounded COLLECTION is not a bound** (T-0556). The body limit divided by a
+  *small* item is thousands of blob uploads and rows, so an intake taking a list caps the list too —
+  and gates the `RuleForEach` on that cap (`.When(x => x.Items.Count <= Max)`), or the per-item rules
+  decode every item of a list that is already refused, which is the cost the cap exists to refuse.
+
+## The declared content type is a HINT; the bytes are the evidence (T-0556)
+
+**Enforced by:** `SaveMyDocumentsHandlerTests` + `DocumentFileValidatorTests` — `T1-CI`, for
+`SaveMyDocuments` only.
+
+`BlobFileDto.ContentType` is a string the client chose, and the file extension is a weaker one (it
+survives a rename). Neither is evidence about the payload, so **neither may decide what a stored
+object is, nor what it is served as** — the recorded type comes back verbatim as the `Content-Type` of
+every `DownloadMyDocument`/`DownloadEmployeeDocument` response. `FileValidator.HaveValidFileType`
+reads the declared string: that is a **client-affordance filter, not a control**, and citing it as
+content validation is the mistake this rule exists to stop.
+
+- **Sniff, then let the sniff decide the stored type.** One function answers both *may we accept this?*
+  and *what is it?* (`Common/Validators/DocumentContentType.FromContent`, `null` = neither), because
+  they are the same fact and splitting them is how a path accepts on one basis and stores on another.
+- **Sniff the HEAD, not the payload.** Base64 decodes in independent 4-character groups, so 12
+  characters yield the first 9 bytes — more than any signature needs — which is what lets the content
+  rule sit before the full decode rather than after it.
+- **Say what a signature does NOT prove.** It bounds the container: `PK\x03\x04` is OOXML-or-any-zip,
+  `D0CF11E0` is Office-compound-or-any. It refuses markup, scripts and arbitrary binary and it makes
+  the stored type server-truth; it is not a malware scan, and nothing on this path is.
+- **Keep the accepted set equal to what the clients offer**, not to what is convenient: the web
+  picker's accept list and the five-locale `file.type_not_allowed` string ("Accepted: PDF, JPEG, PNG,
+  DOC, DOCX") are the promise, so a format missing from the table refuses an upload the UI invited.
+- **Do not lean on `Content-Disposition`.** `File(bytes, type, name)` sets `attachment`, which is why a
+  poisoned type is not stored XSS today — but the two-argument overload sets **no** disposition at all
+  (verified by execution), so that mitigation is one call-site edit away from gone. The control is the
+  byte-derived type; the disposition is luck.
 
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 

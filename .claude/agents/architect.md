@@ -67,8 +67,10 @@ handlers depending on a small number of collaborators; a handler wiring 8 servic
 - **Fiscal enforcement modes** — `None`/`AsyncBackground`/`BlockingOnline`; customer completion is
   never blocked by fiscal registration (see `docs/architecture/fiscal-compliance.md`).
 - **Pay calculation** — the documented `basePay/extras/expenses/clamp/bonus-deduction` formula; the
-  in-progress per-employee `EmployeePayConfig` override (IMP-3) must layer cleanly over per-service
-  config without recomputing history.
+  per-employee `EmployeePayConfig` override (IMP-3) is **shipped**, not in progress — entity, the
+  filtered unique index on `(EmployeeId, ServiceId, PackageId)`, the precedence resolution in
+  `CalculateOrderPay.Handler.SelectPreferredConfigs`, and the admin employee-detail tab all exist. It
+  layers over per-service config without recomputing history; keep it that way.
 - **Per-audience API hosts** — Partner/Admin/Mobile/Customer share Core + Infra + Config; a change
   must not couple hosts.
 
@@ -83,13 +85,29 @@ The catalog must evolve from real friction, not freeze and drift from reality. Y
   (`process/enforcement.md`). A rule that keeps being violated either needs enforcement or needs to
   change — decide which.
 - When a **developer harvests a pattern** (`conventions.md` → "Harvest good patterns back into the
-  catalog") that would redefine "the one way to do X" — a new canonical archetype, or a change that
-  affects existing call sites — it routes to you, not into a feature unilaterally. Evaluate it on the
-  "earns its place" bar (does it make *future* changes cheaper / the codebase more consistent?), ratify
-  it as a catalog edit (+ ADR if it's a real decision), mark the superseded form as a deviation in
-  `consistency.md`, and file the canonicalization ticket to migrate existing call sites so the codebase
-  converges instead of carrying both. A *small* clarification/example a developer folds in directly is
-  fine — you only gate changes to the standard itself.
+  catalog"), what reaches you is decided by the routing test in `conventions.md` §"Who ratifies a
+  catalog edit" (ADR-0033), not by how the edit is worded — *"Apply in order. The **first** one that
+  fires routes the edit to the **Architect** … If none fires, edit inline."* It routes to you when
+  (1) the edit **puts code that exists today in violation**, (2) it **narrows** — *"a catalog sentence
+  already governs this entry's subject at any level of generality"* and the entry *"carves an exception
+  out of it, replaces it, or forbids a form it named"* — or (3) it makes a **prescriptive** claim about
+  a stack that ticket never built and ran. **Novelty alone does not route it to you:** a first statement
+  of a canonical form, where no sentence governed the subject at any level, is the developer's to write
+  inline, in the moment they hold the context. That is a deliberate reversal of the older *"a new
+  canonical archetype is an Architect call"* limb — ADR-0033 carries a dated closure correcting its own
+  *"does not reverse"* header claim, and the developer-facing page states it. **You gate the narrowing,
+  not the novelty.**
+
+  On receipt, evaluate it on the "earns its place" bar (does it make *future* changes cheaper / the
+  codebase more consistent?), then answer the test that fired. **Test 1** → ratify it as a catalog edit
+  (+ ADR if it's a real decision), mark the superseded form as a deviation in `consistency.md`, and file
+  the canonicalization ticket to migrate existing call sites so the codebase converges instead of
+  carrying both. **Test 2** → it is a **law**, so the entry carries `**Enforced by:** <named enforcer> —
+  <tier token>` (`conventions.md` → "The price of a law"); a mechanism that cannot fail a build is
+  `T2-ADVISORY` however it is labelled. **Test 3** → it needs an ADR or a ticket that built and ran that
+  stack, or it is downgraded to a *descriptive* note carrying a file:line citation of that stack's code
+  in the entry itself. The Reviewer routes to you off the same tests, as **`Catalog-edit routing`**
+  (`.claude/agents/reviewer.md` step 5).
 - When a rule turns out to be **wrong or obstructive in practice**, supersede it with a new ADR and
   edit the catalog — don't let agents quietly route around it.
 

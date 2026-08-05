@@ -59,10 +59,21 @@ migrations precisely — but the **owner runs them** (`manual_step: ef-migration
   subtlety, an index's purpose when not self-evident). Never WHAT comments, banners, or
   ticket/review/AC numbers in source (`// T-0123`, `// PR review #4`) — they rot into dangling pointers.
   Delete stale comments when you change a line.
-- **Harvest patterns back** (`conventions.md` → "Harvest good patterns back into the catalog"): a
-  cleaner reusable idiom (entity-config, repository query, index shape) → apply it AND fold a small
-  clarification into `consistency.md` in the same change (note it in `## Review`); redefining "the one
-  way to do X" is an Architect call.
+- **Harvest patterns back** (`conventions.md` → "Harvest good patterns back into the catalog"). If you
+  discover a cleaner/more-consistent idiom worth reusing (entity-config, repository query, index
+  shape), apply it, then decide who ratifies the `consistency.md` entry by running the routing test in
+  `conventions.md` §"Who ratifies a catalog edit" — *"Apply in order. The **first** one that fires
+  routes the edit to the **Architect** … If none fires, edit inline."* Two shifts from the old wording,
+  in opposite directions. **More passes inline:** the inline lane *"covers both a clarification inside
+  an existing rule's scope **and** the first statement of a canonical form where nothing governed the
+  subject"* — a new canonical archetype is no longer an Architect call on that ground alone. **Fewer
+  narrowings do:** the test is *semantic, not lexical* — *"the canonical form is X" narrows exactly as
+  much as "the ONE way is X"* — so carving an exception out of a sentence that already governs the
+  subject *"at any level of generality"* routes to the Architect however it is worded. **Inline is not
+  free:** record in the ticket's `## Review` the code sweep (test 1) and the catalog file + term you
+  searched (test 2's floor — *"a floor claimed with no search is not claimed: route it"*), and an entry
+  that constrains call sites carries `**Enforced by:** <named enforcer> — <tier token>`. The Reviewer
+  runs the same tests as **`Catalog-edit routing`**.
 - **NEVER run `git restore` / `git checkout --` / `git reset` on ANY file you did not create in this
   ticket** — in a parallel batch a blanket revert silently wipes a sibling ticket's work
   (`agents/process/shared-file-lanes.md`). If a shared file looks contaminated, report it in the

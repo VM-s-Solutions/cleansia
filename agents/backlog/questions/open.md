@@ -886,7 +886,26 @@ _No open Wave-1 *planning* questions remain._
 - What would help most: **the same specimen, from a VAT-registered supplier**, if you have one. One
   more photo settles part (b) completely.
 - Default taken: **none.** T-0522 is `blocked` on this together with Q-PAYOUT-02.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-05) — part (a) SETTLED, part (b) still open:**
+  > *"I wouldn't ask them if they're VAT payers. So I wouldn't consider that there is a need to
+  > implement VAT functionality around cleaner invoices."*
+
+  So: **the platform does not ask, and no VAT functionality is built around cleaner invoices.** The
+  self-billing agreement's version key therefore needs **no VAT axis** — this unblocks ADR-0041's D1
+  key, which was the only thing this question gated there.
+
+  ⚠️ **One tension the owner should see, recorded as fact, not as a challenge to the ruling.** The
+  intent is "we don't ask", but the tree already asks in two places and already branches on the answer:
+  - a cleaner can **self-service edit** `VatNumber` (`UpdateIdentificationInfo.cs:77`), and an admin can
+    set it (`AdminUpdateEmployee.cs:65`);
+  - the invoice PDF branches on it — `CountryInvoiceContext.VatWithinGross(...)` returns 0 when the
+    supplier is not a payer, and `ReceiptPdfData` swaps VAT rows for a non-payer notice.
+
+  So "not asking" is true of the onboarding flow and false of the data model. Nothing is broken today
+  (null ⇒ non-payer ⇒ the specimen's *"Nejsme plátci DPH"* is correct), and this does **not** reopen the
+  ruling. It is a **cleanup question for later**: either remove the field and its branch, or leave both
+  as dormant capability and say so. Part **(b)** — what a VAT-registered variant would print — is moot
+  under this ruling and should be closed with it if the field goes.
 
 ## Owner rulings recorded 2026-08-03 — **CLOSED ON ARRIVAL** (recorded by `architect`)
 

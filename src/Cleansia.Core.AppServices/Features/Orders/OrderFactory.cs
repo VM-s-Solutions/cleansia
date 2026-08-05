@@ -92,20 +92,22 @@ public sealed class OrderFactory(
         var resolution = ResolveLoy003Discount(
             membershipDiscount, tierDiscount, input.PromoDiscountAmount, input.RawSubtotal);
 
-        decimal? appliedTierDiscount = resolution.TierAmount > 0m ? resolution.TierAmount : null;
-        decimal? appliedMembershipDiscount = resolution.MembershipAmount > 0m ? resolution.MembershipAmount : null;
-        decimal? appliedPromoDiscount = resolution.PromoAmount > 0m ? resolution.PromoAmount : null;
-        string? appliedPromoCodeId = resolution.PromoAmount > 0m ? input.PromoCodeId : null;
-        string? appliedMembershipPlanId = resolution.MembershipAmount > 0m ? membershipPlanId : null;
-        LoyaltyTier? appliedTierAtPurchase = resolution.TierAmount > 0m ? tierAtPurchase : null;
-        var appliedAmount = resolution.TotalAmount;
+        var surchargeApplies = BookingPolicy.RequiresExpressSurcharge(
+            input.CleaningDate,
+            input.NowUtc,
+            waiverApplies: input.ReservedExpressWaiver != null);
 
         var finalTotalPrice = BookingPolicy.ApplyExpressSurcharge(
-            input.RawSubtotal - appliedAmount,
-            BookingPolicy.RequiresExpressSurcharge(
-                input.CleaningDate,
-                input.NowUtc,
-                waiverApplies: input.ReservedExpressWaiver != null));
+            input.RawSubtotal - resolution.TotalAmount, surchargeApplies);
+
+        var applied = resolution.AsChargedAgainst(surchargeApplies);
+
+        decimal? appliedTierDiscount = applied.TierAmount > 0m ? applied.TierAmount : null;
+        decimal? appliedMembershipDiscount = applied.MembershipAmount > 0m ? applied.MembershipAmount : null;
+        decimal? appliedPromoDiscount = applied.PromoAmount > 0m ? applied.PromoAmount : null;
+        string? appliedPromoCodeId = applied.PromoAmount > 0m ? input.PromoCodeId : null;
+        string? appliedMembershipPlanId = applied.MembershipAmount > 0m ? membershipPlanId : null;
+        LoyaltyTier? appliedTierAtPurchase = applied.TierAmount > 0m ? tierAtPurchase : null;
 
         var order = Order.Create(
             input.CustomerName,
@@ -277,8 +279,8 @@ public sealed class OrderFactory(
     }
 
     /// <summary>
-    /// Per-source amounts after LOY-003 cap + promo-replacement resolution.
-    /// Either (Membership + Tier) or Promo is non-zero, never both — the
+    /// Per-source amounts after LOY-003 cap + promo-replacement resolution, measured against the RAW
+    /// pre-surcharge subtotal. Either (Membership + Tier) or Promo is non-zero, never both — the
     /// promo branch zeroes the additive pair. Both Membership and Tier
     /// can be non-zero simultaneously in the combined branch.
     /// </summary>
@@ -286,5 +288,29 @@ public sealed class OrderFactory(
         decimal MembershipAmount,
         decimal TierAmount,
         decimal PromoAmount,
-        decimal TotalAmount);
+        decimal TotalAmount)
+    {
+        /// <summary>
+        /// The same resolution restated against the price actually charged — the ONE form that may be
+        /// reported, persisted or rendered.
+        ///
+        /// <para>Resolution happens on the raw pre-surcharge subtotal and stays there: the tier floor
+        /// and the 12% cap must be judged on the base <see cref="QuoteOrder"/> judged them on, or a
+        /// booking straddling the floor qualifies in the wizard and loses the discount at submit. But
+        /// the price these come off carries the express surcharge, and on an express order the raw
+        /// figure under-states the saving by <c>ExpressSurchargeRate</c> of itself — the customer would
+        /// have paid <c>raw * 1.2</c> and pays <c>(raw - d) * 1.2</c>, so they saved <c>d * 1.2</c>.
+        /// Every consumer composes the amount with the surcharge-inclusive price (the mappers'
+        /// <c>OriginalSubtotal = TotalPrice + applied</c>, the lifetime-savings sum, every client's
+        /// <c>totalPrice - discount</c>), and the order carries no express flag for any of them to
+        /// correct with, so the correction can only be made here, before the amount is written.</para>
+        /// </summary>
+        internal DiscountResolution AsChargedAgainst(bool surchargeApplies)
+        {
+            decimal Charged(decimal amount) => BookingPolicy.ApplyExpressSurcharge(amount, surchargeApplies);
+
+            return new DiscountResolution(
+                Charged(MembershipAmount), Charged(TierAmount), Charged(PromoAmount), Charged(TotalAmount));
+        }
+    }
 }

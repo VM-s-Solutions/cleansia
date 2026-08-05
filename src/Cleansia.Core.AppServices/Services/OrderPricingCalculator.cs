@@ -58,9 +58,12 @@ public sealed class OrderPricingCalculator(
         // subtotal — applied here so the wizard summary line item matches
         // what gets persisted in Order.TotalPrice.
         //
-        // Quoted in the CHARGE currency, like TotalPrice: CreateOrder.Handler derives its discount
-        // base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be subtracted
-        // from a scaled total and inflate every discounted price at any exchange rate but 1.
+        // EVERY money figure this method returns is in the CHARGE currency — the catalog is priced in
+        // the base one, so the scaling happens here and exactly once. CreateOrder.Handler derives its
+        // discount base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be
+        // subtracted from a scaled total and inflate every discounted price at any exchange rate but 1;
+        // the broken-out line items render under this quote's own CurrencyCode, so an unscaled one
+        // prints a base-currency number under the charge currency's symbol.
         var chargeSubtotal = baseSubtotal * exchangeRate;
 
         // PURE READ — the resolver never writes, which is what lets the quote path and the create
@@ -85,9 +88,9 @@ public sealed class OrderPricingCalculator(
             TotalPrice: totalPrice,
             CurrencyId: currency?.Id ?? string.Empty,
             CurrencyCode: currency?.Code ?? string.Empty,
-            ServicesSubtotal: servicesSubtotal,
-            PackagesSubtotal: packagesSubtotal,
-            ExtrasSubtotal: extrasSubtotal,
+            ServicesSubtotal: servicesSubtotal * exchangeRate,
+            PackagesSubtotal: packagesSubtotal * exchangeRate,
+            ExtrasSubtotal: extrasSubtotal * exchangeRate,
             ExpressSurchargeApplied: expressSurchargeApplied,
             ExpressSurchargeAmount: expressSurchargeAmount,
             ExchangeRate: exchangeRate,

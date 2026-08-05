@@ -8,15 +8,15 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// The wizard's itemised "Plus saving" and the one persisted on the order must be the same number.
-/// <see cref="OrderFactory"/> discounts the RAW pre-surcharge subtotal and re-applies the express
-/// surcharge on top; the quote used to discount the surcharge-inclusive gross. Both produce the same
-/// final charge (multiplication commutes) but a different itemised discount — 120 shown, 100 stored —
-/// and the stored one feeds the lifetime-savings stat, so the customer's receipt and their savings
-/// total silently disagreed with the price they were quoted.
+/// The wizard's itemised "Plus saving" and the one persisted on the order must be the same number, and
+/// that number must be what the customer actually saved. <see cref="OrderFactory"/> RESOLVES the
+/// discount on the RAW pre-surcharge subtotal — the tier floor and the LOY-003 cap have to be judged on
+/// one base — and REPORTS it against the price it comes off, which carries the surcharge.
 ///
 /// Numbers: base 1000, express slot (+20%) =&gt; gross 1200; Plus 10%.
-/// Persisted path: (1000 - 100) * 1.2 = 1080, discount 100.
+/// Resolved on 1000 =&gt; 100; charged (1000 - 100) * 1.2 = 1080; saved 1200 - 1080 = 120.
+/// Aligning the two surfaces on 100 made them agree on a figure neither price supports — the whole
+/// composition is pinned by <see cref="ExpressSurchargeDiscountCompositionTests"/>.
 /// </summary>
 public class QuoteOrderExpressSurchargeDiscountBaseTests
 {
@@ -105,7 +105,8 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
 
         var result = await CreateHandler().Handle(ExpressCommand(), CancellationToken.None);
 
-        Assert.Equal(BaseSubtotal * PlusPercentage / 100m, result.Value.MembershipDiscountAmount);
+        var savedOnTheChargedPrice = GrossSubtotal - result.Value.FinalPriceAfterDiscount;
+        Assert.Equal(savedOnTheChargedPrice, result.Value.MembershipDiscountAmount);
     }
 
     [Fact]

@@ -23,8 +23,12 @@ namespace Cleansia.Tests.Services;
 public class OrderPricingCalculatorExchangeRateTests
 {
     private const string ServiceId = "service-1";
+    private const string PackageId = "package-1";
+    private const string ExtraSlug = "inside-oven";
     private const string CurrencyId = "currency-eur";
     private const decimal BaseSubtotal = 1000m;
+    private const decimal PackagePrice = 250m;
+    private const decimal ExtraPrice = 75m;
     private const decimal ExchangeRate = 0.04m;
 
     private readonly Mock<IServiceRepository> _serviceRepository = new();
@@ -58,6 +62,31 @@ public class OrderPricingCalculatorExchangeRateTests
             _currencyRepository.Object,
             _expressWaiverResolver.Object);
     }
+
+    private OrderPricingCalculator CreateMixedBasketCalculator(decimal exchangeRate)
+    {
+        var calculator = CreateCalculator(exchangeRate);
+
+        var package = Package.Create("Deep clean bundle", "desc", PackagePrice);
+        package.Id = PackageId;
+        _packageRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(new List<Package> { package }.BuildMock());
+
+        var extra = Extra.Create(ExtraSlug, "Inside oven", null, ExtraPrice);
+        _extraRepository.Setup(r => r.GetAll())
+            .Returns(new List<Extra> { extra }.BuildMock());
+
+        return calculator;
+    }
+
+    private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceMixedBasketAsync(
+        decimal exchangeRate)
+        => CreateMixedBasketCalculator(exchangeRate).CalculateAsync(
+            [ServiceId], [PackageId], [ExtraSlug], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
+            cleaningDateUtc: DateTime.UtcNow.AddHours(3),
+            userId: null,
+            nowUtc: DateTime.UtcNow,
+            CancellationToken.None);
 
     private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceExpressSlotAsync(
         decimal exchangeRate)
@@ -105,6 +134,45 @@ public class OrderPricingCalculatorExchangeRateTests
 
         Assert.Equal(BaseSubtotal * BookingPolicy.ExpressSurchargeRate, result.ExpressSurchargeAmount);
         Assert.Equal(BaseSubtotal, result.TotalPrice - result.ExpressSurchargeAmount);
+    }
+
+    /// <summary>
+    /// The broken-out line items are the same money as the total and must carry the same unit. They are
+    /// rendered under the quote's own <c>CurrencyCode</c>, so an unscaled services row against a scaled
+    /// total prints a Kč figure labelled €. Same method, same class of defect as the surcharge above.
+    /// </summary>
+    [Fact]
+    public async Task LineItemSubtotals_NonUnitExchangeRate_AreQuotedInTheChargeCurrency()
+    {
+        var result = await PriceMixedBasketAsync(ExchangeRate);
+
+        Assert.Equal(BaseSubtotal * ExchangeRate, result.ServicesSubtotal);
+        Assert.Equal(PackagePrice * ExchangeRate, result.PackagesSubtotal);
+        Assert.Equal(ExtraPrice * ExchangeRate, result.ExtrasSubtotal);
+    }
+
+    /// <summary>
+    /// The wizard's breakdown has to add up: the three rows are the pre-surcharge subtotal, which is
+    /// exactly what every client derives as <c>totalPrice - expressSurchargeAmount</c>.
+    /// </summary>
+    [Fact]
+    public async Task LineItemSubtotals_NonUnitExchangeRate_SumToThePreSurchargeSubtotal()
+    {
+        var result = await PriceMixedBasketAsync(ExchangeRate);
+
+        Assert.Equal(
+            result.TotalPrice - result.ExpressSurchargeAmount,
+            result.ServicesSubtotal + result.PackagesSubtotal + result.ExtrasSubtotal);
+    }
+
+    [Fact]
+    public async Task LineItemSubtotals_UnitExchangeRate_AreUnchanged()
+    {
+        var result = await PriceMixedBasketAsync(1m);
+
+        Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
+        Assert.Equal(PackagePrice, result.PackagesSubtotal);
+        Assert.Equal(ExtraPrice, result.ExtrasSubtotal);
     }
 
     [Fact]

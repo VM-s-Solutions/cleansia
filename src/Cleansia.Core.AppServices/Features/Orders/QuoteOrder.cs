@@ -33,7 +33,9 @@ public class QuoteOrder
     /// display price after the best-of-three (tier vs membership) discount, computed the way
     /// <c>OrderFactory</c> persists it: discount off the pre-surcharge subtotal, surcharge on top.
     /// <see cref="OriginalSubtotal"/> is that price plus the discount, so it always equals the
-    /// <c>OrderItem.OriginalSubtotal</c> the order detail page will show for the same booking.
+    /// <c>OrderItem.OriginalSubtotal</c> the order detail page will show for the same booking — and,
+    /// because the discount is reported against the charged price, equals <see cref="TotalPrice"/>.
+    /// Both are the undiscounted price; two fields that disagreed were the express-composition defect.
     /// Promo isn't included here (entered at checkout, applied at create-time).
     ///
     /// <see cref="ExtrasSubtotal"/>, <see cref="ExpressSurchargeApplied"/>,
@@ -201,10 +203,15 @@ public class QuoteOrder
             var resolution = OrderFactory.ResolveLoy003Discount(
                 membershipDiscount, tierDiscount, promoDiscount: 0m, rawSubtotal: rawSubtotal);
 
+            var finalPrice = BookingPolicy.ApplyExpressSurcharge(
+                rawSubtotal - resolution.TotalAmount, result.ExpressSurchargeApplied);
+
+            var applied = resolution.AsChargedAgainst(result.ExpressSurchargeApplied);
+
             // Pick the enum that best describes what's actually showing.
             // Combined = both Plus and tier non-zero (after capping).
             // Membership = only Plus. Tier = only tier. None = neither.
-            var source = (resolution.MembershipAmount, resolution.TierAmount) switch
+            var source = (applied.MembershipAmount, applied.TierAmount) switch
             {
                 ( > 0m, > 0m) => AppliedDiscountSource.Combined,
                 ( > 0m, _) => AppliedDiscountSource.Membership,
@@ -212,16 +219,13 @@ public class QuoteOrder
                 _ => AppliedDiscountSource.None,
             };
 
-            var finalPrice = BookingPolicy.ApplyExpressSurcharge(
-                rawSubtotal - resolution.TotalAmount, result.ExpressSurchargeApplied);
-
             return BusinessResult.Success(new Response(
                 TotalPrice: grossSubtotal,
                 FinalPriceAfterDiscount: finalPrice,
-                OriginalSubtotal: finalPrice + resolution.TotalAmount,
+                OriginalSubtotal: finalPrice + applied.TotalAmount,
                 AppliedDiscountSource: source,
-                TierDiscountAmount: resolution.TierAmount > 0m ? resolution.TierAmount : null,
-                MembershipDiscountAmount: resolution.MembershipAmount > 0m ? resolution.MembershipAmount : null,
+                TierDiscountAmount: applied.TierAmount > 0m ? applied.TierAmount : null,
+                MembershipDiscountAmount: applied.MembershipAmount > 0m ? applied.MembershipAmount : null,
                 TierDiscountMinOrderAmount: tierMinOrderAmount,
                 CurrencyId: result.CurrencyId,
                 CurrencyCode: result.CurrencyCode,

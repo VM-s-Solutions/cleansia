@@ -36,6 +36,46 @@ Filed from the **T-0446 security gate** (finding **SEC-3**). Full write-up:
 > way. Also note that **blobs uploaded before PR #154 still carry EXIF** — see the backfill note under
 > Out of scope.
 
+> ## 🛑 GATE 0 — 2026-08-05. **Everything below this block is stale. Read the draft ADR first.**
+>
+> Four intake-hardening tickets have landed since this was filed (T-0464 `b9753e85`, T-0548 `97bb7265`,
+> T-0556 + follow-up). **Verified at HEAD by the architect (author mode):**
+>
+> | This ticket says | At HEAD |
+> |---|---|
+> | *"there is no size limit anywhere"* | **SHIPPED** — 10 MiB decoded, one shared predicate, derived from the *encoded* length, **first** in every chain (`Common/Validators/BlobFileSize.cs:8-9,17-28`) |
+> | *(not asked for)* | **Per-request count caps SHIPPED** — 10 / 10 / **30** (`SaveOrderPhotos.cs:46`) |
+> | *"`ImageFileValidator` checks a 3–4 byte magic prefix and nothing else"* | still true for **images**; **superseded for documents** — `DocumentContentType.FromContent` derives the stored type from the bytes and discards the client's claim |
+> | *"a magic-byte check says the bytes are an image, not that the image is safe to hand back"* | the *hand-back* half is **closed** — `ServedContentType` is a closed value type on the READ path (so it governs already-stored blobs); `text/html` and `image/svg+xml` are excluded by name |
+> | *"EXIF/GPS is not stripped"* | **STILL TRUE. This is the entire remaining residue.** |
+>
+> **So this ticket is ~70 % satisfied, and its remaining 30 % is a different decision than the one it
+> frames.** Three specific things in it are now **wrong**, not merely stale:
+>
+> 1. **The library question (ImageSharp vs SkiaSharp) is moot unless the panel overrules the draft ADR's
+>    D2.** `SixLabors`/`SkiaSharp`/`System.Drawing`/`Magick` appear in **zero** `src/**/*.csproj`, and
+>    **no user image is decoded server-side anywhere** (`OrderPhoto.Width`/`Height` are never
+>    populated). Adding a decoder on a request path fed 10 MiB × 30 items, on an S1 / 1.75 GB plan
+>    shared by 5 APIs + SSR + Functions, **creates** a decompression-bomb primitive that does not exist
+>    today. The draft ADR refuses re-encoding and rules for a **container rewrite** instead.
+> 2. **AC6's pilot choice is backwards.** The avatar is not "lowest blast radius" — it is the surface
+>    with **no exposure at all**: `GetCurrentUser.ResolveProfilePhotoUrl` is the only SAS mint for
+>    `user-files`, and every list/employee DTO maps the photo with `BlobUrl = null`. Piloting there
+>    reduces zero exposure and measures the one-item case instead of the 30-item batch. The draft ADR
+>    moves the pilot to `SaveOrderPhotos`.
+> 3. **The "shared sanitizer seam" premise is refused** by the draft ADR: the shareable seams already
+>    exist (`BlobFileSize`, `ServedContentType`, `Base64UploadIntakeRosterTests`); a metadata transform
+>    is not one of them, and the shareable part is the *obligation* — a roster column, not an interface.
+>
+> **AC status:** AC1 stands (rewritten scope). AC2/AC3 stand. **AC4 (orientation) stands and is the
+> hardest part of the adopted design.** **AC5 is satisfied** by T-0548/T-0556 — no new error key is
+> needed (the draft ADR reuses `file.content_type_doesnt_match`). **AC6 is overturned.** AC7 stands but
+> is owed on the **batch**, not the avatar. AC8 stands.
+>
+> **Draft ADR:** `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md`
+> (`proposed`, number not allocated, **panel owed**).
+> **Living doc:** `agents/architecture/decisions/user-uploaded-artifacts.md`.
+
 **No user-uploaded image is sanitized SERVER-SIDE, and the server cannot verify that any client did.**
 `ImageFileValidator`
 (`src/Cleansia.Core.AppServices/Common/Validators/ImageFileValidator.cs`) checks a **3–4 byte magic
@@ -155,6 +195,26 @@ _(PM floor; the panel finalizes)_
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0446 security gate, finding SEC-3; split from T-0459 to keep both off `L`)
 - 2026-07-30 — **not `ready`**: awaiting the architect panel (DoR item 7 — no archetype exists, and the library/seam decision is unmade).
+- 2026-08-05 — **Gate 0 run by the architect (author mode). Premises verified at HEAD; ~70 % of this
+  ticket is already satisfied and the remainder is reframed.** See the GATE 0 block at the top. A draft
+  ADR is on disk — `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` — with
+  the living doc `agents/architecture/decisions/user-uploaded-artifacts.md`. **Still not `ready`:** the
+  draft is `proposed`, its `## Challenge` section is an author-run self-challenge, and
+  `process/deliberation.md` requires distinct author / challenger / lead instances. AC1 is unsatisfied
+  until that panel runs.
+  **What the panel must settle** (the author's positions are in the draft, and the two he most wants
+  attacked are marked): **(a)** whether the web clients re-encoding on pick — matching both mobile
+  clients, ~30 lines per picker, zero server cost — makes the server-side scrub unnecessary rather
+  than merely less urgent; the ticket's *"a client-side strip is unenforceable"* argument imports the
+  XSS threat model, where the uploader is the **adversary**, into the metadata case, where the uploader
+  is the **victim**. **(b)** whether hand-rolled JPEG/PNG/WebP container walks are acceptable
+  attacker-facing code versus a third-party decoder. **(c)** whether the avatar's "audience: self"
+  exemption is safe, given a cross-user avatar URL is a one-line change in `UserMappers`.
+  **Renaming owed:** if the draft survives, this ticket's and T-0459's titles are wrong — there is no
+  sanitizer in the adopted design, there is a **metadata scrub** on two surfaces.
+  **Also filed by this pass, for the PM:** an owner escalation candidate **Q-ART-01** (keep accepting
+  DOC/DOCX on employee documents, whose author/revision metadata is not scrubbed?) — draft ADR
+  §Escalations; to be written to `questions/open.md` by the panel lead, not by this ticket.
 
 ## Review
 <!-- reviewer + security verdicts here; AC3 must name the mutation-proving test -->

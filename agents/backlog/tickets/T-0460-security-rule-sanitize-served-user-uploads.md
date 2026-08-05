@@ -21,6 +21,44 @@ sprint: 14
 Filed from the **T-0446 security gate** (finding **SEC-5**). Full write-up:
 `agents/backlog/security/user-profile-avatar.md`.
 
+> ## 🛑 GATE 0 — 2026-08-05. **The gap is now HALF closed in code, and the proposed wording has two
+> defects. Read the draft ADR before writing the rule.**
+>
+> Verified at HEAD by the architect (author mode), after T-0464 `b9753e85` / T-0548 `97bb7265` / T-0556:
+>
+> - **The served-type half of the proposed rule is already shipped and already enforced.**
+>   `ServedContentType` (closed value type, private constructor, `text/html` and `image/svg+xml`
+>   excluded by name, unknown → `application/octet-stream`) decides the served type on the **read**
+>   path, so it governs blobs written before it existed; `DocumentContentType.ForDownload` does the same
+>   for the two employee-document download handlers. Pinned by `ServedContentTypeTests` (26 cases),
+>   `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`,
+>   `SasResponseHeaderOverrideTests` — all in `Cleansia.Tests`, a named step of `backend-ci.yml:70-71`,
+>   i.e. **T1-CI today**. It is written down in `patterns-backend.md:1274-1315` as a *backend
+>   convention*. **What is missing is that it is a LAW, and the content half.**
+> - **Defect 1 — "served back by URL" is the wrong hinge.** Employee documents are **never** served by
+>   URL (three API routes, `File(bytes, type, name)` → `Content-Disposition: attachment`) and they are
+>   the surface carrying the **most** metadata — PDFs carry `/Author`/`/Producer`, DOCX carries revision
+>   history and author names. A rule keyed on the delivery mechanism excludes its own worst case. The
+>   draft ADR keys the rule on **audience**: *does a fetcher who is not the uploader receive these
+>   bytes?*
+> - **Defect 2 — the proposed wording mandates "re-encoded", and the draft ADR refuses re-encoding.**
+>   No user image is decoded server-side anywhere today (zero `SixLabors`/`SkiaSharp`/`System.Drawing`/
+>   `Magick` references in `src/**/*.csproj`); a decoder on a request path fed 10 MiB × 30 items on an
+>   S1 / 1.75 GB shared plan **creates** a decompression-bomb primitive. A law that mandates it would be
+>   violated by four of five surfaces on the day it is written.
+> - **AC5 answer, pre-computed:** the rule **is** mechanically checkable — but only in parts, and one
+>   part is live while four are `(gate pending: …)`. The full per-clause enforcer/tier table is in the
+>   draft ADR §D7 and the living doc §5. **Do not label it `T1-CI` wholesale**; and note
+>   `check-consistency.mjs` is **T2-ADVISORY** (zero `.github/` workflows) and the frontend lint step is
+>   `continue-on-error: true`, so neither can carry this.
+> - **AC4 is already one worse than stated:** `security-rules.md`'s own header reads **"S1–S10"** while
+>   **S11** exists in the file. The header is part of the drift sweep.
+>
+> **Proposed S12 text, the S12-vs-S4 ruling, the "how wide is artifact" ruling and the retroactive-scope
+> ruling are all in** `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` **§D7
+> / §D8 / §D9** (`proposed`, number not allocated, **panel owed**). This ticket remains the **sole
+> writer** of `agents/knowledge/security-rules.md`; the draft ADR deliberately does not edit it.
+
 **This is a genuine gap in the rule set, not a violation of it.** Nothing in **S1–S11** addresses
 **bytes embedded inside a stored artifact that is later served by URL**:
 
@@ -106,6 +144,25 @@ and the panel must settle more than the wording:
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0446 security gate, finding SEC-5)
 - 2026-07-30 — **not `ready`**: awaiting the architect panel (a new S-series law is an architect call, per the T-0445 precedent).
+- 2026-08-05 — **Gate 0 run by the architect (author mode).** The gap is half closed in code and the
+  proposed wording carries two defects — see the GATE 0 block at the top. **The ticket survives and its
+  premise is stronger, not weaker:** the reason SEC-3 sat undetected in three shipped pipelines was
+  that no law reached inside a byte array, and that is still true; what changed is that the *served
+  type* half now has shipped code and a live T1-CI enforcer to cite (AC1 asks for exactly such a
+  citation, and it no longer has to wait for T-0458).
+  Proposed S12 text + the four rulings this ticket's `## Deliberation` demands (S12 vs S4 · how wide
+  "artifact" goes · what is enforceable · retroactive scope) are drafted in
+  `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` §D7–§D9, with the living
+  doc at `agents/architecture/decisions/user-uploaded-artifacts.md`.
+  **Still not `ready`:** that draft is `proposed` and its `## Challenge` is an author-run
+  self-challenge; `process/deliberation.md` requires distinct author / challenger / lead instances.
+  **The challenge the author flagged against his own S12 (C-4):** four clauses in one law may be four
+  laws. If the lead rules they are separable, the natural split is *S12 = the disclosure law (audience +
+  content)* with the served-type clause promoted into **S4** as a DTO-adjacent sentence — the author
+  would accept that, and would not accept splitting out the no-decode prohibition, which is the reason
+  the content clause takes the form it does.
+  **Sequencing note, unchanged and now cheaper:** this ticket can land **ahead of** T-0458's
+  implementation, because three of its five enforcer citations already exist at HEAD.
 
 ## Review
 <!-- architect + docs verdicts here -->

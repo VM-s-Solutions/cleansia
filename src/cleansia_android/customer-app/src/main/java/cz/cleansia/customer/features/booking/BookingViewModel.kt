@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -205,6 +206,19 @@ class BookingViewModel @Inject constructor(
 
     private val _promoCodeState = MutableStateFlow<PromoCodeUiState>(PromoCodeUiState.Idle)
     val promoCodeState: StateFlow<PromoCodeUiState> = _promoCodeState.asStateFlow()
+
+    /**
+     * The one discount the summary card and the sticky price bar both spend. They used to derive it
+     * separately and the bar left the server discounts out, so a Plus member read two different totals
+     * on one screen. Tier and membership are additive and already capped server-side; a promo replaces
+     * the pair when it is larger and never stacks (`AppliedDiscountResolver`).
+     */
+    val effectiveDiscount: StateFlow<Double> = combine(_quoteState, _promoCodeState) { quote, promo ->
+        val quoted = (quote as? QuoteState.Quoted)?.response
+        val serverDiscount = (quoted?.tierDiscountAmount ?: 0.0) + (quoted?.membershipDiscountAmount ?: 0.0)
+        val promoDiscount = (promo as? PromoCodeUiState.Valid)?.discountAmount ?: 0.0
+        maxOf(serverDiscount, promoDiscount)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     private val _referralCodeState = MutableStateFlow<ReferralCodeUiState>(ReferralCodeUiState.Idle)
     val referralCodeState: StateFlow<ReferralCodeUiState> = _referralCodeState.asStateFlow()

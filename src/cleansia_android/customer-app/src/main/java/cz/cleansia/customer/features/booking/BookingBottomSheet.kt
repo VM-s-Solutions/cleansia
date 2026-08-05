@@ -546,26 +546,12 @@ private fun SheetContent(
             // remains 1:1 with the prior implementation.
             val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
             val quote = (quoteState as? QuoteState.Quoted)?.response
-            val promoCodeState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
-            // Slide-button label has to match the receipt's grand total — the
-            // ConfirmStep applies the express surcharge + best-discount math
-            // client-side via BookingPricing.finalTotal(). Re-run the same
-            // math here so the swipe label doesn't lie to the user when a
-            // promo is applied (would otherwise show pre-discount quote.totalPrice).
+            val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
+            // The slide-button label and the receipt above it are the same number by construction:
+            // one resolver, one discount from the view model. This bar used to redo the math with the
+            // server discounts left out, so a Plus member read two different totals on one screen.
             val totalDisplay = quote?.let { q ->
-                val basePrice = q.totalPrice
-                val promoDiscount = (promoCodeState as? PromoCodeUiState.Valid)?.discountAmount ?: 0.0
-                val tierDiscount = 0.0
-                val finalTotal = BookingPricing.finalTotal(
-                    basePrice = basePrice,
-                    cleaningAt = state.selectedInstant,
-                    tierDiscount = tierDiscount,
-                    promoDiscount = promoDiscount,
-                    waiverApplies = q.expressSurchargeWaivedByMembership,
-                )
-                // Same formatter the ConfirmStep summary uses — the footer and the
-                // receipt above it must render the identical number and symbol.
-                formatOrderPrice(finalTotal, q.currencyCode)
+                formatOrderPrice(BookingPriceSummary.resolve(q, effectiveDiscount).total, q.currencyCode)
             }
             if (currentStep == TOTAL_STEPS) {
                 // Slide to confirm — Wolt-style, prevents accidental taps on the final step.

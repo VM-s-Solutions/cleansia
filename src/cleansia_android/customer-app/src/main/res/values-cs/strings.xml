@@ -564,7 +564,7 @@
     <string name="booking_arrival_window">Uklízeč přijde do 1 hodiny</string>
     <string name="booking_slot_unavailable">Obsazeno</string>
     <string name="booking_slot_earliest">Nejdříve</string>
-    <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express" formatted="false">Expres +20 %</string>
     <string name="booking_slot_express_waived">Expres · bez příplatku</string>
     <string name="booking_express_waiver_available">Plus pokrývá 20%% expresní příplatek — %1$d zbývá tento kalendářní měsíc.</string>
     <string name="booking_express_waiver_used" formatted="false">Tento měsíc už nezbývá žádné odpuštění expresního příplatku — expresní termíny se účtují s +20 % až do příštího měsíce.</string>

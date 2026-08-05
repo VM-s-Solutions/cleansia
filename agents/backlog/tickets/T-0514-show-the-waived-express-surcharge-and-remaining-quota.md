@@ -206,4 +206,59 @@ web is independent.
     **post-discount** subtotal while the server computes it on the **pre-discount** one. Both need an
     owner call on the intended summary semantics (which number is "Subtotal"?) — filing suggested.
 
+- 2026-08-05 — **android double-count FIXED under an explicit coordinator override of AC3** (the iOS leg
+  had already fixed the same defect in `ed065a0d`; leaving Android alone would have shipped the two
+  clients disagreeing about the price of an express booking).
+  - **One resolver, mirroring iOS's `BookingPriceSummary.resolve` line for line**:
+    `BookingPriceSummary` in `features/booking/BookingPricing.kt` —
+    `subtotal = totalPrice − expressSurchargeAmount`, `expressSurcharge = expressSurchargeAmount`,
+    `total = max(totalPrice − discount, 0)`, and an `ExpressLine` token
+    (`NotExpress`/`Charged`/`Waived`). **No rate is applied anywhere.** `BookingPricing` keeps only
+    `requiresExpressSurcharge`, now with the same single responsibility (and single caller) it has on
+    iOS: tagging slots in the grid, never money. `expressSurchargeAmount()`/`finalTotal()` are deleted —
+    they *were* the defect.
+  - **Why `totalPrice − discount` is what the server charges**, verified rather than assumed:
+    `QuoteOrder.cs:164` computes `rawSubtotal = grossSubtotal − ExpressSurchargeAmount` and derives
+    **every** discount amount from it; `CreateOrder.cs:364` uses the same `rawSubtotal` and previews the
+    promo against it. So `(rawSubtotal + surcharge) − discount` is the server's own composition,
+    rearranged.
+  - **Second bug fixed on the way, same as iOS's**: the sticky price bar hardcoded `tierDiscount = 0.0`
+    and only spent the promo, so a Plus member read one total on the receipt and a different one on the
+    slide-to-confirm button. `effectiveDiscount` is now a single `StateFlow` on `BookingViewModel`
+    (`max(tier + membership, promo)`) that both surfaces read; per the charter it is the ViewModel's
+    logic, not a composable's. The "Subtotal" row also stopped being the surcharge-inclusive total.
+  - **AC3 is now knowingly violated and that is the ruling**: a non-member booking an express slot sees
+    a *lower, correct* total. Flagged, not buried.
+  - **`booking_slot_express` translated in cs/sk/uk/ru** ("Expres +20 %", "Експрес +20 %",
+    "Экспресс +20 %"), taken from the customer web locales. It was the bare English literal in all five
+    while its waived twin was translated, so the chip flipped scripts mid-flow.
+  - **Verification**: `--rerun-tasks`, exit code captured before any pipe, counts from JUnit XML.
+    customer-app **492 → 55 classes / 503 tests / 0 failures**; `:core` 21/151 and `:partner-app` 46/224
+    unchanged. Full CI-equivalent run exit **0**, "96 actionable tasks: 96 executed".
+  - **Gate 0.5, round two — 8/8 mutations RED**, all reverted byte-exact (sha256 verified after every
+    batch; the post-fix baseline `checksums2.txt` matches on all five files):
+
+    | # | Rule mutated | Killed |
+    |---|---|---|
+    | M19 | the rate is re-applied on top of the server total | `BookingPriceSummaryTest` ×4 |
+    | M20 | the subtotal row goes back to being surcharge-inclusive | `BookingPriceSummaryTest` ×2 |
+    | M21 | the surcharge is re-derived from a client-chosen base | `BookingPriceSummaryTest` ×3 |
+    | M22 | the discount base is swapped (surcharge dropped from the total) | `BookingPriceSummaryTest` ×2 |
+    | M23 | the sticky bar stops spending the shared discount | `BookingExpressWaiverBindingTest` |
+    | M24 | the server discount pair stops being additive | `BookingViewModelTest` ×2 |
+    | M25 | a promo stacks instead of replacing | `BookingViewModelTest` ×2 |
+    | M26 | the chip reverts to Latin script in a Cyrillic locale | `MembershipExpressClaimTest` |
+
+    **M23 initially survived** — the assertion looked for the *symbols* `BookingPriceSummary.resolve(`
+    and `bookingVm.effectiveDiscount`, both of which a mutation to `resolve(q, 0.0)` leaves in place. It
+    was tightened to match the **call** (`resolve(\w+, effectiveDiscount)`) and re-proven RED. Same
+    failure mode as M17 last round; both are recorded so the next reader stops writing symbol-presence
+    assertions where a call-shape assertion is meant.
+  - **On the pre-/post-discount surcharge base: it is now unobservable, and that is the fix.** With no
+    rate applied there is no base to choose. The property is still pinned, sharply: the test
+    `the surcharge row is the server amount, not a rate over any client-chosen base` uses a quote whose
+    `expressSurchargeAmount` (150) is deliberately 20 % of **neither** candidate base — not the
+    pre-discount subtotal (→200) nor the post-discount one (→210) — so one assertion rejects both. M21
+    proves it kills a re-derivation.
+
 ## Review

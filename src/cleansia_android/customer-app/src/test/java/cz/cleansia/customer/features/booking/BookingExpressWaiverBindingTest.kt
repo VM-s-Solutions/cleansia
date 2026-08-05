@@ -78,27 +78,43 @@ class BookingExpressWaiverBindingTest {
             confirm.contains("booking_summary_express_surcharge_waived"),
         )
         assertTrue(
-            "the summary decides the waiver itself instead of reading the quote",
-            confirm.contains("expressSurchargeWaivedByMembership"),
+            "the summary decides the waiver itself instead of reading the resolved line",
+            confirm.contains("BookingPriceSummary.ExpressLine.Waived"),
         )
     }
 
     /**
-     * The quote already drops the surcharge when the waiver applies, so a client that keeps adding it
-     * shows a member a total nobody bills them.
+     * `totalPrice` already contains the surcharge, so any rate applied on top of it inflates the screen
+     * against the number the order is created with. No booking source may name a rate at all.
      */
     @Test
-    fun `every pricing call site forwards the waiver verdict`() {
-        listOf("ConfirmStep.kt", "BookingBottomSheet.kt").forEach { name ->
+    fun `no booking screen re-applies an express rate`() {
+        listOf("ConfirmStep.kt", "BookingBottomSheet.kt", "WhenWhereStep.kt", "BookingViewModel.kt").forEach { name ->
             val text = source(name)
-            val pricingCalls = Regex("BookingPricing\\.(requiresExpressSurcharge|expressSurchargeAmount|finalTotal)\\(")
-                .findAll(text)
-                .count()
-            assertTrue("$name stopped calling BookingPricing", pricingCalls > 0)
             assertTrue(
-                "$name calls BookingPricing $pricingCalls times but names waiverApplies " +
-                    "${text.split("waiverApplies").size - 1} times",
-                text.split("waiverApplies").size - 1 >= pricingCalls,
+                "$name multiplies by an express rate instead of reading the server amount",
+                !Regex("0\\.2\\b|0\\.20\\b|1\\.2\\b|EXPRESS_SURCHARGE_RATE|\\* *20\\b")
+                    .containsMatchIn(text),
+            )
+        }
+    }
+
+    /**
+     * Two surfaces, one number: the receipt and the slide-to-confirm label must resolve identically.
+     * Asserted on the **call**, not on the symbols — the sticky bar once passed its own zero discount
+     * while still importing and naming everything this test would otherwise look for.
+     */
+    @Test
+    fun `both money surfaces resolve through the one summary and the one discount`() {
+        listOf("ConfirmStep.kt", "BookingBottomSheet.kt").forEach { name ->
+            val flat = source(name).replace(Regex("\\s+"), " ")
+            assertTrue(
+                "$name does not spend the view model's discount at its BookingPriceSummary call",
+                Regex("BookingPriceSummary\\.resolve\\(\\w+, effectiveDiscount\\)").containsMatchIn(flat),
+            )
+            assertTrue(
+                "$name derives its own discount instead of the view model's",
+                flat.contains("bookingVm.effectiveDiscount"),
             )
         }
     }

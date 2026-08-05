@@ -112,12 +112,9 @@ private enum class SlotState { Available, Express, Unavailable, Earliest }
 
 private data class TimeSlot(val time: String, val state: SlotState)
 
-// Source-of-truth lead-time bands — keep in sync with backend
-// `BookingPolicy` (StandardLeadTimeHours = 4, ExpressLeadTimeHours = 2,
-// FirstWindowHour = 8, LastWindowHour = 20). Mobile derives slot states
-// dynamically from the user's selected date so "Today" never shows
-// already-passed hours as bookable.
-private const val STANDARD_LEAD_HOURS = 4
+// Booking window — keep in sync with backend `BookingPolicy` (FirstWindowHour = 8,
+// LastWindowHour = 20). Slot states are derived from the user's selected date so "Today" never shows
+// already-passed hours as bookable; the express band itself is [BookingPricing]'s.
 private const val EXPRESS_LEAD_HOURS = 2
 private const val FIRST_WINDOW_HOUR = 8
 private const val LAST_WINDOW_HOUR = 20
@@ -125,8 +122,8 @@ private const val LAST_WINDOW_HOUR = 20
 /**
  * Build the 1-hour window list for a given local date, gated on lead time.
  * - Below [EXPRESS_LEAD_HOURS] from now → Unavailable (rendered greyed out).
- * - [EXPRESS_LEAD_HOURS]..[STANDARD_LEAD_HOURS] → Express (+20% surcharge).
- * - First slot ≥ [STANDARD_LEAD_HOURS] → Earliest (visual hint).
+ * - Inside [BookingPricing.requiresExpressSurcharge]'s band → Express (a tag, never a price).
+ * - The first slot past it → Earliest (visual hint).
  * - The rest → Available.
  *
  * For dates strictly in the future (tomorrow+), every slot is Available
@@ -150,7 +147,7 @@ private fun timeSlotsFor(date: LocalDate): List<TimeSlot> {
         val leadHours = (slotInstant - now).inWholeMinutes / 60.0
         val state = when {
             leadHours < EXPRESS_LEAD_HOURS -> SlotState.Unavailable
-            leadHours < STANDARD_LEAD_HOURS -> SlotState.Express
+            BookingPricing.requiresExpressSurcharge(slotInstant, now) -> SlotState.Express
             !earliestAssigned -> { earliestAssigned = true; SlotState.Earliest }
             else -> SlotState.Available
         }

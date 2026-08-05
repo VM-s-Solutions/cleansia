@@ -749,4 +749,75 @@ class BookingViewModelTest {
 
         assertEquals(ExpressWaiverStatus.None, vm.expressWaiver.value.status)
     }
+
+    // ── effectiveDiscount ──
+    //
+    // The sticky price bar used to redo this with the server discounts left out, so a Plus member on
+    // the confirm step read one total on the receipt and a different one on the button.
+
+    @Test
+    fun effectiveDiscount_addsTierAndMembership() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        assertEquals(50.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_givenLargerPromo_replacesTheServerPairRatherThanStacking() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 120.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(120.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_givenSmallerPromo_keepsTheServerPair() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 10.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(50.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_withoutAQuote_isZero() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(0.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    private fun quoteWith(tierDiscount: Double, membershipDiscount: Double) = QuoteOrderResponse(
+        totalPrice = 1000.0,
+        tierDiscountAmount = tierDiscount,
+        membershipDiscountAmount = membershipDiscount,
+        currencyId = "cur-1",
+        currencyCode = "CZK",
+        servicesSubtotal = 1000.0,
+        packagesSubtotal = 0.0,
+        exchangeRate = 1.0,
+    )
 }

@@ -75,6 +75,24 @@ class MembershipExpressClaimTest {
         }
     }
 
+    /**
+     * `booking_slot_express` shipped as the bare English literal "Express +20%" in every locale while
+     * its waived twin was translated, so the chip flipped between an English and a Ukrainian label
+     * mid-flow. A Cyrillic locale cannot express any of this copy in Latin script.
+     */
+    @Test
+    fun `every express string in a Cyrillic locale is written in Cyrillic`() {
+        val cyrillic = Regex("\\p{IsCyrillic}")
+        expressStrings()
+            .filter { (locale, _, _) -> locale == "values-uk" || locale == "values-ru" }
+            .forEach { (locale, key, value) ->
+                assertTrue(
+                    "$locale/$key is untranslated Latin script — $value",
+                    cyrillic.containsMatchIn(value),
+                )
+            }
+    }
+
     @Test
     fun `no locale describes the express window as same-day`() {
         expressStrings().forEach { (locale, key, value) ->

@@ -561,7 +561,7 @@
     <string name="booking_arrival_window">Клинер прибудет в течение 1 часа</string>
     <string name="booking_slot_unavailable">Недоступно</string>
     <string name="booking_slot_earliest">Раньше всего</string>
-    <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express" formatted="false">Экспресс +20 %</string>
     <string name="booking_slot_express_waived">Экспресс · без доплаты</string>
     <string name="booking_express_waiver_available">Plus покрывает 20%% экспресс-доплаты — %1$d осталось в этом календарном месяце.</string>
     <string name="booking_express_waiver_used" formatted="false">В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца.</string>

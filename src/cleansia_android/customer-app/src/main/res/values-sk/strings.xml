@@ -561,7 +561,7 @@
     <string name="booking_arrival_window">Upratovačka príde do 1 hodiny</string>
     <string name="booking_slot_unavailable">Obsadené</string>
     <string name="booking_slot_earliest">Najskôr</string>
-    <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express" formatted="false">Expres +20 %</string>
     <string name="booking_slot_express_waived">Expres · bez príplatku</string>
     <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
     <string name="booking_express_waiver_used" formatted="false">Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.</string>

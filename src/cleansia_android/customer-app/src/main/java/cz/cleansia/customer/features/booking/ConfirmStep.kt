@@ -94,41 +94,20 @@ fun ConfirmStep(
     // Null before the first quote lands — formatOrderPrice falls back to CZK, which
     // is what the hardcoded " CZK" suffix this replaced always assumed.
     val currencyCode = quote?.currencyCode
-    // [totalPrice] is the raw subtotal — what the backend's PriceMatchesAsync
-    // validates against, so submission must echo it unchanged. Discounts are
-    // applied client-side here for display.
-    val basePrice = quote?.totalPrice
+    val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
+    // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
+    // disagree with each other or with the total the order is created with.
+    val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
+    // Catalog sum only until the first quote lands, so the card isn't blank; never a money decision.
+    val subtotal = quote?.let { summary.subtotal }
         ?: (selectedServices.sumOf { it.basePrice + it.perRoomPrice * (state.rooms + state.bathrooms) } +
             selectedPackages.sumOf { it.price })
-    // The quote already dropped the surcharge when the member's quota covered this slot, so following
-    // its verdict is what keeps the number on screen equal to the number charged.
-    val expressWaived = quote?.expressSurchargeWaivedByMembership == true
-    val isExpress = BookingPricing.requiresExpressSurcharge(state.selectedInstant, waiverApplies = expressWaived)
-    // LOY-003 — server now returns Plus AND tier additively (both can be
-    // non-zero on the same quote, already capped at 12% combined). Promo
-    // replaces the additive pair if larger; never stacks. Mirror the same
-    // decision tree here so the displayed math matches what the backend
-    // will persist on submit.
+    // LOY-003 — server returns Plus AND tier additively (both can be non-zero on the same quote,
+    // already capped at 12% combined). Promo replaces the additive pair if larger; never stacks.
     val tierDiscount = quote?.tierDiscountAmount ?: 0.0
     val membershipDiscount = quote?.membershipDiscountAmount ?: 0.0
     val promoDiscount = (promoState as? PromoCodeUiState.Valid)?.discountAmount ?: 0.0
-    val combinedServerDiscount = tierDiscount + membershipDiscount  // additive, already capped server-side
-    val effectiveDiscount = maxOf(combinedServerDiscount, promoDiscount)
-    // Surcharge is computed on the post-discount price so it tracks what the
-    // user actually pays. Mirrors backend CreateOrder.Handler order.
-    val discountedSubtotal = (basePrice - effectiveDiscount).coerceAtLeast(0.0)
-    val surcharge = BookingPricing.expressSurchargeAmount(
-        discountedSubtotal,
-        state.selectedInstant,
-        waiverApplies = expressWaived,
-    )
-    val finalTotal = BookingPricing.finalTotal(
-        basePrice,
-        state.selectedInstant,
-        0.0,
-        effectiveDiscount,
-        waiverApplies = expressWaived,
-    )
+    val combinedServerDiscount = tierDiscount + membershipDiscount
     // Promo wins → show only the promo line. Otherwise show whichever of
     // (Plus, tier) is non-zero; both can be shown simultaneously now.
     val showPromoLine = promoDiscount > 0.0 && promoDiscount > combinedServerDiscount
@@ -221,8 +200,8 @@ fun ConfirmStep(
 
             HorizontalDivider(Modifier.padding(vertical = 10.dp))
 
-            // Total breakdown — base + (optional) express surcharge + grand total.
-            // Server recomputes this so the displayed number IS what the user pays.
+            // Total breakdown — subtotal + (optional) express surcharge + grand total, every figure
+            // split out of the server quote so the rows add up to the number that gets charged.
             Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     stringResource(R.string.booking_summary_subtotal),
@@ -230,7 +209,7 @@ fun ConfirmStep(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    formatOrderPrice(basePrice, currencyCode),
+                    formatOrderPrice(subtotal, currencyCode),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -277,7 +256,7 @@ fun ConfirmStep(
                     )
                 }
             }
-            if (isExpress) {
+            if (summary.expressLine == BookingPriceSummary.ExpressLine.Charged) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         stringResource(R.string.booking_summary_express_surcharge),
@@ -285,13 +264,13 @@ fun ConfirmStep(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "+${formatOrderPrice(surcharge, currencyCode)}",
+                        "+${formatOrderPrice(summary.expressSurcharge, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
-            if (expressWaived) {
+            if (summary.expressLine == BookingPriceSummary.ExpressLine.Waived) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         stringResource(R.string.booking_summary_express_surcharge_waived),
@@ -309,7 +288,7 @@ fun ConfirmStep(
             // the order falls below the per-tier minimum. Only show when no
             // discount is currently winning, otherwise it's misleading noise.
             val tierFloor = quote?.tierDiscountMinOrderAmount
-            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && basePrice < tierFloor) {
+            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && subtotal < tierFloor) {
                 Text(
                     stringResource(
                         R.string.booking_summary_tier_discount_min_not_met,
@@ -328,7 +307,7 @@ fun ConfirmStep(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    formatOrderPrice(finalTotal, currencyCode),
+                    formatOrderPrice(summary.total, currencyCode),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                 )

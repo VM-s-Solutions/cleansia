@@ -1282,6 +1282,7 @@
     <string name="error_order_total_price_positive">Total price must be positive</string>
     <string name="error_receipt_not_found">Receipt not found</string>
     <string name="error_recurring_booking_ends_on_before_start">The end date must be after the start date.</string>
+    <string name="error_recurring_booking_membership_required">Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up.</string>
     <string name="error_recurring_booking_no_services_or_packages">Select at least one service or package.</string>
     <string name="error_recurring_booking_not_found">Recurring cleaning not found.</string>
     <string name="error_recurring_booking_not_owned_by_user">This recurring cleaning belongs to a different account.</string>

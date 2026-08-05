@@ -1256,6 +1256,7 @@
     <string name="error_order_total_price_positive">Celková cena musí být kladná</string>
     <string name="error_receipt_not_found">Potvrzení nenalezeno</string>
     <string name="error_recurring_booking_ends_on_before_start">Datum ukončení musí být po datu zahájení.</string>
+    <string name="error_recurring_booking_membership_required">Pravidelné úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si aktivujte předplatné.</string>
     <string name="error_recurring_booking_no_services_or_packages">Vyberte alespoň jednu službu nebo balíček.</string>
     <string name="error_recurring_booking_not_found">Pravidelný úklid nenalezen.</string>
     <string name="error_recurring_booking_not_owned_by_user">Tento pravidelný úklid patří k jinému účtu.</string>

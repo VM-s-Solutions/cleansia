@@ -35,6 +35,16 @@ public class SaveOrderPhotos
 
     public class Validator : AbstractValidator<Command>
     {
+        /// <summary>
+        /// Three times the ten the two document intakes use, because the batch it bounds is a different
+        /// shape: a document set is bounded by the ten document types, while a photo set is before AND
+        /// after per documented area and the web client sends both phases in one command, so a
+        /// fifteen-area home is a legitimate thirty. What the cap is for is unaffected by the difference
+        /// — the per-photo size rule bounds one item, and the request body divided by a SMALL item is
+        /// thousands of blob uploads and rows. Thirty makes that tens.
+        /// </summary>
+        private const int MaxPhotosPerRequest = 30;
+
         public Validator(IOrderRepository orderRepository)
         {
             RuleFor(x => x.OrderId)
@@ -45,8 +55,11 @@ public class SaveOrderPhotos
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Photos)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .Must(photos => photos.Count() <= MaxPhotosPerRequest)
+                .WithMessage(BusinessErrorMessage.FileCountExceeded);
 
             RuleForEach(x => x.Photos).ChildRules(photo =>
             {
@@ -66,7 +79,10 @@ public class SaveOrderPhotos
                     .WithMessage(BusinessErrorMessage.FileRequired)
                     .Must(BlobFileSize.HasContentWithinLimit)
                     .WithMessage(BusinessErrorMessage.FileSizeExceeded);
-            });
+            })
+            // Without this the per-item rules still walk every item of a list already refused for being
+            // too long, which is the cost the count cap exists to refuse.
+            .When(x => x.Photos is not null && x.Photos.Count() <= MaxPhotosPerRequest);
         }
     }
 

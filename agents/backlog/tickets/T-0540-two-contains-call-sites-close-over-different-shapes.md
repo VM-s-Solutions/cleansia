@@ -1,7 +1,7 @@
 ---
 id: T-0540
 title: Two status `Contains` call sites close over different shapes and may not emit the same SQL — nothing pins it
-status: ready
+status: done
 size: S
 owner: db
 created: 2026-08-04

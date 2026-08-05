@@ -444,6 +444,78 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `a successful save of a picked photo confirms the upload`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_avatar_upload_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
+    }
+
+    @Test
+    fun `a successful save of a removal confirms the removal`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.removeAvatar()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_upload_success) }
+    }
+
+    @Test
+    fun `a save that leaves the avatar alone confirms nothing`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+    }
+
+    /** A rejected save leaves the old photo in place, so claiming otherwise is a lie. */
+    @Test
+    fun `a failed save claims nothing about the photo`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Error(ApiError.Server(statusCode = 500, message = "save failed"))
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+    }
+
+    /** Nothing has reached the server until the user saves, so neither may confirm. */
+    @Test
+    fun `picking and removing confirm nothing on their own`() = runTest {
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.removeAvatar()
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+    }
+
+    @Test
     fun `discardAvatarDraft resets a pending pick`() = runTest {
         val vm = viewModel()
         vm.pickAvatar(pickedUri)

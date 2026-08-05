@@ -21,6 +21,8 @@ class ProfileAvatarStringsTest {
         "profile_avatar_encode_failed",
         "profile_avatar_picker_unavailable_title",
         "profile_avatar_picker_unavailable_message",
+        "profile_avatar_upload_success",
+        "profile_avatar_remove_success",
     )
 
     private val resDir: File = sequenceOf(
@@ -53,6 +55,23 @@ class ProfileAvatarStringsTest {
                     valueOf(xml, key) != english[key],
                 )
             }
+        }
+    }
+
+    /**
+     * "Updated" and "removed" are the two outcomes of the same tap, so a copy-paste
+     * that leaves both reading the same sentence tells the user nothing at all — and
+     * every locale is a fresh chance to make it.
+     */
+    @Test
+    fun `the two save confirmations say different things in every locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            assertTrue(
+                "$locale/strings.xml uses one sentence for both avatar outcomes",
+                valueOf(xml, "profile_avatar_upload_success") !=
+                    valueOf(xml, "profile_avatar_remove_success"),
+            )
         }
     }
 

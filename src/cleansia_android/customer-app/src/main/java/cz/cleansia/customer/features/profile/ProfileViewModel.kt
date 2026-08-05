@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.profile
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
@@ -42,6 +43,18 @@ sealed interface AvatarDraft {
     data class Picked(val previewUri: Uri, val image: Base64Image) : AvatarDraft
 
     data object Removed : AvatarDraft
+}
+
+/**
+ * What to confirm once the server has accepted a save carrying this draft. Null
+ * for [AvatarDraft.Unchanged]: that save touched no photo, so a photo message
+ * would claim something that never happened.
+ */
+@StringRes
+private fun avatarSaveMessageRes(draft: AvatarDraft): Int? = when (draft) {
+    is AvatarDraft.Picked -> R.string.profile_avatar_upload_success
+    AvatarDraft.Removed -> R.string.profile_avatar_remove_success
+    AvatarDraft.Unchanged -> null
 }
 
 /**
@@ -184,6 +197,7 @@ class ProfileViewModel @Inject constructor(
             )
             result
                 .onSuccess {
+                    avatarSaveMessageRes(draft)?.let(snackbar::showSuccessKey)
                     _avatarDraft.value = AvatarDraft.Unchanged
                     _saveState.value = ActionState.Idle
                     onSaved()

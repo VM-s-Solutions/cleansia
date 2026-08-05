@@ -418,6 +418,8 @@
     <string name="profile_avatar_encode_failed">Не вдалося використати це зображення. Спробуйте інше фото.</string>
     <string name="profile_avatar_picker_unavailable_title">Немає засобу вибору фото</string>
     <string name="profile_avatar_picker_unavailable_message">На цьому пристрої немає програми для вибору фото.</string>
+    <string name="profile_avatar_upload_success">Фото профілю оновлено</string>
+    <string name="profile_avatar_remove_success">Фото профілю видалено</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Збережені адреси</string>

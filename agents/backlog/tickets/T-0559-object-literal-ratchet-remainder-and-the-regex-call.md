@@ -1,7 +1,7 @@
 ---
 id: T-0559
 title: Finish the generated-DTO literal sweep — 46 left in 9 admin libs, 3 with no specs at all — and rule on the ratchet's `(Command|Request|Dto|Query)$` blind spot
-status: draft
+status: done
 size: M
 owner: frontend
 created: 2026-08-05

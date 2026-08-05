@@ -1,7 +1,7 @@
 ---
 id: T-0546
 title: Four customer feature libs cannot compile a test — a wrong tsconfig `extends` makes their green test target meaningless
-status: draft
+status: done
 size: S
 owner: frontend
 created: 2026-08-05

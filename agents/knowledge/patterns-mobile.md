@@ -391,14 +391,41 @@ raw components one-off; never duplicate a `:core` component.
 > which is **every** localized chip row, because a three-chip line that fits in English overflows in
 > cs/sk/uk/ru and an `HStack` truncates rather than wraps.
 
-> **A perk/benefit the backend never enforces must not be rendered.** The membership `allowsExpressUpgrade`
-> flag is seeded, returned by `GetMyMembership` and read by exactly zero lines of pricing code — a Plus
-> member pays the standard express surcharge — so the iOS perk row deliberately omits it while Android
-> still shows an "Express" pill. Before mirroring a benefit chip, grep the field: if its only readers are
-> DTO mappers, it is marketing copy, not a feature, and a second platform doubles the promise. The
-> matching iOS shape is a semantic **`MembershipPerk`** enum resolved by `MembershipPerks.resolve` (the
-> "carry the token, not the resolved string" rule again), so a test can assert the express case does not
-> exist at all rather than hunting a literal in a view.
+> **A perk/benefit the backend never enforces must not be rendered — grep the field before mirroring a
+> benefit chip.** If a flag's only readers are DTO mappers, it is marketing copy, not a feature, and a
+> second platform doubles the promise. The matching iOS shape is a semantic **`MembershipPerk`** enum
+> resolved by `MembershipPerks.resolve` (the "carry the token, not the resolved string" rule again), so
+> the claim is assertable without hunting a literal in a view.
+>
+> ⚠️ **`allowsExpressUpgrade` is no longer the worked example — it SHIPPED, and the perk is rendered on
+> all three clients.** The express-upgrade waiver is live and metered per calendar month (ADR-0035):
+> `ExpressWaiverResolver` feeds the pricing calculator, the quote carries
+> `expressSurchargeWaivedByMembership` / `expressUpgradesRemaining`, and iOS renders it
+> (`MembershipPerks.swift:125-130` — `.express(...)` off `ExpressWaiverStatus.resolve`;
+> `SubscribePlusScreen.swift:45`; `CustomerShellView` → `showExpressPerk`), as do Android and web.
+> **Do not "restore parity" by deleting the iOS express perk** —
+> that undoes shipped work, which is precisely what a stale worked example instructs the next reader to do.
+> The general rule above is unchanged; only its example expired.
+>
+> **When the condition a tripwire guards gets fixed, REPOINT the tripwire at the claim's content — do not
+> delete it.** The old test asserted the express case *did not exist*; once the mechanism shipped it had
+> nothing left to do, and deleting it would have dropped the guard on the two sentences that made the old
+> claim false. `MembershipExpressClaimTests` now asserts, per locale **through the built bundle** rather
+> than the `.xcstrings` source, that every express string exists and is localized, that none promises
+> "same-day" (express is a 2–4 h lead window), that none hardcodes the per-plan quota (numbers erased by
+> *shape* — the 20 % rate and the 2…4 window — so a bare digit allow-list cannot smuggle "2 free express
+> bookings a month" through), and that each screen rendering the claim gates it on a **server field**.
+> A test that asserts a claim's truth conditions outlives the flag; a test that asserts absence does not.
+>
+> **Enforced by:** the express-claim invariants — `MembershipExpressClaimTests`
+> (`CleansiaCustomer/Tests/MembershipExpressClaimTests.swift`), run by `xcodebuild -scheme CleansiaCustomer
+> … build test` (`.github/workflows/ios-ci.yml:189-196`) — **T1-CI**. **Scope, stated because it is
+> narrower than the paragraph:** it gates the enumerated express keys and a **closed roster of three
+> screen→gate pairs** (`:133-144`); a *fourth* screen that renders the claim ungated is not caught, and
+> adding one means adding its row. The general "grep the field before mirroring a chip" rule is
+> **(guidance — no gate)** — it is a judgement about a field's readers, not a mechanically expressible
+> property. *Cross-stack note (descriptive — not a rule for web): the same content invariants are held for
+> the customer web app by `apps/cleansia.app/src/app/i18n/membership-express-claim.spec.ts`.*
 
 > **A number the server computes has no client-side twin, and the REASON travels with it (T-0527).** Both
 > cancel sheets rebuilt the fee schedule locally and both were wrong — 50% where the backend charges 25%,
@@ -1217,10 +1244,12 @@ surfaced as a **sealed `UiState<Catalog>`** on the VM (NOT the Android `loading`
 E1 catch). **Server is authoritative for pricing:** the VM's `quoteState` FSM (`idle`/`quoting`/`quoted(BookingQuote)`,
 no `Error` variant — a swallowed failure keeps the prior quote, the Android `QuoteState` parity) is driven by a Combine
 **quoteWatcher** — `$state.map(\.quoteRequest).removeDuplicates().debounce(400ms).sink → orderQuote`; iOS computes ONLY the
-**display math** in a pure **`BookingPricing`** port (max(tier,promo) discount FIRST, then +20% express on the discounted
-subtotal for the 2–4h lead band, mirroring `CreateOrder.Handler` ordering so the shown total == the charged raw subtotal).
-The footer Continue/Slide label shows the live total via `BookingPricing.finalTotal` (the `BookingBottomSheet.kt` footer
-parity). **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
+**display split** in a pure **`BookingPricing`** / **`BookingPriceSummary`** port — it *splits* the server's already-composed
+total and evaluates **no rate at all** (the rule immediately below). The footer Continue/Slide label shows the live total via
+`BookingPriceSummary.resolve(...).total` (the `BookingBottomSheet.kt` footer parity). ⚠️ This clause used to read *"discount
+FIRST, then +20% express on the discounted subtotal, mirroring `CreateOrder.Handler` ordering"* and named a
+`BookingPricing.finalTotal` that no longer exists — **that sentence shipped a defect on both clients** and is superseded by
+the rule below. **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
 `PartnerGeneratedAuth`, `CustomerAuthSpine.make` now returns a stack exposing the `headerAdapter`) — the first customer
 business client, authed through the one Core spine. Quote/catalog are in `AnonymousAllowList.customer`, so the
 `HeaderAdapter` withholds the Bearer on those paths even with a stored token — guest booking works tokenless. The
@@ -1233,8 +1262,64 @@ allow-list entries STAY (the carve-out is an additive classification, NOT a dele
 are anon-but-not-dual-use → **never** get the Bearer even signed-in; `Payment/CreatePaymentIntent` is in no anon set →
 always authed. `partner` has an empty `dualUsePaths` (no regression). The factory carries the Bearer on non-allow-listed paths. **Deviations a reviewer rejects:**
 a ported catalog flag-bag instead of `UiState<Catalog>`; a quote computed/totaled client-side instead of the server response;
-the discount applied AFTER the surcharge or promo/tier summed instead of max(); a per-call Bearer/401 on the quote/catalog
-call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
+**any pricing rate evaluated on the client** — express surcharge, VAT, tier or promo percentage — instead of splitting the
+server's own figures (promo/tier summed instead of `max()` is the same defect one layer up); a per-call Bearer/401 on the
+quote/catalog call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
+
+> **The client SPLITS the server's total; it never evaluates a rate — the ONE way for every money row on the booking sheet.**
+> `QuoteOrderResponse.totalPrice` **already contains** the express surcharge, so each row is derived by *subtraction*, in
+> exactly **one** place per app: iOS `BookingPriceSummary.resolve`
+> (`CleansiaCustomer/Sources/Features/Booking/BookingPricing.swift:46-63`), Android `BookingPriceSummary.resolve`
+> (`customer-app/…/features/booking/BookingPricing.kt:50-65`).
+>
+> ```
+> subtotal         = quote.totalPrice − quote.expressSurchargeAmount      // pre-surcharge, by subtraction
+> expressSurcharge = quote.expressSurchargeAmount                         // the server's number, verbatim
+> total            = max(quote.totalPrice − discount, 0)
+> expressLine      = waived ? .waived : applied ? .charged : .notExpress  // waived OUTRANKS charged
+> ```
+>
+> **Why the naive form is wrong — kept here because a rule whose rationale is missing gets re-derived away.** Both clients
+> used to mirror `CreateOrder.Handler`'s *ordering* (discount first, then +20 % express on the discounted subtotal). Both
+> were wrong on the wire: the number they were adding 20 % to had **already had 20 % added by the server**, so an express
+> booking displayed roughly a fifth more than the order was created with — on both platforms, agreeing with each other and
+> with neither the server nor the charge. Mirroring a server *formula* is not reproducing a server *number*: the formula's
+> input was the raw subtotal; what the client holds is the formula's **output**. Any time a client "mirrors backend ordering",
+> ask which end of the pipeline the value it holds came from.
+>
+> **This dissolves the pre-/post-discount base question rather than answering it.** There is no base to choose because no
+> rate is applied. Every discount amount on the quote was computed by the server *against the same pre-surcharge subtotal*,
+> so subtracting it off the gross total reproduces the server's own composition exactly — the clients now agree with the
+> server rather than merely with each other. The general form: **a new money line is a new AMOUNT field on the quote, never
+> a rate in the client.** If a row cannot be produced by adding or subtracting fields the server sent, the fix is a server
+> field, not client arithmetic.
+>
+> **The discriminator is "does a currency amount depend on it", NOT "is it a percentage"** — say it that way or the next
+> reader over-applies this and deletes a legitimate chip. Two things stay and are not violations:
+> `BookingPricing.requiresExpressSurcharge` (it decides which *slots the grid may label* express before any quote for that
+> slot exists — it touches no money and no money row reads it), and *rendering* a percentage as copy, e.g. the "5 % off"
+> perk label off `membership.discountPercentage` (`MembershipPerks.swift:116`). Displaying a rate is fine; **applying** one
+> to money is not. Likewise `effectiveDiscount` — `max(quote.tierDiscountAmount + quote.membershipDiscountAmount,
+> promoState.discount)` (`BookingViewModel.swift:96-99`) — is compliant: it *selects among server amounts*, and the LOY-003
+> best-wins shape is the server's, not the client's invention.
+>
+> *Cross-stack note (descriptive — not a rule for the backend or for web): the server composes
+> `totalPrice = chargeSubtotal + expressSurchargeAmount` (`src/Cleansia.Core.AppServices/Services/OrderPricingCalculator.cs:82`)
+> and derives its discount base as `rawSubtotal = grossSubtotal − ExpressSurchargeAmount`
+> (`src/Cleansia.Core.AppServices/Features/Orders/QuoteOrder.cs:163-164`); customer web performs the identical split at
+> `libs/cleansia-customer-features/order-wizard/src/lib/order-wizard/order-pricing.facade.ts:98-101`.*
+>
+> **Enforced by:** `BookingPriceSummaryTests` (`CleansiaCustomer/Tests/BookingPricingTests.swift:46-125`, run by
+> `xcodebuild -scheme CleansiaCustomer … build test`, `.github/workflows/ios-ci.yml:189-196`) **and** `BookingPriceSummaryTest`
+> (`customer-app/src/test/java/cz/cleansia/customer/features/booking/BookingPriceSummaryTest.kt`, run by
+> `:customer-app:testDebugUnitTest`, `.github/workflows/android-ci.yml:79`) — **T1-CI**. The Android suite carries the case
+> that kills the whole class of defect rather than one instance: a surcharge that is 20 % of **neither** the pre-discount nor
+> the post-discount subtotal, so only reading the server's `expressSurchargeAmount` produces it (`:56-65`) — one assertion
+> rejecting *both* candidate bases. **Scope, stated because it is narrower than the sentence:** the suites pin the resolver's
+> arithmetic, and every money row on both clients goes through that resolver today (iOS `BookingSheetView.swift:175`,
+> `Confirm/ConfirmStep.swift:30-31`; Android `ConfirmStep.kt:100`, `BookingBottomSheet.kt:554`). They do **not** catch a
+> *second* computer of money appearing beside it. Keep the one call site per screen — a new money row is a new field on
+> `BookingPriceSummary`, not a new calculation in a view.
 
 **Slice C (T-0313 §7.16 When&Where + Confirm extras/promo/referral, done):** Step 2 = the address row (a `.fullScreenCover`
 over a customer-local `BookingAddressPickerView` reusing the Core `MapProvider`/`GeocodingService` seam + the shared Core

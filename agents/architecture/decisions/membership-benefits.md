@@ -7,6 +7,16 @@
 > this file described the draft and were wrong. **§1 remains what ships TODAY: nothing is metered yet**
 > — T-0512/T-0493 have not landed. This banner comes off when T-0493 ships.
 >
+> **⚠️ 2026-08-05 — §1 IS NOW STALE ON THE EXPRESS ROW AND THIS BANNER'S "nothing is metered yet" IS NO
+> LONGER TRUE.** The metered express waiver **shipped**: `ExpressWaiverResolver.ResolveForUserAsync` is
+> called on the pricing path (`OrderPricingCalculator.cs:69-80`), the quote carries
+> `ExpressSurchargeWaivedByMembership` / `ExpressUpgradesRemaining` (`:94-95`), and iOS, Android and web
+> all render the perk. §1's table row *"Free express upgrade — NO — read by zero pricing code"* is
+> **false at HEAD**; it is left in place rather than rewritten because §1 is dated-as-of and a full
+> re-baseline of this doc is its own pass. Do not act on that row. The client-side half of the shape is
+> `client-price-display.md`. **The whole of §1 needs re-baselining — treat every row as suspect until
+> that pass runs.**
+>
 > **2026-08-03 — three of the six escalations are CLOSED by owner ruling.** **E-1** (the trial),
 > **E-2** (`PastDue`) and **E-3** (the mid-month plan swap) are answered and binding. See **§2** for the
 > rulings and **§5** for what remains. The ADR's §Verdict escalation table is discharged for those

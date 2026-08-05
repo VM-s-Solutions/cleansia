@@ -1,6 +1,14 @@
 # Role — `ExpressWaiverResolver` / `IExpressWaiverResolver` (CRC card)
 
-> **⚠️ NOT YET BUILT — but the decision is settled.** Introduced by **ADR-0035**
+> **✅ 2026-08-05 — BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than
+> deleted, so the reader can see it moved.** `src/Cleansia.Core.AppServices/Services/ExpressWaiverResolver.cs`
+> exists and is called on the pricing path (`OrderPricingCalculator.cs:69-80`, feeding
+> `BookingPolicy.RequiresExpressSurcharge(..., waiverApplies:)` at `:74-76`); the quote carries
+> `ExpressSurchargeWaivedByMembership` / `ExpressUpgradesRemaining` (`:94-95`) and all three clients render
+> it. The responsibility, collaborators, "does NOT know" list and invariants below are **still the
+> contract** — verify against them, not against the banner.
+>
+> **⚠️ NOT YET BUILT — but the decision is settled.** *(superseded — see above.)* Introduced by **ADR-0035**
 > (`agents/backlog/adr/0035-metered-membership-benefit-usage.md`), **`accepted`** 2026-08-02 with 16
 > binding amendments, **amended 2026-08-03 by owner instruction (AM-17/AM-18/AM-19)**. T-0493 builds it.
 > **Direct sibling of `CancellationPolicyResolver`** (`Core.AppServices/Services/`) — same shape, same

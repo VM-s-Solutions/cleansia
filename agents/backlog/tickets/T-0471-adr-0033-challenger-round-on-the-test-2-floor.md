@@ -1,7 +1,7 @@
 ---
 id: T-0471
 title: ADR-0033 — run the one challenger round on the test-2 floor, then accept or amend
-status: in_review
+status: done
 size: S
 owner: architect
 created: 2026-08-01
@@ -202,6 +202,21 @@ is not limited to these, but must address them:
   wording and in enforcement**; the headline is that it was enforced by a mechanism that could not
   fire.
 
+- 2026-08-05 — **INDEPENDENT LEAD PASS RUN. `in_review` → `done`; AC1 SATISFIED by a third instance.**
+  Ruling: the amendments are **sustained in direction and insufficient on two points**. **M2** sustained
+  unqualified. **M1** proved determinate on one real catalog edit (**T-0349** — an eighth retro case, the
+  first where the "any level of generality" limb does the work, and it matches history) and
+  **indeterminate** on another (**T-0473**), because it defines *silence* and never defines *governs*
+  (**L1**). **M3's enforcement amendment describes a fix rather than making one** — all four facts CH-2
+  turned on are still true and FT-11/12/8 have no tickets, so ADR-0033 is `(guidance — no gate)` (**L2**).
+  New blocking-grade defect the round missed: **Block C would install a contradiction into
+  `conventions.md`** by appending the new test over the limb the floor reverses (**L3**) — **FT-8 must not
+  be applied as specified**. The two OVERRULED dispositions are substantively right but **neither is an
+  overrule of the challenger**, so the AC1 mitigation resting on them does not hold (**L4**). **F5 fixed**
+  (`patterns-mobile.md:1241`). **F1 widened** to two stale statements. **L1 + L3 + F4 routed to a new
+  panel — deliberately not written by this lead.** Trail appended to ADR-0033 per `adr/README.md` §1; no
+  accepted-ADR body rewritten. NOT committed — the owner commits.
+
 ## Review
 
 **ARCHITECT — round verdict, 2026-08-05. The PM reconciles; AC1 is explicitly left for the PM.**
@@ -258,7 +273,14 @@ written and was **not** rejected. What changed, in one line each:
       an executable assertion — `quality-gates.md:67-70` scopes leg 1 by the evidence, not the ticket
       type) and leg 2 **DOES NOT APPLY** (no suite, build or checker was run), then names four things
       this round could not verify — including that **F3 is deliberately unresolved**.
-- [ ] **AC1 (a real panel) — SATISFIED IN PART; PM'S CALL, and deliberately not self-certified.** The
+- [x] **AC1 (a real panel) — SATISFIED. Closed 2026-08-05 by an independent third instance**, not by the
+      PM accepting the record below. See `## Review — LEAD (independent adjudication)` at the foot of this
+      ticket and ADR-0033 §"2026-08-05 — Independent lead adjudication". Author (ADR-0032 panel lead,
+      2026-08-01) ≠ challenger (`adr/challenges/0033-floor.md`) ≠ lead (this pass). **The challenger's
+      refusal to self-certify was correct and is now vindicated on evidence**: one of the two "overrules"
+      it offered as proof of independence was an overrule of a position no challenger took.
+      *(Original self-assessment retained below, unedited, as the record.)*
+- [ ] ~~**AC1 (a real panel) — SATISFIED IN PART; PM'S CALL, and deliberately not self-certified.**~~ The
       floor's **author** was the ADR-0032 panel lead (a different instance, 2026-08-01). The
       **challenger** and the **lead** in this round were the **same T-0471 architect instance** — the
       invocation carried no capability to spawn a separate lead. **The defect this ticket exists to
@@ -281,3 +303,63 @@ withdrew. Full detail in `agents/backlog/adr/challenges/0033-floor.md` §Finding
 
 **New follow-ups on ADR-0033:** **FT-11** (Block D — the named reviewer-check; **blocks FT-8**) and
 **FT-12** (record the check id in `enforcement.md` so dropping it is a visible regression).
+
+---
+
+## Review — LEAD (independent adjudication), 2026-08-05
+
+**Third instance.** Distinct from the floor's author (the ADR-0032 panel lead, 2026-08-01) and from the
+T-0471 challenger, which filed `adr/challenges/0033-floor.md` and then declined to self-certify AC1
+because it was also acting as lead. **That objection was correct and this pass is the missing instance.**
+Full trail appended to ADR-0033 as a dated, attributed, record-only section per `adr/README.md` §1 — **no
+accepted-ADR body was rewritten.**
+
+**Ticket verdict: `in_review` → `done`. AC1 is SATISFIED.** The deliverable was *the round*, and the round
+is now complete with the composition the AC names. The defects this pass found are **new findings routed
+as follow-ups** — the same treatment F1–F5 already got — not grounds to hold open a ticket that discovered
+them.
+
+**Overall ruling on the amendments: SUSTAINED IN DIRECTION, INSUFFICIENT ON TWO POINTS.** Neither "accept
+unchanged" nor "reject" was right, and the panel's own framing (*every amendment is a concession to its
+own proposal*) turned out to be the thing worth attacking — two of the six amendments do less than the
+verdict claims.
+
+| Item ruled | Verdict |
+|---|---|
+| **M1** — trigger moved from *"previously permitted"* to *"a sentence governs the subject at any level of generality"* | **SUSTAINED IN DIRECTION, INSUFFICIENT.** Tested on **two real catalog edits**, both worked in the appended section. **T-0349** (address-picker VM): determinate, fires, matches history — the eighth retro case, and the first evidence that a *general* sentence carries a determinate verdict, which is M1's entire content. **T-0473** (`patterns-mobile.md:265-276`): **not determinate** — `:520-522` names a *file*-scoped source-text scan and the entry forbids *"a whole-file `contains`"*, so two reviewers reach opposite verdicts on the recorded evidence. Cause: **M1 defines *silence* and never defines *governs*.** → **L1** |
+| **M2** — author records the catalog sweep; missing evidence routes | **SUSTAINED, unqualified.** The only amendment that changes what a reviewer can *do* rather than what a reviewer is *told*. It also narrows L1 (the sweep becomes the artifact reviewers argue with), without closing it |
+| **M3 / Block D** — the "named enforcer" | **THE CHALLENGE SUCCEEDED; THE AMENDMENT DID NOT.** Re-verified: `reviewer.md:105-110` still teaches the superseded axis · `conventions.md:122-127` **also** does (the round measured only the reviewer's page) · Block C is absent from `conventions.md` · **`INDEX.md` carries no row for FT-11, FT-12 or FT-8**. So `reviewer-check 5` does not exist and **ADR-0033 ships at `(guidance — no gate)`** by ADR-0032 D2's own line. An ADR was accepted on a condition of acceptance that is unmet. → **L2** |
+| **NEW — Block C** (not found by the round) | **BLOCKING-GRADE.** Block C says *"insert **after** the existing numbered list"* and never amends `conventions.md:122-127`, whose **first limb the floor reverses** (*"a **new canonical archetype** or …"* — retro row 7 is the proof: T-0379 routed to the Architect on exactly that ground). Applied as specified, `conventions.md` would carry both *"new canonical archetype → Architect"* and *"first statement → inline"*. **That is F5's disease installed by the edit meant to prevent authority drift**, and ADR-0033's *"refines, does not reverse"* header claim is false as to that limb. **FT-8 must not be applied as specified.** → **L3** |
+| **The two OVERRULED challenges** | **Dispositions stand; attribution corrected.** Both are substantively right — the ordered tests cannot contradict, and rows 2–3 do hold under the amended wording. **But neither is an overrule of the challenger**: `challenges/0033-floor.md` CH-4 never asserts a contradiction (the §Defense concedes *"the challenger did not argue for it"* and the §Verdict books it as an overrule anyway), and CH-5 is titled *"The retro-validation is **not fitted**"* — the challenger cleared the ADR on that point unprompted. Both were overrules of the **author's own nominated framings**. **§Verdict's *"overrules the challenger in part twice"* therefore does not support the AC1 argument it was offered for.** → **L4, closed on the record** |
+| **F5** | **REAL, and FIXED in this pass.** `patterns-mobile.md:1241` granted `.presentationDetents([.medium])` for the promo/referral dialogs that the architect-ratified rule at `:996-1001` withdrew — **and it was factually stale too**: shipped is `CodeSheetShell.swift:29` `.fixedSize(horizontal:false, vertical:true)` + `:36` `.presentationDetents([.height(contentHeight)])` + `:78` `CodeSheetHeightKey: PreferenceKey`. **The withdrawal survives**; the grant is retracted in place with a dated erratum note. One-hunk edit, `patterns-mobile.md` lane, no `git restore`, no `git stash` |
+| **F1** | **REAL and WIDER than filed.** ADR-0032 carries **two** stale statements: `:23-25` (0031 *is* on `master`) **and `:14`** (*"ADR-0033 is `proposed`, not accepted"*) — the second was made stale by this very round. One **signed erratum** must cover both. **Not written here**: editing an accepted ADR from inside another ticket is the violation the erratum lane exists to prevent |
+| **F2** | **REAL.** `Enforced by:` = **0** in `patterns-mobile.md`; the T-0451 entry (`:292-304`) carries neither label nor residual sentence. Repo-wide the count is **7** strict / **9** counting two colon-less `roles/` variants — the round's "8" was a middle reading. **The label is not uniform enough to grep one way; FT-4 needs to know that before it counts anything** |
+| **F3** | **REAL, and partly answered.** Its suspected mis-routing is **not** established — under Ruling 1 Case β the T-0473 entry routes **inline**. What stands is the missing enforcer + tier and the unrun sweep. **Recorded, not re-opened** (T-0274 precedent) |
+| **F4** | **REAL, with better evidence than filed.** `T-0397-…md:70` shows the architect ruling *"carries a real trade-off — should it be an ADR, not a catalog row? Ruling: no trade-off survives"* — the limb is a ground actually used **and answered**. **Fold into L1's panel**: a fourth test and a definition of "governs" are the same decision |
+
+**What this pass deliberately did NOT do.** It did not write the repair for L1 or L3. ADR-0033's own status
+block rules that *"inventing the repair and then ratifying it is not adjudication"* — that binds a second
+lead exactly as it bound the first. **L1 and L3 are routed to a new ADR with its own panel, and no number
+is reserved** (two architects collided on 0041 this sprint; the PM allocates when the panel spawns).
+
+**PM actions, in priority order:**
+1. **File FT-11 as a ticket and widen it** to cover `conventions.md:122-127` as well as `reviewer.md:105-110`.
+   Until it lands, ADR-0033 binds nothing — say so wherever the ADR is cited.
+2. **File FT-12 and FT-8**; FT-8 is now blocked **twice** (behind FT-11, and behind L3).
+3. **Spawn the L1/L3 panel** (author ≠ challenger ≠ lead, three instances — this ticket is the reason).
+   **F4 folds into it.**
+4. **F1's signed erratum on ADR-0032** — two statements, one erratum.
+
+**Gate 0.5 (deliberation).** **Leg 1 and leg 2 do not apply**, for the reasons already recorded — nothing
+executable was asserted and nothing was run. **Leg 3 — what this pass could not verify:** (a) **no shell in
+this invocation**, so `git log`/`git show` were unavailable and **no catalog edit was read as a diff** —
+both worked cases are reconstructed from in-tree ticket tags plus their tickets, recoverable but not
+diffs; (b) **two cases is enough to rule M1 insufficient** (one reproducible indeterminacy is a
+counter-example) and **not** enough to say how often that shape occurs; (c) **Case β's verdict is this
+lead's reading** — the ADR as written does not compel it, which is the finding; (d) three cited offsets had
+**drifted** since the challenger pass (`:577`→`:588`, `:985-990`→`:996-1001`, `:1230`→`:1241`), which is
+why the round's practice of quoting text alongside offsets is what made every citation recoverable.
+
+**Files touched by this pass:** `agents/backlog/adr/0033-…md` (appended section only) ·
+`agents/architecture/decisions/catalog-governance.md` · `agents/knowledge/patterns-mobile.md` (F5, one
+hunk) · this ticket. **Nothing committed** — the owner commits.

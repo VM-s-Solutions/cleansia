@@ -58,7 +58,22 @@ ADR-0033 addresses (1). ADR-0032 addresses (2). They compose on the same hunk an
   failure shape as D3's overclaim, moved from *scope* to *severity*: a step that reports and never
   reddens has told a reader nothing, exactly as a green gate asserting two sentences had.
 
-### What routes to the Architect (ADR-0033, accepted 2026-08-05)
+### What routes to the Architect (ADR-0033, accepted 2026-08-05) — **ACCEPTED AND NOT IN FORCE**
+
+> ⛔ **Read this before applying anything in this section.** ADR-0033 named Block D (the reviewer-check)
+> as **its own condition of acceptance** and was accepted with that condition **unmet**. Re-verified by
+> the independent lead pass, 2026-08-05:
+>
+> | | State |
+> |---|---|
+> | `.claude/agents/reviewer.md:105-110` — what a **reviewer** runs | still the **superseded** axis, verbatim |
+> | `agents/knowledge/conventions.md:122-127` — what an **author** applies | still the **superseded** axis |
+> | ADR-0033 Block C in `conventions.md` | **absent** (the next section is `## Naming (canonical)`) |
+> | FT-11 / FT-12 / FT-8 as `INDEX.md` rows | **none exist** |
+>
+> By ADR-0032 D2's own line (*"T3-HUMAN requires a **named** checklist item"*), **ADR-0033 is
+> `(guidance — no gate)` today.** Its three tests bind nothing. **FT-11 is not a follow-up — it is the
+> remainder of the decision.** Until it lands, `conventions.md:125-127` is the operative routing rule.
 
 Three ordered tests; first to fire routes: **(1)** does it put shipped code in violation? **(2)** does
 it *narrow* latitude the catalog previously left open? **(3)** does it make a *prescriptive* claim
@@ -71,8 +86,21 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    replaces it, or forbids a form it named.
 2. **Silence is defined.** "The catalog was silent about X" = *no sentence covers X at any level of
    generality* — **not** *no sentence names X specifically*. This is what closes the sub-case dodge
-   (T-0451's "theme-invariant surfaces" is a sub-case of `patterns-mobile.md:577`'s rule about which
-   token supplies ink; the phrase being new does not make the catalog silent).
+   (T-0451's "theme-invariant surfaces" is a sub-case of the Android→iOS mapping row that states
+   `CleansiaColors` slots *are* `Color.dynamic(light:dark:)` pairs — **`patterns-mobile.md:588`**, cited
+   as `:577` in the ADR before drift; T-0451 adds `onFixedWhite`, a slot deliberately **not** a dynamic
+   pair, so it carves an exception out of what that row states. The phrase being new does not make the
+   catalog silent).
+   > ⚠️ **Known residual (finding L1, lead pass 2026-08-05): M1 defines *silence* and never defines
+   > *governs*.** The disambiguator that actually decides a hard case is *"does the candidate sentence,
+   > **applied to this entry's subject**, yield a prescription the entry contradicts?"* — and it is **not
+   > in the ADR**. Worked both ways on real hunks: **T-0349** (address-picker VM) is determinate and fires
+   > — `patterns-mobile.md:990` says *"feature/VM import no MapKit"*, the entry says one such import *"is
+   > allowed"*; history routed it to the Architect ✅. **T-0473** (`:265-276`) is **not** determinate —
+   > `:520-522` names a *file*-scoped source-text scan and the entry forbids *"a whole-file `contains`"*,
+   > so one reviewer fires test 2 while another (correctly) sees a prescription for a different subject
+   > that yields nothing here. Until L1 lands, routing on a general sentence rests on the reviewer's
+   > **paraphrase** of it — the same defect CH-1 removed from the other half of the clause.
 3. **Claiming the floor costs one grep, and the default is route.** The author records the catalog
    file(s) + term searched in `## Review`, symmetric with test 1's code sweep. **A floor claimed with
    no search is not claimed.**
@@ -112,13 +140,26 @@ inconsistent alternative. So "does it forbid something?" fires on everything. AD
 repair: **adding** a canonical form where **no sentence governed the subject at any level** is inline;
 **carving an exception out of a sentence that did** is a law.
 
+**The floor REVERSES `conventions.md:125`'s first limb, and ADR-0033 says it does not (finding L3).**
+The rule ADR-0033 refines reads *"a **new canonical archetype** **or** anything that changes 'the one way
+to do X' … → **Architect** call"* — a **disjunction**. The floor routes a first statement of a canonical
+form **inline**, and a first statement of a canonical form *is* a new canonical archetype. ADR-0033's own
+retro row 7 proves it: T-0379's `format: date` row routes inline here and was routed to the Architect in
+fact, on the ground that it *"defines the one way for date-only wire on iOS"*. The ADR argues past this by
+quoting only the second limb. **Reversing limb 1 is a defensible choice — the defect is that Block C does
+not implement it**: it says *"insert **after** the existing numbered list"* and never amends `:122-127`.
+Applied as specified, `conventions.md` would instruct **both** *"new canonical archetype → Architect"* and
+*"first statement → inline"* on one page. That is exactly F5's disease — a page carrying two incompatible
+forms — installed by the edit whose purpose is to stop authority drift. **FT-8 must not be applied as
+specified.**
+
 **Where the floor's first wording broke, and why the current one is different (T-0471, 2026-08-05).**
 The draft floor turned on *"a form the catalog previously **permitted**"*. The catalog does not permit;
 it prescribes — so "permitted" was inferable only from silence, which is the *same* condition that
 routes an edit **inline**. The predicate was true and false of the same edit, and it split the ADR's
 own founding case: retro row 3 claims T-0451 withdrew `Color.dynamic` ink, but the sentence that
-"permitted" it (`patterns-mobile.md:577`) is a descriptive mapping row that never mentions
-theme-invariant surfaces. Read one way, C5 was unrepaired; read the other, the T-0451 refusal that
+"permitted" it (`patterns-mobile.md:588`; cited as `:577` before drift) is a descriptive mapping row
+that never mentions theme-invariant surfaces. Read one way, C5 was unrepaired; read the other, the T-0451 refusal that
 generated both ADRs was wrong. The repair moved the unit from the *topic* to the **sentence** — and the
 topic-level reading was explicitly rejected, because a sub-case is always a fresh topic if you are
 allowed to choose the vocabulary.
@@ -137,8 +178,26 @@ reviewer who is actually told to look.
 | No floor (C5's unfloored test 2) | everything routes | the inline lane dies; `conventions.md`'s harvest loop closes |
 | Floor on "previously **permitted**" | nothing | undecidable — the catalog prescribes, so "permitted" collapses into "silent" |
 | Floor on the **topic** ("has the catalog discussed X?") | nothing | every sub-case is a fresh topic if you pick the vocabulary; T-0451 escapes as "theme-invariant surfaces" |
-| **Floor on a governing *sentence* at any level of generality** ← **chosen** | one grep, recorded | residual: the author may search at the wrong level of generality. Mitigated by route-by-default, not eliminated |
+| **Floor on a governing *sentence* at any level of generality** ← **chosen** | one grep, recorded | **two** residuals: the author may search at the wrong level of generality (mitigated by route-by-default), and **"governs" is itself undefined** (finding L1 — not mitigated) |
 | Route every first statement (Alternative B) | the harvest loop | rejected in the original panel; nobody argued for it in the re-check |
+
+**The eighth retro case, produced by the lead pass — the first one where the "any level of generality"
+limb does the work.** ADR-0033's table has seven rows; in six of them test 2 fires (or not) on a
+sentence that **names the specific form**. **T-0349** (`patterns-mobile.md:1244-1254`, "the address-picker
+= one Core VM, app-local Views — the one way") is the case M1 was written for and did not have:
+
+| | |
+|---|---|
+| Test 1 | **does not fire** — the edit converts its own violator (the duplicated partner picker VM) in the same change. This is retro row 3's shape: *the floor is the only thing standing.* |
+| Test 2 | **FIRES.** Governing sentence, quotable and general: `patterns-mobile.md:990` — *"feature/VM import no MapKit"* (the catalog form of ADR-0013 D6 invariant #7). The entry carves an exception: *"the **only** sanctioned feature-layer `import MapKit` is the View's binding … that View touch **is allowed**"*. |
+| Routes to | **Architect** |
+| Actual ruling | **Architect** ✅ — `T-0349-…md` is `owner: architect`, `layers: [ios, architect]`, with a `## Architect ruling (2026-06-30)` reasoning from the same invariant (`:97-99`) |
+
+**Why it matters:** it is direct evidence that a *general* sentence can carry a determinate test-2 verdict,
+which is the whole content of M1 and was previously supported only by row 3 — the row CH-1 showed was
+carried by an assertion. It is also the counterweight to L1: the limb works when the governing sentence,
+applied to the entry's subject, yields a prescription the entry contradicts. When it does not (T-0473),
+the limb goes indeterminate. Same test, two outcomes, and the ADR does not name the difference.
 
 ---
 
@@ -191,9 +250,11 @@ the number to re-measure, not to trust:
 
 | Measure | Count |
 |---|---|
-| `**Enforced by:**` in `agents/knowledge/` | **8** — `patterns-backend.md:638`, `:729`; `patterns-frontend.md:462`; `consistency.md:332`, `:395`; `roles/post-commit-effects.md:32`; `roles/order-availability.md:130`; + the template at `conventions.md:141` |
-| `**Enforced by:**` in `patterns-mobile.md` — the ~22-law file ADR-0032's Block A and FT-4 target | **0** |
+| `Enforced by:` in `agents/knowledge/` — **strict** form (colon straight after `by`) | **7** — `patterns-backend.md:638`, `:729`; `patterns-frontend.md:462`, **`:546`**; `consistency.md:332`, **`:416`**; + the template at `conventions.md:141` |
+| …counting the two `roles/` **variant** spellings that omit the colon | **9** — `+ roles/post-commit-effects.md:32` (*"**Enforced by** (ADR-0032 D2 …"*), `roles/order-availability.md:130` (*"**Enforced by `TC-TAKE-ONE-ERROR`**"*). **The label is not yet uniform enough to grep one way — know this before FT-4 counts anything.** |
+| `**Enforced by:**` in `patterns-mobile.md` — the ~22-law file ADR-0032's Block A and FT-4 target | **0** (the load-bearing number; re-confirmed by the lead pass 2026-08-05) |
 | Catalog entries added to `patterns-mobile.md` *after* ADR-0032 was accepted, carrying no enforcer + tier | at least **1** — `:265-276` (T-0473), which constrains call sites (*"hoist it one level further"*) and forbids a form (*"not a whole-file `contains`"*) |
+| Pages that still teach the **superseded** routing axis | **2** — `.claude/agents/reviewer.md:105-110` (the reviewer's) **and `agents/knowledge/conventions.md:122-127` (the author's)**. The T-0471 round measured only the first; the lead pass found the second. **FT-11's scope must cover both** |
 
 The T-0473 entry's ticket self-classified as *"a testability clarification, not a redefinition"*
 (`T-0473-…md:337-339`) — the same self-classification as T-0274 (`:133`), two sprints later, on the
@@ -209,14 +270,18 @@ ADR-0033 replaces.
 | Item | Owner | Where |
 |---|---|---|
 | ~~The floor on ADR-0033's test 2 needs one adversarial round~~ — **CLOSED 2026-08-05** (T-0471): challenged, amended M1–M6, `accepted` | architect panel | ADR-0033 §Verdict · `adr/challenges/0033-floor.md` |
+| ~~AC1 — the round needs a lead distinct from the challenger~~ — **CLOSED 2026-08-05**: third instance ran it; ADR-0033 §"Independent lead adjudication" | architect | ADR-0033, appended section |
+| 🔴 **L1 — M1 defines *silence* but never defines *governs*.** The missing operational sentence (*"a sentence governs this subject iff, applied to it, it yields a prescription the entry contradicts"*) is what makes T-0473 determinate. **A new ADR refining ADR-0033 D1, with its own panel — a lead may not author it.** Allocate the number when the panel spawns | PM → architect panel | ADR-0033 §Ruling 1 |
+| 🔴 **L2 — FT-11 is the remainder of the decision and has no ticket.** File FT-11/FT-12/FT-8 as `INDEX.md` rows, FT-8 behind FT-11, **and widen FT-11 to `conventions.md:122-127`** — the author's page teaches the superseded axis too | PM → architect + docs | this doc, "not in force" box |
+| 🔴 **L3 — Block C as specified installs a contradiction into `conventions.md`** (appends the new test, leaves `:122-127`'s reversed limb standing). **FT-8 must not be applied as specified.** Fold into L1's panel | PM → architect panel | this doc, trade-off space |
 | **FT-11 — land the named enforcer (Block D):** reviewer-check 5 "Catalog-edit routing" in `.claude/agents/reviewer.md` + a Gate 1 pointer. **Blocks FT-8.** Until it lands, ADR-0033 is `(guidance — no gate)` in fact | architect + docs | ADR-0033 §Block D / §Follow-ups |
 | **FT-12 — record the check id in `enforcement.md`** so dropping reviewer-check 5 is a visible regression | architect + docs | ADR-0033 §Follow-ups |
-| **FT-8 — Block C into `conventions.md`** (amended floor wording + its own `Enforced by:` line) — **sequenced behind FT-11** | architect + docs | ADR-0033 §Block C |
-| **F1 — ADR-0032's Number note is false** (0031 *is* on `master`, `acf2f0bc`/PR #175). `accepted` ⇒ needs a **signed erratum**, not an in-body edit (`adr/README.md:16-26`) | PM → architect | ADR-0032 `:23-25` |
+| **FT-8 — Block C into `conventions.md`** — **blocked twice**: behind FT-11, and behind L3's ruling on `:122-127` | architect + docs | ADR-0033 §Block C |
+| **F1 — ADR-0032 carries TWO stale statements**, not one: `:23-25` (0031 *is* on `master`, `acf2f0bc`/PR #175) **and `:14`** (*"ADR-0033 is `proposed`, not accepted"*, made stale by the T-0471 round itself). `accepted` ⇒ one **signed erratum** covering both (`adr/README.md:16-26`) | PM → architect | ADR-0032 `:14`, `:23-25` |
 | **F2 — ADR-0032's Block A was never applied**; `**Enforced by:**` has 0 instances in `patterns-mobile.md`, so FT-4 has nothing to build on | PM → ios lane | ADR-0032 §Block A |
-| **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier and its test-1 sweep was never run (14 source-reading guard tests exist; none audited for the withdrawn whole-file shape). **Recorded, not re-opened** — T-0274 precedent | PM | `adr/challenges/0033-floor.md` §Findings |
-| **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test (the ground three reviewers used on T-0397) | PM → architect | CH-6, deliberately out of T-0471's scope |
-| **F5 — `patterns-mobile.md:1230` still grants the `.medium` detent** that the T-0397-ratified `:985-990` withdrew | PM → `patterns-mobile.md` lane | found while verifying retro row 6 |
+| **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier. **Its test-1/test-2 question is now answered in part** by the lead pass: the candidate governing sentence is `:520-522` and the entry **routes inline**, so the suspected mis-routing is *not* established; what stands is the missing enforcer + tier and the unrun sweep. **Recorded, not re-opened** — T-0274 precedent | PM | ADR-0033 §Ruling 1, Case β |
+| **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test. Confirmed real with better evidence: `T-0397-…md:70` shows the architect ruling *"carries a real trade-off — should it be an ADR, not a catalog row? Ruling: no trade-off survives"* — a ground actually used **and answered**. **Fold into L1's panel** (a fourth test is the same decision as defining "governs") | PM → architect panel | CH-6 / F4 |
+| ~~**F5 — `patterns-mobile.md` still grants the `.medium` detent**~~ — **FIXED 2026-08-05** by the lead pass. Confirmed real at `:1241` (cited `:1230` before drift) against the withdrawal at `:996-1001` (cited `:985-990`), **and factually stale**: shipped is `CodeSheetShell.swift:29` `.fixedSize(horizontal:false, vertical:true)` + `:36` `.presentationDetents([.height(contentHeight)])` + `:78` `CodeSheetHeightKey: PreferenceKey`. The withdrawal survives; the grant is retracted with a dated in-place erratum note | closed | `patterns-mobile.md:1241` |
 | FT-1 verify the `NOT RUN` banner on merge of `fix/tooling-false-green-and-broken-docs` | tooling | ADR-0032 §Follow-ups |
 | FT-2 `custom_rules` bootstrap + `CleansiaWeb` overclaim + widen `included:` | ios | ADR-0032 §Follow-ups |
 | FT-4 tier-label the ~22-entry iOS corpus, in lane slices | ios + architect | ADR-0032 §Follow-ups |
@@ -253,3 +318,22 @@ ADR-0033 replaces.
   Amendments **M1–M6**; `accepted`. **Panel composition is declared in §Verdict: challenger and lead
   were the same instance** (no spawn capability in that invocation), distinct from the floor's author —
   AC1 **SATISFIED-IN-PART**, for the PM to decide whether a second-instance re-check is warranted.
+- **2026-08-05 (T-0471, later the same day) — the independent lead pass.** A **third** instance ran the
+  adjudication the challenger declined to self-certify. **AC1 is now SATISFIED on composition** (author ≠
+  challenger ≠ lead). Rulings: **M2 sustained without qualification** — it is the one amendment that
+  changes what a reviewer can *do*, and route-by-default removes the self-certifying path. **M1 sustained
+  in direction, insufficient as written** — proved determinate on a real hunk the round did not have
+  (**T-0349**, an eighth retro case that fires on a *general* sentence and agrees with history) and
+  **indeterminate** on another (**T-0473**), because "governs" is never defined (**L1**). **M3 ruled a
+  described fix, not a fix** — the four facts CH-2 turned on are all still true, FT-11/12/8 have no
+  tickets, so ADR-0033 ships at `(guidance — no gate)`: **the challenge succeeded and the amendment did
+  not** (**L2**). New blocking-grade defect the round missed: **Block C appends the new test and leaves
+  `conventions.md:125`'s reversed limb standing**, so applying it as specified would put two incompatible
+  routing instructions on one page — and ADR-0033's *"refines, does not reverse"* header claim is false as
+  to that limb (**L3**). The two **OVERRULED** dispositions were re-derived: **both are substantively
+  right and neither is an overrule of the challenger** — `challenges/0033-floor.md` CH-4 never claims a
+  contradiction and CH-5 is titled *"the retro-validation is **not** fitted"*. Both were overrules of the
+  *author's own nominated framings*, so **§Verdict's "overrules the challenger in part twice" does not
+  support the AC1 argument it was offered for** — which is exactly why the composition fix was needed.
+  **F5 fixed in the same pass.** L1/L3 are routed to a **new panel**, not written by this lead: inventing
+  the repair and ratifying it is the defect T-0471 exists to repair, and it binds a second lead too.

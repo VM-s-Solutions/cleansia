@@ -1238,8 +1238,13 @@ slug→true `selectedExtraSlugs`. Promo + referral are **one-shot Apply-validate
 (`…/invalid(ReferralValidationError?)`) over a **`ReferralClient`** (`Referral/Validate`, **fail-soft** — a network failure or
 typed-invalid is `.invalid`, never fatal; the wire payload still forwards the raw code at submit, Slice D). Valid persists the
 normalized code into `BookingState`; the typed-error enums map to localized `.xcstrings` keys (NOT the `code: String?` placeholder).
-The code dialogs are native `.sheet`+`.presentationDetents([.medium])` owning local input+FSM, firing the VM's async validate once
-per Apply, swapping to Done on Valid (the `PromoCodeBottomSheet.kt` parity). **Recorded parity divergence:** Android's ConfirmStep
+The code dialogs are native `.sheet`s owning local input+FSM, firing the VM's async validate once
+per Apply, swapping to Done on Valid (the `PromoCodeBottomSheet.kt` parity); their detent is **NOT** a fixed `.medium` —
+it is the self-sizing `.fixedSize` + height-`PreferenceKey` + `.presentationDetents([.height(measured)])` shape ruled in the
+*iOS partner order work-loop* entry above, shipped at `CodeSheetShell.swift:29,36`. *(Erratum 2026-08-05, T-0471 lead: this
+sentence read `.sheet`+`.presentationDetents([.medium])` until today. It described the Slice-C shipped state and was
+superseded by the architect-ratified T-0397 rule, which withdrew `.medium` for exactly these promo/referral dialogs — so the
+catalog was granting on this line what it forbade above, and the granting form no longer matched the code either.)* **Recorded parity divergence:** Android's ConfirmStep
 *removed* the referral row (signup-only); the ticket re-scopes the referral FSM+row into Slice C, so iOS ships it (the
 `validateReferralCodeNow` FSM is still live on the Android VM). **The address-picker = one Core VM, app-local Views (the one way, T-0349 RESOLVED):** the address-picker VM is the **Core type**
 `CleansiaCore/Location/AddressPickerViewModel` (public, `init(geocoding:, reverseDebounce:, searchDebounce:, searchBias:

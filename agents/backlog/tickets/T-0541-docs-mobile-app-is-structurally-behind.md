@@ -1,11 +1,11 @@
 ---
 id: T-0541
 title: `docs/mobile-app/**` documents a single-module Android app that no longer exists, and has no iOS at all
-status: ready
+status: done
 size: M
 owner: docs
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

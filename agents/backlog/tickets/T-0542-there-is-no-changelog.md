@@ -1,11 +1,11 @@
 ---
 id: T-0542
 title: There is no changelog, though four process documents and the docs charter all say the docs agent owns one
-status: ready
+status: done
 size: S
 owner: docs
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -47,25 +47,25 @@ rate-limited, and `OrderStatus.Pending` was declared dead. That is a release not
 
 ## Acceptance criteria
 
-- [ ] **AC1 — a `CHANGELOG.md` exists at the repository root in Keep a Changelog format** with the six
+- [x] **AC1 — a `CHANGELOG.md` exists at the repository root in Keep a Changelog format** with the six
       categories the docs charter names (Added / Changed / Deprecated / Removed / Fixed / Security) and
       an `## [Unreleased]` section.
-- [ ] **AC2 — sprint 15 is backfilled from what SHIPPED, not from what was planned.** Given
+- [x] **AC2 — sprint 15 is backfilled from what SHIPPED, not from what was planned.** Given
       `git log master..HEAD`, When the entry is written, Then every user-visible or operator-visible
       change is present, sourced from the commits. **Do not backfill from `INDEX.md`** — the whole
       premise of this reconciliation is that the index had drifted from the tree.
-- [ ] **AC3 — entries are written for a reader, not for an agent.** Given any line, When it is read by
+- [x] **AC3 — entries are written for a reader, not for an agent.** Given any line, When it is read by
       someone who has not seen the code, Then it says what changed and what it means for them. No ticket
       ids as the whole entry, no commit shas as the whole entry, no internal class names in a user-facing
       line. A ticket id **may** appear as a trailing reference.
-- [ ] **AC4 — `Removed` and `Security` are actually used where they apply.** The express perk was
+- [x] **AC4 — `Removed` and `Security` are actually used where they apply.** The express perk was
       **removed** from every client (`0c665c08`); the favourite-cleaner feed gained a rate limit, a
       server-side Plus gate and an active-cleaner filter (`b6f1c2a2`), and a customer-facing handler
       stopped pulling IBAN and PassportId into memory. Those are not "Changed".
-- [ ] **AC5 — the process documents are made true.** Given the four documents above, When this lands,
+- [x] **AC5 — the process documents are made true.** Given the four documents above, When this lands,
       Then each points at the file's real path. If a document's claim is still not implementable after
       this ticket, **correct the document** rather than leaving the claim standing.
-- [ ] **AC6 — there is a stated rule for what does NOT get an entry.** Given a refactor, a test-only
+- [x] **AC6 — there is a stated rule for what does NOT get an entry.** Given a refactor, a test-only
       change or an agent-process change, When the rule is read, Then it says so. Without this, the
       changelog becomes a second commit log and stops being read — which is how it silently dies again.
 
@@ -91,6 +91,49 @@ creates it. No panel.
 ## Status log
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Passes DoR: AC observable, `S`,
   no dependencies, no owner-only steps, format and categories already fixed by the charter.
+- 2026-08-05 — built by `docs`. `CHANGELOG.md` created at the repository root; the four referencing
+  documents and `agents/README.md` now name that path; a `Changelog` nav entry in
+  `docs/.vitepress/config.ts` links out to it. **`status:` untouched — PM-owned** (`ticket-lifecycle.md:48`);
+  this needs the PM to move `ready → in_review` and to update the `INDEX.md` row (a serialized
+  shared-file lane no developer agent writes).
+
+  **Audience ruled, not defaulted.** The four referencing documents pair the changelog with the
+  *published* output and `agents/process/documentation.md:15` calls that output "user/dev-facing", so
+  the readers are the owner, whoever operates the platform and whoever builds against it — not end
+  customers (no marketing register, no feature launches) and not agents (no ticket-id-only entries, no
+  internal type names). The three roles the entries are written for are named in the file.
+
+  **Backfill depth ruled, and the rule is stated in the file itself** (§"Where this record starts"):
+  sprint 15 only, i.e. the work merged after `master` at `dceed4f1`. Backfilling further would have
+  meant reconstructing user-visible outcomes from a ticket record that ADDENDUM C established had
+  drifted from the tree — a plausible fiction, which is the failure mode this ticket exists to close.
+
+  **Padding refused, per AC6.** ~72 commits on the branch produced **33 entries** (9 Added · 7 Changed ·
+  1 Deprecated · 2 Removed · 10 Fixed · 4 Security). The exclusions are
+  written down in the file and now in Gate 7, so "no entry" is a decision a reviewer states rather than
+  an omission: refactors, test-only changes, CI/lint/tooling, agent-process and backlog/ADR authoring,
+  client regeneration, and anything no user can reach yet.
+
+  **Method.** Commit subjects were used to *locate* changes; every entry was then confirmed against the
+  tree, and three claims were corrected as a result:
+  - the favourite-cleaner **list** is not Plus-gated — only the per-slot availability answer is
+    (`GetMyServingCleaners.cs:39-46`), so the entry says that rather than repeating "the perk became
+    Plus-only";
+  - the customer **web** wizard has no preferred-cleaner picker at all
+    (`order-wizard.facade.ts:593-595` leaves `preferredEmployeeId` off the JSON deliberately), so the
+    picker is recorded as Android + iOS;
+  - **no** client sends the `MyServingCleaners` slot parameters yet, so the availability answer is
+    recorded as an API capability with nothing displaying it, not as a shipped feature.
+
+  Two things were deliberately **not** written: the `order.take.already_cancelled` /
+  `already_completed` client keys (present in the tree, but a web/iOS lane is live in this tree right
+  now and T-0543 records them as in flight — a committed-vs-working-tree distinction I could not settle
+  read-only), and the ADR-0041 self-billing **acceptance record**, which is a decision with no code
+  behind it (`grep -r SelfBilling src/` is empty).
+
+  `.claude/agents/docs.md` was **not** edited: its claim is now true as written, and a charter is agent
+  configuration. Naming the path and the exclusion rule in it is an owner call — see the note in the
+  handover.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

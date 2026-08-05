@@ -12,7 +12,7 @@ docs rotting into fiction.
 | **Analysts** | the **business-logic** view | `agents/analysts/<domain>.md` | the domain's business rules in prose **+ Mermaid diagrams** (flows, state machines, decision trees), the living **story map** (which stories cover which capability), open questions |
 | **Architects** | the **decision** view | `agents/architecture/decisions/<topic>.md` | living design notes, the trade-off space, current shape, links to the immutable ADRs. (The **ADRs** themselves stay in `backlog/adr/` — immutable once accepted; these decision docs are the *evolving* companion that explains the current state.) |
 | **Developers** | the **implementation** view | `docs/architecture/*` (canonical, published) + short impl notes in the ticket | how it's actually built; kept in sync by the `docs` agent when behavior ships |
-| **Docs agent** | the **published** site | `docs/**` (VitePress) + changelog | the polished, user/dev-facing output synced from the above |
+| **Docs agent** | the **published** site | `docs/**` (VitePress) + [`CHANGELOG.md`](../../CHANGELOG.md) (repo root) | the polished, user/dev-facing output synced from the above |
 
 > Internal deliberation/working docs live under `agents/` (not the published site). The published
 > `docs/` stays the clean output. The three internal views (analyst/architect/dev) are separate trees
@@ -55,7 +55,13 @@ stateDiagram-v2
 - A **decision/ADR** is accepted → the **author architect** updates
   `agents/architecture/decisions/<topic>.md` and writes the immutable ADR.
 - A **ticket** ships behavior → the **developer** updates the implementation note + flags the `docs`
-  agent to sync `docs/**`; the `docs` agent updates the published page + changelog (Gate 7).
+  agent to sync `docs/**`; the `docs` agent updates the published page + the changelog (Gate 7).
+  The changelog is [`CHANGELOG.md`](../../CHANGELOG.md) at the **repository root** — a separate
+  artifact from the VitePress site, not a page inside it, and it is not published by the docs build.
+  **Not every ticket earns an entry**: the file's own "What does NOT get an entry" section is the
+  rule, and it deliberately excludes refactors, test-only changes, tooling and agent-process work.
+  A ticket that changes nothing a customer, cleaner, admin, operator or API consumer would notice
+  clears Gate 7 with no changelog edit.
 
 ## Keeping it honest
 - Docs describe what's **decided/built now**, not aspirations (aspirations are stories/tickets).

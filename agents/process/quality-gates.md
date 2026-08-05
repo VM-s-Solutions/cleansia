@@ -172,8 +172,17 @@ red before this change".
   owner. The agents do **not** regenerate clients.
 - If a schema changed, the ticket carries a `MANUAL_STEP: ef-migration` flag. The agents do **not**
   run migrations.
-- If shipped behavior changed, the Docs agent updates the relevant `docs/**` page and the changelog
-  in the same ticket (or a linked docs ticket).
+- If shipped behavior changed, the Docs agent updates the relevant `docs/**` page and the changelog —
+  [`CHANGELOG.md`](../../CHANGELOG.md) at the **repository root** — in the same ticket (or a linked
+  docs ticket).
+- **The changelog leg is conditional and the condition is written down.** A changelog entry is owed
+  when a **customer, cleaner, admin, operator or API consumer** would notice the change; `CHANGELOG.md`
+  §"What does NOT get an entry" enumerates what is excluded (refactors, test-only changes, CI/tooling,
+  agent-process and backlog work, client regeneration, anything no user can reach yet). A ticket that
+  falls entirely inside those exclusions clears this gate with **no changelog edit** — but the
+  reviewer states which of the two it was, so "no entry" stays a decision rather than an omission.
+  This gate went years without a file to write to; the way it dies again is by becoming a second
+  commit log nobody reads.
 
 ### Gate 8 — Mechanical checks pass (always; this is what makes the rules real)
 Deterministic beats diligent. Before a ticket reaches `done`, the **mechanical** checks for the

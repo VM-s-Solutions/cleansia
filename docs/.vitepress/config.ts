@@ -17,6 +17,12 @@ export default defineConfig({
       { text: 'Mobile App', link: '/mobile-app/overview' },
       { text: 'API', link: '/api/authentication' },
       { text: 'Deployment', link: '/deployment/ci-cd' },
+      // The changelog is a repo-root artifact, not a page in this site, so this is an external link
+      // rather than a route. Keeping one copy is the point: a published duplicate would rot.
+      {
+        text: 'Changelog',
+        link: 'https://github.com/VM-s-Solutions/cleansia/blob/master/CHANGELOG.md',
+      },
     ],
     sidebar: {
       '/architecture/': [

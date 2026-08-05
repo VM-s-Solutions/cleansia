@@ -21,7 +21,7 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 | Bug/defect fix — or a behavior change in the Gate 6.5 classes (auth, money math, state transitions, spine) **whose AC evidence is an executable assertion** | the assigned dev + reviewer, flagged for **Gate 0.5** (verification integrity — name the test that goes red against the pre-fix code; the verifier re-runs it un-cached) |
 | Hot path, list view, paged query, new dependency, heavy UI | `optimizer` |
 | PR/diff ready for behavioral verification | `qa` |
-| Shipped behavior changed; docs/changelog stale | `docs` |
+| Shipped behavior changed; `docs/**` page or root `CHANGELOG.md` stale | `docs` |
 
 ## Sequencing rules (the PM applies these)
 

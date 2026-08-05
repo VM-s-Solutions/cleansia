@@ -50,7 +50,7 @@ decision; the charter is the *definition*.
 | **Reviewer** | `reviewer.md` | review verdicts | Gatekeeps every change against the conventions, ADRs, and AC. Runs in parallel with devs. |
 | **Security Reviewer** | `security.md` | `backlog/security` | Audits auth, ownership, PII, tenancy, idempotency, secrets, rate-limits. Gates security-touching work. |
 | **Optimizer** | `optimizer.md` | optimization reports | Hunts performance & cost: N+1s, bundle size, render churn, slow queries, allocations. |
-| **Docs** | `docs.md` | `docs/**`, changelog | Keeps the VitePress site, READMEs, and changelog in sync with shipped behavior. |
+| **Docs** | `docs.md` | `docs/**`, `CHANGELOG.md` (repo root) | Keeps the VitePress site, READMEs, and changelog in sync with shipped behavior. |
 
 ### Why one charter per role (and not `backend-1`, `backend-2`)
 

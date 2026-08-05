@@ -187,8 +187,7 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
     {
         private static readonly DateTime Now = DateTime.UtcNow;
 
-        private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-            .WithImage("postgres:latest")
+        private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:latest")
             .WithDatabase("plandb")
             .WithUsername("planuser")
             .WithPassword("planpass")

@@ -87,6 +87,8 @@ public class RedactionUnmaskedFreeTextGuardTests
         "PreferredLanguageCode",
         "PreferredLanguageName",
         "LanguageCode",       // ISO code, e.g. "cs"
+        // RegisterDevice.Validator admits only "android" or "ios"; nothing else reaches the handler.
+        "Platform",
         "PaymentIntentId",    // Stripe machine id, e.g. "pi_3Abc…"
         // Opaque Stripe id, not narrative text — so it is out of scope for THIS guard. That these
         // responses hand a StripeCustomerId to the client at all is a separate S4 question about the

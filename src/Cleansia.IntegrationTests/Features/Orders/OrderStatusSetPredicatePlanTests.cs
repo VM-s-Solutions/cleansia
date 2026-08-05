@@ -216,8 +216,7 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
 
         private static readonly DateTime WindowStart = new(2026, 6, 15, 10, 0, 0, DateTimeKind.Utc);
 
-        private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-            .WithImage("postgres:latest")
+        private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:latest")
             .WithDatabase("orderplandb")
             .WithUsername("planuser")
             .WithPassword("planpass")

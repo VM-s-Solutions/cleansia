@@ -58,29 +58,32 @@ ADR-0033 addresses (1). ADR-0032 addresses (2). They compose on the same hunk an
   failure shape as D3's overclaim, moved from *scope* to *severity*: a step that reports and never
   reddens has told a reader nothing, exactly as a green gate asserting two sentences had.
 
-### What routes to the Architect (ADR-0033, accepted 2026-08-05) — **ACCEPTED AND NOT IN FORCE**
+### What routes to the Architect (ADR-0033, accepted 2026-08-05) — **IN FORCE from 2026-08-05**
 
-> ⛔ **Read this before applying anything in this section.** ADR-0033 named Block D (the reviewer-check)
-> as **its own condition of acceptance** and was accepted with that condition **unmet**. Re-verified by
-> the independent lead pass, 2026-08-05:
+> ✅ **The condition of acceptance is met.** ADR-0033 named Block D — the reviewer-check — as its own
+> condition of acceptance and was accepted with that condition unmet; it sat at `(guidance — no gate)`
+> for the whole of its acceptance. **T-0549 / T-0550 / T-0551 landed it, 2026-08-05.** State now:
 >
 > | | State |
 > |---|---|
-> | `.claude/agents/reviewer.md:105-110` — what a **reviewer** runs | still the **superseded** axis, verbatim |
-> | `agents/knowledge/conventions.md:122-127` — what an **author** applies | still the **superseded** axis |
-> | ADR-0033 Block C in `conventions.md` | **absent** (the next section is `## Naming (canonical)`) |
-> | FT-11 / FT-12 / FT-8 as `INDEX.md` rows | **filed 2026-08-05** — `T-0549` / `T-0550` / `T-0551`; none landed |
+> | `.claude/agents/reviewer.md` step 5 — what a **reviewer** runs | **reviewer-check 5 "Catalog-edit routing"** — ADR-0033 Block D verbatim. The superseded axis is gone from the page (T-0549 AC1) |
+> | `agents/process/quality-gates.md` Gate 1 | carries the one-line pointer to reviewer-check 5, so the check is reachable from the gate list and not only from the charter (T-0549 AC2) |
+> | `agents/process/enforcement.md` §"Enforcement tiers" | names reviewer-check 5 by id under `T3-HUMAN`, with what it governs and what falls if it is deleted (T-0550) |
+> | `agents/knowledge/conventions.md` — what an **author** applies | the superseded numbered list is **replaced**, not appended to; §"Who ratifies a catalog edit — the routing test" carries the three tests + the floor + `**Enforced by:**` (T-0549 AC3 + T-0551) |
+> | ADR-0033 itself | carries a dated **record-only closure** recording the landing and correcting the false *"does not reverse"* header claim |
 >
-> By ADR-0032 D2's own line (*"T3-HUMAN requires a **named** checklist item"*), **ADR-0033 is
-> `(guidance — no gate)` today.** Its three tests bind nothing. **FT-11 is not a follow-up — it is the
-> remainder of the decision.** Until it lands, `conventions.md:125-127` is the operative routing rule.
+> **Tier: `T3-HUMAN`, and that is the honest ceiling.** Nothing in ADR-0033 is mechanically enforced and
+> nothing claims to be — `check-consistency.mjs` is in zero `.github/` workflows and `frontend-ci.yml`
+> runs lint with `continue-on-error: true`, so no mechanism this rule could reach can fail a build. What
+> makes it a tier at all is that the checklist item is **named** and greppable (`reviewer-check 5`).
 >
-> ⛔ **And the floor's own predicate is still undefined.** The first attempt to define *"governs"* was
-> `rejected` by its panel on 2026-08-05 (see **L1** in Open items). So even once T-0549 lands, test 2
-> routes on the reviewer's **paraphrase** of a general sentence. **`ab077504` is what that costs**: a
-> harvest that deleted a named canonical form, deleted a shipped Swift file and rewrote a committed test
-> suite went inline under `owner: qa`, one day after this ADR was accepted, and **the accepted floor
-> already routed it** — nothing was watching.
+> ⚠️ **In force does not mean settled: the floor's own predicate is still undefined.** The first attempt
+> to define *"governs"* was `rejected` by its panel on 2026-08-05 (see **L1** in Open items), so test 2
+> still routes on the reviewer's **paraphrase** of a general sentence. `conventions.md` now says so on
+> the page, with a pointer to the open panel. **`ab077504` is what the gap costs**: a harvest that
+> deleted a named canonical form, deleted a shipped Swift file and rewrote a committed test suite went
+> inline under `owner: qa`, one day after this ADR was accepted — and note *that* case needed no new
+> definition. **The accepted floor already routed it; nothing was watching. From today something is.**
 
 Three ordered tests; first to fire routes: **(1)** does it put shipped code in violation? **(2)** does
 it *narrow* latitude the catalog previously left open? **(3)** does it make a *prescriptive* claim
@@ -144,10 +147,14 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    ADR-0032's second `T1-CI` condition — so a mechanizable rule owes its gate in the same ticket, and a
    mechanism that cannot fail a build is `T2-ADVISORY` however it is labelled.
 
-**Enforced by:** reviewer-check **5 "Catalog-edit routing"** (`.claude/agents/reviewer.md`) —
-**T3-HUMAN**. ⚠️ **Not yet landed: FT-11.** Until it does, the reviewer's charter still teaches the
-superseded axis, so **FT-8 (the `conventions.md` text) is sequenced behind FT-11** and
-`conventions.md:125-127` remains what a reviewer actually applies.
+**Enforced by:** reviewer-check **5 "Catalog-edit routing"** (`.claude/agents/reviewer.md` step 5) —
+**T3-HUMAN**, landed 2026-08-05 (T-0549). Recorded by id in `process/enforcement.md` (T-0550) so a
+charter edit that drops it reads as a regression against an accepted ADR rather than as tidying, and
+pointed at from `quality-gates.md` Gate 1 so a reviewer arriving with an `agents/knowledge/*.md` diff
+reaches it without knowing the charter. **The author's page and the reviewer's page now teach one axis
+and it is ADR-0033's** — verify with
+`grep -rn 'one way to do X' .claude/agents/ agents/knowledge/conventions.md` (expected: no hit that
+*instructs* routing).
 
 ---
 
@@ -176,18 +183,27 @@ inconsistent alternative. So "does it forbid something?" fires on everything. AD
 repair: **adding** a canonical form where **no sentence governed the subject at any level** is inline;
 **carving an exception out of a sentence that did** is a law.
 
-**The floor REVERSES `conventions.md:125`'s first limb, and ADR-0033 says it does not (finding L3).**
-The rule ADR-0033 refines reads *"a **new canonical archetype** **or** anything that changes 'the one way
-to do X' … → **Architect** call"* — a **disjunction**. The floor routes a first statement of a canonical
-form **inline**, and a first statement of a canonical form *is* a new canonical archetype. ADR-0033's own
-retro row 7 proves it: T-0379's `format: date` row routes inline here and was routed to the Architect in
-fact, on the ground that it *"defines the one way for date-only wire on iOS"*. The ADR argues past this by
-quoting only the second limb. **Reversing limb 1 is a defensible choice — the defect is that Block C does
-not implement it**: it says *"insert **after** the existing numbered list"* and never amends `:122-127`.
-Applied as specified, `conventions.md` would instruct **both** *"new canonical archetype → Architect"* and
-*"first statement → inline"* on one page. That is exactly F5's disease — a page carrying two incompatible
-forms — installed by the edit whose purpose is to stop authority drift. **FT-8 must not be applied as
-specified.**
+**The floor REVERSES the old first limb — RESOLVED 2026-08-05 by replacing the list, not appending to it
+(finding L3).** The rule ADR-0033 refines read *"a **new canonical archetype** **or** anything that
+changes 'the one way to do X' … → **Architect** call"* — a **disjunction**. The floor routes a first
+statement of a canonical form **inline**, and a first statement of a canonical form *is* a new canonical
+archetype. ADR-0033's own retro row 7 proves it: T-0379's `format: date` row routes inline here and was
+routed to the Architect in fact, on the ground that it *"defines the one way for date-only wire on iOS"*.
+The ADR argued past this by quoting only the second limb, and its Block C said *"insert **after** the
+existing numbered list"* — which, applied literally, would have left the reversed limb standing and put
+two incompatible routing instructions on one page: F5's disease installed by the edit whose purpose is to
+stop authority drift.
+
+**How it was resolved** (T-0549 AC3 + T-0551, applying the T-0553 panel's severed Block C):
+
+| | |
+|---|---|
+| Operation | **REPLACE** the numbered list, not append beside it. The old bullets are gone; nothing on the page instructs the old axis |
+| Limb 1 (*new canonical archetype → Architect*) | **reversed, and the page says so** — a standing callout tells a reader who remembers the old wording exactly what changed and that *"what changed is the price, not the permission"* |
+| Limb 2 (*changes "the one way" → Architect*) | **survives** as test 2 (narrowing a governing sentence) |
+| The **third category** neither old bullet described | named: old bullet 1 scoped the inline lane to *"a **small** clarification/addition to an **existing** rule"*, which excludes the first statement the floor sends inline. Test 4 now says the inline lane covers **both** — which also repairs ADR-0033 D1 test 4's self-miscitation (*"unchanged from step 2, first bullet"* — it was not) |
+| Step 3 (supersession → `consistency.md` deviation) | **untouched**, and the harvest action was kept **inside** its branch (CH-G): a developer whose edit routes to the Architect no longer arrives at an unconditional *"write it into the catalog"* |
+| ADR-0033's *"does not reverse"* header claim | **corrected on the ADR**, via a dated record-only closure — meaning, not digits, so not the erratum lane (`adr/README.md:16-29`). The denial is **not** propagated into the developer-facing page |
 
 **Where the floor's first wording broke, and why the current one is different (T-0471, 2026-08-05).**
 The draft floor turned on *"a form the catalog previously **permitted**"*. The catalog does not permit;
@@ -359,18 +375,20 @@ the number to re-measure, not to trust:
 
 | Measure | Count |
 |---|---|
-| `Enforced by:` in `agents/knowledge/` — **strict** form (colon straight after `by`) | **7** — `patterns-backend.md:638`, `:729`; `patterns-frontend.md:462`, **`:546`**; `consistency.md:332`, **`:416`**; + the template at `conventions.md:141` |
-| …counting the two `roles/` **variant** spellings that omit the colon | **9** — `+ roles/post-commit-effects.md:32` (*"**Enforced by** (ADR-0032 D2 …"*), `roles/order-availability.md:130` (*"**Enforced by `TC-TAKE-ONE-ERROR`**"*). **The label is not yet uniform enough to grep one way — know this before FT-4 counts anything.** |
-| `**Enforced by:**` in `patterns-mobile.md` — the ~22-law file ADR-0032's Block A and FT-4 target | **0** (the load-bearing number; re-confirmed by the lead pass 2026-08-05) |
+| `Enforced by:` in `agents/knowledge/` — **strict** form (colon straight after `by`) | **9** *(re-measured 2026-08-05 at the close of T-0551; was **7** at the lead pass)* — `consistency.md:343`, `:436`; `patterns-frontend.md:462`, `:579`; `patterns-backend.md:638`, `:729`, `:1229`; the template at `conventions.md:141`; **+ the one this lane added: `conventions.md` §"Who ratifies a catalog edit"**. The lead pass's line numbers have all drifted; of the growth from 7, **one is another lane** (`patterns-backend.md:1229` — T-0548's `T1-CI` image-validator entry) and **one is this lane**. The practice is spreading, which is the point of ADR-0032 |
+| …counting the `roles/` **variant** spellings that omit the colon | **+2** — `roles/post-commit-effects.md:32` (*"**Enforced by** (ADR-0032 D2 …"*), `roles/order-availability.md:130` (*"**Enforced by `TC-TAKE-ONE-ERROR`**"*). **The label is still not uniform enough to grep one way — know this before FT-4 counts anything.** |
+| `**Enforced by:**` in `patterns-mobile.md` — the ~22-law file ADR-0032's Block A and FT-4 target | **0** — **unchanged, and deliberately so.** This lane added the label to exactly one entry: the governance rule itself, which is the rule discharging its own rule. Nothing here implies the label belongs on the iOS corpus yet — that is **FT-4**, a labelling sweep in the iOS lane, and it still has nothing to build on |
 | Catalog entries added to `patterns-mobile.md` *after* ADR-0032 was accepted, carrying no enforcer + tier | at least **1** — `:265-276` (T-0473), which constrains call sites (*"hoist it one level further"*) and forbids a form (*"not a whole-file `contains`"*) |
-| Pages that still teach the **superseded** routing axis | **2** — `.claude/agents/reviewer.md:105-110` (the reviewer's) **and `agents/knowledge/conventions.md:122-127` (the author's)**. The T-0471 round measured only the first; the lead pass found the second. **FT-11's scope must cover both** |
+| Pages that still teach the **superseded** routing axis | **0** *(was 2)* — `.claude/agents/reviewer.md` step 5 carries reviewer-check 5 (T-0549 AC1); `agents/knowledge/conventions.md`'s numbered list was **replaced** (T-0549 AC3 + T-0551). Re-verify with `grep -rn 'one way to do X' .claude/agents/ agents/knowledge/conventions.md` |
 
 The T-0473 entry's ticket self-classified as *"a testability clarification, not a redefinition"*
 (`T-0473-…md:337-339`) — the same self-classification as T-0274 (`:133`), two sprints later, on the
-same failure mode. **That is the empirical case for FT-11:** a governance rule whose only home is a
-page the checker does not read is folklore with a citation. The reviewer's charter
-(`.claude/agents/reviewer.md:105-110`) is what a reviewer actually runs, and it still teaches the axis
-ADR-0033 replaces.
+same failure mode. **That was the empirical case for FT-11**, and it is now answered: a governance rule
+whose only home is a page the checker does not read is folklore with a citation, so the rule was moved
+onto the page the reviewer actually runs. **What that does not buy is detection strength.** The check is
+`T3-HUMAN`; it fires only when a reviewer reads the diff and remembers to run it. The measurement worth
+repeating next sprint is not *"does the check exist"* — it does — but *"did the next `agents/knowledge/`
+hunk after 2026-08-05 arrive with a recorded catalog sweep and an enforcer label?"*
 
 ---
 
@@ -381,13 +399,14 @@ ADR-0033 replaces.
 | ~~The floor on ADR-0033's test 2 needs one adversarial round~~ — **CLOSED 2026-08-05** (T-0471): challenged, amended M1–M6, `accepted` | architect panel | ADR-0033 §Verdict · `adr/challenges/0033-floor.md` |
 | ~~AC1 — the round needs a lead distinct from the challenger~~ — **CLOSED 2026-08-05**: third instance ran it; ADR-0033 §"Independent lead adjudication" | architect | ADR-0033, appended section |
 | 🔴 **L1 — M1 defines *silence* but never defines *governs*. STILL OPEN; the first repair was REJECTED 2026-08-05.** The conflicting-instance test (`adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`, now `rejected`) fell on a defect in its own validation table: it **states an existential** and **scores six of ten rows with a compose test**, so read as stated it flips ADR-0033's retro row 2 (T-0441 `inline` ✅) to *Architect*, and read as scored its only new catch (T-0449) is a **false positive**. Two supporting falsifications from diffs: the T-0449 artifact is excluded by `ProfileViewModel.kt:179-180` + `ProfileViewModelTest.kt:635`, and the corpus greps the **post-edit** tree so a **deleted** governing sentence is invisible (row 8 / `ab077504`). **A second author round is owed on T-0553 AC2** — new author instance, corpus rebuilt per **R-6**. The bar the repair must clear is **R-1…R-7** in that draft's §Verdict; do not start from a blank page. | architect panel (round 2 owed) | the rejected draft §Verdict · ADR-0033 §Ruling 1 |
-| 🟠 **L2 — FT-11 is the remainder of the decision. TICKETS NOW FILED (T-0549…T-0553); the rule still binds nothing.** `T-0549` (FT-11, scope widened to **both** pages) `ready` · `T-0550` (FT-12) `ready` · `T-0551` (FT-8) `blocked` on purpose · `T-0552` (F1 erratum) `ready` · `T-0553` (this panel) `in_progress`. **Re-verified at HEAD 2026-08-05: `.claude/agents/reviewer.md:105-110` and `conventions.md:122-127` BOTH still teach the superseded axis**, so ADR-0033 remains `(guidance — no gate)`. **T-0549 AC1/AC2 were never blocked by this panel and should not wait for it** — only AC3 (`conventions.md`) does | PM → architect + docs | `INDEX.md` §"The ADR-0033 remainder" |
+| 🔴 **L5 — NEW, found 2026-08-05 at the close of T-0549: the superseded axis survives on FIVE MORE charter pages, and this is the third time the site count has grown.** T-0471 measured one page (`reviewer.md`). The lead pass found a second (`conventions.md`) and widened FT-11 to both. Running FT-11's **own** evidence grep — `redefines "the one way to do X"` over `.claude/agents/` — after the fix returns **5 hits, none on the reviewer's page**: `backend.md:80`, `frontend.md:69`, `android.md:69`, `ios.md:62` (each pairs *"fold a **small clarification**"* with *"redefining 'the one way to do X' is an Architect call"* — old bullet 1's scope + the **lexical** trigger D1 replaced with the semantic narrowing test), and **`architect.md:86`**, which carries the disjunction whole: *"a **new canonical archetype**, or a change that affects existing call sites"* — **limb 1, the limb the floor reverses, in the charter of the role the floor routes to.** T-0549's scope was explicitly one charter, so none were touched. **The pattern, not the count, is the finding:** each round measures the sites it happens to think of, declares the axis retired, and a later grep finds more. **The fix is a single-command site list, not another round of recall** — `grep -rln 'one way to do X' .claude/agents/ agents/knowledge/ agents/process/` is the whole inventory, and it should be run *before* the next round declares anything retired | PM → architect (one XS ticket, five one-line hunks, all charter edits) | this pass · T-0549 AC1 evidence line |
+| 🟢 **L2 — CLOSED 2026-08-05. FT-11 landed and ADR-0033 is in force.** `T-0549` (both pages + Gate 1) · `T-0550` (FT-12, the check id in `enforcement.md`) · `T-0551` (FT-8, the severed Block C) all applied in one serialized pass over the shared `conventions.md` section. `T-0552` (F1 erratum) is **still open** — a different lane. **What is closed is the enforcer's existence, not its strength**: reviewer-check 5 is `T3-HUMAN`, so the next measurement is whether the first post-2026-08-05 `agents/knowledge/` hunk arrives with a recorded catalog sweep and an enforcer label | architect + docs | ADR-0033 §"Record-only closure" |
 | 🔴 **G1 — a catalog harvest deleted a named canonical form INLINE, under `owner: qa`, with no Architect (T-0527, `ab077504` `@@ -1272,9 +1315,9 @@`).** It removed the sentence naming `CancellationFeePreview` + the client-side tier ladder as the shipped form, deleted `CancellationFeePreview.swift`, deleted `CancelOrderSheet.kt`'s ladder and **rewrote a committed test suite that pinned the old schedule**. Under the **accepted** floor this fires test 2's *decidable* disjunct — *"replaces it, or forbids a form it named"* — the half `challenges/0033-floor.md` CH-1 explicitly cleared as checkable. **No new definition is needed to catch it.** **Recorded, not re-opened** (T-0274/T-0473 precedent — the substance is right, only the routing was not taken); it post-dates ADR-0033's acceptance by a day, **which is the point: this is the sharpest evidence in the record for L2** | PM (record) → the L2 lane | corpus `ab077504` · challenge CH-A |
 | 🟡 **G3 — `patterns-mobile.md` §"Shared UI & theme" (`:247`–`:455`) hosts four iOS entries under an Android-worded preamble** (`:249-253`, ending *"never duplicate a `:core` component"*). `4d8b3978` inserted the first iOS blockquote **immediately below** that line, and T-0473 / T-0451 / T-0449 followed. The iOS section proper does not start until `:569`. So one sentence has two defensible scopes, in the file the routing test is applied to most — and **CH-C turns on exactly that**: read as the section preamble it rules `ProfileHubContent.swift:298` (`LogoutRow`) a flat defect, while the T-0432 entry tolerates it as a *"remaining convergence target"* with `(gate pending: FT-5)`. **Whatever replaces D1, this ambiguity should not survive it**: a heading, or one clause of scope, retires it | PM → ios lane (structural catalog edit) | challenge CH-C, G3 |
-| 🟢 **L3 — SUSTAINED and SEVERED 2026-08-05. It does not depend on L1 and must not wait for it.** Every fact re-verified in tree by two independent instances: `conventions.md:120-130` are items 1–3; `:122-124` scopes the inline lane to *"a **small** clarification/addition to an **existing** rule"* (**bullet 1 is wrong too** — the floor opens a third category neither bullet describes); `:125-127` is the disjunction whose first limb the floor reverses; `:128-130` survives untouched; `:132-134` is the "earns its place" bar. **REPLACE `:120-130` in full — do not append.** **ADR-0033 D1 test 4 mis-cites itself** as *"unchanged from step 2, first bullet"*, which is why a good-faith editor would append. The *"does not reverse"* header claim is confirmed false and **does not qualify for the erratum lane** (`adr/README.md:16-26` — meaning, not digits): a dated appended section on ADR-0033. **Carried to its own small ADR** with three changes ruled by the panel: (a) the D1 *"what governs means"* paragraph is **EXCISED** and **accepted ADR-0033's floor wording stands verbatim** in its place; (b) a visible pointer that *"governs"* is under repair; (c) **CH-G fixed** — step 3's *"write it into the catalog"* goes back **inside** its branch, or a developer whose edit routes still arrives at it (L3's disease one nesting level down). **The Block D reviewer-side addendum is HELD until L1 lands** — *"name the artifact"* is empty while "artifact ruled differently" has two readings | architect (new author round) | the rejected draft §D4 / §Block C′ · T-0551 |
-| **FT-11 — land the named enforcer (Block D):** reviewer-check 5 "Catalog-edit routing" in `.claude/agents/reviewer.md` + a Gate 1 pointer. **Blocks FT-8.** Until it lands, ADR-0033 is `(guidance — no gate)` in fact | architect + docs | ADR-0033 §Block D / §Follow-ups |
-| **FT-12 — record the check id in `enforcement.md`** so dropping reviewer-check 5 is a visible regression | architect + docs | ADR-0033 §Follow-ups |
-| **FT-8 — Block C into `conventions.md`** (`T-0551`) — **blocked twice**: behind FT-11, and behind L3's ruling on `:122-127`. **L3's ruling now exists (2026-08-05) and severs it from L1** — apply the corrected block *minus* the rejected D1 paragraph, with ADR-0033's accepted floor wording verbatim in its place. **It no longer waits on the "governs" panel** | architect + docs | ADR-0033 §Block C · L3 row above |
+| 🟢 **L3 — CLOSED 2026-08-05, applied as ruled (T-0549 AC3 + T-0551).** The list was **replaced, not appended to**; limb 1's reversal is stated in the developer-facing page instead of denied in the ADR header; bullet 1's *"small clarification to an **existing** rule"* scope and the third category it excluded are both repaired in test 4; `:128-130` (supersession) survived untouched; **CH-G fixed** — the harvest action is back **inside** its branch. The D1 *"what governs means"* paragraph was **EXCISED** and **accepted ADR-0033's floor wording stands verbatim** in its place (a deletion + a quotation, not authorship), with a visible pointer that *"governs"* is under repair. **Two things stayed held, on purpose:** the **Block D reviewer-side addendum** (*"if you say a sentence governs, quote it and name the artifact"*) — empty until "artifact ruled differently" has one reading — and any definition of *"governs"* itself. The header correction rode a **dated record-only closure** on ADR-0033, not the erratum lane (`adr/README.md:16-29` — meaning, not digits). **No ADR number was allocated**: what the panel called "its own small ADR" landed as an application of already-accepted ADR-0033 content plus two deletions, so there was no new decision to number — if a later reader disagrees, the missing artifact is an ADR, not a re-edit | architect (closed) · PM (number call, if any) | the rejected draft §D4 / §Block C′ · T-0551 · ADR-0033 §"Record-only closure" |
+| ~~**FT-11 — land the named enforcer (Block D)**~~ — **DONE 2026-08-05 (T-0549).** reviewer-check 5 in `.claude/agents/reviewer.md` step 5 (Block D verbatim) + the Gate 1 pointer + the author's page. **This was the one charter edit in the lane; it changes how every future review behaves** | closed | ADR-0033 §Block D / §"Record-only closure" |
+| ~~**FT-12 — record the check id in `enforcement.md`**~~ — **DONE 2026-08-05 (T-0550).** Named by id under the `T3-HUMAN` bullet, with its home file, what it governs, and the sentence that makes deleting it a regression rather than a cleanup | closed | ADR-0033 §Follow-ups |
+| ~~**FT-8 — Block C into `conventions.md`**~~ — **DONE 2026-08-05 (T-0551)**, as the **severed** block: the rejected D1 definition excised, ADR-0033's accepted floor wording verbatim in its place, the numbered list replaced rather than appended to, CH-G fixed, the Block D addendum held | closed | ADR-0033 §Block C · L3 row above |
 | **F1 — ADR-0032 carries TWO stale statements**, not one: `:23-25` (0031 *is* on `master`, `acf2f0bc`/PR #175) **and `:14`** (*"ADR-0033 is `proposed`, not accepted"*, made stale by the T-0471 round itself). `accepted` ⇒ one **signed erratum** covering both (`adr/README.md:16-26`) | PM → architect | ADR-0032 `:14`, `:23-25` |
 | **F2 — ADR-0032's Block A was never applied**; `**Enforced by:**` has 0 instances in `patterns-mobile.md`, so FT-4 has nothing to build on | PM → ios lane | ADR-0032 §Block A |
 | **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier. **Its test-2 question is now closed on a stronger ground than the lead pass had:** the candidate governing sentence `:520-522` **did not exist** when the entry landed (`2012b014` 2026-08-02 vs `0e4ede1b` 2026-08-01), so nothing governed the subject and the entry **routes inline** — the suspected mis-routing is not merely unestablished, it is refuted. What stands is the **missing enforcer + tier** and the **unrun test-1 sweep** (14 in-tree guard tests read source as a fixture and none was opened for the withdrawn shape). **Recorded, not re-opened** — T-0274 precedent | PM | ADR-0033 §Ruling 1, Case β · corpus `2012b014` |
@@ -499,3 +518,20 @@ ADR-0033 replaces.
   **The bar for the next author is R-1…R-7** in the rejected draft's §Verdict. **A pattern named rather
   than repeated: three rounds running have declared a limitation and then printed an undiscounted headline
   number** — R-6 makes discounting a condition of reporting a score.
+- **2026-08-05 (T-0549 → T-0550 → T-0551) — the enforcement lands; ADR-0033 goes from `(guidance — no
+  gate)` to `T3-HUMAN` in force.** One architect, one serialized pass over the shared `conventions.md`
+  section, no panel: AC1/AC2/FT-12 apply text an accepted ADR already ratified, and the `conventions.md`
+  repair applies the T-0553 panel's severance ruling. **Nothing from the rejected "governs" draft was
+  carried in.** Four judgment calls worth keeping in the record because they were not transcription:
+  (1) the numbered list was **replaced**, and the **reviewer's page was fixed first** (the ADR's own M3
+  order), so the window in which the two pages disagreed ran in the safe direction and never carried two
+  axes on one page; (2) the *"earns its place"* bar was left **above** the new `###` subsections rather
+  than following them as Block C′'s letter implies — a general sentence parked under a narrower heading
+  acquires that heading's scope, which is finding **G3**'s live disease and would have been indefensible
+  to install in this of all edits; (3) ADR-0033's false *"does not reverse"* header claim was corrected
+  by a **dated record-only closure**, and the denial was **not** propagated into the developer-facing
+  page; (4) **no ADR number was allocated** — after the severance what remained was accepted ADR-0033's
+  own content plus two deletions. **The honest limit of all of it: this is a human-tier enforcer and it
+  cannot go red.** `check-consistency.mjs` is in zero workflows and the frontend lint step is
+  `continue-on-error: true`, so no mechanical option existed to reach for. What the lane bought is a
+  **named, greppable** standing item where there had been an unnamed one teaching the superseded rule.

@@ -103,11 +103,28 @@ author.
    feasible, the ticket says so explicitly with the reason. A fix without a guard invites the bug back.
 
 5. If you find a **security** concern, mark it and tell the PM to invoke `security`. If a **design**
-   concern, tell the PM to invoke `architect`. If the change **edits the knowledge catalog**
-   (`patterns-*.md` / `consistency.md`) to harvest a newly-discovered pattern (per `conventions.md` →
-   "Harvest good patterns back into the catalog"), sanity-check it: a small clarification/example is
-   fine to pass with the change; anything that redefines "the one way to do X" is an **Architect** call
-   — flag it for the PM, don't approve the standard-change inline.
+   concern, tell the PM to invoke `architect`.
+
+   **Reviewer-check 5 — "Catalog-edit routing" (ADR-0033 · ADR-0032).** If the diff touches
+   `agents/knowledge/*.md`, run the three ordered tests; the first that fires means the ticket may not
+   ratify the edit for itself — flag it for the PM to route to the Architect. The content may be right;
+   the question is who ratifies it.
+   1. **Does it put code that exists today in violation?** The ticket names the sweep it ran (a grep, a
+      file list). "No existing violations" with no sweep is not an answer.
+   2. **Does it narrow?** A sentence already governs this subject at any level of generality, and the
+      entry carves an exception out of it, replaces it, or forbids a form it named. Semantic, not
+      lexical — "the canonical form is X" narrows as much as "the ONE way is X". **If the author claims
+      the floor (first statement, catalog silent), read the catalog search they recorded; if there is
+      none, the floor is not claimed — route it.**
+   3. **Prescriptive about a stack this ticket never built and ran?** A descriptive cross-stack note
+      needs a file:line of that stack's code **in the entry** and must impose no obligation.
+   4. **The price of a law (ADR-0032).** An entry constraining call sites carries
+      `**Enforced by:** <named enforcer> — <tier token>`. A floor-qualifying entry has a zero baseline,
+      so a mechanizable rule owes `T1-CI`. **A tier naming a mechanism that cannot fail a build is
+      `T2-ADVISORY`** — `check-consistency.mjs` is in zero `.github/` workflows; `frontend-ci.yml` runs
+      lint with `continue-on-error: true`. **Open the named enforcer and read what it asserts**: if the
+      sentence claims more, the sentence narrows (stating the residual) or the enforcer widens.
+   Nothing fires ⇒ inline is correct; sanity-check the content and say so in your verdict.
 6. Write a verdict: `APPROVED` or `CHANGES REQUESTED` with the numbered list. Approve only when every
    applicable gate passes.
 

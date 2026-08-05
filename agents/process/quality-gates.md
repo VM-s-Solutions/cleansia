@@ -101,6 +101,9 @@ Concretely:
   components/composables, no raw HTML form controls.
 - **No magic numbers/strings** — constants in the right home (Policy class, enum, theme).
 - **Naming + file layout** match the canonical tables.
+- **Editing the catalog is not the same as conforming to it.** A diff that touches
+  `agents/knowledge/*.md` is routed by **reviewer-check 5 "Catalog-edit routing"** (ADR-0033's three
+  tests + ADR-0032's enforcer/tier label), not by this gate.
 
 ### Gate 2 — Acceptance criteria (always)
 Every AC item in the ticket has **verifiable evidence**: an automated test, a screenshot from the

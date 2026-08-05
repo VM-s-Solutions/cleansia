@@ -1084,3 +1084,71 @@ direction is right, M2 is unqualifiedly sound, and M1 is a real repair with a na
 L3 are not challenges to the accepted text — they are the next decision, and they belong to a panel this
 lead is not entitled to be the author of.** No escalation to the owner: nothing here carries lasting
 business impact.
+
+---
+
+## Record-only closure — the condition of acceptance is met, and one header claim is corrected
+
+> **Appended 2026-08-05 by the architect applying T-0549 / T-0550 / T-0551.** Form 1 of
+> `adr/README.md:9-12` (a dated, attributed, record-only appended section). **No decision content
+> changes** — not the chosen option, not a threshold, not the scope, not an alternative's disposition,
+> not the rationale. The body above is not rewritten. This section records what landed and corrects one
+> claim the ADR makes *about itself*, which the erratum lane may not carry
+> (`adr/README.md:16-29` — *"the erratum lane is for digits, not meaning"*).
+
+**1. Blocks C and D are applied. ADR-0033 is IN FORCE.** §Consequences' present-tense claim
+(*"Block D **moves** the check out of this ADR and into the reviewer's own numbered list"*) was **false
+from acceptance until today** and is **true from this date**:
+
+| Block | Landed as | Where |
+|---|---|---|
+| **D** — reviewer-check 5 "Catalog-edit routing" | **T-0549 AC1** | `.claude/agents/reviewer.md` step 5 — Block D's text verbatim; the superseded axis it replaced no longer appears on that page |
+| **D** — the Gate 1 pointer | **T-0549 AC2** | `agents/process/quality-gates.md` Gate 1, last bullet — verbatim from §Block D `:399-403` |
+| **FT-12** — the check id on the enforcement side | **T-0550** | `agents/process/enforcement.md` §"Enforcement tiers", the `T3-HUMAN` bullet |
+| **C** — the author-facing catalog text | **T-0549 AC3 + T-0551** | `agents/knowledge/conventions.md` §"Harvest good patterns back into the catalog" — **as severed by the T-0553 panel**, see (3) |
+
+**2. The header's "does not reverse" claim is FALSE as to limb 1 of the rule it refines.** The
+**Refines:** line (`:14-17`) says this ADR *"does not reverse"* `conventions.md` §"Harvest good patterns
+back into the catalog". That rule was a **disjunction** — *"a **new canonical archetype** **or**
+anything that changes 'the one way to do X' … → **Architect** call"* — and the floor routes a first
+statement of a canonical form **inline**. A first statement of a canonical form *is* a new canonical
+archetype. This ADR's **own retro row 7** is the proof: T-0379's `format: date` row routes inline here
+and was routed to the Architect in fact, *"on the ground that it defines the one way for date-only wire
+on iOS"*. Established by the independent lead pass as finding **L3** and **re-verified in tree by two
+further instances** in the T-0553 panel (2026-08-05).
+
+**Reversing limb 1 is the decision this ADR made, argued and evidenced; only the claim not to have made
+it is wrong.** The reversal is now stated plainly on the page a developer actually reads
+(`conventions.md` §"Who ratifies a catalog edit"), not denied in an ADR header. Two related record
+corrections from the same panel:
+
+- **D1 test 4 mis-cites itself** as *"unchanged from `conventions.md` step 2, first bullet"*. It is not:
+  that bullet scoped the inline lane to *"a **small** clarification/addition to an **existing** rule"*,
+  and the floor sends inline a **first statement where no rule exists** — a third category neither of
+  the old bullets described. This is why a good-faith editor reading Block C would have **appended**.
+- **Block C's stated insertion point (`:294-295`, *"Insert after the existing numbered list"*) is
+  superseded.** Applied literally it would have left the reversed limb standing and put two
+  incompatible routing instructions on one page — finding **L3**, installed by the very edit meant to
+  stop authority drift. The applied operation **replaced** that list.
+
+**3. What was applied is the SEVERED Block C, not Block C as written here.** The T-0553 panel
+(five instances, author ≠ challenger ≠ lead) rejected a proposed definition of *"governs"* and, in the
+same ruling, **sustained and severed** the Block C correction as independent of it. Applied text =
+Block C′'s skeleton with **the rejected definition paragraph excised and this ADR's own accepted floor
+wording standing verbatim in its place** — a deletion and a quotation, not new authorship. Also held
+back, deliberately, and **not** applied:
+
+- the **reviewer's firing-side burden** (*"if you say a sentence governs, quote it and name the
+  artifact"*) — sound, and empty until *"artifact ruled differently"* has one reading. It ships with
+  the repair, not before it.
+- any definition of **"governs"**. Test 2 still routes on the reviewer's paraphrase of a general
+  sentence. `conventions.md` now says so out loud and cites the open panel; an undefined term in an
+  accepted rule is survivable, an undefined term dressed as a definition is what that panel rejected.
+
+**4. Tier, unchanged and stated plainly.** Reviewer-check 5 is **T3-HUMAN**. Nothing in this ADR is
+mechanically enforced and nothing here claims to be: `check-consistency.mjs` is in zero `.github/`
+workflows and `frontend-ci.yml` runs lint with `continue-on-error: true`, so no mechanism available to
+this rule can fail a build. §Consequences' *"the enforcer can rot back"* remains live — which is what
+FT-12 (T-0550) is now for.
+
+**Nothing above re-opens this ADR's status, its D1/D2 content, or any alternative's disposition.**

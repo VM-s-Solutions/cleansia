@@ -118,13 +118,15 @@ thing — a cleaner idiom, a reusable helper, a safer default that the rest of t
 benefit from — **don't keep it to yourself in one feature:**
 
 1. **Apply it** in the change you're making.
-2. **Propose it into the catalog** so it becomes the canonical form everyone follows next time:
-   - a *small* clarification/addition to an existing rule (a better example, a sharper "why", a newly
-     observed footgun) → the developer edits the relevant `patterns-*.md` / `consistency.md` entry in
-     the same change, and notes it in the ticket's `## Review` so the Reviewer sanity-checks it.
-   - a *new canonical archetype* or anything that changes "the one way to do X" across the codebase →
-     this is an **Architect** call (it may warrant an ADR and a canonicalization ticket to migrate the
-     existing call sites). Raise it via the ticket; don't unilaterally redefine the standard.
+2. **Decide who ratifies it** — run the routing test below. Most edits are yours to make; some are not.
+   - **Nothing fires → it is yours.** Edit the relevant `patterns-*.md` / `consistency.md` entry in the
+     same change so it becomes the canonical form everyone follows next time, and note it in the
+     ticket's `## Review` so the Reviewer sanity-checks it. Price it: an entry that constrains call
+     sites names its enforcer and declares a tier (see "The price of a law").
+   - **Something fires → it is not yours to ratify.** Raise it via the ticket and let the **Architect**
+     rule (it may warrant an ADR and a canonicalization ticket to migrate the existing call sites). The
+     content may well be right, and you may still be the one who ends up writing it — what you may not
+     do is ratify your own standard-change. Don't write it into the catalog inline.
 3. If the new pattern supersedes an old one, mark the old form as a deviation in
    `consistency.md` (and file the canonicalization follow-up) so the codebase converges instead of
    carrying both.
@@ -132,6 +134,85 @@ benefit from — **don't keep it to yourself in one feature:**
 The bar: a pattern earns a catalog entry when it would make **future** changes cheaper or the
 codebase **more consistent**, not because it's merely a preference. Reviewer and Architect are the
 guardrails against catalog bloat — the same "earns its place" test as any abstraction.
+
+### Who ratifies a catalog edit — the routing test (ADR-0033)
+
+Apply in order. The **first** one that fires routes the edit to the **Architect** — the content may be
+right; what you may not do is ratify it for yourself. If none fires, edit inline.
+
+1. **Does the edit put code that exists today in violation?** If any current call site becomes a
+   deviation it wasn't before, it needs a `consistency.md` deviation entry and a canonicalization
+   ticket — neither of which a developer or a reviewer can file for themselves. **Name the sweep you
+   ran** (a grep, a file list) in `## Review`; "no existing violations" with no sweep is not an answer.
+2. **Does it *narrow* latitude the catalog previously left open?** It narrows when **a catalog sentence
+   already governs this entry's subject at any level of generality** and the entry carves an exception
+   out of it, replaces it, or forbids a form it named. That is a **law**, and laws are priced (see "The
+   price of a law").
+   **Floor:** first-statement-of-a-form, where **no** sentence covers the subject at any level, is
+   **inline**. *"The catalog was silent about X" means no sentence covers X at any level of generality
+   — not that no sentence names X specifically.* A rule stated about the general case governs its
+   sub-cases; carving out a sub-case narrows it whether or not the sub-case was ever named.
+   **Claiming the floor costs one line:** name, in the ticket's `## Review`, the catalog file(s) and the
+   term you searched for a governing sentence, and what it returned — the same evidence test 1 already
+   demands for code. **A floor claimed with no search is not claimed: route it.**
+   The test is **semantic**: "the canonical form is X" narrows exactly as much as "the ONE way is X".
+   Imperative wording is a prompt to look, not the trigger.
+
+   > ⚠️ **"Governs" is not defined yet — know that before you lean on this test.** ADR-0033 defines what
+   > *silence* is; it never defines what *governs* is. So on a hard case — a general sentence that may or
+   > may not reach your subject — the verdict rests on how you and your reviewer each paraphrase that
+   > sentence, and two careful readers can differ (worked both ways on real hunks: `patterns-mobile.md:990`
+   > vs T-0349 is determinate and fires; `:520-522` vs T-0473 is not). The first repair — *"name one
+   > concrete artifact both sentences reach and rule differently"* — was drafted, challenged and
+   > **rejected** on 2026-08-05 (`agents/backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`,
+   > `rejected`); a second author round is owed on **T-0553**. Until it lands, quote the candidate
+   > sentence and record both readings in `## Review` rather than settling it by whoever quotes first.
+3. **Does it make a prescriptive claim about a stack this ticket did not build and run?** A rule for a
+   stack you never executed is not yours to declare. A **descriptive** cross-stack note is fine from any
+   ticket — see "Cross-stack claims" below.
+4. Otherwise → **inline.** This covers both a clarification inside an existing rule's scope *and* the
+   first statement of a canonical form where nothing governed the subject.
+
+> **This is a deliberate reversal, and it is the one thing to know if you remember this page from
+> before.** The old wording sent *"a new canonical archetype"* to the Architect on that ground alone.
+> It no longer does: a first statement that obliges no shipped call site and withdraws no governing
+> sentence is **yours to write**, in the moment you hold the context — which is the best moment there
+> is to write it. What changed is the price, not the permission. *(ADR-0033's header says it "does not
+> reverse" this rule; that claim is false as to this limb, and the ADR carries a dated correction
+> saying so. The page you are reading is the operative one.)*
+
+**Inline is not free.** An entry that clears the floor has a **zero baseline by construction** (test 1
+did not fire), which is exactly the second condition "The price of a law" puts on `T1-CI`. So if the
+form is mechanically expressible on its stack, the inline ticket **ships the gate with the entry**.
+Where the only mechanizer available cannot fail a build — `check-consistency.mjs` (in **zero**
+`.github/` workflows) or an ESLint rule under `frontend-ci.yml`'s `continue-on-error: true` lint step —
+the honest token is `T2-ADVISORY` and the entry says what would promote it.
+`patterns-frontend.md:462-465` is the model.
+
+*Not* the test: "is this a gap in the rules or a clarification to them?" That measures novelty relative
+to the text rather than cost imposed on the codebase, and the two come apart in both directions — a gap
+can oblige nobody, and a "clarification" that sharpens an existing rule's scope can retroactively put
+dozens of shipped call sites in violation.
+
+**Enforced by:** reviewer-check **5 "Catalog-edit routing"** (`.claude/agents/reviewer.md`) —
+**T3-HUMAN**. Scope: it fires on any diff touching `agents/knowledge/*.md`; it does not read the
+entry's content, only its routing and its enforcement label.
+
+### Cross-stack claims (ADR-0033 D2)
+
+A catalog entry may reference a stack the ticket did not build, at exactly two strengths, and the
+strength must be legible from the sentence:
+
+- **Descriptive** — permitted from any ticket. Needs a **file:line citation of that stack's code in the
+  entry itself** (not only in the ticket's `## Review`), and must impose **no** obligation on that
+  stack. Label it: *"Cross-stack note (descriptive — not a rule for X)"*.
+- **Prescriptive** — Architect, and it must come from a ticket that **built and ran** that stack (or
+  from an ADR).
+
+The line between them is the evidence: **structural claims may be verified by reading** ("every
+property on the generated model is optional"); **behavioural claims require execution** ("the same
+mutation leaves that suite green"). The operative question is *can the next reader verify this by
+reading what is in the repo?* — if that stops being true for a claim, the claim has become behavioural.
 
 ### The price of a law — a constraining entry names its enforcer and declares its tier (ADR-0032)
 

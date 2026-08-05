@@ -161,6 +161,19 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
 - **T3-HUMAN** — a **named** item in a standing checklist the Reviewer runs (Gate-DP §G of
   `ios-app-review-checklist.md`, Gate-AR, a numbered reviewer-check). An **unnamed** human enforcer
   ("someone will notice") is not T3 — it is `(guidance — no gate)`.
+  - **The named T3-HUMAN enforcers, by id.** A T3-HUMAN enforcer lives in exactly one file and nothing
+    goes red when it is deleted, so removing one has to be legible *here* as a regression against an
+    accepted ADR rather than as tidying. This list records existing enforcers; it declares no new rule.
+    - **Gate-DP §G** of `agents/backlog/ios-app-review-checklist.md` (+ reviewer-check #22) — ADR-0018's
+      design-parity gate, on every iOS screen/feature ticket.
+    - **reviewer-check 5 "Catalog-edit routing"** — `.claude/agents/reviewer.md`, step 5. Governs **any
+      diff touching `agents/knowledge/*.md`**: it runs ADR-0033's three ordered routing tests (does the
+      edit put shipped code in violation / does it narrow a governing sentence, with the floor's
+      recorded-catalog-sweep rule / is it prescriptive about a stack the ticket never ran) plus
+      ADR-0032's enforcer + tier check on the hunk. **ADR-0033 named this check as its own condition of
+      acceptance: delete it and ADR-0033's routing test is `(guidance — no gate)`** by the line directly
+      above — the rule stops binding the day the check disappears, and no build notices. Specified at
+      ADR-0033 §Block D; this entry is its §Follow-ups **FT-12**.
 - **`(gate pending: <ticket>)`** — the gate is specified and ticketed, but its baseline is non-zero, so
   the "rule of thumb" below forbids blocking on it yet. It promotes to T1-CI when the ticket lands.
 - **`(guidance — no gate)`** — nobody enforces it.

@@ -1,7 +1,7 @@
 ---
 id: T-0550
 title: FT-12 — record reviewer-check 5's id in enforcement.md so dropping it is a visible regression
-status: ready
+status: done
 size: XS
 owner: architect
 created: 2026-08-05
@@ -37,16 +37,16 @@ the accepted ADR.
 
 ## Acceptance criteria
 
-- [ ] **AC1 — the id is written down on the enforcement side.** Given `agents/process/enforcement.md`
+- [x] **AC1 — the id is written down on the enforcement side.** Given `agents/process/enforcement.md`
       §"Enforcement tiers" (`:146-178`), When the `T3-HUMAN` bullet (`:161-163`) is extended to name
       **reviewer-check 5 "Catalog-edit routing"** by id, with its home file (`.claude/agents/reviewer.md`)
       and what it governs (any diff touching `agents/knowledge/*.md`), Then a reader of `enforcement.md`
       alone can tell the check exists and what depends on it.
-- [ ] **AC2 — the dependency is stated in the direction that matters.** Given that entry, When it is
+- [x] **AC2 — the dependency is stated in the direction that matters.** Given that entry, When it is
       written, Then it states explicitly that **ADR-0033's routing test is `(guidance — no gate)` if
       this check is removed** — so deleting reviewer-check 5 is legible as a regression against an
       accepted ADR rather than as a charter cleanup.
-- [ ] **AC3 — no new claim is made.** Given the edit, When reviewed, Then it records an existing
+- [x] **AC3 — no new claim is made.** Given the edit, When reviewed, Then it records an existing
       enforcer and declares no new rule. `enforcement.md:180-185` reserves rule *creation* for the
       Architect via ADR/catalog; this ticket only makes an already-decided enforcer visible.
 
@@ -80,6 +80,40 @@ re-verification at dispatch is one command:
 - 2026-08-05 — created `ready` by pm. Filed from ADR-0033 §Follow-ups FT-12, which had carried no
   `INDEX.md` row since the ADR was accepted. Sequenced behind T-0549 because the id it records does not
   exist until T-0549 AC1 lands.
+- 2026-08-05 — **`done` by architect.** Applied after T-0549 AC1, so the id it records existed at the
+  moment it was recorded. One file, one hunk, no new rule.
 
 ## Review
-<!-- reviewer / architect write verdicts here; PM reconciles before advancing state -->
+
+**One hunk:** `agents/process/enforcement.md` §"Enforcement tiers", the `T3-HUMAN` bullet — a sub-list
+*"The named T3-HUMAN enforcers, by id"* under the existing bullet, leaving the tier definition itself
+byte-identical.
+
+**AC1 — id, home, scope.** The entry names **reviewer-check 5 "Catalog-edit routing"**, its home
+(`.claude/agents/reviewer.md`, step 5) and what it governs (**any diff touching
+`agents/knowledge/*.md`**), and spells out what it runs — ADR-0033's three ordered tests plus
+ADR-0032's enforcer/tier check. A reader of `enforcement.md` alone can now tell the check exists, where
+to open it, and what it is for.
+
+**AC2 — direction.** Stated as the consequence of *removal*, which is the direction that matters:
+*"ADR-0033 named this check as its own condition of acceptance: delete it and ADR-0033's routing test is
+`(guidance — no gate)` by the line directly above — the rule stops binding the day the check
+disappears, and no build notices."* The `(guidance — no gate)` verdict is not asserted fresh; it is
+derived from the T3-HUMAN definition **two lines up on the same page**, so the page argues it rather
+than declaring it.
+
+**AC3 — no new claim.** Verified line by line: the sub-list records two enforcers that already exist
+(ADR-0018's Gate-DP §G + reviewer-check #22; ADR-0033's reviewer-check 5), cites the ADR that created
+each, and closes with *"this entry is its §Follow-ups FT-12"*. It defines no tier, changes no threshold,
+and creates no obligation. `enforcement.md:180-185` ("When a new rule is needed") is untouched.
+
+**House model followed.** §Implementation notes named ADR-0018's Gate-DP §G + reviewer-check #22 as the
+shape to mirror; it is now the **first row of the same list**, so the two named T3-HUMAN enforcers on
+this project sit together and a third has an obvious home.
+
+**Not done, deliberately:** the tier definitions, the `check-consistency.mjs` / lint tier facts, and the
+`conventions.md` "price of a law" table were all out of scope and are untouched.
+
+**Verification.** `grep -n 'reviewer-check' agents/process/enforcement.md` now returns the generic tier
+line **and** the named entry. Nothing here is mechanical — this ticket records a `T3-HUMAN` enforcer; it
+does not create a gate, and no build can go red on it. That is the accurate claim.

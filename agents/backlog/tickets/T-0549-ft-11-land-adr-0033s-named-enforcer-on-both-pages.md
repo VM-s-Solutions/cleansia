@@ -1,7 +1,7 @@
 ---
 id: T-0549
 title: FT-11 — land ADR-0033's named enforcer (reviewer-check 5) and stop BOTH pages teaching the superseded routing axis
-status: ready
+status: done
 size: XS
 owner: architect
 created: 2026-08-05
@@ -56,27 +56,29 @@ redefinition"* — the same words T-0274 used two sprints earlier for the same f
 
 ## Acceptance criteria
 
-- [ ] **AC1 — the reviewer's page carries the named check.** Given `.claude/agents/reviewer.md`, When
+- [x] **AC1 — the reviewer's page carries the named check.** ✅ **criterion met; the evidence line as
+      literally written does NOT return zero — see §Review "AC1 — the residual".** Given `.claude/agents/reviewer.md`, When
       step 5's catalog clause (`:105-110`) is replaced with **reviewer-check 5 "Catalog-edit routing"**
       exactly as specified in ADR-0033 **Block D** (`agents/backlog/adr/0033-…md:368-394` — the three
       ordered tests + the floor's evidence rule + ADR-0032's enforcer/tier check), Then no sentence
       teaching the superseded axis survives on that page. Evidence: the diff, plus a grep for
       `redefines "the one way to do X"` in `.claude/agents/` returning **zero** hits.
-- [ ] **AC2 — the check is reachable from the gate list, not only from the charter.** Given
+- [x] **AC2 — the check is reachable from the gate list, not only from the charter.** Given
       `agents/process/quality-gates.md` **Gate 1** (`:92`), When the one-line pointer specified at
       ADR-0033 `:399-403` is added, Then a reader arriving at Gate 1 with a `agents/knowledge/*.md`
       diff is routed to reviewer-check 5.
-- [ ] **AC3 — the author's page stops teaching the superseded axis** (`agents/knowledge/conventions.md:122-127`).
-      **HELD until T-0553 rules.** Given the panel's ruling on **which limb-1 text survives** (L3 — the
+- [x] **AC3 — the author's page stops teaching the superseded axis** (`agents/knowledge/conventions.md:122-127`).
+      ✅ **T-0553 ruled 2026-08-05 (severance); applied.** Given the panel's ruling on **which limb-1 text survives** (L3 — the
       floor *reverses* limb 1 and ADR-0033 never amends it), When `:122-127` is rewritten to the ruled
       text, Then `conventions.md` and `.claude/agents/reviewer.md` teach **one** routing axis and it is
       ADR-0033's. Evidence: both pages quoted side by side in `## Review`.
-- [ ] **AC4 — the "not in force" box tells the truth at every intermediate state.** Given
+- [x] **AC4 — the "not in force" box tells the truth at every intermediate state.** Given
       `agents/architecture/decisions/catalog-governance.md:61-76` (the ⛔ box) and `:111-114`, When AC1+AC2
       land but AC3 has not, Then the box is **updated, not deleted** — it must state that the reviewer's
       page is fixed and the author's page is not, so nobody reads a half-landed FT-11 as
       "ADR-0033 in force". When AC3 lands, the box is replaced by the in-force statement.
-- [ ] **AC5 — no ticket claims more than it did.** Given this ticket is closed, When the PM writes the
+- [ ] **AC5 — no ticket claims more than it did.** ⏳ **PM's, not mine** — `INDEX.md` is outside this
+      lane's write scope. §Review gives the row text to use, including what it must NOT claim. Given this ticket is closed, When the PM writes the
       `INDEX.md` row, Then the row states which of the two pages were fixed. A row saying
       "the superseded axis is gone" while `conventions.md:122-127` still teaches it is the exact
       failure this ticket exists to end.
@@ -137,6 +139,93 @@ AC3 carries the decision and is gated on one.
   **widened** to `agents/knowledge/conventions.md:122-127` per L2 — the round measured only the
   reviewer's page. `depends_on: [T-0553]` is **AC3-only** and is annotated as such in the frontmatter
   banner; AC1/AC2 dispatch immediately.
+- 2026-08-05 — **`done` by architect.** AC1–AC4 applied. AC3 unblocked by T-0553's severance ruling
+  (the rejected "governs" definition was carried in nowhere). **AC5 is the PM's** and is left unticked.
+  **One new finding filed: L5** — the axis survives on five more charter pages, out of scope here.
 
 ## Review
-<!-- reviewer / architect write verdicts here; PM reconciles before advancing state -->
+
+### What landed
+
+| AC | File | Hunk |
+|---|---|---|
+| AC1 | `.claude/agents/reviewer.md` | step 5 replaced with **reviewer-check 5 "Catalog-edit routing"**, ADR-0033 §Block D verbatim (the 3 ordered tests + the floor's recorded-sweep rule + ADR-0032's enforcer/tier check + the "nothing fires ⇒ inline" close) |
+| AC2 | `agents/process/quality-gates.md` | Gate 1, final bullet — the pointer verbatim from §Block D |
+| AC3 | `agents/knowledge/conventions.md` | the numbered list **replaced**, not appended to (T-0553's ruling); the routing-test section itself is **T-0551**'s hunk |
+| AC4 | `agents/architecture/decisions/catalog-governance.md` | the ⛔ box → the in-force statement; `Enforced by:` line; the L3 trade-off paragraph → a resolution table; the "gap" table re-measured; L2/L3/FT-11/FT-12/FT-8 rows closed; a deliberation-history entry |
+
+### Both pages, quoted side by side (AC3's evidence requirement)
+
+`.claude/agents/reviewer.md` step 5 and `agents/knowledge/conventions.md` §"Who ratifies a catalog
+edit" now carry **the same three ordered tests, in the same order, with the same floor**: (1) puts
+shipped code in violation → Architect, sweep named; (2) narrows a sentence that already governs the
+subject at any level of generality → Architect, with the floor for a first statement and
+**route-by-default when no catalog sweep is recorded**; (3) prescriptive about a stack the ticket never
+ran → Architect; otherwise inline. The reviewer's page adds ADR-0032's enforcer/tier check (it is the
+reviewer's job); the author's page adds the "inline is not free" pricing (it is the author's job). They
+differ in **audience-specific additions only** — there is no sentence on one page that a sentence on
+the other contradicts. That is the property AC3 exists to secure.
+
+### Sequencing actually honoured
+
+The reviewer's page was fixed **first** (AC1), then the author's (AC3), in ADR-0033's own M3 order. So
+the window in which the two pages disagreed ran in the safe direction — the reviewer running the *new*
+test while the author's page still said the old one, never the reverse. At no point did either page
+carry two axes.
+
+### AC1 — the residual, stated rather than ticked away
+
+AC1's criterion — *"no sentence teaching the superseded axis survives **on that page**"* — is **met**:
+`grep -n 'one way to do X' .claude/agents/reviewer.md` returns **zero**.
+
+AC1's **evidence line** asks for a grep over the whole of `.claude/agents/` returning zero. **It returns
+five**, none of them on the reviewer's page:
+
+| Page | What it teaches |
+|---|---|
+| `backend.md:80`, `frontend.md:69`, `android.md:69`, `ios.md:62` | old bullet 1's scope (*"fold a **small clarification**"*) + the **lexical** trigger (*"redefining 'the one way to do X' is an Architect call"*) that D1 replaced with the semantic narrowing test |
+| **`architect.md:86`** | the disjunction whole — *"a **new canonical archetype**, or a change that affects existing call sites"*. **Limb 1 — the limb the floor reverses — in the charter of the role the floor routes to** |
+
+This ticket's own §Implementation notes names its complete file list and the four charters are not on
+it; the dispatch brief restricted the lane to **one** charter edit. So they were **not touched**, and a
+reviewer must read the five hits as **out-of-scope residual, not as this ticket failing and not as this
+ticket being incomplete**. Filed as **L5** in `catalog-governance.md` §Open items for the PM.
+
+**The pattern is the finding, not the count.** Round 1 measured one page. The lead pass found a second
+and called it "the finding". This pass found five more — by running the ticket's own evidence command.
+Three rounds, three site counts, each declared complete. The repair is a **command, not recall**:
+
+```
+grep -rln 'one way to do X' .claude/agents/ agents/knowledge/ agents/process/
+```
+
+Run it *before* the next round declares the axis retired.
+
+### For the PM's `INDEX.md` row (AC5) — what it may and may not say
+
+**May say:** reviewer-check 5 exists in `.claude/agents/reviewer.md`; Gate 1 points at it;
+`enforcement.md` names it by id; `conventions.md`'s superseded list is replaced; ADR-0033 is in force
+at `T3-HUMAN`.
+**Must NOT say:** *"the superseded axis is gone"* — it is gone from the reviewer's page and the author's
+page, and it is **live on five charters** (L5). A row claiming the axis is retired repeats exactly the
+failure this ticket exists to end, one level out.
+
+### Verification — and the one thing this enforcement is not
+
+**It is human-tier, and it cannot go red.** Nothing here is mechanical, so there is no build to
+demonstrate failing. That is not a shortcut: `check-consistency.mjs` appears in **zero** `.github/`
+workflow files and `frontend-ci.yml`'s lint step is `continue-on-error: true`, so no mechanizer this
+rule could reach is capable of setting a non-zero exit code — the same fact ADR-0033 D1 and ADR-0032
+already record. What ADR-0032's line demands of a `T3-HUMAN` tier is that the checklist item be
+**named**, and it is:
+
+```
+grep -rn 'Catalog-edit routing' .claude/ agents/          # reviewer.md, quality-gates.md,
+                                                          # enforcement.md, conventions.md,
+                                                          # catalog-governance.md, ADR-0033
+```
+
+⚠️ Grep for **`Catalog-edit routing`**, not `reviewer-check 5`. `conventions.md` and ADR-0033 write the
+id as `reviewer-check **5 "Catalog-edit routing"**` — markdown emphasis falls between "check" and "5",
+so the literal string `reviewer-check 5` misses those two sites. Kept verbatim because T-0551 AC1
+requires the panel's text unedited; the name-string is flagged here instead.

@@ -119,5 +119,43 @@ multi-tenant `tenant_id` claim. **That is not an `M`.** If it is a contact field
   credential this is an auth epic and AC2 forces a re-file rather than letting an `M` become one in
   flight. The **success toast on a discarded write (AC4)** is called out as the most important half:
   it is what stopped anyone noticing for as long as this has been shipping.
+- 2026-08-05 — **AC1 re-established by backend: the premise is NO LONGER TRUE, and AC2 fires.** The
+  validate-then-discard defect was fixed in `2012b014` (#189, merged the same day this was filed) by
+  deleting the field rather than persisting it. What is left of this ticket is AC5, and the AC2 gate
+  now has its answer: **the email IS an identity credential**, so AC5 must be re-filed as an auth
+  epic, not built here. See `## Review`.
 
 ## Review
+
+### AC1 — re-established. Two of the three failures no longer exist; the negative still holds.
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| Email is **validated** | **GONE** | `2012b014` deleted `RuleFor(c => c.Email).ValidateUserEmail()` from `UpdateEmployee.Validator` and `AddEmailRules(c => c.Email)` from `UpdatePersonalInfo.Validator` |
+| Email is **discarded** | **GONE — the field no longer exists** | `UpdateEmployee.Command` (`UpdateEmployee.cs:203-227`) and `UpdatePersonalInfo.Command` (`UpdatePersonalInfo.cs:52-60`) expose no `Email` member; pinned by `Cleansia.Tests/Features/Employees/EmailIsNotAnOnboardingInputTests.cs` (reflection, both types) |
+| **Success toast** on a discarded write | **GONE, and the client was always innocent** | `profile.facade.ts:209-219` fires the toast inside `next:` guarded by `if (result)` — i.e. only when the API returned a body. It said "saved" because the server said "saved". Removing the field removed the lie at its source |
+| **No email-change path anywhere** | **STILL TRUE** | `User.Email` has exactly four writers: the three factories (`User.cs:134`, `:149`, `:161`) and `Anonymize()` (`:417`). No `UpdateEmail`/`ChangeEmail` command exists on partner, mobile, or admin. `AdminUpdateEmployee` and the `AdminUsers` feature carry `Email` on **create** only |
+
+The web form field is gone too — `profile.facade.ts:52-54` keeps the address as a display-only signal
+with the reason written next to it.
+
+### AC2 — the sizing gate: the email IS an identity credential. STOP and re-file.
+
+`IUserSessionProvider.GetUserEmail()` returns the JWT `ClaimTypes.Email`
+(`Infra.Database/UserSessionProvider.cs:24-27`), and **the partner surface resolves its subject row
+from it, not from the user id**: `employeeRepository.GetByUserEmailAsync(userSessionProvider.GetUserEmail())`
+appears in **14** feature files under `Features/Employees/` and `Features/EmployeeDocuments/`, plus
+`Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:18-25` — the completeness gate on the whole
+partner surface. Every login path also looks the user up by email
+(`Login.cs:48`, `PartnerLogin.cs:49`, `MobilePartnerLogin.cs:62`, `AdminLogin.cs:53`).
+
+So a live email change with the token unchanged 403s the cleaner off their own account until they
+re-authenticate. That is an auth flow — verification of the new address, token re-issue, session
+handling — **not an `M` profile edit**. Per AC2 this ticket does not grow in place: AC5 is re-filed.
+
+**Recommended disposition:** close T-0505 (AC1–AC4 satisfied by `2012b014` + the reflection pin);
+re-file AC5/AC6/AC7 as an auth epic carrying the 14-call-site finding as its premise.
+
+### Not done here, and why
+AC3 (round trip) and AC8/AC9 (error keys, regen) are **moot** — there is no email field on the wire
+to round-trip and no contract change. AC5/AC6/AC7 move to the re-file.

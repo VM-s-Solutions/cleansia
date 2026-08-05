@@ -195,6 +195,17 @@ need backfilling.
 
 ### Fixed
 
+- **Operators — ⚠️ the documentation claimed a level of error tracking that does not exist, and now
+  says what is really there.** The infrastructure docs stated that all five APIs send telemetry to
+  Application Insights and that their structured logs are queryable there. **Neither is true.** Only
+  the Azure Functions host sends anything to Application Insights; the five APIs and the customer SSR
+  host have the connection string injected and read by nothing, and Sentry's DSN is empty in every
+  deployed environment. Since DEV is the only environment ever deployed, **an unhandled 500 on an API
+  today leaves no stack trace anywhere** — the platform-metric alerts (5xx count, response time,
+  Postgres health, Functions health probe, poison-queue arrivals) still fire and are all an operator
+  gets. Nothing about the running system changed; what changed is that the documentation no longer
+  points an incident responder at a diagnosis that was never available. (T-0501)
+
 - **Customer — booking with a promo code failed outright.** Every order carrying a promo code raised a
   foreign-key violation and **no order was created**; the customer saw a server error. Promo codes work
   again, and hitting a per-user or campaign-wide cap now returns a clear reason instead of an error.

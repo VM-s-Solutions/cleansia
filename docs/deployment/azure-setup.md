@@ -130,6 +130,18 @@ App Services access Key Vault via managed identity using Key Vault references in
 These are estimates based on typical usage patterns. Actual costs vary based on traffic, storage consumption, and database activity. Monitor costs via Azure Cost Management.
 :::
 
+::: warning Two known gaps in these tables
+**Application Insights and Log Analytics are not line items in either table**, although both are
+provisioned (`deploy/bicep/modules/appInsights.bicep`) and Log Analytics bills per GB ingested. Today
+the Functions host is the only telemetry producer, so it is the only contributor to that ingestion —
+the five APIs and the SSR host send nothing. The DEV workspace carries a 1 GB/day ingestion cap and
+prod defaults to 5 GB/day.
+
+**The `Monitoring (Sentry)` line is a forecast for a subscription that is not active.** Sentry is
+disabled in every deployed environment because the DSN is empty. See
+[Infrastructure → Observability](/architecture/infrastructure#observability).
+:::
+
 ## Architecture Diagram
 
 ```

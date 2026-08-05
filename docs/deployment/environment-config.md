@@ -144,7 +144,19 @@ Production (`appsettings.Production.json`):
 }
 ```
 
-Development uses an empty DSN (disabled). Production configures a 20% trace sample rate.
+::: warning Only `Dsn` is read, and it is empty everywhere
+`UseSentryMonitoring` (`Cleansia.ServiceDefaults/Extensions.cs:85-112`) reads exactly one key —
+`Sentry:Dsn`. `Environment` and `TracesSampleRate` in this block are **not bound**; the sample rate is
+fixed at `0.2` in code. A blank or absent DSN leaves the SDK uninitialized, which is the deliberate
+guard that stops a DSN-less host from failing to boot.
+
+**Every committed `appsettings*.json` across the five APIs sets `"Dsn": ""`.** In Azure the value is a
+Key Vault reference (`main.bicep:467`) fed by the `SENTRY_DSN` GitHub secret, and the DEV runbook
+directs that it stay empty (`deploy/AZURE-DEV-RUNBOOK.md:239`). Since DEV is the only deployed
+environment, **Sentry is not collecting anywhere right now**. See
+[Infrastructure → Observability](/architecture/infrastructure#observability) for what does still
+alert.
+:::
 
 ### Logging
 
@@ -197,7 +209,7 @@ Production:
 | Stripe Cancel URL | `https://cleansia.cz/checkout/cancel` |
 | SendGrid URLs | `https://partner.cleansia.cz/...` |
 | Logging | `Warning` level |
-| Sentry | Enabled with 20% trace rate |
+| Sentry | Enabled with a 20% trace rate **only once `Sentry--Dsn` holds a real DSN** — production has never been deployed, and the committed value is empty |
 
 ## Key Vault References
 

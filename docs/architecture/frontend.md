@@ -13,7 +13,7 @@ The Cleansia frontend is an **Nx monorepo** containing three Angular 19 applicat
 | PrimeFlex | 4.0 | Utility CSS framework |
 | Chart.js / ng2-charts | 4.5 / 8.0 | Dashboard charts and analytics |
 | ngx-translate | 16.0 | i18n (cs, en, sk, uk, ru) |
-| Sentry | 10.40 | Error tracking |
+| Sentry | 10.40 | Error tracking — **dormant**, see below |
 | Lucide Angular | 0.525 | Icon library |
 | Bootstrap | 5.3 | Grid utilities |
 | Stripe | (via redirect) | Payment processing |
@@ -155,6 +155,17 @@ export const environment = {
   bugReportUrl: '',
 };
 ```
+
+::: warning Browser-side Sentry is not collecting anywhere
+The **admin** and **partner** apps call `Sentry.init` only when `environment.sentryDsn` is non-empty
+(`apps/cleansia-admin.app/src/main.ts:4`, `apps/cleansia-partner.app/src/main.ts:4`), and every
+committed environment file — `environment.ts`, `environment.staging.ts`, `environment.prod.ts`, for
+all three apps — sets `sentryDsn: ''`. The **customer** app carries the property but has no Sentry
+initialization at all.
+
+So a browser exception today is reported to nothing. The same is true server-side; see
+[Infrastructure → Observability](/architecture/infrastructure#observability).
+:::
 
 ::: warning Dev `apiBaseUrl` is relative on purpose
 Auth is an HttpOnly cookie with `SameSite=Strict`, so the browser must see one origin. In dev the

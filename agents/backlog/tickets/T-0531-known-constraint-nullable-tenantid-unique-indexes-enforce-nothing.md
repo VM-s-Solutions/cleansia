@@ -1,7 +1,7 @@
 ---
 id: T-0531
 title: Known constraint — a unique index containing nullable TenantId enforces nothing in single-tenant mode
-status: ready
+status: done
 size: XS
 owner: architect
 created: 2026-08-02

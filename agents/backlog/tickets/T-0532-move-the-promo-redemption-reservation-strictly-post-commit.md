@@ -1,7 +1,7 @@
 ---
 id: T-0532
 title: Move the promo-code redemption reservation strictly post-commit onto IPostCommitEffects (retires the ADR-0038 §D3 interim)
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-03

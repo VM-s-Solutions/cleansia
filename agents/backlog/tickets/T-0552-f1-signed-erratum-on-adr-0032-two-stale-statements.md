@@ -1,7 +1,7 @@
 ---
 id: T-0552
 title: F1 — ADR-0032 carries TWO stale statements and is `accepted`; it needs one signed erratum, not a quiet edit
-status: ready
+status: done
 size: XS
 owner: architect
 created: 2026-08-05

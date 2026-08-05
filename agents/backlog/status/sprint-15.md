@@ -1166,6 +1166,17 @@ was that wrong — 13 of 23 `ready` rows. **The signal falls as the queue is rec
 ticket moves its `updated:` past the commits that touched it. It measures staleness rather than accusing
 anyone of it.
 
+**Follow-up, 2026-08-05 — the flag was right and the queue was wronger than this pass recorded.**
+Candidate 3 flagged T-0448/T-0450 as "the next thing to check." Checked: **both had already shipped**, in
+squash-merge `0e4ede1b` (PR #184), which carried **19 Android files** — `ProfileAvatar.kt`, the
+`ProfileViewModel`/`UserRepository` threading, five `strings.xml` and four test files — alongside the
+backlog docs its subject line advertises. Both are now `done`. So this pass closed 9; the true count was
+**11**, and candidate 3 had already pointed at the other two.
+
+**Candidate 1 would have missed both** — verified directly: T-0448 and T-0450 each have **0 ticked boxes**
+and a `## Review` section containing nothing but its HTML-comment template. That is the recall weakness
+stated above, now measured on named cases rather than estimated.
+
 **Best combination:** run candidates 1 and 3 in one script. Candidate 1 supplies **precision** (8 hits,
 0 false positives), candidate 3 supplies **recall** (10 of 12). Together they would have caught **12 of the
 13** rows this pass fixed by hand.
@@ -1179,6 +1190,25 @@ anyone of it.
   (ADR-0032 D3). About **half a day** including the self-test. It is not "genuinely small", which is why
   **this pass specified it rather than building it** — and building it would also have written outside this
   pass's `agents/backlog/**` boundary.
+- ⚠️ **Path filtering is load-bearing, and the spec above does not say so.** Measured on this corpus
+  (62 open `draft`/`ready` tickets), the *same* rule flags **29 tickets** if it counts every path a ticket
+  names, and **11** if it counts only product paths under `src/` and `docs/`. The 18-ticket difference is
+  almost entirely tickets citing **shared** knowledge docs — `agents/knowledge/patterns-mobile.md`,
+  `security-rules.md`, `consistency.md` — which nearly every ticket references and nearly every agent
+  edits, so they move constantly and mean nothing about any one ticket. **Exclude `agents/knowledge/**`,
+  `agents/process/**`, `agents/architecture/**` and `agents/tools/**` from the path set**, or the check
+  fires on half the backlog and gets ignored, which is worse than not having it.
+- ⚠️ **Resolve paths by suffix match against `git ls-files`, as specified — not by `os.path.isfile`.**
+  A naive exact-path resolver drops the avatar lane's real evidence and catches T-0448 only incidentally,
+  through an unrelated `customer-mobile-api.json` commit. Same rule, same corpus, different resolver,
+  different answer.
+
+**A fourth candidate, tested and rejected: "the ticket body carries a completion record."** The idea was
+that a `## Verdict` / `## Implementation —` heading inside a `ready` ticket is an agent's own admission
+that work happened. It flags **1 of 62**. The control kills it: only **4 of 272 `done` tickets** carry the
+same marker, so writing one is not the convention — its absence proves nothing, and its presence on T-0448
+was luck. Recorded so nobody re-derives it.
+
 - **Where it runs — and the one trap to avoid.** ⚠️ **Do not attach it to the frontend lint step:** that
   step is `continue-on-error: true` (`frontend-ci.yml:73`), so a check placed there can never fail a build.
   And do not repeat `check-consistency.mjs`'s mistake: it appears in **zero** workflow files, so it can

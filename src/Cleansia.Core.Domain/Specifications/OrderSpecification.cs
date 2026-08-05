@@ -123,9 +123,11 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         if (OrderStatuses is not null && OrderStatuses.Any())
         {
             // Reads the persisted Order.CurrentStatus column (denormalized from OrderStatusHistory at
-            // the AddOrderStatus seam) instead of a per-row latest-history subquery. The column is NOT
-            // NULL, so this is a bare IN — no null conjunct pushing the term inside an OR, which is what
-            // lets the planner seek on the leading column of IX_Orders_CurrentStatus_CleaningDateTime.
+            // the AddOrderStatus seam) instead of a per-row latest-history subquery. OrderStatuses is a
+            // runtime value, so EF emits `= ANY (@p)`; the column is NOT NULL, so no null conjunct
+            // pushes the term inside an OR and it stays the leading index condition on
+            // IX_Orders_CurrentStatus_CleaningDateTime. OrderStatusSetPredicatePlanTests EXPLAINs it —
+            // an OR here keeps the index but demotes the status term to a residual filter.
             specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.CurrentStatus));
         }
 

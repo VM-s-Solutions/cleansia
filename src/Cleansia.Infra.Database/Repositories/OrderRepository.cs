@@ -257,7 +257,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     }
 
     // An assigned order occupies the cleaner's time only while it is a live commitment;
-    // terminal orders (Completed, Cancelled) free the slot.
+    // terminal orders (Completed, Cancelled) free the slot. Being static readonly, EF inlines these
+    // as `IN (0, 1, 2, 3, 4)` where OrderSpecification's runtime set emits `= ANY (@p)`; PostgreSQL
+    // folds both to one ScalarArrayOpExpr, so the difference is textual and both seek on
+    // IX_Orders_CurrentStatus_CleaningDateTime. OrderStatusSetPredicatePlanTests EXPLAINs both.
     private static readonly OrderStatus[] SlotBlockingStatuses =
     [
         OrderStatus.New,

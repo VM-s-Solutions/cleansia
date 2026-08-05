@@ -150,6 +150,17 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **separate `createXxx(data)` and `updateXxx(id, data)`** methods, each building the generated
   `Create*Command`/`Update*Command`, using the C3 pipe, and **navigating via a route enum on success**.
   *(This archetype is already consistent — keep it that way.)*
+- **D1a — the command is built by construct-then-assign, never `new X({ … })`** (ADR-0031; full
+  reasoning and the ESLint ratchet in `patterns-frontend.md` §"Building a generated DTO"). The
+  command lives in the **facade or the feature's `*.models.ts`**, never in the component: a component
+  that builds one is holding logic and is untestable without a TestBed. Where several call sites build
+  the same shape, export one `buildXxxCommand(data)` beside the models (`profile.models.ts`
+  `buildChangePasswordCommand` / `buildAddSavedAddressCommand`, marketing
+  `buildSendSitewidePromoCommand`). Every member is declared `field!: T`, so **a dropped assignment
+  type-checks and no build catches it** — the facade spec therefore asserts the whole serialized body,
+  `expect(command.toJSON()).toEqual({ … })`, not field by field. ✗ A per-field
+  `expect(command.orderId).toBe(…)` reads like coverage and passes when a *different* field is
+  dropped.
 - **D2.** Component is `standalone` + `OnPush`, builds the form with **`fb.nonNullable.group(...)`**
   and detects mode via **`route.snapshot.data['mode']`**. ✗ *Don't* mix `fb.group({})` with
   `fb.nonNullable.group({})` in one component (`package-form`) — if a nested dynamic group genuinely
@@ -387,6 +398,27 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   by hand; the pin is a host/route test seeding the pre-release row shape
   (`PayoutGateDeployDayTests`) plus a real-PostgreSQL erasure test through the owning service's own
   query shape (`PayoutDetailsErasureTests`). Full rule in `patterns-backend.md`.
+
+- **A comment claiming a query PLAN property is pinned by `EXPLAIN` over the statement EF actually
+  emitted — and the assertion is the `Index Cond`, not "no Seq Scan" (T-0540).** Two call sites tested
+  `Order.CurrentStatus` with `Contains` over different shapes (an instance `IEnumerable` vs a
+  `private static readonly` array) and both claimed in prose to seek on
+  `IX_Orders_CurrentStatus_CleaningDateTime`. Measured, they emit **different SQL** — `= ANY (@p)` vs an
+  inlined `IN (0, 1, 2, 3, 4)`, because EF parameterises a runtime value and folds a static readonly to
+  constants — which PostgreSQL normalises to the same `ScalarArrayOpExpr`. So the claim was true, and
+  nothing kept it true. Two rules:
+  - **EXPLAIN the captured statement, never a hand-written copy of it.** A `DbCommandInterceptor` that
+    re-runs `"EXPLAIN " + command.CommandText` on the *same* connection, transaction and parameters
+    pins the plan the query gets; SQL retyped into the test pins the plan of the retyping
+    (`OrderStatusSetPredicatePlanTests`, the shape to copy; the older
+    `UserMembershipCancellationSweepIndexPlanTests` hand-writes its SQL and is the weaker form).
+  - **"No Seq Scan" is not the assertion.** Pushing the status term inside an `OR` leaves the planner
+    on the same index and merely **demotes the term out of the `Index Cond` into a residual filter** —
+    green under a seq-scan check, and exactly the ADR-0040 fail-open regression. Assert that the term
+    appears in the `Index Cond:` of the node naming the index, and assert the value set that reaches
+    PostgreSQL against a **golden literal** (reading it off the private field under test cannot detect
+    that field being widened). Deviating forms: a plan assertion on an empty or uniform table; a
+    seq-scan-only assertion; an expectation derived from the code under test.
 
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 

@@ -1,7 +1,7 @@
 ---
 id: T-0503
 title: Boot cost — a blocking DB call with a 15s timeout runs during DI registration, and the EF model is built on the first request
-status: in_review
+status: done
 size: M
 owner: backend
 created: 2026-08-02

@@ -1,7 +1,7 @@
 ---
 id: T-0499
 title: One file, five values — Functions host.json polls 14 queue listeners every 5s and defeats its own sampling (€35–42/month)
-status: in_review
+status: done
 size: S
 owner: backend
 created: 2026-08-02

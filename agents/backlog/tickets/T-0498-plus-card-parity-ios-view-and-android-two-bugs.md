@@ -1,11 +1,11 @@
 ---
 id: T-0498
 title: Plus card — iOS is one view away from parity; Android's perk pills are hardcoded English and one renders unconditionally
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0491]
 blocks: []
 stories: []

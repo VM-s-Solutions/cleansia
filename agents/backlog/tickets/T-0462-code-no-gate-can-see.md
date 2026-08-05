@@ -1,11 +1,11 @@
 ---
 id: T-0462
 title: Code no gate can see — delete the stale second admin client, resolve the app-unreachable lib file, and correct the three CLAUDE.md entries (including six Nx commands that all fail)
-status: draft
+status: done
 size: S
 owner: frontend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0439]
 blocks: []
 stories: []

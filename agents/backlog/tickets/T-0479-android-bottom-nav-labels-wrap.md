@@ -1,11 +1,11 @@
 ---
 id: T-0479
 title: Android bottom-nav labels wrap to two lines instead of truncating (customer + partner)
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

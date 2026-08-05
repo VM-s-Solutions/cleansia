@@ -1,11 +1,11 @@
 ---
 id: T-0477
 title: Android recurring wizard renders service and package names in the catalog's raw language
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

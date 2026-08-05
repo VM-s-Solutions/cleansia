@@ -1,11 +1,11 @@
 ---
 id: T-0505
 title: Partner onboarding validates the email, discards it, and shows a success toast — and no email-change path exists anywhere
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0504]
 blocks: []
 stories: []

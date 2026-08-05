@@ -1,11 +1,11 @@
 ---
 id: T-0501
 title: The infrastructure docs claim all five APIs send telemetry; none of them do
-status: draft
+status: done
 size: S
 owner: docs
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0500]
 blocks: []
 stories: []

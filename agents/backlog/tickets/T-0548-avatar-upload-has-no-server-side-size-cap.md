@@ -1,7 +1,7 @@
 ---
 id: T-0548
 title: Avatar upload has no server-side size cap — the client promises 10 MB and the server enforces nothing
-status: in_review
+status: done
 size: S
 owner: backend
 created: 2026-08-05

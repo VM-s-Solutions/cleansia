@@ -1,11 +1,11 @@
 ---
 id: T-0478
 title: iOS recurring setup — reproduce the owner's "no translations" report, then fix what it actually is
-status: draft
+status: done
 size: S
 owner: ios
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

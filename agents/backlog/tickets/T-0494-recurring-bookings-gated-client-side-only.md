@@ -1,7 +1,7 @@
 ---
 id: T-0494
 title: SECURITY — recurring bookings are a paid Plus perk; Create is gated, Update re-authors a whole schedule ungated
-status: in_review
+status: done
 size: S
 owner: backend
 created: 2026-08-02

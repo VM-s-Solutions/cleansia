@@ -1,11 +1,11 @@
 ---
 id: T-0506
 title: Partner language — the onboarding route renders EmptyView(), no client persists it, and the endpoint has zero consumers
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0504]
 blocks: []
 stories: []

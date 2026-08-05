@@ -1,11 +1,11 @@
 ---
 id: T-0492
 title: The Plus discount is worth 0 Kč at Platinum, 40 Kč at Gold, and a promo code erases it entirely
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0491]
 blocks: []
 stories: []

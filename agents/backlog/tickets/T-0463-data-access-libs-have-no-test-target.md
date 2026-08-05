@@ -1,11 +1,11 @@
 ---
 id: T-0463
 title: All three data-access libs have NO test target — the NgRx effects behind two of the last three regen breaks are entirely untested
-status: draft
+status: done
 size: M
 owner: frontend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

@@ -1,11 +1,11 @@
 ---
 id: T-0490
 title: Android partner invoice detail — the back button is drawn under the status bar (no window inset)
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

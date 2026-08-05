@@ -1,7 +1,7 @@
 ---
 id: T-0502
 title: Dev cold start — Always On is off, the existing warm loop does not point at dev, and every deploy restarts 7 sites twice
-status: in_review
+status: done
 size: M
 owner: architect
 created: 2026-08-02

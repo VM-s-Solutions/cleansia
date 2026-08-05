@@ -1,11 +1,11 @@
 ---
 id: T-0482
 title: iOS partner order detail has no mascot puck and no job-progress affordance; Android does
-status: draft
+status: done
 size: M
 owner: ios
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0489]
 blocks: []
 stories: []

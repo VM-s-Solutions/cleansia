@@ -44,14 +44,14 @@ validation example is worse than dead code.**
 
 ## Acceptance criteria
 
-- [ ] **AC1 — deadness is proven, not assumed.** Given both command types, When the sweep is run, Then
+- [x] **AC1 — deadness is proven, not assumed.** Given both command types, When the sweep is run, Then
       the ticket records the evidence that neither is dispatched: no `Send(new UploadEmployeeDocument…`
       / `UploadNewDocumentVersion…` anywhere, no controller action, and the only same-named symbol is
       `Policy.CanUploadEmployeeDocument`, which is a **different symbol** guarding `SaveMyDocuments`.
       Paste the greps with exit codes.
-- [ ] **AC2 — they are deleted.** Given AC1 holds, When the files are removed, Then the solution builds
+- [x] **AC2 — they are deleted.** Given AC1 holds, When the files are removed, Then the solution builds
       (`dotnet build Cleansia.Api.sln` from `src/`) and all three suites still pass.
-- [ ] **AC3 — the policy constant is untouched.** Given `Policy.cs:75`, When the commands are deleted,
+- [x] **AC3 — the policy constant is untouched.** Given `Policy.cs:75`, When the commands are deleted,
       Then `CanUploadEmployeeDocument` **remains**, because it guards the live route — and
       `FrozenPermissionMapTests` stays green. **Deleting the constant along with the commands would 403
       the working document-upload route on two hosts.** This AC exists because the names collide.
@@ -95,6 +95,74 @@ decision if the lane argues for revival instead.
 - 2026-08-05 — created `ready` by pm, low priority. The name collision with `Policy.CanUploadEmployeeDocument`
   is called out in AC3 specifically because a careless "delete every hit" would take down the live
   document-upload route on two hosts.
+- 2026-08-05 — done by backend. Both files deleted. AC4 not taken: no revival argued.
+
+### AC1 evidence (at `24af741e`, before deletion)
+
+A substring grep is what made this look inconclusive, so the proof is a **word-boundary** grep, which
+excludes `CanUploadEmployeeDocument` by construction:
+
+```
+$ git grep -nE '(^|[^a-zA-Z])UploadEmployeeDocument' -- 'src/'
+src/…/Features/EmployeeDocuments/UploadEmployeeDocument.cs:13:public class UploadEmployeeDocument
+exit=0
+
+$ git grep -nE '(^|[^a-zA-Z])UploadNewDocumentVersion' -- 'src/'
+src/…/Features/EmployeeDocuments/UploadNewDocumentVersion.cs:12:public class UploadNewDocumentVersion
+exit=0
+```
+
+The **only** occurrence of either name in the whole `src/` tree was its own class declaration. C# cannot
+bind or dispatch a type without naming it and there is no reflective command discovery (the sole
+`typeof(ICommand)` sweep is `EveryCommandHasValidatorTests`, a test), so zero references is a
+compile-level proof of deadness — no controller action, no `Mediator.Send`, no direct instantiation.
+
+- **Wire surface: clean.** `git grep -nE 'UploadEmployeeDocument|UploadNewDocumentVersion' -- '*.json'
+  '*.yaml' '*.yml'` (exit 0) hit only `agents/backlog/audits/*.json` prose. The three committed specs —
+  `src/cleansia_android/openapi/{customer-api,customer-mobile-api,partner-mobile-api}.json` — carry
+  neither name nor a `…Command`/`…Response` schema derived from it. **Not a wire change.**
+- **Tests: none referenced either command**, so nothing went green-by-deletion and no test was removed.
+  The two reflective sweeps that could plausibly have covered them enumerate *controller actions*, not
+  command types, and both are single `[Fact]`s: `Base64UploadIntakeRosterTests` (keys on `BlobFileDto`,
+  which these never carried) and `SaveMyDocumentsRouteCoverageTests`. `EveryCommandHasValidatorTests` is
+  also one `[Fact]`, so it silently enumerates two fewer types. **Test counts are unchanged: 3072 / 144 / 120.**
+- **AC3 holds.** `Policy.CanUploadEmployeeDocument` and all five of its sites are untouched
+  (`Policy.cs:75`, `PolicyBuilder.cs:79`, `FrozenPermissionMapTests.cs:72`,
+  `Web.Partner/…/EmployeeController.cs:76`, `Web.Mobile.Partner/…/EmployeeController.cs:130`).
+
+### The inherited claim, confirmed — and it was understated
+
+Confirmed: `FileSizeBytes` is a plain `long` on the command with **no bytes anywhere in the request**
+(no `BlobFileDto`, no base64, no stream), capped at `10 * 1024 * 1024`. It is a bound on a number the
+caller types, and the handler then persisted that same number as the document's recorded size.
+
+What the report did not say is that **`FilePath` is the more serious half**. Both download handlers feed
+the stored value straight in as a blob name against the shared employee-documents container —
+`blobClient.DownloadAsync(document!.FilePath, ct)` (`DownloadMyDocument.cs:88`,
+`DownloadEmployeeDocument.cs:52`) — and the ownership check upstream is on the *document row*, not on
+the blob the row names. A caller-chosen `FilePath` therefore becomes a caller-chosen read out of a
+container shared by every employee, through a route that then correctly authorises the row. Contrast the
+live path, which derives it server-side and uploads the bytes to it first:
+`Constants.VirtualDirectories.EmployeeDocuments` formatted with `employee.Id`, plus
+`{employee.Id}_{DocumentType}_{timestamp}_{guid8}{ext}` (`SaveMyDocuments.cs:125-145`).
+
+So AC4's bar stands and is if anything higher than written: a revival may not reuse this shape.
+
+### One orphan created, deliberately left — needs a follow-up
+
+`BusinessErrorMessage.FileSizeExceeded10MB` (`BusinessErrorMessage.cs:367`, `"file.size_exceeded_10mb"`)
+now has **zero backend references** — the two dead commands were its only ones. It is redundant with the
+live `FileSizeExceeded` (`"file.size_exceeded"`) that `DocumentFileValidator.cs:29` actually uses.
+
+It was **not** removed here, because removing it is a three-app frontend change, not a backend one:
+`apps/cleansia.app/src/app/i18n/error-contract-parity.spec.ts:181` lists `file.size_exceeded_10mb` in
+`CUSTOMER_SURFACE_ERROR_KEYS`, and that spec asserts *frontend key → BusinessErrorMessage value*, so
+deleting the constant alone reddens it. A correct removal also deletes 15 translation rows
+(3 apps × 5 locales) together, since a sibling assertion requires the five locale `api.*` key sets to be
+identical. Out of this ticket's lane (`Features/EmployeeDocuments/**`) and out of the backend role.
+Everything else checked out clean: `EmployeeDocumentItem`, its mapper, `IEmployeeDocumentRepository`,
+`GetLatestByFileNameAsync`, `EmployeeDocument.Create`/`CreateNewVersion` and
+`BusinessErrorMessage.FileTypeNotAllowed` all keep live callers.
 
 ## Review
 <!-- reviewer verdict here; PM reconciles before advancing state -->

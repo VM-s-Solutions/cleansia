@@ -71,6 +71,36 @@ run locally on `master`).
 ## Status log
 - 2026-07-30 — draft (created by pm from QA's T-0446 AC4 run; no-decision, mechanical)
 - 2026-07-30 — **`ready` on merit** (DoR met, no dependencies) but **unscheduled** — post-demo filler; it is a deprecation, not a defect.
+- 2026-08-05 — **done. Two premise corrections, both in the direction of more work, neither material.**
+  - **There are THREE parameterless call sites, not two.** The ticket names
+    `PostgresContainerFixture.cs:15` and `UserMembershipCancellationSweepIndexPlanTests.cs:190`
+    (`:29` when filed); `OrderStatusSetPredicatePlanTests.cs:219` is a third, added since. All three
+    migrated — leaving one is the same two-of-three hole the ticket exists to prevent.
+    `HostTestPostgresFixture.cs:31` already used `new PostgreSqlBuilder("postgres:16")`.
+  - **xUnit2031 is not a deadlock rule.** AC2 calls it "a real deadlock-risk pattern" — that is
+    xUnit**1031** (blocking task operations). xUnit2031 is an assertion-quality rule: the `.Where(…)`
+    form reports "the collection was empty" instead of showing what the collection held. The fix is
+    the same either way (`Assert.Single(tokens, t => t.IsAlive)`), and no `#pragma` was used.
+  - **AC4 (no behavioural change) is measured, not asserted.** All three sites already called
+    `.WithImage("postgres:latest")`, so the parameterless ctor's default never applied — it is
+    **`postgres:15.1`**, confirmed by reflecting the 4.10.0 builder. A probe compared
+    `new PostgreSqlBuilder().WithImage(x)` against `new PostgreSqlBuilder(x)` across **all 32**
+    `DockerResourceConfiguration` properties: **0 differences**. The migration is byte-equivalent
+    configuration.
+  - **Out-of-scope analyzer warnings, counted as the ticket asks (do not sweep):** solution-wide
+    warnings fell **230 → 226**, exactly the 3 × CS0618 + 1 × xUnit2031 removed. Still open and
+    deliberately untouched: **1** × CS0618 `GoogleCredential.FromJson` (`FcmPushDispatcher.cs:297`,
+    a *security* deprecation — worth its own ticket), **3** × CS0618
+    `IReadOnlyEntityType.GetQueryFilter()` (EF 10, `Cleansia.Tests` metadata tests), **2** × xUnit2031
+    (`MobileLoginMissingDeviceIdWarningTests.cs:89,112`), plus the CS86xx nullable and xUnit2029/2030/2013
+    families in `Cleansia.Tests/Features/Auth`.
+  - **AC3 — run locally, Docker up, real counts:** `Cleansia.Tests` **3179/3179** exit 0,
+    `Cleansia.IntegrationTests` **144/144** exit 0, `Cleansia.HostTests` **135/135** exit 0.
+    The ticket's expected totals (2295 / 108 / 75) are **stale by two sprints**, not a discrepancy:
+    integration and host match the current sprint-15 baselines (144 / 135) exactly, and the unit total
+    reconciles fully — **3146** (clean `master`) **+ 5** (a concurrent lane's untracked
+    `AppInsightsExporterWiringTests`, measured, not this batch's) **= 3151**, the pre-change total
+    measured on this tree, **+ 28** (T-0470's guard) **= 3179**.
 
 ## Review
 <!-- reviewer verdict here -->

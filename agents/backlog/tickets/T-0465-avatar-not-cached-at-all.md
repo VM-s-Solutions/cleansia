@@ -127,5 +127,30 @@ chosen, **the security reviewer must re-gate**, because a predictable, longer-li
     **T-0446 ✅ → T-0464 ✅ → T-0465** is clear and this ticket is now unblocked for the architect
     call between A and B.
 
+- 2026-08-05 — **backend Gate 0 re-verification. Option A is not a choice left to make — it is already
+  implemented on all three clients and on the server. The only residue is AC2: record it.** Every claim
+  below was read in the source this session, not inherited.
+  - **Cause 1 — fixed, and AC5 is satisfied by construction.**
+    `BlobContainerClient.GenerateSasUri` sets `CacheControl = "private, max-age=3600"` on the one mint
+    (`BlobContainerClient.cs:109`) and takes **no parameter for it**, so no call site can weaken it to
+    `public`.
+  - **Cause 2 — true, inherent, and already mitigated client-side on all three.** Verified:
+    Android `ProfileAvatar.kt:100` → `.memoryCacheKey((photo as? AvatarPhoto.Remote)?.fileName)`;
+    iOS `CachedRemoteImage.swift` takes an explicit `cacheKey` ("cached under `cacheKey` rather than
+    under its URL") and `ProfileAvatar.swift:50` passes `stored.fileName`; web
+    `profile.facade.ts:175-202` `applyAvatar` holds the rendered URL steady while the blob name is
+    unchanged. **AC4 is therefore already consistent** — "cache on `fileName`, never on `blobUrl`" is
+    exactly what the three clients do.
+  - **AC1** — the measurement that can be made statically: the avatar is one small image on one screen,
+    server-capped at **10 MB** since T-0548 (`97bb7265`); the SPA session and both mobile caches collapse
+    the repeats, leaving one download per full page load per session on web and none on mobile. A
+    per-session download count needs instrumentation nobody has; it is not worth building for this.
+  - **B is not chosen, so AC3 is not owed** — no security re-gate, no widened SAS window.
+  - **What is left: AC2 only.** The acceptance ("cause 2 is inherent to the per-read-SAS design and is
+    accepted; the clients cache on `fileName`") is **not** recorded in
+    `agents/architecture/decisions/user-uploaded-artifacts.md`. Deliberately **not written by this
+    lane**: that doc is architect-owned and was being edited today. Text above is ready to lift.
+  - **No code change was made for this ticket, and none is warranted.**
+
 ## Review
 <!-- reviewer verdict here -->

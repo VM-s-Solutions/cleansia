@@ -159,15 +159,25 @@ Keep the two regexes **separate**. They redact identically but they do not free 
 merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as
 unmasked — a guard that has stopped saying anything.
 
-**What makes a denylist admissible at all is the guard, not the list.** `RequestLogPiiSurfaceGuardTests`
-and `RequestLogPayoutPathSuppressionTests` walk every wire DTO reachable from a controller action on the
-five hosts (shared walk: `WireSurface`), read the token list **out of the live compiled regex** so the two
-cannot drift, and redden CI naming the DTO, the member and the routes. A new PII- or payout-shaped member
-that is neither redacted, nor on a suppressed route, nor excepted **in writing** fails the build. A
-redaction list without that is the same defect class as a comment asserting an invariant.
+**What makes a denylist admissible at all is the guard, not the list.** `RequestLogPiiSurfaceGuardTests`,
+`RequestLogPayoutPathSuppressionTests` and `RequestLogCredentialShapeGuardTests` walk every wire DTO
+reachable from a controller action on the five hosts (shared walk: `WireSurface`), read the token list
+**out of the live compiled regex** so the three cannot drift, and redden CI naming the DTO, the member and
+the routes. A new PII-, payout- or credential-shaped member that is neither redacted, nor on a suppressed
+route, nor excepted **in writing** fails the build. A redaction list without that is the same defect class
+as a comment asserting an invariant.
+**Enforced by:** the three guards above (`Cleansia.Tests`, a named step of `backend-ci.yml:69-71`) — **T1-CI**.
 
-**Still open, and nothing detects it:** a *credential* whose field name was never in the token list
-(T-0470). The PII half is closed; do not read this table as covering it.
+**The credential half is now closed too, and closing it found one.** A secret whose field name was never
+in the token list used to be caught by nothing; `RequestLogCredentialShapeGuardTests` asks the question by
+*shape* — a member whose PascalCase words include `secret`/`token`/`key`/`password` must be redacted,
+suppressed or excepted with a reason. Its first run found `RegisterDevice.Command.DeviceToken` writing the
+raw FCM/APNs push token to Information on every device registration, because the alternation is
+quote-anchored and `token` therefore never matched `deviceToken`. The same value was already redacted when
+called `Token` and suppressed when called `TrustedDeviceToken` — which is the arbitrariness of a name list,
+measured rather than argued. **What the shape still cannot see** is a secret under a name with no
+credential word in it (`Payload`, `Handle`); no name heuristic reaches that, and a value-shaped leg was
+tried and dropped — nothing in the wire surface carries a statically discoverable example value to read.
 
 ## S7 — Idempotency on side-effecting commands
 

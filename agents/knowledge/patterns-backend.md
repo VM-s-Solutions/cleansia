@@ -1227,10 +1227,11 @@ Two corollaries this shape makes cheap:
 ## A rule that REJECTS cheaply runs before any rule that MATERIALIZES the payload
 
 **Enforced by:** `Cleansia.Tests/Common/Validators/ImageFileValidatorTests` +
-`DocumentFileValidatorTests` — `T1-CI`. Closed roster: the three `AbstractValidator<BlobFileDto>`
-siblings, `ImageFileValidator`, `FileValidator` and `DocumentFileValidator` (T-0556). The remaining
-base64 intake paths are enumerated on T-0548's sweep — `SaveOrderPhotos` still carries its own copy of
-the limit and `UpdateEmployee` still stores a client-declared content type — and are **not** covered.
+`DocumentFileValidatorTests`, over the surface `Base64UploadIntakeRosterTests` enumerates — `T1-CI`.
+**Two** `AbstractValidator<BlobFileDto>` siblings now, `ImageFileValidator` and `DocumentFileValidator`:
+the third, `FileValidator`, is deleted (T-0556 follow-up), because what it checked was the *declared* content type
+and its only caller now sniffs. Every base64 intake on every host runs the shared `BlobFileSize`
+predicate; the last private copy of the limit (`SaveOrderPhotos`) is gone.
 
 Ordering inside a `Cascade(CascadeMode.Stop)` chain is a **cost** decision as well as a message
 decision. `ImageFileValidator`'s magic-byte rule allocates the decoded payload twice
@@ -1263,18 +1264,27 @@ corollaries are what make it stick:
   *small* item is thousands of blob uploads and rows, so an intake taking a list caps the list too —
   and gates the `RuleForEach` on that cap (`.When(x => x.Items.Count <= Max)`), or the per-item rules
   decode every item of a list that is already refused, which is the cost the cap exists to refuse.
+- **Enumerate the intakes; do not remember them** (T-0556 follow-up). Two consecutive tickets each hardened the
+  path they were pointed at and each left a sibling writing the same container under the old rules —
+  the miss was never the rule, it was that nothing stated how many intakes exist.
+  `Base64UploadIntakeRosterTests` walks every host action whose request graph reaches `BlobFileDto` and
+  asserts the route list, annotated with the validator each one uses, so a new upload endpoint reddens
+  CI. **A roster is the only artifact here that catches the NEXT instance rather than the last one.**
 
-## The declared content type is a HINT; the bytes are the evidence (T-0556)
+## The declared content type is a HINT; the bytes are the evidence (T-0556 + its follow-up)
 
-**Enforced by:** `SaveMyDocumentsHandlerTests` + `DocumentFileValidatorTests` — `T1-CI`, for
-`SaveMyDocuments` only.
+**Enforced by:** `SaveMyDocumentsHandlerTests`, `UpdateEmployeeStoredContentTypeTests`,
+`EmployeeDocumentDownloadContentTypeTests` + `DocumentFileValidatorTests` — `T1-CI`, over both
+employee-document intakes and both download handlers.
 
 `BlobFileDto.ContentType` is a string the client chose, and the file extension is a weaker one (it
 survives a rename). Neither is evidence about the payload, so **neither may decide what a stored
 object is, nor what it is served as** — the recorded type comes back verbatim as the `Content-Type` of
-every `DownloadMyDocument`/`DownloadEmployeeDocument` response. `FileValidator.HaveValidFileType`
-reads the declared string: that is a **client-affordance filter, not a control**, and citing it as
-content validation is the mistake this rule exists to stop.
+every `DownloadMyDocument`/`DownloadEmployeeDocument` response. An **allowlist of declared types is a
+client-affordance filter, not a control**: it bounds what a caller may claim, and arbitrary bytes under
+a permitted claim pass it unchanged. Citing one as content validation is the mistake this rule exists
+to stop — it is what let the fourth employee-document intake keep storing a caller's string for a whole
+ticket after the first three were fixed.
 
 - **Sniff, then let the sniff decide the stored type.** One function answers both *may we accept this?*
   and *what is it?* (`Common/Validators/DocumentContentType.FromContent`, `null` = neither), because
@@ -1291,7 +1301,18 @@ content validation is the mistake this rule exists to stop.
 - **Do not lean on `Content-Disposition`.** `File(bytes, type, name)` sets `attachment`, which is why a
   poisoned type is not stored XSS today — but the two-argument overload sets **no** disposition at all
   (verified by execution), so that mitigation is one call-site edit away from gone. The control is the
-  byte-derived type; the disposition is luck.
+  byte-derived type; the disposition is luck. Both are now asserted on the *returned result*
+  (`EmployeeDocumentDownloadDispositionTests`) rather than read off the call site, because losing an
+  argument is the kind of change review does not see. No host sets `X-Content-Type-Options: nosniff`.
+- **A write-path rule retypes nothing that is already stored** (T-0556 follow-up). Hardening an intake fixes the
+  rows written after it; the rows already there keep whatever their uploader claimed, and no amount of
+  validator is going to reach them. Close the residue where it is a **closed set** — the handlers that
+  serve the blob — by deriving the served type from the bytes there too
+  (`DocumentContentType.ForDownload`, falling back to `ServedContentType.Opaque` so an unrecognised
+  legacy row is demoted rather than made undownloadable). Same argument that chose a SAS
+  response-header override over re-uploading every order photo, and the same discipline: **the read
+  path reads the intake's own signature table**, or the two answers drift and a document is one type on
+  the way in and another on the way out.
 
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 

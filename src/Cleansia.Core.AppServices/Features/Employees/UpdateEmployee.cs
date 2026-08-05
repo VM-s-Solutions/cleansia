@@ -22,6 +22,13 @@ public class UpdateEmployee
 {
     public class Validator : AbstractValidator<Command>
     {
+        /// <summary>
+        /// The same cap as <c>SaveMyDocuments</c>, which writes the same container and the same table:
+        /// the per-document size bound bounds one item, and the host body limit buys thousands of small
+        /// ones, each a blob upload and a row.
+        /// </summary>
+        private const int MaxDocumentsPerRequest = 10;
+
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly ITaxIdValidator _taxIdValidator;
@@ -126,9 +133,23 @@ public class UpdateEmployee
                 .Equal(true)
                 .WithMessage(BusinessErrorMessage.Required);
 
+            RuleFor(c => c.Documents)
+                .Must(documents => documents is null || documents.Count <= MaxDocumentsPerRequest)
+                .WithMessage(BusinessErrorMessage.FileCountExceeded);
+
             RuleForEach(c => c.Documents)
-                .SetValidator(new FileValidator()!)
-                .When(command => command.Documents?.Any() == true);
+                .Cascade(CascadeMode.Stop)
+                // FluentValidation skips a child validator for a null element, so without this a
+                // `[null]` entry reaches the handler and is dereferenced.
+                .NotNull().WithMessage(BusinessErrorMessage.Required)
+                .SetValidator(new DocumentFileValidator())
+                .ChildRules(document => document.RuleFor(file => file.FileName)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty().WithMessage(BusinessErrorMessage.Required)
+                    .MaximumLength(255).WithMessage(BusinessErrorMessage.MaxLength))
+                // Without this the per-item rules still sniff and decode every item of a list already
+                // refused for being too long, which is the cost the count cap exists to refuse.
+                .When(command => command.Documents?.Count <= MaxDocumentsPerRequest);
 
             RuleFor(c => c.Availability)
                 .Must(BeValidAvailability)
@@ -264,20 +285,15 @@ public class UpdateEmployee
 
             foreach (var document in command.Documents)
             {
-                if (string.IsNullOrWhiteSpace(document.Base64Content))
-                {
-                    continue;
-                }
-
                 var uniqueFileName = $"{Guid.NewGuid()}_{document.FileName}";
                 var fullFilePath = $"{employeeDocumentsPath}/{uniqueFileName}";
-                var contentType = document.ContentType ?? "application/octet-stream";
+                var contentType = DocumentContentType.FromContent(document.Base64Content)!;
 
-                await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content.ExtractBase64Data()));
+                await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content!.ExtractBase64Data()));
                 var fileSizeBytes = stream.Length;
 
                 var metadata = MetadataExtensions.CreateDocumentMetadata(
-                    document.FileName ?? "unknown",
+                    document.FileName,
                     contentType,
                     employee.UserId);
 
@@ -285,7 +301,7 @@ public class UpdateEmployee
 
                 var employeeDocument = EmployeeDocument.Create(
                     employee.Id,
-                    document.FileName ?? uniqueFileName,
+                    document.FileName,
                     fullFilePath,
                     contentType,
                     fileSizeBytes,

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -34,8 +35,6 @@ public class SaveOrderPhotos
 
     public class Validator : AbstractValidator<Command>
     {
-        private const long MaxFileSizeBytes = 10 * 1024 * 1024;
-
         public Validator(IOrderRepository orderRepository)
         {
             RuleFor(x => x.OrderId)
@@ -52,24 +51,22 @@ public class SaveOrderPhotos
             RuleForEach(x => x.Photos).ChildRules(photo =>
             {
                 photo.RuleFor(p => p.File.FileName)
+                    .Cascade(CascadeMode.Stop)
                     .NotEmpty()
                     .WithMessage(BusinessErrorMessage.Required)
                     .MaximumLength(255)
                     .WithMessage(BusinessErrorMessage.MaxLength);
 
-                photo.RuleFor(p => p.File.Base64Content)
-                    .NotEmpty()
+                // The presence rule has to stay ahead of the size rule and cannot be folded into it:
+                // the shared predicate treats blank content as out of bounds, so the order is the only
+                // thing deciding whether a missing photo reports itself as an oversized one.
+                photo.RuleFor(p => p.File)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(file => !string.IsNullOrWhiteSpace(file.Base64Content))
                     .WithMessage(BusinessErrorMessage.FileRequired)
-                    .Must(base64 => GetBase64DataSize(base64) <= MaxFileSizeBytes)
+                    .Must(BlobFileSize.HasContentWithinLimit)
                     .WithMessage(BusinessErrorMessage.FileSizeExceeded);
             });
-        }
-
-        private static long GetBase64DataSize(string? base64)
-        {
-            if (string.IsNullOrEmpty(base64)) return 0;
-            var data = base64.Contains(',') ? base64.Split(',')[1] : base64;
-            return (long)(data.Length * 0.75);
         }
     }
 

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.Blobs.Abstractions;
 
 namespace Cleansia.Core.AppServices.Common.Validators;
 
@@ -15,7 +16,8 @@ namespace Cleansia.Core.AppServices.Common.Validators;
 /// as; the extension is the weaker of the two, since it also survives a rename by anyone who later
 /// touches the file name. Every type recorded from here on is therefore one of the five below, which is
 /// what keeps <c>text/html</c> and <c>image/svg+xml</c> off a response header whatever a client sends.
-/// Rows written before this existed still hold what their uploader claimed.</para>
+/// Rows written before this existed still hold what their uploader claimed — which is what
+/// <see cref="ForDownload"/> exists for, and why both entry points read the one table below.</para>
 ///
 /// <para><b>What this does not do.</b> A signature bounds the container format, not its contents: a ZIP
 /// header says OOXML-or-any-other-zip, an OLE2 header says Office-compound-file-or-any-other, and both
@@ -55,11 +57,25 @@ internal static class DocumentContentType
         }
 
         Span<byte> head = stackalloc byte[SniffedBase64Characters * 3 / 4];
-        var sniffed = DecodeHead(base64Content.ExtractBase64Data(), head);
 
+        return Match(DecodeHead(base64Content.ExtractBase64Data(), head));
+    }
+
+    /// <summary>
+    /// The same question asked of a blob already in storage, for the rows written before the intake
+    /// asked it — a write-path rule retypes nothing that is already there, and every one of those rows
+    /// holds a string its uploader chose. An unrecognised payload falls back to
+    /// <see cref="ServedContentType.Opaque"/> rather than being refused: it must not gain a capability,
+    /// but a cleaner's already-accepted document must not become undownloadable either.
+    /// </summary>
+    public static string ForDownload(ReadOnlySpan<byte> content) =>
+        Match(content) ?? ServedContentType.Opaque.Value;
+
+    private static string? Match(ReadOnlySpan<byte> content)
+    {
         foreach (var (signature, contentType) in Signatures)
         {
-            if (sniffed.Length >= signature.Length && sniffed[..signature.Length].SequenceEqual(signature))
+            if (content.Length >= signature.Length && content[..signature.Length].SequenceEqual(signature))
             {
                 return contentType;
             }

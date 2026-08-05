@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.LocalOffer
@@ -79,8 +80,7 @@ import kotlinx.coroutines.launch
  *    committing.
  *  - Social-proof tile right under the hero ("Members typically save…").
  *  - Perks rendered as tiles with bigger icons; ordered economic-value first
- *    (discount → cancellation → favorite cleaner → recurring). Express upgrade
- *    is absent on purpose — see [MembershipPerks].
+ *    (discount → cancellation → favorite cleaner → recurring → express waiver).
  *  - Sticky bottom CTA on a contrasting bg with verb-led label
  *    ("Start free trial") + fine-print renewal terms.
  *
@@ -210,6 +210,12 @@ fun SubscribePlusScreen(
                 icon = Icons.Outlined.Repeat,
                 title = stringResource(R.string.membership_perk_recurring_title),
                 desc = stringResource(R.string.membership_perk_recurring_desc),
+            )
+            Spacer(Modifier.height(10.dp))
+            PerkTile(
+                icon = Icons.Outlined.Bolt,
+                title = stringResource(R.string.membership_perk_express_title),
+                desc = stringResource(R.string.membership_perk_express_desc),
             )
 
             Spacer(Modifier.height(24.dp))

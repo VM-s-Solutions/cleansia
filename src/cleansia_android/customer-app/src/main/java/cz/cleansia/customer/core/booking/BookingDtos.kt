@@ -55,6 +55,12 @@ data class QuoteOrderResponse(
     val expressSurchargeApplied: Boolean = false,
     /** Surcharge amount folded into [totalPrice]. Surface as its own row in the breakdown. */
     val expressSurchargeAmount: Double = 0.0,
+    /**
+     * True when the slot is in the express window AND the member's monthly quota covered it, in which
+     * case [expressSurchargeApplied] is false and [totalPrice] carries no surcharge. The summary must
+     * follow this verdict rather than re-deriving one from the clock.
+     */
+    val expressSurchargeWaivedByMembership: Boolean = false,
     val exchangeRate: Double,
 )
 

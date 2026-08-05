@@ -12,6 +12,9 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.memberships.ExpressWaiver
+import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.resolveExpressWaiver
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
@@ -25,12 +28,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -150,11 +155,27 @@ class BookingViewModel @Inject constructor(
     // single-serviced-country fallback), but the moment we flag SK as
     // serviced too the fallback fails and the user would see "country.required".
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
+    private val membershipRepository: MembershipRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingState())
     val state: StateFlow<BookingState> = _state.asStateFlow()
+
+    /**
+     * The wizard's one read of the express waiver, shared by the slot grid's disclosure and its chip.
+     * A failed or absent membership read degrades to [ExpressWaiver.None] — the same silence a
+     * non-member gets — because a claim rendered from nothing is worse on this screen than no claim.
+     */
+    val expressWaiver: StateFlow<ExpressWaiver> = membershipRepository.current
+        .map { resolveExpressWaiver(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ExpressWaiver.None)
+
+    init {
+        if (tokenStore.current() != null) {
+            viewModelScope.launch { membershipRepository.refresh() }
+        }
+    }
 
     /**
      * Wave 4 — formerly `_submitting: Boolean`. No Error variant today (the

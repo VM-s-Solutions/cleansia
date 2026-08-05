@@ -150,4 +150,60 @@ web is independent.
     their own shared catalogs (`values*/strings.xml`, `Localizable.xcstrings`) — **separate lanes, no
     concurrent writers on either file.**
 
+- 2026-08-05 — **android leg shipped.** `manual_steps: mobile-spec-redump` was **already DISCHARGED** at
+  Gate 0: `openapi/customer-mobile-api.json` carries `QuoteOrder_Response.expressSurchargeWaivedByMembership`
+  / `.expressUpgradesRemaining` and `GetMyMembership_Response.expressUpgradesPerMonth` /
+  `.expressUpgradesRemaining` / `.trialEndsAtUtc`, and the build-time OpenAPI codegen already emits them.
+  No redump was needed and none was requested.
+  **The surface, for the iOS port to reproduce 1:1:**
+  - **One resolver, two consumers** (mirrors web's `express-waiver-status.ts`):
+    `cz.cleansia.customer.core.memberships.ExpressWaiver` — `enum ExpressWaiverStatus { None, Trial,
+    Available, Exhausted }` + `resolveExpressWaiver(membership, now)`. Order of tests is load-bearing:
+    no membership → `None`; `expressUpgradesPerMonth <= 0` → `None`; `trialEndsAtUtc > now` → `Trial`
+    (**before** the count, so a trialing member never reports a waiver); else `remaining > 0` →
+    `Available(remaining)` : `Exhausted(0)`. The **quota, not `allowsExpressUpgrade`,** is the gate —
+    the server already reports `Quota = 0` for a plan whose flag is off.
+  - **API calls: none added.** The disclosure reads `GetMyMembership` (already called), the summary
+    reads the existing `/Order/Quote`. The quote **cannot** drive the disclosure: it reports
+    `expressUpgradesRemaining = 0` for a trialing member *and* an exhausted one and carries no
+    `trialEndsAtUtc`, so only `GetMyMembership` separates them — same reason web used it.
+  - **AC1/AC4 — slot grid** (`WhenWhereStep.kt`): the express chip renders
+    `booking_slot_express_waived` instead of `booking_slot_express` when status is `Available`; a note
+    under the grid renders **only when the grid actually offers an express slot**, in three states —
+    `booking_express_waiver_available` (`%1$d` = the server count, bound verbatim),
+    `booking_express_waiver_used`, `booking_express_waiver_trial`. `None` renders **nothing**.
+  - **AC1 — summary** (`ConfirmStep.kt:105`): `expressWaived = quote?.expressSurchargeWaivedByMembership`
+    drives a `booking_summary_express_surcharge_waived` row at `0` *instead of* the +20 % row, and is
+    threaded into `BookingPricing` so the displayed total drops the surcharge. `BookingPricing`'s three
+    functions now take a **required** `waiverApplies` (mirroring `BookingPolicy.RequiresExpressSurcharge`)
+    so an omitted call site does not compile — greppable by construction.
+  - **AC3 — a non-member is byte-for-byte unchanged**: `None` adds no note, no chip flip and no row, and
+    `waiverApplies = false` reproduces the previous arithmetic exactly (`BookingPricingTest`
+    `a standard slot total is identical whether or not a waiver exists`).
+  - **Navigation: unchanged.** No new routes, no new screens.
+  - `BookingViewModel` gains `expressWaiver: StateFlow<ExpressWaiver>` (`stateIn(…, Eagerly, None)` — the
+    house idiom, `ProfileViewModel`/`CreateRecurringViewModel`) and warms `MembershipRepository.refresh()`
+    on `init` **only when `tokenStore.current() != null`**; a failed read degrades to `None`, i.e. silence.
+    `WhenWhereStep` takes the waiver as a **parameter** (stateless, preview-friendly) — it does not reach
+    for a ViewModel.
+  - **AC9** — customer-app **51 classes / 455 tests → 54 / 492, 0 failures**; `:core` 21/151 and
+    `:partner-app` 46/224 unchanged. Full CI-equivalent run (all 3 modules compile + test) exit **0**,
+    "96 actionable tasks: 96 executed". New: `ExpressWaiverTest` (10), `BookingPricingTest` (8),
+    `BookingExpressWaiverBindingTest` (7), +4 `BookingViewModelTest`, +1 `BookingApiTest`.
+  - **AC10 / Gate 0.5** — the screenshot ACs are QA's and carry no leg-1 proof. The logic does: **18/18
+    mutations RED, every one attributed to a named test, all files restored byte-exact (sha256 verified
+    after every batch).** The proof also **found a weak assertion of my own** — M17 (`.map {
+    resolveExpressWaiver(it) }` → `.map { ExpressWaiver.None }`) initially left the binding test green
+    because the *import line* still carried the symbol; the assertion was tightened to the mapped
+    expression and re-proven RED.
+  - 🚩 **Found, NOT fixed — pre-existing express double-count on the DISPLAYED total** (unrelated to the
+    waiver, affects every express booking incl. non-members, so out of this ticket's scope and of AC3's
+    "unchanged"). The server folds the surcharge into `QuoteOrderResponse.totalPrice`
+    (`OrderPricingCalculator.cs`: `totalPrice = chargeSubtotal + expressSurchargeAmount`) and
+    `submit()` forwards that number unchanged (`BookingViewModel.kt:391-395`), but the *display* path
+    takes `basePrice = quote.totalPrice` and adds ~20 % **again** (`ConfirmStep.kt:120-131`,
+    `BookingBottomSheet.kt:557`). Second, smaller divergence: the client computes the surcharge on the
+    **post-discount** subtotal while the server computes it on the **pre-discount** one. Both need an
+    owner call on the intended summary semantics (which number is "Subtotal"?) — filing suggested.
+
 ## Review

@@ -562,6 +562,10 @@
     <string name="booking_slot_unavailable">Недоступно</string>
     <string name="booking_slot_earliest">Раньше всего</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express_waived">Экспресс · без доплаты</string>
+    <string name="booking_express_waiver_available">Plus покрывает 20%% экспресс-доплаты — %1$d осталось в этом календарном месяце.</string>
+    <string name="booking_express_waiver_used" formatted="false">В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Во время пробного периода экспресс-слоты оплачиваются с +20 % — отмена доплаты начинается с первого оплаченного месяца.</string>
     <string name="booking_slot_select">Выбрать</string>
     <string name="booking_all_slots_booked">Все слоты на этот день заняты — выберите другой день.</string>
 
@@ -672,6 +676,7 @@
     <string name="booking_summary_time">Время</string>
     <string name="booking_summary_subtotal">Промежуточный итог</string>
     <string name="booking_summary_express_surcharge">Экспресс-надбавка (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Экспресс-слот — отменено с Plus</string>
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Скидка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Скидка за лояльность</string>
@@ -835,11 +840,16 @@
     <string name="membership_perk_cancellation_desc">Отмените за 4 часа до уборки без комиссий.</string>
     <string name="membership_perk_discount_title" formatted="false">5% скидка для участников</string>
     <string name="membership_perk_discount_desc" formatted="false">На каждую уборку. В сочетании с уровнем лояльности ограничена 12%.</string>
+    <string name="membership_perk_express_title">Экспресс-заказы без доплаты</string>
+    <string name="membership_perk_express_desc" formatted="false">Мы не берём 20 % доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. Определённое количество на каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">скидка %1$d%%</string>
     <string name="membership_perk_pill_cancellation">отмена за %1$d ч</string>
     <string name="membership_perk_pill_recurring">Регулярно</string>
+    <string name="membership_perk_pill_express">Экспресс без доплаты · осталось %1$d</string>
+    <string name="membership_perk_pill_express_used">Экспресс без доплаты · не осталось</string>
+    <string name="membership_perk_pill_express_trial">Экспресс без доплаты · после пробного</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -850,6 +860,7 @@
     <string name="membership_success_title">Добро пожаловать в Plus!</string>
     <string name="membership_success_subtitle">Ваши преимущества активны сразу. Вот что только что открылось:</string>
     <string name="membership_success_perks_header">ВАШИ ПРЕИМУЩЕСТВА PLUS</string>
+    <string name="membership_success_perk_express">Экспресс-заказы без доплаты — с первого оплаченного месяца</string>
     <string name="membership_success_cta_setup_recurring">Настроить регулярную уборку</string>
     <string name="membership_success_cta_back_home">На главную</string>
     <string name="membership_active_status">Активна</string>

@@ -111,6 +111,7 @@ private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
         extrasSubtotal = extrasSubtotal ?: 0.0,
         expressSurchargeApplied = expressSurchargeApplied ?: false,
         expressSurchargeAmount = expressSurchargeAmount ?: 0.0,
+        expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: false,
         exchangeRate = exchangeRate ?: 1.0,
     )
 }

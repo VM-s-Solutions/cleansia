@@ -147,5 +147,66 @@ same test that killed the last one.
   - `owner` moves `analyst` → `android`; the copy decision is made and attributed, so what remains is a
     verbatim port plus the two per-platform guards. iOS runs in parallel.
 
+- 2026-08-05 — **android leg shipped.**
+  - **The stale comment is gone.** `values/strings.xml:855-858` did read *"No express perk anywhere …
+    Restore this perk only together with the code that waives the surcharge."* — verified verbatim before
+    editing, and false since T-0493. Replaced with the neutral section header the other four locales
+    already carried (`<!-- Perk pills on the active management card. -->`). The second copy of the same
+    claim lived in `MembershipPerks.kt:9-12` (*"Express upgrade is deliberately absent…"*) and in
+    `SubscribePlusScreen.kt:82` (*"Express upgrade is absent on purpose"*) and in `MembershipPerksTest`'s
+    doc — **all four rewritten**, plus `MembershipExpressClaimTest`'s class doc, which asserted the
+    opposite of what it now guards. A grep for `absent|deliberate|no pricing code|Restore this` over
+    `customer-app/src/main/java` now returns only the new, true comments.
+  - **AC5 re-derived, not trusted: Android has THREE render sites, not two.** Subscribe
+    (`SubscribePlusScreen.kt` — a 5th `PerkTile`), success (`MembershipSuccessScreen.kt` — a 4th
+    `PerkRow`), **and the management card's pill row** (`MembershipManagementCard.kt`), which the ticket's
+    count omitted. The pill row is the container-equivalent of web's `<li>` list in
+    `membership-management.component.html`. **iOS has the same three** (`MembershipPerks.swift`'s enum
+    feeds a `ChipFlow` row per `patterns-mobile.md`), so the iOS leg owes three, not two.
+  - **AC6 — Plus advertises five perks again** on the subscribe screen (discount → cancellation →
+    favorite cleaner → recurring → **express waiver**), four on the success screen, and four pills on the
+    active card. Verified by rendering order in source, not by key grep.
+  - **Copy taken verbatim from `apps/cleansia.app/src/assets/i18n/*.json` in all five locales:**
+    `benefit_express_title` → `membership_perk_express_title`; `benefit_express_body` →
+    `membership_perk_express_desc`; `welcome_perk_express` → `membership_success_perk_express`.
+  - ⚠️ **One deliberate copy divergence the iOS leg should match, not re-derive.** Web's
+    `perk_express` / `_used` / `_trial` are full sentences in a `<li>` list ("Express surcharge waived —
+    {{count}} left this month"). Android's counterpart is a **chip in a `FlowRow`** whose siblings are
+    "%1$d%% off" / "%1$dh free cancel" / "Recurring" — a 50-character sentence wraps inside the pill and
+    reads as broken. So the three pill strings are terse Android-native variants carrying the identical
+    three claims (`membership_perk_pill_express` = "Express waived · %1$d left",
+    `_used` = "… · none left", `_trial` = "… · after trial"). The **promise** copy on the prose surfaces
+    is verbatim web. **iOS uses a `ChipFlow` for the same row, so it should take the Android pill copy.**
+  - **AC1 holds in all four cases** because the claim is a *status*, not a promise: the pill only renders
+    when the server reports a quota, and it renders `Trial` / `Exhausted` / `Available(n)` distinctly.
+    PastDue never reaches it — `GetActiveForUserNoTrackingAsync` excludes it, so the whole perk list
+    disappears. **AC2** — no locale names a count; the count is always `%1$d` from the server.
+    **AC3** — no locale says same-day.
+  - **AC4 — the three guards were narrowed, not deleted, and re-mutation-proven.**
+    `MembershipExpressClaimTest` kept its five-locale walk over **VALUES** and swapped "no express string
+    exists" for: (a) all 11 express keys present + non-empty in all five locales, (b) no locale matches a
+    multilingual same-day regex, (c) **no express string carries a digit** once `%…` placeholders, the
+    rate (`\b20\s?%`) and the window (`\b2\D{1,6}4\b`) are erased **by shape** — web's M3 lesson (a plain
+    2/4/20 allow-list also passes *"2 free express bookings a month"*) applied directly, (d) every screen
+    renders the claim and none branches on the bare `allowsExpressUpgrade` flag. A floor assertion fails
+    the walk if it ever stops finding `11 keys × 5 locales` strings.
+  - **Bonus safety net found, not added by me:** `NotificationsScreenTogglesTest :: all five locales
+    declare the same keys` already enforces whole-catalog locale parity and went RED on mutation M7 (a
+    key deleted from `values-uk`). So the five-locale requirement is double-covered.
+  - **Gate 0.5 — 18/18 mutations RED**, each attributed to a named test, all files restored byte-exact
+    (sha256 verified after each batch). Copy-guard mutations specifically: **M7** a locale drops the perk
+    title → *every express string is present…*; **M8** a cs locale claims same-day → *no locale describes
+    the express window as same-day*; **M9** en body says "2 free express bookings a month" → *no express
+    string hardcodes the monthly quota*; **M15** a sk locale loses `%1$d` → *every counted express string
+    keeps its placeholder*; **M13** the trial pill points at the "used" string → *each express pill state
+    maps to its own label*; **M16** the subscribe tile deleted → *every membership screen gates the
+    express claim on a server field*.
+  - customer-app **51 classes / 455 tests → 54 / 492, 0 failures**; `:core` and `:partner-app` unchanged.
+  - 🚩 **Found, NOT fixed (pre-existing, out of scope):** `booking_slot_express` is the untranslated
+    literal *"Express +20%"* in **all five** locales including uk/ru, where every neighbouring string uses
+    "Експрес"/"Экспресс". The new `booking_slot_express_waived` IS translated (web verbatim), so the chip
+    flips between an English and a localized label for the same user. Fixing it would change a
+    non-member's screen, which T-0514 AC3 forbids — needs its own row.
+
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

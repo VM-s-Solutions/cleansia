@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Repeat
@@ -137,6 +138,10 @@ fun MembershipSuccessScreen(
                 PerkRow(
                     icon = Icons.Outlined.CheckCircle,
                     title = stringResource(R.string.membership_perk_cancellation_title),
+                )
+                PerkRow(
+                    icon = Icons.Outlined.Bolt,
+                    title = stringResource(R.string.membership_success_perk_express),
                 )
             }
 

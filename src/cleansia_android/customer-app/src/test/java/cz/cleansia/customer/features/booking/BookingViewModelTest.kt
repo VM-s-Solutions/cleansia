@@ -9,6 +9,9 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
 import cz.cleansia.customer.core.payments.PaymentRepository
 import cz.cleansia.customer.core.promo.PromoCodeApi
@@ -67,9 +70,11 @@ class BookingViewModelTest {
     private lateinit var tokenStore: cz.cleansia.core.auth.TokenStore
     private lateinit var snackbar: SnackbarController
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
+    private lateinit var membershipRepository: MembershipRepository
     private lateinit var appContext: Context
 
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
+    private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
 
     private val networkMessage = "Check your internet connection and try again."
     private val pickTimeMessage = "Please select a cleaning date and time."
@@ -87,6 +92,8 @@ class BookingViewModelTest {
         snackbar = mockk(relaxed = true)
         serviceAreaProvider = mockk()
         coEvery { serviceAreaProvider.loadCountries() } returns emptyList()
+        membershipRepository = mockk(relaxed = true)
+        every { membershipRepository.current } returns membershipFlow
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -117,6 +124,7 @@ class BookingViewModelTest {
         tokenStore = tokenStore,
         snackbar = snackbar,
         serviceAreaProvider = serviceAreaProvider,
+        membershipRepository = membershipRepository,
         appContext = appContext,
     )
 
@@ -693,5 +701,52 @@ class BookingViewModelTest {
         assertEquals(QuoteState.Idle, vm.quoteState.value)
         assertEquals(ActionState.Idle, vm.submitState.value)
         assertEquals(PromoCodeUiState.Idle, vm.promoCodeState.value)
+    }
+
+    // ── express waiver ──
+
+    @Test
+    fun expressWaiver_givenSignedInUser_warmsTheMembershipRead() = runTest {
+        newViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { membershipRepository.refresh() }
+    }
+
+    @Test
+    fun expressWaiver_givenGuest_neverCallsTheMembershipEndpoint() = runTest {
+        every { tokenStore.current() } returns null
+
+        newViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { membershipRepository.refresh() }
+    }
+
+    @Test
+    fun expressWaiver_givenQuotaLeft_reportsTheServerCount() = runTest {
+        membershipFlow.value = GetMyMembershipResponse(
+            hasMembership = true,
+            expressUpgradesPerMonth = 2,
+            expressUpgradesRemaining = 2,
+        )
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(ExpressWaiverStatus.Available, vm.expressWaiver.value.status)
+        assertEquals(2, vm.expressWaiver.value.remaining)
+    }
+
+    /**
+     * A membership read that never lands must leave the wizard silent, not render a claim from
+     * nothing on the most valuable screen in the product.
+     */
+    @Test
+    fun expressWaiver_givenNoMembershipYet_staysSilent() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(ExpressWaiverStatus.None, vm.expressWaiver.value.status)
     }
 }

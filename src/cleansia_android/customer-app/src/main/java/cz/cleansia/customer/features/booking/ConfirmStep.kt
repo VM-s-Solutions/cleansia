@@ -100,7 +100,10 @@ fun ConfirmStep(
     val basePrice = quote?.totalPrice
         ?: (selectedServices.sumOf { it.basePrice + it.perRoomPrice * (state.rooms + state.bathrooms) } +
             selectedPackages.sumOf { it.price })
-    val isExpress = BookingPricing.requiresExpressSurcharge(state.selectedInstant)
+    // The quote already dropped the surcharge when the member's quota covered this slot, so following
+    // its verdict is what keeps the number on screen equal to the number charged.
+    val expressWaived = quote?.expressSurchargeWaivedByMembership == true
+    val isExpress = BookingPricing.requiresExpressSurcharge(state.selectedInstant, waiverApplies = expressWaived)
     // LOY-003 — server now returns Plus AND tier additively (both can be
     // non-zero on the same quote, already capped at 12% combined). Promo
     // replaces the additive pair if larger; never stacks. Mirror the same
@@ -114,8 +117,18 @@ fun ConfirmStep(
     // Surcharge is computed on the post-discount price so it tracks what the
     // user actually pays. Mirrors backend CreateOrder.Handler order.
     val discountedSubtotal = (basePrice - effectiveDiscount).coerceAtLeast(0.0)
-    val surcharge = BookingPricing.expressSurchargeAmount(discountedSubtotal, state.selectedInstant)
-    val finalTotal = BookingPricing.finalTotal(basePrice, state.selectedInstant, 0.0, effectiveDiscount)
+    val surcharge = BookingPricing.expressSurchargeAmount(
+        discountedSubtotal,
+        state.selectedInstant,
+        waiverApplies = expressWaived,
+    )
+    val finalTotal = BookingPricing.finalTotal(
+        basePrice,
+        state.selectedInstant,
+        0.0,
+        effectiveDiscount,
+        waiverApplies = expressWaived,
+    )
     // Promo wins → show only the promo line. Otherwise show whichever of
     // (Plus, tier) is non-zero; both can be shown simultaneously now.
     val showPromoLine = promoDiscount > 0.0 && promoDiscount > combinedServerDiscount
@@ -275,6 +288,20 @@ fun ConfirmStep(
                         "+${formatOrderPrice(surcharge, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+            if (expressWaived) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(R.string.booking_summary_express_surcharge_waived),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SuccessText,
+                    )
+                    Text(
+                        formatOrderPrice(0.0, currencyCode),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SuccessText,
                     )
                 }
             }

@@ -39,6 +39,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.memberships.ExpressWaiver
+import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.ui.theme.selectionTint
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -161,6 +163,7 @@ fun WhenWhereStep(
     state: BookingState,
     onUpdate: (BookingState) -> Unit,
     onPickAddressOnMap: () -> Unit = {},
+    expressWaiver: ExpressWaiver = ExpressWaiver.None,
 ) {
     // Weekday labels come from the ACTIVE app locale, not the JVM default, so a
     // per-app language override is honoured. Both inputs are remember keys: with
@@ -274,6 +277,7 @@ fun WhenWhereStep(
                 TimeSlotRow(
                     slot = slot,
                     selected = state.selectedTime == slot.time,
+                    waiverAvailable = expressWaiver.status == ExpressWaiverStatus.Available,
                     onClick = {
                         val instant = pickedDayChip?.let { combineDateAndTime(it.localDate, slot.time) }
                         onUpdate(
@@ -292,6 +296,11 @@ fun WhenWhereStep(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 16.dp),
                 )
+            }
+            // The express verdict belongs at the moment of choice, not at payment: a member who
+            // learns their waiver is gone while confirming the price has already been surprised.
+            if (visibleSlots.any { it.state == SlotState.Express }) {
+                ExpressWaiverNote(expressWaiver)
             }
         }
 
@@ -427,12 +436,56 @@ private fun DayChipView(day: DayChip, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
+/* ── Express waiver disclosure — one line under the slot grid ── */
+
+/**
+ * Three server-decided states, and [ExpressWaiverStatus.None] deliberately says nothing: for a guest
+ * or a plan without the perk, the slot's own "+20%" tag already discloses the charge, and inventing a
+ * fourth sentence for them would change a flow this ticket must leave alone.
+ */
+@Composable
+private fun ExpressWaiverNote(waiver: ExpressWaiver) {
+    val text = when (waiver.status) {
+        ExpressWaiverStatus.Available ->
+            stringResource(R.string.booking_express_waiver_available, waiver.remaining)
+        ExpressWaiverStatus.Exhausted -> stringResource(R.string.booking_express_waiver_used)
+        ExpressWaiverStatus.Trial -> stringResource(R.string.booking_express_waiver_trial)
+        ExpressWaiverStatus.None -> return
+    }
+    Row(
+        modifier = Modifier.padding(top = 4.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            if (waiver.status == ExpressWaiverStatus.Available) Icons.Outlined.Bolt else Icons.Outlined.Info,
+            null,
+            tint = if (waiver.status == ExpressWaiverStatus.Available) {
+                ExpressOrange
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 /* ── Time slot row — full-width list row with optional express left stripe ── */
 
 private val ExpressOrange = androidx.compose.ui.graphics.Color(0xFFEA580C)
 
 @Composable
-private fun TimeSlotRow(slot: TimeSlot, selected: Boolean, onClick: () -> Unit) {
+private fun TimeSlotRow(
+    slot: TimeSlot,
+    selected: Boolean,
+    waiverAvailable: Boolean,
+    onClick: () -> Unit,
+) {
     val isExpress = slot.state == SlotState.Express
     val isEarliest = slot.state == SlotState.Earliest
 
@@ -492,7 +545,10 @@ private fun TimeSlotRow(slot: TimeSlot, selected: Boolean, onClick: () -> Unit) 
                 )
                 when {
                     isExpress -> Text(
-                        stringResource(R.string.booking_slot_express),
+                        stringResource(
+                            if (waiverAvailable) R.string.booking_slot_express_waived
+                            else R.string.booking_slot_express,
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = ExpressOrange,
                     )

@@ -562,6 +562,10 @@
     <string name="booking_slot_unavailable">Obsadené</string>
     <string name="booking_slot_earliest">Najskôr</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express_waived">Expres · bez príplatku</string>
+    <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
+    <string name="booking_express_waiver_used" formatted="false">Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom.</string>
     <string name="booking_slot_select">Vybrať</string>
     <string name="booking_all_slots_booked">Pre tento deň sú všetky termíny obsadené — vyberte iný deň.</string>
 
@@ -672,6 +676,7 @@
     <string name="booking_summary_time">Čas</string>
     <string name="booking_summary_subtotal">Medzisúčet</string>
     <string name="booking_summary_express_surcharge">Expresný príplatok (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Expresný termín — odpustené s Plus</string>
     <string name="booking_summary_promo_discount">Zľavový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Zľava Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Vernostná zľava</string>
@@ -835,11 +840,16 @@
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny pred upratovaním bez poplatkov.</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská zľava</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
+    <string name="membership_perk_express_title">Expresné termíny bez príplatku</string>
+    <string name="membership_perk_express_desc" formatted="false">Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">zľava %1$d %%</string>
     <string name="membership_perk_pill_cancellation">zrušenie %1$d h zadarmo</string>
     <string name="membership_perk_pill_recurring">Pravidelne</string>
+    <string name="membership_perk_pill_express">Expres odpustený · zostáva %1$d</string>
+    <string name="membership_perk_pill_express_used">Expres odpustený · nič nezostáva</string>
+    <string name="membership_perk_pill_express_trial">Expres odpustený · po skúšobnej dobe</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -850,6 +860,7 @@
     <string name="membership_success_title">Vitajte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody sú hneď aktívne. Tu je, čo ste práve odomkli:</string>
     <string name="membership_success_perks_header">VAŠE VÝHODY PLUS</string>
+    <string name="membership_success_perk_express">Expresné termíny bez príplatku — od prvého plateného mesiaca</string>
     <string name="membership_success_cta_setup_recurring">Nastaviť pravidelné upratovanie</string>
     <string name="membership_success_cta_back_home">Späť na hlavnú</string>
     <string name="membership_active_status">Aktívne</string>

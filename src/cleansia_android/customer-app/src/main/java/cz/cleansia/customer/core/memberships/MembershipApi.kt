@@ -111,6 +111,9 @@ private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse = Ge
     cancelRequested = this?.cancelRequested ?: false,
     billingInterval = this?.billingInterval,
     monthlyEquivalentPriceCzk = this?.monthlyEquivalentPriceCzk,
+    expressUpgradesPerMonth = this?.expressUpgradesPerMonth,
+    expressUpgradesRemaining = this?.expressUpgradesRemaining,
+    trialEndsAtUtc = this?.trialEndsAtUtc,
 )
 
 private fun GenMembershipStatus.toCode(): Int = value

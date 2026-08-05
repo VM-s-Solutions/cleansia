@@ -91,6 +91,15 @@ data class GetMyMembershipResponse(
     val billingInterval: Int? = null,
     /** Per-month equivalent: same as [monthlyPriceCzk] for monthly, /12 for yearly. */
     val monthlyEquivalentPriceCzk: Double? = null,
+    /** The resolver's quota, already zero for a plan whose express flag is off. */
+    val expressUpgradesPerMonth: Int? = null,
+    /**
+     * Live waivers left this calendar month, before any booking under composition. Null = no
+     * membership; 0 = exhausted OR still inside the trial — [trialEndsAtUtc] tells those apart.
+     */
+    val expressUpgradesRemaining: Int? = null,
+    /** End of the Stripe free trial. In the future means metered benefits have not started yet. */
+    val trialEndsAtUtc: kotlinx.datetime.Instant? = null,
 )
 
 /**

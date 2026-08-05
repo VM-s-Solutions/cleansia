@@ -214,6 +214,7 @@ private fun SheetContent(
     // logic stays untouched.
     val submitState by bookingVm.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val expressWaiver by bookingVm.expressWaiver.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var currentStep by remember { mutableIntStateOf(1) }
@@ -525,6 +526,7 @@ private fun SheetContent(
                         state = state,
                         onUpdate = { next -> bookingVm.update { next } },
                         onPickAddressOnMap = { showAddressManager = true },
+                        expressWaiver = expressWaiver,
                     )
                     3 -> ConfirmStep(state = state, onUpdate = { next -> bookingVm.update { next } })
                 }
@@ -559,6 +561,7 @@ private fun SheetContent(
                     cleaningAt = state.selectedInstant,
                     tierDiscount = tierDiscount,
                     promoDiscount = promoDiscount,
+                    waiverApplies = q.expressSurchargeWaivedByMembership,
                 )
                 // Same formatter the ConfirmStep summary uses — the footer and the
                 // receipt above it must render the identical number and symbol.

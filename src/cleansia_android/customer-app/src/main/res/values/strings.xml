@@ -569,6 +569,10 @@
     <string name="booking_slot_unavailable">Unavailable</string>
     <string name="booking_slot_earliest">Earliest</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express_waived">Express · no surcharge</string>
+    <string name="booking_express_waiver_available">Plus covers the 20%% express surcharge — %1$d left this calendar month.</string>
+    <string name="booking_express_waiver_used" formatted="false">No express waivers left this month — express slots are charged at +20% until next month.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Express slots are charged at +20% during your trial — the waiver starts with your first paid month.</string>
     <string name="booking_slot_select">Select</string>
     <string name="booking_all_slots_booked">All slots booked for this day — try another date.</string>
 
@@ -686,6 +690,7 @@
     <string name="booking_summary_time">Time</string>
     <string name="booking_summary_subtotal">Subtotal</string>
     <string name="booking_summary_express_surcharge">Express surcharge (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Express slot — waived with Plus</string>
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
@@ -851,14 +856,16 @@
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
     <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
+    <string name="membership_perk_express_title">Express bookings without the surcharge</string>
+    <string name="membership_perk_express_desc" formatted="false">We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
 
-    <!-- No express perk anywhere — not on the subscribe screen, the success screen or the
-         management pills. Nothing in pricing reads AllowsExpressUpgrade, so a member pays the
-         standard express surcharge, and BookingPolicy's express window is a 2-4h lead time rather
-         than "same day". Restore this perk only together with the code that waives the surcharge. -->
+    <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
     <string name="membership_perk_pill_cancellation">%1$dh free cancel</string>
     <string name="membership_perk_pill_recurring">Recurring</string>
+    <string name="membership_perk_pill_express">Express waived · %1$d left</string>
+    <string name="membership_perk_pill_express_used">Express waived · none left</string>
+    <string name="membership_perk_pill_express_trial">Express waived · after trial</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -870,6 +877,7 @@
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
     <string name="membership_success_perks_header">YOUR PLUS PERKS</string>
+    <string name="membership_success_perk_express">Express bookings with the surcharge waived — from your first paid month</string>
     <string name="membership_success_cta_setup_recurring">Set up a recurring cleaning</string>
     <string name="membership_success_cta_back_home">Back to home</string>
     <string name="membership_active_status">Active</string>

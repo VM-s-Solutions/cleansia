@@ -227,6 +227,50 @@ on. If it is ever worth closing, the shape is a sweep over sessions with no matc
 
 ## What this does NOT reopen
 
+### The mirror question, asked again 2026-08-05 and answered from the record: **should promo take the membership shape?**
+
+*"The membership benefit reservation is one atomic `INSERT … SELECT … ON CONFLICT DO NOTHING RETURNING`
+that auto-commits **before** the order exists; `OrderId` is stamped afterwards on the unit of work and
+orphans are reclaimed by a sweep. Should the promo redemption follow **that** shape instead of
+`IPostCommitEffects`?"* It is a fair question — it is **not** in ADR-0038's A1…A11 table — and it needs
+no new decision, because **it is ADR-0035's A13 read in the other direction, and A13 is `accepted`
+record.** ADR-0035 AM-3 ruled on *both* features in one amendment: the express waiver takes **Mode A,
+claim-before-act**; the promo archetype **is** *reserve-after-persist and fail-soft*, and the ground is
+an asymmetry that has nothing to do with the mechanism:
+
+> a promo discount requires **possession of a code an operator issued** … an express waiver requires
+> **nothing but an active Plus subscription**: a soft cap is farmable by *every* subscriber, with
+> concurrent requests alone, at will.
+
+ADR-0038 then changed *when* "after persist" is, and said so explicitly (§D1: *"This ADR changes **when**
+'after persist' is, not **whether** the cap is soft"*). So the two shapes are not interchangeable options
+that happened to be decided differently — each was argued from what the entitlement costs to obtain, and
+the mirror alternative is written into the other ADR as rejected.
+
+**Three structural facts make the swap expensive in this direction specifically** — recorded because the
+question will be asked a third time, and because none of them is in either ADR's alternatives table:
+
+| | Express waiver (`MembershipBenefitUsage`) | Promo (`PromoCodeRedemption`) |
+|---|---|---|
+| `OrderId` | `string?` — **nullable by design**, stamped later by `StampOrderId`, orphans swept | `[Required]`, non-null, **UNIQUE** — the natural key seam law 2 rests on. Making it nullable is an owner `ef-migration` **and** deletes that idempotency key |
+| The reservation's answer is… | an **input** to the price: `TryReserveAsync` runs *before* `orderFactory.CreateAsync`, and the reserved waiver is threaded in as a parameter | an **output**: `OrderFactory.ResolveLoy003Discount` may **discard** the promo when membership+tier is larger, so a pre-commit promo reservation must be *released* on a path that is not a failure at all — a **successful** order. That is §D5.1's defect, re-created by construction |
+| What an orphan row is | a reserved **capacity** unit; nothing was charged | a **money** record — `AppliedDiscount` — with no order behind it, on an entity documented *"append-only audit row"* |
+
+And the residuals point in opposite directions, which is the choice in one line:
+
+- **Post-commit (chosen):** the residual is a **lost redemption** — a crash in the ms window after the
+  commit. Money already moved at the discounted price; the campaign is over-redeemed by one. Detected
+  from persisted state by the amount-keyed query below, with **no new job**.
+- **Reserve-first + sweep:** the residual is a **reservation that outlives a failed (or promo-discarded)
+  order** — a customer told *"you have already used this code"* for a booking that never happened, until
+  a sweep that **does not exist for promo** runs. It also leaves §D6 leak 2 open (the global increment
+  still precedes the commit) and needs its own compensation on the discard path.
+
+**Disposition: T-0532 proceeds exactly as specified.** No ADR, no supersede, no panel — nothing here
+changes a decision; it records where the decision already is. If anyone *does* want to move promo to
+Mode A, the instrument is a **superseding ADR against both 0035 AM-3 and 0038**, carrying the migration,
+the sweep and the discard-path compensation as costs — not a re-scope of T-0532.
+
 **ADR-0035's A13 stays rejected for the express waiver.** AM-3 rejected reserve-after-persist for the
 membership express waiver on *two* grounds: (1) it makes the cap **soft**, and (2) "post-persist" in
 this codebase did not mean post-commit anyway. ADR-0038 fixes (2) — but (1) stands on its own and is

@@ -228,5 +228,58 @@ Both sections are marked **PROPOSED** and flip to law with the ADR.
   documentation. Note **T-0545 retired** in this pass, which removes the §D6.4 counter-repair from this
   ticket's neighbourhood but changes nothing about its own scope.
 
+- 2026-08-05 — **ARCHITECT DISPOSITION (pass 2): the ticket STANDS, unchanged, `ready`, unblocked. No
+  ADR, no supersede, no panel — and the question it was re-dispatched with is answered from the
+  `accepted` record rather than re-decided.**
+  1. **Ground truth re-verified at HEAD first.** The interim is live —
+     `src/Cleansia.Infra.Database/Repositories/PromoCodeRedemptionRepository.cs:22` still carries
+     `// INTERIM(ADR-0038 §D3 → T-0532)`, and the method below it is the change-tracked
+     `Add(redemption)` with the app-level ordinal pre-read. `IPostCommitEffects` / `IPostCommitEffect`
+     occur in **exactly one file** in `src/` — that same repository's comment. So nothing has shipped,
+     the marker is non-orphan (§D4), and the ticket is **not** one of this session's already-satisfied
+     ones.
+  2. **The dispatch question — *"should the promo reservation follow the membership shape (atomic
+     pre-commit `INSERT … ON CONFLICT DO NOTHING RETURNING` that auto-commits before the order exists,
+     `OrderId` stamped afterwards, orphans swept) instead of `IPostCommitEffects`?"* — is real, is NOT in
+     ADR-0038's A1…A11 table, and is nevertheless already adjudicated.** It is **ADR-0035's A13 read in
+     the other direction**, and A13 is `accepted` record: AM-3 ruled *both* features in one amendment —
+     express waiver → **Mode A, claim-before-act**; promo archetype → **reserve-after-persist and
+     fail-soft** — on an asymmetry independent of mechanism (*"a promo discount requires **possession of
+     a code an operator issued** … an express waiver requires **nothing but an active Plus
+     subscription**: a soft cap is farmable by every subscriber"*). ADR-0038 §D1 then says in terms:
+     *"This ADR changes **when** 'after persist' is, not **whether** the cap is soft."*
+  3. **Three structural facts make the swap expensive in this direction specifically, and none is in
+     either ADR's alternatives table** — recorded in `architecture/decisions/promo-redemption-ordering.md`
+     §"What this does NOT reopen" so it is not asked a third time: (a) `MembershipBenefitUsage.OrderId`
+     is `string?` **by design**; `PromoCodeRedemption.OrderId` is `[Required]` and **UNIQUE** — the
+     natural key seam law 2 rests on, so nulling it is an owner `ef-migration` **and** deletes the
+     idempotency guard; (b) the waiver reservation's answer is an **input** to the price (threaded into
+     `orderFactory.CreateAsync`), while the promo's is an **output** `OrderFactory.ResolveLoy003Discount`
+     may **discard** — so a pre-commit promo reservation needs a release on a **successful** order, which
+     is §D5.1's defect re-created by construction; (c) an orphaned benefit row is a **capacity** unit,
+     an orphaned redemption row is a **money** record (`AppliedDiscount`) on an entity documented
+     *"append-only audit row"*.
+  4. **The failure modes, in each direction, since the brief asked for both.** Post-commit (chosen):
+     the residual is a **lost redemption** — a crash in the ms window after the commit; money already
+     moved at the discounted price, the campaign is over-redeemed by one, and it is detected from
+     persisted state by the amount-keyed §D6.3 query **with no new job**. Reserve-first + sweep: the
+     residual is a **reservation that outlives a failed — or promo-discarded — order**; a customer told
+     *"you already used this code"* for a booking that never happened, until a sweep that **does not
+     exist for promo** runs; it also leaves §D6 leak 2 open (AC10) and needs its own discard-path
+     compensation.
+  5. **If anyone still wants Mode A for promo, the instrument is a superseding ADR against BOTH
+     ADR-0035 AM-3 and ADR-0038** — carrying the migration, the sweep and the discard-path compensation
+     as costs. It is **not** a re-scope of this ticket, and this disposition does not open one: no
+     alternative's disposition was changed on an `accepted` ADR, so nothing here needed a panel.
+  6. **AC-level state, unchanged by this pass:** AC0 discharged; AC5's precondition met
+     (`PromoCodeRedemptionEntityConfiguration` carries `.AreNullsDistinct(false)` and it is emitted in
+     the committed `Initial`) so AC5 must **pass**, not be marked pending; AC11's ruling stands and is
+     re-verified against the workflow files rather than from memory — **`check-consistency.mjs` appears
+     in ZERO `.github/` workflow files** (its only mention anywhere under `.github/` is a comment in
+     `nx-project-registration.yml:20-21` citing it as *the counter-example*), while `Cleansia.Tests` is a
+     required step in `backend-ci.yml:69-74` with no `continue-on-error`. So `InterimMarkerTripwireTests`
+     in `Cleansia.Tests` is the only home of the two that can go red, and the anti-vacuity clause
+     (fail on an empty corpus, fail if `INDEX.md` cannot be located) is mandatory.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

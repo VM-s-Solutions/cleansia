@@ -99,6 +99,48 @@ gets one.
 ## Status log
 - 2026-08-05 — created `ready` by pm. Filed from finding F1 as **widened** by the independent lead pass:
   two stale statements, not one. Had no `INDEX.md` row before this filing.
+- 2026-08-05 — **ARCHITECT: DONE. The instrument is NOT an erratum — AC2's alternate lane fired, and
+  that is the substance of the ticket rather than a technicality.** Both statements were re-verified at
+  HEAD before anything was written (Gate 0): ADR-0033 `:3` reads `**Status:** accepted` dated
+  2026-08-05, and `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` is a tracked
+  file (T-0439 merged as `acf2f0bc`, PR #175; ADR-0033's own corrected Number note `:19-27` records the
+  same fact).
+  - **Erratum lane refused, for both.** `adr/README.md:16-26` opens it only for *"a **transcription
+    error** — a value mis-copied from the ADR's **own cited source**"*, and closes *"for digits, not
+    meaning"* (`:29`). **Both sentences were true when written on 2026-08-01** and were falsified by
+    later events. Nothing was mis-copied. Per AC2 the ticket therefore lands a **dated appended
+    section** (`README.md:9-12`) — a **record-only closure** — which is the same call the T-0549/T-0551
+    pass made four days ago on ADR-0033's false *"does not reverse"* header claim
+    (`catalog-governance.md`, finding L3: *"meaning, not digits, so not the erratum lane"*). The closure
+    states the line as reusable: **an erratum corrects the ADR against its own source; a closure records
+    that the world moved.**
+  - **AC1 — satisfied in substance, via AC2.** ONE dated, signed block, naming **both** `:14` and
+    `:23-25`, each with the fact that made it stale and its evidence. It is a closure block, not an
+    erratum block, because an erratum block here would have been the process violation the ticket exists
+    to prevent.
+  - **AC3 — satisfied.** Two in-body annotations, bracketed, dated, self-describing, each citing what it
+    corrects and each **signed by the closure**. They are explicitly labelled `pointer … not an erratum`
+    and follow the ADR-0031 §"Amendment ledger" V9 form (*"a dated pointer annotation … carries no
+    decision content of its own"*), not the ADR-0031 §A erratum form. They exist because both stale
+    sentences sit in the **header block** a reader consults to ask *"does this bind?"* — a correction 700
+    lines below does not reach that reader. Original text left standing, byte-for-byte.
+  - **AC4 — satisfied, and half of it was already true.** The living doc's F1 open-item row is now
+    closed with the instrument and the reason. **Its header (`:4-8`) needed no edit — verified: it
+    already reads ADR-0033 `accepted` 2026-08-05.** Recorded rather than edited, per the standing rule
+    about not manufacturing a diff. A dated Deliberation-history bullet was added.
+  - **AC5 — satisfied.** ADR-0032 is still `accepted`; no clause altered; no `superseded` marking. No
+    decision content changed, so this correctly did not route to a panel.
+  - 🔎 **One finding the ticket did not have: there is a THIRD occurrence of the same phrase, and it
+    must NOT be corrected.** ADR-0032's `## Verdict` **C5** row (`:624` before the annotations shifted
+    it) also says *"ADR-0033 is
+    `proposed`, not accepted"*, there as the panel's stated **reason** for leaving the split-off decision
+    unaccepted. It is **left untouched** and the closure says so in a named section: a verdict row pins
+    what was ruled, and ADR-0031 §A already settled that class (*"re-anchor citations that help a future
+    reader find current config; **leave citations that pin what was ruled on**"*). The discriminator is
+    the sentence's **job**, not its wording — `:14` and `:23-25` are forward-looking pointers (*"see its
+    status block"*, *"until T-0439 merges"*); `:624` is a finding. Anyone re-running the ticket's own
+    dispatch grep (`grep -n 'ADR-0033 is .proposed' …`) will get a hit at `:624` and must not act on it.
+  - **Out of scope confirmed untouched:** FT-7 (the file rename), ADR-0033's own status, every other ADR.
 
 ## Review
 <!-- reviewer / architect write verdicts here; PM reconciles before advancing state -->

@@ -212,5 +212,66 @@ ADR. `agents/knowledge/security-rules.md` S8 is the rule this constraint qualifi
   principle/decay — see the disposition above). **AC5 stands: nothing is fixed, no migration, no index
   change.** No re-derivation needed; this line exists so the fifth reconciliation does not re-run the fourth.
 
+- 2026-08-05 — **ARCHITECT: DONE, and AC1′ landed WIDER than specified — by one half that the rescope
+  did not have and that is the sharper defect.** Re-verified at HEAD first (Gate 0):
+  `multi-tenancy-and-region.md` was 89 lines with zero occurrences of "unique index" / "NULLS" /
+  "DISTINCT", so the deliverable genuinely did not exist.
+  - **AC1′ — satisfied, all four legs.** New section *"What ACTIVATION changes"*, placed between Axis (a)
+    and Axis (b) because it is a property of the tenancy axis, not of region. (1) forward: inert indexes
+    start firing and a race that produced two rows starts producing a `DbUpdateException` on a path that
+    may not expect one — with the ADR-0038 §D3 money-path case named; (2) the reverse and dangerous
+    direction: where an app-level guard was removed on the strength of such an index, the invariant is
+    unguarded **now** (ADR-0035 §D3 named as the origin, ADR-0038 §Context as the live instance);
+    (3) a **pointer, not a copy**, to `agents/knowledge/consistency.md` §"Tenant-scoped unique indexes";
+    (4) the two re-derivation greps and **no frozen table**.
+  - **AC2′ — satisfied.** No entity configuration, no migration, no behaviour, no `agents/knowledge/`
+    edit, no touch to any `adr/challenges/*.md`. The nine-row inventory was **not** copied anywhere.
+  - ➕ **The one addition, and the reason for it: an index-only note leaves the reader to walk into the
+    query-filter version of the same fact.** Both halves start with *"`TenantId` is nullable and NULL is
+    production today"* and both are inert today, but they fail in **opposite** directions on activation —
+    the index half starts **rejecting writes** (loud), the filter half starts **hiding rows** (silent,
+    and reported as a legitimate "none"). The section carries both, with a table of the contrast and the
+    **two** questions a new tenant-scoped table must answer: *is this index a sole arbiter or a
+    backstop?* **and** *who writes the rows, and with what tenant?*
+  - **Both halves are grounded in this sprint's live examples rather than written abstractly**, as
+    instructed: ADR-0041 D9 reached for `.AreNullsDistinct(false)` on every new tenant-scoped index as an
+    S8 formality (`0041-…md:433-437`), and `challenges/0041-schema.md` CH-S14.3 sustained that the
+    *reason* was wrong (the catalog decides by the index's **job**) while **CH-S4** (`:268-335`) showed
+    that *"the real tenancy hole is not on a unique index — it is on the query filter"*: config rows
+    seeded `TenantId NULL` (`sql-scripts/insert_seed_data.sql:1548`) are invisible to every tenanted
+    caller, and the ADR's own D4.3 reports that invisibility as `required: false` — the gate switches
+    itself off in the unsafe direction. The panel lead sustained it **blocking** and ruled RB-9
+    (`0041-…md:914-924`), noting that a tenantless key makes *"the `.AreNullsDistinct(false)` question
+    evaporate rather than being answered on the wrong grounds"*.
+    ⚠️ *Precision note for the record:* the brief described example 1 as a *"one current acceptance"*
+    invariant on such an index. In the tree the invariant that rests on a `(TenantId, …)` unique index is
+    **"one current version"** — `UNIQUE (TenantId, Kind, CountryId, Version)` (`0041-…md:141`), which D5's
+    *current-acceptance* gate resolves **through**. CH-S6 (`challenges/0041-schema.md:385-413`) is the
+    independent second defect on the same index (it constrains `Version`; resolution reads
+    `EffectiveFrom`) and says the index *"creates a false sense that cardinality is handled"* — which is
+    the identical failure mode from the other side. Cited as it is, not as it was described.
+  - **What exists as a guard, stated honestly and verified against the workflow file, not from memory:**
+    `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` asserts the option on each
+    sole-arbiter index **and** carries a negative control (`UserMemberships`, deliberately nulls-distinct)
+    so the theory cannot pass on a reader that answers `false` for everything. It runs in
+    `backend-ci.yml`'s *"Unit tests (Cleansia.Tests)"* step (`:69-74`), which carries no
+    `continue-on-error` — so it can genuinely go red. **No `**Enforced by:**` label was attached
+    anywhere**: a living decision doc is not `agents/knowledge/`, and the test is cited descriptively,
+    including its limits (its roster is hand-maintained; a new sole-arbiter index is uncaught until
+    someone adds a row).
+  - 🚩 **Two things left for the PM, deliberately not done here** (both are `agents/knowledge/` edits, a
+    lane this ticket forbids and two live lanes may hold): (a) **the filter half has no catalog home** —
+    `security-rules.md` S8 asks *"could two tenants both have rows here?"* and stops; it never states
+    that a `TenantId NULL` row is invisible to a tenanted caller. That is a candidate `consistency.md`
+    entry, and CH-S4 is the evidence for it. (b) S8's sentence *"Unique indexes on tenant-scoped tables
+    are `(TenantId, X)`, not `(X)`"* reads as unconditional against `consistency.md`'s shape (c) (*drop
+    `TenantId` from the key where a globally-unique FK pins the tenant transitively*) and against RB-9's
+    ruling. Not a defect this ticket may fix; named so it is not re-derived a fourth time.
+  - **Incidental, in the same doc and in support of the new section:** Axis (a)'s three query-filter cells
+    cited `:171-240` / `:222-234` / `:209-217`; the method now spans `:201-270`. **Re-anchored to named
+    expressions** (`ApplyTenantQueryFilters`, `singleTenantMatch`, the `body` `OrElse`) rather than to
+    corrected digits — the ADR-0031 §A lesson, since three different documents already cite three
+    different line ranges for this one method.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

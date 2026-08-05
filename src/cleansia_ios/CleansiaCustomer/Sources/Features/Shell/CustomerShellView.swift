@@ -388,6 +388,7 @@ extension CustomerShellView {
 
     private var membershipSuccess: some View {
         MembershipSuccessScreen(
+            showExpressPerk: membershipVM.expressWaiverAdvertised,
             onSetupRecurring: {
                 model.path = NavigationPath([
                     ShellRoute.recurringList,

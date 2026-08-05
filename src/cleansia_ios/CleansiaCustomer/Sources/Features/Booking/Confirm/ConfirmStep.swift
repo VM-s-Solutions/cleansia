@@ -11,10 +11,6 @@ struct ConfirmStep: View {
         viewModel.quoteState.quote
     }
 
-    private var basePrice: Double {
-        quote?.totalPrice ?? 0
-    }
-
     private var tierDiscount: Double {
         quote?.tierDiscountAmount ?? 0
     }
@@ -31,32 +27,8 @@ struct ConfirmStep: View {
         tierDiscount + membershipDiscount
     }
 
-    private var effectiveDiscount: Double {
-        max(combinedServerDiscount, promoDiscount)
-    }
-
-    private var isExpress: Bool {
-        BookingPricing.requiresExpressSurcharge(cleaningAt: viewModel.state.selectedInstant)
-    }
-
-    private var discountedSubtotal: Double {
-        max(basePrice - effectiveDiscount, 0)
-    }
-
-    private var surcharge: Double {
-        BookingPricing.expressSurchargeAmount(
-            basePrice: discountedSubtotal,
-            cleaningAt: viewModel.state.selectedInstant
-        )
-    }
-
-    private var finalTotal: Double {
-        BookingPricing.finalTotal(
-            basePrice: basePrice,
-            cleaningAt: viewModel.state.selectedInstant,
-            tierDiscount: combinedServerDiscount,
-            promoDiscount: promoDiscount
-        )
+    private var priceSummary: BookingPriceSummary {
+        BookingPriceSummary.resolve(quote: quote, discount: viewModel.effectiveDiscount)
     }
 
     private var currencyCode: String {
@@ -83,7 +55,7 @@ struct ConfirmStep: View {
             .padding(Spacing.l)
         }
         .task { await viewModel.loadExtras() }
-        .task { await extras.load() }
+        .task { await extras.load(membership: viewModel.loadMembership()) }
         .sheet(isPresented: $showPromoSheet) {
             PromoCodeSheet(
                 initialCode: viewModel.state.promoCode,
@@ -109,15 +81,11 @@ struct ConfirmStep: View {
     private var summaryCard: some View {
         SummaryCard(
             state: viewModel.state,
-            basePrice: basePrice,
+            summary: priceSummary,
             promoDiscount: promoDiscount,
             membershipDiscount: membershipDiscount,
             tierDiscount: tierDiscount,
             combinedServerDiscount: combinedServerDiscount,
-            effectiveDiscount: effectiveDiscount,
-            isExpress: isExpress,
-            surcharge: surcharge,
-            finalTotal: finalTotal,
             currencyCode: currencyCode
         )
     }

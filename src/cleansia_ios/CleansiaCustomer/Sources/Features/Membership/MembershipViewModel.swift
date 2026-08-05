@@ -36,6 +36,14 @@ final class MembershipViewModel: ViewModel {
         isCardPaymentAvailable
     }
 
+    var expressWaiverStatus: ExpressWaiverStatus {
+        ExpressWaiverStatus.resolve(current)
+    }
+
+    var expressWaiverAdvertised: Bool {
+        expressWaiverStatus.isAdvertised
+    }
+
     func load() async {
         await repository.refresh()
         await repository.refreshPlans()

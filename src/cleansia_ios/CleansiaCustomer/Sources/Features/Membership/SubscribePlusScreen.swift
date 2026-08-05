@@ -42,7 +42,7 @@ struct SubscribePlusScreen: View {
                             onBack: onBack
                         )
                         SocialProofTile()
-                        PerksSection()
+                        PerksSection(showExpress: selectedPlan?.allowsExpressUpgrade == true)
                         Color.clear.frame(height: 140)
                     }
                 }
@@ -293,6 +293,8 @@ private struct SocialProofTile: View {
 }
 
 private struct PerksSection: View {
+    let showExpress: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             Text(L10n.Membership.perksSectionTitle)
@@ -310,6 +312,13 @@ private struct PerksSection: View {
                 desc: L10n.Membership.perkFavoriteCleanerDesc
             )
             PerkTile(icon: "repeat", title: L10n.Membership.perkRecurringTitle, desc: L10n.Membership.perkRecurringDesc)
+            if showExpress {
+                PerkTile(
+                    icon: "bolt",
+                    title: L10n.Membership.perkExpressTitle,
+                    desc: L10n.Membership.perkExpressDesc
+                )
+            }
         }
         .padding(.horizontal, Spacing.ml)
     }

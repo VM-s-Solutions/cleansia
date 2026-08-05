@@ -21,6 +21,11 @@ struct WhenWhereStep: View {
         return BookingTimeSlots.slots(for: selectedDay.date).filter { $0.state != .unavailable }
     }
 
+    /// The waiver note belongs under a grid that actually offers an express slot, and nowhere else.
+    private var offersExpressSlot: Bool {
+        visibleSlots.contains { $0.state == .express }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -46,6 +51,15 @@ struct WhenWhereStep: View {
                 timeSlots
                     .padding(.horizontal, Spacing.l)
                     .padding(.top, Spacing.s)
+
+                if offersExpressSlot {
+                    ExpressWaiverNote(
+                        status: viewModel.expressWaiverStatus,
+                        remaining: viewModel.expressUpgradesRemaining
+                    )
+                    .padding(.horizontal, Spacing.l)
+                    .padding(.top, Spacing.s)
+                }
 
                 cancelHint
                     .padding(.horizontal, Spacing.l)
@@ -74,6 +88,7 @@ struct WhenWhereStep: View {
         }
         .onAppear(perform: pruneStaleTime)
         .onChange(of: viewModel.state.selectedDate) { _ in pruneStaleTime() }
+        .task { await viewModel.loadMembership() }
     }
 
     private func pruneStaleTime() {
@@ -121,6 +136,7 @@ struct WhenWhereStep: View {
                     TimeSlotRow(
                         slot: slot,
                         selected: viewModel.state.selectedTime == slot.time,
+                        expressWaived: viewModel.expressWaiverStatus == .available,
                         action: {
                             if let date = selectedDay?.date {
                                 viewModel.selectTime(slot.time, on: date)
@@ -238,9 +254,41 @@ private struct DayChipView: View {
     }
 }
 
+private struct ExpressWaiverNote: View {
+    let status: ExpressWaiverStatus
+    let remaining: Int
+
+    var body: some View {
+        switch status {
+        case .none:
+            EmptyView()
+        case .available:
+            note(icon: "bolt.fill", text: L10n.Booking.expressWaiverAvailable(remaining), tint: CleansiaColors.primary)
+        case .exhausted:
+            note(icon: "info.circle", text: L10n.Booking.expressWaiverUsed, tint: CleansiaColors.onSurfaceVariant)
+        case .trial:
+            note(icon: "info.circle", text: L10n.Booking.expressWaiverTrial, tint: CleansiaColors.onSurfaceVariant)
+        }
+    }
+
+    private func note(icon: String, text: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: Spacing.xs) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundColor(tint)
+            Text(text)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(tint)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 private struct TimeSlotRow: View {
     let slot: BookingTimeSlot
     let selected: Bool
+    let expressWaived: Bool
     let action: () -> Void
 
     private static let expressOrange = Color(red: 0.918, green: 0.345, blue: 0.047)
@@ -253,13 +301,17 @@ private struct TimeSlotRow: View {
         slot.state == .earliest
     }
 
+    private var expressAccent: Color {
+        expressWaived ? CleansiaColors.primary : Self.expressOrange
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.s) {
                 if isExpress {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 16))
-                        .foregroundColor(Self.expressOrange)
+                        .foregroundColor(expressAccent)
                 } else if isEarliest {
                     Image(systemName: "clock")
                         .font(.system(size: 16))
@@ -270,9 +322,9 @@ private struct TimeSlotRow: View {
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurface)
                     if isExpress {
-                        Text(L10n.Booking.slotExpress)
+                        Text(expressWaived ? L10n.Booking.slotExpressWaived : L10n.Booking.slotExpress)
                             .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(Self.expressOrange)
+                            .foregroundColor(expressAccent)
                     } else if isEarliest {
                         Text(L10n.Booking.slotEarliest)
                             .font(CleansiaTypography.labelSmall)
@@ -296,7 +348,7 @@ private struct TimeSlotRow: View {
             .overlay(alignment: .leading) {
                 if isExpress {
                     Rectangle()
-                        .fill(Self.expressOrange)
+                        .fill(expressAccent)
                         .frame(width: 4)
                 }
             }

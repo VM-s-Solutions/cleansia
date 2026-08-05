@@ -127,6 +127,22 @@ extension L10n {
             localized("booking_slot_express")
         }
 
+        static var slotExpressWaived: String {
+            localized("booking_slot_express_waived")
+        }
+
+        static func expressWaiverAvailable(_ remaining: Int) -> String {
+            format("booking_express_waiver_available", remaining)
+        }
+
+        static var expressWaiverUsed: String {
+            localized("booking_express_waiver_used")
+        }
+
+        static var expressWaiverTrial: String {
+            localized("booking_express_waiver_trial")
+        }
+
         static var slotEarliest: String {
             localized("booking_slot_earliest")
         }
@@ -189,6 +205,10 @@ extension L10n {
 
         static var summaryExpressSurcharge: String {
             localized("booking_summary_express_surcharge")
+        }
+
+        static var summaryExpressSurchargeWaived: String {
+            localized("booking_summary_express_surcharge_waived")
         }
 
         static func summaryPromoDiscount(_ code: String) -> String {

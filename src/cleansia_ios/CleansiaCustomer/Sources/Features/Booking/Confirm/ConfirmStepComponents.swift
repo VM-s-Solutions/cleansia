@@ -75,15 +75,11 @@ private struct ExtraRow: View {
 
 struct SummaryCard: View {
     let state: BookingState
-    let basePrice: Double
+    let summary: BookingPriceSummary
     let promoDiscount: Double
     let membershipDiscount: Double
     let tierDiscount: Double
     let combinedServerDiscount: Double
-    let effectiveDiscount: Double
-    let isExpress: Bool
-    let surcharge: Double
-    let finalTotal: Double
     let currencyCode: String
 
     private var showPromoLine: Bool {
@@ -138,7 +134,7 @@ struct SummaryCard: View {
 
     private var totalsSection: some View {
         VStack(spacing: Spacing.xxs) {
-            AmountRow(label: L10n.Booking.summarySubtotal, value: money(basePrice), emphasis: .normal)
+            AmountRow(label: L10n.Booking.summarySubtotal, value: money(summary.subtotal), emphasis: .normal)
             if showPromoLine {
                 AmountRow(
                     label: L10n.Booking.summaryPromoDiscount(state.promoCode),
@@ -156,10 +152,23 @@ struct SummaryCard: View {
             if showTierLine {
                 AmountRow(label: L10n.Booking.summaryTierDiscount, value: "-\(money(tierDiscount))", emphasis: .success)
             }
-            if isExpress {
-                AmountRow(label: L10n.Booking.summaryExpressSurcharge, value: "+\(money(surcharge))", emphasis: .normal)
+            switch summary.expressLine {
+            case .notExpress:
+                EmptyView()
+            case .charged:
+                AmountRow(
+                    label: L10n.Booking.summaryExpressSurcharge,
+                    value: "+\(money(summary.expressSurcharge))",
+                    emphasis: .normal
+                )
+            case .waived:
+                AmountRow(
+                    label: L10n.Booking.summaryExpressSurchargeWaived,
+                    value: money(0),
+                    emphasis: .success
+                )
             }
-            AmountRow(label: L10n.Booking.summaryTotal, value: money(finalTotal), emphasis: .total)
+            AmountRow(label: L10n.Booking.summaryTotal, value: money(summary.total), emphasis: .total)
         }
     }
 

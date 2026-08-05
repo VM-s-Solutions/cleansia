@@ -290,7 +290,9 @@ private struct PerkPill: View {
                 allowsExpressUpgrade: true,
                 currentPeriodEnd: Date(timeIntervalSince1970: 1_780_000_000),
                 cancelRequested: cancelRequested,
-                billingInterval: 1
+                billingInterval: 1,
+                expressUpgradesPerMonth: 2,
+                expressUpgradesRemaining: 1
             )
         }
     }

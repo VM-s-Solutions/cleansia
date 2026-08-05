@@ -69,7 +69,10 @@ private extension GetMyMembershipResponse {
             allowsExpressUpgrade: allowsExpressUpgrade,
             currentPeriodEnd: currentPeriodEnd,
             cancelRequested: cancelRequested ?? false,
-            billingInterval: billingInterval
+            billingInterval: billingInterval,
+            expressUpgradesPerMonth: expressUpgradesPerMonth,
+            expressUpgradesRemaining: expressUpgradesRemaining,
+            trialEndsAtUtc: trialEndsAtUtc
         )
     }
 }

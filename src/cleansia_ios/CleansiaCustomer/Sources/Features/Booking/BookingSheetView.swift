@@ -172,14 +172,8 @@ private struct BookingSheetContent: View {
 
     private var totalDisplay: String? {
         guard let quote = viewModel.quoteState.quote else { return nil }
-        let promoDiscount: Double = if case let .valid(amount) = viewModel.promoState { amount } else { 0 }
-        let finalTotal = BookingPricing.finalTotal(
-            basePrice: quote.totalPrice,
-            cleaningAt: viewModel.state.selectedInstant,
-            tierDiscount: 0,
-            promoDiscount: promoDiscount
-        )
-        return BookingPricing.formatTotal(finalTotal, currencyCode: quote.currencyCode)
+        let summary = BookingPriceSummary.resolve(quote: quote, discount: viewModel.effectiveDiscount)
+        return BookingPricing.formatTotal(summary.total, currencyCode: quote.currencyCode)
     }
 
     var body: some View {

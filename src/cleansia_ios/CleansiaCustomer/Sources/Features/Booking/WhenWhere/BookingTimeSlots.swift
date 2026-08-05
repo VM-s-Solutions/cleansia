@@ -30,8 +30,6 @@ struct BookingTimeSlot: Equatable, Identifiable {
 enum BookingTimeSlots {
     static let firstWindowHour = 8
     static let lastWindowHour = 20
-    static let expressLeadHours = 2.0
-    static let standardLeadHours = 4.0
 
     static func days(now: Date = Date(), calendar: Calendar = .current) -> [BookingDay] {
         let today = calendar.startOfDay(for: now)
@@ -59,9 +57,9 @@ enum BookingTimeSlots {
             }
             let leadHours = slotInstant.timeIntervalSince(now) / 3600.0
             let state: SlotState
-            if leadHours < expressLeadHours {
+            if leadHours < BookingPricing.expressLeadHours {
                 state = .unavailable
-            } else if leadHours < standardLeadHours {
+            } else if BookingPricing.requiresExpressSurcharge(cleaningAt: slotInstant, now: now) {
                 state = .express
             } else if !earliestAssigned {
                 earliestAssigned = true

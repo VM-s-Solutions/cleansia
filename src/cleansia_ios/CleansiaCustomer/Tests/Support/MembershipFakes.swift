@@ -73,7 +73,9 @@ enum MembershipFixtures {
         allowsExpressUpgrade: true,
         currentPeriodEnd: Date(timeIntervalSince1970: 1_780_000_000),
         cancelRequested: false,
-        billingInterval: 1
+        billingInterval: 1,
+        expressUpgradesPerMonth: 2,
+        expressUpgradesRemaining: 1
     )
 
     static let setup = SubscriptionSetup(

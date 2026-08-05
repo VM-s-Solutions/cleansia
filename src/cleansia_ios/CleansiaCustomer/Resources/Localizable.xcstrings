@@ -2311,6 +2311,111 @@
         }
       }
     },
+    "booking_express_waiver_available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus pokrývá 20% expresní příplatek — %1$d zbývá tento kalendářní měsíc."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus covers the 20% express surcharge — %1$d left this calendar month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus покрывает 20 % экспресс-доплаты — %1$d осталось в этом календарном месяце."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus pokrýva 20% expresný príplatok — %1$d zostáva tento kalendárny mesiac."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus покриває 20 % експрес-доплати — %1$d залишилось цього календарного місяця."
+          }
+        }
+      }
+    },
+    "booking_express_waiver_trial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Během zkušební doby se expresní termíny účtují s +20 % — odpuštění začíná prvním placeným měsícem."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express slots are charged at +20% during your trial — the waiver starts with your first paid month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Во время пробного периода экспресс-слоты оплачиваются с +20 % — отмена доплаты начинается с первого оплаченного месяца."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під час пробного періоду експрес-слоти оплачуються з +20 % — скасування доплати починається з першого оплаченого місяця."
+          }
+        }
+      }
+    },
+    "booking_express_waiver_used" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento měsíc už nezbývá žádné odpuštění expresního příplatku — expresní termíny se účtují s +20 % až do příštího měsíce."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No express waivers left this month — express slots are charged at +20% until next month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цього місяця скасування експрес-доплати більше не діє — експрес-слоти оплачуються з +20 % до наступного місяця."
+          }
+        }
+      }
+    },
     "booking_extras_header" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4306,6 +4411,41 @@
         }
       }
     },
+    "booking_slot_express_waived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres · bez příplatku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express · no surcharge"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс · без доплаты"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres · bez príplatku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес · без доплати"
+          }
+        }
+      }
+    },
     "booking_slot_select" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5247,6 +5387,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Експрес-надбавка (+20%)"
+          }
+        }
+      }
+    },
+    "booking_summary_express_surcharge_waived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresní termín — odpuštěno s Plus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express slot — waived with Plus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс-слот — отменено с Plus"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresný termín — odpustené s Plus"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес-слот — скасовано з Plus"
           }
         }
       }
@@ -14106,6 +14281,76 @@
         }
       }
     },
+    "membership_perk_express_desc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы не берём 20 % доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. Определённое количество на каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться."
+          }
+        }
+      }
+    },
+    "membership_perk_express_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresní termíny bez příplatku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express bookings without the surcharge"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс-заказы без доплаты"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresné termíny bez príplatku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес-замовлення без доплати"
+          }
+        }
+      }
+    },
     "membership_perk_favorite_cleaner_desc" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14242,6 +14487,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "знижка %1$d%%"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · zbývá %1$d"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · %1$d left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · осталось %1$d"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · zostáva %1$d"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · %1$d залишилось"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express_trial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · po zkušební době"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · after trial"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · после пробного"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · po skúšobnej dobe"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · після пробного"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express_used" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · nic nezbývá"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · none left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · не осталось"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · nič nezostáva"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · не залишилось"
           }
         }
       }
@@ -14802,6 +15152,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Налаштувати регулярне прибирання"
+          }
+        }
+      }
+    },
+    "membership_success_perk_express" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresní termíny bez příplatku — od prvního placeného měsíce"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express bookings with the surcharge waived — from your first paid month"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс-заказы без доплаты — с первого оплаченного месяца"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresné termíny bez príplatku — od prvého plateného mesiaca"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес-замовлення без доплати — з першого оплаченого місяця"
           }
         }
       }

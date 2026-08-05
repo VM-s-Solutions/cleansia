@@ -13,6 +13,7 @@ struct BookingQuote: Equatable {
     let membershipDiscountAmount: Double
     let expressSurchargeApplied: Bool
     let expressSurchargeAmount: Double
+    let expressSurchargeWaivedByMembership: Bool
 
     init(
         totalPrice: Double,
@@ -25,7 +26,8 @@ struct BookingQuote: Equatable {
         tierDiscountAmount: Double = 0,
         membershipDiscountAmount: Double = 0,
         expressSurchargeApplied: Bool = false,
-        expressSurchargeAmount: Double = 0
+        expressSurchargeAmount: Double = 0,
+        expressSurchargeWaivedByMembership: Bool = false
     ) {
         self.totalPrice = totalPrice
         self.originalSubtotal = originalSubtotal
@@ -38,6 +40,7 @@ struct BookingQuote: Equatable {
         self.membershipDiscountAmount = membershipDiscountAmount
         self.expressSurchargeApplied = expressSurchargeApplied
         self.expressSurchargeAmount = expressSurchargeAmount
+        self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
     }
 
     init(from response: QuoteOrderResponse) {
@@ -52,7 +55,8 @@ struct BookingQuote: Equatable {
             tierDiscountAmount: response.tierDiscountAmount ?? 0,
             membershipDiscountAmount: response.membershipDiscountAmount ?? 0,
             expressSurchargeApplied: response.expressSurchargeApplied ?? false,
-            expressSurchargeAmount: response.expressSurchargeAmount ?? 0
+            expressSurchargeAmount: response.expressSurchargeAmount ?? 0,
+            expressSurchargeWaivedByMembership: response.expressSurchargeWaivedByMembership ?? false
         )
     }
 }

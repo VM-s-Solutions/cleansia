@@ -7,15 +7,10 @@ final class PreferredCleanerViewModel: ViewModel {
     @Published private(set) var cleaners: [ServingCleaner] = []
     @Published private(set) var cancellationPolicy = CancellationPolicyBuilder.make(membership: nil)
 
-    private let membershipClient: MembershipClient
     private let cleanersClient: ServingCleanersClient
     private var loaded = false
 
-    init(
-        membershipClient: MembershipClient = LiveMembershipClient(),
-        cleanersClient: ServingCleanersClient = LiveServingCleanersClient()
-    ) {
-        self.membershipClient = membershipClient
+    init(cleanersClient: ServingCleanersClient = LiveServingCleanersClient()) {
         self.cleanersClient = cleanersClient
         super.init()
     }
@@ -24,12 +19,10 @@ final class PreferredCleanerViewModel: ViewModel {
         isPlus && !cleaners.isEmpty
     }
 
-    func load() async {
+    func load(membership: MembershipSnapshot?) async {
         if loaded { return }
         loaded = true
-        guard case let .success(membership) = await membershipClient.currentMembership() else {
-            return
-        }
+        guard let membership else { return }
         cancellationPolicy = CancellationPolicyBuilder.make(membership: membership)
         guard membership.hasMembership else { return }
         isPlus = true

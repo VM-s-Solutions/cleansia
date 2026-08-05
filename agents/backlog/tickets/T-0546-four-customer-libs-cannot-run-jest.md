@@ -5,6 +5,7 @@ status: draft
 size: S
 owner: frontend
 created: 2026-08-05
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -47,6 +48,24 @@ test**, and the first person to add one gets a failure that looks like their own
 
 The other nine customer libs, and every partner and admin feature lib, already extend correctly.
 
+**The four files still broken, named in full (PM, 2026-08-05 — re-verified at HEAD after `6bd3b0c6`
+fixed `gdpr` and `orders` as part of T-0535):**
+
+```
+src/Cleansia.App/libs/cleansia-customer-features/checkout/tsconfig.json          # extends ../../../../ ❌
+src/Cleansia.App/libs/cleansia-customer-features/home/tsconfig.json              # extends ../../../../ ❌
+src/Cleansia.App/libs/cleansia-customer-features/legal-pages/tsconfig.json       # extends ../../../../ ❌ + no `test` target
+src/Cleansia.App/libs/cleansia-customer-features/services-catalog/tsconfig.json  # extends ../../../../ ❌
+```
+
+Also touched by AC2: `src/Cleansia.App/libs/cleansia-customer-features/legal-pages/project.json`
+(no `"test"` target — the other three have one).
+
+> These paths are written out because a ticket that names no path **cannot be detected as stale by
+> anything** (`status/sprint-15.md` §D3): the staleness check resolves path tokens by suffix match
+> against `git ls-files`, and `libs/cleansia-customer-features/<lib>/tsconfig.json` with a placeholder
+> resolves to nothing. This ticket is now covered by that check.
+
 ## Acceptance criteria
 
 - [ ] **AC1** — `checkout`, `home` and `services-catalog` extend `../../../tsconfig.base.json`, and a
@@ -80,6 +99,11 @@ live in the lib rather than in `apps/cleansia.app`, it currently could not run.
 - 2026-08-05 — draft, filed by frontend from the T-0535 sweep. Not `ready`: AC3 wants a decision on
   where the workspace-wide check lives (a Jest spec vs. a `tools/` script run in CI), which is a
   small architect/PM call rather than an implementer's.
+- 2026-08-05 — **pm, additive only: the four remaining files are now written out by full path** (§Context)
+  and the ticket gained its first `INDEX.md` row — it had none. State re-verified at HEAD: `gdpr` and
+  `orders` extend `../../../` ✅ (fixed in `6bd3b0c6`); `checkout`, `home`, `legal-pages` and
+  `services-catalog` still extend `../../../../` ❌, and `legal-pages/project.json` still has no `test`
+  target. **Status unchanged (`draft`) and no AC was altered** — the open AC3 decision still gates it.
 
 ## Review
 <!-- reviewer verdict here -->

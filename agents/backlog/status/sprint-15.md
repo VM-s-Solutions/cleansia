@@ -1313,3 +1313,104 @@ two items longer.**
   allocates them when the round is convened.
 - **Did not move `Q-PAYOUT-02` / `Q-PAYOUT-03` to `answered.md`.** They are answered (T-0522 AC0 records the
   owner's verbatim words) but `questions/open.md` is a shared file with live lanes.
+
+---
+
+# ADDENDUM E — the filing pass (2026-08-05): eleven rows for work that was never in the backlog
+
+**Adds to ADDENDUM D; supersedes nothing in it except the T-0537 correction below.**
+
+## E1. The headline, and it is not a ticket
+
+**ADR-0033 is `accepted` and NOT IN FORCE, and the reason is a filing failure.** The ADR named its own
+enforcement (Block D → **FT-11**) as *its condition of acceptance*. That condition was never filed as a
+ticket, so it was never scheduled, so it never landed — and the ADR's §Consequences states in the
+present tense that the check *"moves"*. Verified before filing: `.claude/agents/reviewer.md:105-110`
+still teaches the **superseded** routing axis verbatim, `agents/knowledge/conventions.md:122-127` teaches
+it too (the first adversarial round measured only the reviewer's page), and `INDEX.md` carried **no row**
+for FT-11, FT-12 or FT-8.
+
+By ADR-0032's own definition that makes ADR-0033 `(guidance — no gate)`: **three routing tests that bind
+nothing, for four days, because nobody wrote down that they had to be turned on.** The living doc
+(`architecture/decisions/catalog-governance.md:61-76`) already said so. The backlog did not. That gap —
+a decision recorded as accepted while its enabling work exists in no queue — is the finding this pass
+records, and it is a **process** failure, not an architecture one.
+
+## E2. What was filed — eleven rows, `T-0549`…`T-0559`
+
+| Group | Rows |
+|---|---|
+| **ADR-0033 remainder** | **T-0549** FT-11 (`ready`, widened to *both* pages) · **T-0550** FT-12 (`ready`) · **T-0551** FT-8 (⛔ `blocked` **twice**) · **T-0552** F1, the signed erratum on ADR-0032 (`ready`) · **T-0553** the L1/L3/F4 panel (`in_progress`) |
+| **Nx guard, pinned but unfixed** | **T-0554** three dangling `tsconfig.base.json` aliases · **T-0555** `libs/cleansia` invisible to Nx |
+| **Landed-during-the-pass lanes** | **T-0556** `SaveMyDocuments` unbounded upload (**security**) · **T-0557** host-level request-body limit (**architect**) · **T-0558** two dead upload commands · **T-0559** the object-literal remainder + the lint-regex call (`draft`) |
+
+**Three filings are deliberately not `ready`:**
+
+- **T-0551 is `blocked`, not `ready`** — Block C **as specified in the accepted ADR** appends the new
+  routing test and never amends `conventions.md:122-127`, whose first limb the floor *reverses*. Applied
+  literally, one page instructs both. A `ready` row would have invited exactly that.
+- **T-0553 is `in_progress` and was filed after it spawned** — recorded that way rather than backdated,
+  because an in-flight panel that blocks two filed tickets and appears in no row is the same defect as
+  FT-11's.
+- **T-0559 is `draft`** — its architect ruling does not exist yet, and its counts must be re-derived
+  rather than inherited.
+
+## E3. Three backlog-integrity corrections found while filing
+
+| | |
+|---|---|
+| **T-0546**, **T-0548** | Both existed as ticket **files on disk with no `INDEX.md` row.** Rows added (`draft` / `in_review`). A ticket file with no row is invisible to every mechanism this sprint built |
+| **T-0537** | **ADDENDUM D's row is stale.** It says `ready` because *"the guard does not exist"* — the guard shipped in **`e78fb619`** with its own repo-root workflow, and the ticket file now reads `done` with AC1–AC5 ticked. **Corrected to `done` ⚠️ (unreviewed):** its `## Review` is still the empty template, so per `ticket-lifecycle.md:165-179` it owes a reviewer pass or a MANUAL-GATE block |
+
+**The pattern under all three:** ADDENDUM D measured tickets that were stale *against the code*. These
+are stale *against each other* — file vs. index — which no candidate in §D3 detects, because all three
+candidates read tickets and commits, never the manifest.
+
+## E4. §D3's mechanism, applied — including where it does not reach
+
+Both measured corrections were applied when writing these eleven tickets:
+
+- **Every ticket names the specific product files it touches**, because that is the only signal shown to
+  work (candidate 3, resolved by suffix match against `git ls-files`).
+- **Five of the eleven are structurally undetectable by it.** T-0549/0550/0551/0552/0553 touch only
+  `.claude/agents/**`, `agents/knowledge/**`, `agents/process/**`, `agents/architecture/**` and
+  `agents/backlog/adr/**` — and the middle three are *deliberately excluded* from the path rule, because
+  counting shared knowledge docs takes it from **11 flags to 29** on this corpus. So each of those five
+  carries a **`### Staleness detectability`** section naming the one hand-check that substitutes for the
+  script. **This is a real hole in the proposed mechanism: the governance backlog — the part that went
+  unfiled in the first place — is exactly the part the script cannot see.**
+- **Candidate 1's inverse earned its keep.** Its recall gap is proven (T-0448/T-0450), but reading it
+  backwards — *a `done`/`in_review` ticket with an empty `## Review`* — is what surfaced T-0537 and
+  T-0548 above. Worth adding to the script as a second rule; it costs nothing extra.
+
+## E5. 🔴 OWNER — what this pass puts on your desk
+
+**Nothing blocking, and one thing worth knowing.**
+
+1. **T-0556 is the one to look at.** `SaveMyDocuments` accepts an unbounded, unchecked upload on **two
+   partner hosts**, and the content type is taken from the file **extension**. It is the same defect just
+   fixed on the avatar path, in the same feature area, and it is still open.
+2. **ADR-0033's routing rule is not running.** Until T-0549 lands, catalog edits route by the
+   *superseded* axis on both the author's and the reviewer's page. Nothing regresses meanwhile — the old
+   axis is what everyone has been applying all along — but no one should cite ADR-0033 as binding.
+3. **T-0557 needs an architect panel before any code**, and it will produce a platform-wide number
+   (the request-body ceiling) that touches every intake path on all five hosts.
+
+## E6. What this pass deliberately did NOT do
+
+- **Did not touch git.** No add, commit, branch, stash, checkout or restore. `git log` / `git show` /
+  `git status` were read-only.
+- **Did not edit `.claude/agents/*.md`.** T-0549 *specifies* the reviewer-charter edit; it does not
+  perform it. That separation is part of why the finding sat unfiled — the round that found it could not
+  perform the fix either.
+- **Did not edit any live lane's ticket file.** T-0535, T-0447, T-0465 and T-0537 were read and left
+  alone; T-0559 was filed as T-0535's *remainder* rather than as an edit to it. The single exception is
+  **T-0546**, which is committed and clean: additive only — four full paths and a status-log line, **no
+  AC and no status changed**.
+- **Did not write the ADR-0033 repairs, the erratum, or any ADR.** Those belong to the architect and to
+  T-0553's panel; a PM inventing the repair is the exact defect T-0471 exists to correct.
+- **Did not reconcile T-0447 / T-0465 / T-0473 / T-0479 / T-0490.** T-0447 says `ready`/`updated: 2026-08-01`
+  while `6bd3b0c6` shipped work naming it — a candidate-3 flag, out of this pass's brief, **named here
+  rather than left latent.**
+- **Did not build the §D3 staleness script.** Still specified, still unbuilt, and E4 now records a hole
+  in its coverage that its spec should absorb before anyone writes it.

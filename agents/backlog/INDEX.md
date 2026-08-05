@@ -10,6 +10,85 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🧾 FILING PASS — 2026-08-05. **Eleven new rows for work that existed only in ADR text, commit messages and one lane's report.** Adds rows; supersedes nothing below except the **T-0537** correction it names.
+>
+> ### The finding is the absence
+>
+> **ADR-0033 is `accepted` and NOT IN FORCE.** It named Block D — the reviewer-check that enforces it —
+> as **its own condition of acceptance**, and was accepted with that condition unmet. Its §Consequences
+> claims in the present tense that the check *"moves"*. That is false at HEAD. PM-verified before filing:
+>
+> | | State at HEAD (`0e1af548`) |
+> |---|---|
+> | `.claude/agents/reviewer.md:105-110` — what a **reviewer** runs | still the **superseded** axis, verbatim |
+> | `agents/knowledge/conventions.md:122-127` — what an **author** applies | still the superseded axis. **The first adversarial round measured only the reviewer's page and missed this second site** |
+> | `agents/process/quality-gates.md` Gate 1 (`:92`) | no catalog-edit pointer |
+> | **FT-11 / FT-12 / FT-8 as `INDEX.md` rows** | **none existed.** The follow-through the ADR's own acceptance depended on was never filed at all |
+>
+> By ADR-0032 D2's own line (*"T3-HUMAN requires a **named** checklist item"*), ADR-0033 is
+> `(guidance — no gate)` today and its three routing tests bind nothing. **FT-11 is not a follow-up — it
+> is the remainder of the decision.** The living doc `agents/architecture/decisions/catalog-governance.md:61-76`
+> already recorded this; **these rows are the backlog catching up to it.**
+>
+> ### The ADR-0033 remainder — five rows
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0549** | **FT-11 — land the named enforcer (reviewer-check 5 "Catalog-edit routing") and stop BOTH pages teaching the superseded axis.** `.claude/agents/reviewer.md:105-110` + `quality-gates.md` Gate 1 + **`agents/knowledge/conventions.md:122-127`** | XS | **`ready`** | T-0553 *(**AC3 only** — AC1/AC2 dispatch now)* | architect, docs | no | **The condition of acceptance.** Scope **widened** to the author's page per finding **L2** — fixing one page leaves the rule half-taught, which looks done |
+> | **T-0550** | **FT-12 — record reviewer-check 5's id in `agents/process/enforcement.md`** (`:161-163`) so a charter edit that drops it is a visible regression, not a silent one | XS | `ready` | T-0549 | architect, docs | no | Nothing to record until T-0549 AC1 lands |
+> | **T-0551** | **FT-8 — Block C into `agents/knowledge/conventions.md`** | XS | ⛔ **`blocked`** | **T-0549, T-0553** | architect, docs | no | **Blocked twice, and filed `blocked` on purpose.** Applied **as specified** it installs a contradiction: Block C says only *"insert after the existing numbered list"* and never amends `:122-127`, whose **first limb the floor reverses** — one page would instruct both (finding **L3**). A `ready` row here invites exactly that literal application |
+> | **T-0552** | **F1 — ADR-0032 carries TWO stale statements and is `accepted`: one signed erratum, not a quiet edit.** `:23-25` (0031 **is** on `master` — `acf2f0bc`, PR #175) **and `:14`** (*"ADR-0033 is `proposed`"* — made stale by this very round) | XS | `ready` | — | architect, docs | no | Only the architect signs (`adr/README.md:16-26`); the living doc moves in the same change (`:31-32`) |
+> | **T-0553** | **Architect panel — L1 ("governs" is undefined) + L3 (the reversed limb) + F4 (the missing trade-off limb) → a new ADR refining ADR-0033 D1** | S | **`in_progress`** | — | architect | no | **Running now; filed after it spawned** — which is the same defect as FT-11 going unfiled, recorded rather than smoothed over. Blocks T-0549 AC3 and T-0551. AC1 = author ≠ challenger ≠ lead, declared. **ADR number allocated at write time; highest at HEAD is 0042, `T-0547` reserved** |
+>
+> ⚠️ **`agents/knowledge/conventions.md` §"Harvest good patterns back into the catalog" is a serialized
+> lane: T-0549 AC3 → T-0551. Never concurrent** — two instances in that section is how a page acquires
+> two incompatible forms, which is the exact disease under repair.
+>
+> ### Two Nx-guard findings — pinned by CI so they cannot grow, neither fixed
+>
+> Both were reported by **T-0537**'s guard (`e78fb619`) into its own recorded sets and had no ticket.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0554** | **Three dangling `tsconfig.base.json` aliases** — `@cleansia.app/order-details` (`:45-47`, **missing the `libs/` prefix entirely**), `@cleansia/cleansia-services` (`:177`), `@cleansia/stores` (`:193`). All three targets absent; **zero importers** (verified) | XS | `ready` | — | frontend | no | Closes the guard's **NX-4** recorded set (`check-nx-project-registration.mjs:99-104`) — the entry must be deleted **in the same change**, or the guard goes red *"stale entry"* |
+> | **T-0555** | **`libs/cleansia` is invisible to Nx** — no `index.ts`, no `project.json`, no alias | XS | `ready` | — | frontend | no | 🔎 **The guard's description is wrong and the correction is what makes deletion safe:** it is **not** a generator scaffold but a **superseded copy of the live landing page** — `CleansiaComponent` imports **ten** sub-components that exist only under the registered `libs/cleansia-customer-features/home`, so the file **cannot compile**, and its template is an *older* copy. Closes **NX-5** (`:106-109`) |
+>
+> ⚠️ **T-0554 and T-0555 are a serialized lane on `agents/tools/check-nx-project-registration.mjs`** —
+> different constants, one file. Run them one after the other.
+>
+> ### Four findings from lanes that landed while this pass ran
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0556** | 🔴 **`SaveMyDocuments` accepts an unbounded upload with no content check.** `SaveMyDocuments.cs:74-77` asserts **the same predicate twice** (`NotEmpty()` then `Must(!IsNullOrWhiteSpace)`) and nothing else; the handler decodes straight to blob upload; content type is inferred from the **file extension**, not the bytes; the document **list** has no count cap | S | `ready` | — | backend | **yes** | Reachable on **two hosts** (`Web.Partner` + `Web.Mobile.Partner` `EmployeeController`). Same defect class as the avatar path just fixed in `97bb7265` (T-0548) — **the highest-severity row in this pass** |
+> | **T-0557** | **No `MaxRequestBodySize` anywhere in the solution** — Kestrel's ~28.6 MB default is the real ceiling on every intake path. Decide the host-level, config-driven shape in `CleansiaStartupBase` | S | `ready` | — | architect, backend | **yes** | **Architect, not backend.** The number is **not derivable from the avatar path**: three intake paths take unbounded arrays with **no count cap**, so a host-wide limit silently sets their policy too. Explicitly **not** a per-endpoint attribute — an attribute is what the next endpoint forgets, which is how the avatar gap happened |
+> | **T-0558** | **Two dead commands** — `UploadEmployeeDocument`, `UploadNewDocumentVersion`: no controller, no dispatcher | XS | `ready` | — | backend | no | The only remaining hits are the **identically-named policy constant** `Policy.CanUploadEmployeeDocument` (`Policy.cs:75`), which guards the **live** route — AC3 forbids deleting it. They cap a *client-declared* `FileSizeBytes` next to a *client-supplied* `FilePath`: **must not be revived as-is.** Dead code that looks like a working validation example is worse than dead code |
+> | **T-0559** | **Finish the generated-DTO literal sweep — 46 left in 9 admin libs — and rule on the ratchet's `(Command\|Request\|Dto\|Query)$` blind spot** (`eslint.generated-dto.config.mjs:24`) | M | **`draft`** | T-0535 | frontend, architect | no | **T-0535's remainder, filed separately because T-0535 is a live lane whose file must not be edited underneath it.** Widening the regex starts matching **hand-written** classes → an Architect call. **Three of the nine libs have no spec files at all** — pinning their bodies from scratch is the real cost, not the conversion. `draft` until AC5's ruling exists and the count is re-derived |
+>
+> ### Backlog integrity — three corrections found while filing
+>
+> | ID | Correction |
+> |----|----|
+> | **T-0546** | **Row added — the ticket existed on disk with no `INDEX.md` row.** `draft`, `S`, frontend. Four customer libs extend `tsconfig.base.json` **one level too deep** and cannot compile a test; with no spec Jest prints *"No tests found, exiting with code 0"* and Nx reports success, so the lib sits silently outside the suite. `gdpr`/`orders` fixed in `6bd3b0c6`; **`checkout`, `home`, `legal-pages`, `services-catalog` still broken** (+ `legal-pages` has no `test` target). **PM added the four full paths to the ticket** — a ticket that names no path cannot be detected as stale by anything. Status untouched; AC3's "where does the workspace-wide check live" call still gates it |
+> | **T-0548** | **Row added — ticket existed on disk with no `INDEX.md` row.** `in_review`, `S`, backend, `security_touching: true`. Avatar upload had no server-side size cap; the fix shipped in **`97bb7265`** (*"rejects before it decodes"*). **Not `done`: its `## Review` is still the empty template** — no reviewer verdict, no MANUAL-GATE block |
+> | **T-0537** | ⚠️ **The pass-4 row above is STALE.** It says `ready` because *"AC1–AC5 are the GUARD, and no guard exists"* — **the guard shipped in `e78fb619`** (`agents/tools/check-nx-project-registration.mjs` + `.test.mjs` + its own `.github/workflows/nx-project-registration.yml`, 5 rules over 3 witnesses), and the **ticket file now reads `done` with AC1–AC5 ticked**. Corrected here to **`done` ⚠️ *(unreviewed)*: its `## Review` is the empty template**, so per `ticket-lifecycle.md:165-179` it owes a reviewer pass or a MANUAL-GATE block before `done` is legitimate. **Ticket file not edited — the frontend lane is live in this tree** |
+>
+> ### How these were filed, and the one thing it changes for the next pass
+>
+> Applying `status/sprint-15.md` §D3's two measured corrections:
+>
+> - **Every ticket names the specific product files it touches.** That is the only staleness signal shown
+>   to work (candidate 3: 10 of 12 real hits, resolved by **suffix match against `git ls-files`**).
+> - **But five of these eleven tickets are structurally undetectable by it** — T-0549/0550/0551/0552/0553
+>   touch only `.claude/agents/**`, `agents/knowledge/**`, `agents/process/**`, `agents/architecture/**`
+>   and `agents/backlog/adr/**`, and the *first three of those are deliberately excluded* from the path
+>   rule (counting shared knowledge docs takes it from **11 flags to 29** on this corpus). **Each of those
+>   five carries a `### Staleness detectability` section naming the one hand-check that substitutes for
+>   it.** The remaining six name `src/` paths and are covered.
+> - **Candidate 1 has a proven recall gap** (T-0448/T-0450: 0 ticked boxes, template-only `## Review`, both
+>   already shipped), so an empty `## Review` on a `ready` row proves nothing on its own. **Its inverse
+>   found something here:** T-0537 and T-0548 are `done`/`in_review` **with** empty review blocks.
+
 > ## ✅ RECONCILIATION PASS 4 — 2026-08-05. **This block SUPERSEDES every row below for the tickets it names.**
 >
 > The third pass closed 15 tickets; this one closes 9 more, and **every one of them had been sitting in

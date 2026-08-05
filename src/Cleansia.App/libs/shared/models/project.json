@@ -11,6 +11,12 @@
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"
+      ],
       "outputs": [
         "{workspaceRoot}/coverage/{projectRoot}"
       ],

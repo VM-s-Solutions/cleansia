@@ -9,6 +9,14 @@
     "type:data"
   ],
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/data-access/admin-stores/jest.config.ts",
+        "tsConfig": "libs/data-access/admin-stores/tsconfig.spec.json"
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }

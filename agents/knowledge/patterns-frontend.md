@@ -604,10 +604,10 @@ suppression list — it is exact-match in **both** directions, so closing a reco
 its entry in the **same** change, and the self-test covers that ratchet by injecting entries into a
 throwaway copy of the checker rather than by giving the shipped tool a suppression flag.
 
-### A registered lib is not yet a *runnable* one — two ways a green `test` target compiles nothing
+### A registered lib is not yet a *runnable* one — three ways a green `test` target compiles nothing
 
 Registration, tags and an alias get a lib into `nx run-many -t test --all`. They do not get a single
-test compiled, and both ways of failing that print **success**:
+test compiled, and all three ways of failing that print **success**:
 
 - **The lib's `tsconfig.json` `extends` a path that is not there.** Count the `../` segments against a
   sibling at the same depth — a feature lib under `libs/<area>/<lib>/` is **three** up
@@ -619,18 +619,27 @@ test compiled, and both ways of failing that print **success**:
 - **The lib has a `jest.config.ts` and no `test` target.** Then it is not in the run at all, and an
   absent project is the one failure no log can print — `legal-pages` had the whole jest shape and no
   target.
+- **The lib has NEITHER — no jest config and no `test` target.** `nx test <lib>` answers *"Cannot find
+  configuration for task"*, `run-many -t test --all` never lists it, and the project simply does not
+  appear in any number you look at. All three `libs/data-access/*-stores` — the NgRx effects behind
+  auth, user and the services/packages catalogs — shipped this way with `lint` as their only target
+  (T-0463). This is the state NX-7 could not see: NX-7's witness is the jest config, which is exactly
+  the half that is missing, so the SOURCE has to be the witness instead.
 
 So the number to look at after adding a lib is **how many projects ran a test**, not whether the run was
 green: `run-many` was green over 61 projects while three of them compiled nothing and a fourth was not
-listed. When you add a lib, add the spec that proves its target works in the same change — a corrected
-`extends` with zero specs is byte-for-byte as green as the broken one.
+listed, and green again over 64 while three more were not projects it could select at all. When you add
+a lib, add the spec that proves its target works in the same change — a corrected `extends` with zero
+specs is byte-for-byte as green as the broken one, and so is a correct target with no spec beside it.
 
 **Enforced by:** `agents/tools/check-nx-project-registration.mjs` rules **NX-6** (every `tsconfig*.json`
-resolves its `extends` and its `references`) and **NX-7** (`jest.config.*` ⇔ a `test` target, and the
+resolves its `extends` and its `references`), **NX-7** (`jest.config.*` ⇔ a `test` target, and the
 target's `jestConfig`/`tsConfig` options resolve — they are **workspace**-relative, not project-relative)
-— **T1-CI**, same repo-root workflow, same anti-vacuity anchor: zero tsconfigs read, or zero jest configs
-across a non-empty project set, is a hard failure. Neither rule has a recorded set; both baselines are
-zero and each instance is a one-token fix.
+and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **T1-CI**, same
+repo-root workflow, same anti-vacuity anchor: zero tsconfigs read, zero jest configs, or zero `test`
+targets across a non-empty project set is a hard failure. None of the three has a recorded set; all
+three baselines are zero and each instance is a one-token fix. NX-8 and NX-7 are disjoint by
+construction, so a project is reported once, not twice.
 
 **A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
 alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib
@@ -654,22 +663,154 @@ on libs tagged with `scope:shared`"* immediately. So a scope break can hide behi
 and **the scope-violation count staying at zero after you fix a cycle is the expected outcome, not
 evidence there was nothing underneath** — one fix retires both.
 
-**The fix, and the general rule: a wire enum a shared lib needs is declared in `@cleansia/models`, and
-pinned to every generated client by an off-disk parity spec.** Shared code may not import any
-`*-services` client, so the enum has to be re-declared — which makes it a **fourth** copy of something
-three clients already generate, and nothing makes the four agree. Declare it in
-`libs/shared/models/src/lib/models/` and guard it with a spec that **reads the three generated clients
-off disk and parses them** (`order-status-enum-parity.spec.ts`) — an import would be the very break you
-are fixing, so the file-reading idiom of the i18n and brand-asset guards is the only available one. A
-regen that renumbers a member then fails `nx test models` instead of silently giving shared code a
-different contract from the app it renders in. Which of the four declarations should be **canonical** —
-i.e. whether the clients should stop emitting their own — is an Architect call on owner-run generation:
-`Q-ENUM-01`.
+**The fix, and the general rule: a wire enum a shared lib needs is declared in `@cleansia/models`,
+pinned to every generated client by an off-disk parity spec, and the clients are declared `inputs` of
+that spec's own `test` target — without that last part the spec does not run.** Shared code may not
+import any `*-services` client, so the enum has to be re-declared — which makes it a **fourth** copy of
+something three clients already generate, and nothing about the language makes the four agree. Declare
+it in `libs/shared/models/src/lib/models/` and guard it with a spec that **reads the three generated
+clients off disk and parses them** (`order-status-enum-parity.spec.ts`) — an import would be the very
+break you are fixing, so the file-reading idiom of the i18n and brand-asset guards is the only
+available one.
+
+**A file a spec only `readFileSync`s is a file Nx cannot see, and an unseen input makes a green run
+worthless.** Nx derives *both* "is this project affected" *and* the task's cache key from **declared**
+inputs: `nx.json` gives `@nx/jest` `["default", "^production", "{workspaceRoot}/jest.preset.js"]`,
+`default` is `{projectRoot}/**/*`, `sharedGlobals` is **empty**, and `models` has no dependency edge to
+any `*-services` lib — nor may it have one. Undeclared, the three clients are inputs to nothing, which is
+two independent holes; the second one is the one nobody expects. Measured by renumbering `OnTheWay = 3`
+to `33` in `partner-client.ts` (bytes restored, checksum-verified):
+
+| Invocation | Clients undeclared | Clients declared as `inputs` |
+|---|---|---|
+| `nx test models`, warm cache | **green — 7 passing, replayed from cache** over the renumbered bytes | **red** — the hash moved, so there is no entry to replay |
+| `nx test models --skip-nx-cache` | red | red |
+| `nx affected` for a client-only diff | `models` **absent** — 12 test-target projects, all partner-scoped | `models` **present**, and its dependent tree with it — 63 |
+
+So it is not that the guard is merely skipped by `affected` on a regen-only commit: it is
+**cache-replayable**, i.e. a run that does select `models` can still serve a pass computed over
+different client bytes. The declaration that closes both is one line of
+`libs/shared/models/project.json`, on the `test` target — a glob, not three paths, so a fourth client
+lib arrives covered:
+
+```jsonc
+"inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js",
+           "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"]
+```
+
+**An input is a hashing declaration, not a dependency — and that distinction is the only reason this is
+available here.** `nx graph` still reports `models → types` and nothing else. The alternative that looks
+equivalent, an `implicitDependencies` entry, **is** a graph edge and yields
+`models → partner-services → partner-stores → models`: the same circular-dependency class whose repair
+created the `scope:shared` boundary that forces the shared copy to exist. Never reach for it here.
+
+The price is legible and worth paying: because almost everything depends on `models`, a commit that
+touches a client now selects nearly the whole workspace, not the partner subtree. Only a regen touches
+those files, and a regen is exactly the change whose blast radius *is* the whole workspace — the three
+unconditional production builds in `frontend-ci.yml` exist for the same reason.
+
+Write the input with the guard, in the same change, whenever you pin a shared lib to a generated client
+this way. When the file a spec reads lives **above** the workspace root (`src/Cleansia.App`) — a C#
+domain rule, a Kotlin or Swift literal — an Nx input cannot name it at all, and the house shape is the
+one `.github/workflows/offerability-parity.yml` uses and states in its header: a dependency-free Node
+checker outside the workspace, its own repo-root workflow, its self-test first. The three
+`apps/*/src/app/i18n/error-contract-parity.spec.ts` sit in exactly that un-declarable position — they
+walk up to `Cleansia.Api.sln` to read `BusinessErrorMessage.cs`.
+
+**Two other shipped specs read off-project files and declare nothing, and this entry does not cover
+them** — `cleansia-brand-name.component.spec.ts` (three apps' `assets/logos`, from `components`) and
+partner `forgot-password.models.spec.ts` (the partner i18n bundle, from a feature lib). Do not read
+their green as a guarantee about the files they open. Declaring inputs there is not the same cheap call:
+it would make `components` — which nearly everything depends on — touched by every asset edit, and that
+blast radius wants a ticket, not a drive-by.
+
+**Enforced by:** `libs/shared/models/src/lib/models/order-status-enum-parity.spec.ts` **plus** the
+`{workspaceRoot}` client glob on `models`' `test` target — **T1-CI**, `frontend-ci.yml`'s
+*"Unit tests (affected)"* step (`nx affected -t test`, which unlike that workflow's lint step is not
+`continue-on-error`). Neither half is the enforcer alone: the spec without the input is a spec that does
+not run, and the input without the spec hashes nothing. Its anti-vacuity anchor is the spec's third
+`it()` — zero client files found, or an enum that parsed to nothing, is a hard failure rather than a
+vacuous pass.
+
+**It detects exactly one thing: a generated client that disagrees with the shared table.** Four
+artifacts agreeing with each other says nothing about whether any of them matches
+`Cleansia.Core.Domain.Enums` — a backend renumbering that has not been regenerated yet leaves all four
+in perfect agreement and all four wrong. Which declaration should be **canonical** — whether the clients
+should stop emitting their own, and where the shared file's integers come from — is an Architect call on
+owner-run generation: `Q-ENUM-01`, still **open**. ADR-0042 answered it and was **returned to its author**
+on 2026-08-05 (`proposed`, never accepted); nothing may be built against it, and the §7 catalog
+replacement it carries has not landed.
 
 The `*-services` index barrels
 (`libs/core/<app>-services/src/index.ts`) are **hand-maintained** (not generated — NSwag only emits
 `client/<app>-client.ts`); re-exporting an already-generated DTO through the barrel is normal frontend
 work, **not** a `nswag-regen` step.
+
+## Testing an NgRx effect — pin behaviour, and pin that the effect is still alive
+
+The `libs/data-access/*-stores` libs hold the cross-feature state (auth, user, the services/packages
+catalogs) and had **no** spec of any kind until T-0463. The harness is `provideMockActions` over a
+`Subject`, with the generated client wrapper provided as a plain object of `jest.fn()`s:
+
+```ts
+TestBed.configureTestingModule({
+  providers: [
+    UserEffects,
+    provideMockActions(() => actions$),
+    { provide: PartnerClient, useValue: { userClient } },
+  ],
+});
+```
+
+**Subscribe to the effect before you push an action.** `actions$` is a `Subject`, so anything dispatched
+first is dropped and the test reads as "the effect did nothing" — an assertion that passes for the wrong
+reason on a `toHaveLength(0)`.
+
+Pin **three** things per effect, not one:
+
+1. the success action carries what the client returned;
+2. the failure branch emits the failure action **carrying the error**, rather than swallowing it;
+3. **the effect is still alive afterwards** — push a second action and assert it is served too.
+
+The third is the one worth the keystrokes. `catchError` belongs *inside* the `mergeMap`/`switchMap`;
+hoisted to the outer pipe it still compiles, still reports the **first** failure correctly, and then
+completes the stream so every later action is dropped in silence for the rest of the session. One
+transient failure and the admin app's enum dropdowns are empty until reload. Nothing type-checks it and
+tests 1 and 2 both stay green — mutation-proved on all three store libs.
+
+Where the operator choice is load-bearing, pin that too rather than trusting the identifier:
+`switchMap` on a catalog read means a slow first response must not land after a newer one and repaint
+with stale prices. Two pending `Subject`s, resolve the older one last, assert only the newer action was
+emitted.
+
+**The two regen-break pins (ADR-0031's failure mode, seen from the store layer).** A `jest.Mock` has no
+signature, so asserting on `mock.calls[0]` cannot catch a regen at all — the mock happily accepts
+whatever order the effect passes:
+
+- **A positional query** (`getPaged(id, isActive, firstName, lastName, …)` — eleven optional
+  parameters, every one assignable to the next) is pinned **end-to-end** by constructing the *real*
+  generated sub-client over a mocked `HttpClient` and asserting the request URL. A regen that inserts or
+  reorders a parameter then moves `Filter.Email=` onto a different value and the test goes red;
+  the same swap against a mocked client is invisible.
+- **A command** is pinned in both directions: `toJSON()` + `toEqual` for the *drop* direction (every
+  generated member is `field!: T`, so a deleted assignment type-checks and no build catches it), and
+  `Object.keys(toJSON()).sort()` for the *add* direction — the regen tripwire. `toJSON()` emits the
+  generated class's declared members, so a member the backend adds turns that list red and forces the
+  round-trip decision, instead of a whole-resource update silently sending the type default and
+  **overwriting** the stored value.
+
+Reference: `libs/data-access/partner-stores/src/lib/user/user.effects.spec.ts` (all five shapes),
+`.../admin-stores/src/lib/code/` and `.../customer-stores/src/lib/catalog/` (effect + reducer pairs).
+A reducer spec is worth writing beside the effect spec: it is where the three data states
+(empty / loading / error) are actually decided, and `customerCatalogReducer` currently makes a failed
+catalog read **byte-identical** to an empty catalog — `CustomerCatalogState` carries no error field —
+which that spec pins as-is rather than blesses.
+
+**What is gated:** the *configuration* — that these libs are in the test run at all — is NX-8 above,
+**T1-CI**. The *coverage* is not gated and cannot be until it is clean: 7 of 11 `*.effects.ts` and 12 of
+14 reducers under `libs/data-access/` still have no spec, so a `*.effects.ts` ⇔ `*.effects.spec.ts`
+guard would land on a non-zero baseline (`enforcement.md`: enforcement goes behind the cleanup, never in
+front of it). Until that backfill lands this section is **(guidance — no gate)**.
 
 ## Dev API base URL — relative on purpose (one-origin cookie auth)
 

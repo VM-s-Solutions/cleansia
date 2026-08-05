@@ -1227,35 +1227,47 @@ _No open Wave-1 *planning* questions remain._
   of shipping. This is a detector, not a fix: it tells you the four disagree, it does not stop the
   disagreement. Collapsing to one declaration is the Architect's call and is a change to owner-run
   generation, so it was not taken here.
-- **ANSWERED 2026-08-04 — owner ruling + architect design, recorded in `ADR-0042`**
-  (`adr/0041-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`, `proposed`;
-  living doc `architecture/decisions/generated-client-contract.md` §"The second surface"). **PM: move
-  this entry to `answered.md`.**
+- **PARTIALLY ANSWERED — the owner's half is settled; the mechanism was RETURNED to its author on
+  2026-08-05.** ADR-0042 is `adr/0042-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`
+  and is `proposed`, **not accepted** (`0041` is the self-billing-agreement ADR — an earlier pointer here
+  named it and led readers into a different decision). Living doc:
+  `architecture/decisions/generated-client-contract.md` §"The second surface". **This entry stays open —
+  it does not move to `answered.md`.**
   - **Owner, verbatim:** *"I think that there is a need to refactor and better to use the one that is
     generated from nswag. Also consider using backend enums on frontend instead of generating your own."*
     ⇒ the hand-written mirror **goes**; the shared declaration must come out of the NSwag pipeline and be
-    traceable to `Cleansia.Core.Domain.Enums` with no human retyping. That half is **settled**.
-  - **The architect's HOW (ADR-0042, open to one challenger round on the mechanism only):** a generator
-    `src/Cleansia.App/tools/generate-wire-enums.mjs` runs **inside** every `npm run generate-*-client`,
-    between the formatter and the ADR-0031 typecheck. It derives the client set from each
-    `nswag-*.json`'s `output` key (never a glob), keeps the enums **all** clients declare, **fails the
-    owner's regen** if any disagree, and writes one `wire-enums.generated.ts` in `libs/shared/models`.
-    `order-status.models.ts` is deleted; the `SortDirection` hand-mirror in `sort-types.models.ts` is
-    folded in; the parity spec is re-based as a committed-state backstop. **The owner's commands do not
-    change.**
-  - **The per-app copies KEEP being emitted, deliberately** (the sub-question asked). Five hosts are
-    regenerated independently; three clients from three specs is three contracts. One shared symbol
-    imported by all three would let a client generated against a stale host *claim* the current
-    contract — it removes the evidence of drift, not the drift. NSwag's config is **not** changed.
-  - **Three facts the question did not have, and they change its framing:** (1) there are **five**
-    declarations, not four — `libs/core/services/src/lib/client/admin-client.ts` is a fifth, and it has
-    **already drifted through a renumbering** (`InProgress=3` where the live contract says `OnTheWay=3`);
-    the parity spec does not cover it. (2) It is a **class**: **12** enums are declared by all three
-    clients (36 declarations), and `SortDirection` was already a third hand-mirror with no spec at all.
-    (3) The parity spec **cannot run in CI on a regen-only commit** — it reads the clients off disk, so
-    `models` is not Nx-affected by a client change and `nx affected -t test` skips it.
-- Answer: **the shared declaration is GENERATED from the NSwag output at regen time; the hand-written
-  copy is deleted; the three per-host clients keep theirs. ADR-0042.**
+    traceable to `Cleansia.Core.Domain.Enums` with no human retyping. That half is **settled** and is not
+    re-litigable — the panel left it untouched.
+  - **RETURNED, do not build against it — the architect's HOW as drafted:** a generator
+    `src/Cleansia.App/tools/generate-wire-enums.mjs` running **inside** every `npm run generate-*-client`,
+    deriving the client set from each `nswag-*.json`'s `output` key, keeping the enums **all** clients
+    declare, **failing the owner's regen** on disagreement, and writing one `wire-enums.generated.ts` in
+    `libs/shared/models`. The 2026-08-05 panel did not reach consensus and returned it: the value
+    authority and the gate's placement are **inverted, not amendable** — a comparison among renderings of
+    one declaration cannot detect the defect the ADR was written for, and the drift is created by a
+    **backend** commit, so a regen-time gate sits where it is repaired. Seven rebuild constraints
+    (RB-1 … RB-7) and a second panel are owed. The *shape* — one machine-written shared declaration, no
+    hand-typing — survives.
+  - **The per-app copies KEEP being emitted** — the sub-question this entry asked, and the one clause of
+    the ADR the panel left standing (§D3 ground (i), unbroken). Hosts are regenerated independently;
+    three clients from three specs is three contracts. One shared symbol imported by all three would let
+    a client generated against a stale host *claim* the current contract — it removes the evidence of
+    drift, not the drift. NSwag's config is **not** changed.
+  - **Three facts the question did not have, and they change its framing:** (1) it counted **four**
+    declarations; a **fifth** existed in `libs/core/services/src/lib/client/admin-client.ts`, already
+    drifted through a renumbering (`InProgress=3` where the live contract says `OnTheWay=3`) and not
+    covered by the parity spec — that dead client was **deleted** in `2d913b8b`, so at HEAD the count is
+    back to four. (2) It is a **class**: **12** enums are declared by all three clients (36
+    declarations), and `SortDirection` was already a third hand-mirror with no spec at all. (3) The
+    parity spec **could not run** on a regen-only commit and was cache-replayable even when it was
+    selected — **fixed independently of this ADR**: the clients are now a declared
+    `{workspaceRoot}` glob input of `models`' `test` target, so a client-only diff selects `models` and
+    no cached pass can be replayed over changed client bytes. Verified by mutation; see
+    `agents/knowledge/patterns-frontend.md` §"Module boundaries". This closes the *detector*, not the
+    question — it still only compares clients to the shared table, never either to the backend (RB-1).
+- Answer: **open.** Settled: the hand-written mirror goes and the shared declaration must come out of
+  the NSwag pipeline (owner). Undecided: what the shared file's integers are derived from, and where the
+  gate that can go red actually lives — returned to the ADR's author, awaiting a second panel.
 
 ---
 

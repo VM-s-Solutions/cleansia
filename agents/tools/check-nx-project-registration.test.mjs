@@ -20,11 +20,16 @@
  * The AC3 scenarios are the point of the file: a corpus that has gone EMPTY must be RED. A guard
  * that goes green because it looked at nothing is the failure this ticket exists to prevent. The
  * NX-6/NX-7 scenarios (T-0546) replay the same thing one layer in — a registered, tagged lib whose
- * test target compiles nothing — so the fixture carries real tsconfigs and jest configs.
+ * test target compiles nothing — so the fixture carries real tsconfigs and jest configs. The NX-8
+ * scenarios (T-0463) replay the layer under THAT: a project with neither half of the jest shape,
+ * which NX-7 cannot witness at all.
  *
- * Stub the checker to exit 0 and 36 of the 40 scenarios go red. The 4 survivors are the must-NOT-fire
+ * The fixture's apps deliberately carry no source, so NX-8 does not fire on them by default; the
+ * scenario that needs an app to fire writes a `.ts` into one.
+ *
+ * Stub the checker to exit 0 and 41 of the 46 scenarios go red. The 5 survivors are the must-NOT-fire
  * ones (a tag value the guard has no opinion on, a JSONC comment, a bare `extends` specifier, an
- * extensionless `extends`), which a no-op passes by construction.
+ * extensionless `extends`, a project with no TypeScript), which a no-op passes by construction.
  *
  *   node agents/tools/check-nx-project-registration.test.mjs
  */
@@ -183,7 +188,7 @@ scenario("an unmutated workspace is clean and states what it read", {
     // clean fixture must report ZERO known, not a quiet pass over something it tolerated.
     expectText: [
         "read 4 lib root(s), 4 registered project(s), 4 alias(es) into libs/, 3 rostered app(s), " +
-            "13 tsconfig(s), 4 jest config(s)",
+            "13 tsconfig(s), 4 jest config(s), 4 test target(s)",
         "0 violation(s), 0 known",
     ],
 });
@@ -490,7 +495,93 @@ scenario("NX-7: an UNREGISTERED lib's jest config is NX-1's business, not NX-7's
     rejectText: ["NX-7"],
 });
 
+// ── NX-8 — the state NX-7 is blind to, because NX-7's witness is the jest config (T-0463) ───
+// All three `libs/data-access/*-stores` had `lint` as their only target and no jest config at all.
+// They were registered, tagged and aliased, so NX-1..NX-5 passed them; NX-7 needs a jest config to
+// fire and there was none; and `run-many -t test --all` simply never listed them. Third instance of
+// the class this guard exists for, and the guard could not see it.
+scenario("NX-8: a lib with NO test target and NO jest config -> RED", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        delete j.targets.test;
+        writeJson(r, p, j);
+        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
+    },
+    expectExit: 1,
+    expectText: ["NX-8", BROKEN_LIB, "declares NO `test` target and has no jest config"],
+});
+
+scenario("NX-8: it is NX-8 alone, never doubled with NX-7 — the two states are disjoint", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        delete j.targets.test;
+        writeJson(r, p, j);
+        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
+    },
+    expectExit: 1,
+    expectText: ["NX-8", "1 violation(s)"],
+    // A finding renders as `<path>  <rule>  <message>`, so the two-space form is the finding itself.
+    // The bare token appears inside NX-8's own message, which explains why NX-7 stays silent here.
+    rejectText: ["  NX-7  "],
+});
+
+scenario("NX-8: every untargeted lib is named, not just the first", {
+    mutate: (r) => {
+        for (const dir of [BROKEN_LIB, "libs/shared/components"]) {
+            const p = `${WS}/${dir}/project.json`;
+            const j = readJson(r, p);
+            delete j.targets.test;
+            writeJson(r, p, j);
+            rm(r, `${WS}/${dir}/jest.config.ts`);
+        }
+    },
+    expectExit: 1,
+    expectText: [BROKEN_LIB, "libs/shared/components", "2 violation(s)"],
+});
+
+scenario("NX-8: an APP with source and no test target is caught too, not just a lib", {
+    mutate: (r) => write(r, `${WS}/apps/cleansia.app/src/main.ts`, "export const boot = 1;\n"),
+    expectExit: 1,
+    expectText: ["NX-8", "apps/cleansia.app/project.json", "declares NO `test` target"],
+});
+
+scenario("NX-8: a project holding no TypeScript is not asked to run tests", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        delete j.targets.test;
+        writeJson(r, p, j);
+        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
+        rm(r, `${WS}/${BROKEN_LIB}/src`);
+        for (const name of ["tsconfig.json", "tsconfig.lib.json", "tsconfig.spec.json"]) {
+            rm(r, `${WS}/${BROKEN_LIB}/${name}`);
+        }
+        const base = `${WS}/tsconfig.base.json`;
+        const tsconfig = readJson(r, base);
+        delete tsconfig.compilerOptions.paths["@cleansia-customer/orders"];
+        writeJson(r, base, tsconfig);
+        write(r, `${WS}/${BROKEN_LIB}/README.md`, "assets only\n");
+    },
+    expectExit: 0,
+    rejectText: ["NX-8"],
+});
+
 // ── the new corpora are anchored too: an empty SCAN is illegal ──────────────
+scenario("AC3: registered projects but ZERO test targets -> RED (the target probe went stale)", {
+    mutate: (r) => {
+        for (const [dir] of LIBS) {
+            const p = `${WS}/${dir}/project.json`;
+            const j = readJson(r, p);
+            delete j.targets.test;
+            writeJson(r, p, j);
+        }
+    },
+    expectExit: 1,
+    expectText: ["P0", "ZERO `test` targets", "HARD FAILURE, never a silent pass"],
+});
+
 scenario("AC3: ZERO tsconfig files -> RED, not a pass over an unread corpus", {
     mutate: (r) => {
         rm(r, `${WS}/tsconfig.base.json`);

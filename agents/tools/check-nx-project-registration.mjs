@@ -45,8 +45,15 @@
  *   - NX-7, a jest config with no `test` target to select it (or a target whose `jestConfig` path does
  *     not resolve). `legal-pages` had a jest-shaped lib and no target, so `run-many -t test --all`
  *     simply did not list it — an absence no run can print.
- * Both are the same failure mode as an unregistered lib, one layer in: the corpus is smaller than it
- * looks and nothing says so.
+ *   - NX-8, NEITHER (T-0463). NX-7 uses the jest config as its witness, so a project that has no jest
+ *     config AND no `test` target is invisible to it — the guard was blind to exactly the state it
+ *     was built for. All three `libs/data-access/*-stores` sat there: registered, tagged, aliased,
+ *     holding the NgRx effects for auth/user/catalog, with `lint` as their only target. `nx test
+ *     partner-stores` answered "Cannot find configuration for task", `run-many -t test --all` never
+ *     listed them, and NX-7 said nothing. The witness for this one has to be the SOURCE, not the
+ *     jest config, because a jest config is precisely what these projects lacked.
+ * All three are the same failure mode as an unregistered lib, one layer in: the corpus is smaller
+ * than it looks and nothing says so.
  *
  * TAGS ARE ASSERTED BY PRESENCE, NOT BY VALUE. A `project.json` with no `tags` puts the lib straight
  * back outside `@nx/enforce-module-boundaries` — half of the original hole — so an empty or missing
@@ -169,6 +176,10 @@ const hasProjectRootBeneath = (dir) =>
 const hasSourceBeneath = (dir) =>
     subtree(dir, (e) => e.isFile() && SOURCE_EXT.some((x) => e.name.endsWith(x)));
 
+/** NX-8's witness. A project with no TypeScript under it has nothing a `test` target could compile. */
+const hasTypeScriptBeneath = (dir) =>
+    subtree(dir, (e) => e.isFile() && (e.name.endsWith(".ts") || e.name.endsWith(".tsx")));
+
 /**
  * Walk `libs/` and classify. A project root's own `src/` tree is source, not a place another project
  * root can live, so it is not descended into; everything else is, so a project root nested beside
@@ -278,6 +289,7 @@ let registered = 0;
 let aliases = 0;
 let tsconfigs = 0;
 let jestConfigs = 0;
+let testTargets = 0;
 let libProjects = [];
 
 if (!isDir(WORKSPACE)) {
@@ -451,12 +463,13 @@ for (const app of APP_ROSTER) {
     }
 }
 
-// ── NX-6 / NX-7: a registered, tagged project whose TEST TARGET still runs nothing ──
+// ── NX-6 / NX-7 / NX-8: a registered, tagged project whose TEST TARGET still runs nothing ──
 //
-// Neither rule gets a recorded set. Both baselines are zero as of T-0546 and each instance is a
-// one-token fix, so there is nothing to ship enforcement behind (`agents/process/enforcement.md`).
-// If a future gap genuinely has to land ahead of its cleanup, record it the way NX-4/NX-5 do — an
-// exact-match set that goes red in both directions — never a suppression flag.
+// None of the three gets a recorded set. All three baselines are zero as of T-0546 and T-0463, and
+// each instance is a one-token fix, so there is nothing to ship enforcement behind
+// (`agents/process/enforcement.md`). If a future gap genuinely has to land ahead of its cleanup,
+// record it the way NX-4/NX-5 do — an exact-match set that goes red in both directions — never a
+// suppression flag.
 if (isDir(WORKSPACE)) {
     const tsconfigFiles = walkFiles(WORKSPACE, isTsconfigName);
     tsconfigs = tsconfigFiles.length;
@@ -529,6 +542,24 @@ if (isDir(WORKSPACE)) {
         const jestConfig = jestConfigOf(dir);
         if (jestConfig) jestConfigs++;
         const target = value?.targets?.test;
+        if (target) testTargets++;
+
+        // NX-8 — the state NX-7 cannot see, because NX-7's witness is the jest config. Source is the
+        // only witness left when a project has neither half of the jest shape.
+        if (!target && !jestConfig && hasTypeScriptBeneath(dir)) {
+            add(
+                file,
+                "NX-8",
+                "holds TypeScript source but declares NO `test` target and has no jest config — " +
+                    "`nx test <project>` answers 'Cannot find configuration for task' and " +
+                    "`run-many -t test --all` never lists it, so the project is absent from every " +
+                    "test run with no output anywhere saying so. NX-7 cannot see this: its witness " +
+                    "is the jest config, which is the half that is missing. Scaffold jest.config.ts " +
+                    "+ tsconfig.spec.json + src/test-setup.ts from a sibling and add the target — " +
+                    "and land a real spec in the same change, because a correct config with zero " +
+                    "specs prints 'No tests found, exiting with code 0' and reads as success.",
+            );
+        }
 
         if (jestConfig && !target) {
             add(
@@ -568,13 +599,22 @@ if (isDir(WORKSPACE)) {
                 "probe is stale; this is a HARD FAILURE, never a silent pass",
         );
     }
+    if (registered > 0 && testTargets === 0) {
+        add(
+            WORKSPACE,
+            "P0",
+            `read ${registered} registered lib project(s) and ZERO \`test\` targets — the target ` +
+                "probe is stale, or the whole workspace is outside `nx test`; this is a HARD " +
+                "FAILURE, never a silent pass",
+        );
+    }
 }
 
 // ── report ──────────────────────────────────────────────────────────────────
 console.log(
     `nx-project-registration: read ${libRoots} lib root(s), ${registered} registered project(s), ` +
         `${aliases} alias(es) into libs/, ${APP_ROSTER.length} rostered app(s), ` +
-        `${tsconfigs} tsconfig(s), ${jestConfigs} jest config(s)`,
+        `${tsconfigs} tsconfig(s), ${jestConfigs} jest config(s), ${testTargets} test target(s)`,
 );
 
 if (known.length) {

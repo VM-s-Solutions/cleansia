@@ -8,6 +8,9 @@ name: Nx Project Registration (T-0537)
 # extend it one layer in: a lib that IS registered and tagged, but whose tsconfig `extends` dangles
 # or whose jest config has no `test` target, has a green test target that has never compiled a test.
 # Jest prints "No tests found, exiting with code 0" and Nx prints "Successfully ran target test".
+# NX-8 (T-0463) closes the layer under that: a project with NEITHER a jest config NOR a `test`
+# target is invisible to NX-7, whose witness IS the jest config. All three libs/data-access/*-stores
+# — the NgRx effects for auth, user and the catalog — sat there with `lint` as their only target.
 #
 #   * frontend-ci.yml's LINT step is `continue-on-error: true` (:73). Anything attached there reports
 #     success no matter what it found, so it could never fail this build.
@@ -63,10 +66,10 @@ jobs:
 
       # Runs FIRST and unconditionally. T-0537 AC1 states the acceptance test behaviourally —
       # "temporarily rename one project.json, show the failure, restore" — so the self-test performs
-      # exactly that, plus AC3's empty-corpus cases and T-0546's NX-6/NX-7 cases, against throwaway
-      # fixture trees. Stub the checker to exit 0 and this step goes red on 36 of its 40 scenarios
-      # (the 4 survivors are the must-NOT-fire ones, which a no-op passes by construction): the guard
-      # cannot rot into scaffolding.
+      # exactly that, plus AC3's empty-corpus cases, T-0546's NX-6/NX-7 cases and T-0463's NX-8
+      # cases, against throwaway fixture trees. Stub the checker to exit 0 and this step goes red on
+      # 41 of its 46 scenarios (the 5 survivors are the must-NOT-fire ones, which a no-op passes by
+      # construction): the guard cannot rot into scaffolding.
       - name: Registration guard self-test
         run: node agents/tools/check-nx-project-registration.test.mjs
 

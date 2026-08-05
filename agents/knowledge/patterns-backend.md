@@ -1224,6 +1224,40 @@ Two corollaries this shape makes cheap:
   to one constant — fine for one outcome, wrong when the caller must tell "bad checksum" from "that is a
   card number".
 
+## A rule that REJECTS cheaply runs before any rule that MATERIALIZES the payload
+
+**Enforced by:** `Cleansia.Tests/Common/Validators/ImageFileValidatorTests` — `T1-CI`. Closed roster:
+it gates `ImageFileValidator` and `FileValidator`, the two `AbstractValidator<BlobFileDto>` siblings.
+The other base64 intake paths are enumerated on T-0548's sweep and are **not** covered by it.
+
+Ordering inside a `Cascade(CascadeMode.Stop)` chain is a **cost** decision as well as a message
+decision. `ImageFileValidator`'s magic-byte rule allocates the decoded payload twice
+(`new byte[len * 3 / 4]`, then a copy); placing the size bound after it returns the right answer having
+already paid the entire cost the bound exists to avoid. Measured on the unfixed validator: rejecting
+one ~10 MB avatar allocated **20,979,352 bytes**.
+
+So: **size first, then anything that decodes, parses, hashes, or round-trips the bytes.** The
+corollaries are what make it stick:
+
+- **Prove the order with a test, not by reading the chain.** Two shapes, and you want both — a payload
+  that fails **both** rules must report only the *first* one (swap the rules and it goes red), and an
+  allocation assertion over `GC.GetAllocatedBytesForCurrentThread()` around the `Validate` call (it is
+  synchronous and the counter is thread-local, so this is stable under xUnit's parallelism; warm up
+  once first). A test using a payload that fails only the size rule passes under either order and pins
+  nothing.
+- **Derive size from the ENCODED length; never decode to measure it.** `(base64Data.Length * 3) / 4`
+  on `ExtractBase64Data()`'s output rounds up by ≤2 bytes — it never under-reports, which is the safe
+  direction for a limit.
+- **Measure the EXTRACTED data, because the clients disagree about the wire form.** Web sends a full
+  `data:` URI; both mobile clients send bare base64. `Base64Content.Length` is therefore a different
+  quantity per client. A fixture that pins this must sit within ~22 bytes of the limit, or the prefix
+  is too small to change the verdict and the test proves nothing.
+- **One limit, one place.** Two validators over the same DTO that each own a private `10 * 1024 * 1024`
+  will drift. `Common/Validators/BlobFileSize.cs` holds the constant and the predicate for both.
+- **A client-side cap is a UX affordance, never a control** — and if the UI *prints* the number, the
+  server must enforce **that** number. A tighter server cap recreates the same defect with the sign
+  flipped; a looser one makes the printed promise a lie.
+
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Moq;
@@ -186,5 +187,39 @@ public class UpdateCurrentUserValidatorTests
         Assert.Contains(result.Errors, e =>
             e.ErrorCode == nameof(UpdateCurrentUser.Command.PhoneNumber)
             && e.ErrorMessage == BusinessErrorMessage.ExistingPhoneNumber);
+    }
+
+    [Fact]
+    public async Task Avatar_Over_TenMebibytes_Fails_FileSizeExceeded()
+    {
+        ArrangeOwner();
+        ArrangePhoneFree("+420123456789");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes + 1024) });
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.FileSizeExceeded);
+    }
+
+    [Fact]
+    public async Task Avatar_Under_TenMebibytes_Passes()
+    {
+        ArrangeOwner();
+        ArrangePhoneFree("+420123456789");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes - 1024) });
+
+        Assert.True(result.IsValid);
+    }
+
+    private const long TenMebibytes = 10L * 1024 * 1024;
+
+    private static BlobFileDto Avatar(long size)
+    {
+        var png = new byte[size];
+        png[0] = 0x89;
+        png[1] = 0x50;
+        png[2] = 0x4E;
+        png[3] = 0x47;
+        return new BlobFileDto("avatar.png", Convert.ToBase64String(png), "image/png");
     }
 }

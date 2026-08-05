@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using FluentValidation;
 
@@ -10,6 +10,9 @@ public class ImageFileValidator : AbstractValidator<BlobFileDto>
     {
         RuleFor(file => file)
             .Cascade(CascadeMode.Stop)
+            .Must(BlobFileSize.HasContentWithinLimit)
+            .WithErrorCode(nameof(BlobFileDto))
+            .WithMessage(BusinessErrorMessage.FileSizeExceeded)
             .Must(FileMatchesImageContentType)
             .WithErrorCode(nameof(BlobFileDto))
             .WithMessage(BusinessErrorMessage.FileNotMatchContentType);

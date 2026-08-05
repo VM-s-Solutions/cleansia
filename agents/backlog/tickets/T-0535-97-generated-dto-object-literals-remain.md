@@ -1,11 +1,11 @@
 ---
 id: T-0535
 title: 97 object literals over generated command types remain, and the ratchet that would stop the next one is advisory
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

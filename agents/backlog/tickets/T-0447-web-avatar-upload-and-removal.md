@@ -1,11 +1,11 @@
 ---
 id: T-0447
 title: Web — avatar upload, render and removal on the customer profile
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446, T-0438]
 blocks: []
 stories: [US-user-avatar]

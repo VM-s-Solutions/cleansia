@@ -1,7 +1,7 @@
 ---
 id: T-0558
 title: `UploadEmployeeDocument` and `UploadNewDocumentVersion` are dead — no controller, no dispatcher, and they model validation that must never be copied
-status: ready
+status: done
 size: XS
 owner: backend
 created: 2026-08-05

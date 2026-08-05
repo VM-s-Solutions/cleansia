@@ -1,7 +1,7 @@
 ---
 id: T-0557
 title: There is no request-body limit anywhere — Kestrel's ~28.6 MB default is the real ceiling on every intake path. Decide the host-level shape (ADR)
-status: ready
+status: done
 size: S
 owner: architect
 created: 2026-08-05

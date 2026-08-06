@@ -218,9 +218,11 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<IOrderRepository>(
+            sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
         services.AddScoped<IOrderFactory>(sp =>
-            new ThrowsForTemplate(RealOrderFactory(sp.GetRequiredService<CleansiaDbContext>()), Bad));
+            new ThrowsForTemplate(RealOrderFactory(sp.GetRequiredService<IOrderRepository>()), Bad));
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         services.AddScoped<IMediator>(sp =>
@@ -255,7 +257,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         }
     }
 
-    private static IOrderFactory RealOrderFactory(CleansiaDbContext context)
+    private static IOrderFactory RealOrderFactory(IOrderRepository orderRepository)
     {
         var services = new Mock<IServiceRepository>();
         services.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
@@ -277,7 +279,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             .ReturnsAsync(PreferredCleanerOutcome.Declined(HoldDeclineReason.NoPreference));
 
         return new OrderFactory(
-            new OrderRepository(context),
+            orderRepository,
             services.Object,
             packages.Object,
             new Mock<ICompanyInfoRepository>().Object,

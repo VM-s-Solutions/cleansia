@@ -72,9 +72,10 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
     public bool IsActive { get; private set; } = true;
 
     /// <summary>
-    /// The cleaning date of the most recently materialized occurrence. The
-    /// materializer reads this to know what to skip and where to resume.
-    /// Null on a brand-new template — first run materializes from StartsOn.
+    /// The cleaning date of the last occurrence the materializer evaluated — a
+    /// resume pointer, not a duplicate guard (see <see cref="UpdateSchedule"/>,
+    /// which clears it). Null on a brand-new template and after every edit;
+    /// the materializer then derives from StartsOn.
     /// </summary>
     public DateTime? LastMaterializedFor { get; private set; }
 
@@ -118,7 +119,10 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
     ///
     /// <see cref="LastMaterializedFor"/> is intentionally cleared because the
     /// new schedule may put the next occurrence earlier than the previously
-    /// materialized one — the materializer must re-evaluate from scratch.
+    /// materialized one — the materializer must re-evaluate from scratch. Do
+    /// not stop clearing it to prevent duplicates: the marker is a resume
+    /// pointer, and the duplicate guard is the materializer's check for an
+    /// order already spawned at the candidate instant.
     /// </summary>
     public RecurringBookingTemplate UpdateSchedule(
         RecurrenceFrequency frequency,

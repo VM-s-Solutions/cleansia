@@ -40,6 +40,7 @@ public class RecurringMaterializationIsMembershipIndependentTests
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
+    private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
@@ -107,17 +108,26 @@ public class RecurringMaterializationIsMembershipIndependentTests
     /// <c>MaterializeRecurringBookings</c> itself only selects ids and dispatches one of these per
     /// template in its own DI scope.
     /// </summary>
-    private MaterializeRecurringBookingTemplate.Handler CreateHandler() =>
-        new(
+    private MaterializeRecurringBookingTemplate.Handler CreateHandler()
+    {
+        // No order has been spawned for this template yet, so the materializer's duplicate guard finds
+        // nothing and every candidate occurrence is created — which is the arrangement these tests want.
+        _orderRepository
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(Array.Empty<Cleansia.Core.Domain.Orders.Order>().AsQueryable().BuildMock());
+
+        return new(
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
             _currencyRepository.Object,
+            _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+    }
 
     [Fact]
     public async Task OccurrencesGenerateWithNoMembershipLookupAndNoWaiver()

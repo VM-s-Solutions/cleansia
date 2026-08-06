@@ -12,9 +12,10 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 
 /// <summary>
 /// Daily sweep that turns active <see cref="Cleansia.Core.Domain.Bookings.RecurringBookingTemplate"/>
-/// rows into concrete <see cref="Cleansia.Core.Domain.Orders.Order"/> records 7 days ahead. Idempotent
-/// via <c>LastMaterializedFor</c>: running it twice on the same day is a no-op for templates that already
-/// have an order created within the horizon.
+/// rows into concrete <see cref="Cleansia.Core.Domain.Orders.Order"/> records 7 days ahead. Running it
+/// twice on the same day is a no-op for templates whose horizon is already materialized — see the
+/// per-template command for why that is a query for the existing orders and not <c>LastMaterializedFor</c>,
+/// which an edit clears.
 ///
 /// <para>This handler is a <b>dispatcher, not a worker</b>. It selects the candidate template ids and
 /// sends one <see cref="MaterializeRecurringBookingTemplate.Command"/> per template, each inside its OWN

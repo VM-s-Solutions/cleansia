@@ -33,14 +33,19 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 /// tracker, half-built order and all — is disposed with its scope and never observed again; the next
 /// template starts from a genuinely empty tracker. That is the property a <c>catch</c> cannot buy.</para>
 ///
-/// <para><b>Idempotency is unchanged by this split.</b> <see cref="RecurringBookingTemplate.LastMaterializedFor"/>
-/// is written per OCCURRENCE, but it has always been COMMITTED per template — all of a template's
-/// occurrences and its marker land in one transaction, so the durable atom was already the template, not
-/// the occurrence. This restructure moves the atom's boundary from "one commit inside a shared context"
-/// to "one scope, one context, one commit", which is the same atom with the shared-tracker hazard
-/// removed. A template that throws leaves its marker exactly where it was, so the next tick recomputes
-/// the same occurrences and retries it; templates that already succeeded replay as no-ops because their
-/// marker moved past the horizon.</para>
+/// <para><b>Idempotency is the existing-order check, not the watermark.</b>
+/// <see cref="RecurringBookingTemplate.LastMaterializedFor"/> is a RESUME POINTER: it says where to start
+/// deriving, and <see cref="RecurringBookingTemplate.UpdateSchedule"/> deliberately clears it, because an
+/// edited schedule can put the next occurrence EARLIER than the previously materialized one and an
+/// un-cleared marker would make that occurrence unreachable forever. While the marker was also the only
+/// duplicate guard, that clear re-emitted every occurrence already sitting inside the horizon — a second
+/// priced order, and on a card template a second charge, for a slot the customer booked once. So the
+/// guard is a query for orders this template already spawned AT THOSE INSTANTS, and the marker is free to
+/// keep meaning only "resume here".</para>
+///
+/// <para>The commit atom is unaffected: all of a template's occurrences and its marker land in one
+/// transaction, so a template that throws keeps its old marker and the next tick recomputes the same
+/// occurrences and retries it.</para>
 /// </summary>
 public class MaterializeRecurringBookingTemplate
 {
@@ -68,6 +73,7 @@ public class MaterializeRecurringBookingTemplate
         ISavedAddressRepository savedAddressRepository,
         IAddressRepository addressRepository,
         ICurrencyRepository currencyRepository,
+        IOrderRepository orderRepository,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
         ITenantProvider tenantProvider,
@@ -108,6 +114,49 @@ public class MaterializeRecurringBookingTemplate
             var occurrences = ComputeOccurrences(template, now, horizon).ToList();
             if (occurrences.Count == 0)
             {
+                return BusinessResult.Success(new Response(0));
+            }
+
+            // The duplicate guard. Asked once for the whole candidate set rather than once per occurrence,
+            // and keyed on the pair the materializer itself writes — (RecurringTemplateId, CleaningDateTime),
+            // served by IX_Orders_RecurringTemplateId. Three properties are load-bearing:
+            //
+            //   * The tenant filter is IGNORED, matching how the template above was loaded. A template id
+            //     is already tenant-scoped, so this narrows nothing — but a filter that hid an existing
+            //     order would fail OPEN, which is the duplicate charge this exists to refuse.
+            //   * The instant is matched EXACTLY, never by day or by window. Both sides are whole minutes
+            //     built by ComputeOccurrences, so equality is the question "did we already spawn THIS
+            //     occurrence" and nothing wider. A coarser key would silently swallow a legitimate
+            //     time-of-day reschedule.
+            //   * Order STATUS is not consulted. "Already materialized" is a fact about the sweep, not
+            //     about the order's later lifecycle: excluding cancelled rows would let a template edit
+            //     resurrect an occurrence the customer cancelled, or one AutoCancelStaleRecurringOrders
+            //     retracted an hour before the slot.
+            var alreadyMaterialized = (await orderRepository.GetQueryableIgnoringTenant()
+                .Where(o => o.RecurringTemplateId == template.Id && occurrences.Contains(o.CleaningDateTime))
+                .Select(o => o.CleaningDateTime)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            var pending = occurrences.Where(o => !alreadyMaterialized.Contains(o)).ToList();
+
+            if (alreadyMaterialized.Count > 0)
+            {
+                logger.LogInformation(
+                    "Template {TemplateId}: {Skipped} of {Candidates} occurrences in the horizon already have "
+                    + "an order and were skipped",
+                    template.Id, alreadyMaterialized.Count, occurrences.Count);
+            }
+
+            // The marker is the LAST candidate in the window, not the last one created — a skipped
+            // occurrence is materialized too, and resuming before it would re-derive and re-query the same
+            // window on every tick with the customer's LastMaterializedFor pinned at null.
+            var resumeFrom = occurrences[^1];
+
+            if (pending.Count == 0)
+            {
+                template.MarkMaterializedFor(resumeFrom);
+                await unitOfWork.CommitAsync(cancellationToken);
                 return BusinessResult.Success(new Response(0));
             }
 
@@ -161,7 +210,7 @@ public class MaterializeRecurringBookingTemplate
                     .Where(s => !string.IsNullOrWhiteSpace(s)));
 
             var ordersCreated = 0;
-            foreach (var occurrence in occurrences)
+            foreach (var occurrence in pending)
             {
                 var input = new CreateOrderInput(
                     UserId: template.UserId,
@@ -192,9 +241,10 @@ public class MaterializeRecurringBookingTemplate
                     RecurringTemplateId: template.Id);
 
                 await orderFactory.CreateAsync(input, cancellationToken);
-                template.MarkMaterializedFor(occurrence);
                 ordersCreated++;
             }
+
+            template.MarkMaterializedFor(resumeFrom);
 
             // Committed HERE and not left to the UnitOfWork pipeline, for the same reason it was before
             // the per-scope split: CleansiaDbContext stamps TenantId on every Added ITenantEntity from the
@@ -207,9 +257,10 @@ public class MaterializeRecurringBookingTemplate
         }
 
         /// <summary>
-        /// Compute the list of UTC DateTimes this template should spawn within
-        /// the [now, horizon] window, skipping any already-materialized via
-        /// <see cref="RecurringBookingTemplate.LastMaterializedFor"/>.
+        /// The CANDIDATE UTC instants for this template in the [now, horizon] window.
+        /// <see cref="RecurringBookingTemplate.LastMaterializedFor"/> only moves the start of the
+        /// derivation forward; it is not the duplicate guard, and it is null on every tick that follows an
+        /// edit. Whether a candidate already has an order is decided by the caller.
         /// </summary>
         internal static IEnumerable<DateTime> ComputeOccurrences(
             RecurringBookingTemplate template,

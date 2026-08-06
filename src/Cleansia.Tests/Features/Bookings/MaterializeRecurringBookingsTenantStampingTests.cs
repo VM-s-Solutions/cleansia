@@ -191,8 +191,10 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<IOrderRepository>(
+            sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
-        services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<IOrderRepository>()));
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         // Only the one command the sweep sends. Registering the real MediatR would drag the whole
@@ -212,7 +214,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         return services.BuildServiceProvider();
     }
 
-    private static IOrderFactory RealOrderFactory(CleansiaDbContext context)
+    private static IOrderFactory RealOrderFactory(IOrderRepository orderRepository)
     {
         var services = new Mock<IServiceRepository>();
         services.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
@@ -234,7 +236,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             .ReturnsAsync(PreferredCleanerOutcome.Declined(HoldDeclineReason.NoPreference));
 
         return new OrderFactory(
-            new OrderRepository(context),
+            orderRepository,
             services.Object,
             packages.Object,
             new Mock<ICompanyInfoRepository>().Object,

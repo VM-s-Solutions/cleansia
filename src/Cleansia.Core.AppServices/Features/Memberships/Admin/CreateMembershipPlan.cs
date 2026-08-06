@@ -91,7 +91,7 @@ public class CreateMembershipPlan
             if (existing != null)
             {
                 return BusinessResult.Failure<Response>(
-                    new Error(BusinessErrorMessage.MembershipPlanCodeAlreadyExists, BusinessErrorMessage.MembershipPlanCodeAlreadyExists));
+                    new Error(nameof(command.Code), BusinessErrorMessage.MembershipPlanCodeAlreadyExists));
             }
 
             var plan = MembershipPlan.Create(

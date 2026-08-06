@@ -38,7 +38,7 @@ public static class GrantConsent
             return granted
                 ? BusinessResult.Success()
                 : BusinessResult.Failure(new Error(
-                    BusinessErrorMessage.ConsentAlreadyGranted, "Consent already granted"));
+                    nameof(Command.ConsentType), BusinessErrorMessage.ConsentAlreadyGranted));
         }
     }
 }

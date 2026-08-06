@@ -29,7 +29,7 @@ public class GetPromoCodeById
             if (code == null)
             {
                 return BusinessResult.Failure<PromoCodeDetailDto>(
-                    new Error(BusinessErrorMessage.PromoNotFound, BusinessErrorMessage.PromoNotFound));
+                    new Error(nameof(request.PromoCodeId), BusinessErrorMessage.PromoNotFound));
             }
 
             var redemptionCount = await redemptionRepository

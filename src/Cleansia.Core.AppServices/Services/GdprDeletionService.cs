@@ -48,24 +48,24 @@ public class GdprDeletionService(
 
         if (user is null)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.NotExistingUserWithEmail, "User not found"));
+                nameof(userId), BusinessErrorMessage.NotExistingUserWithEmail));
 
         var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, DeletionRequestType, cancellationToken);
         if (hasPending)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.GdprDeletionAlreadyPending, "A deletion request is already pending"));
+                nameof(userId), BusinessErrorMessage.GdprDeletionAlreadyPending));
 
         var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
         if (blockingOrder)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.GdprDeletionBlockedByOrder, "Active or in-progress order prevents deletion"));
+                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByOrder));
 
         if (user.Employee is not null)
         {
             var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
             if (blockingInvoice)
                 return BusinessResult.Failure(new Error(
-                    BusinessErrorMessage.GdprDeletionBlockedByInvoice, "Pending or approved invoice prevents deletion"));
+                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByInvoice));
         }
 
         var auditEntry = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);

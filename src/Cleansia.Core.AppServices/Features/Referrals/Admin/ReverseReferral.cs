@@ -60,7 +60,7 @@ public class ReverseReferral
             if (referral!.Status != ReferralStatus.Qualified)
             {
                 return BusinessResult.Failure<Response>(
-                    new Error(BusinessErrorMessage.ReferralNotQualified, BusinessErrorMessage.ReferralNotQualified));
+                    new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotQualified));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;

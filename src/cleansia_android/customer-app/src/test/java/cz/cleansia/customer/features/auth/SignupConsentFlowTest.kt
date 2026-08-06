@@ -184,7 +184,32 @@ class SignupConsentFlowTest {
     @Test
     fun aDuplicateRefusal_countsAsDeliveredAndIsNotRetried() = runTest {
         // The literal body GrantConsent's failure arm produces: CreateProblemDetails keys the
-        // `errors` bag by Error.Code and values it with Error.Message.
+        // `errors` bag by Error.Code (the offending field) and values it with Error.Message.
+        gdprApi.grantResponse = {
+            Response.error(
+                400,
+                """
+                {"title":"Bad Request","type":"ConsentType",
+                 "detail":"gdpr.consent_already_granted","status":400,
+                 "errors":{"ConsentType":"gdpr.consent_already_granted"}}
+                """.trimIndent().asProblem(),
+            )
+        }
+        register(acceptedTerms = true)
+
+        signIn()
+        signIn()
+
+        assertEquals(listOf(ConsentType._0, ConsentType._1), granted)
+    }
+
+    /**
+     * The same refusal with the two `Error` slots swapped — the shape that shipped before the fix.
+     * The dot code sat in the bag KEY and the VALUE every client resolves was prose, so the refusal
+     * was unrecognisable and the tick was re-sent every session.
+     */
+    @Test
+    fun aDuplicateRefusalWithSwappedSlots_isNotRecognised() = runTest {
         gdprApi.grantResponse = {
             Response.error(
                 400,
@@ -200,7 +225,10 @@ class SignupConsentFlowTest {
         signIn()
         signIn()
 
-        assertEquals(listOf(ConsentType._0, ConsentType._1), granted)
+        assertEquals(
+            listOf(ConsentType._0, ConsentType._1, ConsentType._0, ConsentType._1),
+            granted,
+        )
     }
 
     @Test

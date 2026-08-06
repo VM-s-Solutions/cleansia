@@ -82,7 +82,8 @@ public class ForceQualifyReferralHandlerTests
         var second = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
 
         Assert.True(second.IsFailure);
-        Assert.Equal(BusinessErrorMessage.ReferralNotAccepted, second.Error!.Code);
+        Assert.Equal(BusinessErrorMessage.ReferralNotAccepted, second.Error!.Message);
+        Assert.Equal(nameof(ForceQualifyReferral.Command.ReferralId), second.Error.Code);
 
         _loyaltyService.Verify(s => s.GrantPointsManuallyAsync(
             It.IsAny<string>(), It.IsAny<int>(), It.IsAny<LoyaltyEarnSource>(), It.IsAny<string?>(),

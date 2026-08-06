@@ -110,7 +110,7 @@ public class CreatePromoCode
             if (existing != null)
             {
                 return BusinessResult.Failure<Response>(
-                    new Error(BusinessErrorMessage.PromoCodeAlreadyExists, BusinessErrorMessage.PromoCodeAlreadyExists));
+                    new Error(nameof(command.Code), BusinessErrorMessage.PromoCodeAlreadyExists));
             }
 
             var entity = command.Type == PromoCodeType.PercentDiscount

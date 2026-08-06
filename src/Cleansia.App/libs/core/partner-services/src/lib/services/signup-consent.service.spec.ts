@@ -31,6 +31,31 @@ describe('SignupConsentService', () => {
     });
   }
 
+  /** The literal ProblemDetails `GrantConsent`'s failure arm produces. */
+  function alreadyGranted(): unknown {
+    return {
+      title: 'Bad Request',
+      type: 'ConsentType',
+      detail: 'gdpr.consent_already_granted',
+      status: 400,
+      errors: { ConsentType: 'gdpr.consent_already_granted' },
+    };
+  }
+
+  /**
+   * The same refusal with the two `Error` slots swapped — the shape that shipped before the fix.
+   * `extractApiErrorCode` reads the bag VALUE, so this yields the prose and matches nothing.
+   */
+  function alreadyGrantedWithSwappedSlots(): unknown {
+    return {
+      title: 'Bad Request',
+      type: 'gdpr.consent_already_granted',
+      detail: 'Consent already granted',
+      status: 400,
+      errors: { 'gdpr.consent_already_granted': 'Consent already granted' },
+    };
+  }
+
   beforeEach(() => {
     localStorage.clear();
     gdprClient = {
@@ -87,17 +112,25 @@ describe('SignupConsentService', () => {
   });
 
   it('counts an already-granted refusal as delivered', () => {
-    gdprClient.consentsPost.mockReturnValue(
-      throwError(() => ({
-        errors: { ConsentType: 'gdpr.consent_already_granted' },
-      }))
-    );
+    gdprClient.consentsPost.mockReturnValue(throwError(() => alreadyGranted()));
     service.record('cleaner@example.com');
 
     service.flush('cleaner@example.com');
     service.flush('cleaner@example.com');
 
     expect(gdprClient.consentsPost).toHaveBeenCalledTimes(2);
+  });
+
+  it('cannot recognise the refusal when the backend swaps the Error slots', () => {
+    gdprClient.consentsPost.mockReturnValue(
+      throwError(() => alreadyGrantedWithSwappedSlots())
+    );
+    service.record('cleaner@example.com');
+
+    service.flush('cleaner@example.com');
+    service.flush('cleaner@example.com');
+
+    expect(gdprClient.consentsPost).toHaveBeenCalledTimes(4);
   });
 
   it('keeps the tick for the next session when a grant fails for a real reason', () => {

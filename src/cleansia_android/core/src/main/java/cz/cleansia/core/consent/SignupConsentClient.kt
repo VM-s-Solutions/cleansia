@@ -36,15 +36,15 @@ fun ApiResult<*>.toConsentGrantOutcome(): ConsentGrantOutcome = when (this) {
 }
 
 /**
- * Read off the ProblemDetails `type` and the `errors` bag KEY, never off
- * [ApiError.BadRequest.errorKey]: `CleansiaApiController.CreateProblemDetails` keys that
- * bag by `Error.Code` and values it with `Error.Message`, and this handler's message is
- * prose ("Consent already granted"), so the value never equals the code.
+ * Read off [ApiError.BadRequest.errorKey] — the first VALUE in the ProblemDetails `errors` bag.
+ * `CleansiaApiController.CreateProblemDetails` keys that bag by `Error.Code` (the offending field,
+ * `ConsentType`) and values it with `Error.Message` (the business key), which is the same slot the
+ * web and iOS clients resolve their translations from. Matching the bag KEY or the `type` instead
+ * would be matching the field name.
  */
 private fun ApiError.namesConsentAlreadyGranted(): Boolean {
     val badRequest = this as? ApiError.BadRequest ?: return false
-    return badRequest.code == CONSENT_ALREADY_GRANTED ||
-        badRequest.validationErrors?.containsKey(CONSENT_ALREADY_GRANTED) == true
+    return badRequest.errorKey == CONSENT_ALREADY_GRANTED
 }
 
 private const val CONSENT_ALREADY_GRANTED = "gdpr.consent_already_granted"

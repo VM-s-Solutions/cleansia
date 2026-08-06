@@ -9,7 +9,7 @@ updated: 2026-08-06
 depends_on: []
 blocks: []
 stories: []
-adrs: ["NNNN-stored-content-type-is-byte-derived-on-every-intake (draft rev 2 — challenged + defended, lead owed)", "0043"]
+adrs: ["0044", "0043"]
 layers: [backend]
 security_touching: false
 manual_steps: []

@@ -268,18 +268,20 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
 
 The T-0556 follow-up brought thirteen of the fourteen intakes onto a byte-derived stored type and routed
 two calls here rather than deciding them. Both are now drafted. **Neither is `accepted`.** §7.1 has had
-an **independent challenge round** (`backlog/adr/challenges/NNNN-stored-content-type-byte-derived.md`,
-five blocking findings), the author's **rev 2** answered it, and a **lead has ruled (2026-08-06):
-verdict REVISE on a closed twelve-item list, zero blocking challenges surviving, no further round — it
-lands as `ADR-0044` and the PM stamps it against that list.** §7.2 is still an author-mode draft
-awaiting both.
+an **independent challenge round** (`backlog/adr/challenges/0044-stored-content-type-byte-derived.md`,
+five blocking findings), the author's **rev 2** answered it, and a **lead ruled (2026-08-06): verdict
+REVISE on a closed twelve-item list, zero blocking challenges surviving, no further round.** That list
+is now **transcribed (rev 3)** and the decision has **landed as `ADR-0044`, status `proposed`** — the
+author does not accept their own ADR; the PM checks rev 3 against §E only and stamps it. §7.2 is still
+an author-mode draft awaiting both.
 
 ### 7.1 `SaveOrderPhotos` — the exception closes
 
-`backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md`
+`backlog/adr/0044-stored-content-type-is-byte-derived-on-every-intake.md`
+*(was `backlog/adr/drafts/NNNN-…`; the draft path is a tombstone)*
 
 **The trade-off space, so the next reader does not re-derive it.** ⚠️ **Rewritten 2026-08-06 after the
-independent challenge round** (`backlog/adr/challenges/NNNN-stored-content-type-byte-derived.md`). Three
+independent challenge round** (`backlog/adr/challenges/0044-stored-content-type-byte-derived.md`). Three
 rows changed: the read path was one row and is three; the `Opaque` row's why-not was backwards; the
 refuse-vs-`Opaque` branch is now an owner call.
 
@@ -288,9 +290,9 @@ refuse-vs-`Opaque` branch is now an owner call.
 | **Keep the exception, document it honestly** | none | Its justification bounds the served type to *inert*, not to *right*; its fallback invents a fact; it hides a live 500; and its cost is zero — a carve-out with no cost behind it buys nothing and forbids stating the rule |
 | **Sniff at intake → refuse on failure** ← **chosen seam, default branch** | web-only, and only for a file whose browser-derived type disagrees with its bytes | Matches `UploadOrderPhoto` on the same container/table/accept set. **The refuse-vs-store branch is escalated — `Q-ART-02`**; the seam (byte-derived type, minted extension, decodability rule) is identical either way |
 | **Sniff at intake → store `Opaque` on failure** | **none at all** | ~~evidence silently lost~~ **that reason was backwards and is withdrawn**: under `Opaque` the bytes are stored and download rather than preview (the same cost §7.2's D3 names), while a refusal the cleaner does not retry loses the photo outright. What survives is a **usability** claim, plus symmetry with the sibling endpoint — a tie-breaker, not a ruling. Hence `Q-ART-02` |
-| **Narrow the READ clamp to the intake's accepted set** ← **also chosen (a complement, not a substitute)** | none | Closes the `application/pdf`/`image/gif` capability on **every row including those already written**, which the write-path rule cannot reach. Reads no bytes, changes no client, needs no migration. Already obliged by `patterns-backend.md:1364-1366` — *"the read path reads the intake's own signature table"* — which `GetOrderPhotos.cs:96` violates today. **Cost: a legacy GIF/PDF row downloads instead of rendering.** Row count owed as an owner query |
+| **Narrow the READ clamp to the intake's accepted set** ← **also chosen (a complement, not a substitute)** | none | Closes the `application/pdf`/`image/gif` capability on **every row including those already written**, which the write-path rule cannot reach. Reads no bytes, changes no client, needs no migration. Already obliged by `patterns-backend.md:1371-1373` — *"the read path reads the intake's own signature table"* — which `GetOrderPhotos.cs:96` violates today. **Cost: a legacy GIF/PDF row downloads instead of rendering.** Row count owed as an owner query |
 | Re-derive the served type from the bytes on read (the document technique) | none | **Structurally unavailable.** The `GetOrderPhotos` → SAS path never holds the bytes; adopting it means downloading every photo on every gallery render |
-| Set `rscd` (`Content-Disposition: attachment`) on non-image served types | none | **Routed, not rejected.** `patterns-backend.md:1352-1357` rules it out as *the* control, and `GenerateSasUri` is one shared mint whose dispute-evidence user legitimately previews PDFs — a product change on a surface §7.1 does not own. Belongs with the dispute/content-policy lane (its CH-7) |
+| Set `rscd` (`Content-Disposition: attachment`) on non-image served types | none | **Routed, not rejected.** `patterns-backend.md:1359-1364` rules it out as *the* control, and `GenerateSasUri` is one shared mint whose dispute-evidence user legitimately previews PDFs — a product change on a surface §7.1 does not own. Belongs with the dispute/content-policy lane (its CH-7) |
 | Delete `SaveOrderPhotos`, route everyone to `UploadOrderPhoto` | none | Right direction, wrong ticket — wire change across 3 generated clients + 2 shipped apps, and it drops the 30-photo batch the web picker uses. **Cheaper after the ruling than before it** |
 
 **Why BOTH rows are chosen, in a form a reviewer checks by reading (lead, §A).** The two govern disjoint
@@ -346,7 +348,7 @@ byte-derived `octet-stream` would make the scrub a *declared* no-op, which is fi
 
 - `GetOrderPhotos.cs:59` gates on **`CanBrowseOrderAsync`**, not `CanAccessOrderAsync`
   (`OrderAccessService.cs:68-92`, comment at `:84-87`). Writing still requires assignment
-  (`SaveOrderPhotos.cs:114-117`); **fetching does not.** Any tenant cleaner who can see the order while
+  (`SaveOrderPhotos.cs:115-118`); **fetching does not.** Any tenant cleaner who can see the order while
   a seat remains open can mint a SAS for its photos — so the `application/pdf`-over-arbitrary-bytes
   capability is planted for an audience that is not enumerable at upload time.
 - **A decoder is already deployed, and this ruling does not depend on it either way.** QuestPDF
@@ -362,7 +364,7 @@ byte-derived `octet-stream` would make the scrub a *declared* no-op, which is fi
   siblings), consumed by `SaveOrderPhotos.Validator` via `SetValidator` inside the existing `ChildRules`
   block — **not** a fourth inline copy of that chain. `DetermineContentType` deleted; blob-name extension
   minted via `SniffedContentType.ExtensionFor`. The decodability rule closes a **live 500**
-  (`SaveOrderPhotos.cs:136` calls `Convert.FromBase64String` unguarded) and is unconditional on
+  (`SaveOrderPhotos.cs:137` calls `Convert.FromBase64String` unguarded) and is unconditional on
   `Q-ART-02`.
 - **Read side — new, and it is the repair for the finding the ruling leads with.** The clamp is
   **narrowed to the intake's accepted set** in one named function
@@ -412,7 +414,11 @@ sibling-endpoint symmetry, which is a tie-breaker and is labelled as one.
 It does not decide whether the read-side narrowing is right; it says how many existing photos change
 from rendering inline to downloading on the day it ships.
 
-**Blocked on:** ~~the lead's ruling, then~~ the transcription of the lead's closed list, then the ticket.
+**Blocked on:** ~~the lead's ruling, then the transcription of the lead's closed list, then~~ **the PM's
+acceptance stamp, then the ticket.** Rev 3 landed 2026-08-06 as `ADR-0044` (`proposed`) carrying a
+`## Transcription record` that maps each of §E's twelve items to where it went; §F (the `T-0561`
+staleness) and §G (the `patterns-backend.md` callout's stale `SaveOrderPhotos.cs` citations) are routed
+to the PM, not absorbed by that pass.
 The catalog sentence is written in that ADR's D2 with tier `(gate pending: <closing ticket>)`. **Its
 enforcer changed after the challenge round:** `UploadIntakeRosterTests` splits each roster row on `" — "`
 and keeps `[0]` (`:66-68`), so **the annotation is enforced by nothing** — it is a `T1-CI` enforcer of

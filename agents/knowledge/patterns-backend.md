@@ -1289,6 +1289,29 @@ corollaries are what make it stick:
 tests — `T1-CI`, over both employee-document intakes, both download handlers, and the two intakes the
 `BlobFileDto` roster could not see (`UploadOrderPhoto`, `UploadDisputeEvidence`).
 
+> ⚠️ **One intake of the fourteen is OUTSIDE that scope, and until now it was recorded only in code**
+> *(2026-08-06, architect)*. **`SaveOrderPhotos`** — the batch route on `Web.Partner` +
+> `Web.Mobile.Partner`, and the one both mobile clients call — reads no byte of its payload.
+> `SaveOrderPhotos.DetermineContentType` (`:171-184`) takes the caller's `data:` URI prefix, else the
+> caller's file-name extension, else **the string literal `"image/jpeg"`**; the blob name's extension is
+> `Path.GetExtension(file.FileName)` (`:132`), the caller's string, where its sibling
+> `UploadOrderPhoto.cs:103` mints it from the sniff. The exception was reasoned in
+> `UploadIntakeRosterTests.cs:34-38` and `ServedContentType.cs:7-14` — **both code, neither read by
+> anyone consulting this page**, which is why it is named here. Its justification, that
+> `ServedContentType` clamps the answer on the read path, holds for the case it was written for
+> (`text/html` and `image/svg+xml` are unreachable — pinned by `SaveOrderPhotosContentTypeTests.cs:32-47`)
+> and is **one set too wide** for everything else: the clamp bounds to the six-value *serve* set
+> (`ServedContentType.cs:34-42`), not to this intake's three-value *accept* set
+> (`SniffedContentType.cs:91`), so `image/gif` and `application/pdf` over arbitrary bytes are storable
+> and servable here and on no other order-photo path. **And a clamp cannot answer the thing that
+> actually breaks:** any per-format control built on this row — a metadata scrub, a thumbnailer, a
+> PDF embed — dispatches on a client string, so declaring `data:image/png` over JPEG bytes runs the PNG
+> parser on a JPEG. That is a **no-op the uploader selects, under a green test**, and no read-path clamp
+> reaches it. The general form of the sentence below therefore **cannot be written while this stands**,
+> and that is a statement about the code, not about the rule.
+> **Drafted, panel owed:** `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md`
+> (D2 carries the exact sentence and its tier). Do not copy this intake's shape into a new one.
+
 `BlobFileDto.ContentType` is a string the client chose, and the file extension is a weaker one (it
 survives a rename). Neither is evidence about the payload, so **neither may decide what a stored
 object is, nor what it is served as** — the recorded type comes back verbatim as the `Content-Type` of

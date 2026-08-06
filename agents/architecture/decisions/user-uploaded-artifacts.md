@@ -1,7 +1,8 @@
 # User-uploaded artifacts — living decision doc
 
 > **Status: §1–§3 are SHIPPED and verified at HEAD (2026-08-05). §4–§6 are DECIDED-BUT-UNPANELLED —
-> nothing in them is implemented.** The immutable record for §4–§6 is
+> nothing in them is implemented. §7 is new (2026-08-06) and is the content-type ruling.** The
+> immutable record for §4–§6 is
 > `../../backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` (**`proposed`**, number not
 > allocated, **defense panel owed**).
 > **Tickets:** T-0458 (policy + seam), T-0459 (application), T-0460 (the S-series law) — **all three are
@@ -9,6 +10,12 @@
 > **Related:** T-0464 ✅ (`b9753e85`, the served-type clamp), T-0548 ✅ (`97bb7265`, the avatar size cap),
 > T-0556 ✅ + follow-up (document intake, the roster), `request-intake-limits.md` (the host ceiling —
 > the *transport* bound, a different guarantee).
+>
+> ⚠️ **§2's residue table (R1–R3) was written before the T-0556 follow-up and is STALE. Corrected
+> in-place below; read §7 for the current content-type state.** Three names in §2/§5 no longer exist:
+> `DocumentContentType` → `SniffedContentType` (one table, all four intakes),
+> `Base64UploadIntakeRosterTests` → `UploadIntakeRosterTests` (**14 rows, not 10**), and
+> `Constants.ImageSignatures` is **deleted** (`grep` over `src/` at 2026-08-06 returns nothing).
 
 ---
 
@@ -60,17 +67,19 @@ away**, and the day it lands the avatar's "audience: self" exemption expires.
 
 ### The residue, named so it is not rediscovered
 
-- **R1** — `UploadOrderPhoto` stores `command.ContentType` verbatim (`:112`); `UploadDisputeEvidence`
-  records nothing and derives the served type from the client's file name (`DisputeMappers.cs:65-77`).
-  Both sit behind a *declared*-type allowlist, which `patterns-backend.md:1283-1287` already calls a
-  client-affordance filter, not a control. **Not exploitable** — the read clamp holds — but it is the
-  sibling-left-behind shape in the one form the roster cannot see.
-- **R2** — `GetOrderPhotos.cs:75` emits the raw stored `ContentType` on the DTO while clamping only the
-  SAS header (`:71`).
-- **R3** — `Constants.ImageSignatures:95-104` admits BMP, TIFF ×2 and **any RIFF** (the signature is
-  `"RIFF"`, not `RIFF????WEBP`). `ServedContentType` can never serve BMP or TIFF, so those uploads
-  succeed and never render — and no client offers them.
-- **R4** — no metadata is removed from anything, anywhere.
+*(R1–R3 as written 2026-08-05. **Re-checked at HEAD 2026-08-06 — all three are CLOSED.** Struck rather
+than deleted, because the wrong half of a closed finding is what gets re-derived from an old checkout.)*
+
+- ~~**R1**~~ — **CLOSED.** `UploadOrderPhoto.cs:102` and `UploadDisputeEvidence.cs:104` both sniff;
+  the dispute blob name's extension is minted from the bytes (`:105`) and the read resolves the stored
+  **path**, not `FileName` (`DisputeMappers.cs:75`).
+- ~~**R2**~~ — **CLOSED.** `GetOrderPhotos.MapToDto` resolves `ServedContentType` once and uses it for
+  both the DTO field and the SAS header (`:96,101,105`).
+- ~~**R3**~~ — **CLOSED.** `Constants.ImageSignatures` is deleted; `SniffedContentType.Signatures`
+  (`:66-78`) carries no BMP or TIFF and matches WebP as `RIFF` + `WEBP` at offset 8.
+- **R4** — no metadata is removed from anything, anywhere. **Still open** (§4).
+- **R5 — new, 2026-08-06.** `SaveOrderPhotos` is the fourteenth intake and reads no byte of its
+  payload. **See §7 — it is the subject of a ruling, not an unowned residue.**
 
 ## 3. The property that decides everything — nothing here decodes an image
 
@@ -163,3 +172,105 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
   (`patterns-backend.md:1306`) and real Azure sends none on a SAS fetch (owner-verified on DEV,
   T-0464 status log). The closed served-type set is the control; a header would be defence in depth and
   is a Bicep change. Storage-account CORS is a separate live gap (T-0447 C2).
+
+---
+
+## 7. The content-type question — ruled 2026-08-06 (two drafts, panel owed)
+
+The T-0556 follow-up brought thirteen of the fourteen intakes onto a byte-derived stored type and routed
+two calls here rather than deciding them. Both are now drafted. **Neither is `accepted`; both are
+author-mode drafts awaiting a challenger and a lead.**
+
+### 7.1 `SaveOrderPhotos` — the exception closes
+
+`backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md`
+
+**The trade-off space, so the next reader does not re-derive it:**
+
+| Option | Refusals it introduces | Why not (or why) |
+|---|---|---|
+| **Keep the exception, document it honestly** | none | Its justification is one set too wide, its fallback invents a fact, and its cost is zero — a carve-out with no cost behind it buys nothing and forbids stating the rule |
+| **Sniff → refuse on failure** ← **chosen** | web-only, and only for a file whose browser-derived type disagrees with its bytes | Matches `UploadOrderPhoto` on the same container/table/accept set; the refused set is exactly the set that stores a lie today |
+| **Sniff → store `Opaque` on failure** | **none at all** | The strongest alternative. Rejected because it gives one question two answers across two sibling endpoints, and a photo that uploads and can never render is evidence silently lost on a path a dispute may later turn on |
+| Delete `SaveOrderPhotos`, route everyone to `UploadOrderPhoto` | none | Right direction, wrong ticket — wire change across 3 generated clients + 2 shipped apps, and it drops the 30-photo batch the web picker uses |
+| Fix it on the read path (the document technique) | none | **Structurally impossible.** The server never sees an order photo's bytes after intake — `GetOrderPhotos` mints a SAS and storage serves the client directly |
+
+**The fact that decided it, and the one to re-check if this is ever revisited:** *both mobile clients
+re-encode every pick to JPEG and cannot emit anything else* — iOS `ImageCompressor.swift:77`
+(`UTType.jpeg`), Android `ImageCompressor.kt:248` (`Bitmap.CompressFormat.JPEG`), both emitting
+`photo.jpg` and bare base64. **The "it would break a live mobile path" objection is false**, and the set
+of uploads that succeed today, render correctly, and would newly fail is **empty**.
+
+**A second, independent lane reached the same verdict from the other direction.** The challenge on the
+content-policy draft (`backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4,
+`c6370115`) attacks that draft for electing this surface as its metadata-scrub **pilot**: a per-format
+scrub dispatching on the client's `data:` prefix runs the PNG chunk walker over JPEG bytes when the
+uploader says so — **a no-op the attacker selects, under a green "scrub applied" test**
+(premise pinned by `SaveOrderPhotosContentTypeTests.cs:49-59`). That is a stronger argument than "the
+stored type is a lie", because it is about a future control being **unbuildable** rather than a fact
+being wrong. It does **not** decide between the chosen option and the `Opaque` alternative — a
+byte-derived `octet-stream` would make the scrub a *declared* no-op, which is fine — so F4 kills the
+status quo and the sibling-symmetry reasons still carry the rest.
+
+**Sequencing this creates, and it is the practical output of the two lanes meeting:**
+**the closing ticket blocks T-0459** (apply the scrub). A scrub shipped first is a control whose no-op
+path its own uploader chooses. The content-policy ADR should not re-decide the mechanism — it should
+state that its D2 runs only against a byte-derived type and cite §7.1.
+
+**Two audience facts re-verified here, because they change what the ruling is worth (CH-2c, CH-3iii):**
+
+- `GetOrderPhotos.cs:59` gates on **`CanBrowseOrderAsync`**, not `CanAccessOrderAsync`
+  (`OrderAccessService.cs:68-92`, comment at `:84-87`). Writing still requires assignment
+  (`SaveOrderPhotos.cs:114-117`); **fetching does not.** Any tenant cleaner who can see the order while
+  a seat remains open can mint a SAS for its photos — so the `application/pdf`-over-arbitrary-bytes
+  capability is planted for an audience that is not enumerable at upload time.
+- **A decoder is already deployed, and this ruling does not depend on it either way.** QuestPDF
+  2024.12.1 ships native Skia + libjpeg-turbo/libpng/libwebp as runtime assets
+  (`Cleansia.Infra.Services/obj/project.assets.json:832-864,2362-2364`, verified); the *call site* is
+  what is absent. §3's "nothing decodes" is therefore a statement about **call sites**, not about the
+  image on the box — correct §3 accordingly when that ADR is re-based. §7.1 leans on **neither** limb.
+
+**Current shape (what the closing ticket implements):** sniff rule appended after the size rule; a
+decodability rule closing the chain (there is none today — `SaveOrderPhotos.cs:136` calls
+`Convert.FromBase64String` unguarded, which is a **live 500**); `DetermineContentType` deleted; blob-name
+extension minted via `SniffedContentType.ExtensionFor`. The read-path clamp is **not** touched — it is
+what governs rows already stored.
+
+**Blocked on:** the panel, then the ticket. The catalog sentence is written in that ADR's D2 with tier
+`(gate pending: <closing ticket>)`, promoting to `T1-CI` when it lands. Until then
+`patterns-backend.md` carries the exclusion **as a named, dated deviation at the rule** rather than only
+in two doc comments — that disclosure edit is made and is not gated on the panel, because withdrawing an
+implicit blessing obliges nobody.
+
+### 7.2 `DisputeEvidence` — the column is refused, the round-trip is pinned
+
+`backlog/adr/drafts/NNNN-dispute-evidence-type-carrier-is-the-blob-name.md`
+
+**Ruling: the server-minted blob-name extension is sufficient. No migration.** The name is
+content-addressed — minted from the bytes in the same statement that reads them — which makes
+`DisputeEvidence` the only upload surface with exactly **one** source of truth for its served type. A
+column would give it two, and the sibling that has two (`OrderPhoto`) is the one that shipped the
+"client believes the wrong one" defect the follow-up had to fix.
+
+**The real gap is elsewhere, and it is cheap:** the carrier depends on `SniffedContentType.ExtensionFor`
+and `ServedContentType.ForFileName` agreeing in both directions, across an assembly boundary
+(`Core.AppServices` vs `Core.Blobs.Abstractions`, which cannot reference it), with **no test**. It holds
+for all four accepted types today; one of four is exercised. `.doc`/`.docx` are already in the signature
+table and unknown to `ServedContentType`, so a one-line widening of an accepted set silently demotes a
+whole surface. Pin it with a property test over every `(intake, accepted type)` pair, count-asserted
+first, exemptions named — `T1-CI`, zero baseline.
+
+**Failure mode if this ruling is wrong:** evidence downloads instead of previewing for the customer and
+the adjudicating staff member. Silent capability loss on a support path; never a security failure (the
+demotion direction is `Opaque`-ward by construction).
+
+### 7.3 Found while verifying 7.2 — not a content-type problem, and larger
+
+**GDPR erasure orphans every dispute-evidence blob and destroys the only pointer to it.**
+`GdprDeletionService` deletes blobs for `user-files` (`:134-135`), `employee-documents` (`:146-157`) and
+`order-photos` (`:164-180`), then calls `dispute.Anonymize()` (`:210-212`) → `evidence.Anonymize()`
+(`Dispute.cs:160-163`) → `FilePath = AnonymizationMarker.Value` (`DisputeEvidence.cs:37-42`). The
+`dispute-evidence` container is **never touched**, and after the marker is written nothing in the
+database can name the blob to delete it later. **Ordering matters: any deletion sweep must run before
+`Anonymize()`.** Needs its own ticket against `GdprDeletionService`, `security_touching: true`. Recorded
+here so it is not lost between two ADRs that are not about it.

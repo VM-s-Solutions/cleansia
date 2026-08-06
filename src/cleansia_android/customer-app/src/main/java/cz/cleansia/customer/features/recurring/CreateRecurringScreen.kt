@@ -97,10 +97,10 @@ import java.util.Locale
  *  Step 2 — What:  Packages · Services · Rooms · Bathrooms
  *  Step 3 — Where & Pay:  Address · Payment · Starts on
  *
- * Path A (blank) lands on Step 1; Path B (pre-filled from a Completed order)
- * also lands on Step 1 with most fields already populated — the user just
- * taps Next, Next, Create. The ViewModel keys on an optional `orderId` nav
- * arg to decide which mode it's in.
+ * Every path lands on Step 1. Path A (blank) starts on defaults, Path B
+ * (pre-filled from a Completed order) and Path C (editing an existing
+ * template) start populated. The ViewModel keys on the optional `orderId` /
+ * `templateId` nav args to decide which mode it's in.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -207,6 +207,7 @@ fun CreateRecurringScreen(
                             state = state,
                             viewModel = viewModel,
                             onOpenAddressSheet = { addressSheetOpen = true },
+                            isEditing = isEditing,
                         )
                     }
                     Spacer(Modifier.height(40.dp))
@@ -501,6 +502,7 @@ private fun WhereAndPayStep(
     state: CreateRecurringFormState,
     viewModel: CreateRecurringViewModel,
     onOpenAddressSheet: () -> Unit,
+    isEditing: Boolean,
 ) {
     SectionLabel(stringResource(R.string.recurring_create_address_label))
     Spacer(Modifier.height(8.dp))
@@ -521,6 +523,44 @@ private fun WhereAndPayStep(
     SectionLabel(stringResource(R.string.recurring_create_starts_label))
     Spacer(Modifier.height(8.dp))
     StartsOnPicker(isoValue = state.startsOnIso, onChange = viewModel::setStartsOn)
+
+    if (isEditing) {
+        Spacer(Modifier.height(24.dp))
+        EditImpactNotice()
+    }
+}
+
+/**
+ * Edit-mode footnote, in the delete dialog's "what stops / what stays"
+ * vocabulary so the two destructive-ish actions read as one family.
+ */
+@Composable
+private fun EditImpactNotice() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.recurring_edit_notice_title),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.recurring_edit_notice_what_changes),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.recurring_edit_notice_what_stays),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 /* ─────────────── Section helpers ─────────────── */

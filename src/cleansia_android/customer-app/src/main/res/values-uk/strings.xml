@@ -925,12 +925,13 @@
     <string name="recurring_create_address_add_new">Додати нову адресу</string>
     <string name="recurring_create_submit">Створити розклад</string>
     <string name="recurring_create_success">Регулярний розклад створено.</string>
-    <string name="recurring_create_failed">Не вдалося створити розклад. Спробуйте знову.</string>
     <string name="recurring_edit_title">Редагувати регулярне прибирання</string>
     <string name="recurring_edit_submit">Зберегти зміни</string>
     <string name="recurring_edit_success">Розклад оновлено.</string>
-    <string name="recurring_edit_failed">Не вдалося оновити розклад. Спробуйте знову.</string>
     <string name="recurring_edit_load_failed">Не вдалося завантажити цей розклад. Поверніться назад і спробуйте знову.</string>
+    <string name="recurring_edit_notice_title">Що зміниться після збереження</string>
+    <string name="recurring_edit_notice_what_changes">Прибирання, замовлені за цим розкладом надалі, використовуватимуть дані вище.</string>
+    <string name="recurring_edit_notice_what_stays">Прибирання, які вже є у вашому календарі, зберігають початковий час і ціну — змінити або скасувати їх можна окремо в Замовленнях.</string>
     <string name="recurring_freq_weekly_label">Щотижня</string>
     <string name="recurring_freq_biweekly_label">Кожні 2 тижні</string>
     <string name="recurring_freq_monthly_label">Щомісяця</string>

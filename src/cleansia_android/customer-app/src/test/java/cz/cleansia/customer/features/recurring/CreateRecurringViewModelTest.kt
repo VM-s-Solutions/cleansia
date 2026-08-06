@@ -19,6 +19,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,6 +76,8 @@ class CreateRecurringViewModelTest {
         vm.toggleService("svc-1")
         vm.setStartsOn("2026-07-01T00:00:00Z")
     }
+
+    private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
 
     private val template = RecurringBookingTemplateDto(
         id = "tpl-1",
@@ -263,6 +266,69 @@ class CreateRecurringViewModelTest {
 
         coVerify(exactly = 0) { recurringRepo.update(any()) }
         coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    @Test
+    fun `edit mode echoes the stored end date back so the update cannot erase it`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals("2026-12-31T00:00:00Z", request.captured.endsOn)
+    }
+
+    @Test
+    fun `submit failure shows the backend message, not a generic key`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { recurringRepo.update(any()) } returns
+            ApiResult.Error(ApiError.BadRequest(message = plusRefusal, errorKey = "recurring_booking.membership_required"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showError(plusRefusal) }
+        verify(exactly = 0) { snackbar.showErrorKey(any()) }
+    }
+
+    @Test
+    fun `create failure shows the backend message, not a generic key`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns
+            ApiResult.Error(ApiError.BadRequest(message = plusRefusal, errorKey = "recurring_booking.membership_required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showError(plusRefusal) }
+        verify(exactly = 0) { snackbar.showErrorKey(any()) }
+    }
+
+    @Test
+    fun `submit failure on a transport error stays silent — the interceptor owns that toast`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { recurringRepo.update(any()) } returns
+            ApiResult.Error(ApiError.Network("Check your internet connection and try again."))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showErrorKey(any()) }
+        assertTrue(vm.submitState.value is ActionState.Error)
     }
 
     @Test

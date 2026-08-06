@@ -158,6 +158,12 @@ class CreateRecurringViewModel @Inject constructor(
         startsOn = startsOnIso,
     )
 
+    /**
+     * The backend's `UpdateSchedule` rewrites every schedule column from the
+     * command, so a field the form does not echo back is not "left alone" —
+     * it is erased. `endsOn` has no editor in this wizard, which is exactly
+     * why the stored value has to ride along.
+     */
     private fun CreateRecurringFormState.toUpdateRequest(templateId: String) =
         UpdateRecurringBookingRequest(
             templateId = templateId,
@@ -171,6 +177,7 @@ class CreateRecurringViewModel @Inject constructor(
             selectedPackageIds = selectedPackageIds.toList(),
             paymentType = paymentType,
             startsOn = startsOnIso,
+            endsOn = endsOnIso,
         )
 
     /** True when the form has the minimum data needed to submit. */
@@ -198,9 +205,9 @@ class CreateRecurringViewModel @Inject constructor(
                     _submitted.emit(Unit)
                 }
                 is ApiResult.Error -> {
-                    snackbar.showErrorKey(
-                        if (isEditing) R.string.recurring_edit_failed else R.string.recurring_create_failed,
-                    )
+                    if (result.error !is ApiError.Network) {
+                        snackbar.showError(result.error.getUserMessage())
+                    }
                     _submitState.value = ActionState.Error(result.error.getUserMessage())
                 }
             }
@@ -231,6 +238,7 @@ class CreateRecurringViewModel @Inject constructor(
                 selectedPackageIds = template.selectedPackageIds.toSet(),
                 paymentType = template.paymentType,
                 startsOnIso = template.startsOn,
+                endsOnIso = template.endsOn,
             )
         }
     }
@@ -293,4 +301,6 @@ data class CreateRecurringFormState(
     val paymentType: Int = 1,
     /** ISO-8601 instant. Default empty — UI must set before submit. */
     val startsOnIso: String = "",
+    /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
+    val endsOnIso: String? = null,
 )

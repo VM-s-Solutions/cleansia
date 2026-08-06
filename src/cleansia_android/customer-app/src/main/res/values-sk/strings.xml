@@ -925,12 +925,13 @@
     <string name="recurring_create_address_add_new">Pridať novú adresu</string>
     <string name="recurring_create_submit">Vytvoriť rozvrh</string>
     <string name="recurring_create_success">Opakovaný rozvrh vytvorený.</string>
-    <string name="recurring_create_failed">Rozvrh sa nepodarilo vytvoriť. Skúste to znova.</string>
     <string name="recurring_edit_title">Upraviť opakované upratovanie</string>
     <string name="recurring_edit_submit">Uložiť zmeny</string>
     <string name="recurring_edit_success">Rozvrh bol aktualizovaný.</string>
-    <string name="recurring_edit_failed">Rozvrh sa nepodarilo upraviť. Skúste to znova.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh sa nepodarilo načítať. Vráťte sa späť a skúste to znova.</string>
+    <string name="recurring_edit_notice_title">Čo sa uložením zmení</string>
+    <string name="recurring_edit_notice_what_changes">Upratovania nanovo objednané z tohto rozvrhu sa budú riadiť údajmi vyššie.</string>
+    <string name="recurring_edit_notice_what_stays">Upratovania, ktoré už máte v kalendári, si ponechajú pôvodný čas aj cenu — zmeniť alebo zrušiť ich môžete jednotlivo v Objednávkach.</string>
     <string name="recurring_freq_weekly_label">Každý týždeň</string>
     <string name="recurring_freq_biweekly_label">Každé 2 týždne</string>
     <string name="recurring_freq_monthly_label">Každý mesiac</string>

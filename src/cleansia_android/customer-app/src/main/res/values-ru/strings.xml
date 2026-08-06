@@ -925,12 +925,13 @@
     <string name="recurring_create_address_add_new">Добавить новый адрес</string>
     <string name="recurring_create_submit">Создать расписание</string>
     <string name="recurring_create_success">Регулярное расписание создано.</string>
-    <string name="recurring_create_failed">Не удалось создать расписание. Попробуйте снова.</string>
     <string name="recurring_edit_title">Изменить регулярную уборку</string>
     <string name="recurring_edit_submit">Сохранить изменения</string>
     <string name="recurring_edit_success">Расписание обновлено.</string>
-    <string name="recurring_edit_failed">Не удалось обновить расписание. Попробуйте снова.</string>
     <string name="recurring_edit_load_failed">Не удалось загрузить это расписание. Вернитесь назад и попробуйте снова.</string>
+    <string name="recurring_edit_notice_title">Что изменится после сохранения</string>
+    <string name="recurring_edit_notice_what_changes">Уборки, заказанные по этому расписанию в дальнейшем, будут использовать данные выше.</string>
+    <string name="recurring_edit_notice_what_stays">Уборки, уже добавленные в ваш календарь, сохранят исходное время и цену — изменить или отменить их можно по отдельности в Заказах.</string>
     <string name="recurring_freq_weekly_label">Каждую неделю</string>
     <string name="recurring_freq_biweekly_label">Каждые 2 недели</string>
     <string name="recurring_freq_monthly_label">Каждый месяц</string>

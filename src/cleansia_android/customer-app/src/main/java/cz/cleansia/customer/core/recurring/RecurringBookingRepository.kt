@@ -62,7 +62,7 @@ class RecurringBookingRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        val body = resp.body() ?: return networkError()
+        val body = resp.body() ?: return emptyBodyError()
         refresh()
         return ApiResult.Success(body)
     }
@@ -72,7 +72,7 @@ class RecurringBookingRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        val body = resp.body() ?: return networkError()
+        val body = resp.body() ?: return emptyBodyError()
         refresh()
         return ApiResult.Success(body)
     }
@@ -106,6 +106,15 @@ class RecurringBookingRepository @Inject constructor(
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    /**
+     * A 2xx whose body did not survive [RecurringBookingApi]'s null-field drop.
+     * Deliberately not [ApiError.Network]: that channel is the silent one — the
+     * interceptor already toasted — so reusing it here turns a failed write into
+     * a no-op the user never sees.
+     */
+    private fun emptyBodyError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)

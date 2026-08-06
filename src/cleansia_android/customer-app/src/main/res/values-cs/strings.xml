@@ -928,12 +928,13 @@
     <string name="recurring_create_address_add_new">Přidat novou adresu</string>
     <string name="recurring_create_submit">Vytvořit rozvrh</string>
     <string name="recurring_create_success">Opakovaný rozvrh vytvořen.</string>
-    <string name="recurring_create_failed">Rozvrh se nepodařilo vytvořit. Zkuste to znovu.</string>
     <string name="recurring_edit_title">Upravit opakovaný úklid</string>
     <string name="recurring_edit_submit">Uložit změny</string>
     <string name="recurring_edit_success">Rozvrh byl aktualizován.</string>
-    <string name="recurring_edit_failed">Rozvrh se nepodařilo upravit. Zkuste to znovu.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh se nepodařilo načíst. Vraťte se zpět a zkuste to znovu.</string>
+    <string name="recurring_edit_notice_title">Co se uložením změní</string>
+    <string name="recurring_edit_notice_what_changes">Úklidy nově objednané z tohoto rozvrhu se budou řídit údaji výše.</string>
+    <string name="recurring_edit_notice_what_stays">Úklidy, které už máte v kalendáři, si ponechají původní čas i cenu — změnit nebo zrušit je můžete jednotlivě v Objednávkách.</string>
     <string name="recurring_freq_weekly_label">Každý týden</string>
     <string name="recurring_freq_biweekly_label">Každé 2 týdny</string>
     <string name="recurring_freq_monthly_label">Každý měsíc</string>

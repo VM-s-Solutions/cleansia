@@ -10,13 +10,15 @@ struct RegisterView: View {
         client: RegistrationAuthClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
+        signupConsent: SignupConsentRecording,
         onSignIn: @escaping () -> Void,
         onRegistered: @escaping (String) -> Void
     ) {
         _vm = StateObject(wrappedValue: RegisterViewModel(
             client: client,
             settings: settings,
-            snackbar: snackbar
+            snackbar: snackbar,
+            signupConsent: signupConsent
         ))
         self.onSignIn = onSignIn
         self.onRegistered = onRegistered

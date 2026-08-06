@@ -694,6 +694,22 @@ once, for all). Authentication is decided by the injected `AnonymousAllowList`, 
 `requiresAuthentication` flag. T-0303 proves it; every later authed wave installs the same factory per host and
 writes no auth code.
 
+**Binding a repository `@Published` into an iOS view model — the ONE way:** `upstream.assign(to: &$property)`.
+`Subscribers.Assign` holds its `on:` target **strongly**, so the key-path form —
+`repository.$x.assign(to: \.x, on: self).store(in: &cancellables)` — closes
+`self → cancellables → subscription → Assign → self` and the view model never deallocates. The leak is
+invisible while a view model has no `deinit`; it turns into work that never stops the moment someone adds
+one (`OrderDetailViewModel`'s `deinit` is `pollTask?.cancel()`, so there the same shape left a poller
+running per screen open for the life of the process). The projected form needs no `cancellables` entry at
+all: the subscription's lifetime is the `@Published` property's. Prove a fix with a weak-reference release
+test, not by reading the call site.
+**Enforced by:** the `combine_assign_retains_target` custom rule in `src/cleansia_ios/.swiftlint.yml`,
+run by `swiftlint lint --strict` (`.github/workflows/ios-ci.yml`, blocking) — **T1-CI**. *Scope, stated
+because it is narrower than the paragraph: the rule matches the key-path call form
+(`.assign(to: \.…`) outside comments and strings; it does not decide whether a given target would
+actually have been retained, and `.swiftlint.yml`'s `included:` covers the two app `Sources` trees plus
+`CleansiaCore/Sources` and `CleansiaCore/Tests` — the app test targets are not linted.*
+
 **iOS jank idioms (T-0425 owner perf sweep):** (a) ship brand raster at ≤ the largest on-screen render
 size (the 1024²→600² mascot downsample — SwiftUI decodes the full asset on the MAIN thread at first
 draw, and that decode competes with every animation transaction); (b) a session-shared async load

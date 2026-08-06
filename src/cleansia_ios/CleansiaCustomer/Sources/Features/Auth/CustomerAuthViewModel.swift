@@ -98,6 +98,7 @@ final class CustomerAuthViewModel: ViewModel {
     private let socialProvider: SocialSignInProviding
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
+    private let signupConsent: SignupConsentRecording
     private let pendingEmail: String?
     private let errorLocalizer = ApiErrorLocalizer()
 
@@ -123,6 +124,7 @@ final class CustomerAuthViewModel: ViewModel {
         socialProvider: SocialSignInProviding,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
+        signupConsent: SignupConsentRecording,
         pendingEmail: String? = nil,
         changePasswordClient: ChangePasswordClient = LiveChangePasswordClient(),
         referralClient: ReferralClient = LiveReferralClient()
@@ -137,6 +139,7 @@ final class CustomerAuthViewModel: ViewModel {
         self.socialProvider = socialProvider
         self.settings = settings
         self.snackbar = snackbar
+        self.signupConsent = signupConsent
         self.pendingEmail = pendingEmail
     }
 
@@ -262,6 +265,7 @@ final class CustomerAuthViewModel: ViewModel {
 
         switch result {
         case .success:
+            await signupConsent.recordSignupTick(email: signUpForm.email, accepted: signUpForm.acceptTerms)
             outcome.send(.needsEmailConfirm(email: signUpForm.email))
         case let .failure(error):
             snackbar.showApiError(error)

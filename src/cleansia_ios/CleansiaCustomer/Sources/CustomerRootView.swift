@@ -93,6 +93,7 @@ struct CustomerRootView: View {
             socialProvider: container.socialSignInProvider,
             settings: container.appSettings,
             snackbar: container.snackbar,
+            signupConsent: container.signupConsent,
             pendingEmail: pendingEmail,
             changePasswordClient: container.changePasswordClient
         )

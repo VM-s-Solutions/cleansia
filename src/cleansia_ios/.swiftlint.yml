@@ -24,6 +24,17 @@ opt_in_rules:
 analyzer_rules:
   - unused_import
 
+custom_rules:
+  combine_assign_retains_target:
+    name: "Combine assign(to:on:) retains its target"
+    message: "Bind a repository @Published into a view model with assign(to: &$property). Subscribers.Assign holds `on:` strongly, so a binding stored in the view model's own cancellables makes it immortal."
+    regex: '\.assign\(to:\s*\\\.'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    severity: error
+
 force_unwrapping:
   severity: error
 force_cast:

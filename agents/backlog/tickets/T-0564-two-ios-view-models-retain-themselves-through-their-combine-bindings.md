@@ -1,7 +1,7 @@
 ---
 id: T-0564
 title: Two iOS customer view models retain themselves through their Combine bindings and never deallocate
-status: draft
+status: done
 size: S
 owner: ios
 created: 2026-08-06

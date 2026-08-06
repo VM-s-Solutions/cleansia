@@ -15,10 +15,12 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var settings: FakeAppSettingsStore!
     private var snackbar: SnackbarController!
     private var referral: FakeReferralClient!
+    private var signupConsent: RecordingSignupConsent!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
+        signupConsent = RecordingSignupConsent()
         login = FakeLoginClient()
         registration = FakeRegistrationClient()
         confirmation = FakeEmailConfirmationClient()
@@ -57,6 +59,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
             socialProvider: provider,
             settings: settings,
             snackbar: snackbar,
+            signupConsent: signupConsent,
             pendingEmail: pendingEmail,
             changePasswordClient: changePassword,
             referralClient: referral
@@ -302,6 +305,9 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(registration.callCount, 0)
     }
 
+    /// The terms box is a hard blocker, not a hint. It is the reason the "unticked box parks
+    /// nothing" rule in `SignupConsentRepository` can never fire from this screen — and the
+    /// reason that rule cannot be the only thing pinning it.
     func testSignUpWithoutConsentSetsTermsErrorAndDoesNotSubmit() async {
         let vm = makeViewModel()
         fillValidSignUp(vm)
@@ -311,6 +317,27 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.signUpForm.termsError)
         XCTAssertEqual(registration.callCount, 0)
+        XCTAssertEqual(signupConsent.parked.count, 0)
+    }
+
+    func testASuccessfulSignUpParksTheTickAgainstTheSubmittedAddress() async {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(signupConsent.parked.map(\.email), ["jana@b.cz"])
+        XCTAssertEqual(signupConsent.parked.map(\.accepted), [true])
+    }
+
+    func testARejectedSignUpParksNothing() async {
+        registration.result = .failure(ApiError(code: "user.existing_email", httpStatus: 400))
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(signupConsent.parked.count, 0)
     }
 
     func testSignUpFormStaysInvalidUntilConsentIsAccepted() {

@@ -35,6 +35,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     public let tokenStore: TokenStore
     private let sessionScopedCaches: SessionScopedCacheRegistry
     private let registerEndpoint: RegisterEndpoint
+    private let signupConsent: SignupConsentDelivering?
     private let lock = NSLock()
     private var preLogout: (@Sendable () async -> Void)?
 
@@ -47,6 +48,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         headerAdapter: HeaderAdapter,
         sessionScopedCaches: SessionScopedCacheRegistry,
         registerEndpoint: RegisterEndpoint = .employee,
+        signupConsent: SignupConsentDelivering? = nil,
         authedSession: URLSession = .shared,
         noAuthSession: URLSession = URLSession(configuration: .ephemeral)
     ) {
@@ -55,6 +57,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         self.headerAdapter = headerAdapter
         self.sessionScopedCaches = sessionScopedCaches
         self.registerEndpoint = registerEndpoint
+        self.signupConsent = signupConsent
         self.authedSession = authedSession
         self.noAuthSession = noAuthSession
     }
@@ -79,7 +82,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         case let .failure(error):
             return .failure(error)
         case let .success(dto):
-            return .success(resolveEmailGate(
+            return await .success(resolveEmailGate(
                 dto,
                 fallbackEmail: email,
                 refreshLifetime: rememberMe ? .longLived : .shortLived
@@ -102,7 +105,11 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         case let .failure(error):
             return .failure(error)
         case let .success(dto):
-            return .success(resolveEmailGate(dto, fallbackEmail: dto.email ?? email, refreshLifetime: .shortLived))
+            return await .success(resolveEmailGate(
+                dto,
+                fallbackEmail: dto.email ?? email,
+                refreshLifetime: .shortLived
+            ))
         }
     }
 
@@ -168,7 +175,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         case let .failure(error):
             return .failure(error)
         case let .success(dto):
-            return .success(resolveEmailGate(
+            return await .success(resolveEmailGate(
                 dto,
                 fallbackEmail: dto.email ?? fallbackEmail,
                 refreshLifetime: .longLived
@@ -180,11 +187,14 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         _ dto: JwtTokenResponseDto,
         fallbackEmail: String,
         refreshLifetime: RefreshLifetime
-    ) -> LoginOutcome {
+    ) async -> LoginOutcome {
         guard let token = dto.token, !token.isEmpty else {
             return .unverifiedEmail(email: fallbackEmail, hasToken: false)
         }
         persist(dto, fallbackRefreshLifetime: refreshLifetime)
+        // The signup tick predates any session and this is the first point at which the
+        // SERVER has named the account it belongs to — hence `dto.email`, never `fallbackEmail`.
+        await signupConsent?.deliver(sessionEmail: dto.email)
         if dto.isEmailConfirmed != true {
             return .unverifiedEmail(email: fallbackEmail, hasToken: true)
         }

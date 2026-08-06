@@ -105,7 +105,7 @@ struct HomeTab: View {
         .task { await vm.refreshStaleSources() }
         .task { await vm.refreshCatalogIfNeeded() }
         .task { await notificationBadge.refresh() }
-        .task(id: vm.isPlus) { await vm.refreshRecurringIfPlus(vm.isPlus) }
+        .task { await vm.refreshRecurring() }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
                 // The badge is cheap enough to refetch on every foreground; the

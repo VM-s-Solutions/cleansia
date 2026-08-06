@@ -901,6 +901,11 @@
     <string name="recurring_bookings_day_at_time">%1$s в %2$s</string>
     <string name="recurring_bookings_empty_cta">Создать расписание</string>
     <string name="recurring_bookings_create_fab">Новое расписание</string>
+    <string name="recurring_plus_gate_title">Регулярные — это преимущество Plus</string>
+    <string name="recurring_plus_gate_subtitle">Присоединяйтесь к Cleansia Plus, чтобы настроить еженедельные или раз в две недели уборки, которые бронируются сами.</string>
+    <string name="recurring_plus_gate_cta">Попробовать Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus больше не активна</string>
+    <string name="recurring_lapsed_notice_body">Эти расписания продолжают работать, и уборки бронируются по полной цене без членства. Любое из них можно здесь в любой момент приостановить или удалить. Чтобы добавить или изменить расписание, возобновите подписку.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Новая регулярная уборка</string>

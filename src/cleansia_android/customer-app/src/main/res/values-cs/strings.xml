@@ -904,6 +904,11 @@
     <string name="recurring_bookings_day_at_time">%1$s v %2$s</string>
     <string name="recurring_bookings_empty_cta">Vytvořit rozvrh</string>
     <string name="recurring_bookings_create_fab">Nový rozvrh</string>
+    <string name="recurring_plus_gate_title">Opakování je výhoda Plus</string>
+    <string name="recurring_plus_gate_subtitle">Připojte se k Cleansia Plus a nastavte si týdenní nebo čtrnáctidenní úklidy, které se objednají samy.</string>
+    <string name="recurring_plus_gate_cta">Vyzkoušet Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus už není aktivní</string>
+    <string name="recurring_lapsed_notice_body">Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Nový opakovaný úklid</string>

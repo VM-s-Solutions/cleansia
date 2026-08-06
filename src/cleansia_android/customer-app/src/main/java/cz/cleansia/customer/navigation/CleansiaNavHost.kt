@@ -613,6 +613,7 @@ fun CleansiaNavHost(
                 onEdit = { templateId ->
                     navController.navigate(Routes.CreateRecurringBooking(templateId = templateId))
                 },
+                onSubscribePlus = { navController.navigate(Routes.SubscribePlus) },
             )
         }
         composable<Routes.CreateRecurringBooking>(

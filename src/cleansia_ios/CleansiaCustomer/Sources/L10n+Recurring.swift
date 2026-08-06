@@ -98,6 +98,14 @@ extension L10n {
             localized("recurring_plus_gate_cta")
         }
 
+        static var lapsedNoticeTitle: String {
+            localized("recurring_lapsed_notice_title")
+        }
+
+        static var lapsedNoticeBody: String {
+            localized("recurring_lapsed_notice_body")
+        }
+
         static var createTitleBlank: String {
             localized("recurring_create_title_blank")
         }

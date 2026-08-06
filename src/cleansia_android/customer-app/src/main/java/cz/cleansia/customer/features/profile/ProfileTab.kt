@@ -173,9 +173,9 @@ fun ProfileTab(
         )
         Spacer(Modifier.height(12.dp))
 
-        // Recurring bookings entry — Plus-only; the row hides itself for
-        // non-Plus users by reading membership state internally.
-        cz.cleansia.customer.features.profile.PlusRecurringEntryRow(
+        // Recurring bookings entry — always reachable: a lapsed membership does
+        // not stop a schedule, so this is the route to the stop button.
+        cz.cleansia.customer.features.profile.RecurringEntryRow(
             modifier = Modifier.padding(horizontal = 20.dp),
             onClick = { onRowClick("recurring_bookings") },
         )

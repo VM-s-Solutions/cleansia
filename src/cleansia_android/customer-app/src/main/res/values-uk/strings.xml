@@ -901,6 +901,11 @@
     <string name="recurring_bookings_day_at_time">%1$s о %2$s</string>
     <string name="recurring_bookings_empty_cta">Створити розклад</string>
     <string name="recurring_bookings_create_fab">Новий розклад</string>
+    <string name="recurring_plus_gate_title">Регулярні — це перевага Plus</string>
+    <string name="recurring_plus_gate_subtitle">Приєднайтеся до Cleansia Plus, щоб налаштувати щотижневі або раз на два тижні прибирання, які бронюються самі.</string>
+    <string name="recurring_plus_gate_cta">Спробувати Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus більше не активна</string>
+    <string name="recurring_lapsed_notice_body">Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Нове регулярне прибирання</string>

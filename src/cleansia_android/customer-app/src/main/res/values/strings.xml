@@ -918,6 +918,11 @@
     <string name="recurring_bookings_day_at_time">%1$s at %2$s</string>
     <string name="recurring_bookings_empty_cta">Set one up</string>
     <string name="recurring_bookings_create_fab">New schedule</string>
+    <string name="recurring_plus_gate_title">Recurring is a Plus perk</string>
+    <string name="recurring_plus_gate_subtitle">Join Cleansia Plus to set up weekly or biweekly cleanings that book themselves.</string>
+    <string name="recurring_plus_gate_cta">Try Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus is no longer active</string>
+    <string name="recurring_lapsed_notice_body">These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule.</string>
 
     <!-- Recurring booking create form (PA14) -->
     <string name="recurring_create_title_blank">New recurring cleaning</string>

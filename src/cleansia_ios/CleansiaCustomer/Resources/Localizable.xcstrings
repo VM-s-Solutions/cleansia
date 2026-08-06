@@ -26356,6 +26356,76 @@
         }
       }
     },
+    "recurring_lapsed_notice_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эти расписания продолжают работать, и уборки бронируются по полной цене без членства. Любое из них можно здесь в любой момент приостановить или удалить. Чтобы добавить или изменить расписание, возобновите подписку."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieto rozvrhy bežia ďalej a upratovania sa objednávajú za plnú cenu bez členstva. Ktorýkoľvek z nich tu môžete kedykoľvek pozastaviť alebo vymazať. Na pridanie alebo úpravu rozvrhu členstvo obnovte."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку."
+          }
+        }
+      }
+    },
+    "recurring_lapsed_notice_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus už není aktivní"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus is no longer active"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus больше не активна"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus už nie je aktívne"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus більше не активна"
+          }
+        }
+      }
+    },
     "recurring_plus_gate_cta" : {
       "extractionState" : "stale",
       "localizations" : {

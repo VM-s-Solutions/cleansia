@@ -1448,3 +1448,58 @@ neither has an answer to give yet, because the artifact being approved does not 
 - Default if unanswered: yes, an admin may record it, kept permanently distinct from a self-service tick;
   the reference field is treated as PII and redacted on erasure.
 - Answer: _(owner fills in)_
+
+---
+
+### Q-ART-01 — [blocking: no] Do we keep accepting formats we have decided not to scrub? (DOC/DOCX on employee documents; PDF on dispute evidence)
+- Raised by: architect (panel lead, user-artifact content-policy ADR) — T-0458 / T-0459
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-08-06
+- Question: two accept-set narrowings, same shape, one decision. The panel ruled that user-uploaded
+  **images** get their metadata scrubbed at intake, and that **document formats do not** — rewriting a
+  PDF object graph or an OOXML package is refused as disproportionate. That leaves two formats
+  accepted-but-never-scrubbed:
+  - **(a) DOC/DOCX on employee documents** — they carry author names and revision history. Dropping
+    them leaves PDF/JPEG/PNG, which cover every real document-scan case, but it narrows what a cleaner
+    may upload and changes a five-locale string that promises *"Accepted: PDF, JPEG, PNG, DOC, DOCX"*.
+  - **(b) `application/pdf` on dispute evidence** — the flow is photo evidence, and an uploader who
+    wants metadata preserved can simply wrap the photo in a PDF, which the scrub will not touch.
+    Unlike (a) this changes no five-locale promise. It does remove a customer's ability to attach a PDF
+    document (a receipt, a bank statement) as evidence, which is the cost to weigh.
+- Why it matters: an accept set is a product promise. Widening one later is cheap; narrowing one after
+  launch breaks a flow someone has already used. It also sets the precedent for every future format
+  request — do we accept a format we cannot scrub and say so, or refuse it?
+- Default taken (non-blocking): **keep accepting both.** The architecture is complete either way — the
+  exclusion is written per surface, with its own reason, on the upload intake roster, so no format is
+  silently unscrubbed. The panel explicitly declined to decide this as an architecture call.
+- Answer: _(owner fills in)_
+
+---
+
+### Q-ART-02 — [blocking: no] A cleaner's photo fails the byte check mid-job: refuse it, or store it un-previewable?
+- Raised by: architect (challenger, byte-derived intake ADR) — T-0561 / T-0459
+- Owner: owner
+- Resolve-by: pre-prod
+- Date: 2026-08-06
+- Question: `SaveOrderPhotos` is about to derive the stored content type from the payload's **bytes**
+  rather than from what the client declared. Two behaviours are on the table when the bytes are not
+  JPEG/PNG/WebP — realistically a mislabelled or renamed file picked in partner **web** (both mobile
+  apps re-encode to JPEG and cannot produce this case):
+  - **(A) Refuse it (400).** The cleaner sees a translated error and must re-pick. If they are on site,
+    on a phone, and do not retry, that before/after photo does not exist in the job record at all.
+  - **(B) Store it, serve it as `application/octet-stream`.** The upload succeeds and the bytes are
+    kept, but the tile does not render in the gallery — the file downloads instead of previewing, and
+    nobody is told why.
+- Why it matters: order photos are the evidence a **dispute** is later adjudicated on. (A) is what the
+  sibling single-photo endpoint already does, so it is also the consistent answer; (B) never loses
+  bytes. The trade-off is *a legible refusal the cleaner can act on* versus *never lose a before/after
+  photo*. Architecture can defend either — this is a product call.
+- Default taken: none. Flagged before the ADR is ruled on, so whichever you pick is what gets built.
+- Answer: _(owner fills in)_
+
+> **Two measurements owed before this lands, neither of which an architect could take (no shell):**
+> (i) how many `OrderPhotos` rows on DEV already carry `application/pdf` or `image/gif` — an owner
+> query, and the number decides whether a read-path clamp needs a migration or is free; (ii) whether
+> the rewritten pin test actually reddens under each named mutation, which is the closing ticket's
+> Gate 0.5 and must not be taken on trust.

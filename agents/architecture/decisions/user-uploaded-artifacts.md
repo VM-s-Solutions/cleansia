@@ -1,10 +1,11 @@
 # User-uploaded artifacts — living decision doc
 
-> **Status: §1–§3 are SHIPPED and verified at HEAD (2026-08-05). §4–§6 are DECIDED-BUT-UNPANELLED —
-> nothing in them is implemented. §7 is new (2026-08-06) and is the content-type ruling.** The
+> **Status: §1–§3 are SHIPPED and verified at HEAD (2026-08-05). §4–§6 were DECIDED-BUT-UNPANELLED —
+> ⚠️ THE PANEL HAS NOW RUN (2026-08-06) and §8 is its verdict; read §8 BEFORE §4–§6, which it corrects
+> in ten places. §7 is the content-type ruling (a separate, still-unpanelled lane).** The
 > immutable record for §4–§6 is
 > `../../backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` (**`proposed`**, number not
-> allocated, **defense panel owed**).
+> allocated, **panel run → verdict REVISE; rev N+1 owed, then accept**).
 > **Tickets:** T-0458 (policy + seam), T-0459 (application), T-0460 (the S-series law) — **all three are
 > re-scoped by that draft; do not read their `## Context` as current.**
 > **Related:** T-0464 ✅ (`b9753e85`, the served-type clamp), T-0548 ✅ (`97bb7265`, the avatar size cap),
@@ -43,9 +44,19 @@ property; 1–5 are per-surface properties.
 |---|---|---|---|---|---|---|
 | Avatar | 3 (`UserController.UpdateCurrentUser` × Customer / Mobile.Customer / Mobile.Partner / Partner — 4 rows on the roster) | the user | **the same user only** | 1 h SAS → `<img>` | `application/octet-stream` (opaque overload) | no |
 | Order photos (batch) | 2 (`OrderController.SavePhotos`, Partner + Mobile.Partner) | a cleaner | **customer + cleaner + admin**, 5 read hosts | 1 h SAS | closed-set typed | no |
-| Order photo (single) | 2 (`OrderController.UploadPhoto`) | a cleaner | same | 1 h SAS | closed-set typed at read; **raw client string stored** | no |
-| Dispute evidence | 2 (`DisputeController.UploadEvidence`, `multipart/form-data`) | the customer | that customer + **staff** | 1 h SAS | typed from the **client's file name** | no |
+| Order photo (single) | 2 (`OrderController.UploadPhoto`) | a cleaner | same | 1 h SAS | closed-set typed at read; ~~raw client string stored~~ **byte-derived** (`:102`) | no |
+| Dispute evidence | 2 (`DisputeController.UploadEvidence`, `multipart/form-data`) | the customer — **and on this surface the uploader is an adversary with money on the outcome** (`:95-99`) | that customer + **staff adjudicating a refund** | 1 h SAS, **inline** — `GenerateSasUri` sets `rsct`/`rscc` and **no `rscd`** (`BlobContainerClient.cs:93-110`) | ~~typed from the client's file name~~ **byte-derived**; the blob-name extension is minted from the bytes (`:104-105`) | no |
 | Employee documents | 4 (`EmployeeController.SaveMyDocuments` / `.UpdateEmployee`, Partner + Mobile.Partner) | a cleaner | that cleaner + **admin** | **never by URL** — API host, `File(bytes, type, name)` → `attachment` | **byte-derived** | no (PDF/Office) |
+
+> ⚠️ **The two order-photo rows' "Fetched by" is WRONG and was corrected by the panel (2026-08-06,
+> CH-2c).** `GetOrderPhotos.cs:59` gates on **`CanBrowseOrderAsync`**, not `CanAccessOrderAsync`. After
+> owner/admin/assigned fails, `OrderAccessService.cs:68-92` returns `true` for **any** caller with role
+> `Employee` and a resolvable `employeeId` while `order.HasAvailableSpots && OrderVisibility.NotHeldFrom(…)`
+> — the comment at `:84-87` says that branch is *"both browse surfaces at once — order detail and order
+> photos."* So the fetch set is customer + admin + assigned cleaners **+ every cleaner in the tenant who
+> can see the order while a seat remains open** (up to 12 seats on a 24 h order). **Writing** still
+> requires assignment (`SaveOrderPhotos.cs:114-117`); **fetching does not.** This is why the scrub's
+> justification is *"the audience is not enumerable at upload time"* and not *"three known parties"*.
 
 **Why the avatar row matters most for planning:** `GetCurrentUser.ResolveProfilePhotoUrl` is the *only*
 SAS mint for `user-files`. `UserMappers.cs:23,66` and `EmployeeMappers.cs:37,63` map the photo **without**
@@ -58,12 +69,20 @@ away**, and the day it lands the avatar's "audience: self" exemption expires.
   private constructor; `text/html` and `image/svg+xml` are excluded **by name**; unknown → `Opaque`
   (`application/octet-stream`, outside the MIME-sniffing standard's sniffable set). Applied via the SAS
   response-header override (`rsct`/`rscc`), so it governs blobs written **before** it existed.
-- **Type confusion on documents: closed.** `DocumentContentType.FromContent` answers *may we accept*
-  and *what is it* from the first 9 bytes; `ForDownload` re-derives from the same table on the read
-  path, so legacy rows retype without a backfill.
+  ⚠️ **One nuance the panel added (CH-7):** the closed set still admits a **scriptable container** —
+  `application/pdf`, served **inline** with no `Content-Disposition`. That is *not* equivalent to stored
+  XSS (the storage host carries no app session and browser PDF viewers are sandboxed) and the "closed"
+  verdict survives — but the threat table must say so rather than reason only over `text/html` and
+  `image/svg+xml`.
+- **Type confusion: closed on 13 of 14 intakes.** ~~`DocumentContentType`~~ **`SniffedContentType`**
+  `.FromContent` answers *may we accept* and *what is it* from the first 12 bytes, for **all four**
+  intakes off **one** signature table; `ForDownload` re-derives from the same table on the read path, so
+  legacy rows retype without a backfill. **The fourteenth is `SaveOrderPhotos`** — see §7.1.
 - **Unbounded intake: closed.** One shared size predicate, ordered first; count caps on all three arrays.
-- **"How many intakes are there": partly closed.** `Base64UploadIntakeRosterTests` enumerates 10 —
-  every route whose request graph reaches `BlobFileDto`. **Four more exist** and it cannot see them.
+- ~~**"How many intakes are there": partly closed.**~~ **CLOSED.** ~~`Base64UploadIntakeRosterTests`
+  enumerates 10~~ → **`UploadIntakeRosterTests` enumerates all 14** (`:39-55`), with a second `[Theory]`
+  (`:76-84`) naming the four `byte[]`/`IFormFile` intakes so narrowing the predicate cannot silently
+  pass. **This is `T1-CI` today** — only the `audience` / `scrub` columns are outstanding.
 
 ### The residue, named so it is not rediscovered
 
@@ -81,17 +100,38 @@ than deleted, because the wrong half of a closed finding is what gets re-derived
 - **R5 — new, 2026-08-06.** `SaveOrderPhotos` is the fourteenth intake and reads no byte of its
   payload. **See §7 — it is the subject of a ruling, not an unowned residue.**
 
-## 3. The property that decides everything — nothing here decodes an image
+## 3. The property that decides everything — nothing here **calls** a decoder
 
-`SixLabors`, `SkiaSharp`, `System.Drawing`, `Magick` appear in **zero** `src/**/*.csproj`. The only
-graphics package is `QuestPDF` (`Cleansia.Infra.Services.csproj:14`), which generates invoices and never
-touches a user photo. `OrderPhoto.Width`/`Height` exist and are **never populated** — both writers omit
-the optional arguments.
+> ⚠️ **Corrected by the panel, 2026-08-06 (§8 / CH-3iii). This section said "nothing decodes an image",
+> which is wrong in one direction and overstated in another. Both corrections are below and both were
+> re-verified by the lead.**
 
-**So every decoder in this system belongs to a client rendering an `<img>`.** That is what makes a
-decompression bomb a non-threat today, and it is what a "sanitizer" would destroy: 10 MiB × 30 items of
-attacker-chosen input, on an **S1 / 1.75 GB plan shared by 5 APIs + SSR + Functions**. A single-colour
-30 000 × 30 000 PNG is a few hundred KB on the wire and ≈3.6 GB decoded.
+`SixLabors`, `SkiaSharp`, `System.Drawing`, `Magick` appear in **zero** `src/**/*.csproj`, and
+`OrderPhoto.Width`/`Height` exist and are **never populated** — both writers omit the optional
+arguments. **But a complete decoding stack is already deployed:** QuestPDF 2024.12.1
+(`Cleansia.Infra.Services.csproj:14`, pinned `Directory.Packages.props:55`) ships its own native Skia as
+runtime assets — `runtimes/{linux-x64,linux-arm64,linux-musl-x64}/native/libQuestPdfSkia.so`
+(`Cleansia.Infra.Services/obj/project.assets.json:832-864`) with bundled `libjpeg-turbo` / `libpng` /
+`libwebp` / `skia` licences (`:2362-2368`).
+
+**What is absent is the call site**, and that is the real property: `.Image(` / `ImageDescriptor` /
+`Image.FromBinaryData` return **zero** matches across `src/**/*.cs`. So the prohibition is a
+**reachability** property, not a package-inventory one — which is why a `.csproj` name-denylist cannot
+enforce it (§5) and why one `.Image(orderPhotoBytes)` inside an invoice or dispute-pack document would
+create the primitive while the denylist stayed green.
+
+**Why a decoder on a request path is still refused**, restated without the arithmetic error the panel
+caught (CH-3i — Kestrel's 30,000,000 B ceiling means ≈21 MiB decoded per request, so "10 MiB × 30" was
+never reachable and never needed):
+
+- **One bounded upload already suffices.** A single-colour 30 000 × 30 000 PNG is a few hundred KB on
+  the wire and ≈3.6 GB decoded. The array cap is irrelevant to the argument.
+- **The plan is S1 / 1.75 GB** (`weu.prod.bicepparam:34`) and carries **the 5 APIs + SSR + Functions**
+  (`appServicePlan.bicep:22`). DEV is **B2 with autoscale off** (`weu.dev.bicepparam:26`) — one fixed
+  instance, and DEV is live.
+- **Autoscale is CPU-driven only** (`appServicePlan.bicep:70,88` — both `CpuPercentage`). A decoder's
+  failure mode is **memory**, so scale-out never fires and an OOM takes every site on the instance.
+  *(This is a stronger argument than the one originally written here — panel, CH-3ii.)*
 
 ## 4. The decided shape (unpanelled)
 
@@ -107,11 +147,17 @@ attacker-chosen input, on an **S1 / 1.75 GB plan shared by 5 APIs + SSR + Functi
 3. **Applied by audience:** order photos and dispute evidence **yes**; the avatar **no**, recorded with
    an expiry (the ticket that first emits an avatar URL on a cross-user DTO owes it); employee
    documents **no** (PDF/OOXML rewriting refused, exclusion written on the roster).
-4. **Narrow the accept set to the serve set** — drop BMP + TIFF, tighten WebP to `RIFF`+`WEBP`. Existing
-   error key, no new i18n. This deletes the TIFF metadata problem instead of solving it (TIFF *is* an
-   IFD container).
-5. **Widen the roster to 14 rows** (`byte[]` + `IFormFile` request graphs) and give each row
-   `validator | audience | scrub`.
+   ⚠️ **The RULING survives the panel; the REASON does not.** Order photos are scrubbed because their
+   audience is **not enumerable at upload time** — `GetOrderPhotos.cs:59` gates on `CanBrowseOrderAsync`,
+   and `OrderAccessService.cs:68-92` admits **any** tenant cleaner while the order has an open seat — not
+   because it is "customer + cleaner + admin". See §8 / CH-2c and the corrected §2 note.
+4. ~~**Narrow the accept set to the serve set**~~ — **SHIPPED.** `SniffedContentType.Signatures:66-78`
+   carries no BMP or TIFF and matches WebP as `RIFF`@0 + `WEBP`@8. This is a **ratification**, not a
+   decision the ADR gets to make (§8 / CH-1).
+5. ~~**Widen the roster to 14 rows**~~ — **SHIPPED.** `UploadIntakeRosterTests.cs:39-55` is 14 rows,
+   plus a `[Theory]` at `:76-84` naming the four non-`BlobFileDto` intakes. **Only the two extra columns
+   (`audience`, `scrub`) remain outstanding**, and the widening is `T1-CI` **today** — the ADR mis-tiered
+   this in both directions (§8 / CH-1).
 6. **The law is a new S12**, keyed on **audience**, not on "served back by URL" — because the surface
    carrying the most metadata (employee documents) is not served by URL at all. Not an S4 extension:
    same principle, but S4's check is "read the DTO's field list," and no reading of a field list reaches
@@ -120,28 +166,47 @@ attacker-chosen input, on an **S1 / 1.75 GB plan shared by 5 APIs + SSR + Functi
    `canvas`/`createImageBitmap` exists anywhere in `src/Cleansia.App`. ~30 lines per picker, zero server
    cost, removes essentially all live volume.
 
-### The threat-model inversion this rests on
+### The threat-model inversion this rests on — ⚠️ **scoped to the avatar by the panel**
 
 T-0458 argues the server work is required because *"a client-side strip is unenforceable."* That is
-decisive for XSS, where **the uploader is the adversary**. For metadata **the uploader is the victim** —
-a cleaner has no motive to hand-craft an API call re-attaching their own home GPS. The residual after a
-client-side strip is an old client, a future integration, and carelessness. The server-side scrub is
-therefore a **durability** argument, not a **correctness** one, and it must be defended as such.
+decisive for XSS, where **the uploader is the adversary**. The draft generalised the inverse — *"for
+metadata the uploader is the victim"* — to all four surfaces. **The panel scoped it to one** (§8 /
+CH-2). It is a claim about **whose metadata is in the file**, and:
 
-The one genuinely new disclosure: an order photo uploaded from **partner web** carries the cleaner's
-device identity, capture timestamp and — if taken away from the job — the cleaner's own location, **to
-the customer**. GPS taken at the job is the customer's own address, which all three parties already
-hold. On the avatar the only fetcher is the subject, so **T-0446 disclosed nobody's EXIF to anyone.**
+- **It is unknowable in the ordinary case.** No intake establishes capture provenance; `SaveOrderPhotos.cs:114-117`
+  proves *assignment*, which is an authorization fact, not a capture fact. A cleaner may upload a photo a
+  colleague sent them (CH-2a).
+- **On dispute evidence the uploader is an adversary with money on the outcome.** `UploadDisputeEvidence.cs:95-99`
+  refuses unless the uploader **is the dispute's own customer**, and the outcome is a refund against a
+  cleaner. "The client strips it" is not a control against a party whose interest is to not strip — so
+  **the scrub there is enforceability, not durability, and it may NOT be deferred behind the web
+  re-encode** (§8 / B.5). *Severity bound, recorded: no surface reads EXIF today, so this is latent, not
+  live — it bounds urgency, not the availability of the deferral.*
+- **It holds on the avatar, which is the surface the ADR exempts.** The only fetcher is the subject, so
+  **T-0446 disclosed nobody's EXIF to anyone.**
+
+The genuinely new disclosure on order photos, restated: device identity, capture timestamp and — if the
+photo was taken away from the job — the cleaner's own location, handed **not** to a known triangle but to
+**any tenant cleaner who can browse the order while a seat remains open**. GPS taken at the job is the
+customer's own address, which all parties already hold; a **device serial is a stable cross-order
+correlation key** that walks straight through the two controls that deliberately withhold cleaner
+identity (`GetOrderPhotos.cs:107-109`, ADR-0036). That is the S12 argument in its purest form — a
+DTO-level control defeated by content.
 
 ## 5. Enforcement (ADR-0032 tiers — one clause is live, four are pending)
+
+*(Table replaced by the panel, 2026-08-06 — §8 / B.6. The previous version mis-tiered two rows in
+opposite directions and named an enforcer that cannot see its clause's real failure mode.)*
 
 | Clause | Enforcer | Tier |
 |---|---|---|
 | Served type is server-derived from a closed set | `ServedContentTypeTests`, `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`, `SasResponseHeaderOverrideTests` (`Cleansia.Tests`, a named step of `backend-ci.yml:70-71`) | **T1-CI** |
-| Accept set = serve set | new test over `Constants.ImageSignatures` × `ServedContentType` | `(gate pending: T-0458)` |
-| Every intake declares audience + scrub | `Base64UploadIntakeRosterTests`, widened | `(gate pending: T-0458)` |
+| Accept set ⊆ serve set | **true by construction today** — one `Signatures` table + `AcceptedByIntake` (`SniffedContentType.cs:66-104`) — but **unpinned**: `ServedContentTypeTests` carries no assertion that every `Signatures` MIME resolves to a non-`Opaque` `ServedContentType`, so a seventh row reintroduces the defect silently | `(gate pending: T-0458)` — for that reason, not the one previously written here |
+| The roster **enumerates** all 14 intakes | `UploadIntakeRosterTests` (`:39-55` + `:76-84`) | **T1-CI — shipped** |
+| Every intake **declares** audience + scrub | the same test, with two added columns | `(gate pending: T-0458)` |
 | The scrub actually removes metadata | per-pipeline tests reading metadata out of the bytes handed to the blob client | `(gate pending: T-0459)` |
-| No image-decoding package reference | new csproj-graph denylist walk with a non-vacuity floor | `(gate pending: T-0458)` |
+| No **direct package reference** to a decoder | `.csproj` denylist walk (`SixLabors.*`, `SkiaSharp*`, `System.Drawing.Common`, `Magick.NET*`) + non-vacuity floor | `(gate pending: T-0458)` |
+| No **call site** reaching a decoder — incl. QuestPDF's transitively-shipped Skia (§3) | source scan of `src/**/*.cs` for `.Image(` / `ImageDescriptor` / `Image.FromBinaryData`, non-vacuity floor. **If T-0458 cannot build it, this clause is declared `T2-ADVISORY` with a named reviewer check — it is not left labelled as a gate** | `(gate pending: T-0458)` |
 
 **The rule must not be labelled `T1-CI` wholesale.** `enforcement.md:177-179` provides
 `(gate pending: <ticket>)`, and note that `check-consistency.mjs` is **T2-ADVISORY** (in zero
@@ -149,15 +214,21 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
 
 ## 6. Open / owed
 
-- **Panel.** T-0458 AC1 and T-0460's "Deliberation required" both need distinct author / challenger /
-  lead instances. **Not run.** Nothing below the draft ADR is `ready`.
-- **The challenge I most want pressed:** whether §4.7 (web re-encode) makes §4.2/§4.3 unnecessary. If
-  the panel rules it does, the correct output is: ship §4.7, §4.4, §4.5 and the §4.6 rule, and **defer
-  the scrub with a written trigger.**
-- **The second:** §4.2 hand-rolls format parsers over attacker-controlled binary. Less parsing surface
-  than a decoder, but new security-control code with an interest-conflicted author.
-- **The avatar exemption** is one PR from being wrong and the roster row asserts a *string*, not a
-  *fact*. Scrubbing it anyway costs one call site.
+- ~~**Panel.**~~ **RUN, 2026-08-06.** Author + independent challenger + lead, all distinct instances.
+  Verdict **REVISE** (rulings survive; map and several reasons rewritten) — **§8**. T-0458 AC1 is
+  satisfied only when **rev N+1** is accepted; rev N+1 is a transcription pass, not another round.
+- ~~**The challenge I most want pressed:**~~ **ANSWERED — split per surface.** Deferring the scrub
+  behind the web re-encode is available for **order photos** (the argument there is durability) and
+  **not** for **dispute evidence** (adversarial uploader — §8 / B.5).
+- ~~**The second** (hand-rolled parsers)~~ — **ANSWERED as a condition.** Sustained as a real cost;
+  answered by construction (forward-only, length-prefixed, refuse-never-repair) **plus the new,
+  stronger property: no attacker byte reaches the output** — the emitted `APP1` is server-synthesized
+  end to end. Condition: the §8 / B.4 degradation rule and the synthetic-corpus burden are written into
+  rev N+1.
+- ~~**The avatar exemption**~~ — **CHALLENGED AND SUSTAINED.** The challenger independently verified it
+  (`GetCurrentUser.cs:44,47-60` is the only `user-files` SAS mint; `UserMappers.cs:23,66` and
+  `EmployeeMappers.cs:37,63` carry no URL; `GdprExportDto.cs:85-90` carries file **names**, not bytes or
+  URLs) and **could not improve on the author's own mitigation.** The exemption holds, with its expiry.
 - **Escalation Q-ART-01 (owner):** keep accepting DOC/DOCX on employee documents? They carry author
   names and revision history, no scrub is proposed, and an OOXML rewriter is not worth building.
   Dropping them changes a five-locale promise. Product call.
@@ -267,6 +338,7 @@ demotion direction is `Opaque`-ward by construction).
 ### 7.3 Found while verifying 7.2 — not a content-type problem, and larger
 
 **GDPR erasure orphans every dispute-evidence blob and destroys the only pointer to it.**
+*(Unchanged by the panel — recorded here because it belongs to neither ADR.)*
 `GdprDeletionService` deletes blobs for `user-files` (`:134-135`), `employee-documents` (`:146-157`) and
 `order-photos` (`:164-180`), then calls `dispute.Anonymize()` (`:210-212`) → `evidence.Anonymize()`
 (`Dispute.cs:160-163`) → `FilePath = AnonymizationMarker.Value` (`DisputeEvidence.cs:37-42`). The
@@ -274,3 +346,60 @@ demotion direction is `Opaque`-ward by construction).
 database can name the blob to delete it later. **Ordering matters: any deletion sweep must run before
 `Anonymize()`.** Needs its own ticket against `GdprDeletionService`, `security_touching: true`. Recorded
 here so it is not lost between two ADRs that are not about it.
+
+---
+
+## 8. Panel verdict on the content policy — 2026-08-06 (the current shape)
+
+Author (2026-08-05) · independent challenger
+(`backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) · lead
+(2026-08-06), all distinct instances. Full trail and the closed change list live in the ADR's `## Verdict`.
+
+**Outcome: REVISE — the rulings survive, the map and several reasons do not. No further challenge round.**
+Rev N+1 is a transcription pass; the PM checks it against the ADR's §C and accepts.
+
+### 8.1 What survived unchanged (do not re-litigate)
+
+- **No decoder on a request path.** The central ruling survived every attack, and CH-3(ii) strengthened
+  it (memory-blind autoscale, seven sites per instance).
+- **Removal by container rewrite, not re-encode** (JPEG `APP1`/`APP13`, PNG `eXIf`/`tEXt`/`iTXt`/`zTXt`/
+  `tIME`, WebP `EXIF`/`XMP ` + `VP8X` bits, GIF passthrough). It is a **metadata scrub**, not a sanitizer.
+- **The seam location** — intake, in the handler, between the decode and `UploadAsync`. A FluentValidation
+  validator cannot mutate; a decorator on `IBlobContainerClient.UploadAsync` would rewrite our own
+  generated invoices/receipts/GDPR exports; the read path cannot touch bytes a SAS serves directly.
+- **No `IImageSanitizer` seam** — the shareable thing is the *obligation*, and its home is a roster column.
+- **The avatar exemption**, with its expiry (challenged, independently verified, sustained).
+- **Audience, not delivery mechanism, is the hinge of the law** (S12), and S12 is not an S4 extension.
+- **No backfill obligation** from the rule; it is a real migration and its own ticket.
+
+### 8.2 What the panel changed
+
+| Ruling | Change |
+|---|---|
+| **Generation loss** | **Not** a rejection ground for re-encode. The platform already re-encodes at q0.7 / 1920 on both mobile clients (`ImageCompressor.swift:31-32`, `.kt`). A1 is rejected on the **resource** and **PDF-generality** limbs alone — both falsifiable-proof, and the rejection is over-determined without the weak limbs |
+| **The ImageSharp licence** | **Deleted as a rejection ground.** The repo already ships a revenue-threshold-licensed graphics package (QuestPDF). The decision does **not depend** on the licence, because no library is adopted; if an ADR ever overrules the no-decoder ruling, the licence is an **owner/legal** question filed then — never an architect's finding |
+| **A4 (strip specific tags)** | Rejection **restated**, not re-scored. The parser-size argument is conceded (both designs need an IFD reader). A4 loses on **allowlist vs denylist** (a tag denylist ages with every new `MakerNote` variant) and because **A4 re-emits attacker bytes with rewritten offsets** while the chosen design emits a server-synthesized `APP1` containing one validated value |
+| **EXIF `Orientation`** | **Completed.** Preserve **iff** the source `APP1` reads unambiguously and yields 2–8; on anything else — malformed IFD, unexpected byte order, out-of-range value, truncation — emit **no EXIF at all** and accept the rotation. **Never guess, never repair.** A rotated photo is a rare cosmetic defect on a largely adversarial branch; a corrupted photo or a surviving GPS tag is not. Because D10 will leave this branch with near-zero production exercise, it carries a **synthetic corpus** burden: truncated segments, garbage lengths, both byte orders, orientation 1 / 2–8 / 9 / absent |
+| **What the scrub dispatches on** | **From the bytes it is holding, at the moment it runs.** Never a client string, never a persisted `ContentType` — not even a correct one. An unidentifiable format is **passed through untouched and reported as "not scrubbed"**, never as "scrubbed". This is stricter than, and consistent with, §7.1's ruling, and it means **T-0459 is not gated on §7.1's closing ticket** |
+| **The deferral option** | **Per surface.** Deferrable for order photos (durability); **not** for dispute evidence (enforceability — the uploader is the adversary) |
+| **Enforcement** | Replaced — see §5. The no-decode prohibition is a **reachability** property and needs a call-site enforcer; the roster widening is `T1-CI` **today**; accept ⊆ serve is true by construction but unpinned |
+
+### 8.3 Sequencing this produces
+
+1. **D10 (web clients re-encode on pick) ships first and independently** — best exposure/effort ratio,
+   and it is a **complement**, not a substitute. Unpriced in the draft: there are **four** distinct web
+   file-read call sites, not one per app, and the documents picker must **not** re-encode. The shared
+   `file-transformation.utils.ts:127-129` sets `contentType` and `fileName`, both of which a canvas
+   re-encode changes and `SaveOrderPhotos.DetermineContentType` reads.
+2. **Rev N+1 of the ADR accepted** — the only true gate on T-0459.
+3. **T-0459** — `UploadDisputeEvidence` (not deferrable) and `UploadOrderPhoto` are decision-complete
+   today; `SaveOrderPhotos` too, under the bytes-in-hand rule. §7.1's closing ticket should still land
+   first if the PM can sequence it, but it is **not** a blocker.
+4. **Backfill** — its own ticket, after the panel. Bounded by PR #154 (2026-07-26) plus web uploads since.
+
+### 8.4 Open with the owner (not blocking)
+
+**Q-ART-01, now two-part** — whether to keep accepting **DOC/DOCX on employee documents** and
+**`application/pdf` on dispute evidence**, given that neither will be scrubbed and an OOXML/PDF
+object-graph rewriter is refused. Both are **product** narrowings, not architecture. D8 is scoped per
+surface either way and the roster records `scrub: none` with its reason regardless of the answer.

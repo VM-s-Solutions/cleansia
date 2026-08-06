@@ -454,3 +454,37 @@ Silence is not assent, so these are named:
 position is that this ADR reaches the **right answers** on a **materially out-of-date map**, with one
 live hole (CH-4) and one enforcement claim it cannot honour (CH-3iii). Re-based and with the reasons
 replaced, I would not block it.
+
+---
+
+## Lead ruling — 2026-08-06
+
+Recorded here so this challenge is not left dangling. **The full adjudication is the `## Verdict`
+section of `../drafts/NNNN-user-artifact-content-policy-no-decoder.md`**; this is the index into it.
+
+**Every finding above was re-verified by the lead at HEAD before ruling — none was taken on trust.**
+
+| # | Ruling | Where the repair is decided |
+|---|---|---|
+| CH-1 | **STANDS** | Verdict §C.1 — D5/D6 demoted to ratifications, ~7 citations replaced |
+| CH-2(a) | **STANDS** | §C.3 |
+| CH-2(b) | **STANDS** | §B.5 — the deferral becomes per-surface; **not available** for `UploadDisputeEvidence` |
+| CH-2(c) | **STANDS** | §C.2 — ruling survives, reason replaced with *"the audience is not enumerable at upload time"* |
+| CH-2(d) | **NO FINDING**, recorded as checked | §C.10 — the expiry line lands in D8 |
+| CH-3(i) | **STANDS** | §C.5 — restated as *"one bounded upload already suffices"* |
+| CH-3(ii) | **ACCEPTED** (a strengthening, not a challenge) | §C.5 — folded into D2 |
+| CH-3(iii) | **STANDS** | §B.6 — the prohibition is re-declared a **reachability** property; the package denylist is honestly narrowed and a call-site enforcer added, `T2-ADVISORY` if it cannot be built |
+| CH-3(iii) sec. (licence) | **STANDS** | §B.2 — the licence limb is **deleted** from A1/A2; the decision does not depend on it |
+| CH-4 | **STANDS** | §B.1 — ruled **in this ADR**, as you asked, and in a form stronger than either option you offered: **the scrub dispatches on the bytes it is holding**, never on a persisted `ContentType`. Consequence: T-0459 is **not** gated on §7.1's closing ticket |
+| CH-5 | **STANDS** | §B.2 — position picked: generation loss is **not** an A1 rejection ground. Your D10 pricing correction (four web call sites, documents excluded, `file-transformation.utils.ts:127-129`) is folded into the living doc §8.3 |
+| CH-6 | **STANDS** | §B.3 — rejection **restated**, not re-scored: allowlist-vs-denylist and *no attacker byte reaches the output* |
+| CH-7 | **STANDS** (incl. the inline-PDF limb, independently verified at `BlobContainerClient.cs:93-110`) | §C.10 — D8 scoped per surface; the accept-set narrowing is escalated to the owner as product, not decided here |
+
+**Verdict: REVISE, not blocked.** Your closing position — *"re-based and with the reasons replaced, I
+would not block it"* — is adopted as the panel's. Rev N+1 is a **transcription pass against the closed
+list**, so **no further challenge round is convened**: T-0459's surfaces are cross-user visible today and
+another round would cost exposure time without changing an answer.
+
+**One correction to your process note:** T-0458 and T-0460 were both reopened to `status: blocked` on
+2026-08-06 (T-0458's front matter carries the reopen note at `:19-21`, citing that the closing commit
+pointed at an unratified draft). The tickets and the ADR now agree. T-0459 is still `draft`.

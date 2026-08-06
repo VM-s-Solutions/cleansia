@@ -14,10 +14,13 @@
 - **Living doc:** `agents/architecture/decisions/user-uploaded-artifacts.md`
 
 > ### ⚠️ Method declaration — read before relying on anything here
-> **1. No defense panel has run.** One architect instance wrote this. §Challenge is an author-run
-> self-challenge, which is weaker by construction. **This ADR cannot be `accepted` until distinct
-> author / challenger / lead instances have run** (`process/deliberation.md`). Every ruling below is a
-> defensible opening position, not a closed one.
+> **1. ~~No defense panel has run.~~ SUPERSEDED 2026-08-06 — the panel HAS run. See §Verdict.**
+> An independent challenger round was run
+> (`agents/backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) and a
+> **lead has adjudicated** (§Verdict, 2026-08-06). Outcome: **REVISE — the rulings survive, the map and
+> several reasons do not.** The body below is **rev N** and is superseded in the twelve places §Verdict
+> §C enumerates. **Do not implement from this body**; implement from rev N+1. §Challenge below remains
+> the author's *self*-challenge and is NOT the panel round.
 >
 > **2. No shell in this invocation** (`Read`/`Glob`/`Grep`/`Write`/`Edit`; no `Bash`). Nothing was
 > compiled, executed or measured. Every fact is read from source at HEAD and cited at `file:line`.
@@ -523,8 +526,210 @@ deriving from the client's file name at read time; and whether the four `byte[]`
 should be converted to `BlobFileDto` so one roster predicate and one validator family covers everything
 (which would delete R1 and half of D6 instead of enforcing them).
 
-## Verdict
+## Verdict — LEAD, 2026-08-06
 
-**Not adjudicated.** No independent challenger has run and no lead has ruled. T-0458's and T-0460's
-"Deliberation required" sections are both unsatisfied, so **this ADR is not `accepted` and no ticket
-below it is `ready`.** The rulings above are the author's position going into that panel.
+**Adjudicated.** Panel: author (this document, 2026-08-05) · challenger (threat-model / subject-of-the-
+metadata lane, `../challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) · lead
+(this section, architect instance distinct from both). `process/deliberation.md` step 5.
+
+**Outcome: REVISE. Not `accepted`. No further challenge round is required.** Every finding is either
+sustained-with-its-repair-ruled-here or defended; none is left open for another instance to decide. Rev
+N+1 is a **transcription job against the closed list in §C**, not a re-deliberation — the author (or
+whoever the PM assigns) applies §C, and the PM checks rev N+1 against §C **only**, then accepts. Sending
+this round again would cost exposure time (T-0459's surfaces are cross-user visible today) and buy
+nothing, because the challenger's own closing position is *"re-based and with the reasons replaced, I
+would not block it"* and the lead independently re-verified every blocking fact at HEAD.
+
+**The one-line summary of the panel: this ADR reached the right answers on a stale map, and defended
+several of them with reasons that are false. The answers stand. The reasons are rewritten.**
+
+### A. Per-finding ruling
+
+Every "stands" below was **re-verified by the lead at HEAD**, not taken from the challenge document.
+
+| # | Finding | Ruling | Reason (one line) |
+|---|---|---|---|
+| **CH-1** | D5/D6 shipped, R1/R2/R3 closed, ~7 dead citations | **STANDS** | Verified: `SniffedContentType.cs:66-78` carries no BMP/TIFF and matches WebP as `RIFF`@0 + `WEBP`@8; `UploadIntakeRosterTests.cs:39-55` is 14 rows; `UploadOrderPhoto.cs:102` and `UploadDisputeEvidence.cs:104` both sniff; `GetOrderPhotos.cs:96,105` resolves once; `grep ImageSignatures src/` → **zero files** |
+| **CH-2(a)** | Uploader ≠ capturer; provenance is unknowable | **STANDS** | No intake establishes capture provenance — `SaveOrderPhotos.cs:114-117` proves *assignment*, which is an authorization fact; unrebutted |
+| **CH-2(b)** | Dispute evidence has an adversarial uploader | **STANDS** | `UploadDisputeEvidence.cs:95-99` — the uploader **is** the dispute's own customer, and the outcome is money; D4 already called forgeable EXIF timestamps a "benefit" while the ADR's premise denies the adversary exists |
+| **CH-2(c)** | Order-photo audience is wider than the table says | **STANDS** | `GetOrderPhotos.cs:59` gates on `CanBrowseOrderAsync`; `OrderAccessService.cs:68-92` returns `true` for **any** tenant `Employee` while `HasAvailableSpots && NotHeldFrom`. The "load-bearing table" is materially wrong |
+| **CH-2(d)** | No admin-side document upload exists | **NO FINDING** | Confirmed by the roster: all four document intakes are Partner / Mobile.Partner (`UploadIntakeRosterTests.cs:45-46,50-51`). Recorded as checked; D8 gains the expiry line |
+| **CH-3(i)** | "10 MiB × 30" is unreachable | **STANDS** | Kestrel's 30,000,000 B ceiling bounds a request to ≈21 MiB decoded (`request-intake-limits.md:26-42`, the ADR's own cited companion). The conclusion is unaffected — one ~300 KB PNG already suffices — so the figure is spending credibility for nothing |
+| **CH-3(ii)** | CPU-only autoscale strengthens D2 | **ACCEPTED (not a challenge)** | Verified: `appServicePlan.bicep:70,88` are both `CpuPercentage`; a decoder fails on **memory**, so scale-out never fires, and `:22` states the plan carries the 5 APIs + SSR + Functions. DEV is B2 with autoscale **off** (`weu.dev.bicepparam:26`) — one fixed instance, and DEV is live |
+| **CH-3(iii)** | The denylist enforcer cannot see the real failure mode; Skia is already deployed | **STANDS** | Verified: `Cleansia.Infra.Services/obj/project.assets.json:832-864` ships `libQuestPdfSkia.so` for all three Linux RIDs and `:2362-2368` the libjpeg-turbo/libpng/libwebp/skia licences. The prohibition is a **reachability** property; a `PackageReference` name-denylist cannot express it, and the ADR holds others to exactly this standard in its own §D7 |
+| **CH-3(iii) sec.** | The licence limb is self-inconsistent | **STANDS** | The repo already ships one revenue-threshold-licensed graphics package. "Licence" cannot disqualify ImageSharp without an established legal finding this ADR does not have and may not make |
+| **CH-4** | The pilot surface has no server-truth type to dispatch on | **STANDS — repair ruled in §B.1** | Verified: `SaveOrderPhotos.cs:171-184` reads the client `data:` prefix, else the client extension, else the literal `"image/jpeg"`; the roster records the exception in writing (`UploadIntakeRosterTests.cs:47,52`) |
+| **CH-5** | Generation loss disqualifies A1, then D10 adopts it harsher | **STANDS — position picked in §B.2** | Verified: `ImageCompressor.swift:31-32` is `maxDimension: 1920, quality: 0.7`, and `:80-82` writes *only* the quality key. The draft holds both positions at once |
+| **CH-6** | A4's rejection assumes a parser D2 also needs | **STANDS — rejection restated in §B.3** | D2's *"re-emit a minimal EXIF `APP1` carrying only `Orientation`"* requires reading the TIFF byte order, IFD0 offset and entry table to find tag `0x0112`. That **is** the IFD reader A4 was rejected for needing. The stated distinction is false |
+| **CH-7** | D8's PDF exclusion is evadable and imports its justification | **STANDS** | `AcceptedByIntake[DisputeEvidence]` includes `application/pdf` (`SniffedContentType.cs:92-95`); D8's *"already has more"* is an employee-document sentence applied to a customer→cleaner→staff triangle where it is true of nobody |
+| **CH-7 sec.** | Dispute PDFs are served **inline**, not `attachment` | **STANDS** | Verified: `BlobContainerClient.cs:93-110` sets `ContentType` and `CacheControl` and **no** `ContentDisposition`. D8's *"served as an attachment … never by URL"* is false for this surface |
+| **C-1** (author self) | Refused a decoder without measuring | **DEFENDED** | D2's adopted option has no decode step, so the resource cost never has to be quantified to be avoided. The claim that *is* owed a measurement (the segment walk) is marked ⚠ and ticketed |
+| **C-2** (author self) | D2 hand-rolls parsers over attacker binary | **DEFENDED, conditionally** | Sustained as a real cost, answered by construction — forward-only, length-prefixed, *refuse-never-repair*, and (new, §B.3) **no attacker byte reaches the output**. Condition: the §B.4 degradation rule and the synthetic-corpus burden are written into rev N+1 |
+| **C-3** (author self) | The avatar exemption is one PR from wrong | **DEFENDED** | The challenger independently verified the exemption is correct on the facts (`GetCurrentUser.cs:44,47-60` is the only `user-files` SAS mint; `UserMappers.cs:23,66` / `EmployeeMappers.cs:37,63` carry no URL; `GdprExportDto.cs:85-90` carries names, not bytes) and **could not improve on the author's own mitigation**. Option (a) stands |
+| **C-4** (author self) | Four clauses is four rules | **DEFENDED** | The clauses share one check — *walk the roster row*. The lead declines the proposed split: promoting the served-type clause into S4 would put a bytes-question under a rule whose check is "read the DTO's field list", which is the exact discoverability failure D7 exists to fix |
+| **C-5** (author self) | D10 makes the rest optional | **CONCEDED IN PART — see §B.5** | Sustained for order photos, **refused for dispute evidence** (CH-2b): a client-side strip is not available against an uploader whose interest is to not strip. The deferral becomes per-surface |
+
+**Zero blocking challenges remain.** Consensus is declared on the *rulings*; the revise verdict is about
+the record, not about the answers.
+
+### B. Rulings the lead makes (these are decisions, not suggestions — rev N+1 transcribes them)
+
+**B.1 — CH-4: the scrub selects its parser from the bytes it is handed. Full stop.**
+The challenger offered the author a choice of (a) the scrub sniffs its own bytes or (b) `SaveOrderPhotos`
+adopts `SniffedContentType.FromContent(…, UploadIntake.OrderPhoto)` first. The sibling lane
+(`drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md` D1) has independently decided (b)
+and asks this ADR not to re-decide it. **Agreed — and the lead rules the strictly stronger form that is
+robust to that lane's outcome:**
+
+> The metadata scrub determines the container format **from the bytes it is holding**, at the moment it
+> runs. It never reads a client-supplied string, and it never reads a persisted `ContentType` field —
+> not even a correct one. A format it cannot identify is **passed through untouched and reported as
+> "not scrubbed"**, never as "scrubbed".
+
+This satisfies the sibling lane's constraint (*"T-0459 must not dispatch on `OrderPhoto.ContentType`"*)
+by never dispatching on it at all, and it does **not** undercut D1: calling an existing intake helper is
+not building a shared transform abstraction. **One decision per ADR is preserved** — this ADR rules what
+the *scrub* dispatches on; the sibling rules what the *row* stores. The sibling's closing ticket is owed
+on its own grounds (a stored type that disagrees with its bytes, the `"image/jpeg"` fabrication, and the
+unguarded `Convert.FromBase64String` at `SaveOrderPhotos.cs:136`), and **T-0459 is not gated on it.**
+
+**B.2 — CH-5: generation loss is NOT an A1 rejection ground. Drop that limb, and drop the licence limb.**
+The platform already re-encodes the majority of order photos at q0.7 with a 1920 downscale, on the
+clients, deliberately. A server-side re-encode at q0.9 with no downscale would be *less* destructive. An
+ADR may not reject an option for a cost it is simultaneously shipping. **A1's rejection is
+over-determined and loses nothing:** it stands on the resource limb (a user-driven decoder on a request
+path, on a memory-blind autoscale, on a plan carrying seven sites) and the PDF-generality limb. Deleting
+the two weak limbs makes the rejection *stronger*, because both are falsifiable from this repo.
+
+**B.3 — CH-6: A4's rejection is restated, not re-scored.** The parser-size argument is conceded — D2 and
+A4 both need an IFD reader. A4 is still rejected, on the two grounds that actually distinguish them:
+
+1. **Allowlist vs denylist.** D2 emits only the one tag it chose. A4 removes only the tags it thought
+   of, and that list ages every time a vendor invents a `MakerNote` variant. For a *disclosure* control
+   the default must be "drop unless named", not "keep unless named".
+2. **No attacker byte reaches the output.** D2's emitted `APP1` is server-synthesized end to end — fixed
+   one-entry IFD, server-computed offsets, one value validated into 2–8. A4 re-emits attacker-chosen
+   bytes with rewritten offsets, and offset arithmetic over attacker-chosen values is precisely where
+   C-2's worry becomes a defect.
+
+This also answers C-2 better than the draft does, and rev N+1 should say so there too.
+
+**B.4 — EXIF `Orientation`: the policy is completed with its degradation direction.** The draft names the
+mechanism and never says what happens when it fails, which is what makes it incomplete against the
+INDEX's fourth item. Ruling:
+
+> Orientation is preserved **if and only if** the source `APP1` can be read unambiguously and yields a
+> value in 2–8. Anything else — a malformed IFD, an unexpected byte order, a value out of range, a
+> truncated segment — emits **no EXIF at all** and accepts the rotation. Never guess, never repair.
+
+The safe direction is deliberate: a photo that ships rotated is a visible cosmetic defect on a rare and
+largely adversarial branch; a corrupted photo or a surviving GPS tag is not. CH-5's second half is
+sustained as the reason this needs a **synthetic corpus**, not production exercise: once D10 lands, every
+client the platform controls bakes rotation into pixels and emits no EXIF at all, so this branch will run
+almost exclusively for residual old-client and third-party traffic. Rev N+1 carries that as an explicit
+test burden on T-0458 (truncated segments, garbage lengths, both byte orders, orientation 1 / 2–8 / 9 /
+absent), and it is the answer to *"new attacker-facing code with near-zero production exercise."*
+
+**B.5 — C-5 / CH-2(b): the deferral option becomes per-surface.**
+
+| Surface | May D2/D4 be deferred behind D10 with a written trigger? |
+|---|---|
+| `SaveOrderPhotos` / `UploadOrderPhoto` | **Yes** — the argument there is durability, and D10 genuinely removes the live volume |
+| `UploadDisputeEvidence` | **No** — the uploader is the dispute's own customer with money on the outcome (`:95-99`). "The client strips it" is not a control against a party whose interest is to not strip. Here the server-side scrub is *enforceability*, not durability |
+
+The challenger's own severity bound is recorded and does **not** change the ruling: the dispute exposure
+is **latent** (no surface reads EXIF today — `DisputeEvidenceDto` carries `FileName` / `BlobUrl` /
+`UploadedOn`, which is server time), so this bounds the *urgency*, not the *availability of the
+deferral*.
+
+**B.6 — CH-3(iii): the no-decode prohibition is re-tiered honestly, and the "nothing decodes" claim is
+corrected.** The **fact** survives — there is no call site (`.Image(` / `ImageDescriptor` /
+`Image.FromBinaryData` return zero across `src/**/*.cs`, independently checked by two instances). The
+**framing** does not: a complete JPEG/PNG/WebP decoding stack is already on the Linux image via
+QuestPDF's native assets, so §3's *"nothing here decodes an image"* must become *"nothing here **calls**
+a decoder"*. Enforcement:
+
+| Clause | Enforcer | Tier |
+|---|---|---|
+| No **direct package reference** to a decoder | `.csproj` denylist walk + non-vacuity floor | `(gate pending: T-0458)` → `T1-CI` when it lands |
+| No **call site** reaching a decoder (incl. transitively-shipped QuestPDF image APIs) | source scan of `src/**/*.cs` for `.Image(` / `ImageDescriptor` / `Image.FromBinaryData`, non-vacuity floor | `(gate pending: T-0458)`; **if T-0458 cannot build it, the clause is declared `T2-ADVISORY` in the ADR with a named reviewer check** — not left labelled as a gate |
+| Roster **widening** to 14 rows | `UploadIntakeRosterTests` | **`T1-CI` today** — only the two new columns are `(gate pending: T-0458)` |
+| Accept ⊆ serve | true **by construction** today (one `Signatures` table + `AcceptedByIntake`) but **unpinned** — `ServedContentTypeTests` carries no such assertion | `(gate pending: T-0458)`, for that reason, not the draft's |
+
+A mechanism that cannot fail a build is `T2-ADVISORY` however it is labelled (ADR-0032,
+`enforcement.md`). The draft says this about others in §D7 and must apply it to itself.
+
+### C. Closed list — what rev N+1 must change (nothing else is reopened)
+
+1. **Re-base §Context.** Delete R1/R2/R3 (closed) and delete or demote **D5** and **D6** to
+   *ratifications with HEAD citations*. Replace every dead citation: `Constants.ImageSignatures` →
+   deleted; `DocumentContentType` → `SniffedContentType`; `Base64UploadIntakeRosterTests` →
+   `UploadIntakeRosterTests`; `GetOrderPhotos.cs:75` → `:96,105`; `UploadOrderPhoto.cs:112` → `:102`;
+   `DisputeMappers.cs:65-77` → `UploadDisputeEvidence.cs:104-105`.
+2. **Fix the audience table** per CH-2(c), and **replace D4's stated reason**: order photos are scrubbed
+   because the audience is **not enumerable at upload time**, not because it is three known parties.
+   Name what is disclosed that the DTO withholds — device identity and off-site location, a stable
+   cross-order correlation key that walks through `GetOrderPhotos.cs:107-109` and ADR-0036.
+3. **Scope the threat-model premise to the avatar.** Add CH-2(a) (provenance is unknowable) and CH-2(b)
+   (adversarial uploader on dispute evidence), and record the latency bound from §B.5.
+4. **Apply §B.5** — the deferral table, per surface, replacing C-5's binary.
+5. **Apply §B.6** — drop "10 MiB × 30" (restate as *"one bounded upload already suffices; the array cap
+   is irrelevant to the argument"*), correct "nothing decodes" → "nothing calls a decoder", add CH-3(ii)
+   (CPU-only autoscale, seven sites, DEV single-instance), and replace the §D7 enforcement table with
+   §B.6's.
+6. **Apply §B.1** as an explicit clause of D2/D3, citing the sibling draft and stating that T-0459 is
+   **not** gated on the sibling's closing ticket.
+7. **Apply §B.2** — delete the generation-loss limb **and** the licence limb from A1/A2; state in one
+   sentence that the licence question is **not live because no library is adopted**, and that it becomes
+   an owner/legal question in the ADR that ever overrules D2.
+8. **Apply §B.3** — restate A4's rejection; carry the same two grounds into the C-2 answer.
+9. **Apply §B.4** — the orientation degradation rule and the synthetic-corpus test burden.
+10. **Scope D8 per surface.** The dispute-evidence PDF exclusion needs its own written reason (the
+    employee-document one is false there), plus CH-7's correction that dispute PDFs are served **inline**
+    with no `rscd`, plus CH-2(d)'s expiry line, plus one sentence in the threat table acknowledging that
+    the closed served-type set admits a **scriptable container** even though stored XSS stays closed.
+11. **Carry the deliberation trail.** `## Challenge` must cite
+    `../challenges/NNNN-user-artifact-content-policy-threat-model.md` as the panel round (the existing
+    §Challenge stays, relabelled as the author's self-challenge); add a `## Defense` recording
+    rebut/concede per finding; keep this §Verdict.
+12. **Do not re-title this ADR to cover shipped work.** Its one decision is *metadata is scrubbed at
+    intake, by audience, without a decoder*. Everything else in it is ratification or context.
+
+### D. The four things T-0458's INDEX row demanded the panel rule on
+
+| # | Demanded | Answered? | By what |
+|---|---|---|---|
+| 1 | **The library** — ImageSharp licence is legal, not technical | **YES — by removing the dependency** | D2 adopts **no** library, so the licence question never becomes live. **Fallback, and rev N+1 must state it (§C.7):** if a future ADR overrules D2 and adopts a decoder, the licence is an **owner/legal** question filed at that time — the architect does not rule it. The draft's use of it as a *rejection ground* is deleted per §B.2 |
+| 2 | **Strip vs re-encode** | **YES** | D2: **strip** by container rewrite; re-encode refused. Survived the challenge — the challenger's §"could not break" item 6 sustains the central ruling explicitly, and §B.6 strengthens it |
+| 3 | **Seam location** (a validator cannot mutate) | **YES** | D3: **intake, in the handler, between the decode and `UploadAsync`.** Validator ruled out for exactly the INDEX's reason — validators reject, they do not transform. Also ruled out: a decorator on `IBlobContainerClient.UploadAsync` (that sink writes our **own** generated invoices/receipts/GDPR exports) and the read path (a SAS hands the client the stored bytes). D1 refuses the `IImageSanitizer` seam; §B.1 adds what the seam dispatches on |
+| 4 | **EXIF `Orientation`** | **NOW yes — it was not, in rev N** | The draft named the mechanism and never named its failure behaviour, which is what left the policy incomplete. **§B.4 completes it** (preserve iff unambiguously readable, else emit no EXIF and accept the rotation; never guess, never repair) and **§B.3** replaces the reasoning that chose this mechanism over A4 |
+
+### E. Ticket consequences (PM)
+
+- **T-0458** — stays `blocked` until rev N+1 is accepted. **AC6 is overturned** (pilot moves off the
+  avatar). **AC1 must be re-worded**: it asks for *"the library + its licence position"*; the ruling is
+  *no library*, and the licence position is explicitly **not** the architect's to state. **AC5** cites
+  `errors.*` — wrong namespace, it is `api.*` (`CLAUDE.md` §i18n). New AC owed for §B.4's corpus and
+  §B.6's two enforcers.
+- **T-0459** — **partially unblocked by this ruling. See §F.**
+- **T-0460** — the S12 text survives (C-4 defended); its enforcement table is replaced by §B.6, and its
+  Q3 clause gains §B.1's "from the bytes it is holding".
+- **Titles.** T-0458/T-0459 both say "sanitizer". There is no sanitizer. Rename at the PM's discretion.
+
+### F. Is T-0459 unblocked?
+
+**Partially — and the split is worth having, because two of its three handlers can start immediately.**
+
+| T-0459 handler | Blocked? | Why |
+|---|---|---|
+| `UploadDisputeEvidence.cs` | **NO — start now** | Already byte-derived (`:104`). §B.5 rules the scrub here is **not deferrable**, so it is the most decision-complete of the three |
+| `UploadOrderPhoto.cs` | **NO — start now** | Already byte-derived (`:102`) |
+| `SaveOrderPhotos.cs` | **NO, under §B.1** | The scrub sniffs the bytes it holds, so it does **not** depend on the sibling lane's closing ticket. That ticket is still owed on independent grounds and should land first if the PM can sequence it, but it is not a gate |
+
+The only true gate on T-0459 is **rev N+1 being accepted**, which is a transcription pass against §C.
+
+### G. Escalation
+
+**Q-ART-01 survives D8 and is now two-part** (CH-7 added the dispute-evidence half). Filed by the PM;
+proposed text handed over with this verdict. It does **not** block: D8 is scoped per surface either way,
+and the roster records `scrub: none` with its reason regardless of the owner's answer.

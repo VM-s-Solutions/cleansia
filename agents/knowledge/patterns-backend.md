@@ -1292,10 +1292,10 @@ tests — `T1-CI`, over both employee-document intakes, both download handlers, 
 > ⚠️ **One intake of the fourteen is OUTSIDE that scope, and until now it was recorded only in code**
 > *(2026-08-06, architect)*. **`SaveOrderPhotos`** — the batch route on `Web.Partner` +
 > `Web.Mobile.Partner`, and the one both mobile clients call — reads no byte of its payload.
-> `SaveOrderPhotos.DetermineContentType` (`:171-184`) takes the caller's `data:` URI prefix, else the
+> `SaveOrderPhotos.DetermineContentType` (`:174-187`, the literal at `:186`) takes the caller's `data:` URI prefix, else the
 > caller's file-name extension, else **the string literal `"image/jpeg"`**; the blob name's extension is
-> `Path.GetExtension(file.FileName)` (`:132`), the caller's string, where its sibling
-> `UploadOrderPhoto.cs:103` mints it from the sniff. The exception was reasoned in
+> `Path.GetExtension(file.FileName)` (`:133`), the caller's string, where its sibling
+> `UploadOrderPhoto.cs:104` mints it from the sniff. The exception was reasoned in
 > `UploadIntakeRosterTests.cs:34-38` and `ServedContentType.cs:7-14` — **both code, neither read by
 > anyone consulting this page**, which is why it is named here. Its justification, that
 > `ServedContentType` clamps the answer on the read path, holds for the case it was written for
@@ -1312,6 +1312,12 @@ tests — `T1-CI`, over both employee-document intakes, both download handlers, 
 > **A second divergence in the same area, recorded here because it is the same fact from the read side:**
 > `GetOrderPhotos.cs:96` resolves the **platform-wide** `ServedContentType` table rather than this
 > intake's accepted set, which is what the last bullet of this section asks for.
+> **Cross-stack note (descriptive — not a rule):** ADR-0043's metadata scrub now runs on this
+> handler between the decode and the upload (`SaveOrderPhotos.cs:137`, `UploadOrderPhoto.cs:107`,
+> `UploadDisputeEvidence.cs:108`), so a recorded type describes the **submitted** bytes while the
+> blob holds the **scrubbed** ones. The two agree only because `ImageMetadata` dispatches to a walker
+> whose own signature matched and returns the input unchanged otherwise; **that agreement is
+> unpinned** — T-0561 carries the AC.
 > **Scope, descriptively:** the `Enforced by:` clause above does not cover this intake, and the general
 > form of the sentence below is written scoped to exclude it. **Drafted, panel owed:**
 > `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md` — rev 2, one

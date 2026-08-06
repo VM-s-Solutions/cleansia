@@ -90,7 +90,7 @@ public class ConfirmRecurringOrder
             if (order.PaymentStatus != PaymentStatus.Pending)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentStatus), "order.payment.already_paid"));
+                    nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
             }
 
             return order.PaymentType switch

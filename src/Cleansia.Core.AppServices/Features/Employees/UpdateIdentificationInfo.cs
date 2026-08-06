@@ -71,7 +71,7 @@ public class UpdateIdentificationInfo
                         command.BusinessCountryId, command.EntityType, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.registration_number.invalid_format")
+                .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
 
             RuleFor(c => c.VatNumber)
@@ -86,7 +86,7 @@ public class UpdateIdentificationInfo
                         command.BusinessCountryId, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.vat_number.invalid_format")
+                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
 
             // Legal entity name only required when EntityType=LegalEntity.

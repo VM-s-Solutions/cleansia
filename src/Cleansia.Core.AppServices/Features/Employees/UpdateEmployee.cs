@@ -101,7 +101,7 @@ public class UpdateEmployee
                         command.CountryId, command.EntityType, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.registration_number.invalid_format");
+                .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
 
             RuleFor(c => c.VatNumber)
                 .MaximumLength(50)
@@ -115,7 +115,7 @@ public class UpdateEmployee
                         command.CountryId, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.vat_number.invalid_format")
+                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
 
             RuleFor(c => c.LegalEntityName)

@@ -1162,6 +1162,8 @@
     <string name="error_validation_invalid_tax_id">Zadejte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
+    <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
+    <string name="error_validation_vat_number_invalid_format">Zadejte prosím platné DIČ pro vybranou zemi.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
     <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
 

@@ -149,6 +149,13 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.total_price.positive',
   'order.total_price.not_match',
   'order.payment_gateway_unavailable',
+  // Emitted by CreatePaymentIntent + ConfirmRecurringOrder, both dispatched by
+  // Cleansia.Web.Customer. No web component calls either yet — the web card path
+  // is createOrder's hosted-Checkout redirect — but the generated client carries
+  // createPaymentIntent, so this ships ahead of the caller for the same reason
+  // auth.invalid_apple_token does: on the money path, the string must never be
+  // the thing that is missing when the button lands.
+  'order.payment.already_paid',
   'order.creation_failed',
   'order.not_completed',
   'order.review.already_exists',

@@ -146,6 +146,7 @@ public static class BusinessErrorMessage
     public const string OrderNoteContentRequired = "order.note.content_required";
     public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
+    public const string OrderPaymentAlreadyPaid = "order.payment.already_paid";
     public const string OrderCreationFailed = "order.creation_failed";
     public const string OrderNotCompleted = "order.not_completed";
     public const string ReviewAlreadyExists = "order.review.already_exists";
@@ -290,6 +291,9 @@ public static class BusinessErrorMessage
     public const string InvalidTaxId = "validation.invalid_tax_id";
     public const string InvalidIban = "validation.invalid_iban";
     public const string InvalidZipCode = "validation.invalid_zip_code";
+    // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
+    public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
+    public const string VatNumberInvalidFormat = "validation.vat_number.invalid_format";
 
     // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
     public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";

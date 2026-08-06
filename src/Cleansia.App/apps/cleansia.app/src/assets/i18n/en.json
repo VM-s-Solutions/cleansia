@@ -1483,6 +1483,9 @@
         "not_match": "The order total has changed — please review your order and try again."
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "payment": {
+        "already_paid": "This order has already been paid."
+      },
       "creation_failed": "We couldn't create your order. Please try again.",
       "not_completed": "This action is only available once the cleaning is completed.",
       "review": {

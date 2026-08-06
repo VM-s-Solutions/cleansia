@@ -1047,6 +1047,12 @@
       "invalid_tax_id": "Neplatný formát IČO",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
+      "registration_number": {
+        "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
+      },
+      "vat_number": {
+        "invalid_format": "Neplatný formát IČ DPH pre vybranú krajinu"
+      },
       "must_be_positive": "Hodnota musí byť kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",

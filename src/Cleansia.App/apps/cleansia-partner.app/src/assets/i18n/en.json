@@ -1047,6 +1047,12 @@
       "invalid_tax_id": "Invalid tax ID format",
       "invalid_iban": "Invalid IBAN format",
       "invalid_zip_code": "Invalid zip code format",
+      "registration_number": {
+        "invalid_format": "Invalid company registration number format for the selected country"
+      },
+      "vat_number": {
+        "invalid_format": "Invalid VAT number format for the selected country"
+      },
       "must_be_positive": "Value must be positive",
       "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
       "page_must_be_positive": "Page must be greater than 0",

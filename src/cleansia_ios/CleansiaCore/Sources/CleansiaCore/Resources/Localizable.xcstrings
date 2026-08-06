@@ -3779,6 +3779,41 @@
         }
       }
     },
+    "error.order.payment.already_paid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato objednávka už byla zaplacena."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order has already been paid."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ уже оплачен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto objednávka už bola zaplatená."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення вже оплачено."
+          }
+        }
+      }
+    },
     "error.order.payment_gateway_unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6081,6 +6116,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ваш банк в іншій країні, ніж та, де ви працюєте, тому нам потрібен ще й SWIFT/BIC. Його вказано у виписці."
+          }
+        }
+      }
+    },
+    "error.validation.registration_number.invalid_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné IČO pro vybranou zemi."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid company registration number for the selected country."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите действительный регистрационный номер компании для выбранной страны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné IČO pre vybranú krajinu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть дійсний реєстраційний номер компанії для обраної країни."
+          }
+        }
+      }
+    },
+    "error.validation.vat_number.invalid_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné DIČ pro vybranou zemi."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid VAT number for the selected country."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите действительный номер НДС для выбранной страны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné IČ DPH pre vybranú krajinu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть дійсний номер ПДВ для обраної країни."
           }
         }
       }

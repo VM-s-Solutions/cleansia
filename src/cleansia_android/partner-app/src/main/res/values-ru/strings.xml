@@ -1145,6 +1145,8 @@
     <string name="error_validation_invalid_tax_id">Введите, пожалуйста, корректный налоговый ID.</string>
     <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>
+    <string name="error_validation_registration_number_invalid_format">Введите действительный регистрационный номер компании для выбранной страны.</string>
+    <string name="error_validation_vat_number_invalid_format">Введите действительный номер НДС для выбранной страны.</string>
     <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
     <string name="error_validation_invalid_availability_format">Неверный формат доступности.</string>
 

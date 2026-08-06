@@ -1,7 +1,7 @@
 ---
 id: T-0565
 title: Five error keys are written as bare string literals, so the parity guards cannot see them and every one shows the generic error
-status: ready
+status: in_review
 size: S
 owner: backend
 created: 2026-08-06

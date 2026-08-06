@@ -16,6 +16,12 @@ namespace Cleansia.Tests.Common;
 /// stays true. Only the slot itself is checkable, and only at the source level — the swap is legal
 /// C# (both slots are <c>string</c>) and no runtime reflection over the constants can observe which
 /// argument a call site passed them to.
+///
+/// <para>The adjacent defect lives here too: a key written as a bare literal rather than as a
+/// <c>BusinessErrorMessage</c> constant. The parity guards read <c>BusinessErrorMessage.cs</c>, so a key
+/// that never becomes a constant is invisible to them by construction — the guard is not failing, it is
+/// not looking — and every client falls through to <c>api.common.error_occurred</c>. Reflection cannot
+/// see it either, for the same reason as above.</para>
 /// </summary>
 public class BusinessErrorSlotContractTests
 {
@@ -26,6 +32,10 @@ public class BusinessErrorSlotContractTests
     private static readonly Regex DotKeyShape = new(@"^[a-z0-9_]+(\.[a-z0-9_]+)+$", RegexOptions.Compiled);
 
     private static readonly Regex NewErrorCall = new(@"\bnew\s+Error\s*\(", RegexOptions.Compiled);
+
+    /// <summary>FluentValidation's message slot. <c>.WithMessage</c> is used in this project alone —
+    /// no other project in the solution calls it — so scanning it here scans all of it.</summary>
+    private static readonly Regex WithMessageCall = new(@"\.WithMessage\s*\(", RegexOptions.Compiled);
 
     /// <summary>
     /// The Stripe webhook is the one caller that is not a person: Stripe reads the status code and
@@ -40,6 +50,8 @@ public class BusinessErrorSlotContractTests
     };
 
     private sealed record Construction(string RelativePath, int Line, string CodeSlot, string MessageSlot);
+
+    private sealed record MessageArgument(string RelativePath, int Line, string Expression, string Call);
 
     [Fact]
     public void No_BusinessErrorMessage_Constant_Sits_In_The_Code_Slot()
@@ -75,6 +87,62 @@ public class BusinessErrorSlotContractTests
             "The second Error argument must be a BusinessErrorMessage constant (or an expression that "
             + "yields one). A prose literal here is what every client tries, and fails, to translate:\n  "
             + string.Join("\n  ", offenders));
+    }
+
+    /// <summary>
+    /// The key must come from <c>BusinessErrorMessage</c>, not from a literal that merely looks like one.
+    /// A bare dot key still reaches the client and still misses every locale file, but it is invisible to
+    /// the parity guards — they enumerate the constants, so a key that never becomes one is never checked.
+    /// Scoped to dot-notation because that is the shape the clients treat as a lookup; prose is a separate
+    /// defect, caught for the Error slot by <see cref="No_Prose_Sits_In_The_Message_Slot"/>.
+    /// </summary>
+    [Fact]
+    public void No_Bare_Dot_Key_Literal_Reaches_A_Message_Slot()
+    {
+        var fromErrorSlot = Scan()
+            .Where(c => IsBareDotKeyLiteral(c.MessageSlot))
+            .Select(c => $"{c.RelativePath}:{c.Line} -> new Error({c.CodeSlot}, {c.MessageSlot})");
+
+        var fromWithMessage = ScanMessageArguments()
+            .Where(a => IsBareDotKeyLiteral(a.Expression))
+            .Select(a => $"{a.RelativePath}:{a.Line} -> {a.Call}({a.Expression})");
+
+        var offenders = fromErrorSlot.Concat(fromWithMessage).OrderBy(x => x).ToList();
+
+        Assert.True(offenders.Count == 0,
+            "A dot-notation key must be a BusinessErrorMessage constant. Written as a literal it still "
+            + "ships to the client, but the i18n parity guards enumerate the constants — so nothing "
+            + "checks it has a translation and every client falls through to api.common.error_occurred:\n  "
+            + string.Join("\n  ", offenders));
+    }
+
+    /// <summary>
+    /// Anti-vacuity for the fact above, which after a fix has nothing left to match and would therefore
+    /// pass on a scanner that reached no code at all. Pins three separate links: the WithMessage scan
+    /// finds the bulk of its call sites, it resolves a known constant-carrying argument, and it reaches a
+    /// real string LITERAL argument — the branch the classifier judges. The classifier itself is pinned
+    /// last, against the exact literal this guard was written for.
+    /// </summary>
+    [Fact]
+    public void BareDotKey_Scanner_Reaches_Literal_Arguments()
+    {
+        var arguments = ScanMessageArguments();
+
+        Assert.True(arguments.Count > 800,
+            $"Expected the {ScannedProject} scan to find the bulk of its message arguments but found "
+            + $"{arguments.Count} — the scanner, not the codebase, is what regressed.");
+
+        Assert.Contains(arguments, a =>
+            a.RelativePath == Normalize("Features/Orders/CreatePaymentIntent.cs")
+            && a.Expression == "BusinessErrorMessage.OrderPaymentAlreadyPaid");
+
+        var literals = arguments.Where(a => IsStringLiteral(a.Expression)).ToList();
+        Assert.Contains(literals, a =>
+            a.RelativePath == Normalize("Features/EmployeeDocuments/DeleteMyDocument.cs"));
+
+        Assert.True(IsBareDotKeyLiteral("\"order.payment.already_paid\""));
+        Assert.False(IsBareDotKeyLiteral("BusinessErrorMessage.OrderPaymentAlreadyPaid"));
+        Assert.False(IsBareDotKeyLiteral("\"Cannot delete an approved document.\""));
     }
 
     [Fact]
@@ -121,6 +189,9 @@ public class BusinessErrorSlotContractTests
         return withoutNameof.Contains("BusinessErrorMessage.");
     }
 
+    private static bool IsBareDotKeyLiteral(string expression) =>
+        IsStringLiteral(expression) && DotKeyShape.IsMatch(Unquote(expression));
+
     private static bool IsStringLiteral(string slot) =>
         slot.StartsWith('"') || slot.StartsWith("$\"") || slot.StartsWith("@\"")
         || slot.StartsWith("$@\"") || slot.StartsWith("@$\"");
@@ -139,12 +210,10 @@ public class BusinessErrorSlotContractTests
         return dir!;
     }
 
-    private static IReadOnlyList<Construction> Scan()
+    private static IEnumerable<(string Relative, string Text)> SourceFiles()
     {
         var projectRoot = new DirectoryInfo(Path.Combine(SrcRoot().FullName, ScannedProject));
         Assert.True(projectRoot.Exists, $"Scanned project directory missing: {ScannedProject}");
-
-        var constructions = new List<Construction>();
 
         var files = projectRoot.EnumerateFiles("*.cs", SearchOption.AllDirectories)
             .Where(f => !f.FullName.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
@@ -152,9 +221,43 @@ public class BusinessErrorSlotContractTests
 
         foreach (var file in files)
         {
-            var text = BlankComments(File.ReadAllText(file.FullName));
-            var relative = Path.GetRelativePath(projectRoot.FullName, file.FullName);
+            yield return (
+                Path.GetRelativePath(projectRoot.FullName, file.FullName),
+                BlankComments(File.ReadAllText(file.FullName)));
+        }
+    }
 
+    private static IReadOnlyList<MessageArgument> ScanMessageArguments()
+    {
+        var arguments = new List<MessageArgument>();
+
+        foreach (var (relative, text) in SourceFiles())
+        {
+            foreach (Match match in WithMessageCall.Matches(text))
+            {
+                var openParen = match.Index + match.Length - 1;
+                var argumentList = ExtractBalanced(text, openParen);
+                if (argumentList is null)
+                    continue;
+
+                var args = SplitTopLevel(argumentList);
+                if (args.Count != 1)
+                    continue;
+
+                var line = text.Take(match.Index).Count(c => c == '\n') + 1;
+                arguments.Add(new MessageArgument(relative, line, args[0], "WithMessage"));
+            }
+        }
+
+        return arguments;
+    }
+
+    private static IReadOnlyList<Construction> Scan()
+    {
+        var constructions = new List<Construction>();
+
+        foreach (var (relative, text) in SourceFiles())
+        {
             foreach (Match match in NewErrorCall.Matches(text))
             {
                 var openParen = match.Index + match.Length - 1;

@@ -1145,6 +1145,8 @@
     <string name="error_validation_invalid_tax_id">Введіть, будь ласка, дійсний податковий ID.</string>
     <string name="error_validation_invalid_iban">Введіть, будь ласка, дійсний IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
+    <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
+    <string name="error_validation_vat_number_invalid_format">Введіть дійсний номер ПДВ для обраної країни.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
     <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
 

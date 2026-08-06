@@ -1483,6 +1483,9 @@
         "not_match": "Celková cena objednávky se změnila — zkontrolujte objednávku a zkuste to znovu."
       },
       "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
+      "payment": {
+        "already_paid": "Tato objednávka už byla zaplacena."
+      },
       "creation_failed": "Objednávku se nepodařilo vytvořit. Zkuste to prosím znovu.",
       "not_completed": "Tato akce je dostupná až po dokončení úklidu.",
       "review": {

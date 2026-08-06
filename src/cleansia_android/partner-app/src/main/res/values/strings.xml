@@ -1173,6 +1173,8 @@
     <string name="error_validation_invalid_tax_id">Please enter a valid tax ID.</string>
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
+    <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
+    <string name="error_validation_vat_number_invalid_format">Please enter a valid VAT number for the selected country.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
     <string name="error_validation_invalid_availability_format">Availability format is invalid.</string>
 

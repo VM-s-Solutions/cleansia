@@ -1027,6 +1027,7 @@
     <string name="error_order_time_conflict">Цей час конфліктує з іншим бронюванням.</string>
     <string name="error_order_total_price_not_match">Ціна змінилася. Оновіть і спробуйте знову.</string>
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
+    <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
     <string name="error_order_review_rating_invalid">Оцінка має бути від 1 до 5.</string>

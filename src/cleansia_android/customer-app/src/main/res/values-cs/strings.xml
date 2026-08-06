@@ -1030,6 +1030,7 @@
     <string name="error_order_time_conflict">Tento čas koliduje s jinou rezervací.</string>
     <string name="error_order_total_price_not_match">Cena se změnila. Obnovte prosím a zkuste znovu.</string>
     <string name="error_order_payment_gateway_unavailable">Platební služba je dočasně nedostupná.</string>
+    <string name="error_order_payment_already_paid">Tato objednávka už byla zaplacena.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_review_already_exists">Tuto rezervaci jste již hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnocení musí být mezi 1 a 5.</string>

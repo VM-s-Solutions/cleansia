@@ -1048,6 +1048,7 @@
     <string name="error_order_time_conflict">This time conflicts with another booking.</string>
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
+    <string name="error_order_payment_already_paid">This order has already been paid.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_review_already_exists">You\'ve already reviewed this booking.</string>
     <string name="error_order_review_rating_invalid">Rating must be between 1 and 5.</string>

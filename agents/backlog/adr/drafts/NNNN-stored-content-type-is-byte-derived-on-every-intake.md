@@ -975,18 +975,286 @@ CH-4-on-that-draft's option **(a)**. Rev 1 asserted the opposite in three places
 this ADR its F4 justification, which is the correct outcome: a justification that a sibling panel has
 just made moot should not be carried forward because it was persuasive when written.
 
-## Verdict
+## Verdict — LEAD, 2026-08-06
 
-**Not adjudicated.** One independent challenge round has run and this is the author's rev 2. **A lead
-has not ruled.** Two things the lead should weigh explicitly, because they are the places where this
-revision changed what gets built:
+Author (rev 1 + rev 2) · independent challenger
+(`../challenges/NNNN-stored-content-type-byte-derived.md`, ten findings, five blocking) · lead
+(2026-08-06), all distinct instances. `process/deliberation.md` step 5.
 
-1. **D4** was not in rev 1 at all. If the lead judges that D1 and D4 belong in **separate** ADRs (one
-   decision per ADR), the split is clean — D1+D2+D3+D5+D6+D7 is *"the stored type is byte-derived"* and
-   D4 is *"a served type is clamped to its intake's accepted set."* I have kept them together because D4
-   is the repair for the finding D1 leads with, and separating them would put F1 in an ADR that cannot
-   close it — which is the defect this revision exists to fix. **The lead's call.**
-2. **D6** hands the refuse-vs-store-opaque branch to the owner (Q-ART-02, already filed). If the lead
-   would rather the ADR rule it, the ADR can — the default is stated with its reason — but the panel
-   should say so deliberately rather than let a sibling-symmetry tie-breaker read as an architectural
-   finding.
+**Outcome: REVISE — every ruling survives; the enforcement specification, four statements and eight
+citations do not. No further challenge round.** §E below is a **closed list**: the next pass is
+transcription, not deliberation. On its completion this lands as
+**`agents/backlog/adr/0044-stored-content-type-is-byte-derived-on-every-intake.md`**, status
+`proposed`, PM checks it against §E only and stamps `accepted` — the ADR-0043 sequence.
+
+> **Method (lead).** No `Bash` in this invocation — `Read`/`Glob`/`Grep`/`Write`/`Edit` only. Nothing
+> compiled, executed or measured. **No claim below is inherited**, from the draft or from the challenge:
+> every finding was re-opened at source before it was ruled on, and three of the rulings (§A, §B, §E-6)
+> rest on facts neither document contains. Where a number is owed and I could not take it, the
+> measurement and its owner are named.
+
+### §A — RULING: the composition argument HOLDS. Here is the check, and here is the row it misses.
+
+The author's central claim — D1 (sniff at intake) and D4 (clamp narrowed to the intake's accepted set)
+are **complements, not substitutes**, governing disjoint populations — survives, and it survives for a
+better reason than "disjoint". A reviewer verifies it in three steps by reading, no execution:
+
+1. **D4 is the identity on every row D1 writes.** `AcceptedByIntake[OrderPhoto]` =
+   `{image/jpeg, image/png, image/webp}` (`SniffedContentType.cs:91`). Each of the three is a *value* of
+   `ServedContentType.ServableTypes` (`ServedContentType.cs:36-42`) and `ForRecordedType` maps each to
+   itself. So for any `t` D1 can write, `ServedFor(t, OrderPhoto) == ForRecordedType(t) == t`. **D4 adds
+   nothing on D1's rows — it is not doing D1's work.** (Also true under Q-ART-02 branch (B):
+   `ForRecordedType("application/octet-stream")` is already `Opaque`.)
+2. **Every row D4 acts on non-trivially is a row D1 cannot reach.** D4 acts only when the recorded value
+   resolves outside the accepted set — `image/gif`, `application/pdf`, or anything already demoting to
+   `Opaque`. D1 makes those unwritable from here on. So the set D4 changes is, by construction, the
+   pre-D1 set. Disjoint by construction, not by argument.
+3. **Each limb reaches something the other cannot, and neither is decorative.** D1 alone: F2 (the column
+   becomes true), F3 (the 500), the container-bytes invariant, and the truth of the column for any
+   *future* reader that does not route through the clamp. D4 alone: F1 on rows already written — which
+   no write-path rule reaches, and which `SniffedContentType.ForDownload` cannot reach either, because
+   `GetOrderPhotos.cs:118-141` mints a URL and never holds the bytes (contrast `DownloadMyDocument`,
+   which downloads).
+
+**Strengthen the statement, because "disjoint populations" alone invites a future reader to delete
+whichever limb they meet first.** The stronger and equally checkable form: **each limb is the other's
+backstop.** D4 is defence in depth against a write-path regression; **D1 is defence in depth against a
+read path that skips the clamp** — which is not hypothetical, it is the defect this exact method already
+shipped once (`patterns-backend.md:1374-1377`: one method, two halves, one of them forgotten). Put that
+sentence in D4. It is the answer to "why both", and it does not depend on either population.
+
+**The population NEITHER limb reaches, which the ADR must name.** A pre-D1 row recorded `"image/jpeg"`
+by the tier-3 literal (`SaveOrderPhotos.cs:186`) over bytes that are not JPEG. D1 is too late for it;
+D4 is the **identity** on it, because `image/jpeg` is in the accepted set. That row keeps asserting a
+fact the system invented and keeps being served as `image/jpeg`. Harm is unchanged from today — a broken
+tile — and it is **inert**, `image/jpeg` being in the non-scripting class. It is the F2 residue, it is
+uncloseable on this surface for the same structural reason as A4(i), and its existence is exactly why
+§E-2 strikes the Consequences over-claim. **Naming this row is the honest completion of the composition
+argument; the argument does not need it to be empty, only to be stated.**
+
+**One implementation hazard the composition depends on and neither document flags — see §E-3.** The
+order inside `ServedFor` is load-bearing.
+
+### §B — RULING: the tier token is honest; the gate as specified is NOT yet an enforcer. Two corrections, then it is.
+
+**The token.** `(gate pending: T-0561)` is correct and sanctioned. `conventions.md:234` defines it;
+`:237-242` *requires* it when the baseline is non-zero, and the baseline here is non-zero twice over —
+`SaveOrderPhotos` violates D2's sentence and `GetOrderPhotos.MapToDto` violates
+`patterns-backend.md:1371-1373`. The `T2-ADVISORY`-with-named-pins fallback, stated in advance rather
+than discovered later, is the right shape and is the thing ADR-0032 asks for. **Accepted as written.**
+
+**The gate.** CH-4's diagnosis is settled: `UploadIntakeRosterTests.cs:66-68` splits on `" — "` and keeps
+`[0]`; nothing in the file reads `[1]`. The replacement — a per-intake refusal `[Theory]` driven off
+`ExpectedIntakes` with a count-first floor — **can** fail a build on the edit it exists to catch, and
+the closing chain is real: new route → roster red → add row → theory case missing → red → the case must
+assert a refusal → to make it green you must add a content rule. **But as specified it also passes
+vacuously, per case, for a reason one level below the floor it declares**, and this project has now
+shipped two enforcers that enforced less than their description. It does not get a third.
+
+- **The floor counts CASES, not REASONS.** The fourteen roster rows collapse to six command validators,
+  each with heterogeneous constructor dependencies — `IOrderRepository` (`SaveOrderPhotos.cs:49`,
+  `UploadOrderPhoto.cs:41`), `IDisputeRepository` (`UploadDisputeEvidence.cs:44`),
+  `IUserRepository`+`IUserSessionProvider`+`ILanguageRepository` (`UpdateCurrentUser.cs:25-28`),
+  `ICountryRepository`+`IEmployeeRepository`+`IUserSessionProvider`+`ITaxIdValidator`
+  (`UpdateEmployee.cs:36-39`), and `SaveMyDocuments.cs:58-61` — and several run `MustAsync` existence
+  checks. **`Assert.False(result.IsValid)` is green on every un-stubbed dependency**: the command is
+  invalid because the order does not exist, not because the payload was refused. That is CH-4's own
+  failure mode, moved down one level, in the gate written to close CH-4.
+- **Two corrections make it real, and both are cheap.** (i) **Assert the reason, not the verdict**: the
+  failure collection contains a failure on the file property whose `ErrorCode` is `nameof(BlobFileDto)`
+  (or that route's coded equivalent) and whose message is that intake's content key. (ii) **Carry a
+  positive control per case**: the *same* command with an accepted payload validates clean. The positive
+  control is what proves every other rule was stubbed to pass — without it the case asserts nothing
+  about content, and no count of cases can tell you so.
+- **The vocabulary companion is over-claimed by exactly one clause.** *"it does fail the build on the
+  edit that introduces a new unguarded intake"* is **false**: it fails only on an edit that introduces a
+  new unguarded intake **and annotates it honestly as unguarded**. A developer who writes a validator
+  name in the annotation gets a green build. The mechanism is a genuine `T1-CI` assertion over a
+  **narrower clause** — *"every roster annotation is drawn from the closed vocabulary and no row reads
+  `only`"* — and `conventions.md:246-250` requires the entry to say that boundary out loud, which the
+  draft's own next sentence nearly does. Strike the false clause; state the narrow one. §E-5.
+
+**Ruling: with §E-4 and §E-5 applied, D2's enforcer can fail a build on its clause and the token is
+honest. Without them, it is a third test described as an enforcer.**
+
+### §C — RULINGS per finding
+
+| # | Author's answer | Lead |
+|---|---|---|
+| **CH-1** | conceded; *inert* vs *right* separated once, F1 closed rather than demoted | **Accepted.** `ServedContentType.cs:29-33` carries the *inert* property verbatim; the equivocating sentences are gone. Residue: the Consequences bullet re-commits the over-claim — §E-2 |
+| **CH-2** | conceded in full; A4 split (i)/(ii)/(iii); (ii) adopted as D4 | **Accepted, and it is the finding that changed the build.** Every load-bearing fact re-verified by me: `GetOrderPhotos.cs:96` = `ForRecordedType`; six values at `ServedContentType.cs:36-42` vs three at `SniffedContentType.cs:91`; same assembly (`…Features.Orders` / `…Common.Validators`), `internal` reachable, `SniffedContentType.cs:2` and `GetOrderPhotos.cs:4` both already reference `Core.Blobs.Abstractions`. D4 is mechanically buildable as sketched |
+| **CH-3** | evidence argument withdrawn; sibling's `Opaque` reading adopted; symmetry kept as a labelled tie-breaker; escalated | **Accepted.** Q-ART-02 verified filed at `open.md:1480-1499` with both branches in these terms and the two measurements at `:1501-1505`. Not re-filed, correctly |
+| **CH-4** | conceded; roster annotation is discarded; new theory + vocabulary companion + split-tier fallback | **Accepted on the diagnosis; INSUFFICIENT on the replacement.** §B — the floor counts cases, not reasons, and the companion is over-claimed by one clause. §E-4, §E-5 |
+| **CH-5** | conceded; a fourth repair the challenge did not price — the **image** family's existing key | **Accepted, and it is better than all three options the challenger costed.** Verified at source: `en.json:1216` = *"File type does not match content"*, `:1223` = the document promise; `BusinessErrorMessage.cs:229` / `:368`; `ImageFileValidator.cs:29,32` uses it for both rules. Zero new keys, zero locale rows. Residue is in the **ticket**, not the ADR — §F |
+| **CH-6** | conceded both; actor corrected, reach corrected | **Accepted.** `SaveOrderPhotos.cs:115-118` refuses the non-assigned writer; `GetOrderPhotos.cs:59` is `CanBrowseOrderAsync`; `BlobContainerClient.cs:151` is `PublicAccessType.None` and `:93-110` sets `ContentType`+`CacheControl` and no `ContentDisposition` — I read the whole initialiser. The added sentence protecting `ServedContentType.cs:7-14`'s "shared host" phrasing from a well-meaning "fix" earns its place |
+| **CH-7** | size row struck after independent re-derivation; decodability row re-attributed to rule 2 | **Accepted.** Re-derived a third time: `Matches` (`:152-163`) requires `content.Length >= offset + bytes.Length` **per fragment**; the JPEG fragment is 3 bytes at offset 0 (`:69`); `DecodeHead` (`:165-192`) yields empty only when `wholeGroups == 0`. `"/9j/"` → `FF D8 FF` → accepted, before and after |
+| **CH-8** | conceded both halves; `PhotoFileValidator` as a family member; `.WithErrorCode` in the decision, not left to the implementer | **Accepted, and the author found a defect the challenger missed** — `DocumentFileValidator.cs:26` uses `BusinessErrorMessage.Required`, not `FileRequired`, so mirroring it wholesale would have silently changed this route's presence message. Verified. One phrasing correction — §E-10 |
+| **CH-9** | conceded; D7 states the carrier and the redundancy/ambiguity premise | **Accepted on the premise — I adopt it as the shared rule — and WRONG in its instruction to the sibling.** §D-4, §E-8 |
+| **CH-10** | conceded both; two sentences restated descriptively; step renumbered and ordered | **Accepted, and discharged at HEAD.** `patterns-backend.md:1292-1320` now reads *"Scope, descriptively"*; the imperative is gone; `consistency.md` confirmed to contain zero occurrences of `SaveOrderPhotos` / `GetOrderPhotos` / `SniffedContentType` / `ServedContentType`, so step 10's ordering clause is the right fix |
+
+### §D — RULINGS on the four new decisions, and on the two questions the author put to the lead
+
+1. **D4 — SOUND.** §A. It is buildable exactly as sketched, it complies with
+   `patterns-backend.md:1371-1373` rather than deviating from it, and `ServedContentType.cs` stays
+   unmodified, which keeps the closed set closed. **One addition is mandatory** — §E-3.
+2. **D5 — SOUND, and fully verified at source.** The image family's key is the correct family for a
+   photo intake, the document promise is untouched, and the place where the sentence is *approximate*
+   (a hand-crafted GIF/PDF call) is stated as a decision rather than hidden. `PartnerErrorVoiceTests`
+   is a provenance roster whose emitter strings appear only in a failure message, so it reddens no job —
+   the author re-read the assertion rather than inheriting the claim, which is the standard.
+3. **D6 — SOUND; the escalation STANDS.** This is a product call and the ADR is right to refuse it: the
+   architecture is complete under both branches, the seam is identical, and the only surviving
+   architectural input (sibling symmetry) is labelled a tie-breaker rather than dressed as a finding.
+   **One sequencing note for the PM, which strengthens it** — everything in D1 except *one rule and one
+   null-coalesce* is unconditional on the answer (D4, the decodability rule, the byte-derived store, the
+   minted extension). The ticket should not be held hostage to Q-ART-02: land the unconditional side,
+   and let the sniff-refusal rule be the one thing that waits.
+4. **D7 — SOUND in its premise, WRONG in one word of its instruction.** *"Two carriers minted from one
+   derivation is redundancy; two carriers written from two derivations is ambiguity"* is the correct
+   shared rule and I adopt it for both drafts. But D7 asks the sibling's D2 to put `OrderPhoto` on the
+   **exemption** list, and `OrderPhoto`'s three accepted types all round-trip today —
+   `.jpg`/`.png`/`.webp` (`SniffedContentType.cs:69,70,72`) resolve back through
+   `ServedContentType.ServableExtensions` (`:44-52`) to `image/jpeg`/`image/png`/`image/webp`. Exempting
+   an intake whose pairs **pass** deletes the only assertion that would ever catch the minted extension
+   drifting — leaving it *"written by D1, read by nothing, asserted by nothing"*, which is precisely
+   CH-9's objection. **`OrderPhoto` is COVERED, not exempt**, with a note that its read path uses the
+   column so the round-trip is defence in depth rather than the carrier. `EmployeeDocument` stays the
+   only exemption, for the reason the sibling gives (`.doc`/`.docx` are unknown to `ServedContentType`).
+   §E-8. *(The sibling draft is not edited by this verdict; its own lead applies this.)*
+5. **One ADR or two — ONE. The author's question 1 is answered: keep them together.** "One decision per
+   ADR" forbids bundling *unrelated* decisions; D1 and D4 are two limbs of one ruling — *on this intake,
+   the type a reader is given is derived from the bytes: at the write path for the rows it can reach, at
+   the read path for the rows it cannot.* The catalog sentence they implement is itself one bullet
+   spanning both directions (`patterns-backend.md:1365-1373`). Splitting would produce two ADRs that must
+   be read together to understand either, and would put F1 in an ADR that cannot close it. Precedent:
+   ADR-0037 holds `OrderAvailability`'s SQL and in-memory forms as **one** decision pinned by an
+   equivalence test, for the same reason. **The title must carry both limbs** — §E-1.
+6. **The author's question 2 is answered by §D-3: the escalation stands, deliberately, on the record.**
+
+### §E — CLOSED LIST (transcription only; nothing here re-opens a decision)
+
+1. **Title gains the read limb.** e.g. *"The stored content type is derived from the bytes on every
+   intake, and the served type is clamped to the intake's accepted set; the `SaveOrderPhotos` exception
+   closes."* As it stands D4 is invisible to anyone searching for the read-path ruling.
+2. **Strike the universal Consequences over-claim.** *"After this, every recorded content type on every
+   intake is a statement about bytes the server read"* is false for the population §A names. Replace
+   with: *"Every recorded content type written **from here on** is a statement about bytes the server
+   read. The rows written before it keep what their uploader claimed; D4 demotes the ones that gained a
+   capability, and a pre-D1 row recorded `image/jpeg` over non-JPEG bytes is reached by neither limb — it
+   stays a broken tile, inert, exactly as today."* Same sentence goes in §A of D4's rationale.
+3. **D4 gains the composition-order paragraph, and it is load-bearing.** `ServedFor` must resolve
+   `ForRecordedType(recorded)` **first** and membership-test the **result's `.Value`** — never
+   membership-test the raw recorded string. The natural implementation is the wrong order and it
+   demotes real photos: `ServedContentType.ServableTypes` maps `image/jpg → image/jpeg`
+   (`ServedContentType.cs:37`), and rows recorded `image/jpg` exist — `UploadOrderPhoto`'s declared-type
+   allowlist contains `"image/jpg"` (`:39`) and that endpoint stored the client's string until the
+   T-0556 follow-up (living doc §2, R1). Add a verification case: **a row recorded `image/jpg` resolves
+   to `image/jpeg`, not `Opaque`**; mutate the order → red.
+4. **D2's theory asserts the REASON and carries a POSITIVE CONTROL** (§B). Per case: (a) the failure
+   collection contains a failure on the file property with that route's error code and that intake's
+   content key — not merely `IsValid == false`; (b) the same command with an accepted payload validates
+   clean. State that the count-first floor bounds the *case set* and the positive control bounds the
+   *reason*, because the two failure modes are different and only one of them is what CH-4 caught.
+5. **D2's vocabulary companion: strike the false clause.** Delete *"but it does fail the build on the
+   edit that introduces a new unguarded intake, which is the edit the rule exists to catch."* Replace
+   with: *"It enforces a narrower clause — every annotation is drawn from the closed vocabulary and no
+   row reads `only` — and it is green on a new unguarded intake whose author writes a validator name.
+   `T1-CI` over that narrower clause (`conventions.md:246-250`); the refusal theory is the enforcer of
+   the clause itself."*
+6. **NEW, and neither document could have caught it — the scrub landed on this handler mid-panel, and
+   the ADR's central claim now depends on an unpinned invariant.** At HEAD,
+   `SaveOrderPhotos.cs:137` reads `var storedBytes = ImageMetadata.Scrub(Convert.FromBase64String(base64Data)).Bytes;`
+   and `UploadOrderPhoto.cs:107` the same — ADR-0043 D2/D3 has shipped on both. So the recorded type
+   describes the **submitted** bytes while the blob holds the **scrubbed** bytes. It holds today by
+   construction (`ImageMetadata.Rewrite:42-57` dispatches only to a walker whose own `Identifies`
+   matched and returns the input unchanged otherwise — `ImageMetadataDispatchTests:34` asserts
+   `Assert.Same`), so the container class is preserved on every branch. **It is not asserted anywhere,
+   and a future walker change breaks D1's claim silently.** D1 gains an item stating the invariant and
+   naming its pin: for every intake and every type in its accepted set,
+   `SniffedContentType.FromContent(ImageMetadata.Scrub(p).Bytes, intake) == SniffedContentType.FromContent(p, intake)`
+   — `T1-CI`, zero baseline. It spans `UploadOrderPhoto` and `UploadDisputeEvidence` too, so the
+   generalized pin is a **separate small ticket** the PM files; this ADR states the invariant and cites
+   it, and adds a verification step for `SaveOrderPhotos`.
+7. **Verification step 6 is scoped to a ONE-photo command.** `RuleForEach` over up to 30 photos with one
+   shared `.WithErrorCode(nameof(BlobFileDto))` groups every per-photo failure under one key and joins
+   them with `"; "` — correctly, and by design. Two bad photos in one command therefore produce exactly
+   the joined value the step forbids. Say *"a one-photo command that fails only the content rule"*, or
+   the step asserts something false about the batch route it guards.
+8. **D7's last bullet: `OrderPhoto` is COVERED by the sibling's round-trip test, not exempt** (§D-4).
+   Restate as: *"the sibling's D2 test **covers** `OrderPhoto`'s three pairs — they round-trip today —
+   and records that its read path resolves the **column**, so the round-trip is defence in depth rather
+   than the carrier. `EmployeeDocument` remains the only named exemption."*
+9. **Refresh every `SaveOrderPhotos.cs` citation and record the scrub as a HEAD fact.** The file moved
+   under a live lane during the panel: the validator region is **+1** and the handler region **+3**
+   against the draft. Verified at HEAD — `MaxPhotosPerRequest` `:47`; `ChildRules` `:65-86`; the inline
+   presence+size rules `:77-82`; the `.When` gate `:86`; the assignment refusal `:115-118`; the comma
+   split `:127-129`; `Path.GetExtension` `:133`; `Convert.FromBase64String` `:137`; `OriginalFileName`
+   `:149`; `contentType:` `:151`; `DetermineContentType` `:174-187` (the tier-3 literal at `:186`).
+   In the same pass, rewrite the §Cross-lane T-0459 bullet in the **past tense** — it is no longer a
+   prediction that the scrub would not depend on this ticket; the scrub has shipped on this exact
+   handler and does not depend on it. The **`patterns-backend.md` callout carries the same two stale
+   citations** (`:171-184`, `:132`) and is fixed in the catalog edit — text in §G.
+10. **D1 item 1's "family's order" phrasing.** `ImageFileValidator` has **three** rules
+    (`:22-32`: size → sniff → decodability) and no presence rule; `DocumentFileValidator` has four
+    (`:22-35`). Say *"the family's ordered `Cascade(CascadeMode.Stop)` chain, with the presence rule this
+    route already has at its head — four rules, `DocumentFileValidator`'s shape with `ImageFileValidator`'s
+    messages"*, or the next reader reads a uniformity the family does not have.
+11. **Method declaration gains one line** recording that `SaveOrderPhotos.cs` was re-verified at HEAD on
+    2026-08-06 after the ADR-0043 scrub landed on it, and that the citations in the body are post-scrub
+    — the same courtesy the draft already extends for the `patterns-backend.md` +7 offset.
+12. **Landing.** Rename to `agents/backlog/adr/0044-stored-content-type-is-byte-derived-on-every-intake.md`,
+    status `proposed`, `Number:` header replaced by the allocation (0043 is `accepted`; 0044 is free).
+    Rename the challenge file to `challenges/0044-stored-content-type-byte-derived.md` — the numbered
+    form is the majority convention in that folder (`0034-` … `0042-`) — and update its two references
+    (this ADR, living doc §7.1) in the same change. Carry `## Challenge` (the author-run rev-1 round, as
+    labelled) + `## Defense` + this `## Verdict` verbatim. Update the `(gate pending: T-0561)` token if
+    the PM reassigns the ticket id.
+
+### §F — Not this ADR's to fix, handed to the PM (do not absorb into the transcription pass)
+
+- **`T-0561:141` still forbids the file D4 must change.** *"Read-only, must not change:
+  `ServedContentType.cs`, `SniffedContentType.cs`"* — but D4 puts `ServedFor` **on**
+  `SniffedContentType`. Only `ServedContentType.cs` stays read-only. (Distinct from the two lines the PM
+  has already fixed.)
+- **`T-0561` is stale against rev 2 in five more places:** AC2/AC3/AC7 name `FileTypeNotAllowed` /
+  `InvalidFileType`, superseded by D5's `FileNotMatchContentType`; AC5's roster annotation should read
+  `PhotoFileValidator`, not `SniffedContentType(OrderPhoto)` (D1 item 1); AC8 names one `consistency.md`
+  deviation entry where D2 creates two; §Context `:53-60` still asserts *"It blocks T-0459"* and *"Do not
+  ship a scrub … before this ticket lands"*, both now false in **fact** as well as in law — the scrub has
+  shipped on this handler (`SaveOrderPhotos.cs:137`); §Implementation-notes line numbers carry the same
+  +1/+3 drift as §E-9. Add the §E-4/§E-6 gates to the AC list.
+- **The living doc is stale against HEAD on the scrub**, and it is not this lane's field: §2's
+  order-photo rows read *"Metadata scrubbed: no"*, §5's row is `(gate pending: T-0459)`, and §8.3 lists
+  T-0459 as pending — while `SaveOrderPhotos.cs:137` and `UploadOrderPhoto.cs:107` both call
+  `ImageMetadata.Scrub`. The T-0459 lane owns that correction. **Re-verify before acting: I read the
+  working tree, and `Features/Orders` is a live lane.**
+
+### §G — Catalog edit owed with this ruling (routed; not applied by the lead)
+
+`patterns-backend.md` is being written by another lane, so the text is handed over rather than applied.
+Two edits, both inside the dated `SaveOrderPhotos` callout at `:1292-1320`, both **descriptive**:
+
+- Replace `` `SaveOrderPhotos.DetermineContentType` (`:171-184`) `` with
+  `` `SaveOrderPhotos.DetermineContentType` (`:174-187`, the literal at `:186`) ``, and
+  `` `Path.GetExtension(file.FileName)` (`:132`) `` with `` (`:133`) `` — the file moved +1/+3 when
+  ADR-0043's scrub landed on it (`SaveOrderPhotos.cs:137`).
+- Append one sentence to the callout: *"Cross-lane note (descriptive — not a rule): ADR-0043's metadata
+  scrub now runs on this handler between the decode and the upload (`SaveOrderPhotos.cs:137`,
+  `UploadOrderPhoto.cs:107`), so a recorded type describes the SUBMITTED bytes while the blob holds the
+  SCRUBBED ones. The two agree only because `ImageMetadata.Rewrite` (`:42-57`) dispatches to a walker
+  whose own signature matched and returns the input unchanged otherwise; that agreement is unpinned."*
+
+The **general sentence (D2) and the deviation entries (`consistency.md`) land with the closing ticket**,
+not now — the token is `(gate pending: T-0561)` for the two reasons D2 states, and both remain true.
+
+### §H — Owner: no new question. Q-ART-02 stands, and one measurement is now dated.
+
+`Q-ART-02` (`open.md:1480-1505`) covers the refuse-vs-store-un-previewable branch in exactly the terms
+this panel needs and is **not re-filed**. Its rider already owns the one number this ADR declines to
+assert — `SELECT "ContentType", count(*) FROM "OrderPhotos" GROUP BY 1`, owner-run, **before merge**,
+because it sizes how many photos change from previewing to downloading on the day D4 ships. It does not
+decide D4. The second rider measurement (does the rewritten pin redden under each named mutation) is the
+closing ticket's Gate 0.5 and §E-4's positive control is now part of it.
+
+**Consensus: reached, conditional on §E.** Zero blocking challenges survive. Nothing in §E requires a
+further round; a lead re-read is not owed once it is transcribed.

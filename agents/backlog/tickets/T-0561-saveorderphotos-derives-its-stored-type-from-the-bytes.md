@@ -50,7 +50,17 @@ Two more defects on the same 14 lines:
   characters and garbage after reaches an unhandled `FormatException`. Both hardened base64 chains close
   with a decodability rule for exactly this reason.
 
-**It blocks T-0459.** The challenge on the content-policy draft
+**~~It blocks T-0459.~~ WITHDRAWN 2026-08-06 — this whole paragraph is now false in fact, not
+only in law.** ADR-0043 ruled the scrub dispatches **from the bytes it is holding**, never from a
+client string or a persisted `ContentType`, and that scrub has since landed on all three handlers
+(`SaveOrderPhotos.cs:137`, `UploadOrderPhoto.cs:107`, `UploadDisputeEvidence.cs:108`). The
+selected-no-op attack the paragraph below describes is closed by the dispatch rule, not by this
+ticket. **A NEW invariant now rests on this ticket and nothing pins it:** the recorded type describes
+the SUBMITTED bytes while the blob holds the SCRUBBED ones. That holds today only because the rewrite
+dispatches to a walker whose own signature matched and returns the input unchanged otherwise -- see
+AC-NEW below. Retained for provenance:
+
+> **It blocks T-0459.** The challenge on the content-policy draft
 (`agents/backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4, `c6370115`)
 found the same defect from the other side: that draft elects **this** surface as its metadata-scrub
 pilot, and a per-format scrub dispatching on the client's `data:` prefix runs the **PNG chunk walker
@@ -108,6 +118,39 @@ whose browser-derived type disagrees with its bytes — which today stores a lie
       (drop the handler's sniff; restore `Path.GetExtension`; delete the sniff rule; delete the
       decodability rule; swap size/sniff order), files restored byte-exact.
 
+### Panel corrections — 2026-08-06, lead ruling on draft rev 2 (these override the ACs above)
+
+The ACs above predate the panel. Where they disagree with this block, **this block wins**.
+
+- **AC2 / AC3 / AC7 — the refusal message.** Do **not** mint a new key. Reuse
+  `BusinessErrorMessage.FileNotMatchContentType` (`file.content_type_doesnt_match`), which
+  `ImageFileValidator` already uses and which is verified present in all five partner-web locales, all
+  five Android partner locales and iOS. **Zero new keys, zero new locale rows**, and the document
+  promise string stays untouched.
+- **AC5 — the roster annotation is not an enforcer.** `UploadIntakeRosterTests.cs:66-68` asserts
+  `entry.Split(" — ")[0]` and nothing reads index 1, so the text after the em-dash is checked by
+  nothing. Add a per-intake refusal `[Theory]` instead — and note the lead's finding that the obvious
+  form **passes vacuously**: `Assert.False(result.IsValid)` is green on any un-stubbed constructor
+  dependency, because the command is invalid for the wrong reason. Two corrections make it real:
+  (a) assert the failure's **identity** (the file property, that route's error code, that intake's
+  content key), and (b) a **positive control** per case — the same command with an accepted payload
+  validates clean, which is the only thing proving the other rules were stubbed to pass.
+- **AC8 — two deviation entries, not one.**
+- **New AC — pin the scrub/sniff invariant.** ADR-0043's metadata scrub landed on this handler while
+  the panel was sitting (`SaveOrderPhotos.cs:137`, `UploadOrderPhoto.cs:107`,
+  `UploadDisputeEvidence.cs:108`). The recorded type now describes the **submitted** bytes while the
+  blob holds the **scrubbed** ones. Those agree today only because the rewrite dispatches to a walker
+  whose own signature matched and returns the input unchanged otherwise — a future walker change breaks
+  the ticket's central claim **silently**. Assert
+  `FromContent(Scrub(p).Bytes, intake) == FromContent(p, intake)` over every `(intake, accepted type)`
+  pair. `T1-CI`, zero baseline.
+- **Verification step 6 is wrong on the batch route.** `RuleForEach` over 30 photos with one shared
+  error code groups every per-photo failure under a single key joined with `"; "` — by design. Scope
+  that step to a **one-photo** command.
+- **Line numbers in §Implementation notes are stale by +1 (validator region) / +3 (handler region)**
+  since the scrub landed. Re-derive rather than trusting them.
+
+
 ## Out of scope
 
 - ~~**The read-path clamp.**~~ **WITHDRAWN 2026-08-06 by the ADR panel (draft rev 2, new D4).** The
@@ -138,7 +181,13 @@ whose browser-derived type disagrees with its bytes — which today stores a lie
 - `agents/knowledge/patterns-backend.md`, `agents/knowledge/consistency.md` (AC8)
 - `src/Cleansia.Core.AppServices/Features/Orders/GetOrderPhotos.cs` — the D4 clamp (was listed here as
   read-only; the panel withdrew that)
-- **Read-only, must not change:** `ServedContentType.cs`, `SniffedContentType.cs`
+- `src/Cleansia.Core.AppServices/Common/SniffedContentType.cs` — `ServedFor` goes HERE (the lead
+  corrected this: it was listed read-only, and D4 cannot be built without it). **Resolve
+  `ForRecordedType` FIRST, then membership-test the RESULT's value** — the natural order is the wrong
+  one and demotes real photos, because `ServableTypes` maps `image/jpg` to `image/jpeg` and `image/jpg`
+  rows exist (`UploadOrderPhoto.cs:39` allows the alias and stored the client string until the T-0556
+  follow-up)
+- **Read-only, must not change:** `ServedContentType.cs`
 
 **Do not widen `AcceptedByIntake[UploadIntake.OrderPhoto]`.** `image/gif` and `application/pdf` becoming
 unreachable on this intake is the intended outcome, not a regression: no client offers either

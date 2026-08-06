@@ -19,6 +19,7 @@ import {
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
 } from '../client/partner-client';
+import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -28,6 +29,7 @@ export class PartnerAuthService {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
+  private readonly signupConsent = inject(SignupConsentService);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -253,6 +255,11 @@ export class PartnerAuthService {
     }
 
     this.isLoggedIn$.next(true);
+
+    // The signup tick predates any session, and the identity here is the
+    // server's rather than whatever a form held.
+    this.signupConsent.flush(authResult.email);
+
     this.setWarningDialogStatus(false);
   }
 }

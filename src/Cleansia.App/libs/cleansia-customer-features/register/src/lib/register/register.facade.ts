@@ -6,6 +6,7 @@ import {
   CustomerAuthService,
   CustomerClient,
   JwtTokenResponse,
+  SignupConsentService,
   ValidateReferralQuery,
 } from '@cleansia/customer-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
@@ -34,6 +35,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly signupConsent = inject(SignupConsentService);
 
   formGroup = this.createFormGroup();
 
@@ -118,6 +120,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     }
 
     const { email, password, firstName, lastName, referralCode } = this.formGroup.value;
+    const termsAccepted = this.formGroup.get('terms')?.value === true;
     // Bad/empty referral codes are NOT a blocker per the spec — we send the
     // raw value (when non-empty) and let the backend silently skip on failure.
     const trimmedReferral = (referralCode as string | undefined)?.trim();
@@ -126,6 +129,9 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
+          if (termsAccepted) {
+            this.signupConsent.record(email);
+          }
           this.snackbarService.showSuccessTranslated('auth.register.success');
           this.router.navigate([CleansiaCustomerRoute.CONFIRM_EMAIL], {
             queryParams: { email },

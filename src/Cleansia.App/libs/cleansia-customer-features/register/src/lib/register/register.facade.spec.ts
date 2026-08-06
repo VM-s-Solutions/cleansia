@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  ConsentType,
   CustomerAuthService,
   CustomerClient,
+  GrantConsentCommand,
+  SignupConsentService,
   ValidateReferralQuery,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
@@ -226,5 +229,129 @@ describe('RegisterFacade — Sign in with Apple', () => {
     facade.appleSignInFailed();
 
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.common.error_occurred');
+  });
+});
+
+describe('RegisterFacade — the consent ticked at signup', () => {
+  let facade: RegisterFacade;
+  let signupConsent: SignupConsentService;
+  let gdprClient: Record<string, jest.Mock>;
+  let authService: { register: jest.Mock };
+  let router: { navigate: jest.Mock };
+  let snackbar: { showError: jest.Mock; showApiError: jest.Mock; showSuccessTranslated: jest.Mock };
+
+  const EMAIL = 'jan@example.com';
+
+  function fillForm(terms: boolean): void {
+    facade.formGroup.patchValue({
+      firstName: 'Jan',
+      lastName: 'Novák',
+      email: EMAIL,
+      password: 'Heslo1234',
+      confirmPassword: 'Heslo1234',
+      terms,
+    });
+  }
+
+  function grantedTypes(): unknown[] {
+    return gdprClient['consentsPost'].mock.calls.map(([command]) => {
+      expect(command).toBeInstanceOf(GrantConsentCommand);
+      return (command as GrantConsentCommand).toJSON();
+    });
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    authService = { register: jest.fn().mockReturnValue(of(true)) };
+    router = { navigate: jest.fn() };
+    snackbar = {
+      showError: jest.fn(),
+      showApiError: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+    };
+    gdprClient = {
+      consentsGet: jest.fn().mockReturnValue(of([])),
+      consentsPost: jest.fn().mockReturnValue(of(undefined)),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        RegisterFacade,
+        provideMockStore(),
+        { provide: Router, useValue: router },
+        { provide: CustomerAuthService, useValue: authService },
+        {
+          provide: CustomerClient,
+          useValue: { referralClient: { validate: jest.fn() }, gdprClient },
+        },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+      ],
+    });
+
+    facade = TestBed.inject(RegisterFacade);
+    signupConsent = TestBed.inject(SignupConsentService);
+  });
+
+  it('grants the ticked documents at the session that follows the signup', () => {
+    fillForm(true);
+
+    facade.register();
+    signupConsent.flush(EMAIL);
+
+    expect(grantedTypes()).toEqual([
+      { consentType: ConsentType.TermsOfService },
+      { consentType: ConsentType.PrivacyPolicy },
+    ]);
+  });
+
+  it('grants nothing when the registration itself failed', () => {
+    authService.register.mockReturnValue(throwError(() => new Error('taken')));
+    fillForm(true);
+
+    facade.register();
+    signupConsent.flush(EMAIL);
+
+    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
+  });
+
+  it('refuses to register at all while the box is unticked', () => {
+    fillForm(false);
+
+    facade.register();
+
+    expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  // Unreachable in the shipped form, which the test above pins: `terms` is
+  // `requiredTrue`, so an unticked submit never reaches the grant. This pins the
+  // guard, not its reachability — it is what keeps an untick from becoming a
+  // manufactured record if the tick ever stops being required.
+  it('grants nothing for an absent tick when the form does not require one', () => {
+    const terms = facade.formGroup.get('terms');
+    terms?.clearValidators();
+    terms?.updateValueAndValidity();
+    fillForm(false);
+
+    facade.register();
+    signupConsent.flush(EMAIL);
+
+    expect(authService.register).toHaveBeenCalled();
+    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
+  });
+
+  it('completes the signup even when the tick cannot be parked for delivery', () => {
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('quota');
+      });
+    fillForm(true);
+
+    expect(() => facade.register()).not.toThrow();
+
+    setItem.mockRestore();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('auth.register.success');
+    expect(router.navigate).toHaveBeenCalled();
   });
 });

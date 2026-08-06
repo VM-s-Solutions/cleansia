@@ -2,9 +2,22 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { PartnerClient } from '../client/base-client';
+import {
+  ConsentType,
+  GdprClient,
+  GrantConsentCommand,
+} from '../client/partner-client';
 import { PartnerAuthService } from './partner-auth.service';
+import { SignupConsentService } from './signup-consent.service';
+
+function gdprClientMock(): Record<string, jest.Mock> {
+  return {
+    consentsGet: jest.fn().mockReturnValue(of([])),
+    consentsPost: jest.fn().mockReturnValue(of(undefined)),
+  };
+}
 
 describe('PartnerAuthService command payloads', () => {
   let service: PartnerAuthService;
@@ -30,6 +43,7 @@ describe('PartnerAuthService command payloads', () => {
       providers: [
         PartnerAuthService,
         { provide: PartnerClient, useValue: { authClient } },
+        { provide: GdprClient, useValue: gdprClientMock() },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
           provide: TranslateService,
@@ -140,6 +154,7 @@ describe('PartnerAuthService command payloads', () => {
       providers: [
         PartnerAuthService,
         { provide: PartnerClient, useValue: { authClient } },
+        { provide: GdprClient, useValue: gdprClientMock() },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
           provide: TranslateService,
@@ -157,5 +172,72 @@ describe('PartnerAuthService command payloads', () => {
       .subscribe();
 
     expect(sentBody('resendConfirmationEmail')['language']).toBe('en');
+  });
+});
+
+describe('PartnerAuthService signup consent delivery', () => {
+  let service: PartnerAuthService;
+  let signupConsent: SignupConsentService;
+  let gdprClient: Record<string, jest.Mock>;
+
+  function startSession(email: string): void {
+    service.setSession({
+      email,
+      csrfToken: 'csrf-value',
+      refreshTokenExpiresAt: new Date('2030-01-01T00:00:00Z'),
+    } as never);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    gdprClient = gdprClientMock();
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        PartnerAuthService,
+        { provide: PartnerClient, useValue: { authClient: {} } },
+        { provide: GdprClient, useValue: gdprClient },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        {
+          provide: TranslateService,
+          useValue: { currentLang: 'cs', getDefaultLang: () => 'en' },
+        },
+        {
+          provide: AUTH_COOKIE_KEYS,
+          useValue: { csrfToken: 'csrf', refreshTokenExp: 'exp', role: 'role' },
+        },
+      ],
+    });
+
+    service = TestBed.inject(PartnerAuthService);
+    signupConsent = TestBed.inject(SignupConsentService);
+  });
+
+  it('grants the signup tick at the first session, keyed on the identity the server returned', () => {
+    signupConsent.record('cleaner@example.com');
+
+    startSession('cleaner@example.com');
+
+    const bodies = gdprClient['consentsPost'].mock.calls.map(([command]) => {
+      expect(command).toBeInstanceOf(GrantConsentCommand);
+      return (command as GrantConsentCommand).toJSON();
+    });
+    expect(bodies).toEqual([
+      { consentType: ConsentType.TermsOfService },
+      { consentType: ConsentType.PrivacyPolicy },
+    ]);
+  });
+
+  it('signs the user in even when the grant is refused', () => {
+    gdprClient['consentsPost'].mockReturnValue(
+      throwError(() => ({ errors: { '': 'common.error_occurred' } }))
+    );
+    signupConsent.record('cleaner@example.com');
+
+    expect(() => startSession('cleaner@example.com')).not.toThrow();
+
+    expect(service.isLoggedIn()).toBe(true);
+    expect(localStorage.getItem('csrf')).toBe('csrf-value');
   });
 });

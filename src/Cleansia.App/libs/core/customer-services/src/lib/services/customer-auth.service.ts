@@ -19,6 +19,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
+import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,6 +30,7 @@ export class CustomerAuthService {
   private readonly translate = inject(TranslateService);
   private readonly sessionListeners =
     inject(SESSION_LIFECYCLE_LISTENERS, { optional: true }) ?? [];
+  private readonly signupConsent = inject(SignupConsentService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
   // Guard storage access by platform, not `typeof localStorage` — Node 22+
   // exposes a global localStorage whose methods throw during SSR.
@@ -260,6 +262,10 @@ export class CustomerAuthService {
     }
 
     this._isLoggedIn.set(true);
+
+    // The signup tick predates any session, and the identity here is the
+    // server's rather than whatever a form held.
+    this.signupConsent.flush(authResult.email);
 
     // Preload saved addresses so the order wizard finds them warm, even when
     // the user lands there without visiting profile first. Fire-and-forget —

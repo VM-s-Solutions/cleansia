@@ -1,7 +1,7 @@
 ---
 id: T-0458
 title: Image upload sanitization — decide the policy and build the shared sanitizer seam (EXIF strip, size cap, resize)
-status: done
+status: blocked
 size: M
 owner: architect
 created: 2026-07-30
@@ -15,6 +15,10 @@ security_touching: true
 manual_steps: []
 sprint: 14
 ---
+
+> ⚠️ **Reopened 2026-08-06.** I closed this at `6a901ed0` citing `f837e0ec`. That commit is
+> an **unratified draft ADR**, not an implementation — every AC here is still unticked and the panel
+> has not run. Blocked on the content-policy draft reaching `accepted`.
 
 ## Context
 

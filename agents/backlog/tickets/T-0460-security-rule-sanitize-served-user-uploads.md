@@ -1,7 +1,7 @@
 ---
 id: T-0460
 title: SECURITY RULE — user-supplied artifacts served back by URL are sanitized at upload (magic-byte validation is not a sanitizer)
-status: done
+status: blocked
 size: S
 owner: architect
 created: 2026-07-30
@@ -15,6 +15,10 @@ security_touching: false
 manual_steps: []
 sprint: 14
 ---
+
+> ⚠️ **Reopened 2026-08-06.** I closed this at `6a901ed0` citing `f837e0ec`. That commit is
+> an **unratified draft ADR**, not an implementation — every AC here is still unticked and the panel
+> has not run. Blocked on the content-policy draft reaching `accepted`.
 
 ## Context
 

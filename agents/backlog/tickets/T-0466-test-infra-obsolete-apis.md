@@ -1,11 +1,11 @@
 ---
 id: T-0466
 title: Test infra — obsolete parameterless PostgreSqlBuilder (removal announced) and one xUnit2031 violation
-status: draft
+status: done
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-06
 depends_on: []
 blocks: []
 stories: []

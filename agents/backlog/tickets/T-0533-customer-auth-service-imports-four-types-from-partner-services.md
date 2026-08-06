@@ -1,11 +1,11 @@
 ---
 id: T-0533
 title: A live cross-app client import — the customer auth service imports four types from `@cleansia/partner-services`
-status: in_progress
+status: done
 size: S
 owner: frontend
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-06
 depends_on: []
 blocks: []
 stories: []

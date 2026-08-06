@@ -1,11 +1,11 @@
 ---
 id: T-0470
 title: Credential-shape guard — catch a secret whose field name was never in the redaction token list
-status: draft
+status: done
 size: S
 owner: backend
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-06
 depends_on: [T-0446]
 blocks: []
 stories: []

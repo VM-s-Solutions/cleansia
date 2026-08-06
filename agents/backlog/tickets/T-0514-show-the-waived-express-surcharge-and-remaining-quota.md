@@ -1,11 +1,11 @@
 ---
 id: T-0514
 title: Show the waived express surcharge and the remaining monthly quota in the booking flow
-status: in_progress
+status: done
 size: M
 owner: android
 created: 2026-08-02
-updated: 2026-08-05
+updated: 2026-08-06
 depends_on: [T-0493, T-0513]
 blocks: []
 stories: []

@@ -1,11 +1,11 @@
 ---
 id: T-0458
 title: Image upload sanitization — decide the policy and build the shared sanitizer seam (EXIF strip, size cap, resize)
-status: draft
+status: done
 size: M
 owner: architect
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-06
 depends_on: []
 blocks: [T-0459]
 stories: []

@@ -1,11 +1,11 @@
 ---
 id: T-0534
 title: The module-boundary guard is mostly OFF — the base config grants allow-everything to all 44 libs that spread it
-status: in_progress
+status: done
 size: M
 owner: frontend
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-06
 depends_on: []
 blocks: [T-0533]
 stories: []

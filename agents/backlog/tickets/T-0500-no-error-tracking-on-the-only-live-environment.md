@@ -1,11 +1,11 @@
 ---
 id: T-0500
 title: The only live environment has no error tracking at all — Sentry's DSN is empty and there is no App Insights exporter
-status: in_review
+status: done
 size: S
 owner: architect
 created: 2026-08-02
-updated: 2026-08-05
+updated: 2026-08-06
 depends_on: []
 blocks: []
 stories: []

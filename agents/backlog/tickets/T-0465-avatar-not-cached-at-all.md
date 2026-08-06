@@ -1,11 +1,11 @@
 ---
 id: T-0465
 title: Avatars are not cached at all — no Cache-Control and a SAS query string that changes on every mint
-status: draft
+status: done
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-06
 depends_on: [T-0446, T-0464]
 blocks: []
 stories: []

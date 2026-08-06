@@ -1,11 +1,11 @@
 ---
 id: T-0460
 title: SECURITY RULE — user-supplied artifacts served back by URL are sanitized at upload (magic-byte validation is not a sanitizer)
-status: draft
+status: done
 size: S
 owner: architect
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-06
 depends_on: []
 blocks: []
 stories: []

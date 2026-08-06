@@ -1,11 +1,11 @@
 ---
 id: T-0544
 title: Plus advertises four perks instead of five — the affirmative express copy is now owed and belongs to nobody
-status: in_progress
+status: done
 size: S
 owner: android
 created: 2026-08-04
-updated: 2026-08-05
+updated: 2026-08-06
 depends_on: [T-0493, T-0513]
 blocks: []
 stories: []

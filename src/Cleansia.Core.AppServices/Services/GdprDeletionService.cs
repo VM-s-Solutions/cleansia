@@ -208,8 +208,30 @@ public class GdprDeletionService(
             consent.Withdraw();
 
         var disputes = await disputeRepository.GetDisputesByUserIdAsync(user.Id, ct);
+        var evidenceBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
         foreach (var dispute in disputes)
+        {
+            // These two steps are ordered, not adjacent by accident. Anonymize() overwrites
+            // DisputeEvidence.FilePath, which is the only place the blob's name is stored — nothing else
+            // in the database, the GDPR export or the audit log records it. Run it first and the delete
+            // below is issued against "[DELETED]": the file survives with nothing left able to name it,
+            // and the only way back is enumerating the container under the dispute id.
+            foreach (var evidence in dispute.Evidence)
+            {
+                try
+                {
+                    await evidenceBlobClient.DeleteAsync(evidence.FilePath, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Failed to delete dispute evidence blob {BlobName} on dispute {DisputeId} during erasure; the row's path is cleared next, so this name is the only remaining handle on the file",
+                        evidence.FilePath, dispute.Id);
+                }
+            }
+
             dispute.Anonymize();
+        }
 
         var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
         savedAddressRepository.RemoveRange(savedAddresses);

@@ -1303,3 +1303,148 @@ neither has an answer to give yet, because the artifact being approved does not 
   screen, island expanded/compact/minimal) at real proportions, each flagged if it needs a field the
   activity state does not carry today (which would make it a backend + push-payload change under
   ADR-0025).
+
+---
+
+## Signup-consent questions (2026-08-06) — raised while fixing the web signup tick that recorded nothing
+
+### Q-CONSENT-01 — [blocking: no] Google / Apple signup collects no consent tick at all
+- Raised by: frontend (web signup consent fix)
+- Owner: owner (legal)
+- Resolve-by: pre-prod
+- Date: 2026-08-06
+- Question: the "I agree to the Terms of Service and the Privacy Policy" checkbox sits on the
+  email/password form only. The Google and Apple buttons on the same screen are **not** gated by it and
+  a social signup therefore creates an account with **no tick anywhere**. Should those buttons be
+  gated by the same checkbox, should the screen carry a separate "by continuing you accept …" line
+  under them (a distinct, weaker form of evidence), or is account creation itself the acceptance?
+- Why it matters: the web fix delivers exactly what the user ticked and nothing more, so a social
+  signup today produces **no consent record** on either app — the same evidentiary hole this work
+  closed for the email/password path, in a flow that is one click shorter. Recording a consent nobody
+  ticked would be the worse defect (a manufactured record), so it was deliberately not done.
+- Default taken: nothing is recorded for Google/Apple signups. The email/password tick is recorded,
+  as **two** rows — `TermsOfService` and `PrivacyPolicy` — because the checkbox label names both
+  documents by title in all five locales. If the owner wants marketing consent captured at signup it
+  needs its **own** checkbox; the cookie banner is the only surface that grants `MarketingEmails`
+  today, and `ConsentSyncService.syncConsent`
+  (`libs/core/customer-services/src/lib/services/consent-sync.service.ts:36`) returns early for a
+  visitor who is not signed in — so an anonymous visitor's banner choice is kept on the device and
+  never becomes an account record, even after they register. Whether it should is the same
+  legal question in a second place, and was left alone rather than guessed at.
+- Answer: _(owner fills in)_
+
+---
+
+## Self-billing agreement question (2026-08-06) — raised by the ADR-0041 round-3 defense panel
+
+### Q-SELFBILL-06 — [blocking: **YES** — gates only the acceptance of ADR-0041; blocks no ticket and no schema] A cleaner who does not read Czech is approved, works, and is self-billed **without ever being shown the self-billing agreement**
+- Raised by: architect (ADR-0041 round-3 lead, ruling on `challenges/0041-rev3.md` CH-R3-1)
+- Owner: owner (legal / launch sequencing)
+- Resolve-by: pre-prod
+- Date: 2026-08-06
+- Question: ADR-0041 makes the self-billing agreement **demandable only in the caller's own language** —
+  we may not block a Ukrainian-speaking cleaner on ticking a Czech legal text they cannot read, because a
+  signature over bytes the signer cannot read is not evidence. On your stated plan — **Czech text
+  first** — that means every cleaner whose app language is `sk`, `uk`, `ru` or `en` is **approved without
+  the agreement ever being shown to them**, works, accrues pay, and is issued invoices **in their own
+  name**. Which do you want?
+  **(a)** Do not open a country to cleaner registration until its agreement text exists in **all five**
+  partner languages. Closes the hole by sequencing; costs four translations + review before launch.
+  **(b)** Open on Czech, accept that non-Czech readers are self-billed with no recorded agreement until
+  their text lands, and make it **visible**: one query naming the (country × language) pairs with no
+  reviewed text, plus an in-app prompt to those cleaners once their text arrives.
+  **(c)** Open on Czech and accept the gap silently — nothing in the platform counts it.
+- Why it matters: your ruling *"I'll drop an entire DB, we're not PRO just DEV, so don't be bothered with
+  existing cleaners"* removes the **backlog** of un-agreed cleaners. It does not stop the platform
+  **creating new ones** — and this one grows with hiring. The ADR currently claims this population
+  *"cannot form"*; that claim is false against the ADR's own design, and the last revision deleted the
+  report row and the in-app prompt that would have counted and reached these people **on the strength of
+  it**. This is the exact population the whole feature exists for: we issue invoices in the cleaner's
+  name, and the agreement is our evidence that we were allowed to. An architect may not choose between
+  *"delay the launch"* and *"self-bill people who were never shown the agreement"* — that is your call.
+- Default taken if unanswered: **(b)**. It is the only option that neither delays your Czech-first launch
+  nor hides the gap, and its visibility half is a `SELECT` over a config table of tens of rows — not a
+  scan over invoices. **ADR-0041 stays `proposed` until you rule**, because accepting it freezes the
+  sentence, and an accepted ADR may not be edited (only superseded). Nothing else is blocked: no ticket,
+  no schema, no migration.
+- Related — **and this needs the PM, not you:** `Q-SELFBILL-01` (the agreement text itself, which
+  ADR-0041 calls *"the single thing standing between the design and a working feature"*) and
+  `Q-SELFBILL-02`…`-05` are specified in ADR-0041 §Escalations and recorded there as *"filed… by the
+  PM"* — **they are not in this file, and a grep of the whole backlog finds them nowhere.** They have
+  never actually reached you. This entry does not substitute for them. **PM: file that block, and add
+  this entry to the Pre-prod blocking index at the top of this file.**
+- Answer: _(owner fills in)_
+
+---
+
+## Self-billing block (2026-08-06) — filed late; ADR-0041 §Escalations has claimed since rev 1 that these were filed, and they were not
+
+> **Provenance.** ADR-0041's §Escalations opens *"Filed as one block in `agents/backlog/questions/open.md`
+> by the PM."* That sentence was false for the whole life of the ADR. The rev-3 lead grepped the backlog
+> and found them nowhere; I re-ran the grep and confirmed it — `Q-SELFBILL-01`…`-05` appear **only inside
+> ADR-0041 itself**. Three deliberation rounds reasoned about defaults "if the owner does not answer"
+> while the owner had never been shown the questions. They are filed here now, verbatim in substance from
+> the ADR's table so the two cannot drift. `Q-SELFBILL-06` (above) was filed correctly and is separate.
+
+### Q-SELFBILL-01 — [blocking: **YES** — gates the feature's activation, not its build] The self-billing agreement text, and who reviewed it
+- Raised by: architect (ADR-0041), filed by PM 2026-08-06
+- Owner: owner (with counsel)
+- Resolve-by: pre-prod
+- Question: we need the **agreement text** itself, in as many of the five locales as you can supply, and
+  **who reviewed it** — you, or a lawyer. ADR-0041 calls this *"the single thing standing between the
+  design and a working feature."*
+- Why it matters: self-billing means **we** issue the invoice in the cleaner's name. In the EU that is
+  only lawful where the supplier has agreed to it in advance. Without reviewed text there is nothing to
+  show a cleaner and nothing to record them accepting.
+- Default if unanswered: every version stays `NotReviewed`, so nothing is rendered and nothing is
+  demanded, and no jurisdiction is opened. Safe, and visibly incomplete — the feature ships inert.
+- Answer: _(owner fills in)_
+
+### Q-SELFBILL-02 — [blocking: **YES** for the severed coverage decision; blocks no ticket] Which date authorizes a self-billed invoice — the print date or the work period?
+- Raised by: architect (ADR-0041, re-framed rev 2, narrowed rev 3), filed by PM 2026-08-06
+- Owner: owner (with counsel)
+- Resolve-by: pre-prod
+- Question: two halves. (a) If we open a country **before** its agreement text exists, and cleaners work
+  and are invoiced there, is the document valid? (b) Were we authorized to issue **this document** (its
+  print date) or to self-bill **this work** (the pay period it covers)?
+- Why it matters: (b) gives **different answers for the same work**, decided by when a timer happened to
+  run — a cleaner who accepts on 31 July covers June's work; one who accepts on 5 August does not.
+- Default if unanswered: do not open a jurisdiction before its text exists, which makes (a) empty by
+  construction. That is an engineering sequencing call, **not legal advice**, and it does not answer (b).
+- Answer: _(owner fills in)_
+
+### Q-SELFBILL-03 — [blocking: no] Must the invoice itself say it was issued on the cleaner's behalf?
+- Raised by: architect (ADR-0041), filed by PM 2026-08-06
+- Owner: owner (with counsel)
+- Resolve-by: pre-prod
+- Question: must the **invoice document** state that it was issued by us on the supplier's behalf, and in
+  what words?
+- Why it matters: it is a line of text on a PDF, but it is the line that makes the document a
+  self-billed invoice rather than an ordinary one.
+- Default if unanswered: nothing is printed. If the answer requires an **immutable acceptance date** on
+  the document, that is a separate design trigger — say so explicitly if it does.
+- Answer: _(owner fills in)_
+
+### Q-SELFBILL-04 — [blocking: no] May a cleaner withdraw from self-billing in-app, and what follows?
+- Raised by: architect (ADR-0041), filed by PM 2026-08-06
+- Owner: owner
+- Resolve-by: post-launch
+- Question: may a cleaner **withdraw** their agreement from inside the app, and what happens next — they
+  invoice us instead, or they stop working?
+- Why it matters: it is a product question, not a schema one. The record already supports a revocation
+  action, so answering it later costs no migration.
+- Default if unanswered: not exposed in v1.
+- Answer: _(owner fills in)_
+
+### Q-SELFBILL-05 — [blocking: no] Does an operator recording your countersigned paper contract count as the agreement?
+- Raised by: architect (ADR-0041), filed by PM 2026-08-06
+- Owner: owner
+- Resolve-by: pre-prod
+- Question: if you have a signed paper contract with a cleaner, may an admin record that as the
+  agreement instead of the cleaner ticking it in-app? And what may the contract reference field carry —
+  a contract number, a scan id, or free text?
+- Why it matters: an operator-typed free-text field of unconstrained content is treated as personal data
+  and redacted on erasure until you constrain it. Constraining it makes it cheaper to handle.
+- Default if unanswered: yes, an admin may record it, kept permanently distinct from a self-service tick;
+  the reference field is treated as PII and redacted on erasure.
+- Answer: _(owner fills in)_

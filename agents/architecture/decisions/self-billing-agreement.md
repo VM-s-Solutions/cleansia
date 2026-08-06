@@ -296,6 +296,42 @@ not be able to change it, and a frozen stamp is the mechanism.
 > asserted: **no column on the three new tables moves with this decision — only one index does**, which
 > yields the rule *an index that serves a query must be specified in the artifact that fixes the query.*
 
+> ### ⚠️ LEAD'S CORRECTION, round-3 panel (2026-08-06) — **read before lifting any number out of §S2, §S4 or §S5**
+>
+> The round-3 challenger (`agents/backlog/adr/challenges/0041-rev3.md`) **measured this section's
+> numbers again** and the round-3 lead ruled on them (ADR-0041 §X.2, §X.4). Until rev 4 rewrites the
+> text below, these three corrections govern:
+>
+> - **§S2 — "90 411 ms vs 827 ms (109×)" is WITHDRAWN. Do not carry it into the ADR this becomes.**
+>   Round 2's own report (`challenges/0041-schema-rev2.md:138-143`) disclaims its 827 ms baseline: that
+>   baseline enjoyed a **75 % `Memoize` hit rate from a 12-distinct-key seed**, and it states the honest
+>   floor is *"~4× the measured 827 ms"* because production `GeneratedAt` is distinct per invoice (0 %
+>   hits). Round 3, seeding what ADR-0041 §W.10 P3 actually demands (48 000 invoices, **distinct** anchors, 0 % hits
+>   for **both** shapes), measured the work ratio at **1.94× in buffers** — the mechanism's own
+>   prediction. **What survives, reproduced independently by both challengers, is the MECHANISM:** EF
+>   emits the correlated top-1 lookup **twice per invoice row**, and PostgreSQL cannot `Memoize` a
+>   `SubPlan`. State the mechanism; state **no ratio**. §S3's plan-check obligation is untouched and is
+>   now doubly justified — two probes produced wall-clock numbers for the same shape an order of
+>   magnitude apart, which is exactly why a plan claim is discharged by a check and not by a digit.
+>   Quote `Buffers: shared hit` if you quote anything; laptop-container wall clock is not evidence.
+> - **§S4 — the *reason* is corrected; the *column order* is not.** The `TenantId`-leading demotion round
+>   2 measured reproduces only under `plan_cache_mode = force_generic_plan`. Production does not get
+>   generic plans: `Max Auto Prepare` appears **nowhere** in `src/` (lead-verified) and
+>   `DbContextBindingExtensions.cs:35/:68` builds a plain `NpgsqlDataSource` with no preparation
+>   settings, so every statement is unnamed and re-planned with its values — the filter's booleans fold
+>   and the leading `IS NULL` stays in the `Index Cond`. **What a `TenantId`-leading reader index
+>   actually loses is the btree *pathkey*** (so every `ORDER BY … LIMIT 1` behind it becomes a sort),
+>   **not the `Index Cond`.** Lead with the sargable equality terms anyway — it is the only order optimal
+>   in both tenancy modes — but say why correctly.
+> - **§S5 is DELETED, not softened.** Its premise does not arise: round 3 measured that
+>   `SelectMany` + `Take(1).DefaultIfEmpty()` makes EF Core 10 emit a **`LEFT JOIN LATERAL`** — one
+>   evaluation per invoice row, buffer-identical to the hand-written form, global query filter intact,
+>   change tracker intact, **no raw SQL, no `SqlQueryRaw` sanctioned exception, no ADR-0033 question.**
+>   Record the idiom here so this decision's author does not re-derive it.
+> - **§S7's `Jurisdictions with no BusinessSupplied+ text` row is re-opened by `Q-SELFBILL-06`.** ADR-0041
+>   §X.1: demandability is per **caller language**, not per jurisdiction, so D4.5's launch precondition
+>   does not close the fail-open this row was demoted for. The row's fate follows the owner's answer.
+
 **What ADR-0041 already fixed and this decision inherits, not re-litigates:** coverage is **derived**,
 `EmployeeInvoice` gains **no column**, and the definition is *the latest statement for
 `(EmployeeId, SelfBilling)` with `OccurredAt <= <ANCHOR>`, ordered `OccurredAt DESC, RecordedAt DESC,
@@ -633,12 +669,16 @@ rev 2 says so.*
 
 ## Status
 
-**`proposed` — rev 3 (2026-08-05), awaiting a THIRD panel. The SPLIT is executed and two owner rulings
-are applied. NOTHING MAY BE BUILT.**
+**`proposed` — rev 3 ruled on by the THIRD panel (2026-08-06). Verdict: a NARROW rev 4 — sentences and
+checks only — plus ONE owner escalation (`Q-SELFBILL-06`) which is the only thing gating acceptance.
+THE SCHEMA BLOCK IS FROZEN. NOTHING MAY BE BUILT.**
 
-Two panels, three challenger lanes, two leads, **seven** distinct instances. The trajectory is
-convergence and the artifact is now **smaller** than the one before it — by one column, one unique
-index, one lookup index, one report, one prompt surface, one escalation and two findings.
+Three panels, four challenger lanes, three leads, **nine** distinct instances. **The record's shape is
+settled and the round-3 lead ruled it settled** — a fourth independent lane attacked D10, the `Sequence`
+drop, D1.3's variant, D1.3.2, the two-order split and D1.10 and broke none of them. The convergence is
+visible in *what* each return touched: round 1 changed the mechanism, the title and the schema block ×4;
+round 2 the schema block ×3; **round 3 changes the schema block ZERO times.** What is left is one owner
+question and about a dozen sentences.
 
 | | |
 |---|---|
@@ -646,12 +686,14 @@ index, one lookup index, one report, one prompt surface, one escalation and two 
 | **Coverage is DERIVED, no column on `EmployeeInvoice`** | **SURVIVES, on a THIN margin — essentially one test (completeness).** Rewritten honestly: wins 1, ties 2 and 4, wins 3 with a new cost, **LOSES the referential anchor on 5**. Rev 2's *"a partial anchor is worthless"* and *"query cost is not a loss"* are both **retracted** |
 | **The coverage report's specification** | **SEVERED — and now WRITTEN**, in this document under §*"SEVERED"*, for the PM to lift into an ADR and number |
 | **`Sequence` and the atomic append** | **DROPPED.** The lost-append bug, the raw SQL, the `42P08` trap, the auto-commit, the arbiter index and the `NULLS NOT DISTINCT` argument all go with it |
-| **The tenant-stamp obligation (D1.10)** | **NEW and unexamined.** `CommitAsync` stamps only `Auditable`; the repository must stamp. **First thing a third panel should attack** |
-| **The index rule (D1.9)** | **Adopted for this ADR's tables** — and rev 3 found that generalizing it to a catalog law would put **three shipped index sites** in violation, so it routes as an ADR-0033 **test-1** edit, not an inline note |
-| **Tickets 1–13** | May be **filed**. **None may be started or closed** |
-| **Ticket 1 (schema)** | ✅ VAT escalation **discharged**. ⬜ Still needs: a third panel, and the pre-deploy `to_regclass` gate |
-| **`manual_step: ef-migration`** | **Still withdrawn** — but on **one** ground now (the panel + the deploy gate), not three. Additivity re-verified: three `CREATE TABLE`s, zero touches to any existing table, S9-clean |
-| **Owner escalations** | **`Q-SELFBILL-01` (the text) is now the only thing between the design and a working feature.** `Q-SELFBILL-02` goes in its narrowed form, carrying the coverage-anchor question. The VAT limb is **closed** |
+| **The tenant-stamp obligation (D1.10)** | **The FINDING is confirmed by the third panel and by the lead independently** (`CleansiaDbContext.cs:74`, stamp `:89-92` nested inside the `Auditable` loop). **Its REPAIR does not hold:** `Append` is a convention on an interface that ships `Add` (`IRepository.cs:37`) and `AddRange` (`:39`), and check #7 is a happy-path round trip. Rev 4 forbids `Add`/`AddRange` here, adds a **static sole-writer** assertion (§B10 idiom), and **routes** the general `CommitAsync` gap |
+| **The index rule (D1.9)** | **The COLUMN ORDER stands** (optimal in both tenancy modes). **Its stated MECHANISM is withdrawn** — the demotion is a *generic-plan* phenomenon and production gets custom plans (no `Max Auto Prepare` in `src/`, lead-verified); what a `TenantId`-leading reader index loses is the **pathkey**, not the `Index Cond`. **Ticket 13's evidence corrects to ONE shipped index in violation, not three** — ADR-0033 test 1 still fires |
+| **Check #21** | **VACUOUS as written** — it passes green on the very index D1.9 forbids, because an `Index Cond` containing `TenantId IS NULL AND EmployeeId … AND Kind …` *does* carry `EmployeeId` and `Kind`. Rev 4 asserts the discriminating property: **no `Sort` above the scan** and **no `TenantId` term in the `Index Cond`** |
+| **The "109×"** | **WITHDRAWN from every artifact.** Round 2 disclaimed its own baseline; round 3 measures **1.94× in buffers** on a production-shaped seed. **The MECHANISM survives (two evaluations per row) and D6 is untouched** — the refuted number was a cost *against* the chosen option, so its collapse widens derivation's margin. See the correction block under §SEVERED |
+| **Tickets 1–13 (+ 14: the `CommitAsync` stamp gap)** | May be **filed**. **None may be started or closed** |
+| **Ticket 1 (schema)** | ✅ VAT escalation **discharged**. ✅ **Schema block FROZEN by the round-3 verdict — no round-3 finding moves a column, index, key or FK.** ⬜ Still needs: rev 4 cleared, `Q-SELFBILL-06` answered, and the pre-deploy `to_regclass` gate |
+| **`manual_step: ef-migration`** | **Still withdrawn.** Additivity re-verified twice: three `CREATE TABLE`s, zero touches to any existing table, S9-clean |
+| **Owner escalations** | ⚠️ **`Q-SELFBILL-01`…`-05` were never actually filed** — the round-3 lead grepped the whole backlog and they exist only inside ADR-0041 and its challenge files. *"The owner has been asked"* is **false today**, including for the agreement text itself. **`Q-SELFBILL-06` (the per-language un-agreed cohort) IS filed** (`questions/open.md`, 2026-08-06) and gates acceptance |
 
 **The five things the second panel was told to attack, and what happened to each:** **(1)** deriving
 coverage — **attacked hardest, and it survived**, but its cost sentence was measured at 109× and four of
@@ -661,12 +703,26 @@ its *fail-open on an invalid jurisdiction* was found instead; **(3)** the rename
 way"* is the one sentence in that hedge that was wrong; **(5)** the composite-FK chain — **built, run,
 and confirmed working.** **A3** was attacked on argument (ii) as instructed and **held**.
 
-**The method pattern worth carrying out of here**, because it was three-for-three: *this topic keeps
-making claims of a class it has no way to check, on the exact joint it is being ratified on* — rev 1's
-*"append-only"*, rev 2's *"query cost is not a loss"* and *"the append never refuses a true statement"*.
-Each time everything else was verified. **A sentence asserting a property of the running system is either
-accompanied by the check that fails when it stops being true, or it is deleted.** Rev 3 applied that
-literally: **two more sentences were deleted under it** — *"query cost is not a loss"* and *"it rides the
-filter"* — and four checks were added to keep the sentences that earned them. **The fourth-time test is
-whether a third panel finds a fourth such sentence; if it does, the pattern is the finding, not the
-sentence.**
+**What the third panel was told to attack, and what happened to each:** **(1)** D1.10 / F4′ — attacked
+hardest, **confirmed exactly as cited**, and only its *repair* fell; **(2)** D1.9's shipped-violation
+evidence — **corrected, not overturned** (one index, not three; the mechanism is the pathkey, not the
+`Index Cond`); **(3)** the `Sequence` drop — attacked and **strengthened**: the deletion signal is not
+merely tail-blind, it is defeatable by the same actor who could renumber it; **(4)** D4.5's launch
+precondition — **holed**, but on a limb nobody had named (it is satisfied by *one* reviewed language);
+**(5)** the owner rulings applied as deletions — **one of the five deletions missed its subject**, and
+that is `Q-SELFBILL-06`; **(6)** the severed spec's home — not attacked, stands.
+
+**The method pattern, updated once and then CLOSED, because the fourth-time test fired.** The rule from
+round 2 — *a sentence asserting a property of the running system is either accompanied by the check that
+fails when it stops being true, or it is deleted* — is right, and rev 3 applied it literally and deleted
+two sentences under it. **It then wrote four more of the same class** (*"the cohort cannot form"*,
+D1.9's mechanism, P8's universal, and a magnitude its own source had disclaimed) and three checks that
+cannot fail on the property they name. The round-2 lead said: *"if a third panel finds a fourth such
+sentence, the pattern is the finding, not the sentence."* **It found four.** So the pattern is the
+finding, and round 3 supplies its missing half:
+
+> **A check that cannot distinguish this design from the alternative the decision rejected is not a
+> check.** Test every check by asking what it does on the **rejected** alternative. On this ADR, four
+> times, the answer was *"it stays green"* — check #21 on a `TenantId`-leading index, check #7 on an
+> `Add`, check #3 on an `ExecuteUpdateAsync`, check #20 on D2's idempotency no-op. **That question is
+> cheap, it is mechanical, and it is the one this topic kept skipping.**

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Media;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -104,8 +105,10 @@ public class UploadDisputeEvidence
             var contentType = SniffedContentType.FromContent(command.FileData, UploadIntake.DisputeEvidence)!;
             var blobName = $"{command.DisputeId}/{Guid.NewGuid():N}{SniffedContentType.ExtensionFor(contentType)}";
 
+            var storedBytes = ImageMetadata.Scrub(command.FileData).Bytes;
+
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
-            using var stream = new MemoryStream(command.FileData);
+            using var stream = new MemoryStream(storedBytes);
             await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
             dispute.AddEvidence(command.FileName, blobName, userId);

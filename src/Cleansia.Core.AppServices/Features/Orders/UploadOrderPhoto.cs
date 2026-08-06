@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Media;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -103,8 +104,10 @@ public class UploadOrderPhoto
             var uniqueFileName = $"{command.OrderId}_{command.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{SniffedContentType.ExtensionFor(contentType)}";
             var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
+            var storedBytes = ImageMetadata.Scrub(command.FileData).Bytes;
+
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
-            using var stream = new MemoryStream(command.FileData);
+            using var stream = new MemoryStream(storedBytes);
             await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
             var blobUrl = blobClient.GetBlobUri(blobName).ToString();
@@ -115,7 +118,7 @@ public class UploadOrderPhoto
                 blobUrl: blobUrl,
                 fileName: uniqueFileName,
                 originalFileName: command.FileName,
-                fileSizeBytes: command.FileData.Length,
+                fileSizeBytes: storedBytes.Length,
                 contentType: contentType,
                 capturedByEmployeeId: employeeId,
                 notes: command.Notes);

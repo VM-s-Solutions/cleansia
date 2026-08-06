@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Media;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
@@ -133,7 +134,9 @@ public class SaveOrderPhotos
                 var uniqueFileName = $"{command.OrderId}_{photoToSave.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
                 var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
-                using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
+                var storedBytes = ImageMetadata.Scrub(Convert.FromBase64String(base64Data)).Bytes;
+
+                using var stream = new MemoryStream(storedBytes);
                 await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
                 var blobUrl = blobClient.GetBlobUri(blobName).ToString();

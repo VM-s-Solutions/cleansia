@@ -193,6 +193,16 @@ is needed and ADR-0043 does not need re-opening on cost.
   `git status` — a build that compiles locally and not for anyone else. Worth knowing before the next
   person names a folder after this ADR's vocabulary.
 
+### AC7 — the three suites, with every delta accounted for
+
+| Suite | Baseline | Final | Delta |
+|---|---|---|---|
+| `Cleansia.Tests` | 3235 | **3320** ✅ | **+81 this ticket** (63 walker/dispatcher + 18 call-site) **+4 the sibling lane's `BusinessErrorSlotContractTests`**. The +81 is a TRX diff against a detached worktree at HEAD, not a hand count: 85 rows added, **0 removed** |
+| `Cleansia.IntegrationTests` | 147 | **147** ✅ | 0 |
+| `Cleansia.HostTests` | 135 | **138** ✅ | **+3, none of them this ticket's** — the sibling lane's untracked `Tests/ConsentErrorWireContractTests.cs`. Measured at 135 from this lane before that file appeared |
+
+`dotnet build Cleansia.Api.sln` succeeds. Nothing was DEFERRED-TO-CI; all three suites ran locally.
+
 ### Catalog-edit routing (ADR-0033) — **no catalog edit made**, and why
 
 - **Test 1 (does it put shipped code in violation?)** — it would. Sweep run: the 14 rows of

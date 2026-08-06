@@ -1,7 +1,7 @@
 ---
 id: T-0459
 title: Apply the image sanitizer to the order-photo and dispute-evidence upload pipelines
-status: draft
+status: ready
 size: M
 owner: backend
 created: 2026-07-30

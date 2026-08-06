@@ -460,7 +460,13 @@ replaced, I would not block it.
 ## Lead ruling — 2026-08-06
 
 Recorded here so this challenge is not left dangling. **The full adjudication is the `## Verdict`
-section of `../drafts/NNNN-user-artifact-content-policy-no-decoder.md`**; this is the index into it.
+section of the ADR**; this is the index into it.
+
+> **Path update, 2026-08-06 (rev N+1 landed).** The draft this challenge attacked has been revised per
+> the verdict's §C and **numbered ADR-0043** —
+> `../0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`. It carries
+> §Verdict verbatim plus a `## Defense` section recording the rebut/concede disposition of every finding
+> below. `../drafts/NNNN-user-artifact-content-policy-no-decoder.md` is a tombstone; do not cite it.
 
 **Every finding above was re-verified by the lead at HEAD before ruling — none was taken on trust.**
 

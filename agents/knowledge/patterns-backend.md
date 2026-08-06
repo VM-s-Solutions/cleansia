@@ -1305,12 +1305,19 @@ tests — `T1-CI`, over both employee-document intakes, both download handlers, 
 > (`SniffedContentType.cs:91`), so `image/gif` and `application/pdf` over arbitrary bytes are storable
 > and servable here and on no other order-photo path. **And a clamp cannot answer the thing that
 > actually breaks:** any per-format control built on this row — a metadata scrub, a thumbnailer, a
-> PDF embed — dispatches on a client string, so declaring `data:image/png` over JPEG bytes runs the PNG
-> parser on a JPEG. That is a **no-op the uploader selects, under a green test**, and no read-path clamp
-> reaches it. The general form of the sentence below therefore **cannot be written while this stands**,
-> and that is a statement about the code, not about the rule.
-> **Drafted, panel owed:** `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md`
-> (D2 carries the exact sentence and its tier). Do not copy this intake's shape into a new one.
+> PDF embed — would dispatch on a client string, so declaring `data:image/png` over JPEG bytes runs the
+> PNG parser on a JPEG: a **no-op the uploader selects, under a green test**, which no read-path clamp
+> reaches. *(The content-policy panel closed that route for the scrub specifically — it dispatches from
+> the bytes it is holding, never from a persisted `ContentType`; see `user-uploaded-artifacts.md` §8.2.)*
+> **A second divergence in the same area, recorded here because it is the same fact from the read side:**
+> `GetOrderPhotos.cs:96` resolves the **platform-wide** `ServedContentType` table rather than this
+> intake's accepted set, which is what the last bullet of this section asks for.
+> **Scope, descriptively:** the `Enforced by:` clause above does not cover this intake, and the general
+> form of the sentence below is written scoped to exclude it. **Drafted, panel owed:**
+> `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md` — rev 2, one
+> independent challenge round run, lead owed; its D2 carries the general sentence, its tier and its
+> enforcer, and its D4 the read-side divergence. No new intake has been written in this shape since;
+> whether the shape is available to a new one is that ruling's to make, not this callout's.
 
 `BlobFileDto.ContentType` is a string the client chose, and the file extension is a weaker one (it
 survives a rename). Neither is evidence about the payload, so **neither may decide what a stored

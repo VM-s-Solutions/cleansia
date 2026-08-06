@@ -7,9 +7,9 @@ owner: backend
 created: 2026-08-06
 updated: 2026-08-06
 depends_on: []
-blocks: ["T-0459"]
+blocks: []
 stories: []
-adrs: ["NNNN-stored-content-type-is-byte-derived-on-every-intake (draft — panel owed)"]
+adrs: ["NNNN-stored-content-type-is-byte-derived-on-every-intake (draft rev 2 — challenged + defended, lead owed)", "0043"]
 layers: [backend]
 security_touching: false
 manual_steps: []
@@ -110,12 +110,16 @@ whose browser-derived type disagrees with its bytes — which today stores a lie
 
 ## Out of scope
 
-- **The read-path clamp.** `GetOrderPhotos.MapToDto` is untouched. It governs rows already stored and is
-  defence in depth for new ones; removing it because the write path is now correct is the "the bug was
-  preventing the vulnerability" inversion in reverse.
+- ~~**The read-path clamp.**~~ **WITHDRAWN 2026-08-06 by the ADR panel (draft rev 2, new D4).** The
+  clamp is no longer out of scope and `GetOrderPhotos.MapToDto` is no longer read-only: it resolves
+  through the SIX-value `ServedContentType` table while this intake accepts THREE, and the catalog
+  already obliges the narrowing — *"the read path reads the intake's own signature table"*. D4 is the
+  only half of the pair that reaches rows already written; D1 is the only half that makes the stored
+  column true. They compose rather than substitute: after D1 the clamp is the identity on every row D1
+  writes, so its whole effect is on pre-D1 rows — exactly D1's blind spot.
 - **Retyping existing rows.** A write-path rule retypes nothing already stored, and this surface has no
   read-path remedy — the server never sees an order photo's bytes after intake.
-- **Metadata / EXIF.** Different decision, `NNNN-user-artifact-content-policy-no-decoder.md`.
+- **Metadata / EXIF.** Different decision, `ADR-0043`.
 - **Deleting `UploadOrderPhoto` / merging the two endpoints** — ADR alternative A3, still open.
 - **`GetOrderPhotos`' browse gate.** It uses `CanBrowseOrderAsync`, not `CanAccessOrderAsync`
   (`GetOrderPhotos.cs:59`, `OrderAccessService.cs:68-92`), so any tenant cleaner who can see the order
@@ -132,7 +136,9 @@ whose browser-derived type disagrees with its bytes — which today stores a lie
 - `src/Cleansia.Tests/Features/Orders/SaveOrderPhotosContentTypeTests.cs` — rewritten
 - `src/Cleansia.Tests/Common/Validators/UploadIntakeRosterTests.cs` — `:34-38`, `:47`, `:52`
 - `agents/knowledge/patterns-backend.md`, `agents/knowledge/consistency.md` (AC8)
-- **Read-only, must not change:** `GetOrderPhotos.cs`, `ServedContentType.cs`, `SniffedContentType.cs`
+- `src/Cleansia.Core.AppServices/Features/Orders/GetOrderPhotos.cs` — the D4 clamp (was listed here as
+  read-only; the panel withdrew that)
+- **Read-only, must not change:** `ServedContentType.cs`, `SniffedContentType.cs`
 
 **Do not widen `AcceptedByIntake[UploadIntake.OrderPhoto]`.** `image/gif` and `application/pdf` becoming
 unreachable on this intake is the intended outcome, not a regression: no client offers either

@@ -1,13 +1,18 @@
 # User-uploaded artifacts — living decision doc
 
-> **Status: §1–§3 are SHIPPED and verified at HEAD (2026-08-05). §4–§6 were DECIDED-BUT-UNPANELLED —
-> ⚠️ THE PANEL HAS NOW RUN (2026-08-06) and §8 is its verdict; read §8 BEFORE §4–§6, which it corrects
-> in ten places. §7 is the content-type ruling (a separate, still-unpanelled lane).** The
-> immutable record for §4–§6 is
-> `../../backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` (**`proposed`**, number not
-> allocated, **panel run → verdict REVISE; rev N+1 owed, then accept**).
+> **Status: §1–§3 are SHIPPED and verified at HEAD (2026-08-05, re-verified 2026-08-06). §4–§6 were
+> DECIDED-BUT-UNPANELLED — ⚠️ THE PANEL HAS RUN (2026-08-06) and §8 is its verdict; read §8 BEFORE
+> §4–§6, which it corrects in ten places. §7 is the content-type ruling — a separate lane whose
+> **§7.1 draft has now had one independent challenge round (rev 2, 2026-08-06) and is awaiting a lead**,
+> while **§7.2 is still author-only**.** The immutable record for §4–§6 is
+> **`../../backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`**
+> — **rev N+1 landed 2026-08-06**, status **`proposed`**, carrying the full `## Challenge` /
+> `## Defense` / `## Verdict` trail. **The PM checks it against §Verdict §C only, then accepts; that
+> acceptance is the sole remaining gate on T-0459.** The old draft path
+> (`backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md`) is a **tombstone** — it held
+> rev N, whose map was stale in ~7 citations. Do not cite it.
 > **Tickets:** T-0458 (policy + seam), T-0459 (application), T-0460 (the S-series law) — **all three are
-> re-scoped by that draft; do not read their `## Context` as current.**
+> re-scoped by ADR-0043; do not read their `## Context` as current.**
 > **Related:** T-0464 ✅ (`b9753e85`, the served-type clamp), T-0548 ✅ (`97bb7265`, the avatar size cap),
 > T-0556 ✅ + follow-up (document intake, the roster), `request-intake-limits.md` (the host ceiling —
 > the *transport* bound, a different guarantee).
@@ -30,7 +35,7 @@ as having fixed another.
 | 1 | **How many bytes?** | `Common/Validators/BlobFileSize.cs` — 10 MiB decoded, derived from the *encoded* length, **first** in every chain | bound the *collection*; bound the *request* |
 | 2 | **How many items?** | each command's `Validator` — 10 documents, 30 photos | bound bytes at all; it runs after buffering, so it is answer-correctness, not resource protection |
 | 3 | **Is it the kind of thing we take?** | the two `AbstractValidator<BlobFileDto>` siblings + their signature tables | say anything about what is *inside* the container |
-| 4 | **What is it served as?** | `ServedContentType` on the **read** path (closed set) + `DocumentContentType.ForDownload` | change the bytes |
+| 4 | **What is it served as?** | `ServedContentType` on the **read** path (closed set) + `SniffedContentType.ForDownload` (`:127-128`) — *the header's rename note applies here too; `DocumentContentType` is gone* | change the bytes |
 | 5 | **What travels inside it?** | **nothing today** — §4 is the open decision | be answered on the read path (a SAS hands the client the stored bytes directly) |
 
 The transport ceiling is a **sixth** bound and lives in `request-intake-limits.md`. It is a host
@@ -133,7 +138,7 @@ never reachable and never needed):
   failure mode is **memory**, so scale-out never fires and an OOM takes every site on the instance.
   *(This is a stronger argument than the one originally written here — panel, CH-3ii.)*
 
-## 4. The decided shape (unpanelled)
+## 4. The decided shape — panelled 2026-08-06, transcribed into ADR-0043
 
 1. **No shared sanitizer seam.** The shareable things already are shared (`BlobFileSize`,
    `ServedContentType`, the roster). A metadata transform is not shareable — JPEG segments, PNG chunks
@@ -215,8 +220,12 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
 ## 6. Open / owed
 
 - ~~**Panel.**~~ **RUN, 2026-08-06.** Author + independent challenger + lead, all distinct instances.
-  Verdict **REVISE** (rulings survive; map and several reasons rewritten) — **§8**. T-0458 AC1 is
-  satisfied only when **rev N+1** is accepted; rev N+1 is a transcription pass, not another round.
+  Verdict **REVISE** (rulings survive; map and several reasons rewritten) — **§8**.
+  ~~rev N+1 owed~~ **REV N+1 LANDED, 2026-08-06, as `ADR-0043` (`proposed`).** It applied §Verdict §C's
+  twelve items and nothing else, re-opened every surviving `file:line` at HEAD, and restated **D5/D6 as
+  ratifications** of shipped code rather than decisions. **What remains is the PM's acceptance stamp**,
+  checked against §Verdict §C only — T-0458 AC1 is satisfied at that point, and it is the sole gate on
+  T-0459.
 - ~~**The challenge I most want pressed:**~~ **ANSWERED — split per surface.** Deferring the scrub
   behind the web re-encode is available for **order photos** (the argument there is durability) and
   **not** for **dispute evidence** (adversarial uploader — §8 / B.5).
@@ -249,22 +258,29 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
 ## 7. The content-type question — ruled 2026-08-06 (two drafts, panel owed)
 
 The T-0556 follow-up brought thirteen of the fourteen intakes onto a byte-derived stored type and routed
-two calls here rather than deciding them. Both are now drafted. **Neither is `accepted`; both are
-author-mode drafts awaiting a challenger and a lead.**
+two calls here rather than deciding them. Both are now drafted. **Neither is `accepted`.** §7.1 has had
+an **independent challenge round** (`backlog/adr/challenges/NNNN-stored-content-type-byte-derived.md`,
+five blocking findings) and the author's **rev 2** answers it — **a lead is owed and has not ruled**.
+§7.2 is still an author-mode draft awaiting both.
 
 ### 7.1 `SaveOrderPhotos` — the exception closes
 
 `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md`
 
-**The trade-off space, so the next reader does not re-derive it:**
+**The trade-off space, so the next reader does not re-derive it.** ⚠️ **Rewritten 2026-08-06 after the
+independent challenge round** (`backlog/adr/challenges/NNNN-stored-content-type-byte-derived.md`). Three
+rows changed: the read path was one row and is three; the `Opaque` row's why-not was backwards; the
+refuse-vs-`Opaque` branch is now an owner call.
 
 | Option | Refusals it introduces | Why not (or why) |
 |---|---|---|
-| **Keep the exception, document it honestly** | none | Its justification is one set too wide, its fallback invents a fact, and its cost is zero — a carve-out with no cost behind it buys nothing and forbids stating the rule |
-| **Sniff → refuse on failure** ← **chosen** | web-only, and only for a file whose browser-derived type disagrees with its bytes | Matches `UploadOrderPhoto` on the same container/table/accept set; the refused set is exactly the set that stores a lie today |
-| **Sniff → store `Opaque` on failure** | **none at all** | The strongest alternative. Rejected because it gives one question two answers across two sibling endpoints, and a photo that uploads and can never render is evidence silently lost on a path a dispute may later turn on |
-| Delete `SaveOrderPhotos`, route everyone to `UploadOrderPhoto` | none | Right direction, wrong ticket — wire change across 3 generated clients + 2 shipped apps, and it drops the 30-photo batch the web picker uses |
-| Fix it on the read path (the document technique) | none | **Structurally impossible.** The server never sees an order photo's bytes after intake — `GetOrderPhotos` mints a SAS and storage serves the client directly |
+| **Keep the exception, document it honestly** | none | Its justification bounds the served type to *inert*, not to *right*; its fallback invents a fact; it hides a live 500; and its cost is zero — a carve-out with no cost behind it buys nothing and forbids stating the rule |
+| **Sniff at intake → refuse on failure** ← **chosen seam, default branch** | web-only, and only for a file whose browser-derived type disagrees with its bytes | Matches `UploadOrderPhoto` on the same container/table/accept set. **The refuse-vs-store branch is escalated — `Q-ART-02`**; the seam (byte-derived type, minted extension, decodability rule) is identical either way |
+| **Sniff at intake → store `Opaque` on failure** | **none at all** | ~~evidence silently lost~~ **that reason was backwards and is withdrawn**: under `Opaque` the bytes are stored and download rather than preview (the same cost §7.2's D3 names), while a refusal the cleaner does not retry loses the photo outright. What survives is a **usability** claim, plus symmetry with the sibling endpoint — a tie-breaker, not a ruling. Hence `Q-ART-02` |
+| **Narrow the READ clamp to the intake's accepted set** ← **also chosen (a complement, not a substitute)** | none | Closes the `application/pdf`/`image/gif` capability on **every row including those already written**, which the write-path rule cannot reach. Reads no bytes, changes no client, needs no migration. Already obliged by `patterns-backend.md:1364-1366` — *"the read path reads the intake's own signature table"* — which `GetOrderPhotos.cs:96` violates today. **Cost: a legacy GIF/PDF row downloads instead of rendering.** Row count owed as an owner query |
+| Re-derive the served type from the bytes on read (the document technique) | none | **Structurally unavailable.** The `GetOrderPhotos` → SAS path never holds the bytes; adopting it means downloading every photo on every gallery render |
+| Set `rscd` (`Content-Disposition: attachment`) on non-image served types | none | **Routed, not rejected.** `patterns-backend.md:1352-1357` rules it out as *the* control, and `GenerateSasUri` is one shared mint whose dispute-evidence user legitimately previews PDFs — a product change on a surface §7.1 does not own. Belongs with the dispute/content-policy lane (its CH-7) |
+| Delete `SaveOrderPhotos`, route everyone to `UploadOrderPhoto` | none | Right direction, wrong ticket — wire change across 3 generated clients + 2 shipped apps, and it drops the 30-photo batch the web picker uses. **Cheaper after the ruling than before it** |
 
 **The fact that decided it, and the one to re-check if this is ever revisited:** *both mobile clients
 re-encode every pick to JPEG and cannot emit anything else* — iOS `ImageCompressor.swift:77`
@@ -280,13 +296,20 @@ uploader says so — **a no-op the attacker selects, under a green "scrub applie
 (premise pinned by `SaveOrderPhotosContentTypeTests.cs:49-59`). That is a stronger argument than "the
 stored type is a lie", because it is about a future control being **unbuildable** rather than a fact
 being wrong. It does **not** decide between the chosen option and the `Opaque` alternative — a
-byte-derived `octet-stream` would make the scrub a *declared* no-op, which is fine — so F4 kills the
-status quo and the sibling-symmetry reasons still carry the rest.
+byte-derived `octet-stream` would make the scrub a *declared* no-op, which is fine.
 
-**Sequencing this creates, and it is the practical output of the two lanes meeting:**
-**the closing ticket blocks T-0459** (apply the scrub). A scrub shipped first is a control whose no-op
-path its own uploader chooses. The content-policy ADR should not re-decide the mechanism — it should
-state that its D2 runs only against a byte-derived type and cite §7.1.
+> ⚠️ **Superseded 2026-08-06 by §8.2, and the correction runs against this lane.** The content-policy
+> panel ruled that the scrub dispatches **from the bytes it is holding, at the moment it runs — never a
+> client string, never a persisted `ContentType`, not even a correct one** (that challenge's repair
+> **(a)**, not **(b)**). Two consequences, both recorded in the ADR's rev 2:
+> **(i) ~~the closing ticket blocks T-0459~~ — WITHDRAWN.** A scrub that sniffs its own bytes is
+> decision-complete on this surface today (§8.3). Sequencing the closing ticket first is preferable, not
+> required; **the PM should remove `blocks: T-0459` from `T-0561`.** A false dependency in the backlog is
+> worse than none.
+> **(ii) The "unbuildable future control" argument is struck as a justification** for closing the
+> intake. It killed the status quo for a control that no longer needs it. What carries the ruling is the
+> capability (`application/pdf`/`image/gif` storable and servable here and nowhere else), the invented
+> fact of the `"image/jpeg"` fallback, the live 500, and a cost of zero.
 
 **Two audience facts re-verified here, because they change what the ruling is worth (CH-2c, CH-3iii):**
 
@@ -301,17 +324,53 @@ state that its D2 runs only against a byte-derived type and cite §7.1.
   what is absent. §3's "nothing decodes" is therefore a statement about **call sites**, not about the
   image on the box — correct §3 accordingly when that ADR is re-based. §7.1 leans on **neither** limb.
 
-**Current shape (what the closing ticket implements):** sniff rule appended after the size rule; a
-decodability rule closing the chain (there is none today — `SaveOrderPhotos.cs:136` calls
-`Convert.FromBase64String` unguarded, which is a **live 500**); `DetermineContentType` deleted; blob-name
-extension minted via `SniffedContentType.ExtensionFor`. The read-path clamp is **not** touched — it is
-what governs rows already stored.
+**Current shape (what the closing ticket implements) — ⚠️ two-sided after the challenge round:**
 
-**Blocked on:** the panel, then the ticket. The catalog sentence is written in that ADR's D2 with tier
-`(gate pending: <closing ticket>)`, promoting to `T1-CI` when it lands. Until then
-`patterns-backend.md` carries the exclusion **as a named, dated deviation at the rule** rather than only
-in two doc comments — that disclosure edit is made and is not gated on the panel, because withdrawing an
-implicit blessing obliges nobody.
+- **Write side.** A third `AbstractValidator<BlobFileDto>` family member, `PhotoFileValidator`
+  (presence → size → sniff → decodability, `.WithErrorCode(nameof(BlobFileDto))` on every rule like both
+  siblings), consumed by `SaveOrderPhotos.Validator` via `SetValidator` inside the existing `ChildRules`
+  block — **not** a fourth inline copy of that chain. `DetermineContentType` deleted; blob-name extension
+  minted via `SniffedContentType.ExtensionFor`. The decodability rule closes a **live 500**
+  (`SaveOrderPhotos.cs:136` calls `Convert.FromBase64String` unguarded) and is unconditional on
+  `Q-ART-02`.
+- **Read side — new, and it is the repair for the finding the ruling leads with.** The clamp is
+  **narrowed to the intake's accepted set** in one named function
+  (`SniffedContentType.ServedFor(recorded, intake)`, same assembly, returning a `ServedContentType`), and
+  `GetOrderPhotos.cs:96` calls it. `ServedContentType.cs` is **not** modified. After the write-side
+  change the clamp is the **identity** on every row the new intake writes, so its whole effect is on rows
+  written before it — precisely the population a write-path rule cannot reach.
+  **`T-0561`'s "out of scope: the read-path clamp" and "read-only: `GetOrderPhotos.cs`,
+  `SniffedContentType.cs`" are struck; `ServedContentType.cs` stays read-only.**
+- **Messages.** No new `BusinessErrorMessage` key — but not the document family's either.
+  `FileTypeNotAllowed`'s five-locale value is *"Accepted: PDF, JPEG, PNG, DOC, DOCX"*, the **document**
+  promise (`SniffedContentType.cs:83-86`), and partner web is the only client that can reach the new
+  refusal. The sniff and decodability rules use `FileNotMatchContentType`
+  (`file.content_type_doesnt_match`) — the **image** family's key, what `ImageFileValidator` already
+  uses, present in all five partner-web locales (`:1216`), all five Android partner locales and iOS.
+- **Carrier ruling.** On `OrderPhoto` the **`ContentType` column** is authoritative (read at
+  `GetOrderPhotos.cs:96`); the minted blob-name extension is defence in depth that no read path consults.
+  That does **not** contradict §7.2's refusal of a `DisputeEvidence.ContentType` column: **two carriers
+  minted from one derivation is redundancy; two carriers written from two derivations is ambiguity.**
+  §7.2's round-trip test should name `OrderPhoto` in its exemption list with that carrier.
+
+**Escalated, not decided:** whether a photo failing the byte check is **refused** or **stored
+un-previewable** — `Q-ART-02` (`backlog/questions/open.md:1480-1505`), filed, owner, `resolve-by:
+pre-prod`. The architecture is complete either way; the default if unanswered is *refuse*, on
+sibling-endpoint symmetry, which is a tie-breaker and is labelled as one.
+
+**Owner measurement owed before merge:** `SELECT "ContentType", count(*) FROM "OrderPhotos" GROUP BY 1`.
+It does not decide whether the read-side narrowing is right; it says how many existing photos change
+from rendering inline to downloading on the day it ships.
+
+**Blocked on:** the lead's ruling, then the ticket. The catalog sentence is written in that ADR's D2 with
+tier `(gate pending: <closing ticket>)`. **Its enforcer changed after the challenge round:**
+`UploadIntakeRosterTests` splits each roster row on `" — "` and keeps `[0]` (`:66-68`), so **the
+annotation is enforced by nothing** — it is a `T1-CI` enforcer of route *enumeration* only. D2 now names a
+per-intake refusal theory (count-first, driven off the roster array) plus a vocabulary assertion, with an
+explicit `T2-ADVISORY` fallback if the theory cannot be built in the ticket. Until then
+`patterns-backend.md` carries the exclusion **as a named, dated deviation at the rule** — restated
+descriptively 2026-08-06, because two of its sentences read as normative and pre-decided the "keep the
+exception" option the panel convened to weigh.
 
 ### 7.2 `DisputeEvidence` — the column is refused, the round-trip is pinned
 
@@ -353,10 +412,13 @@ here so it is not lost between two ADRs that are not about it.
 
 Author (2026-08-05) · independent challenger
 (`backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) · lead
-(2026-08-06), all distinct instances. Full trail and the closed change list live in the ADR's `## Verdict`.
+(2026-08-06), all distinct instances. Full trail and the closed change list live in the ADR's `## Verdict`
+— **`backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`**.
 
 **Outcome: REVISE — the rulings survive, the map and several reasons do not. No further challenge round.**
-Rev N+1 is a transcription pass; the PM checks it against the ADR's §C and accepts.
+~~Rev N+1 is a transcription pass~~ — **rev N+1 landed 2026-08-06 as ADR-0043 (`proposed`)**, applying
+§Verdict §C's twelve items and nothing else; **D5 and D6 are restated there as ratifications of shipped
+code, not as pending work.** The PM checks it against §C and accepts.
 
 ### 8.1 What survived unchanged (do not re-litigate)
 
@@ -383,6 +445,7 @@ Rev N+1 is a transcription pass; the PM checks it against the ADR's §C and acce
 | **What the scrub dispatches on** | **From the bytes it is holding, at the moment it runs.** Never a client string, never a persisted `ContentType` — not even a correct one. An unidentifiable format is **passed through untouched and reported as "not scrubbed"**, never as "scrubbed". This is stricter than, and consistent with, §7.1's ruling, and it means **T-0459 is not gated on §7.1's closing ticket** |
 | **The deferral option** | **Per surface.** Deferrable for order photos (durability); **not** for dispute evidence (enforceability — the uploader is the adversary) |
 | **Enforcement** | Replaced — see §5. The no-decode prohibition is a **reachability** property and needs a call-site enforcer; the roster widening is `T1-CI` **today**; accept ⊆ serve is true by construction but unpinned |
+| **The document exclusion (D8)** | **Scoped per surface** — §4 item 3's "employee documents no" was one reason doing two jobs. For **employee documents** all three limbs hold (mechanism cost, audience-already-has-more, `attachment`-only delivery), with an **expiry**: no admin-side document upload exists today (`UploadIntakeRosterTests.cs:45-46,50-51`), and if one is added the audience limb inverts. For **dispute-evidence PDFs** (`application/pdf` is in that intake's accepted set, `SniffedContentType.cs:92-95`) only the **mechanism limb** survives: the audience limb is false (customer → cleaner → adjudicating staff — "already has more" is true of nobody) and the delivery limb is false (served **inline**, no `rscd`, `BlobContainerClient.cs:93-110`). So the exclusion there rests on cost alone, **the one-sentence evasion is named rather than hidden** (wrap the photo in a PDF), and narrowing the accept set is escalated as **Q-ART-01(b)** — product, not architecture |
 
 ### 8.3 Sequencing this produces
 

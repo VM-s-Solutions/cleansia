@@ -1,7 +1,7 @@
 ---
 id: T-0460
 title: SECURITY RULE — user-supplied artifacts served back by URL are sanitized at upload (magic-byte validation is not a sanitizer)
-status: blocked
+status: draft
 size: S
 owner: architect
 created: 2026-07-30
@@ -59,7 +59,7 @@ Filed from the **T-0446 security gate** (finding **SEC-5**). Full write-up:
 >   **S11** exists in the file. The header is part of the drift sweep.
 >
 > **Proposed S12 text, the S12-vs-S4 ruling, the "how wide is artifact" ruling and the retroactive-scope
-> ruling are all in** `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` **§D7
+> ruling are all in** `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md` **§D7
 > / §D8 / §D9** (`proposed`, number not allocated, **panel owed**). This ticket remains the **sole
 > writer** of `agents/knowledge/security-rules.md`; the draft ADR deliberately does not edit it.
 
@@ -156,7 +156,7 @@ and the panel must settle more than the wording:
   citation, and it no longer has to wait for T-0458).
   Proposed S12 text + the four rulings this ticket's `## Deliberation` demands (S12 vs S4 · how wide
   "artifact" goes · what is enforceable · retroactive scope) are drafted in
-  `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` §D7–§D9, with the living
+  `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md` §D7–§D9, with the living
   doc at `agents/architecture/decisions/user-uploaded-artifacts.md`.
   **Still not `ready`:** that draft is `proposed` and its `## Challenge` is an author-run
   self-challenge; `process/deliberation.md` requires distinct author / challenger / lead instances.

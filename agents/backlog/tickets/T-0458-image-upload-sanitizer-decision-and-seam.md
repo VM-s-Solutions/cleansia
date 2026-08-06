@@ -1,7 +1,7 @@
 ---
 id: T-0458
 title: Image upload sanitization — decide the policy and build the shared sanitizer seam (EXIF strip, size cap, resize)
-status: blocked
+status: draft
 size: M
 owner: architect
 created: 2026-07-30
@@ -76,7 +76,7 @@ Filed from the **T-0446 security gate** (finding **SEC-3**). Full write-up:
 > needed (the draft ADR reuses `file.content_type_doesnt_match`). **AC6 is overturned.** AC7 stands but
 > is owed on the **batch**, not the avatar. AC8 stands.
 >
-> **Draft ADR:** `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md`
+> **Draft ADR:** `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`
 > (`proposed`, number not allocated, **panel owed**).
 > **Living doc:** `agents/architecture/decisions/user-uploaded-artifacts.md`.
 
@@ -201,7 +201,7 @@ _(PM floor; the panel finalizes)_
 - 2026-07-30 — **not `ready`**: awaiting the architect panel (DoR item 7 — no archetype exists, and the library/seam decision is unmade).
 - 2026-08-05 — **Gate 0 run by the architect (author mode). Premises verified at HEAD; ~70 % of this
   ticket is already satisfied and the remainder is reframed.** See the GATE 0 block at the top. A draft
-  ADR is on disk — `agents/backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md` — with
+  ADR is on disk — `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md` — with
   the living doc `agents/architecture/decisions/user-uploaded-artifacts.md`. **Still not `ready`:** the
   draft is `proposed`, its `## Challenge` section is an author-run self-challenge, and
   `process/deliberation.md` requires distinct author / challenger / lead instances. AC1 is unsatisfied

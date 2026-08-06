@@ -3,22 +3,27 @@ package cz.cleansia.customer.features.orders
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.user.CodeDto
+import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -54,6 +59,8 @@ class OrderDetailViewModelTest {
 
     private lateinit var repository: OrderRepository
     private lateinit var membershipRepository: MembershipRepository
+    private lateinit var membershipStaleness: Staleness
+    private lateinit var membership: MutableStateFlow<GetMyMembershipResponse?>
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var orderEventBus: OrderEventBus
@@ -67,9 +74,23 @@ class OrderDetailViewModelTest {
     fun setUp() {
         repository = mockk(relaxed = true)
         membershipRepository = mockk(relaxed = true)
+        membershipStaleness = Staleness()
+        membership = MutableStateFlow(null)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         orderEventBus = OrderEventBus()
+
+        every { membershipRepository.current } returns membership
+        every { membershipRepository.staleness } returns membershipStaleness
+        coEvery { membershipRepository.refresh() } coAnswers { membershipAnswer(hasMembership = false) }
+    }
+
+    /** Stands in for the repository writing its cache from a successful fetch. */
+    private fun membershipAnswer(hasMembership: Boolean): ApiResult<GetMyMembershipResponse> {
+        val body = GetMyMembershipResponse(hasMembership = hasMembership)
+        membership.value = body
+        membershipStaleness.markFresh()
+        return ApiResult.Success(body)
     }
 
     private fun viewModel(id: String? = orderId) = OrderDetailViewModel(
@@ -273,5 +294,66 @@ class OrderDetailViewModelTest {
 
         assertEquals(OrderDetailUiState.Error(canRetry = false), vm.state.value)
         coVerify(exactly = 0) { repository.getById(any()) }
+    }
+
+    // ── "Make this recurring" gate ──
+
+    @Test
+    fun `a resolved non-member loses the make-recurring shortcut`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringAuthoringGate.Upsell, vm.recurringAuthoring.value)
+    }
+
+    /**
+     * The defect: nothing on this screen fetched membership, so the shortcut was
+     * withheld from paid-up members whenever no other screen had warmed the cache.
+     * An answer that has not landed must not cost them the affordance — the server
+     * refuses an unentitled create with its own localized message.
+     */
+    @Test
+    fun `an unresolved membership keeps the make-recurring shortcut`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        coEvery { membershipRepository.refresh() } returns ApiResult.Error(ApiError.Network("offline"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringAuthoringGate.Allowed, vm.recurringAuthoring.value)
+    }
+
+    @Test
+    fun `a member keeps the make-recurring shortcut`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        coEvery { membershipRepository.refresh() } coAnswers { membershipAnswer(hasMembership = true) }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringAuthoringGate.Allowed, vm.recurringAuthoring.value)
+    }
+
+    @Test
+    fun `the screen fetches membership itself rather than trusting another screen's cache`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+
+        viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { membershipRepository.refresh() }
+    }
+
+    @Test
+    fun `a membership answer still inside its freshness window is not re-fetched`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        membershipAnswer(hasMembership = true)
+
+        viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { membershipRepository.refresh() }
     }
 }

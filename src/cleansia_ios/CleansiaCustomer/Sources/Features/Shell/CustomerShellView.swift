@@ -338,11 +338,11 @@ extension CustomerShellView {
             orderId: orderId,
             client: container.orderClient,
             repository: container.orderRepository,
+            membershipRepository: container.membershipRepository,
             snackbar: snackbar,
             eventBus: container.orderEventBus,
             paymentSheet: StripePaymentController(),
             mapProvider: container.mapProvider,
-            hasMembership: membershipVM.current?.hasMembership == true,
             // The footer hands back the id of the order on screen — the dispute
             // form is only reachable with one, which is the whole fix.
             onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) },

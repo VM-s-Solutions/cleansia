@@ -26,6 +26,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
+    @Published private(set) var hasMembership: Bool?
 
     let cancelSucceeded = PassthroughSubject<CancelOrderResponse, Never>()
     let reviewSucceeded = PassthroughSubject<OrderReviewDto, Never>()
@@ -35,6 +36,7 @@ final class OrderDetailViewModel: ViewModel {
     private let orderId: String
     private let client: OrderClient
     private let repository: OrderRepository
+    private let membershipRepository: MembershipRepository
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
     private let liveActivity: OrderLiveActivitySyncing
@@ -49,6 +51,7 @@ final class OrderDetailViewModel: ViewModel {
         orderId: String,
         client: OrderClient,
         repository: OrderRepository,
+        membershipRepository: MembershipRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
@@ -62,13 +65,24 @@ final class OrderDetailViewModel: ViewModel {
         self.orderId = orderId
         self.client = client
         self.repository = repository
+        self.membershipRepository = membershipRepository
         self.snackbar = snackbar
         self.eventBus = eventBus
         self.liveActivity = liveActivity
         self.pollInterval = pollInterval
         self.now = now
         super.init()
+        membershipRepository.$current
+            .map { $0?.hasMembership }
+            .assign(to: &$hasMembership)
         subscribeToEvents()
+    }
+
+    /// Gates the "Make this recurring" shortcut, from the same nullable membership the
+    /// recurring list resolves. Nothing on this screen used to fetch that answer, so a
+    /// paid-up member lost the shortcut whenever no other screen had warmed the cache.
+    var recurringAuthoring: RecurringAuthoringGate {
+        .resolve(hasMembership: hasMembership)
     }
 
     deinit {
@@ -84,7 +98,20 @@ final class OrderDetailViewModel: ViewModel {
         // the fetch so it lands while the request is in flight: prewarming once the order is loaded runs in
         // the same main-thread turn as the hero's first render, so it can never win that race.
         AnimatedMascotView.prewarm(.cleaningInProgress)
-        await fetch(initial: state.loadedValue == nil)
+        let initial = state.loadedValue == nil
+        // Concurrent, not sequential: the order is what this screen renders, and it must
+        // not wait on the answer that decides one footer button.
+        async let membership: Void = refreshMembership()
+        await fetch(initial: initial)
+        await membership
+    }
+
+    /// A screen that gates on membership fetches it. Reading whatever another screen
+    /// happened to warm is what took the shortcut away from paid-up members on a cold
+    /// entry. Failure leaves `hasMembership` nil, which fails open.
+    private func refreshMembership() async {
+        guard membershipRepository.staleness.isStale else { return }
+        await membershipRepository.refresh()
     }
 
     func retry() async {

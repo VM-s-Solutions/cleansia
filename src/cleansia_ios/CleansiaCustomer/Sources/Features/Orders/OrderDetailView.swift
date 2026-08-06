@@ -18,21 +18,16 @@ struct OrderDetailView: View {
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
-    /// Read from the shell, which already observes the membership repository and
-    /// warms it in `prefetch()`. Deliberately not refreshed here: a network call
-    /// on every order open to decide one button's visibility is a bad trade, and
-    /// Android has the identical cold-deep-link exposure.
-    private let hasMembership: Bool
 
     init(
         orderId: String,
         client: OrderClient,
         repository: OrderRepository,
+        membershipRepository: MembershipRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
         mapProvider: MapProvider,
-        hasMembership: Bool,
         onReportIssue: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
         onMakeRecurring: @escaping (String) -> Void
@@ -42,6 +37,7 @@ struct OrderDetailView: View {
                 orderId: orderId,
                 client: client,
                 repository: repository,
+                membershipRepository: membershipRepository,
                 snackbar: snackbar,
                 eventBus: eventBus
             )
@@ -51,7 +47,6 @@ struct OrderDetailView: View {
         self.snackbar = snackbar
         self.paymentSheet = paymentSheet
         self.mapProvider = mapProvider
-        self.hasMembership = hasMembership
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
@@ -138,12 +133,12 @@ struct OrderDetailView: View {
             ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
                 Task { await vm.confirmRecurring() }
             }
-        } else if OrderDetailFooterActions.showFooter(order.status, hasMembership: hasMembership) {
+        } else if OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring) {
             OrderDetailActionsFooter(
                 showRebook: OrderDetailFooterActions.showRebook(order.status),
                 showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
                     order.status,
-                    hasMembership: hasMembership
+                    authoring: vm.recurringAuthoring
                 ),
                 showCancel: OrderStatusGroup.isCancellable(order.status),
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
@@ -259,22 +254,24 @@ enum OrderDetailFooterActions {
         OrderStatusGroup.isCompleted(status)
     }
 
-    /// Same Completed-only gate as rebook, plus the Plus gate — recurring
-    /// bookings are a membership perk, so offering the CTA without one would
-    /// walk the customer into a paywall from a button that promised a schedule.
-    static func showMakeRecurring(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
-        showRebook(status) && hasMembership
+    /// Same Completed-only gate as rebook, plus the authoring half of Plus —
+    /// recurring bookings are a membership perk. The gate resolves permissively
+    /// from a nullable membership: a resolved non-member is walked into no
+    /// paywall, and an answer still in flight costs a member nothing, because
+    /// the server refuses an unentitled create with its own localized message.
+    static func showMakeRecurring(_ status: OrderStatus?, authoring: RecurringAuthoringGate) -> Bool {
+        showRebook(status) && authoring == .allowed
     }
 
     /// The footer renders if any of its four actions would. Completed used to
     /// arrive here only via `isReportable`, which is an accident of the dispute
     /// window happening to extend past completion rather than a statement about
     /// re-booking; naming all four keeps the gate honest if that window narrows.
-    static func showFooter(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
+    static func showFooter(_ status: OrderStatus?, authoring: RecurringAuthoringGate) -> Bool {
         OrderStatusGroup.isCancellable(status)
             || OrderStatusGroup.isReportable(status)
             || showRebook(status)
-            || showMakeRecurring(status, hasMembership: hasMembership)
+            || showMakeRecurring(status, authoring: authoring)
     }
 }
 

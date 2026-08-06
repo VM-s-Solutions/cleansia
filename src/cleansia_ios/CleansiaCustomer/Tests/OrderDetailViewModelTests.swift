@@ -15,6 +15,7 @@ final class OrderDetailViewModelTests: XCTestCase {
     private func makeVM(
         orderId: String = "o1",
         client: FakeOrderClient,
+        membershipClient: FakeMembershipManagementClient = FakeMembershipManagementClient(),
         pollInterval: TimeInterval = 60
     ) -> OrderDetailViewModel {
         let repo = OrderRepository(client: client)
@@ -22,6 +23,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             orderId: orderId,
             client: client,
             repository: repo,
+            membershipRepository: MembershipRepository(client: membershipClient),
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
@@ -406,6 +408,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             orderId: "o1",
             client: client,
             repository: repo,
+            membershipRepository: MembershipRepository(client: FakeMembershipManagementClient()),
             snackbar: SnackbarController(),
             eventBus: bus,
             liveActivity: NoopLiveActivitySync(),
@@ -417,5 +420,129 @@ final class OrderDetailViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 30_000_000)
 
         XCTAssertGreaterThanOrEqual(client.detailCallCount, 2)
+    }
+
+    // MARK: Make this recurring
+
+    private func membershipClient(_ result: ApiResult<MyMembership>) -> FakeMembershipManagementClient {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [result]
+        return client
+    }
+
+    private func completedVM(_ memClient: FakeMembershipManagementClient) -> OrderDetailViewModel {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
+        return makeVM(client: client, membershipClient: memClient)
+    }
+
+    func testAResolvedNonMemberLosesTheMakeRecurringShortcut() async {
+        let vm = completedVM(membershipClient(.success(MembershipFixtures.inactive)))
+
+        await vm.load()
+
+        XCTAssertEqual(vm.recurringAuthoring, .upsell)
+    }
+
+    /// The defect: nothing on this screen fetched membership, so the shortcut was withheld
+    /// from paid-up members whenever no other screen had warmed the cache. An answer that
+    /// has not landed must not cost them the affordance — the server refuses an unentitled
+    /// create with its own localized message.
+    func testAnUnresolvedMembershipKeepsTheMakeRecurringShortcut() async {
+        let vm = completedVM(membershipClient(.failure(ApiError(httpStatus: 500))))
+
+        await vm.load()
+
+        XCTAssertNil(vm.hasMembership)
+        XCTAssertEqual(vm.recurringAuthoring, .allowed)
+    }
+
+    func testAMemberKeepsTheMakeRecurringShortcut() async {
+        let vm = completedVM(membershipClient(.success(MembershipFixtures.active)))
+
+        await vm.load()
+
+        XCTAssertEqual(vm.recurringAuthoring, .allowed)
+    }
+
+    func testTheScreenFetchesMembershipItselfRatherThanTrustingAnotherScreensCache() async {
+        let memClient = membershipClient(.success(MembershipFixtures.inactive))
+        let vm = completedVM(memClient)
+
+        await vm.load()
+
+        XCTAssertEqual(memClient.mineCallCount, 1)
+    }
+
+    func testAMembershipAnswerStillInsideItsFreshnessWindowIsNotRefetched() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
+        let memClient = FakeMembershipManagementClient()
+        memClient.mineResults = [.success(MembershipFixtures.active)]
+        let memRepo = MembershipRepository(client: memClient)
+        await memRepo.refresh()
+        let vm = OrderDetailViewModel(
+            orderId: "o1",
+            client: client,
+            repository: OrderRepository(client: client),
+            membershipRepository: memRepo,
+            snackbar: SnackbarController(),
+            eventBus: OrderEventBus(),
+            liveActivity: NoopLiveActivitySync(),
+            pollInterval: 60
+        )
+
+        await vm.load()
+
+        XCTAssertEqual(memClient.mineCallCount, 1)
+        XCTAssertEqual(vm.recurringAuthoring, .allowed)
+    }
+
+    /// The binding has to replay a warm cache at init, not one turn later: the footer is
+    /// built on the first body pass, and `.allowed` is also the fail-open default, so a
+    /// binding that did not replay would look correct for a member and flash the shortcut
+    /// at a resolved non-member. This is what makes a separate seed assignment redundant.
+    func testAWarmMembershipCacheIsVisibleBeforeTheFirstLoad() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
+        let memRepo = MembershipRepository(client: membershipClient(.success(MembershipFixtures.inactive)))
+        await memRepo.refresh()
+
+        let vm = OrderDetailViewModel(
+            orderId: "o1",
+            client: client,
+            repository: OrderRepository(client: client),
+            membershipRepository: memRepo,
+            snackbar: SnackbarController(),
+            eventBus: OrderEventBus(),
+            liveActivity: NoopLiveActivitySync(),
+            pollInterval: 60
+        )
+
+        XCTAssertEqual(vm.hasMembership, false)
+        XCTAssertEqual(vm.recurringAuthoring, .upsell)
+    }
+
+    /// `deinit` cancelling `pollTask` is this view model's ONLY teardown for an order that
+    /// stays active: the poller stops when the order goes non-active or `shouldStopPolling()`
+    /// says so, and neither fires when the customer just navigates away. So anything that
+    /// retains `self` here is not a leak — it is a `GET /orders/{id}` every poll interval,
+    /// per screen open, for the life of the process. `assign(to: &$x)` does not retain self;
+    /// `assign(to:on:)` does.
+    func testAnActiveOrderViewModelIsReleasedWhenTheScreenGoesAway() async {
+        weak var released: OrderDetailViewModel?
+
+        func openAndLeaveTheScreen() async {
+            let client = FakeOrderClient()
+            client.detailResults = [.success(OrderFixtures.detail(statusValue: 4))]
+            let vm = makeVM(client: client)
+            released = vm
+            await vm.load()
+            XCTAssertNotNil(released, "the view model was released before the screen was left")
+        }
+
+        await openAndLeaveTheScreen()
+
+        XCTAssertNil(released, "the view model outlived its screen, so its active-order poller never stops")
     }
 }

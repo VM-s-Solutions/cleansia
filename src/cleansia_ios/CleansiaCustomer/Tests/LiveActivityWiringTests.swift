@@ -127,6 +127,7 @@ final class OrderLiveActivitySyncTests: XCTestCase {
             orderId: "o1",
             client: client,
             repository: OrderRepository(client: client),
+            membershipRepository: MembershipRepository(client: FakeMembershipManagementClient()),
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: sync,

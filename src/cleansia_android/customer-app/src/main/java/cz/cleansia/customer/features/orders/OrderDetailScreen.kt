@@ -74,6 +74,7 @@ import cz.cleansia.customer.core.orders.OrderStatusTrackDto
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.customer.core.orders.openReceiptPdf
 import cz.cleansia.customer.core.user.CodeDto
+import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import kotlinx.coroutines.launch
@@ -101,8 +102,8 @@ fun OrderDetailScreen(
     /**
      * PA14 Path B — "Make this recurring". Routes to the create form with
      * the order id pre-filling services/packages/rooms/bathrooms/payment/
-     * timeOfDay. Only shown when the order is Completed AND the user has
-     * an active Plus membership (recurring is a Plus perk).
+     * timeOfDay. Shown on a Completed order unless membership has resolved
+     * to "not a member" — see [RecurringAuthoringGate].
      */
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
@@ -251,12 +252,8 @@ fun OrderDetailScreen(
     // and tap the FAB to start a fresh booking.
     val canRebook = status == OrderStatus.Completed
 
-    // PA14 Path B — "Make this recurring". Same Completed-only gate as
-    // rebook, plus an active-Plus-membership gate (recurring is a Plus
-    // perk). Membership state is read through the VM, which exposes the
-    // singleton repo via Hilt — no EntryPointAccessors detour.
-    val membership by viewModel.membershipRepository.current.collectAsStateWithLifecycle(initialValue = null)
-    val canMakeRecurring = canRebook && membership?.hasMembership == true
+    val recurringAuthoring by viewModel.recurringAuthoring.collectAsStateWithLifecycle()
+    val canMakeRecurring = canRebook && recurringAuthoring == RecurringAuthoringGate.Allowed
 
     // Lift the snackbar above the sheet's sticky footer so a cancel error
     // isn't posted underneath the button that caused it.

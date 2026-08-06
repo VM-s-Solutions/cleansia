@@ -8,6 +8,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
 import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
@@ -16,6 +17,7 @@ import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.OrderReviewDto
+import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,12 +29,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -100,7 +105,7 @@ class OrderDetailViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle,
-    val membershipRepository: cz.cleansia.customer.core.memberships.MembershipRepository,
+    private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
 ) : ViewModel() {
 
@@ -109,6 +114,16 @@ class OrderDetailViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val state: StateFlow<OrderDetailUiState> = _state.asStateFlow()
+
+    /**
+     * Gates the "Make this recurring" shortcut, from the same nullable membership
+     * the recurring list resolves. This screen fetches the answer itself rather
+     * than reading whatever another screen warmed: the cache it used to read is
+     * empty on a cold deep link, and a paid-up member lost the shortcut for it.
+     */
+    val recurringAuthoring: StateFlow<RecurringAuthoringGate> = membershipRepository.current
+        .map { RecurringAuthoringGate.resolve(it?.hasMembership) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, RecurringAuthoringGate.Allowed)
 
     /**
      * Wave 4 — collapsed `_cancelling: Boolean` + `_cancelError: String?` into
@@ -192,6 +207,9 @@ class OrderDetailViewModel @Inject constructor(
 
     init {
         load()
+        viewModelScope.launch {
+            if (membershipRepository.staleness.isStale()) membershipRepository.refresh()
+        }
         // Push-triggered refetch — when an order.* FCM event arrives for this
         // orderId, refetch immediately so the UI reflects the new status without
         // waiting for the next poll tick. The poller below stays as a safety

@@ -79,10 +79,11 @@ final class OrderStatusLogicTests: XCTestCase {
     }
 }
 
-/// The Completed-only footer CTAs (`canRebook` / `canMakeRecurring`,
-/// `OrderDetailScreen.kt:243-250`). These are the gates a screenshot cannot
-/// check: showing "Book again" on a Cancelled order, or the Plus-only recurring
-/// CTA to a free customer, both render perfectly and are both wrong.
+/// The Completed-only footer CTAs (`canRebook` / `canMakeRecurring` in
+/// `OrderDetailScreen.kt`). These are the gates a screenshot cannot check:
+/// showing "Book again" on a Cancelled order, the Plus-only recurring CTA to a
+/// resolved non-member, or hiding it from a member whose answer is still in
+/// flight — all three render perfectly and all three are wrong.
 final class OrderDetailFooterActionsTests: XCTestCase {
     func testBookAgainIsOfferedOnlyOnACompletedOrder() {
         XCTAssertTrue(OrderDetailFooterActions.showRebook(._5))
@@ -98,14 +99,25 @@ final class OrderDetailFooterActionsTests: XCTestCase {
     /// Android gates strictly on Completed and iOS must not drift wider.
     func testBookAgainIsNotOfferedOnACancelledOrder() {
         XCTAssertFalse(OrderDetailFooterActions.showRebook(._6))
-        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._6, hasMembership: true))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._6, authoring: .allowed))
     }
 
-    func testMakeRecurringNeedsBothCompletedAndAnActivePlusMembership() {
-        XCTAssertTrue(OrderDetailFooterActions.showMakeRecurring(._5, hasMembership: true))
-        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._5, hasMembership: false))
-        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._4, hasMembership: true))
-        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(nil, hasMembership: true))
+    func testMakeRecurringNeedsBothCompletedAndTheAuthoringHalfOfPlus() {
+        XCTAssertTrue(OrderDetailFooterActions.showMakeRecurring(._5, authoring: .allowed))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._5, authoring: .upsell))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._4, authoring: .allowed))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(nil, authoring: .allowed))
+    }
+
+    /// A membership answer that has not landed used to read as "not a member", which
+    /// took the shortcut away from paid-up members on a cold entry.
+    func testAnUnresolvedMembershipStillOffersMakeRecurring() {
+        XCTAssertTrue(
+            OrderDetailFooterActions.showMakeRecurring(._5, authoring: .resolve(hasMembership: nil))
+        )
+        XCTAssertFalse(
+            OrderDetailFooterActions.showMakeRecurring(._5, authoring: .resolve(hasMembership: false))
+        )
     }
 
     /// The footer's own render gate. It used to be `isCancellable || isReportable`,
@@ -113,11 +125,71 @@ final class OrderDetailFooterActionsTests: XCTestCase {
     /// an accident that would silently hide both new CTAs if the dispute window
     /// ever narrowed.
     func testTheFooterRendersWheneverAnyOfItsFourActionsWould() {
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, hasMembership: false))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, hasMembership: false))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, hasMembership: false))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, hasMembership: true))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, hasMembership: true))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, authoring: .upsell))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, authoring: .upsell))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, authoring: .upsell))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, authoring: .allowed))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, authoring: .allowed))
+    }
+
+    /// The pure gate above is only as good as what the view hands it. Reverting the
+    /// screen to the shell-injected `Bool` reinstates the defect and leaves every
+    /// assertion in this class green, and there is no view harness to see it.
+    func testTheViewFeedsTheGateItsViewModelResolved() throws {
+        let source = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
+
+        XCTAssertTrue(
+            source.contains("OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring)"),
+            "the footer gate no longer reads the resolved gate"
+        )
+        XCTAssertTrue(
+            source.contains("authoring: vm.recurringAuthoring"),
+            "the make-recurring CTA no longer reads the resolved gate"
+        )
+        XCTAssertNil(
+            source.range(of: "hasMembership"),
+            "the view reads a membership flag again instead of the resolved gate"
+        )
+    }
+
+    /// The shell used to answer the membership question for this screen out of its own
+    /// observed copy, which is the read-without-fetch half of the defect.
+    func testTheShellHandsTheScreenTheRepositoryNotAnAnswer() throws {
+        let source = try readSource("CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift")
+        let orderDetail = try block(in: source, after: "private func orderDetail(_ orderId: String) -> some View {")
+
+        XCTAssertTrue(
+            orderDetail.contains("membershipRepository: container.membershipRepository"),
+            "the order-detail screen is built without a membership repository to fetch from"
+        )
+        XCTAssertNil(
+            orderDetail.range(of: "hasMembership"),
+            "the shell answers the membership question for the order-detail screen again"
+        )
+    }
+
+    private func block(in source: String, after marker: String) throws -> String {
+        let start = try XCTUnwrap(source.range(of: marker), "no `\(marker)` in source")
+        XCTAssertEqual(source.range(of: marker, options: .backwards), start, "`\(marker)` is not unique")
+        var depth = 1
+        var index = start.upperBound
+        while index < source.endIndex {
+            if source[index] == "{" { depth += 1 }
+            if source[index] == "}" {
+                depth -= 1
+                if depth == 0 { return String(source[start.upperBound ..< index]) }
+            }
+            index = source.index(after: index)
+        }
+        throw XCTSkip("unbalanced braces after `\(marker)`")
+    }
+
+    private func readSource(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
     }
 }
 

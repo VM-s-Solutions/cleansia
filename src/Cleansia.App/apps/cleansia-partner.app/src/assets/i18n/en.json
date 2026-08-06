@@ -1105,8 +1105,8 @@
       "no_available_spots": "Another cleaner has already taken this job.",
       "not_takeable": "This job is no longer available.",
       "take": {
-        "already_cancelled": "This order has already been cancelled.",
-        "already_completed": "This order has already been completed."
+        "already_cancelled": "This order is already cancelled.",
+        "already_completed": "This order is already completed."
       },
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",

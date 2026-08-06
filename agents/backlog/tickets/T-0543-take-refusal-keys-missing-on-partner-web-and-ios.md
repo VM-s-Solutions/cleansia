@@ -130,6 +130,39 @@ panel.
   the same five files. **The distinction is deliberate and is the point of the reconciliation: a citation
   is only true against the tree state you name.** Remaining and unverified either way: **iOS partner**
   bundle coverage (AC6) and the parity-guard blind spot (AC5).
+- 2026-08-06 — **re-verified by frontend. The table above is now stale in the direction the ticket itself
+  predicted: the web lane's work was committed as `7ddc491e`, so the gap is closed at HEAD.** Both keys
+  are present under `api.order.take.*` in all five partner bundles (AC1), in the iOS `CleansiaCore`
+  catalog with every unit `translated` (AC2), and in the partner contract spec (AC5). `git status` on
+  `src/Cleansia.App/` is clean, so there is no uncommitted twin of this work to collide with.
+  **AC5 answered — the guard did not miss this, but it could not have caught it.** `26c5274`'s spec was
+  green at the time the keys landed because both its lists are *hand-written*:
+  `PARTNER_SURFACE_ERROR_KEYS` and the `takeRefusals` array are memory, and neither direction of the
+  spec asserts backend → contract. A key the backend adds tomorrow is invisible until a human
+  remembers to list it, which is precisely the failure mode. **Fixed rather than recorded:** the
+  take-refusal test now *derives* its key set by reading `TakeOrder.cs` and resolving each
+  `BusinessErrorMessage.X` reference through `BusinessErrorMessage.cs`, then asserts every derived key
+  is on the contract **and** resolves non-empty **per locale**. Derived set is 12 keys — a strict
+  superset of the 10 that were listed (it adds `common.required` and `employee.not_found`, both already
+  translated). Mutation-proved twice: pointing the emitter at an untranslated constant reddens all five
+  locales, and blanking one locale's value reddens that locale only. `PENDING_TRANSLATION` untouched
+  and still empty.
+  **AC3 was NOT satisfied and is the one real defect that survived.** Partner web `en` read *"This order
+  has already been cancelled. / …completed."* against Android's and iOS's *"This order is already
+  cancelled. / …completed."* — cs/sk/uk/ru matched verbatim, `en` did not. This is not a style nit: the
+  web `en` value was **byte-identical to the customer bundle's `api.order.already_cancelled`**, so on
+  English partner web the ADR-0037 CH-X1 split bought exactly nothing — the cleaner read the customer's
+  sentence, which is the defect the split exists to prevent (AC4). Both `en` values now match Android
+  and iOS verbatim.
+  **AC6 clean, grep recorded:** `BusinessErrorMessage.cs` holds exactly two `order.take.*` values
+  (`already_cancelled`, `already_completed`); the iOS `CleansiaCore` catalog holds exactly those two
+  `error.order.take.*` keys; `CleansiaPartner/Resources/Localizable.xcstrings` holds **0** `error.*`
+  keys of its own, i.e. iOS partner resolves all of them from the shared catalog and has no twin gap.
+  iOS was **read at HEAD only and not edited** — an iOS lane is live in that tree.
+  Not widened into (out of scope, reported for the PM): customer web `uk`/`ru`
+  `api.order.already_*` render *"замовлення"/"заказ"* where the iOS customer catalog uses
+  *"бронювання"/"бронирование"*, so the customer register differs between web and iOS on those two
+  locales. Separate from this ticket's partner keys.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

@@ -24,6 +24,11 @@ const BUSINESS_ERROR_MESSAGE_PATH = join(
   'Cleansia.Core.AppServices/Common/BusinessErrorMessage.cs'
 );
 
+const TAKE_ORDER_PATH = join(
+  SOLUTION_DIR,
+  'Cleansia.Core.AppServices/Features/Orders/TakeOrder.cs'
+);
+
 const I18N_DIR = join(
   SOLUTION_DIR,
   'Cleansia.App/apps/cleansia-partner.app/src/assets/i18n'
@@ -40,15 +45,32 @@ function readLocale(locale: Locale): Record<string, unknown> {
   >;
 }
 
-function parseBusinessErrorValues(): Set<string> {
+function parseBusinessErrorConstants(): Map<string, string> {
   const source = readFileSync(BUSINESS_ERROR_MESSAGE_PATH, 'utf8');
-  const values = new Set<string>();
-  const regex = /public const string \w+ = "([^"]+)";/g;
+  const constants = new Map<string, string>();
+  const regex = /public const string (\w+) = "([^"]+)";/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(source)) !== null) {
-    values.add(match[1]);
+    constants.set(match[1], match[2]);
   }
-  return values;
+  return constants;
+}
+
+function parseBusinessErrorValues(): Set<string> {
+  return new Set(parseBusinessErrorConstants().values());
+}
+
+function keysEmittedBy(emitterPath: string): string[] {
+  const source = readFileSync(emitterPath, 'utf8');
+  const constants = parseBusinessErrorConstants();
+  const emitted = new Set<string>();
+  const regex = /BusinessErrorMessage\.(\w+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    const value = constants.get(match[1]);
+    if (value) emitted.add(value);
+  }
+  return [...emitted].sort();
 }
 
 function flattenKeys(obj: unknown, prefix = ''): Set<string> {
@@ -279,30 +301,37 @@ describe('error-contract parity (partner app)', () => {
     expect(stale).toEqual([]);
   });
 
-  it('the take-order refusal reasons a racing cleaner hits are all translated', () => {
-    // Every arm of the TakeOrder validator chain, in its order. A missing web key renders
-    // "An error occurred. Please try again." — indistinguishable from a 500 — so a partner-facing
-    // refusal that is not in this list is a cleaner clicking the same dead job forever.
-    const takeRefusals = [
-      'order.not_found',
-      'order.take.already_cancelled',
-      'order.take.already_completed',
-      'order.not_takeable',
-      'order.no_available_spots',
-      'employee.profile_incomplete',
-      'employee.not_approved',
-      'order.employee_already_assigned',
-      'order.weekly_limit_reached',
-      'order.time_conflict',
-    ];
-    for (const locale of LOCALES) {
-      const data = readLocale(locale);
-      const missing = takeRefusals.filter((key) => {
-        const value = resolveKey(data, `api.${key}`);
-        return !value || value.trim().length === 0;
-      });
-      expect({ locale, missing }).toEqual({ locale, missing: [] });
-    }
+  describe('the take-order refusal reasons a racing cleaner hits', () => {
+    // Read out of TakeOrder.cs rather than listed here. A hand-kept list cannot fail on a key
+    // the backend added after it was written, which is exactly how order.take.already_* reached
+    // three clients before this app: the missing key renders "An error occurred. Please try
+    // again." — indistinguishable from a 500 — and the cleaner reclicks the same dead job.
+    const takeRefusals = keysEmittedBy(TAKE_ORDER_PATH);
+
+    it('are read out of the emitter, not remembered', () => {
+      expect(takeRefusals).toEqual(expect.arrayContaining(
+        ['order.take.already_cancelled', 'order.take.already_completed']
+      ));
+      expect(takeRefusals.length).toBeGreaterThanOrEqual(10);
+    });
+
+    it('are all on the partner surface contract', () => {
+      const unlisted = takeRefusals.filter(
+        (key) => !PARTNER_SURFACE_ERROR_KEYS.includes(key)
+      );
+      expect(unlisted).toEqual([]);
+    });
+
+    it('are all translated in all five locales', () => {
+      for (const locale of LOCALES) {
+        const data = readLocale(locale);
+        const missing = takeRefusals.filter((key) => {
+          const value = resolveKey(data, `api.${key}`);
+          return !value || value.trim().length === 0;
+        });
+        expect({ locale, missing }).toEqual({ locale, missing: [] });
+      }
+    });
   });
 
   it('the generic fallback key resolves in all five locales', () => {

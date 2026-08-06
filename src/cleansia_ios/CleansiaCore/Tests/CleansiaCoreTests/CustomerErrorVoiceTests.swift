@@ -51,7 +51,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
             "recurring_booking.ends_on_before_start",
             emitters: "CreateRecurringBooking, UpdateRecurringBooking"
         ),
-        CustomerOnlyKey("recurring_booking.membership_required", emitters: "CreateRecurringBooking")
+        CustomerOnlyKey(
+            "recurring_booking.membership_required",
+            emitters: "CreateRecurringBooking, UpdateRecurringBooking"
+        )
     ]
 
     /// Every `BusinessErrorMessage` a customer mobile controller's command can answer with — its own
@@ -136,7 +139,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.total_price.positive": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
-        "recurring_booking.membership_required": "UpdateRecurringBooking",
+        "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.no_services_or_packages": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.not_found": "DeleteRecurringBooking, SetRecurringBookingActive, UpdateRecurringBooking",
         "recurring_booking.not_owned_by_user":

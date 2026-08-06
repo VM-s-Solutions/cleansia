@@ -26076,6 +26076,41 @@
         }
       }
     },
+    "recurring_edit_applies_notice" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Změny platí od této chvíle. Úklidy už zařazené v kalendáři si ponechají původní datum a čas — pokud je nechcete, zrušte je jednotlivě v Objednávkách."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changes apply from now on. Cleanings already on your calendar keep their original date and time — cancel them individually from Orders if you no longer want them."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменения действуют с этого момента. Уборки, уже стоящие в календаре, сохраняют исходную дату и время — отмените их по одной в Заказах, если они больше не нужны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmeny platia od tejto chvíle. Upratovania už zaradené v kalendári si ponechajú pôvodný dátum a čas — ak ich nechcete, zrušte ich jednotlivo v Objednávkach."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зміни діють від цього моменту. Прибирання, які вже у календарі, зберігають початкову дату й час — скасуйте їх по одному в Замовленнях, якщо більше не потрібні."
+          }
+        }
+      }
+    },
     "recurring_edit_failed" : {
       "extractionState" : "stale",
       "localizations" : {

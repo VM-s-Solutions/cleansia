@@ -194,6 +194,10 @@ extension L10n {
             localized("recurring_edit_failed")
         }
 
+        static var editAppliesNotice: String {
+            localized("recurring_edit_applies_notice")
+        }
+
         static var freqWeeklyLabel: String {
             localized("recurring_freq_weekly_label")
         }

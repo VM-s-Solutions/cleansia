@@ -58,8 +58,12 @@ public class UploadDisputeEvidenceSasFailureTests
             _disputeRepository.Object, _session.Object, _blobFactory.Object, _logger.Object);
     }
 
+    /// <summary>
+    /// A real PNG head, not three arbitrary bytes: the intake refuses a payload whose bytes are not an
+    /// accepted type, so a fixture the validator would reject proves nothing about the handler.
+    /// </summary>
     private static UploadDisputeEvidence.Command ValidCommand() =>
-        new(DisputeId, "evidence.png", "image/png", new byte[] { 1, 2, 3 });
+        new(DisputeId, "evidence.png", "image/png", [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D]);
 
     [Fact]
     public async Task SasGenerationThrows_UploadStillSucceeds_WithNullBlobUrl()

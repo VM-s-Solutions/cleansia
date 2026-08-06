@@ -213,13 +213,17 @@ public class UpdateCurrentUserValidatorTests
 
     private const long TenMebibytes = 10L * 1024 * 1024;
 
+    /// <summary>
+    /// The FULL eight-byte PNG signature, not the four a reader recognises. The trailing
+    /// <c>0D 0A 1A 0A</c> is what a real encoder writes and what the sniff requires, so a four-byte
+    /// fixture would be an input no client produces — green here and refused in production.
+    /// </summary>
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
     private static BlobFileDto Avatar(long size)
     {
         var png = new byte[size];
-        png[0] = 0x89;
-        png[1] = 0x50;
-        png[2] = 0x4E;
-        png[3] = 0x47;
+        PngSignature.CopyTo(png, 0);
         return new BlobFileDto("avatar.png", Convert.ToBase64String(png), "image/png");
     }
 }

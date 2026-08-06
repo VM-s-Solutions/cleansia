@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -65,25 +66,7 @@ public class GetOrderPhotos
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             var hideEmployeeIds = orderAccessService.IsCustomerCaller();
 
-            var photoDtos = photos.Select(p => new OrderPhotoDto(
-                Id: p.Id,
-                PhotoType: p.PhotoType,
-                BlobUrl: GenerateSasUrl(blobClient, p.BlobUrl, ServedContentType.ForRecordedType(p.ContentType)),
-                FileName: p.FileName,
-                OriginalFileName: p.OriginalFileName,
-                FileSizeBytes: p.FileSizeBytes,
-                ContentType: p.ContentType,
-                CapturedAt: p.CapturedAt,
-                CapturedByEmployeeId: hideEmployeeIds ? null : p.CapturedByEmployeeId,
-                CapturedByEmployeeName: hideEmployeeIds
-                    ? p.CapturedBy?.User?.FirstName
-                    : (p.CapturedBy != null
-                        ? $"{p.CapturedBy.User?.FirstName} {p.CapturedBy.User?.LastName}".Trim()
-                        : null),
-                Width: p.Width,
-                Height: p.Height,
-                Notes: p.Notes
-            )).ToList();
+            var photoDtos = photos.Select(p => MapToDto(p, blobClient, hideEmployeeIds)).ToList();
 
             var beforeCount = await photoRepository.GetPhotoCountByOrderIdAndTypeAsync(
                 query.OrderId,
@@ -99,6 +82,37 @@ public class GetOrderPhotos
                 Photos: photoDtos,
                 BeforePhotoCount: beforeCount,
                 AfterPhotoCount: afterCount));
+        }
+
+        /// <summary>
+        /// The DTO's ContentType is the SAME answer as the header the SAS pins, never the raw recorded
+        /// string. A row written before the intake sniffed still holds whatever its uploader claimed, so
+        /// emitting that verbatim tells a client <c>image/tiff</c> about a blob that will arrive as
+        /// <c>application/octet-stream</c> — one fact with two sources, and the client believes the one
+        /// that is wrong.
+        /// </summary>
+        private static OrderPhotoDto MapToDto(OrderPhoto photo, IBlobContainerClient blobClient, bool hideEmployeeIds)
+        {
+            var servedAs = ServedContentType.ForRecordedType(photo.ContentType);
+
+            return new OrderPhotoDto(
+                Id: photo.Id,
+                PhotoType: photo.PhotoType,
+                BlobUrl: GenerateSasUrl(blobClient, photo.BlobUrl, servedAs),
+                FileName: photo.FileName,
+                OriginalFileName: photo.OriginalFileName,
+                FileSizeBytes: photo.FileSizeBytes,
+                ContentType: servedAs.Value,
+                CapturedAt: photo.CapturedAt,
+                CapturedByEmployeeId: hideEmployeeIds ? null : photo.CapturedByEmployeeId,
+                CapturedByEmployeeName: hideEmployeeIds
+                    ? photo.CapturedBy?.User?.FirstName
+                    : (photo.CapturedBy != null
+                        ? $"{photo.CapturedBy.User?.FirstName} {photo.CapturedBy.User?.LastName}".Trim()
+                        : null),
+                Width: photo.Width,
+                Height: photo.Height,
+                Notes: photo.Notes);
         }
 
         private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs)

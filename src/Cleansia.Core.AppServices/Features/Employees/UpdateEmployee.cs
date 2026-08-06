@@ -287,7 +287,7 @@ public class UpdateEmployee
             {
                 var uniqueFileName = $"{Guid.NewGuid()}_{document.FileName}";
                 var fullFilePath = $"{employeeDocumentsPath}/{uniqueFileName}";
-                var contentType = DocumentContentType.FromContent(document.Base64Content)!;
+                var contentType = SniffedContentType.FromContent(document.Base64Content, UploadIntake.EmployeeDocument)!;
 
                 await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content!.ExtractBase64Data()));
                 var fileSizeBytes = stream.Length;

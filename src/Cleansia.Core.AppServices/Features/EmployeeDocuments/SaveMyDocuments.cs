@@ -133,7 +133,7 @@ public class SaveMyDocuments
                 var fullBlobPath = $"{employeeDocumentsPath}/{uniqueFileName}";
 
                 var base64Data = doc.File.Base64Content!.ExtractBase64Data();
-                var contentType = DocumentContentType.FromContent(doc.File.Base64Content)!;
+                var contentType = SniffedContentType.FromContent(doc.File.Base64Content, UploadIntake.EmployeeDocument)!;
 
                 await using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
 

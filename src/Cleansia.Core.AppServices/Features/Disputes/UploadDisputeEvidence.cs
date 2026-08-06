@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Repositories;
@@ -14,6 +15,8 @@ public class UploadDisputeEvidence
 {
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
+    // A client-affordance filter, not a control: it bounds what a caller may CLAIM, and arbitrary bytes
+    // under a permitted claim pass it unchanged. The FileData rule is the control.
     private static readonly string[] AllowedContentTypes =
     {
         "image/jpeg",
@@ -65,7 +68,9 @@ public class UploadDisputeEvidence
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.FileRequired)
                 .Must(data => data.Length <= MaxFileSizeBytes)
-                .WithMessage(BusinessErrorMessage.FileSizeExceeded);
+                .WithMessage(BusinessErrorMessage.FileSizeExceeded)
+                .Must(data => SniffedContentType.FromContent(data, UploadIntake.DisputeEvidence) is not null)
+                .WithMessage(BusinessErrorMessage.InvalidFileType);
         }
     }
 
@@ -93,8 +98,11 @@ public class UploadDisputeEvidence
                     new Error(nameof(command.DisputeId), BusinessErrorMessage.DisputeNotOwnedByUser));
             }
 
-            var fileExtension = Path.GetExtension(command.FileName);
-            var blobName = $"{command.DisputeId}/{Guid.NewGuid():N}{fileExtension}";
+            // The evidence row records no content type, so the blob NAME is the only place a later read
+            // can recover one from. Minting its extension from the bytes rather than from the caller's
+            // file name is what makes that answer server-truth on every subsequent read.
+            var contentType = SniffedContentType.FromContent(command.FileData, UploadIntake.DisputeEvidence)!;
+            var blobName = $"{command.DisputeId}/{Guid.NewGuid():N}{SniffedContentType.ExtensionFor(contentType)}";
 
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
             using var stream = new MemoryStream(command.FileData);
@@ -114,7 +122,7 @@ public class UploadDisputeEvidence
                     .GenerateSasUri(
                         blobName,
                         TimeSpan.FromHours(1),
-                        ServedContentType.ForRecordedType(command.ContentType))
+                        ServedContentType.ForRecordedType(contentType))
                     .ToString();
             }
             catch (Exception ex)

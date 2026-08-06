@@ -1227,17 +1227,19 @@ Two corollaries this shape makes cheap:
 ## A rule that REJECTS cheaply runs before any rule that MATERIALIZES the payload
 
 **Enforced by:** `Cleansia.Tests/Common/Validators/ImageFileValidatorTests` +
-`DocumentFileValidatorTests`, over the surface `Base64UploadIntakeRosterTests` enumerates — `T1-CI`.
+`DocumentFileValidatorTests`, over the surface `UploadIntakeRosterTests` enumerates — `T1-CI`.
 **Two** `AbstractValidator<BlobFileDto>` siblings now, `ImageFileValidator` and `DocumentFileValidator`:
 the third, `FileValidator`, is deleted (T-0556 follow-up), because what it checked was the *declared* content type
 and its only caller now sniffs. Every base64 intake on every host runs the shared `BlobFileSize`
 predicate; the last private copy of the limit (`SaveOrderPhotos`) is gone.
 
 Ordering inside a `Cascade(CascadeMode.Stop)` chain is a **cost** decision as well as a message
-decision. `ImageFileValidator`'s magic-byte rule allocates the decoded payload twice
+decision. `ImageFileValidator`'s magic-byte rule used to allocate the decoded payload twice
 (`new byte[len * 3 / 4]`, then a copy); placing the size bound after it returns the right answer having
-already paid the entire cost the bound exists to avoid. Measured on the unfixed validator: rejecting
-one ~10 MB avatar allocated **20,979,352 bytes**.
+already paid the entire cost the bound exists to avoid. Measured on that validator: rejecting one
+~10 MB avatar allocated **20,979,352 bytes**. Both image and document chains now read the head only
+(§"the bytes are the evidence"), so the rule that materializes the payload is the **decodability** one
+at the foot of each chain — the cost argument moved a rule down, it did not go away.
 
 So: **size first, then anything that decodes, parses, hashes, or round-trips the bytes.** The
 corollaries are what make it stick:
@@ -1267,15 +1269,25 @@ corollaries are what make it stick:
 - **Enumerate the intakes; do not remember them** (T-0556 follow-up). Two consecutive tickets each hardened the
   path they were pointed at and each left a sibling writing the same container under the old rules —
   the miss was never the rule, it was that nothing stated how many intakes exist.
-  `Base64UploadIntakeRosterTests` walks every host action whose request graph reaches `BlobFileDto` and
-  asserts the route list, annotated with the validator each one uses, so a new upload endpoint reddens
+  `UploadIntakeRosterTests` walks every host action whose request graph carries an uploaded file and
+  asserts the route list, annotated with the rule each one uses, so a new upload endpoint reddens
   CI. **A roster is the only artifact here that catches the NEXT instance rather than the last one.**
+- **A roster is only as wide as its predicate, and a narrow one reads as coverage.** The walk was keyed
+  on `BlobFileDto` and reported **10** routes out of **14**: `UploadOrderPhoto` takes a raw `byte[]` and
+  `UploadDisputeEvidence` an `IFormFile` (two hosts each), so both were invisible to it while both still
+  derived their stored content type from a client string — the very defect the roster exists to make
+  countable. The predicate now asks *does a file reach storage from here* (reaches `BlobFileDto`, carries
+  a `byte[]` member, or takes an `IFormFile`); the wire shape a client happens to use is not part of that
+  question. **Assert the COUNT first**, before any per-row comparison, or a walk that finds nothing agrees
+  with the roster for the wrong reason.
 
 ## The declared content type is a HINT; the bytes are the evidence (T-0556 + its follow-up)
 
 **Enforced by:** `SaveMyDocumentsHandlerTests`, `UpdateEmployeeStoredContentTypeTests`,
-`EmployeeDocumentDownloadContentTypeTests` + `DocumentFileValidatorTests` — `T1-CI`, over both
-employee-document intakes and both download handlers.
+`EmployeeDocumentDownloadContentTypeTests`, `UploadOrderPhotoContentTypeTests`,
+`UploadDisputeEvidenceContentTypeTests`, `GetOrderPhotosServedTypeTests` + the two file validators'
+tests — `T1-CI`, over both employee-document intakes, both download handlers, and the two intakes the
+`BlobFileDto` roster could not see (`UploadOrderPhoto`, `UploadDisputeEvidence`).
 
 `BlobFileDto.ContentType` is a string the client chose, and the file extension is a weaker one (it
 survives a rename). Neither is evidence about the payload, so **neither may decide what a stored
@@ -1287,17 +1299,33 @@ to stop — it is what let the fourth employee-document intake keep storing a ca
 ticket after the first three were fixed.
 
 - **Sniff, then let the sniff decide the stored type.** One function answers both *may we accept this?*
-  and *what is it?* (`Common/Validators/DocumentContentType.FromContent`, `null` = neither), because
-  they are the same fact and splitting them is how a path accepts on one basis and stores on another.
-- **Sniff the HEAD, not the payload.** Base64 decodes in independent 4-character groups, so 12
-  characters yield the first 9 bytes — more than any signature needs — which is what lets the content
-  rule sit before the full decode rather than after it.
+  and *what is it?* (`Common/Validators/SniffedContentType.FromContent(payload, UploadIntake.X)`,
+  `null` = neither), because they are the same fact and splitting them is how a path accepts on one
+  basis and stores on another.
+- **One signature table, one accepted set per intake.** The intakes differ in *what they may accept*,
+  never in *what a given byte sequence is*, so the second thing is a table and the first is a set beside
+  it. A parallel table for images had drifted from this one in both directions — it matched a bare
+  `RIFF` container as `image/webp` (a WAV and an AVI open identically, so an audio file was stored as an
+  image and that type is what a SAS then pins onto a header), and it accepted BMP and TIFF, which
+  `ServedContentType` can only hand back as `application/octet-stream`. A signature with a fragment away
+  from offset 0 — WebP's `WEBP` tag at byte 8 — is why the matcher takes *(offset, bytes)* fragments
+  rather than a prefix, and why the sniffed head is 12 bytes rather than 8.
+- **Sniff the HEAD, not the payload.** Base64 decodes in independent 4-character groups, so 16
+  characters yield the first 12 bytes — exactly what the longest signature needs — which is what lets
+  the content rule sit before the full decode rather than after it. Since the head is all the sniff
+  reads, every chain closes with a decodability rule: a payload can start with a real signature and
+  still be garbage further in, which reaches the handler's `Convert.FromBase64String` as a 500.
 - **Say what a signature does NOT prove.** It bounds the container: `PK\x03\x04` is OOXML-or-any-zip,
   `D0CF11E0` is Office-compound-or-any. It refuses markup, scripts and arbitrary binary and it makes
   the stored type server-truth; it is not a malware scan, and nothing on this path is.
 - **Keep the accepted set equal to what the clients offer**, not to what is convenient: the web
   picker's accept list and the five-locale `file.type_not_allowed` string ("Accepted: PDF, JPEG, PNG,
   DOC, DOCX") are the promise, so a format missing from the table refuses an upload the UI invited.
+  **The rule binds in the other direction too, and that half went unread for longer:** a format the
+  server accepts that no client offers and `ServedContentType` cannot serve is an upload that succeeds
+  and an image that never renders — which is what BMP and TIFF were on the avatar path. Removing them
+  refuses nothing already stored: the read path already demoted every such row to
+  `application/octet-stream`, so the narrowing is write-path-only and needs no backfill.
 - **Do not lean on `Content-Disposition`.** `File(bytes, type, name)` sets `attachment`, which is why a
   poisoned type is not stored XSS today — but the two-argument overload sets **no** disposition at all
   (verified by execution), so that mitigation is one call-site edit away from gone. The control is the
@@ -1308,11 +1336,20 @@ ticket after the first three were fixed.
   rows written after it; the rows already there keep whatever their uploader claimed, and no amount of
   validator is going to reach them. Close the residue where it is a **closed set** — the handlers that
   serve the blob — by deriving the served type from the bytes there too
-  (`DocumentContentType.ForDownload`, falling back to `ServedContentType.Opaque` so an unrecognised
+  (`SniffedContentType.ForDownload`, falling back to `ServedContentType.Opaque` so an unrecognised
   legacy row is demoted rather than made undownloadable). Same argument that chose a SAS
   response-header override over re-uploading every order photo, and the same discipline: **the read
   path reads the intake's own signature table**, or the two answers drift and a document is one type on
   the way in and another on the way out.
+- **A read DTO that names the type must name the SERVED one.** `GetOrderPhotos` clamped the signed URL's
+  header and emitted `photo.ContentType` raw beside it, so a legacy row told the client `image/tiff`
+  about a blob that arrives as `application/octet-stream` — one fact with two sources, and the client
+  believes the wrong one. Resolve `ServedContentType` once per row and use it for both.
+- **Where the row records no type at all, the blob NAME is the only carrier — so mint it.**
+  `DisputeEvidence` has no content-type column, and its read path resolves one from an extension. That
+  extension came from the caller's file name; it is minted from the sniffed type now, and the read
+  resolves the stored PATH rather than the display `FileName`. The extension therefore lives in the
+  signature table beside the type it belongs to, not at a call site.
 
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 

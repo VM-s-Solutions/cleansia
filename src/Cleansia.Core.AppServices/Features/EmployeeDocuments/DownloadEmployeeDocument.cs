@@ -60,7 +60,7 @@ public class DownloadEmployeeDocument
                 FileName: document.FileName,
                 // The recorded type is what the uploader claimed on every row written before the intake
                 // started sniffing, and it lands verbatim on this response's Content-Type header.
-                ContentType: DocumentContentType.ForDownload(fileBytes)
+                ContentType: SniffedContentType.ForDownload(fileBytes, UploadIntake.EmployeeDocument)
             ));
         }
     }

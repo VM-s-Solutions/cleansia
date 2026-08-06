@@ -11,7 +11,7 @@ namespace Cleansia.Core.AppServices.Common.Validators;
 /// <para>ONE ordered chain, and the order is a cost decision as much as a message one. The size bound
 /// runs first because every rule after it touches the bytes, and a bound placed after a decoding rule
 /// returns the right answer having already paid the entire cost it exists to avoid. The signature sniff
-/// runs before the decodability rule for the same reason one step down: it reads nine bytes, while
+/// runs before the decodability rule for the same reason one step down: it reads twelve bytes, while
 /// decodability has to materialize the whole payload, so the payloads that were never documents are
 /// refused without being decoded at all.</para>
 /// </summary>
@@ -27,7 +27,7 @@ public class DocumentFileValidator : AbstractValidator<BlobFileDto>
             .Must(BlobFileSize.HasContentWithinLimit)
             .WithErrorCode(nameof(BlobFileDto))
             .WithMessage(BusinessErrorMessage.FileSizeExceeded)
-            .Must(file => DocumentContentType.FromContent(file.Base64Content) is not null)
+            .Must(file => SniffedContentType.FromContent(file.Base64Content, UploadIntake.EmployeeDocument) is not null)
             .WithErrorCode(nameof(BlobFileDto))
             .WithMessage(BusinessErrorMessage.FileTypeNotAllowed)
             .Must(HasDecodableContent)

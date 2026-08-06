@@ -106,9 +106,9 @@ public class DocumentFileValidatorTests
     [Fact]
     public void Document_Header_With_Undecodable_Content_Fails_With_InvalidFileType()
     {
-        // Nine bytes encode to exactly twelve unpadded characters — the whole of the sniffed head — so
-        // the garbage lands strictly after it and only the full decode can see it.
-        var headerThenGarbage = Convert.ToBase64String(Headed(Pdf, 9)) + "!!!!";
+        // Twelve bytes encode to exactly sixteen unpadded characters — the whole of the sniffed head —
+        // so the garbage lands strictly after it and only the full decode can see it.
+        var headerThenGarbage = Convert.ToBase64String(Headed(Pdf, 12)) + "!!!!";
 
         var result = _validator.Validate(new BlobFileDto("contract.pdf", headerThenGarbage, "application/pdf"));
 

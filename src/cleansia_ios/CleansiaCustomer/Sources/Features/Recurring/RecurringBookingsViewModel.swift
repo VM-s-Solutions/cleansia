@@ -46,7 +46,6 @@ final class RecurringBookingsViewModel: ViewModel {
     private let repository: RecurringBookingRepository
     private let membershipRepository: MembershipRepository
     private let snackbar: SnackbarController
-    private var cancellables: Set<AnyCancellable> = []
 
     init(
         repository: RecurringBookingRepository,
@@ -57,15 +56,11 @@ final class RecurringBookingsViewModel: ViewModel {
         self.membershipRepository = membershipRepository
         self.snackbar = snackbar
         super.init()
-        templates = repository.templates
-        loaded = repository.loaded
-        hasMembership = membershipRepository.current?.hasMembership
-        repository.$templates.assign(to: \.templates, on: self).store(in: &cancellables)
-        repository.$loaded.assign(to: \.loaded, on: self).store(in: &cancellables)
+        repository.$templates.assign(to: &$templates)
+        repository.$loaded.assign(to: &$loaded)
         membershipRepository.$current
             .map { $0?.hasMembership }
-            .assign(to: \.hasMembership, on: self)
-            .store(in: &cancellables)
+            .assign(to: &$hasMembership)
     }
 
     var authoring: RecurringAuthoringGate {

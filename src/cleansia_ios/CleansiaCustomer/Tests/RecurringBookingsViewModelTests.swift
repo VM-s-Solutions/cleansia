@@ -175,6 +175,56 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         XCTAssertFalse(affordances.showCreateAction)
     }
 
+    // MARK: - Binding lifetime
+
+    /// Both repositories are session-lived singletons and are deliberately held past the
+    /// screen: a binding that retains `self` keeps the view model alive for the process.
+    func testTheViewModelIsReleasedWhenTheScreenGoesAway() async {
+        let repository = RecurringBookingRepository(client: FakeRecurringBookingClient())
+        let membershipRepository = MembershipRepository(client: FakeMembershipManagementClient())
+        weak var released: RecurringBookingsViewModel?
+
+        func openAndLeaveTheScreen() async {
+            let vm = RecurringBookingsViewModel(
+                repository: repository,
+                membershipRepository: membershipRepository,
+                snackbar: SnackbarController()
+            )
+            released = vm
+            await vm.load()
+            XCTAssertNotNil(released, "the view model was released before the screen was left")
+        }
+
+        await openAndLeaveTheScreen()
+
+        XCTAssertNil(released, "the view model outlived its screen")
+    }
+
+    /// The bindings replay each repository's current value on subscribe, which is what makes
+    /// separate seed assignments redundant. The membership half uses a resolved NON-member:
+    /// `.allowed` is also the unresolved default, so a member fixture would pass unbound.
+    func testWarmRepositoriesAreVisibleBeforeTheFirstLoad() async {
+        let client = FakeRecurringBookingClient()
+        client.mineResults = [.success([RecurringFixtures.template()])]
+        let repository = RecurringBookingRepository(client: client)
+        await repository.refresh()
+        let memClient = FakeMembershipManagementClient()
+        memClient.mineResults = [.success(MembershipFixtures.inactive)]
+        let membershipRepository = MembershipRepository(client: memClient)
+        await membershipRepository.refresh()
+
+        let vm = RecurringBookingsViewModel(
+            repository: repository,
+            membershipRepository: membershipRepository,
+            snackbar: SnackbarController()
+        )
+
+        XCTAssertEqual(vm.templates.map(\.id), ["tpl-1"])
+        XCTAssertTrue(vm.loaded)
+        XCTAssertEqual(vm.hasMembership, false)
+        XCTAssertEqual(vm.authoring, .upsell)
+    }
+
     func testTheGateResolverMirrorsTheServerSplit() {
         XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: false), .upsell)
         XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: true), .allowed)

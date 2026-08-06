@@ -211,6 +211,50 @@ final class MembershipViewModelTests: XCTestCase {
         XCTAssertFalse(ok)
     }
 
+    // MARK: Binding lifetime
+
+    /// The repository is a session-lived singleton and is deliberately held past the screen:
+    /// a binding that retains `self` keeps the view model alive for the life of the process.
+    func testTheViewModelIsReleasedWhenTheScreenGoesAway() async {
+        let repository = MembershipRepository(client: FakeMembershipManagementClient())
+        weak var released: MembershipViewModel?
+
+        func openAndLeaveTheScreen() async {
+            let vm = MembershipViewModel(
+                repository: repository,
+                snackbar: SnackbarController(),
+                isCardPaymentAvailable: true
+            )
+            released = vm
+            await vm.load()
+            XCTAssertNotNil(released, "the view model was released before the screen was left")
+        }
+
+        await openAndLeaveTheScreen()
+
+        XCTAssertNil(released, "the view model outlived its screen")
+    }
+
+    /// The bindings replay the repository's current value on subscribe, which is what makes a
+    /// separate seed assignment redundant. Both asserted values differ from the property
+    /// defaults (`nil`, `[]`), so an unbound view model cannot pass this.
+    func testAWarmRepositoryIsVisibleBeforeTheFirstLoad() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.active)]
+        let repository = MembershipRepository(client: client)
+        await repository.refresh()
+        await repository.refreshPlans()
+
+        let vm = MembershipViewModel(
+            repository: repository,
+            snackbar: SnackbarController(),
+            isCardPaymentAvailable: true
+        )
+
+        XCTAssertEqual(vm.current?.planCode, "plus_monthly")
+        XCTAssertEqual(vm.plans.map(\.code), ["plus_monthly", "plus_yearly"])
+    }
+
     func testSecretsNeverAppearInSetupIntentPresentationDescription() async {
         let (vm, _, _) = makeVM()
         let outcome = await vm.startSubscribe(planCode: "plus_monthly")

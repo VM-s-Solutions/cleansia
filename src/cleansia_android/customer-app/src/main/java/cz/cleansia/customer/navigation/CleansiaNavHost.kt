@@ -214,8 +214,8 @@ fun CleansiaNavHost(
             }
 
             SignUpScreen(
-                onRegisterClick = { firstName, lastName, email, password, referralCode ->
-                    vm.register(email, password, firstName, lastName, referralCode)
+                onRegisterClick = { firstName, lastName, email, password, referralCode, acceptedTerms ->
+                    vm.register(email, password, firstName, lastName, referralCode, acceptedTerms)
                 },
                 onLoginClick = { navController.popBackStack() },
                 onGoogleSignIn = { vm.signInWithGoogle(context) },

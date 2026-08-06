@@ -175,6 +175,7 @@ object AuthModule {
         sessionManager: SessionManager,
         sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
         pushTokenRepository: cz.cleansia.core.notifications.PushTokenRepository,
+        signupConsent: javax.inject.Provider<cz.cleansia.core.consent.SignupConsentRepository>,
         json: Json,
     ): AuthRepository = AuthRepository(
         api = api,
@@ -183,6 +184,7 @@ object AuthModule {
         sessionManager = sessionManager,
         sessionScopedCaches = sessionScopedCaches,
         pushTokenRepository = pushTokenRepository,
+        signupConsent = signupConsent,
         json = json,
     )
 

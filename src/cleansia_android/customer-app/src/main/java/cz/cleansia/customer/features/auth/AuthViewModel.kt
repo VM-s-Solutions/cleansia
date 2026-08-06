@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
@@ -38,6 +39,7 @@ class AuthViewModel @Inject constructor(
     private val settings: AppSettingsRepository,
     private val snackbar: SnackbarController,
     private val googleSignInController: GoogleSignInController,
+    private val signupConsent: SignupConsentRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -83,6 +85,13 @@ class AuthViewModel @Inject constructor(
          * the wire. Bad codes don't block submit (backend is fail-soft).
          */
         referralCode: String? = null,
+        /**
+         * The terms box on [SignUpScreen], whose sentence names both documents by title.
+         * Carried explicitly rather than read off a form the ViewModel cannot see, and
+         * deliberately without a default — a consent flag that can be omitted at a call
+         * site is a consent record nobody agreed to.
+         */
+        acceptedTerms: Boolean,
     ) {
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
@@ -95,7 +104,10 @@ class AuthViewModel @Inject constructor(
                 language = language,
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
             )
-                .onSuccess { _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email)) }
+                .onSuccess {
+                    signupConsent.recordSignupTick(email, acceptedTerms)
+                    _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email))
+                }
                 .onError { error ->
                     // Signup is the one auth flow with nothing to hide: the form has to
                     // tell you an email is taken or it can't work. So show the server's

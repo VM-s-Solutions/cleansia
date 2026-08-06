@@ -3,6 +3,7 @@ package cz.cleansia.partner.data.auth
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.partner.api.client.AuthApi
 import cz.cleansia.partner.api.client.EmployeeApi
 import cz.cleansia.partner.api.model.ConfirmUserEmailCommand
@@ -80,6 +81,12 @@ class AuthRepositoryImpl @Inject constructor(
     private val json: Json,
     private val pushTokenRepository: PushTokenRepository,
     private val sessionScopedCaches: Provider<Set<@JvmSuppressWildcards SessionScopedCache>>,
+    /**
+     * Lazy for the same reason as [authenticatedAuthApi]: it reaches the GDPR endpoints
+     * through the authenticated Retrofit, whose graph owns
+     * [cz.cleansia.core.auth.AuthAuthenticator].
+     */
+    private val signupConsent: Provider<SignupConsentRepository>,
 ) : AuthRepository {
 
     override suspend fun login(
@@ -112,6 +119,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
+        deliverSignupConsent(body)
 
         // Unconfirmed email → caller routes to ConfirmEmailScreen. The
         // backend issues a token in this case so resendConfirmation can be
@@ -169,6 +177,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
+        deliverSignupConsent(body)
 
         // Same hydration login does — and the ONLY chance this session gets.
         // A cleaner who registers and confirms on the same device never runs
@@ -231,6 +240,16 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signOutLocal() {
         tokenStore.clear()
         sessionScopedCaches.get().forEach { it.clear() }
+    }
+
+    /**
+     * The signup tick predates any session, and the token response is the first point at
+     * which the SERVER names the account it belongs to — hence `body.email` and never the
+     * address the sign-in form carried. Best-effort inside, and it returns before any
+     * network call when nothing is parked, which is every sign-in but the first.
+     */
+    private suspend fun deliverSignupConsent(body: JwtTokenResponse) {
+        signupConsent.get().deliverFor(body.email)
     }
 
     private fun persistTokens(body: JwtTokenResponse) {

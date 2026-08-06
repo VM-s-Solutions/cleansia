@@ -5,6 +5,7 @@ import cz.cleansia.core.validation.EmailValidator
 import cz.cleansia.core.validation.PasswordPolicy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -49,6 +50,7 @@ class RegisterViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
     private val snackbar: SnackbarController,
+    private val signupConsent: SignupConsentRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -102,6 +104,7 @@ class RegisterViewModel @Inject constructor(
                 language = language,
             )) {
                 is ApiResult.Success -> {
+                    signupConsent.recordSignupTick(state.email, state.acceptTerms)
                     _uiState.update { it.copy(isLoading = false, isRegistrationSuccessful = true) }
                 }
                 is ApiResult.Error -> {

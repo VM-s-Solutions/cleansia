@@ -5,6 +5,7 @@ import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
@@ -42,6 +43,7 @@ class AuthRepositoryTest {
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionManager: SessionManager
     private lateinit var pushTokenRepository: PushTokenRepository
+    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var appContext: Context
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -56,6 +58,7 @@ class AuthRepositoryTest {
         tokenStore = mockk(relaxed = true)
         sessionManager = mockk(relaxed = true)
         pushTokenRepository = mockk(relaxed = true)
+        signupConsent = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
 
         every { appContext.getString(R.string.error_generic_network) } returns networkMessage
@@ -79,6 +82,7 @@ class AuthRepositoryTest {
             sessionManager = sessionManager,
             sessionScopedCaches = caches,
             pushTokenRepository = pushTokenRepository,
+            signupConsent = javax.inject.Provider { signupConsent },
             json = json,
         )
 

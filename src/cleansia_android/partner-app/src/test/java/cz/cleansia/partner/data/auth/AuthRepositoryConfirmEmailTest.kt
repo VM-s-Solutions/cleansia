@@ -2,6 +2,7 @@ package cz.cleansia.partner.data.auth
 
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.api.client.AuthApi
@@ -52,6 +53,8 @@ class AuthRepositoryConfirmEmailTest {
      * what ends up persisted, so a relaxed mock that always answers `null` from
      * `current()` would make it vacuous.
      */
+    private val signupConsent = mockk<SignupConsentRepository>(relaxed = true)
+
     private var storedProfile: UserProfileData? = null
     private val userProfileStore = mockk<UserProfileStore>().also { store ->
         coEvery { store.current() } answers { storedProfile }
@@ -70,6 +73,7 @@ class AuthRepositoryConfirmEmailTest {
         json = json,
         pushTokenRepository = pushTokenRepository,
         sessionScopedCaches = { setOf(cache) },
+        signupConsent = { signupConsent },
     )
 
     private fun confirmResponse() = Response.success(

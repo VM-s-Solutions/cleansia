@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.auth
 
 import android.content.Context
 import android.content.res.Resources
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -60,6 +61,7 @@ class AuthViewModelTest {
     private lateinit var settings: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var googleSignInController: GoogleSignInController
+    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var context: Context
     private lateinit var resources: Resources
 
@@ -76,6 +78,7 @@ class AuthViewModelTest {
         settings = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         googleSignInController = mockk(relaxed = true)
+        signupConsent = mockk(relaxed = true)
         context = mockk(relaxed = true)
         resources = mockk(relaxed = true)
 
@@ -103,6 +106,7 @@ class AuthViewModelTest {
         settings = settings,
         snackbar = snackbar,
         googleSignInController = googleSignInController,
+        signupConsent = signupConsent,
         appContext = context,
     )
 
@@ -128,7 +132,7 @@ class AuthViewModelTest {
         )
 
         val vm = viewModel()
-        vm.register("taken@example.com", "Passw0rd!", "Ada", "Lovelace")
+        vm.register("taken@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
         advanceUntilIdle()
 
         verify(exactly = 1) { snackbar.showError(existingEmailMessage) }
@@ -171,7 +175,7 @@ class AuthViewModelTest {
         )
 
         val vm = viewModel()
-        vm.register("taken@example.com", "Passw0rd!", "Ada", "Lovelace")
+        vm.register("taken@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
         advanceUntilIdle()
 
         assertFalse(vm.uiState.value.loading)
@@ -188,7 +192,7 @@ class AuthViewModelTest {
         stubRegister(ApiResult.Error(ApiError.Network("failed to connect to 10.0.2.2")))
 
         val vm = viewModel()
-        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace")
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
         advanceUntilIdle()
 
         verify(exactly = 1) { snackbar.showError("Check your connection.") }
@@ -200,7 +204,7 @@ class AuthViewModelTest {
         stubRegister(ApiResult.Success(Unit))
 
         val vm = viewModel()
-        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace")
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
         advanceUntilIdle()
 
         assertEquals(
@@ -330,7 +334,7 @@ class AuthViewModelTest {
         stubRegister(ApiResult.Success(Unit))
 
         val vm = viewModel()
-        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace")
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
         advanceUntilIdle()
 
         coVerify(exactly = 1) {

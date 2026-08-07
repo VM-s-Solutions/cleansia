@@ -1414,3 +1414,233 @@ Both measured corrections were applied when writing these eleven tickets:
   rather than left latent.**
 - **Did not build the §D3 staleness script.** Still specified, still unbuilt, and E4 now records a hole
   in its coverage that its spec should absorb before anyone writes it.
+
+---
+
+# ADDENDUM D — DELIVERY RECORD (2026-08-07)
+
+**Branch:** `docs/sprint-15-decisions` → PR #190. **176 commits** off `master`, 1,322 files,
++133,714 / −14,143. **88 of the 176 change behaviour** (`fix`/`feat`/`perf`); the other 88 are the
+decision record, tests and backlog.
+
+Written at the owner's request. Everything below is stated from the commit history and from re-running
+the checks, not from memory. Where a claim was corrected during the sprint, the correction is recorded
+rather than the corrected version presented as if it had always been the finding.
+
+---
+
+## 1. What shipped
+
+### 1.1 Money — the price shown was never the price charged
+
+Two independent composition bugs, one server-side and one client-side, that **partially cancelled**.
+The server applied the express surcharge *after* the discount; every client then recomposed
+`(raw × 1.20) − discount`. Fixing either alone would have made the displayed price *worse* — the
+mobile lane was briefed to fix only the base and would have shown 1100 against a charged 1080. All
+three clients now render the one form the server computes, and the server's own stated law — *"the
+resolution restated against the price actually charged, the ONE form that may be reported, persisted
+or rendered"* — is the shape they read.
+
+Also here: a duplicate priced order created whenever a customer edited a recurring template. The
+watermark search clamped to `now` and then threw the clamp away below day granularity. Double charge,
+no automatic reversal.
+
+### 1.2 Consent — ticked and dropped, on all four clients
+
+`52559e0b` (web) · `7a350159` (Android) · `d81dbea0` (iOS)
+
+A user ticked *"I agree to the Terms of Service and the Privacy Policy"* and **nothing was recorded**,
+anywhere, on any client. The grant service had exactly two production callers and neither was a
+registration path.
+
+The brief's premise — *"grant it after a successful registration"* — turned out to be **unavailable**:
+no registration on any platform mints a session, and the grant endpoint requires an authenticated
+caller. So the tick is **parked identity-bound** and delivered at the first session that provably
+belongs to that account, with the identity taken from **the server's token response, never a form
+field**. Delivery is gated by a pre-flight read that drops any type already answered — *granted or
+withdrawn* — so a delayed retry cannot resurrect a consent since withdrawn.
+
+One tick, **two** rows. `MarketingEmails` is deliberately not granted: no signup form carries that
+checkbox, and manufacturing a record nobody ticked is worse than recording nothing.
+
+### 1.3 Privacy — metadata stripped at intake
+
+`541b8c0f`
+
+A cleaner's photographs of a customer's home carried that customer's GPS coordinates, and the fetch
+gate admits **any** cleaner in the tenant while the order still has an open seat — not just the
+assigned one. Dispute evidence is worse: there the uploader *is* the disputing customer, the upload is
+adversarial by construction, and the outcome is money.
+
+Built as the panel ruled: no sanitizer interface, no DI registration, no package, and **nothing near a
+decoder** — three container walks and one entry point. `Scrub` takes bytes and returns bytes with **no
+content-type parameter**, so there is no string an uploader can steer the walker with. Orientation
+preserves only when the source reads unambiguously, else emits no EXIF and accepts the rotation:
+never guess, never repair. Cost measured, not assumed — 30 × 4 MiB in **32.5 ms**, allocation exactly
+1× input.
+
+One severity claim was **narrowed on evidence**: the customer's full street address is already on the
+order-list DTO, so job-site GPS is not new disclosure to a cleaner who can already read the address.
+The finding stands on the metadata that is *not* already disclosed — device identity, and location
+captured somewhere other than the job.
+
+### 1.4 GDPR erasure — three of seven containers
+
+`3b5f7cf0`
+
+Erasure stranded every dispute-evidence blob and then overwrote the only pointer to it. There were
+**three** lists of blob containers — code constants, infrastructure templates, docs — no two the same,
+and **none stating which an erasure must reach**. That absent statement is now a test, not a table.
+
+The severity was **overstated first and corrected**: the blob name is prefixed by the dispute id and
+that row survives erasure, so a stranded file is recoverable by prefix enumeration. That narrowing
+drove a design decision — it deliberately did *not* rework the domain's anonymisation contract for a
+recoverable failure.
+
+### 1.5 Error plumbing — two classes, both now guarded
+
+`99af0bc4` · `1f0f56da`
+
+**Sixteen handlers** built their error with the code and message slots swapped, so they sent prose
+where the translation key belongs. Every one resolved to *"An error occurred. Please try again."* while
+the correct translation sat in all five locales, unreachable. **Five more** bypassed the constants
+file entirely with bare string literals — two of those on the **customer money path**, where someone
+trying to pay for an already-paid order was told nothing useful.
+
+Neither class was visible to the existing guards, and the reason is the finding: the parity specs
+assert that every constant *has a translation*, which was true throughout. Nothing checked the
+constant was **in the slot that gets read**, and a key that never becomes a constant is invisible **by
+construction**. Both are now closed by source scans, each carrying its own anti-vacuity fact.
+
+### 1.6 Legibility — Cyrillic on all three platforms
+
+`94d5bf99` (Android) · `50ed0c2d` (iOS) · `55ad850e` (web)
+
+The brand face carries **0 of 98** Cyrillic code points; the body face carries 98/98. Both measured
+directly from the font tables, twice.
+
+**Each platform's mechanism was different, and each platform's obvious fix was wrong:**
+
+- **Android** — adding a Cyrillic face to the same family is **per-run, not per-glyph**; refuted by
+  disassembling the shipped Compose bytecode. The matcher's only inputs are weight and style; it never
+  reads a coverage table.
+- **iOS** — per-glyph was already native. The obvious fix would have caused a **universal accessibility
+  regression**: the font constructor that scales with Dynamic Type cannot carry a fallback chain, and
+  the one that can is fixed-size. Measured across the full text-size range: 98.3 → 278.3 versus 98.0
+  with no change event at all.
+- **Web** — CSS was already falling through correctly; it just fell to the browser default because the
+  body face was never named in the stack.
+
+**Correction to the framing:** the text was never unreadable. It was drawn by a system face on every
+platform — off-brand, not illegible. The severity as first reported was too high.
+
+### 1.7 Membership and entitlement
+
+A paid feature was free through an ungated update path. A lapsed member could be charged with **no way
+to stop it** — and the *fetch* was gated too, so they could not even see the subscription. Two
+order-detail surfaces failed **closed** on an unresolved membership, so a paid-up member lost a feature
+whenever nothing had warmed the cache; both now fail open, which is safe because the server refuses an
+unentitled create with its own localized message.
+
+### 1.8 Security and observability
+
+A raw push token written to Information-level logs on every device registration, on all five hosts. The
+pre-auth request-body read bounded across all five — in **characters**, not bytes; the draft said bytes,
+which is wrong in the leaking direction. A WAV file passed the image validator (`RIFF` matched at
+offset 0 only). Telemetry exporters extracted rather than switched, because the overload in use is the
+only one wiring error reporting.
+
+### 1.9 Structure and enforcement
+
+Circular-dependency errors from 47 to zero. Project-registration guards NX-1..NX-8 with a 46-scenario
+self-test, and a new module-boundary gate with 21 — both of which **can actually fail a build**, which
+is the bar this project now holds a rule to.
+
+---
+
+## 2. What was decided
+
+Eleven ADRs added and two amended. Two accepted this week after full author → challenger → lead
+panels: **ADR-0043** (artifact metadata scrubbed at intake, by audience, without a decoder) and
+**ADR-0044** (stored content type derived from the bytes on every intake). **ADR-0041** reached its
+third adjudicated round. **S12** joins the security laws.
+
+---
+
+## 3. The methodological finding
+
+**Three tests were found enforcing less than they claimed, and six were deleted for being unkillable by
+any mutation** — two of which had shipped earlier the same day *described as mutation-proved*.
+
+1. The upload-intake roster splits each row on `" — "` and reads only `[0]`. The per-route rule
+   annotation after the dash is asserted **nowhere**, so it enforces which routes exist and nothing
+   about which rule guards each.
+2. The gate written to **replace** that one would itself have passed vacuously: the obvious assertion
+   is green on any un-stubbed constructor dependency, so the command is invalid for the wrong reason.
+   **Caught before shipping** — it now needs a failure-identity assertion plus a positive control.
+3. The host-test helper matches *type or detail or bag key or bag value*, which is exactly why the host
+   suite could not see sixteen swapped error slots.
+
+The practice that caught all three: a mutation must **reproduce the defect**, not imitate it. One iOS
+lane's first attempt stored a reverted binding in a bag a later line overwrote — which *cancelled* the
+subscription, so no leak formed and the test passed green, reading as "the test doesn't work" when in
+fact the mutation didn't.
+
+---
+
+## 4. What is left
+
+### 4.1 Mine — none unstarted
+
+Every ticket actionable without an owner answer is committed. Open follow-ups, all filed with their
+evidence: **T-0561** (byte-derived intake, now with the panel's corrections), **T-0564** *(done)*,
+**T-0565** *(in review)*, **T-0566** (two apps download a font referenced by zero declarations).
+
+Four limbs of S12 are **honestly ungated** and say so rather than claiming a tier they cannot hold —
+including the decoder prohibition, which has **no enforcer of any kind**: it holds today because nobody
+has added the package, not because anything would stop them.
+
+### 4.2 Blocked on the owner — 37 open questions, 9 of them blocking
+
+Full list in `questions/open.md`. Ranked by what they unblock:
+
+| | Question | What it gates |
+|---|---|---|
+| 1 | **Q-SELFBILL-01** — the agreement text and who reviewed it | the feature's activation; ADR-0041 calls it *"the single thing standing between the design and a working feature"* |
+| 2 | **Q-PAYOUT-02** — is a cleaner an employee or self-employed? | the data model, not just the paperwork |
+| 3 | **Q-SELFBILL-02** — print date or work period authorizes the invoice? | the severed coverage decision |
+| 4 | **Q-SELFBILL-06** — Czech-first approves non-Czech readers un-stated | ADR-0041's acceptance |
+| 5 | **Q-PAYOUT-01** — what a CZ/SK supplier invoice must contain | the invoice PDF |
+| 6 | **Q-LEGAL-01** — who wrote `/terms` and `/privacy`, is it binding? | store submission |
+| 7–9 | **Q-PLUS-01/02/03** — trial enforcement, express quota numbers, favourite cleaner scope | the Plus build |
+
+**Two of these need saying plainly.** The self-billing block `Q-SELFBILL-01`…`-05` was asserted as
+*"filed"* by the ADR since revision 1 and **had never actually reached the owner** — three deliberation
+rounds reasoned about "if the owner does not answer" while the owner had never seen the questions. And
+the *"drop the database"* ruling **does not close what it appeared to**: it empties the backlog of
+un-agreed cleaners and says nothing about the rate new ones are created, because demandability is per
+**caller language**, not per jurisdiction.
+
+`Q-BRAND-01` is now much cheaper than it was: the fallback ships, so it is no longer *"how do Russian
+users read the app"* — only whether the brand face itself should change.
+
+---
+
+## 5. Verification state at the time of writing
+
+| Suite | Result |
+|---|---|
+| Backend unit | **3,322** pass / 0 fail |
+| Backend integration (Testcontainers Postgres) | **147** / 0 |
+| Backend host (authz + isolation) | **138** / 0 |
+| Web | **67 projects green, 1,304 tests** |
+| Android | core **171**, partner **237**, customer **571** — 0 failures |
+| iOS | Core **639**, Partner **600**, Customer **931** — all failures classify to the known macOS sandbox group |
+| Structural guards | project-registration 0 violations; module-boundaries 0 drift |
+
+**Two honest gaps.** The iOS failures are a **local** environment limit — tests that read project
+source under `~/Desktop` hit a file-read denial; they pass in CI, and every lane diffed the failing-case
+set against baseline to prove nothing else moved. And I could not re-run Gradle myself for the last
+Android change: no JDK on this shell's PATH, so those counts come from the lane's JUnit XML rather than
+a run of my own. What I did verify independently there was the durable part — the coverage tables, the
+declared test input, and every call site.

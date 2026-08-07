@@ -1332,7 +1332,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   visitor who is not signed in — so an anonymous visitor's banner choice is kept on the device and
   never becomes an account record, even after they register. Whether it should is the same
   legal question in a second place, and was left alone rather than guessed at.
-- **Answer (owner, 2026-08-07):** **Gate the buttons, or a "By continuing you accept…" line — owner asked for a recommendation.** See the PM recommendation appended below this block.
+- **Answer (owner, 2026-08-07):** **GATE THE BUTTONS.** The Google and Apple buttons are gated on the same checkbox as the email/password form, so a social signup produces the same evidence as an email one — a tick by a specific person at a specific moment, not a claim that they saw a sentence. The passive *"By continuing you accept…"* line is **rejected**. Accepted cost: a disabled social button until the box is ticked, which is the same friction the email form already imposes.
 
 ---
 
@@ -1646,7 +1646,9 @@ remains open and non-blocking** — I cannot change repository settings in any c
 - Default taken: **none.** Deliberately not defaulted — the recorded default said "no residency
   requirement", the owner's answer appears to contradict it, and the contradiction may be only in the
   wording. Nothing is built on either reading until this is settled.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** Verbatim: *"I think that it has to be a rule that both of the sides have to follow, you cannot work in a certain country if you don't have residency there."*
+  **PM reading — stated explicitly because acting on a misread is how this goes wrong: this is option (a), a BUSINESS / CONTRACTING rule, not a data-residency obligation.** The sentence is about who may *work* in a country (both the platform and the cleaner must be registered there), not about where bytes are stored. So **ADR-0017's single shared database in West Europe stands**, and what this creates is a **validation rule plus a `CountryConfiguration` fact** — which country registration each side must hold to operate in a market.
+  **If that reading is wrong** — i.e. you also mean each country's data must physically stay in that country — say so, because that is the trigger that flips the platform to region-pinned databases and needs a superseding ADR with a migration story. Nothing built under reading (a) is wasted if (b) later turns out to be true: the validation rule is needed either way.
 
 ### Q-CI-01 (second occurrence) — RETIRED 2026-08-07
 - Duplicate of the `Q-CI-01` filed 2026-07-30. Retired at the owner's instruction (*"I need to have it

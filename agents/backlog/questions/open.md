@@ -843,7 +843,7 @@ _No open Wave-1 *planning* questions remain._
 - **⚠️ STILL OPEN: SK.** The owner ruled **CZ first**. Nothing here is evidence about Slovak
   requirements and **T-0508 AC11 forbids reading this CZ answer as a CZ/SK one.** Downgraded to
   `blocking: no` because no ticket waits on the SK half today.
-- **Answer (owner, 2026-08-07):** **The owner sent a reference of how the invoice should look.** It must carry **IČO, IBAN, bank details and other details**. ⚠️ **The reference document is not in the repo** — see the PM note appended below this block; the field set must be transcribed from it before T-0508's build lands, and this answer is NOT complete until that transcription exists here.
+- **Answer (owner, 2026-08-07):** **IČO, IBAN, bank details and other details** — the owner re-states that they already sent a reference of how the invoice should look. **They did, and it IS recorded**: `status/sprint-15.md` §A4 carries the field-by-field analysis of the Czech ISDOC specimen they photographed. My first pass at this answer said the reference was missing; that was wrong — only the *photo* is absent from the repo, not the specification derived from it. **The CZ field set is therefore known.** What §A4 also establishes, and what the owner's IČO/IBAN answer confirms, is that the current document has **the two parties the wrong way round** — it prints Cleansia as issuer and the cleaner as 'Billed To', where the specimen has the **cleaner as Dodavatel** and **Cleansia as Odběratel**. That is a document of a different kind, not a missing-fields problem. **SK is still unstated**, and so is whether gapless numbering is required.
 
 ### Q-PAYOUT-02 — [blocking: **YES**] Is a cleaner an employee or a self-employed supplier (OSVČ)?
 - Raised by: pm (T-0508)
@@ -1504,3 +1504,150 @@ neither has an answer to give yet, because the artifact being approved does not 
 > query, and the number decides whether a read-path clamp needs a migration or is free; (ii) whether
 > the rewritten pin test actually reddens under each named mutation, which is the closing ticket's
 > Gate 0.5 and must not be taken on trust.
+
+---
+
+# PM notes on the 2026-08-07 answer batch
+
+Written the same day as the answers, so nothing above depends on a claim recorded nowhere. **The
+owner's instruction on delivering this batch was: *"Write my every answer and DON'T FORGET ABOUT IT
+SINCE I HAD TO ANSWER THE QUESTIONS THAT WERE ALREADY RESERVED IN THE PAST."*** That happened because
+`Q-SELFBILL-01`…`-05` were recorded in ADR-0041 as *"filed"* since revision 1 and had never reached
+this file. The answers were therefore committed **on their own, before any work acted on them**
+(`57cdb535`).
+
+## N1 — `Q-IOS-03`: the trusted-device flow is **NOT** built on mobile
+
+The owner asked to check first. Checked, and the belief does not hold:
+
+- **Backend: present.** Six auth handlers reference it — `MobileLogin.cs:28,37` carries
+  `string? TrustedDeviceToken = null`, plus `Login`, `PartnerLogin`, `MobilePartnerLogin`, `AdminLogin`
+  and `LoginValidator`.
+- **Android: zero references.** `grep -ri trusteddevice src/cleansia_android` → nothing outside build
+  output.
+- **iOS: zero references.** Same grep over `src/cleansia_ios` → nothing.
+
+So the server accepts an optional token that **no mobile client has ever sent**. The recorded default
+(*"omit from v1 to match Android"*) is the accurate description of today. The question is still open as
+a product call: **build it on both, or delete the unused parameter?** Leaving a half-built auth
+affordance is the one option with no argument for it.
+
+## N2 — `Q-CONSENT-01`: the owner asked which is better. **Gate the buttons.**
+
+Recommended: **gate the Google and Apple buttons on the same checkbox**, not a "By continuing you
+accept…" line. Three reasons, in order of weight:
+
+1. **It produces the same evidence as the email path.** A tick is an affirmative act by a specific
+   person at a specific moment; a sentence under a button is an assertion that they saw something.
+   Under GDPR the first is a record and the second is a claim. Since this whole work exists because we
+   had *no* record, deliberately choosing the weaker form for the shorter flow is the wrong direction.
+2. **It is one consent surface, not two.** The delivery machinery already shipped on all four clients
+   and is keyed on the tick. Gating reuses it exactly; the passive line needs a second, weaker rule
+   about what counts as acceptance, and that rule has to be defended separately for every future
+   document.
+3. **The cost is one disabled button**, and it is the same friction the email form already imposes.
+
+**The argument against, stated honestly:** a disabled social button converts worse, and social signup
+is where drop-off is most price-sensitive. If conversion wins, the passive line is defensible — but
+then say so explicitly, because it is a deliberate downgrade of the evidence, not a neutral
+alternative.
+
+## N3 — `Q-REGION-01` **reverses** a recorded default and needs a panel, not a status flip
+
+The recorded default was *"none yet — the EU-centric markets keep data in West Europe."* The owner's
+answer is that cleaners are **B2B suppliers who must hold a country-attached registration number
+(IČO or equivalent)**, so *"they must have residency."*
+
+This is the **named trigger** the question was written to catch, and it is present **from day one** —
+not gated on a second region, which is what every downstream artifact assumes. Before anything is
+built on it, two things need establishing and neither is the PM's to assert:
+
+- **Does "the supplier must be country-registered" actually imply a data-residency obligation**, or is
+  it a *business* requirement about who we may contract with? Those are different constraints with
+  very different costs, and the answer's phrasing (*"otherwise they won't be able to open an IČO"*)
+  reads more like the second. **This distinction is the whole decision** and it is a legal question,
+  not an architecture one.
+- If it *is* residency, ADR-0017's one-shared-DB model is what the trigger flips, and that is a
+  superseding ADR with a migration story — not an edit.
+
+**Filed as `Q-REGION-04` below rather than assumed either way.**
+
+## N4 — `Q-IOS-02` **reverses the parity direction** and contradicts a shipped ADR
+
+Owner: *"iOS has to be primary, so Android has to be similar to iOS, not the other way around."*
+
+**ADR-0018 (iOS design-parity principle) says the opposite**, and so does the iOS charter — Android is
+the reference implementation the iOS apps mirror. Every iOS ticket this sprint was briefed that way,
+including work that shipped. This is not a contradiction to resolve silently: it changes which
+platform a future divergence is judged against.
+
+The map half is clean and needs nothing — **MapKit on iOS, Mapbox on Android, deliberately not
+identical**, which is what both platforms already do. The *principle* half needs a superseding ADR.
+**No existing iOS work is invalidated**: parity was a tie-breaker for undecided details, not a source
+of requirements, and no shipped iOS behaviour was chosen *because* Android did it first.
+
+## N5 — `Q-INFRA-01`: the recorded default is **wrong about the live state**
+
+Custom domains are already set for every DEV web app and API. The default said *"no for dev — the
+default `*.azurewebsites.net` hostnames are sufficient."* That is not superseded, it is **inaccurate
+about today**, so any artifact that reasons from the Azure hostnames needs re-checking rather than
+merely updating. Nothing is blocked; the risk is a doc that sends someone to the wrong URL.
+
+## N6 — a question I missed when I listed them for the owner
+
+I gave the owner a list of 36 and called it complete. **`Q-W3-4`** — *dispute Resolve when the Stripe
+refund fails: keep "Resolved + pending refund row", or defer/surface?* — was not in it. My extraction
+matched on an answer-line pattern that block does not use. It is still open, and it is listed below so
+it is not lost a second time.
+
+Three more are open because the owner's batch did not cover them, which is fine and not an omission:
+**`Q-SELFBILL-03`** (must the invoice say it was issued on the cleaner's behalf), **`Q-SELFBILL-04`**
+(may a cleaner withdraw in-app), **`Q-SELFBILL-05`** (does an admin-recorded paper contract count).
+They are all `blocking: no` and all carry defaults.
+
+## N7 — work the answers created that the questions did not ask about
+
+Recorded here so the scope is not lost between the answer and the ticket:
+
+| From | New work |
+|---|---|
+| `Q-PROMISE-01` | **The iOS Live Activity shows the wrong time until the cleaner arrives.** A defect, reported in passing, not covered by the promise answer |
+| `Q-PROMISE-02` | Favourite cleaner must **assign**, not prioritise — plus notify the cleaner on booking, ask them to confirm, and on refusal offer the customer another cleaner through the same approval flow or a random one. Both the cleaner and customer sides need checking |
+| `Q-FEED-02` | Partner-targeted notifications, **plus an hourly nearby-jobs digest**. The existing partner digest is 30 minutes, so this is a cadence change as well as new events |
+| `Q-W3-2` | Add `CurrencyCode` to the pay DTO (`manual_step: nswag-regen`), and the partner dashboard's hardcoded `Kč` becomes a defect rather than a precedent |
+| `Q-PLUS-01` | Enforce once-per-customer trial. The answer is the **requirement**; what Stripe does today is still unestablished |
+| `Q-PLUS-03` | Gate favourite cleaner on Plus — this **removes a capability real users have today**, so it needs a release note, not just a gate |
+| `Q-IOS-03` | Either build trusted-device on both clients, or delete the unused server parameter |
+
+## N8 — `Q-CI-01` was filed twice
+
+The owner's *"I need to have it only once"* is read as an instruction about the **duplicate**, not about
+branch protection. The second occurrence is retired below. **The branch-protection decision itself
+remains open and non-blocking** — I cannot change repository settings in any case.
+
+---
+
+### Q-REGION-04 — [blocking: no — but it decides whether ADR-0017 stands] Does "cleaners must be country-registered" mean data residency, or only who we may contract with?
+- Raised by: PM, from the owner's `Q-REGION-01` answer
+- Owner: owner (with counsel)
+- Resolve-by: pre-prod
+- Date: 2026-08-07
+- Question: you answered that cleaners must hold a country-attached registration number (IČO or
+  equivalent), *"otherwise they won't be able to open an IČO"*, and concluded *"they must have
+  residency."* Two different constraints fit that sentence and they cost very different amounts:
+  **(a)** a **business** rule — we may only contract with suppliers registered in the country we
+  operate in. Nothing about where data is stored; ADR-0017's single shared database in West Europe is
+  untouched. **(b)** a **data-residency** obligation — that country's data must physically stay in
+  that country, which is the named trigger that flips the platform to region-pinned databases and
+  needs a superseding ADR plus a migration story.
+- Why it matters: (a) is a validation rule and a week of work. (b) is an architecture change that
+  touches every tenant-scoped table. Guessing (b) buys an expensive rewrite nobody asked for; guessing
+  (a) and being wrong is a compliance failure found late.
+- Default taken: **none.** Deliberately not defaulted — the recorded default said "no residency
+  requirement", the owner's answer appears to contradict it, and the contradiction may be only in the
+  wording. Nothing is built on either reading until this is settled.
+- Answer: _(owner fills in)_
+
+### Q-CI-01 (second occurrence) — RETIRED 2026-08-07
+- Duplicate of the `Q-CI-01` filed 2026-07-30. Retired at the owner's instruction (*"I need to have it
+  only once"*). The surviving entry keeps the open branch-protection decision.

@@ -263,11 +263,33 @@ final class CleanOrderCardModelTests: XCTestCase {
         XCTAssertEqual(state("v2Rescheduled").cardModel(now: now).card, .unknown)
     }
 
-    func testTheFinishTimeIsTheActualProjectionWhenThereIsOneAndTheBookedEndOtherwise() {
+    func testTheClockIsTheActualProjectionWhenThereIsOneAndTheBookedEndOtherwise() {
         let projected = now.addingTimeInterval(2700)
 
-        XCTAssertEqual(state("inProgress", phaseEnd: projected).cardModel(now: now).finish, projected)
-        XCTAssertEqual(state("inProgress").cardModel(now: now).finish, now.addingTimeInterval(1800))
+        XCTAssertEqual(state("inProgress", phaseEnd: projected).cardModel(now: now).legEnd, projected)
+        XCTAssertEqual(state("inProgress").cardModel(now: now).legEnd, now.addingTimeInterval(1800))
+    }
+
+    /// The number the owner saw. While the cleaner is on the way the card's instant is their expected
+    /// ARRIVAL — strictly earlier than the clean's booked end — so the card must caption it as one. Under a
+    /// "Finish" caption it says a two-hour clean ends the moment the cleaner rings the bell.
+    func testTheOnTheWayClockIsTheArrivalAndIsCaptionedAsOne() {
+        let arrival = now.addingTimeInterval(600)
+        let onTheWay = state("onTheWay", phaseStart: now.addingTimeInterval(-300), phaseEnd: arrival)
+        let model = onTheWay.cardModel(now: now)
+
+        XCTAssertEqual(model.legEnd, arrival)
+        XCTAssertLessThan(model.legEnd, onTheWay.scheduledEnd)
+        XCTAssertEqual(model.card.timeCaption, .arrival)
+    }
+
+    func testTheCleaningClockIsTheFinishAndIsCaptionedAsOne() {
+        let finish = now.addingTimeInterval(2700)
+        let model = state("inProgress", phaseStart: now.addingTimeInterval(-300), phaseEnd: finish)
+            .cardModel(now: now)
+
+        XCTAssertEqual(model.legEnd, finish)
+        XCTAssertEqual(model.card.timeCaption, .finish)
     }
 
     func testAnInServiceCardCarriesALiveWindowAnchoredNoLaterThanNow() throws {
@@ -294,7 +316,7 @@ final class CleanOrderCardModelTests: XCTestCase {
             )
 
             XCTAssertNil(ahead.cardModel(now: now).liveRange, "\(status) kept a live window")
-            XCTAssertFalse(ahead.cardModel(now: now).card.showsFinishTime, "\(status) still promises a finish")
+            XCTAssertNil(ahead.cardModel(now: now).card.timeCaption, "\(status) still promises a time")
         }
     }
 
@@ -383,6 +405,20 @@ final class OrderEtaWindowTests: XCTestCase {
         ))
 
         XCTAssertEqual(window?.phaseEnd, startedAt.addingTimeInterval(10 * 60))
+    }
+
+    /// Confirmed has no phase to time — the appointment is not an arrival estimate, and treating the
+    /// confirmation as the start of a journey is what made the card count down to a booking days out.
+    func testAConfirmedOrderCarriesNoPhaseWindowAtAll() {
+        let window = EtaWindow.forOrder(order(
+            statusValue: 2,
+            cleaningDateTime: booked,
+            history: [OrderFixtures.track(statusValue: 2, createdOn: booked.addingTimeInterval(-2 * 86400))]
+        ))
+
+        XCTAssertNil(window?.phaseStart)
+        XCTAssertNil(window?.phaseEnd)
+        XCTAssertEqual(window?.countdownEnd, booked.addingTimeInterval(90 * 60))
     }
 
     func testNoHistoryLeavesThePhaseFieldsNil() {

@@ -121,20 +121,30 @@ final class LiveActivityCardTests: XCTestCase {
         XCTAssertNil(card("something_new").position)
     }
 
-    /// A finish time is a promise. A finished clean has nothing left to finish and a cancelled one never
+    /// A time readout is a promise. A finished clean has nothing left to time and a cancelled one never
     /// will, so neither may show one — a lock screen promising a finish for a dead order is the worst
     /// thing this card can do.
-    func testOnlyACardWithSomethingLeftToFinishShowsAFinishTime() {
-        XCTAssertTrue(card("onTheWay").showsFinishTime)
-        XCTAssertTrue(card("inProgress").showsFinishTime)
-        XCTAssertFalse(card("completed").showsFinishTime)
-        XCTAssertFalse(card("cancelled").showsFinishTime)
+    func testOnlyACardWithSomethingLeftToTimeShowsAClock() {
+        XCTAssertNotNil(card("onTheWay").timeCaption)
+        XCTAssertNotNil(card("inProgress").timeCaption)
+        XCTAssertNil(card("completed").timeCaption)
+        XCTAssertNil(card("cancelled").timeCaption)
+    }
+
+    /// The clock and the countdown that shares its instant time DIFFERENT things on different legs: while
+    /// the cleaner is on the way the instant is their expected ARRIVAL, and only once cleaning has started
+    /// is it the finish. Captioning both "Finish" puts the arrival on the lock screen as the moment the
+    /// clean ends — a two-hour clean that "finishes" the minute it starts.
+    func testTheClockIsCaptionedForWhatTheLegIsActuallyTiming() {
+        XCTAssertEqual(card("onTheWay").timeCaption, .arrival)
+        XCTAssertEqual(card("inProgress").timeCaption, .finish)
     }
 
     /// An unknown status is still an in-service card (ADR-0029 D4), so the clock keeps its promise even
-    /// though the journey position cannot be drawn.
-    func testAnUnknownCardKeepsItsFinishTimeButDrawsNoPosition() {
-        XCTAssertTrue(card("something_new").showsFinishTime)
+    /// though the journey position cannot be drawn. It cannot know which leg it is on, so it claims the
+    /// weaker of the two.
+    func testAnUnknownCardKeepsItsClockButDrawsNoPosition() {
+        XCTAssertEqual(card("something_new").timeCaption, .finish)
         XCTAssertNil(card("something_new").position)
     }
 

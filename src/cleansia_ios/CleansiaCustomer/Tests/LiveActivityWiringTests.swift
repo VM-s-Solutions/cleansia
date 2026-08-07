@@ -151,6 +151,25 @@ final class OrderLiveActivitySyncTests: XCTestCase {
         XCTAssertTrue(sync.ended.isEmpty)
     }
 
+    /// Confirmed means a cleaner has taken the job, not that anyone has set off — the service can still be
+    /// days away. The card that used to open here claimed "your cleaner is heading over" and counted down
+    /// to the appointment as if it were an arrival. The backend never starts one at Confirmed either
+    /// (`LiveActivityEventKeys.ForStatus`), so a card opened here could only ever disagree with it.
+    func testAConfirmedOrderOpensNoCardBecauseNobodyHasSetOffYet() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order(
+            statusValue: 2,
+            history: [OrderFixtures.track(statusValue: 2, createdOn: start.addingTimeInterval(-2 * 86400))]
+        ))]
+        let sync = SpyLiveActivitySync()
+
+        await makeVM(client, sync: sync).load()
+
+        XCTAssertTrue(sync.started.isEmpty, "a card opened before the cleaner was on the way")
+        XCTAssertTrue(sync.updated.isEmpty)
+        XCTAssertTrue(sync.ended.isEmpty)
+    }
+
     func testInProgressOrderStartsAndUpdatesToCleaning() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(order(statusValue: 4))]

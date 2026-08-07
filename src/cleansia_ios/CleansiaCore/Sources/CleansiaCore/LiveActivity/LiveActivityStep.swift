@@ -74,6 +74,21 @@ public enum LiveActivityHeadline: Sendable, Equatable {
     case generic
 }
 
+/// What the card's clock — and the countdown that shares its instant — is timing. The two legs of a live
+/// clean end at different things: the on-the-way leg ends when the cleaner ARRIVES, the cleaning leg when
+/// the clean is done. One caption for both puts the arrival on the lock screen as the moment the clean ends.
+public enum LiveActivityTimeCaption: Sendable, Equatable, CaseIterable {
+    case arrival
+    case finish
+
+    public var label: String {
+        switch self {
+        case .arrival: LiveActivityL10n.arrival
+        case .finish: LiveActivityL10n.finish
+        }
+    }
+}
+
 /// What the card renders for one content-state status.
 public enum LiveActivityCard: Sendable, Equatable {
     case journey(LiveActivityStep)
@@ -107,12 +122,13 @@ public enum LiveActivityCard: Sendable, Equatable {
         }
     }
 
-    /// A finish time is a promise, so only a card with something left to finish makes one.
-    public var showsFinishTime: Bool {
+    /// What the card's clock promises, or nil where it has nothing left to time and draws no clock at all.
+    /// An unknown status is still in service but cannot know its leg, so it claims the weaker of the two.
+    public var timeCaption: LiveActivityTimeCaption? {
         switch self {
-        case let .journey(step): step != .done
-        case .cancelled: false
-        case .unknown: true
+        case .journey(.onTheWay): .arrival
+        case .journey(.done), .cancelled: nil
+        case .journey, .unknown: .finish
         }
     }
 

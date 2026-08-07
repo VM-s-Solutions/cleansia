@@ -57,8 +57,8 @@ extension CleanOrderAttributes.ContentState {
         return LiveActivityCardModel(
             card: card,
             orderNumber: orderNumber,
-            finish: etaWindow.countdownEnd,
-            liveRange: card.showsFinishTime ? liveRange(now: now) : nil
+            legEnd: etaWindow.countdownEnd,
+            liveRange: card.timeCaption != nil ? liveRange(now: now) : nil
         )
     }
 
@@ -95,9 +95,10 @@ struct EtaWindow: Equatable {
     let phaseStart: Date?
     let phaseEnd: Date?
 
-    /// The instant the countdown hits 00:00 — the actual finish when it is known, else the booked one.
-    /// NOT the activity's staleDate (`LiveActivityPolicy.staleDate` owns that): a stale date this early is
-    /// reached mid-clean and makes the system draw its placeholder over a card that is still true.
+    /// The instant the countdown hits 00:00 — the end of the leg being walked when it is known (the
+    /// cleaner's arrival, then the projected finish), else the booked end. NOT the activity's staleDate
+    /// (`LiveActivityPolicy.staleDate` owns that): a stale date this early is reached mid-clean and makes
+    /// the system draw its placeholder over a card that is still true.
     var countdownEnd: Date {
         phaseEnd ?? scheduledEnd
     }

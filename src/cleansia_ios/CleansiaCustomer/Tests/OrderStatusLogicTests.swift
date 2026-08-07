@@ -39,6 +39,20 @@ final class OrderStatusLogicTests: XCTestCase {
         XCTAssertFalse(OrderStatusGroup.isActive(._6))
     }
 
+    /// ADR-0029 D2, and the backend's own `LiveActivityEventKeys.ForStatus`: a lock-screen card belongs to
+    /// the service window alone. Confirmed can be days out — a card opened there says "your cleaner is
+    /// heading over" and counts down to an appointment nobody has set off for, and burns the ~8h
+    /// ActivityKit budget before the clean begins.
+    func testOnlyTheTwoInServiceStatusesCarryALiveActivityCard() {
+        XCTAssertEqual(OrderStatusGroup.liveActivityStatus(._3), "onTheWay")
+        XCTAssertEqual(OrderStatusGroup.liveActivityStatus(._4), "inProgress")
+
+        for status in [OrderStatus._0, ._1, ._2, ._5, ._6] {
+            XCTAssertNil(OrderStatusGroup.liveActivityStatus(status), "\(status) opened a card")
+        }
+        XCTAssertNil(OrderStatusGroup.liveActivityStatus(nil))
+    }
+
     func testUpcomingExcludesCompletedAndCancelled() {
         XCTAssertTrue(OrderStatusGroup.isUpcoming(._0))
         XCTAssertTrue(OrderStatusGroup.isUpcoming(._3))

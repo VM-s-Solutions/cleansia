@@ -160,18 +160,17 @@ final class OrderDetailViewModel: ViewModel {
         }
     }
 
-    /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 LA-5): start (idempotent)
-    /// once the order is active — Confirmed / OnTheWay / InProgress — and end it on a terminal status. The
-    /// window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
+    /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 D2): start (idempotent)
+    /// once the cleaner is in the service window — OnTheWay / InProgress — and end it on a terminal status.
+    /// The window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
     /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
     /// counts against what really happened.
     private func syncLiveActivity(for order: OrderItem) {
         guard let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
         let orderNumber = order.displayOrderNumber ?? ""
-        if OrderStatusGroup.isActive(status) {
+        if let wireStatus = OrderStatusGroup.liveActivityStatus(status) {
             guard let window = EtaWindow.forOrder(order) else { return }
-            let wireStatus = OrderStatusGroup.liveActivityStatus(status)
             // start is idempotent (creates the activity once, with the current status); update rewrites a
             // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
             liveActivity.start(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)

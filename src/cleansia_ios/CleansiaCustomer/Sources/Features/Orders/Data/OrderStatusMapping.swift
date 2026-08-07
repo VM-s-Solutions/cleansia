@@ -65,14 +65,16 @@ enum OrderStatusGroup {
         status == ._6
     }
 
-    /// The Live Activity wire status (CleanOrderAttributes.ContentState.status) for an order status.
-    /// InProgress(4) drives the "Cleaning in progress" content; Confirmed(2)/OnTheWay(3) stay "onTheWay".
-    static func liveActivityStatus(_ status: OrderStatus?) -> String {
+    /// The Live Activity wire status (`CleanOrderAttributes.ContentState.status`) an order status opens a
+    /// card with, or nil where it carries no card at all. Mirrors the backend's
+    /// `LiveActivityEventKeys.ForStatus`: only the service window gets one. Confirmed can be days out, and
+    /// a card there says "your cleaner is heading over" while counting down to an appointment nobody has
+    /// set off for — besides burning the ~8h ActivityKit budget before the clean (ADR-0029 D2).
+    static func liveActivityStatus(_ status: OrderStatus?) -> String? {
         switch status {
+        case ._3: "onTheWay"
         case ._4: "inProgress"
-        case ._5: "completed"
-        case ._6: "cancelled"
-        default: "onTheWay"
+        default: nil
         }
     }
 }

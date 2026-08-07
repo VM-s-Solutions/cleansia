@@ -231,7 +231,7 @@ _No open Wave-1 *planning* questions remain._
   It does **not** block starting Wave 2 — T-0231 ships even-split. The owner should, before any DE/AT/ES or
   high-value-bundle refund goes live, either (a) confirm even-split is acceptable for all current bundles, or
   (b) set real weights via T-0232. AUD-02p is now split: weighting capability = T-0232, schema/backfill = T-0231.
-- Answer: _(owner fills in — set per-bundle weights via the admin UI in T-0232 post-T-0231, or confirm
+- **Answer (owner, 2026-08-07):** **Even weights, adjusted in the admin UI later.**
   even-split is acceptable for all current bundles)_
 
 ---
@@ -284,7 +284,7 @@ _No open Wave-1 *planning* questions remain._
   admin), and the screens at once.
 - Default taken (non-blocking): hardcoded `Kč`, consistent with the existing partner dashboard
   earnings display.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Add a `CurrencyCode` to the DTO — do NOT hardcode.** Owner, verbatim: *"NO, DON'T HARDCODE ANYTHING. ADD A DTO."* This is a DTO change and therefore carries `manual_step: nswag-regen`. It also **reverses the existing partner-dashboard precedent**, which hardcodes `Kč` — that call site is now a defect, not a precedent.
 
 ### Q-W3-3 — [RESOLVED 2026-06-21 — not blocking] PdfGenerationFailed / PdfGenerationError missing from admin invoice DTOs
 - Raised by: frontend (T-0171d)
@@ -393,7 +393,7 @@ _No open Wave-1 *planning* questions remain._
   the **seam is unchanged** either way, so this is a provider choice, not an architecture change.
 - Default taken (non-blocking): **No** — MapKit by default; Mapbox only if a specific parity gap (custom
   style, service-area polygon overlay, a sheet UX MapKit can't match) forces one surface onto it.
-- Answer: _(owner fills in — confirm MapKit default, or require Mapbox-identical → flip the default provider)_
+- **Answer (owner, 2026-08-07):** **No Mapbox-identical requirement — and the PARITY DIRECTION IS REVERSED.** Owner: *"iOS has to be primary, so Android has to be similar to iOS, not the other way around. For iOS use MapKit, for Android use Mapbox."* iOS keeps MapKit and Android keeps Mapbox, so the two maps are deliberately NOT identical. ⚠️ The reversal contradicts the shipped parity principle (Android is the reference implementation iOS mirrors) — see the PM note appended below.
 
 ### Q-IOS-03 — [blocking: no] Add trusted-device to the mobile clients (iOS + Android)?
 - Raised by: architect (IOS-ADR / ADR-0013 D10)
@@ -407,7 +407,7 @@ _No open Wave-1 *planning* questions remain._
   clients" — if wanted, design it once and ship Android + iOS together.
 - Default taken (non-blocking): **omit from iOS v1 to match Android** (the field is optional, so omitting
   it is fully supported).
-- Answer: _(owner fills in — omit to match Android, or commission a one-design trusted-device flow for both
+- **Answer (owner, 2026-08-07):** **Owner believes the trusted-device flow may already be built on both platforms and asked for it to be checked first.** See the PM finding appended below this block — this answer is not final until that check is recorded.
   mobile clients)_
 
 ---
@@ -431,7 +431,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking for dev): **No for dev** — the default `*.azurewebsites.net` hostnames are stable +
   TLS-terminated, sufficient for the Mac-points-at-dev goal. The iOS base-URL is env-switched **config**, so
   adding a custom domain later is config, not code.
-- Answer: _(owner fills in — confirm default hostnames for dev; decide custom domain for prod before go-live)_
+- **Answer (owner, 2026-08-07):** **Custom domains are ALREADY SET for everything in DEV** — web and APIs. So the recorded default ("no for dev, default Azure hostnames") is **wrong about the live state**, not merely superseded. Every artifact that assumes `*.azurewebsites.net` for DEV needs re-checking.
 
 ### Q-INFRA-02 — [blocking: no] Two subscriptions, or one subscription + two resource groups?
 - Raised by: architect (INFRA-ADR / ADR-0015 D1)
@@ -445,7 +445,7 @@ _No open Wave-1 *planning* questions remain._
   protected `prod` Environment gates prod deploys) at far less overhead.
 - Default taken (non-blocking): **one subscription, two RGs.** The Bicep is RG-scoped, so a later move to two
   subscriptions is a parameter change, not a rewrite — the seam is preserved.
-- Answer: _(owner fills in — confirm one-sub/two-RGs, or require separate subscriptions)_
+- **Answer (owner, 2026-08-07):** **One subscription + two resource groups.**
 
 ### Q-INFRA-03 — [blocking: no — pre-prod for PROD hardening] Prod network/auth hardening: VNet + private endpoints + Postgres-MI auth?
 - Raised by: architect (INFRA-ADR / ADR-0015 D3/D4)
@@ -460,7 +460,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking for dev): **dev = public-endpoint + firewall (Azure-services + admin IP) + TLS +
   MI-to-KeyVault/Storage + connection-string-in-Key-Vault for Postgres.** The prod Bicep leaves the seam (a
   module flag) to flip VNet/private-endpoint + Postgres-MI on before prod go-live.
-- Answer: _(owner fills in — confirm dev posture; decide prod VNet/private-endpoint + Postgres-MI before prod)_
+- **Answer (owner, 2026-08-07):** **Dev stays public-endpoint + firewall; the VNet / private-endpoint / managed-identity seam is left for prod.**
 
 ---
 
@@ -517,7 +517,7 @@ _No open Wave-1 *planning* questions remain._
   Europe**, which is *in* the EU (GDPR's cross-border concern is transfers *out* of the EU; a single EU region
   does not trigger it). A residency-regulated or non-EU market is the trigger to revisit (a new ADR for the
   region-pinned model).
-- Answer: _(owner fills in — confirm no residency requirement for the planned markets, or name the market(s)
+- **Answer (owner, 2026-08-07):** **⚠️ RESIDENCY IS REQUIRED — this REVERSES the recorded default.** Owner: *"since we'll work B2B with cleaners and require IČO (or another number that is attached to a specific country) then they must have residency. Otherwise they won't be able to open an IČO."* The recorded default said no market is residency-regulated. Cleaner **country registration** is the trigger the question was asking for, and it is present from day one, not gated on a second region. See the PM note appended below — this needs an architect panel, not a status flip.
   that force region-pinned DBs and when they launch)_
 
 ### Q-REGION-02 — [blocking: no — gated on a second region] Tenant→region assignment + reassignment policy
@@ -534,7 +534,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): **country-driven, one home region per tenant, no reassignment story built** until
   a second region is real. A multi-market legal entity = **two tenants** (one per region), not one tenant
   spanning two.
-- Answer: _(owner fills in — confirm country→region granularity; defer reassignment until a second region)_
+- **Answer (owner, 2026-08-07):** **Yes** — country-driven assignment, one home region per tenant, no reassignment story until a second region is real; a multi-market legal entity is two tenants.
 
 ### Q-REGION-03 — [blocking: no] Per-region subscriptions, or one subscription with region in RG/naming?
 - Raised by: architect (INFRA-REGION-ADR / ADR-0017 D6)
@@ -549,7 +549,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): **one subscription** (region in RG/naming) until a quota / billing-legal /
   blast-radius trigger fires. The Bicep is RG-scoped, so a later per-region subscription is a deployment-target
   parameter, not a rewrite.
-- Answer: _(owner fills in — confirm one subscription until a trigger, or require per-region subscriptions)_
+- **Answer (owner, 2026-08-07):** **One subscription.** Owner: *"In case of high traffic I just up-scale the services."*
 
 ### Q-FEED-01 — [blocking: no] Do sitewide promo pushes appear in the customer notifications feed?
 - Raised by: analyst (T-0393 — feed design panel, D2)
@@ -565,7 +565,7 @@ _No open Wave-1 *planning* questions remain._
   stance, not a technical one.
 - Default taken (non-blocking): **excluded from feed v1**; revisit together with the ADR-0025 promo
   iOS-display follow-up ticket so marketing surfaces are decided once, coherently.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Exclude sitewide promo pushes from feed v1.**
 
 ---
 
@@ -597,7 +597,7 @@ _No open Wave-1 *planning* questions remain._
   **not conditional** on this answer — the regen-time typecheck fires earlier than any branch-protection
   rule can (before a commit exists), and the `master` push build is either the safety net (this question
   answered "no") or harmless redundancy (answered "yes"). The two compose; neither substitutes.
-- Answer: _(owner fills in — confirm direct pushes stay allowed, or protect `master` and name the
+- **Answer (owner, 2026-08-07):** **Owner: *"I need to have it only once."*** Read as an instruction about the DUPLICATE ENTRY, not about branch protection: this question was filed twice and must exist once. The duplicate is retired below; the branch-protection decision itself remains unanswered and non-blocking.
   self-approval / admin-bypass posture)_
 
 ---
@@ -620,7 +620,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): **not invented inside T-0393** — the feed v1 shows only events that
   exist. Recommended: a dedicated follow-up ticket (the T-0393 notify seam gives any new producer a
   feed row for free; the cancellation-of-accepted-job event is the highest-impact candidate).
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Yes — add partner-targeted notifications.** Plus a new requirement the question did not ask about: *"I want to have push notifications arriving once per time (I guess once per hour) if new jobs appeared nearby."* The existing partner digest is **30 minutes**, so this is a cadence change plus a nearby-jobs trigger, not only new event types.
 
 ---
 
@@ -692,7 +692,7 @@ _No open Wave-1 *planning* questions remain._
   alone; a shorter Russian string is still Cyrillic and still falls back. The two defects were on one
   surface, never one cause. This question is the reason T-0450 was split: the label half is the one that
   gates the avatar tickets; **this half gates nothing.**
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Keep Poppins.** The brand face does not change. The Cyrillic fallback shipped on all three platforms (`94d5bf99`, `50ed0c2d`, `55ad850e`) is therefore the permanent answer, not an interim one.
 
 ### Q-CI-01 — [blocking: no] Should `master` carry branch protection (required status checks)?
 - Raised by: architect (ADR-0031 panel lead, 2026-07-30)
@@ -746,7 +746,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): **(b) — treat it as a named exception for now.** T-0473 ships the colour
   and records the reasoning at the call site and in its `## Review`; no catalog law is amended by a
   ticket that is fundamentally a two-line colour change. The durable ruling waits for this answer.
-- Answer: _(owner fills in — ratify the exception, or commission (a) a second sanctioned meaning for the
+- **Answer (owner, 2026-08-07):** **(b) — named exception.** Red keeps its single meaning (destructive or error); "Report an issue" is recorded as an exception at the call site rather than the catalog gaining a second sanctioned meaning.
   danger role, or (c) a distinct warning/attention role)_
 
 ---
@@ -843,6 +843,7 @@ _No open Wave-1 *planning* questions remain._
 - **⚠️ STILL OPEN: SK.** The owner ruled **CZ first**. Nothing here is evidence about Slovak
   requirements and **T-0508 AC11 forbids reading this CZ answer as a CZ/SK one.** Downgraded to
   `blocking: no` because no ticket waits on the SK half today.
+- **Answer (owner, 2026-08-07):** **The owner sent a reference of how the invoice should look.** It must carry **IČO, IBAN, bank details and other details**. ⚠️ **The reference document is not in the repo** — see the PM note appended below this block; the field set must be transcribed from it before T-0508's build lands, and this answer is NOT complete until that transcription exists here.
 
 ### Q-PAYOUT-02 — [blocking: **YES**] Is a cleaner an employee or a self-employed supplier (OSVČ)?
 - Raised by: pm (T-0508)
@@ -868,7 +869,7 @@ _No open Wave-1 *planning* questions remain._
   as the issuer — yours, or the cleaner's?*
 - Default taken: **none.** **T-0508 is now `ready`** (the specification does not need this answer);
   **T-0522 (the build) is `blocked` on it.**
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **A cleaner is an OSVČ (self-employed supplier), and the platform SELF-BILLS.** Owner, verbatim: *"This is what I meant by self bill, instead of them making invoices on their own and sending them to us one by one, we have all of the invoices generated from their completed orders in place for all of the cleaners and pay for them in 1 day. So there is a need to have an agreement of self bill/paying."* So the agreement is not optional paperwork — it is what makes the single-day batch payout lawful. **T-0522 unblocks.**
 
 ### Q-PAYOUT-03 — [blocking: **YES**] How does the platform know a cleaner's VAT status, and what does each variant print?
 - Raised by: pm (T-0522, from the owner's specimen)
@@ -1008,7 +1009,7 @@ _No open Wave-1 *planning* questions remain._
   word, or change the mechanic.
 - Default taken: **none for (1) and (3).** For (2), T-0511 will propose **no rollover** as its stated
   default (simplest to explain, no unbounded accrual) — **overridable by your answer.**
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **(1) One express upgrade per month. (2) No rollover. (3) No reset on plan switch.**
 
 ### Q-PLUS-03 — [blocking: **YES**] Favourite cleaner: universal, or Plus-only?
 - Raised by: pm (T-0516, from the owner's *"I'd like to have it working fully"* answer)
@@ -1030,7 +1031,7 @@ _No open Wave-1 *planning* questions remain._
   waits.
 - Default taken: **none — deliberately.** T-0516 is `blocked`. **The PM will not default this**, because
   defaulting to "gate it" silently removes a live capability from real users.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Plus-only.** The favourite-cleaner feature is gated on an active membership, matching what all three clients already advertise. This REMOVES a live capability from non-members, which is why the PM declined to default it — the owner has now ruled.
 
 ### Q-IOS-LEGAL-01 — [blocking: no — a **pre-submission gate**] Which origin serves Terms and Privacy in the review build?
 - Raised by: pm (T-0524, from the owner's housekeeping answers)
@@ -1050,7 +1051,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken: **the owner's ruling stands — DEV URLs for now, recorded as a gate.** Nothing changes
   today; T-0524 is filed `blocked` so this surfaces at the pre-submission checkpoint rather than in a
   rejection.
-- Answer: _(owner fills in — the origin, and the date real text lands)_
+- **Answer (owner, 2026-08-07):** **Keep the DEV URLs for now**; the owner will switch them to production later. The pre-submission gate stands.
 
 ### Q-PLUS-01 — [blocking: **YES**] Does Stripe enforce a once-per-customer trial on the Plus price?
 - Raised by: pm (T-0497, from the Cleansia Plus audit)
@@ -1071,7 +1072,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken: **none — deliberately.** T-0497 is `blocked`. Its **AC1 (code archaeology: does our
   code set the trial, or is it a dashboard property?) is carved out as dispatchable today** so the wait
   is not wasted.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Enforce once-per-customer trial.** Owner: *"Not sure if it's set up in Stripe or not, but indeed there is a need to enforce once-per-customer trial… I don't want a user to be in the situation when he tries a trial subscription, then cancels and then tries a trial again. So basically he wouldn't pay for a subscription."* So the answer is the REQUIREMENT, not the current state — the current state still has to be established (T-0497 AC1) and then made to match.
 
 ### Q-OBS-01 — [blocking: no, but it changes what "green on DEV" means] Does DEV get error tracking?
 - Raised by: pm (T-0500, from the Azure cost investigation)
@@ -1100,7 +1101,7 @@ _No open Wave-1 *planning* questions remain._
   already set at `Extensions.cs:103` — necessary, not sufficient.)*
 - Default taken: **(c) by inaction, which is the current state.** Recorded so it is a decision rather
   than a drift.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **(c) — do not populate Sentry for DEV.** Owner is still using App Insights for DEV. No Sentry DSN is set; this is now a decision rather than a drift.
 
 ### Q-AZURE-01 — [blocking: no — but it gates T-0499 AC1 and AC5] The two cost queries only you can run
 - Raised by: pm (T-0499, from the Azure cost investigation)
@@ -1148,7 +1149,7 @@ _No open Wave-1 *planning* questions remain._
   forgetting.
 - Default taken: **banner visible, date absent.** Preferred over deleting the text (not an agent's call)
   and over rewriting it (would replace unreviewed prose with more unreviewed prose).
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **The text was generated by Claude, and everything will be checked with a lawyer.** So it is **not** binding today and must not be presented as reviewed. The existing banner stays; the store-submission gate stands until the lawyer's pass.
 
 ---
 
@@ -1184,7 +1185,7 @@ _No open Wave-1 *planning* questions remain._
   spread of *order created → first cleaner assigned*? Median and worst case. A rough answer is enough.
 - Default taken: **none.** No ticket is filed yet, deliberately — the two answers have different diffs
   (leave it alone vs. a five-locale × two-platform copy correction) and filing the wrong one wastes a run.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **The promise is TRUE and must be kept: a cleaner is assigned within 1 hour, in PROD.** The copy stays. **But the owner reports a NEW defect in the same breath:** the iOS **Live Activity displays the wrong time until the cleaner's arrival**. That is a separate defect and is being ticketed — it is not covered by this answer.
 
 ### Q-PROMISE-02 — [blocking: no — a copy/product call, but it is on the checkout page] cs/sk/ru tell the customer their favourite cleaner "will be assigned"; en/uk promise only "priority". Which is the intended promise?
 - Raised by: pm (challenger round on ADR-0036, `adr/challenges/0036-A-promise.md` CH-P3)
@@ -1218,7 +1219,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken: **none.** No copy ticket is filed. The T-0491 copy panel is the natural home for the
   wording **once the promise is decided** — but it cannot pick the promise, and a copy ticket written
   before this answer would be a guess in five languages.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Assignment, not priority — and the flow is bigger than the copy.** Owner, verbatim: *"if an employee has a free spot then it has to work in a way that he has to be assigned, not just set a priority. There is a need to check also the functionality around it for both employee and customer. And send a notification to the employee when customer created an order and then ask employee to confirm the order; if not then to offer customer either select another employee that will go through the same flow of approval, or suggest a random cleaner."* So `cs`/`sk`/`ru` were right and `en`/`uk` understate it. This is a **feature**, not a copy fix — see the PM note appended below.
 
 ---
 
@@ -1284,7 +1285,7 @@ _No open Wave-1 *planning* questions remain._
     no cached pass can be replayed over changed client bytes. Verified by mutation; see
     `agents/knowledge/patterns-frontend.md` §"Module boundaries". This closes the *detector*, not the
     question — it still only compares clients to the shared table, never either to the backend (RB-1).
-- Answer: **open.** Settled: the hand-written mirror goes and the shared declaration must come out of
+- **Answer (owner, 2026-08-07):** **Canonical = the backend declaration, surfaced through the generated TypeScript clients.** Owner: *"the ones that are coming and set on backend and are generated via TS client from them."* So the hand-written shared mirror is not canonical; it is a mirror, and the parity spec that makes drift loud is the right shape.
   the NSwag pipeline (owner). Undecided: what the shared file's integers are derived from, and where the
   gate that can go red actually lives — returned to the ADR's author, awaiting a second panel.
 
@@ -1331,7 +1332,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   visitor who is not signed in — so an anonymous visitor's banner choice is kept on the device and
   never becomes an account record, even after they register. Whether it should is the same
   legal question in a second place, and was left alone rather than guessed at.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Gate the buttons, or a "By continuing you accept…" line — owner asked for a recommendation.** See the PM recommendation appended below this block.
 
 ---
 
@@ -1373,7 +1374,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   PM"* — **they are not in this file, and a grep of the whole backlog finds them nowhere.** They have
   never actually reached you. This entry does not substitute for them. **PM: file that block, and add
   this entry to the Pre-prod blocking index at the top of this file.**
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **(b) — open on Czech, with visibility.** Launch is not delayed and the un-agreed cohort is counted and surfaced rather than hidden. ADR-0041 can now be accepted on this limb.
 
 ---
 
@@ -1398,7 +1399,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   show a cleaner and nothing to record them accepting.
 - Default if unanswered: every version stays `NotReviewed`, so nothing is rendered and nothing is
   demanded, and no jurisdiction is opened. Safe, and visibly incomplete — the feature ships inert.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **A lawyer will review it in the future.** So the text is NOT reviewed yet and no version may be marked reviewed on the owner's say-so. The feature stays inert until reviewed text exists — that is the recorded default and it now has an end condition rather than an open wait.
 
 ### Q-SELFBILL-02 — [blocking: **YES** for the severed coverage decision; blocks no ticket] Which date authorizes a self-billed invoice — the print date or the work period?
 - Raised by: architect (ADR-0041, re-framed rev 2, narrowed rev 3), filed by PM 2026-08-06
@@ -1411,7 +1412,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   run — a cleaner who accepts on 31 July covers June's work; one who accepts on 5 August does not.
 - Default if unanswered: do not open a jurisdiction before its text exists, which makes (a) empty by
   construction. That is an engineering sequencing call, **not legal advice**, and it does not answer (b).
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **(a) the invoice is INVALID** — and the residue is empty by construction, because *"it never will be a case that a company registers before the agreement text exists."* That is an owner commitment about sequencing, not merely an engineering default. **(b) the PRINT DATE (`GeneratedAt`) authorizes the document**, not the pay period it covers.
 
 ### Q-SELFBILL-03 — [blocking: no] Must the invoice itself say it was issued on the cleaner's behalf?
 - Raised by: architect (ADR-0041), filed by PM 2026-08-06
@@ -1473,7 +1474,7 @@ neither has an answer to give yet, because the artifact being approved does not 
 - Default taken (non-blocking): **keep accepting both.** The architecture is complete either way — the
   exclusion is written per surface, with its own reason, on the upload intake roster, so no format is
   silently unscrubbed. The panel explicitly declined to decide this as an architecture call.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **Keep accepting both** — DOC/DOCX on employee documents and PDF on dispute evidence. The per-surface exclusion stays written on the intake roster with its own reason, so no format is silently unscrubbed.
 
 ---
 
@@ -1496,7 +1497,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   bytes. The trade-off is *a legible refusal the cleaner can act on* versus *never lose a before/after
   photo*. Architecture can defend either — this is a product call.
 - Default taken: none. Flagged before the ADR is ruled on, so whichever you pick is what gets built.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-07):** **(A) Refuse it — force a re-pick.** Owner: *"in another case it's a data corruption and we have some problems with it if it's stored incorrectly."* So the refusal must be legible and actionable; the reused image-family content-type-mismatch message already resolves in all five locales on every client.
 
 > **Two measurements owed before this lands, neither of which an architect could take (no shell):**
 > (i) how many `OrderPhotos` rows on DEV already carry `application/pdf` or `image/gif` — an owner

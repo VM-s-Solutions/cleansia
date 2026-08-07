@@ -1,0 +1,5 @@
+// Poppins carries no Cyrillic, so `ru`/`uk` headings must land on Nunito
+// rather than the browser's generic sans. Nunito stays second so Poppins
+// still wins for Latin.
+$font-heading: 'Poppins', 'Nunito', sans-serif;
+$font-body: 'Nunito', sans-serif;

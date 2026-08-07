@@ -1,7 +1,8 @@
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-lighter: #f0f9ff;
 $primary-light: #e0f2fe;
-$font-heading: 'Poppins', sans-serif;
 
 .customer-orders {
   max-width: 1000px;

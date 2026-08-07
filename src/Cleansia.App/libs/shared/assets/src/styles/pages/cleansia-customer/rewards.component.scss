@@ -3,9 +3,10 @@
 // rounded surfaces) and adds per-tier colour accents for the hero and
 // tier-ladder rows.
 
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-lighter: #f0f9ff;
-$font-heading: 'Poppins', sans-serif;
 
 // Per-tier accents — used by both the hero and the tier ladder rows.
 $tier-bronze-from: #b45309;

@@ -158,12 +158,12 @@ private struct ProfileHero: View {
                     .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
                     .frame(width: 72, height: 72)
                 Text(initials)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onFixedWhite)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(.white)
                     .lineLimit(1)
                 if let email = employee.email.nonBlankOrNil {

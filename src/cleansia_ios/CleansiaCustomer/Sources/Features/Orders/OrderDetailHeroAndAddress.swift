@@ -28,12 +28,12 @@ struct OrderHeroCard: View {
                 estimatedMinutes: order.estimatedTime ?? 0,
                 locale: locale
             ))
-            .font(CleansiaTypography.headlineSmall)
+            .cleansiaFont(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
 
             HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
                 Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.primary)
                 if let struck = facts.struckSubtotal {
                     Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))

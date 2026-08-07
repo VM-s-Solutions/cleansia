@@ -35,7 +35,7 @@ struct BookingSuccessView: View {
                     .frame(width: 220, height: 220)
                 VStack(spacing: Spacing.xs) {
                     Text(L10n.Booking.successTitle)
-                        .font(CleansiaTypography.headlineSmall)
+                        .cleansiaFont(CleansiaTypography.headlineSmall)
                         .foregroundColor(CleansiaColors.onBackground)
                         .multilineTextAlignment(.center)
                     Text(L10n.Booking.successSubtitle)

@@ -7,7 +7,7 @@ struct HomeSectionTitle: View {
 
     var body: some View {
         Text(text)
-            .font(CleansiaFont.poppins(.semibold, size: 16))
+            .cleansiaFont(.poppins(.semibold, size: 16))
             .foregroundColor(CleansiaColors.onBackground)
     }
 }

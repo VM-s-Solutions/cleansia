@@ -78,7 +78,7 @@ struct CancelOrderSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 Text(L10n.OrderCancel.title)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
 
                 CancellationFeeCard(

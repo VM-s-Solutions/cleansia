@@ -46,7 +46,7 @@ struct OrderTimerCard: View {
                 // shifts width a little as digits change; Android accepted the
                 // same jitter rather than dropping to a system mono font.
                 Text(primary(phase))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                     .lineLimit(1)
                 if let finishedAt = finishedAtSubline(phase) {

@@ -202,7 +202,7 @@ private struct BookingSheetContent: View {
             .accessibilityLabel(Text(step > 1 ? L10n.Booking.back : L10n.Booking.close))
 
             Text(L10n.Booking.stepTitle(step))
-                .font(CleansiaTypography.headlineSmall)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
                 .foregroundColor(CleansiaColors.onBackground)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)

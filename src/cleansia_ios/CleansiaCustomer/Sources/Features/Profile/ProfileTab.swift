@@ -267,7 +267,7 @@ private struct ProfileStatsCard: View {
     private func statColumn(value: String, label: String) -> some View {
         VStack(spacing: Spacing.xxs) {
             Text(value)
-                .font(CleansiaTypography.headlineSmall)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
                 .fontWeight(.bold)
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
@@ -301,7 +301,7 @@ private struct HeroGradient: View {
             )
             VStack(alignment: .leading, spacing: 2) {
                 Text(user?.fullName ?? "")
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(.white)
                     .lineLimit(1)
                 if let email = user?.email, !email.isEmpty {

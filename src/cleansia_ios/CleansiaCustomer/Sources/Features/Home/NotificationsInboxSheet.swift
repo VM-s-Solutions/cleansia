@@ -164,7 +164,7 @@ private struct NotificationsInboxEmptyView: View {
             subtitle: L10n.NotificationsInbox.emptySubtitle,
             verticallyCentered: true,
             imageSize: 160,
-            titleFont: CleansiaTypography.headlineSmall
+            titleStyle: CleansiaTypography.headlineSmall
         )
     }
 }

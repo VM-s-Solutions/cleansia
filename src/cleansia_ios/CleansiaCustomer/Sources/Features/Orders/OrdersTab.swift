@@ -22,7 +22,7 @@ struct OrdersTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L10n.Orders.title)
-                .font(CleansiaTypography.headlineMedium)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
                 .padding(.horizontal, Spacing.ml)
                 .padding(.vertical, Spacing.m)
@@ -252,7 +252,7 @@ private struct OrdersEmptyView: View {
             subtitle: L10n.Orders.emptySubtitle,
             verticallyCentered: true,
             imageSize: 160,
-            titleFont: CleansiaTypography.headlineSmall
+            titleStyle: CleansiaTypography.headlineSmall
         ) {
             CleansiaPrimaryButton(L10n.Orders.emptyCta, action: onBookCleaning)
                 .fixedSize()

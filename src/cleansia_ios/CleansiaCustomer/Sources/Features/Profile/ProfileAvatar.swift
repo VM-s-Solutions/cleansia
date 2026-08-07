@@ -34,7 +34,7 @@ struct ProfileAvatar: View {
             Circle()
                 .fill(Color.white)
             Text(initials)
-                .font(CleansiaTypography.headlineSmall)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
                 .foregroundColor(CleansiaColors.onFixedWhite)
         }
     }

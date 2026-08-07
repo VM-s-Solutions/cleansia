@@ -15,7 +15,7 @@ struct MembershipSuccessScreen: View {
                     .frame(width: 200, height: 200)
                     .padding(.top, Spacing.xl)
                 Text(L10n.Membership.successTitle)
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                 Text(L10n.Membership.successSubtitle)
                     .font(CleansiaTypography.bodyMedium)

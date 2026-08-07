@@ -136,7 +136,7 @@ struct InviteFriendsCard: View {
                     onCopyCode(referral.code)
                 } label: {
                     Text(referral.code)
-                        .font(CleansiaTypography.headlineSmall)
+                        .cleansiaFont(CleansiaTypography.headlineSmall)
                         .foregroundColor(CleansiaColors.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Spacing.m)

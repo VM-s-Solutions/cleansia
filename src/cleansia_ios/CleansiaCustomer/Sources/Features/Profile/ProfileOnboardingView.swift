@@ -126,7 +126,7 @@ private struct ProfileOnboardingContent: View {
                     ? L10n.Onboarding.greeting
                     : L10n.Onboarding.greetingNamed(greetingName)
             )
-            .font(CleansiaTypography.headlineSmall)
+            .cleansiaFont(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
             .padding(.top, Spacing.m)
             Text(L10n.Onboarding.subtitle)

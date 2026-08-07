@@ -375,7 +375,7 @@ private struct SummaryStat: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(CleansiaTypography.headlineSmall)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
                 .foregroundColor(CleansiaColors.primary)
             Text(label)
                 .font(CleansiaTypography.labelMedium)

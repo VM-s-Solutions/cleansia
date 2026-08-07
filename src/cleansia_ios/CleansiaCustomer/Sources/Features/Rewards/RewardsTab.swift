@@ -28,7 +28,7 @@ struct RewardsTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L10n.Rewards.title)
-                .font(CleansiaTypography.headlineMedium)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
                 .padding(.horizontal, Spacing.ml)
                 .padding(.vertical, Spacing.m)
@@ -126,7 +126,7 @@ private struct TierHeroCard: View {
             }
             HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
                 Text(verbatim: "\(account.lifetimePoints)")
-                    .font(CleansiaTypography.displayMedium)
+                    .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(.white)
                 Text(L10n.Rewards.pointsUnit)
                     .font(CleansiaTypography.titleMedium)

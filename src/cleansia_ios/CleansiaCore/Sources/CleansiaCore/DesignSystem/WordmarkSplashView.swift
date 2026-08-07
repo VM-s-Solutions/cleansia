@@ -34,7 +34,7 @@ public struct WordmarkSplashView: View {
 
             if showsPartnerLabel {
                 Text(verbatim: "PARTNER")
-                    .font(CleansiaFont.poppins(.semibold, size: 15))
+                    .cleansiaFont(.poppins(.semibold, size: 15))
                     .tracking(6)
                     .foregroundColor(.white)
                     .opacity(revealed ? 1 : 0)
@@ -77,7 +77,7 @@ public struct WordmarkSplashView: View {
         HStack(spacing: 0) {
             ForEach(Array(Self.brand.enumerated()), id: \.offset) { index, character in
                 Text(String(character))
-                    .font(CleansiaFont.poppins(.bold, size: 44))
+                    .cleansiaFont(.poppins(.bold, size: 44))
                     .foregroundColor(.white)
                     .opacity(revealed ? 1 : 0)
                     .offset(y: revealed ? 0 : 16)

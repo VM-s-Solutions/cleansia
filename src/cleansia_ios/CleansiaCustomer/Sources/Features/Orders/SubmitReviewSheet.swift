@@ -42,7 +42,7 @@ struct SubmitReviewSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 Text(isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
 
                 StarPicker(rating: $rating, enabled: !isSubmitting)

@@ -49,7 +49,7 @@ private struct HeroCard: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
                 Text(EarningsFormat.decimalMoney(invoice.totalAmount ?? 0, currencyCode: invoice.currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if let number = invoice.invoiceNumber, !number.isEmpty {
                     Text(number)

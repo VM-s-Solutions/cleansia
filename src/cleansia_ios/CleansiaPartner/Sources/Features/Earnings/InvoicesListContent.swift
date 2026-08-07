@@ -46,7 +46,7 @@ private struct InvoicesSummaryCard: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
                 Text(EarningsFormat.decimalMoney(total, currencyCode: currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 Text(L10n.Invoices.summaryCount(invoices.count))
                     .font(CleansiaTypography.labelSmall)

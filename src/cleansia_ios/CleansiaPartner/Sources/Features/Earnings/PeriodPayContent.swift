@@ -31,7 +31,7 @@ private struct HeroCard: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
                 Text(EarningsFormat.decimalMoney(summary.grandTotal ?? 0, currencyCode: currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if let label = summary.payPeriodLabel, !label.isEmpty {
                     Text(label)

@@ -72,7 +72,7 @@ private struct RegisterContent: View {
                 Spacer().frame(height: Spacing.l)
 
                 Text(L10n.Register.title)
-                    .font(CleansiaTypography.displayMedium)
+                    .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                     .multilineTextAlignment(.center)
 

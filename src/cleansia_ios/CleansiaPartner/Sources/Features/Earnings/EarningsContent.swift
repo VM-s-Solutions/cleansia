@@ -37,7 +37,7 @@ private struct HeadlineEarningsCard: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
                 Text(EarningsFormat.wholeMoney(stats.currentPeriodEarnings ?? 0, currencyCode: stats.currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if isEstimate {
                     Text(L10n.Earnings.estimateHelper)

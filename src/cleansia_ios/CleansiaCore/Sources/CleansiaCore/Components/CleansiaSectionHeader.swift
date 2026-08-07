@@ -31,7 +31,7 @@ public struct CleansiaSectionHeader: View {
                     .padding(.bottom, Spacing.xxs)
             }
             Text(title)
-                .font(CleansiaTypography.headlineMedium)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
             if let subtitle {
                 Text(subtitle)

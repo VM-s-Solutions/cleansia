@@ -308,3 +308,47 @@ Compose `FontFamily` is weight matching, not coverage fallback."*
   `BundledFontCoverageTest.kt`, which `android-ci.yml`'s *"Unit tests (all modules)"* step runs on
   every PR; baseline is zero and the rule is mechanically expressible, which is exactly when `T1-CI`
   is required.
+
+### iOS half — 2026-08-07
+
+**iOS is the opposite of Android and the ticket's framing is wrong for it.** CoreText itemizes per
+glyph natively, so Cyrillic was *already* being drawn — by **Helvetica**. The iOS defect is
+**off-brand, not unreadable**. Established on the iOS 16.4 simulator (the deployment floor) by four
+probes, not from documentation: run-level itemization, an `ImageRenderer` ink-count identity
+(mixed = Poppins-Latin + Nunito-Cyrillic, and mixed ≠ all-Nunito), and a hosted `UIHostingController`
+app driven with `simctl ui content_size` — the last of them compiled against the shipped design-system
+sources.
+
+**The cheap fix would have caused a universal accessibility regression.** `Font.custom(_:size:)`
+scales with Dynamic Type but cannot carry a cascade; `Font(ctFont)` carries a cascade but is
+**fixed size**. Measured `large` → `accessibility-XXXL`: custom 98.3 → 278.3, `Font(ctFont)` **98.0,
+no change event, body never re-ran** — so a computed `static var` + `UIFontMetrics` does not rescue it.
+Dropping a cascade into the font helper would have frozen every Poppins heading at nominal size while
+all Nunito body text kept growing, to fix a cosmetic defect. There is no Dynamic Type clamp in the
+tree, so that scaling is live.
+
+Also tested and **closed**: `CTFontManagerRegisterFontDescriptors` with the cascade baked into the
+registered descriptor registers cleanly but CoreText **drops the attribute** (cascade count `-1`).
+
+**Shipped instead:** a `ViewModifier` reading `@Environment(\.dynamicTypeSize)` so the *view* owns the
+dependency and rebuilds the cascaded `CTFont`. The scale curve is
+`round(UIFontMetrics.default.scaledValue(...))`, derived by matching implied point sizes and then
+confirmed at all 12 `DynamicTypeSize` values.
+
+**Slot list corrections (iOS):** 5 type-scale slots, not 6 — iOS has **no `displaySmall`**. 5
+hard-coded call sites, not 6, and none of the Android paths exist here. 45 slot call sites, four of
+which pass the style **as a value** rather than to `.font(...)`. Total surface **50 sites in 39
+files**. `displayLarge` has zero callers. Android's `CleansiaErrorState` Poppins site has no iOS
+counterpart. Both divergences pre-existing and out of scope.
+
+Unlike Android, call sites **had** to change — the modifier must be at the call site to read the
+environment. Made compiler-enforced rather than lint-enforced: the five slots are typed
+`CleansiaTextStyle`, so `.font(CleansiaTypography.headlineSmall)` **fails to compile**. Exactly one
+`.custom(` call remains in the tree, guarded so an un-cascaded Poppins is unreachable through the API.
+
+**The Android stale-green hazard has no counterpart here** — verified, not assumed: swapping a TTF's
+bytes turned 11 tests red on the first run.
+
+No font binary added, replaced or re-subset; the 12 files still reduce to the same **6** distinct
+sha1s as Android. No `Info.plist` or `project.yml` edit was needed — Nunito is already registered in
+both apps.

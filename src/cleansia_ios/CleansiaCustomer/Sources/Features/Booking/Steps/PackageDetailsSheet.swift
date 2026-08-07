@@ -33,7 +33,7 @@ struct PackageDetailsSheet: View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(pkg.localizedName(for: locale))
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
                 Text(BookingPricing.formatTotal(pkg.price, currencyCode: "CZK"))
                     .font(CleansiaTypography.titleMedium)

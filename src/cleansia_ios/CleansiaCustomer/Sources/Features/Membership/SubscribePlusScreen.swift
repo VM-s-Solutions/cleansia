@@ -141,7 +141,7 @@ private struct HeroBlock: View {
                 HStack(spacing: Spacing.xs) {
                     Spacer()
                     Text(verbatim: "Cleansia")
-                        .font(CleansiaTypography.displayMedium)
+                        .cleansiaFont(CleansiaTypography.displayMedium)
                         .foregroundColor(.white)
                     Text(L10n.Membership.inactiveBadge)
                         .font(CleansiaTypography.titleMedium)
@@ -152,7 +152,7 @@ private struct HeroBlock: View {
                     Spacer()
                 }
                 Text(L10n.Membership.heroHeadline)
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .multilineTextAlignment(.center)
@@ -195,7 +195,7 @@ private struct HeroBlock: View {
         if trialDays > 0 {
             VStack(spacing: Spacing.xs) {
                 Text(L10n.Membership.heroTrialPrice(trialDays))
-                    .font(CleansiaTypography.headlineLarge)
+                    .cleansiaFont(CleansiaTypography.headlineLarge)
                     .foregroundColor(.white)
                     .lineLimit(1)
                 Text(isAnnual
@@ -208,7 +208,7 @@ private struct HeroBlock: View {
             .frame(maxWidth: .infinity)
         } else {
             Text(isAnnual ? L10n.Membership.planPerYear(regularPrice) : L10n.Membership.planPerMonth(regularPrice))
-                .font(CleansiaTypography.headlineLarge)
+                .cleansiaFont(CleansiaTypography.headlineLarge)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
         }

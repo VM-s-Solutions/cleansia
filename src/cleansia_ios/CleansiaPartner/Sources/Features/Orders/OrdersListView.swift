@@ -95,7 +95,7 @@ struct OrdersListView: View {
     private var header: some View {
         HStack {
             Text(L10n.Orders.title)
-                .font(CleansiaTypography.headlineMedium)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
             Spacer()
         }

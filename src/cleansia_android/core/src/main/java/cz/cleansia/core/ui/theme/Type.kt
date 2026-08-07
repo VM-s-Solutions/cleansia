@@ -24,11 +24,12 @@ import cz.cleansia.core.R
  * Regular(400); that is pre-existing behaviour, not a regression introduced here.
  */
 
-// Poppins — headings (matches web app)
+// Poppins — headings (matches web app). Draws no Cyrillic, so each weight names a Nunito
+// counterpart to draw the glyphs it lacks; see [GlyphFallbackFont].
 val Poppins = FontFamily(
-    Font(R.font.poppins_medium, FontWeight.Medium),
-    Font(R.font.poppins_semibold, FontWeight.SemiBold),
-    Font(R.font.poppins_bold, FontWeight.Bold),
+    GlyphFallbackFont(R.font.poppins_medium, R.font.nunito_regular, FontWeight.Medium),
+    GlyphFallbackFont(R.font.poppins_semibold, R.font.nunito_semibold, FontWeight.SemiBold),
+    GlyphFallbackFont(R.font.poppins_bold, R.font.nunito_bold, FontWeight.Bold),
 )
 
 // Nunito — body (matches web app)

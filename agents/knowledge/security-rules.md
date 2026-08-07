@@ -1,4 +1,4 @@
-# Security Rules (S1–S10) — Non-Negotiable
+# Security Rules (S1–S12) — Non-Negotiable
 
 > These rules exist because this codebase has already had at least one production-class security
 > regression. Treat them as **laws, not guidelines.** When rules conflict, the priority is:
@@ -356,6 +356,128 @@ that is **specified but not yet built** — see `enforcement.md` and §E9 (the e
 `PushLogoutClearsTests` only exercise `clearAll()` behaviorally with an injected set; they do not assert
 the production multibinding equals the expected roster, so they would not catch a forgotten new repo).
 
+## S12 — What is inside a stored artifact is disclosed to everyone who can fetch it
+
+A file a user uploads is a **container**, not a value: pixels *plus* the capture coordinates, device
+identity, author names and revision history that travel with them. A magic-byte check is an
+accept/reject test — it bounds what the container **claims to be** and removes nothing from inside it.
+An allowlist of *declared* types is weaker still: it is a client-affordance filter, and arbitrary bytes
+under a permitted claim pass it unchanged.
+
+**The hinge is the audience, not the delivery mechanism (ADR-0043 D7).** *"Served back by a URL"* is the
+wrong question and excludes its own worst case: employee documents are **never** served by URL — three
+routes, all `File(bytes, type, name)` → `Content-Disposition: attachment` — and they are the surface
+carrying the **most** metadata. The question to ask is: **does a fetcher who is not the uploader receive
+these bytes?**
+
+For every upload surface, answer three questions **in writing, on the intake roster**
+(`UploadIntakeRosterTests.cs:39-55` — 14 rows today):
+
+1. **Who fetches these bytes?** If the only fetcher is the uploader, the artifact discloses nothing new
+   — record *"audience: self"*. **That answer expires the moment a second audience is added**, and the
+   ticket that adds one owes the scrub. Read the **authorization gate the fetch actually uses**, not the
+   one you expect: `GetOrderPhotos.cs:59` gates on `CanBrowseOrderAsync`, and
+   `OrderAccessService.cs:68-92` returns `true` for **any** caller with role `Employee` and a resolvable
+   employee id while `order.HasAvailableSpots && OrderVisibility.NotHeldFrom(…)` — so the order-photo
+   audience is **not enumerable at upload time**, and a cleaner's photos are fetchable by a cleaner who
+   never took the job and never will.
+2. **What is it served as?** Server-derived, from a **closed set**, decided on the **read** path so it
+   also governs rows written before the rule (`ServedContentType.ServableTypes`, `:34-42`, private
+   constructor at `:56`; `text/html` and `image/svg+xml` are absent **by name**, and the mint pins it
+   into the signature — `BlobContainerClient.cs:89-110` sets `rsct`/`rscc`). Never the client's declared
+   type; never the file extension. **On any surface served by URL the accepted set must stay inside the
+   servable set** — accepting a format that can only ever be served opaquely is an upload that succeeds
+   and never renders. *(The document intakes are the deliberate exception and not a violation: they never
+   mint a SAS, so `application/msword` and the OOXML type are accepted by
+   `SniffedContentType.AcceptedByIntake` (`:88-104`) and served by `SniffedContentType.ForDownload`
+   (`:127-128`), which never consults `ServedContentType`'s table.)*
+3. **What travels inside it?** For an artifact whose audience is **not** its uploader, metadata
+   containers are removed at **intake** — the read path cannot do it, because a signed URL hands the
+   client the stored bytes directly and `rsct` retypes a header without changing a byte. **The removal
+   dispatches on the bytes in hand, never on a stored or declared type**, or the uploader selects the
+   no-op: declare `data:image/png`, send JPEG, and the PNG walker finds no `IHDR`, bails, and the
+   coordinates survive **under a green "scrub applied" test**. `ImageMetadata.Scrub(byte[])`
+   (`ImageMetadata.cs:35`) therefore takes no content type at all, and a container it cannot identify is
+   passed through untouched and **reported as not scrubbed** — never as scrubbed. **Degrade explicitly:**
+   EXIF `Orientation` is carried across **iff** the source reads unambiguously into 2–8; on anything else
+   emit **no EXIF** and accept the rotation. *Never guess, never repair* — a rotated photo is a cosmetic
+   defect on a rare and largely adversarial branch; a corrupted photo, or a surviving GPS tag, is not.
+   **A surface that does not scrub records why, by name, on the roster** — the exclusion is written per
+   surface, because one reason rarely covers two (ADR-0043 D8): employee documents are excluded on
+   *mechanism* (a PDF/OOXML object-graph rewrite is the thing the no-decoder rule refuses) **and**
+   *audience* (an admin who already holds the cleaner's legal name, tax id and payout details) **and**
+   *delivery* (`attachment`, never by URL) — all three, which is what also covers the image formats that
+   intake accepts; dispute-evidence PDFs are excluded on the **mechanism limb alone**, because there the
+   uploader is a customer, the adverse party a cleaner and the fetcher staff adjudicating money, and the
+   file is served **inline** (no `rscd`). That exclusion is evadable in one sentence — wrap the photo in a
+   PDF — which is named rather than hidden, and narrowing the accept set is an owner question (Q-ART-01b),
+   not an architecture one.
+
+**And one prohibition: no request path decompresses user-supplied image data.** A decoder turns a
+bounded upload into an allocation the uploader chooses — a few-hundred-KB single-colour 30 000 × 30 000
+PNG into gigabytes of bitmap — on a memory-blind autoscale over a plan carrying seven sites. Nothing in
+this system needs pixels; removal is a **container rewrite** (walk the segments/chunks, drop the metadata
+containers, re-emit the rest byte-identically), not a re-encode. **This is a reachability property, not a
+package-inventory one:** a complete JPEG/PNG/WebP decoding stack is *already* on the image as a
+transitive native asset of QuestPDF, so the thing forbidden is the **call site**. Adding one is an
+**ADR**, not a package reference, and it owes a header-derived dimension bound checked **before** any
+decode.
+
+**The incident.** `ImageFileValidator` was a 3–4 byte magic-prefix check standing in front of three
+shipped pipelines — the avatar, order photos, dispute evidence; `SaveOrderPhotos` read its stored type
+off the client's own `data:` URI prefix; every employee-document intake stored the string its uploader
+claimed. EXIF GPS and device serials rode into `order-photos`, a container whose fetch set includes
+cleaners with no relationship to the job — defeating by *content* the two controls that deliberately
+withhold cleaner identity by *field* (`GetOrderPhotos.cs:107-109` withholds `CapturedByEmployeeId` and
+the surname from a customer caller; ADR-0036 keeps `PreferredEmployeeId` off every partner DTO). **None
+of it was a violation of S1–S11** — S4 governs DTO fields, S6 governs logs, S8/S10 govern query scoping,
+and none of them reaches inside a byte array. The reviewers were not wrong against the rules; the rules
+were silent. *(All three intakes are hardened at HEAD — `ImageFileValidator` now runs
+`SniffedContentType.FromContent(…, UploadIntake.Avatar)` behind a size bound, and the scrub is live at
+`SaveOrderPhotos.cs:137`, `UploadOrderPhoto.cs:107`, `UploadDisputeEvidence.cs:108`. The incident is the
+rule's origin, not an open hole — do not cite it as one.)*
+
+**Scope.** S12 binds **new uploads**. It obliges no audit or rewrite of already-stored artifacts: the
+type half was fixable on the read path, the content half is not (D3), so a backfill is a real data
+migration and is its own ticket (ADR-0043 D9). And S12 is **not** an extension of S4: same principle —
+*do not hand a client something you did not intend* — but a rule's identity is its **check**, and S4's
+check is "read the DTO's field list," and no reading of a field list reaches inside a byte array. A
+reviewer walking the S-series for an upload ticket will not open "DTO leak prevention."
+
+### Enforcement (ADR-0032) — per clause, because the clauses are not tiered alike
+
+**Enforced by:** the eleven-row table below — **mixed tier; read the row, not the rule.** The strongest
+clause is `T1-CI` and the weakest has no mechanism at all; a single token would be false for eight of
+the eleven either way.
+
+**Do not read S12 as `T1-CI` wholesale.** Of the eleven rows below, **six** are enforced today, **four**
+are specified and ticketed, and **one has no mechanism at all** and says so. A mechanism that cannot
+fail a build is `T2-ADVISORY` however it is labelled — note that
+`check-consistency.mjs` runs in **zero** `.github/` workflows and the frontend lint step is
+`continue-on-error: true`, so neither can carry any clause here.
+
+| Clause | Enforcer — and the assertion it **actually** makes | Tier |
+|---|---|---|
+| Q2 — served type is server-derived from a closed set | `ServedContentTypeTests` (`text/html`, `image/svg+xml`, `""`, `null`, `"nonsense"` → `application/octet-stream`, `:42-55`; **no public constructor and no `op_Implicit`/`op_Explicit`**, `:80-87`) · `SasResponseHeaderOverrideTests` (`rsct` on the minted token, `:38-43`; `rscc` never `public`, `:53-63`; the override rides **inside** the signature, `:85-91`) · `EmployeeDocumentDownloadContentTypeTests` (four legacy rows where the recorded string and the bytes disagree, over **both** download handlers, `:37-69`) · `EmployeeDocumentDownloadDispositionTests` (asserts `FileContentResult.FileDownloadName` is non-empty on all three routes, i.e. the 3-arg `File(…)` overload) | **`T1-CI`** — `Cleansia.Tests`, a named step of `backend-ci.yml:69-71` |
+| Q2 — accepted set stays inside the servable set | **True by construction and unpinned.** No test reads `SniffedContentType.Signatures` at all (grep: it appears in one `src` file, its own). A seventh row that `ServedContentType` cannot serve reintroduces the defect silently. **What would close it:** assert every `Signatures` MIME reachable from a SAS-served intake resolves to a non-`Opaque` `ServedContentType`, count-asserted first. *(T-0562 pins the adjacent `ExtensionFor` ↔ `ForFileName` round-trip, which is a different assertion.)* | **`(gate pending: T-0458)`** |
+| Q1/Q3 — the roster **enumerates** every intake | `UploadIntakeRosterTests` — count first (`Assert.Equal(ExpectedIntakes.Length, intakes.Count)`, `:64`) so an empty walk cannot agree with an empty roster, then the route-name list (`:66-68`), plus a `[Theory]` naming the four `byte[]`/`IFormFile` routes (`:76-84`) so narrowing the predicate cannot silently pass | **`T1-CI`** |
+| Q1/Q3 — every intake **declares** its audience and its scrub | **Nothing.** The roster's `— <rule>` annotation is asserted by **no** test: `:66-68` splits each row on `" — "` and compares index `[0]` only, so the text after the dash is read by nobody. Adding `audience`/`scrub` columns without changing that assertion buys a string nobody reads. **What would close it:** assert the annotation vocabulary as a closed set, plus a per-intake refusal theory that names the failure's **identity** (that route's error code) and carries a **positive control** per case — `Assert.False(result.IsValid)` alone is green on any un-stubbed constructor dependency | **`(gate pending: T-0458)`** |
+| Q3 — the scrub actually removes metadata | `UploadDisputeEvidenceMetadataScrubTests` · `UploadOrderPhotoMetadataScrubTests` · `SaveOrderPhotosMetadataScrubTests` — each reads **the bytes handed to `IBlobContainerClient.UploadAsync`** (a `Callback` copying the stream), never "a helper was called", and asserts the GPS and device sentinels are absent while the image body survives. Each dies to its **own** call site being removed and no other's | **`T1-CI`** |
+| Q3 — the scrub dispatches on bytes, and reports honestly | `ImageMetadata.Scrub` takes `byte[]` and nothing else (`ImageMetadata.cs:35`) · `ImageMetadataDispatchTests` (six payloads no walker claims → `Assert.False(result.Scrubbed)` **and** `Assert.Same(payload, result.Bytes)` — identity, not equality) · the three feature suites each send a format under a deliberately **wrong** declared type / `data:` prefix / file name | **`T1-CI`** |
+| Q3 — orientation degrades, never guesses | `JpegMetadataScrubTests` — 2–8 re-emitted as a **server-synthesized** 36-byte `APP1` written out in the test rather than read from the code (`:23-31`), with `ByteSequence.Count(scrubbed, FF E1) == 1`; 13 unreadable sources (both TIFF byte orders, orientation 0/1/9/65535/absent, bad magic, out-of-range IFD pointers, wrong tag type/count, two disagreeing entries) each emit **no** `APP1`; six malformed containers are **refused, not repaired** (`Assert.Same` on the input). Carries its own anti-vacuity fact — `:43` asserts the fixture *does* contain GPS before asserting the output does not | **`T1-CI`** |
+| Q1 — the avatar exemption is honoured | `UpdateCurrentUserAvatarScrubExemptionTests` — asserts the stored bytes **equal** what was sent and still contain the GPS sentinel, so it reddens the day someone wires the scrub in "for consistency" | **`T1-CI`** |
+| Q1 — the avatar exemption's **expiry** | **Nothing, and the test above says so in its own docstring.** The exemption expires when an avatar URL first appears on a cross-user DTO — one line in `UserMappers` / `EmployeeMappers`, which no shipped test can see. In production only three call sites touch `user-files`: `GetCurrentUser.cs:59` (the self SAS mint), `UpdateCurrentUser.cs:160` (write), `GdprDeletionService.cs:134` (delete). **What would close it:** a frozen wire-surface assertion in the shape of `PayoutDtoSurfaceTests` — the avatar URL may appear on the self DTO and on no other. **Ticket owed** | **`(guidance — no gate)`** |
+| Prohibition — no **direct package reference** to a decoder | **Nothing.** `SixLabors` / `SkiaSharp` / `System.Drawing` / `Magick` return **zero** matches across all of `src/**` — including test sources, so no denylist test exists either. **What would close it:** a `.csproj` denylist walk with a project-count non-vacuity floor | **`(gate pending: T-0458)`** |
+| Prohibition — no **call site** reaching a decoder | **Nothing.** `ImageDescriptor` / `Image.FromBinaryData` return zero matches across `src/**`; the property holds and is asserted by no test. A package-name denylist **cannot** express it — one `.Image(orderPhotoBytes)` inside a QuestPDF invoice or dispute pack creates the primitive while the denylist stays green. **What would close it:** a source scan of `src/**/*.cs` with a non-vacuity floor. **If T-0458 cannot build it, this clause is declared `T2-ADVISORY` here with a named reviewer check — it is not left labelled as a gate** (ADR-0043 §B.6) | **`(gate pending: T-0458)`** |
+
+**Reviewer test.** For a ticket that adds or changes an upload route: open the roster row, and ask
+whether its `audience` answer is derived from the gate the *fetch* uses or from the gate the *write*
+uses. On `SaveOrderPhotos` those differ — writing requires assignment (`:115-118`), fetching does not —
+and every wrong audience answer this codebase has produced came from reading the write gate. Then ask
+what the scrub is handed: a `contentType` parameter anywhere on that path is the defect, not a
+convenience. Full context and the trade-off space:
+`agents/architecture/decisions/user-uploaded-artifacts.md`; the record is **ADR-0043**.
+
 ---
 
 ## Audit checklist for an existing endpoint
@@ -372,3 +494,7 @@ the production multibinding equals the expected roster, so they would not catch 
 10. No PII in logs above Debug (S6)
 11. (mobile) A new per-user `@Singleton`/injected cache is in the session-wipe set or the §E9
     allowlist (S11)
+12. (upload) The route is on the intake roster, and its row answers **who fetches** (read the *fetch*
+    gate, not the write gate), **what it is served as** (closed set, read path) and **what is scrubbed**
+    — with a named reason if it is not. The scrub takes bytes, never a content type. No decoder is
+    reachable from the request path (S12)

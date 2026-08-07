@@ -55,7 +55,7 @@ agents.
 | **iOS Dev** | Ports the Android apps to SwiftUI, 1:1, against the same backend. (Ready now; activates on your first iOS ticket.) |
 | **QA** | Writes and runs test plans; adds automated tests for money/state logic; finds regressions. |
 | **Reviewer** | Gatekeeps every change — runs **in parallel** with the developer, exactly as you asked. |
-| **Security Reviewer** | Hunts auth/ownership/PII/tenancy/idempotency holes against the S1–S10 laws. |
+| **Security Reviewer** | Hunts auth/ownership/PII/tenancy/idempotency/upload-content holes against the S1–S12 laws. |
 | **Optimizer** | Hunts N+1s, slow queries, bundle bloat, render churn. |
 | **Docs** | Keeps the VitePress site + changelog honest. |
 
@@ -129,7 +129,7 @@ throwaway patches. That's baked in:
 - **`knowledge/conventions.md`** sets a "would I run this unattended in production with real
   customers and real money" bar, and forbids temporary workarounds, hardcoded strings, `any`/`dynamic`,
   and magic numbers.
-- **`knowledge/security-rules.md`** carries the S1–S10 laws — derived from the real security
+- **`knowledge/security-rules.md`** carries the S1–S12 laws — derived from the real security
   regression this codebase already had — and the Security Reviewer enforces them.
 - **`process/quality-gates.md`** is the checklist a change clears before `done`: conventions, AC
   evidence, security, architecture seams, performance, tests, contract/docs parity.

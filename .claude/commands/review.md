@@ -5,7 +5,7 @@ Run the Reviewer (and, when relevant, Security & Optimizer) over the current dif
 ## Usage
 ```
 /review                 # review the working changes / current branch diff
-/review security        # focus the S1–S10 security gate
+/review security        # focus the S1–S12 security gate
 /review perf            # focus the performance/cost gate
 /review <path>          # review a specific file/area
 ```

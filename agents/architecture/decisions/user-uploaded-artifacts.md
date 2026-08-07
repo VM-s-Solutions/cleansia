@@ -14,6 +14,10 @@
 > rev N, whose map was stale in ~7 citations. Do not cite it.
 > **Tickets:** T-0458 (policy + seam), T-0459 (application), T-0460 (the S-series law) — **all three are
 > re-scoped by ADR-0043; do not read their `## Context` as current.**
+> ✅ **T-0460 has LANDED (2026-08-07): the law is written as `security-rules.md` **S12**, with a
+> per-clause enforcer/tier table, and it — not §5 below — is the enforceable home of that table.** §5 is
+> kept as the design-time record and now points at it. T-0459's scrub is merged; the ⚠️ notes below that
+> said otherwise are resolved in place.
 > **Related:** T-0464 ✅ (`b9753e85`, the served-type clamp), T-0548 ✅ (`97bb7265`, the avatar size cap),
 > T-0556 ✅ + follow-up (document intake, the roster), `request-intake-limits.md` (the host ceiling —
 > the *transport* bound, a different guarantee).
@@ -37,7 +41,7 @@ as having fixed another.
 | 2 | **How many items?** | each command's `Validator` — 10 documents, 30 photos | bound bytes at all; it runs after buffering, so it is answer-correctness, not resource protection |
 | 3 | **Is it the kind of thing we take?** | the two `AbstractValidator<BlobFileDto>` siblings + their signature tables | say anything about what is *inside* the container |
 | 4 | **What is it served as?** | `ServedContentType` on the **read** path (closed set) + `SniffedContentType.ForDownload` (`:127-128`) — *the header's rename note applies here too; `DocumentContentType` is gone* | change the bytes |
-| 5 | **What travels inside it?** | **nothing today** — §4 is the open decision | be answered on the read path (a SAS hands the client the stored bytes directly) |
+| 5 | **What travels inside it?** | `Common/Media/ImageMetadata.Scrub(byte[])` (`:35`) at intake, on the three cross-audience routes — `SaveOrderPhotos.cs:137`, `UploadOrderPhoto.cs:107`, `UploadDisputeEvidence.cs:108`. **The law is `security-rules.md` S12** | be answered on the read path (a SAS hands the client the stored bytes directly); remove ICC, a JPEG `COM`, or anything inside the image data; touch a PDF or an OOXML file at all |
 
 The transport ceiling is a **sixth** bound and lives in `request-intake-limits.md`. It is a host
 property; 1–5 are per-surface properties.
@@ -49,9 +53,9 @@ property; 1–5 are per-surface properties.
 | Surface | Routes | Uploaded by | **Fetched by** | Delivery | Served as | Metadata scrubbed |
 |---|---|---|---|---|---|---|
 | Avatar | 3 (`UserController.UpdateCurrentUser` × Customer / Mobile.Customer / Mobile.Partner / Partner — 4 rows on the roster) | the user | **the same user only** | 1 h SAS → `<img>` | `application/octet-stream` (opaque overload) | no |
-| Order photos (batch) | 2 (`OrderController.SavePhotos`, Partner + Mobile.Partner) | a cleaner | **customer + cleaner + admin**, 5 read hosts | 1 h SAS | closed-set typed | no |
-| Order photo (single) | 2 (`OrderController.UploadPhoto`) | a cleaner | same | 1 h SAS | closed-set typed at read; ~~raw client string stored~~ **byte-derived** (`:102`) | no |
-| Dispute evidence | 2 (`DisputeController.UploadEvidence`, `multipart/form-data`) | the customer — **and on this surface the uploader is an adversary with money on the outcome** (`:95-99`) | that customer + **staff adjudicating a refund** | 1 h SAS, **inline** — `GenerateSasUri` sets `rsct`/`rscc` and **no `rscd`** (`BlobContainerClient.cs:93-110`) | ~~typed from the client's file name~~ **byte-derived**; the blob-name extension is minted from the bytes (`:104-105`) | no |
+| Order photos (batch) | 2 (`OrderController.SavePhotos`, Partner + Mobile.Partner) | a cleaner | **customer + cleaner + admin**, 5 read hosts | 1 h SAS | closed-set typed | **yes** (`:137`) |
+| Order photo (single) | 2 (`OrderController.UploadPhoto`) | a cleaner | same | 1 h SAS | closed-set typed at read; ~~raw client string stored~~ **byte-derived** (`:103`) | **yes** (`:107`) |
+| Dispute evidence | 2 (`DisputeController.UploadEvidence`, `multipart/form-data`) | the customer — **and on this surface the uploader is an adversary with money on the outcome** (`:96-99`) | that customer + **staff adjudicating a refund** | 1 h SAS, **inline** — `GenerateSasUri` sets `rsct`/`rscc` and **no `rscd`** (`BlobContainerClient.cs:89-110`) | ~~typed from the client's file name~~ **byte-derived**; the blob-name extension is minted from the bytes (`:105-106`) | **yes** (`:108`) — images only; a PDF is stored byte-for-byte (D8) |
 | Employee documents | 4 (`EmployeeController.SaveMyDocuments` / `.UpdateEmployee`, Partner + Mobile.Partner) | a cleaner | that cleaner + **admin** | **never by URL** — API host, `File(bytes, type, name)` → `attachment` | **byte-derived** | no (PDF/Office) |
 
 > ⚠️ **The two order-photo rows' "Fetched by" is WRONG and was corrected by the panel (2026-08-06,
@@ -64,13 +68,12 @@ property; 1–5 are per-surface properties.
 > requires assignment (`SaveOrderPhotos.cs:114-117`); **fetching does not.** This is why the scrub's
 > justification is *"the audience is not enumerable at upload time"* and not *"three known parties"*.
 
-> ⚠️ **The `Metadata scrubbed` column is STALE for the two order-photo rows** *(found by the §7.1 lead,
-> 2026-08-06, while verifying that lane — recorded here so the doc does not contradict HEAD, and left for
-> the T-0459 lane to complete)*. `SaveOrderPhotos.cs:137` and `UploadOrderPhoto.cs:107` both call
-> `ImageMetadata.Scrub(...)` on disk today (ADR-0043 D2/D3), so those rows read **no** while the code
-> says otherwise; §5's *"The scrub actually removes metadata"* row still reads `(gate pending: T-0459)`
-> and §8.3 still lists T-0459 as pending. **Re-verify before acting** — I read the working tree and
-> `Features/Orders` is a live lane. Dispute evidence and the exempt surfaces are unaffected by this note.
+> ✅ **The `Metadata scrubbed` column was stale for three rows and is now CORRECTED** *(flagged by the
+> §7.1 lead 2026-08-06, left by the T-0459 lane "for the architect", fixed here 2026-08-07 with all
+> three call sites re-opened at HEAD)*. All three now read **yes**; §5's `(gate pending: T-0459)` row is
+> resolved with it. The **avatar** and the **employee-document** rows still read **no** and that is the
+> ruling, not a gap (D4 / D8) — each carries its reason, and the avatar's expires the day an avatar URL
+> reaches a cross-user DTO.
 
 **Why the avatar row matters most for planning:** `GetCurrentUser.ResolveProfilePhotoUrl` is the *only*
 SAS mint for `user-files`. `UserMappers.cs:23,66` and `EmployeeMappers.cs:37,63` map the photo **without**
@@ -175,7 +178,10 @@ never reachable and never needed):
 6. **The law is a new S12**, keyed on **audience**, not on "served back by URL" — because the surface
    carrying the most metadata (employee documents) is not served by URL at all. Not an S4 extension:
    same principle, but S4's check is "read the DTO's field list," and no reading of a field list reaches
-   inside a byte array.
+   inside a byte array. ✅ **WRITTEN, 2026-08-07 — `agents/knowledge/security-rules.md` §S12**, with the
+   audit-checklist item 12, the per-clause enforcer/tier table, and the incident named. The header now
+   reads S1–S12 (it read "S1–S10" while S11 existed), and the count was swept across `agents/` and
+   `.claude/`.
 7. **The web clients re-encode on pick, and that ships FIRST.** Both mobile clients already do; no
    `canvas`/`createImageBitmap` exists anywhere in `src/Cleansia.App`. ~30 lines per picker, zero server
    cost, removes essentially all live volume.
@@ -211,6 +217,22 @@ DTO-level control defeated by content.
 
 *(Table replaced by the panel, 2026-08-06 — §8 / B.6. The previous version mis-tiered two rows in
 opposite directions and named an enforcer that cannot see its clause's real failure mode.)*
+
+> ✅ **This table is now the DESIGN-TIME record. The enforceable one is `security-rules.md` §S12
+> "Enforcement"** (T-0460, 2026-08-07), which carries eleven rows rather than seven — because writing it
+> against HEAD split three of these and added the enforcers T-0459 shipped. **Two rows below are
+> superseded by it and are corrected in place; where the two ever disagree, S12 wins.**
+> - *"The scrub actually removes metadata"* is **`T1-CI` today**, not `(gate pending: T-0459)`: three
+>   per-pipeline suites read the bytes handed to the blob client and each dies to its own call site.
+>   The dispatch-on-bytes, orientation-degradation and avatar-exemption clauses got their own rows and
+>   are `T1-CI` too.
+> - *"Every intake declares audience + scrub"* keeps `(gate pending: T-0458)` **and the reason is worse
+>   than stated here**: `UploadIntakeRosterTests.cs:66-68` compares `entry.Split(" — ")[0]`, so the
+>   existing annotation is asserted by **nothing**. Adding two columns to a string no test reads buys
+>   nothing; the replacement gate owes a failure-identity assertion and a positive control per case.
+> - **One row S12 adds that this table has none of:** the avatar exemption's *expiry* is
+>   `(guidance — no gate)` — no shipped mechanism sees an avatar URL reaching a cross-user DTO. A
+>   wire-surface assertion in the `PayoutDtoSurfaceTests` shape would close it; **ticket owed.**
 
 | Clause | Enforcer | Tier |
 |---|---|---|

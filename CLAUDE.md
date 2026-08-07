@@ -452,7 +452,7 @@ artifacts. **If you are coordinating multi-agent or multi-step work, start here:
   android, ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with
   `subagent_type` = the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/knowledge/*.md`** — the "how we build" catalog (patterns + the S1–S10 security laws +
+- **`agents/knowledge/*.md`** — the "how we build" catalog (patterns + the S1–S12 security laws +
   conventions). **Every developer agent reads its stack catalog first.**
 - **`agents/backlog/`** — tickets, stories, ADRs, sprint status, questions, audits, test-plans.
 

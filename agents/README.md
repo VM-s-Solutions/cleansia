@@ -83,7 +83,7 @@ agents/
 │   ├── patterns-frontend.md  # facades, signals, NgRx, PrimeNG, i18n (REAL types)
 │   ├── patterns-mobile.md    # Compose, Hilt, MVVM, StateFlow (Android + iOS parity)
 │   ├── consistency.md        # ONE way to do each archetype (paged query, command, list, form, VM)
-│   ├── security-rules.md     # S1–S10 non-negotiable security laws (real-incident derived)
+│   ├── security-rules.md     # S1–S12 non-negotiable security laws (real-incident derived)
 │   ├── testing.md            # what must be tested + the must-cover list (pay, lifecycle, authz…)
 │   ├── runtime-readiness.md  # observability + graceful degradation when a dependency is down
 │   ├── conventions.md        # naming, file layout, quality bars, owner-only steps

@@ -112,7 +112,7 @@ not evidence. An AC with no evidence fails the gate.
 
 ### Gate 3 — Security (mandatory iff `security_touching: true`)
 The Security Reviewer walks [`../knowledge/security-rules.md`](../knowledge/security-rules.md)
-(S1–S10) against the diff. A ticket is **security-touching** if it adds/changes any of: an
+(S1–S12) against the diff. A ticket is **security-touching** if it adds/changes any of: an
 endpoint, auth/authorization, a resource-by-id operation, a response DTO, tenancy scoping, a
 side-effecting command (payment, email, loyalty, referral, invoice), file upload, logging of user
 data, or rate-limited routes. The verdict names the **specific risk**, not a category — e.g.

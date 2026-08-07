@@ -580,7 +580,7 @@ Two things that are **not** open — one a security invariant, one a durability/
     `Opaque` rather than throwing, so a malformed record loses a capability instead of a photo. Note the
     inversion worth remembering: **the bug was preventing the vulnerability, and the natural fix
     introduces it.**
-- **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
+- **Mint a new blob name on every upload** *(cache correctness, not S1–S12)* — `UpdateCurrentUser`,
   `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
   content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced
   image unrenderable behind any name-keyed cache.

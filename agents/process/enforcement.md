@@ -71,6 +71,37 @@ layers**:
   *"Add SessionScopedCache roster-equality tests (Android per-app + iOS) — the S11/E9 hard gate"*
   (`layers: [mobile]`, small; architect-signed rule already in place).
 
+### S12 — user-artifact content (upload intake) — mechanically checkable **in parts**, and only in parts
+
+`security-rules.md` **S12** (ADR-0043) is the answer to T-0460 AC5, recorded here so nobody has to
+infer it: **the rule is partly mechanical and partly not, and it must never be labelled `T1-CI`
+wholesale.** The authoritative per-clause table is in S12 itself; the summary is:
+
+- **Enforced today (`T1-CI`, `Cleansia.Tests`, a named step of `backend-ci.yml:69-71`)** — the served
+  type is a closed set on the read path (`ServedContentTypeTests`, `SasResponseHeaderOverrideTests`,
+  `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`); the intake
+  roster **enumerates** every upload route (`UploadIntakeRosterTests`, count-asserted first); the scrub
+  removes metadata from the bytes actually handed to the blob client (three per-pipeline suites); the
+  scrub dispatches on bytes and reports honestly (`ImageMetadataDispatchTests`); orientation degrades
+  without guessing (`JpegMetadataScrubTests`); the avatar exemption is honoured
+  (`UpdateCurrentUserAvatarScrubExemptionTests`).
+- **Specified, not built — `(gate pending: T-0458)`** — accepted-set ⊆ servable-set; the roster's
+  `audience` / `scrub` columns; the decoder **package** denylist; the decoder **call-site** scan.
+  ⚠️ **The roster's annotation is enforced by nothing today.** `UploadIntakeRosterTests.cs:66-68`
+  splits each row on `" — "` and compares index `[0]`, so everything after the dash is asserted
+  nowhere. Adding two columns without changing that assertion adds a string no test reads — the
+  `T1-CI` claim would be false the day it is written.
+  ⚠️ **And the replacement gate must not pass vacuously.** `Assert.False(result.IsValid)` is green on
+  any un-stubbed constructor dependency, so a per-intake refusal theory owes (a) an assertion on the
+  **identity** of the failure (that route's error code / the file property) and (b) a **positive
+  control** per case — the same command with an accepted payload validating clean.
+- **No mechanism at all — `(guidance — no gate)`** — the avatar exemption's *expiry* (an avatar URL
+  appearing on a cross-user DTO). A wire-surface assertion in the `PayoutDtoSurfaceTests` shape would
+  close it; **that ticket is owed** and is named in S12 rather than left implicit.
+
+**If T-0458 cannot build the call-site scan, that clause is re-declared `T2-ADVISORY` with a named
+reviewer check** — per ADR-0043 §B.6, it is not left carrying a `(gate pending: …)` token forever.
+
 ### Baseline (run on 2026-06-01): ~187 pre-existing violations
 
 The checker found **more** real debt than the manual variance analysis did (e.g. 4 membership

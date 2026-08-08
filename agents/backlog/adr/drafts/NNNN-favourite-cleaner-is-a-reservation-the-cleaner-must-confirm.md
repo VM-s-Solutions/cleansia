@@ -422,7 +422,7 @@ The copy edit runs in an independent lane and is **half landed**:
 | Client | `booking_success_t2_desc` at HEAD | Carries an absolute duration? |
 |---|---|---|
 | Android customer, 5 locales | `values/strings.xml:759` *"We'll let you know as soon as we find one"*; `values-cs:748`, `values-sk:745`, `values-uk:745`, `values-ru:745` | **no — done** |
-| iOS customer, 5 locales | `CleansiaCustomer/Resources/Localizable.xcstrings:4939-4972` — `en` *"Within 1 hour"*, `cs`/`sk` *"Do 1 hodiny"*, `ru` *"В течение 1 часа"*, `uk` *"Протягом 1 години"* | **YES — outstanding** |
+| iOS customer, 5 locales | `CleansiaCustomer/Resources/Localizable.xcstrings:4939-4972` — `en` *"Within 1 hour"*, `cs`/`sk` *"Do 1 hodiny"*, `ru` *"В течение 1 часа"*, `uk` *"Протягом 1 години"* | **NO — landed 2026-08-08**, values byte-identical to Android's after unescaping, and pinned by `BookingSuccessTimelineStringsTests` |
 
 ⇒ **The iOS half is a precondition of every customer-facing ticket below** (R6/R8/R9), not an item this
 ADR files, and the verify step for the standing constraint fails today on exactly those five strings.
@@ -1175,7 +1175,7 @@ log maps old numbers to new.)*
 - **There is now an actor in this feature.** ADR-0036 had none. The failure modes do not merge (D6/AC2),
   but the operational surface grew by one timer and one receipt column.
 - **This design depends on a promise being withdrawn.** `Q-PROMISE-03`'s (c) — the booking-success
-  screen drops the one-hour number — is a **precondition**, and its iOS half is outstanding at HEAD
+  screen drops the one-hour number — is a **precondition**, and it is **met on both platforms as of 2026-08-08**
   (§D4.2). Every customer-facing ticket below inherits it, and §D4.2's standing constraint outlives it.
 - **⚠️ Two owner-only manual steps**: an `ef-migration` (two additive columns, no backfill, no index) and
   an `nswag-regen` (one nested optional DTO block + two customer endpoints + two partner endpoints).
@@ -1335,8 +1335,10 @@ before acceptance — it changes no mechanism, only whether a button is offered.
   or is 'we're still looking' the final state?"* **No default taken** — a fallback is a business
   capability, not an architecture, and building either answer's copy before it is settled is a guess.
 - **The `Q-PROMISE-03` copy edit is half landed** (§D4.2): Android's five locales carry no absolute
-  duration, iOS's five still do (`Localizable.xcstrings:4939-4972`). Not undecided — **owned by another
-  lane** — but recorded here because verify #15 fails until it lands and R6/R8/R9 depend on it.
+  duration, **so do iOS's — landed 2026-08-08 in the same wording, byte-identical after unescaping.**
+  **Verify #15 passes on both platforms** and R6/R8/R9's precondition is met. The FOURTH step's
+  *"we'll remind you 1 hour before"* is deliberately NOT covered by either guard — it is `Q-PROMISE-04`,
+  a promise the platform could keep but does not implement, and the likely fix is to build the reminder.
 - **`Q-PROMISE-04`** — the same post-booking screen's *"We'll remind you 1 hour before"* — is open and is
   **not** governed by §D4.2's constraint (which is scoped to time-to-**assignment**). Same shape, same
   lane, different promise. Recorded so nobody folds it into this ADR or assumes §D4.2 already answers it.

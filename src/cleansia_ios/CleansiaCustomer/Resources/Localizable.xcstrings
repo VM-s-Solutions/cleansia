@@ -4942,31 +4942,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Do 1 hodiny"
+            "value" : "Dáme vám vědět, jakmile ho najdeme"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Within 1 hour"
+            "value" : "We'll let you know as soon as we find one"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В течение 1 часа"
+            "value" : "Сообщим, как только его найдём"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Do 1 hodiny"
+            "value" : "Dáme vám vedieť, hneď ako ju nájdeme"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Протягом 1 години"
+            "value" : "Повідомимо вас, щойно його знайдемо"
           }
         }
       }

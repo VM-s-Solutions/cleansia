@@ -28,6 +28,7 @@
     <string name="register_pw_number">Принаймні одна цифра</string>
     <string name="register_pw_match">Паролі збігаються</string>
     <string name="register_terms_and_conditions"><![CDATA[Я погоджуюся з <a href="cleansia://terms">Умовами використання</a> та <a href="cleansia://privacy">Політикою конфіденційності</a>]]></string>
+    <string name="register_social_terms_required">Щоб продовжити через Google, прийміть Умови використання та Політику конфіденційності.</string>
     <string name="register_submit">Створити обліковий запис</string>
     <string name="register_have_account">Вже маєте обліковий запис?</string>
     <string name="register_login_link">Увійти</string>

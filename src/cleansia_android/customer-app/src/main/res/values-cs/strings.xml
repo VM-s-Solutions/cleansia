@@ -28,6 +28,7 @@
     <string name="register_pw_number">Alespoň jedna číslice</string>
     <string name="register_pw_match">Hesla se shodují</string>
     <string name="register_terms_and_conditions"><![CDATA[Souhlasím s <a href="cleansia://terms">Podmínkami služby</a> a <a href="cleansia://privacy">Zásadami ochrany soukromí</a>]]></string>
+    <string name="register_social_terms_required">Pro pokračování přes Google potvrďte souhlas s Podmínkami služby a Zásadami ochrany soukromí.</string>
     <string name="register_submit">Vytvořit účet</string>
     <string name="register_have_account">Už máte účet?</string>
     <string name="register_login_link">Přihlásit se</string>

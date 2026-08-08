@@ -20,6 +20,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -248,6 +249,66 @@ class AuthRepositoryTest {
         )
 
         assertTrue(result is ApiResult.Error)
+    }
+
+    // ── googleAuth() — the terms tick reaching the wire body ──
+
+    private fun stubGoogleAuth(captured: io.mockk.CapturingSlot<GoogleAuthRequest>) {
+        coEvery { api.googleAuth(capture(captured)) } returns Response.success(
+            JwtTokenResponseDto(
+                token = "h.p.s",
+                isEmailConfirmed = true,
+                email = "user@example.com",
+                refreshToken = "r-1",
+                refreshTokenExpiresAt = "2099-01-01T00:00:00Z",
+            ),
+        )
+    }
+
+    private suspend fun googleAuth(termsAccepted: Boolean): GoogleAuthRequest {
+        val captured = io.mockk.slot<GoogleAuthRequest>()
+        stubGoogleAuth(captured)
+        newRepository().googleAuth(
+            googleIdToken = "google-id-token",
+            googleId = "google-subject",
+            email = "user@example.com",
+            firstName = "Ada",
+            lastName = "Lovelace",
+            termsAccepted = termsAccepted,
+        )
+        return captured.captured
+    }
+
+    @Test
+    fun googleAuth_putsAnAssertedTermsTickOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        assertTrue(googleAuth(termsAccepted = true).termsAccepted)
+    }
+
+    @Test
+    fun googleAuth_leavesTheTickOffWhenTheCallerAssertedNothing() = kotlinx.coroutines.test.runTest {
+        assertEquals(false, googleAuth(termsAccepted = false).termsAccepted)
+    }
+
+    /**
+     * The command binds by ASP.NET's camel-case default, so the serialized NAME is what decides
+     * whether the backend sees the tick at all. A renamed or omitted property binds to
+     * `TermsAccepted = false` — a signup refused with `auth.social_account_not_found`, and
+     * nothing on this side to show for it.
+     */
+    @Test
+    fun googleAuthRequest_serializesTheTickUnderTheNameTheBackendBinds() {
+        val body = json.encodeToString(
+            GoogleAuthRequest(
+                token = "google-id-token",
+                googleId = "google-subject",
+                email = "user@example.com",
+                firstName = "Ada",
+                lastName = "Lovelace",
+                termsAccepted = true,
+            ),
+        )
+
+        assertTrue(body, body.contains("\"termsAccepted\":true"))
     }
 
     // ── logout() ──

@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.auth
 
 import android.content.Context
 import android.content.res.Resources
+import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -10,6 +11,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.AuthRepository
 import cz.cleansia.customer.core.auth.AuthSuccess
 import cz.cleansia.customer.core.auth.GoogleSignInController
+import cz.cleansia.customer.core.auth.GoogleSignInResult
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -116,6 +118,35 @@ class AuthViewModelTest {
         } returns result
     }
 
+    private val googlePick = GoogleSignInResult.Success(
+        idToken = "google-id-token",
+        googleId = "google-subject",
+        email = "ada@example.com",
+        firstName = "Ada",
+        lastName = "Lovelace",
+    )
+
+    private fun stubGooglePicker() {
+        coEvery { googleSignInController.signIn(any()) } returns googlePick
+    }
+
+    private fun stubGoogleAuth(
+        result: ApiResult<AuthSuccess> = ApiResult.Success(
+            AuthSuccess.Authenticated(
+                TokenStore.Tokens(
+                    accessToken = "a",
+                    accessTokenExpiresAt = 1L,
+                    refreshToken = "r",
+                    refreshTokenExpiresAt = 1L,
+                ),
+            ),
+        ),
+    ) {
+        coEvery {
+            authRepository.googleAuth(any(), any(), any(), any(), any(), any())
+        } returns result
+    }
+
     @Test
     fun `register rejected for a taken email shows the server's own message`() = runTest {
         // The backend answers 400 with errors { Email: "user.existing_email" }; safeApiCall
@@ -213,6 +244,110 @@ class AuthViewModelTest {
         )
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
+    }
+
+    // ─── Social auth: the terms tick is what separates a signup from a sign-in ───
+
+    /**
+     * The backend provisions a new identity only for a call that asserts the tick, and refuses
+     * every other one with `auth.social_account_not_found`. So a signup screen that sends
+     * nothing does not merely under-record consent — it refuses every new social user.
+     */
+    @Test
+    fun `a ticked box asserts the terms on the social request`() = runTest {
+        stubGooglePicker()
+        stubGoogleAuth()
+
+        val vm = viewModel()
+        vm.signUpWithGoogle(context, acceptedTerms = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.googleAuth(
+                googleIdToken = "google-id-token",
+                googleId = "google-subject",
+                email = "ada@example.com",
+                firstName = "Ada",
+                lastName = "Lovelace",
+                termsAccepted = true,
+            )
+        }
+    }
+
+    @Test
+    fun `an unticked box opens no picker and sends no request`() = runTest {
+        stubGooglePicker()
+        stubGoogleAuth()
+
+        val vm = viewModel()
+        vm.signUpWithGoogle(context, acceptedTerms = false)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { googleSignInController.signIn(any()) }
+        coVerify(exactly = 0) { authRepository.googleAuth(any(), any(), any(), any(), any(), any()) }
+        assertFalse(vm.uiState.value.loading)
+    }
+
+    /**
+     * The button stays live on purpose. A control that is simply dead explains nothing, and the
+     * checkbox is far enough up a scrolling form to be off screen when the tap happens.
+     */
+    @Test
+    fun `an unticked box says why rather than doing nothing`() = runTest {
+        val vm = viewModel()
+        vm.signUpWithGoogle(context, acceptedTerms = false)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.register_social_terms_required) }
+    }
+
+    /**
+     * The flag is consent semantics, not a screen name: the sign-in screen carries no checkbox, so
+     * an identity it does not recognise must be refused rather than quietly provisioned. Asserted
+     * by capture rather than by counting matched calls, so it stays a statement about what the
+     * sign-in screen sends and not about what the signup screen happened to send too.
+     */
+    @Test
+    fun `the sign-in screen asserts nothing`() = runTest {
+        val asserted = mutableListOf<Boolean>()
+        stubGooglePicker()
+        coEvery {
+            authRepository.googleAuth(any(), any(), any(), any(), any(), capture(asserted))
+        } returns ApiResult.Success(AuthSuccess.EmailUnconfirmed("ada@example.com"))
+
+        val vm = viewModel()
+        vm.signInWithGoogle(context)
+        advanceUntilIdle()
+
+        assertEquals(listOf(false), asserted)
+    }
+
+    @Test
+    fun `a social identity matching no account gets the specific refusal, not a generic one`() = runTest {
+        val socialNotFoundResId = 4343
+        val socialNotFound = "We couldn't find an account for that sign-in. Please sign up first."
+        every {
+            resources.getIdentifier("error_auth_social_account_not_found", "string", packageName)
+        } returns socialNotFoundResId
+        every { context.getString(socialNotFoundResId) } returns socialNotFound
+
+        stubGooglePicker()
+        stubGoogleAuth(
+            ApiResult.Error(
+                ApiError.BadRequest(
+                    message = "A validation problem occurred.",
+                    errorKey = "auth.social_account_not_found",
+                ),
+            ),
+        )
+
+        val vm = viewModel()
+        vm.signInWithGoogle(context)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showError(socialNotFound) }
+        verify(exactly = 0) { snackbar.showErrorKey(any()) }
+        assertFalse(vm.uiState.value.loading)
     }
 
     // ─── Enumeration defence: these three must NOT adopt the parsed message ───

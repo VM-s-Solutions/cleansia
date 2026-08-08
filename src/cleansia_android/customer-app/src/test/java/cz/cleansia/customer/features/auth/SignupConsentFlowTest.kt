@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.PendingSignupConsent
+import cz.cleansia.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.consent.SignupConsentStore
 import cz.cleansia.core.network.ApiError
@@ -20,7 +22,9 @@ import cz.cleansia.customer.api.model.UserConsentDto
 import cz.cleansia.customer.api.model.WithdrawConsentCommand
 import cz.cleansia.customer.core.auth.AuthApi
 import cz.cleansia.customer.core.auth.AuthRepository
+import cz.cleansia.customer.core.auth.AuthSuccess
 import cz.cleansia.customer.core.auth.GoogleSignInController
+import cz.cleansia.customer.core.auth.GoogleSignInResult
 import cz.cleansia.customer.core.auth.JwtTokenResponseDto
 import cz.cleansia.customer.core.consent.GdprConsentClient
 import cz.cleansia.customer.core.settings.AppSettings
@@ -73,6 +77,7 @@ class SignupConsentFlowTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var googleSignInController: GoogleSignInController
     private lateinit var context: Context
+    private lateinit var store: SignupConsentStore
     private lateinit var signupConsent: SignupConsentRepository
 
     private val email = "ada@example.com"
@@ -93,10 +98,8 @@ class SignupConsentFlowTest {
         every { context.packageName } returns "cz.cleansia.customer"
         every { context.resources } returns mockk(relaxed = true)
 
-        signupConsent = SignupConsentRepository(
-            SignupConsentStore(InMemoryPreferences()),
-            GdprConsentClient(gdprApi, json),
-        )
+        store = SignupConsentStore(InMemoryPreferences())
+        signupConsent = SignupConsentRepository(store, GdprConsentClient(gdprApi, json))
     }
 
     /**
@@ -147,6 +150,50 @@ class SignupConsentFlowTest {
             signupConsent = javax.inject.Provider { signupConsent },
             json = json,
         ).login(email, "Passw0rd!", rememberMe = true)
+    }
+
+    /**
+     * A social signup is the mirror image of the email one: the server answers it with a live
+     * session, so the real repository flushes any parked tick from INSIDE that call, before the
+     * ViewModel's next line runs. A tick parked afterwards therefore misses the only delivery the
+     * flow performs. That ordering is unobservable from the grant list alone, so the stub reads
+     * the park store at the instant the call goes out and hands it back.
+     */
+    private fun TestScope.googleFlow(launch: AuthViewModel.() -> Unit): PendingSignupConsent? {
+        var parkedWhenTheCallWentOut: PendingSignupConsent? = null
+        val repository = mockk<AuthRepository>(relaxed = true)
+        coEvery { googleSignInController.signIn(any()) } returns GoogleSignInResult.Success(
+            idToken = "google-id-token",
+            googleId = "google-subject",
+            email = email,
+            firstName = "Ada",
+            lastName = "Lovelace",
+        )
+        coEvery { repository.googleAuth(any(), any(), any(), any(), any(), any()) } coAnswers {
+            parkedWhenTheCallWentOut = store.read()
+            ApiResult.Success(
+                AuthSuccess.Authenticated(
+                    TokenStore.Tokens(
+                        accessToken = "a",
+                        accessTokenExpiresAt = 1L,
+                        refreshToken = "r",
+                        refreshTokenExpiresAt = 1L,
+                    ),
+                ),
+            )
+        }
+
+        AuthViewModel(
+            authRepository = repository,
+            settings = settings,
+            snackbar = snackbar,
+            googleSignInController = googleSignInController,
+            signupConsent = signupConsent,
+            appContext = context,
+        ).launch()
+
+        advanceUntilIdle()
+        return parkedWhenTheCallWentOut
     }
 
     private val granted: List<ConsentType?> get() = gdprApi.grantCommands.map { it.consentType }
@@ -294,6 +341,31 @@ class SignupConsentFlowTest {
         val result = signIn()
 
         assertTrue("expected sign-in to succeed but was $result", result is ApiResult.Success)
+        assertEquals(emptyList<ConsentType?>(), granted)
+    }
+
+    @Test
+    fun aTickedGoogleSignup_parksTheTickBeforeTheCallThatDeliversIt() = runTest {
+        val parked = googleFlow { signUpWithGoogle(context, acceptedTerms = true) }
+
+        assertEquals(SIGNUP_TICK_CONSENTS, parked?.types)
+    }
+
+    @Test
+    fun aTickedGoogleSignup_grantsTermsOfServiceAndPrivacyPolicyAndNothingElse() = runTest {
+        googleFlow { signUpWithGoogle(context, acceptedTerms = true) }
+
+        signupConsent.deliverFor(email)
+
+        assertEquals(listOf(ConsentType._0, ConsentType._1), granted)
+    }
+
+    @Test
+    fun aGoogleSignIn_grantsNothing() = runTest {
+        googleFlow { signInWithGoogle(context) }
+
+        signupConsent.deliverFor(email)
+
         assertEquals(emptyList<ConsentType?>(), granted)
     }
 

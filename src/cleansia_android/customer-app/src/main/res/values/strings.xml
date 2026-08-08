@@ -28,6 +28,7 @@
     <string name="register_pw_number">At least one number</string>
     <string name="register_pw_match">Passwords match</string>
     <string name="register_terms_and_conditions"><![CDATA[I agree to the <a href="cleansia://terms">Terms of Service</a> and <a href="cleansia://privacy">Privacy Policy</a>]]></string>
+    <string name="register_social_terms_required">Accept the Terms of Service and Privacy Policy to continue with Google.</string>
     <string name="register_submit">Create account</string>
     <string name="register_have_account">Already have an account?</string>
     <string name="register_login_link">Log in</string>

@@ -113,9 +113,19 @@ class AuthRepository(
         email: String,
         firstName: String,
         lastName: String,
+        termsAccepted: Boolean,
     ): ApiResult<AuthSuccess> = when (
         val result = safeApiCall(json) {
-            api.googleAuth(GoogleAuthRequest(googleIdToken, googleId, email, firstName, lastName))
+            api.googleAuth(
+                GoogleAuthRequest(
+                    token = googleIdToken,
+                    googleId = googleId,
+                    email = email,
+                    firstName = firstName,
+                    lastName = lastName,
+                    termsAccepted = termsAccepted,
+                ),
+            )
         }
     ) {
         is ApiResult.Success -> handleAuthBody(result.data)

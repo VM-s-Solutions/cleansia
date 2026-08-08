@@ -218,7 +218,7 @@ fun CleansiaNavHost(
                     vm.register(email, password, firstName, lastName, referralCode, acceptedTerms)
                 },
                 onLoginClick = { navController.popBackStack() },
-                onGoogleSignIn = { vm.signInWithGoogle(context) },
+                onGoogleSignIn = { acceptedTerms -> vm.signUpWithGoogle(context, acceptedTerms) },
                 loading = state.loading,
             )
         }

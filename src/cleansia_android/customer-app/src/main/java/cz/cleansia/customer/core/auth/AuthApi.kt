@@ -86,6 +86,13 @@ data class GoogleAuthRequest(
     val email: String,
     val firstName: String,
     val lastName: String,
+    /**
+     * Whether the caller asserted the signup screen's terms tick. The backend provisions a new
+     * identity only for a call that did; a sign-in of an existing account ignores it. Deliberately
+     * without a default — a consent flag that can be omitted at a call site is a consent record
+     * nobody agreed to.
+     */
+    val termsAccepted: Boolean,
 )
 
 // The email names the account the 6-digit code was issued to — the server verifies the code ONLY

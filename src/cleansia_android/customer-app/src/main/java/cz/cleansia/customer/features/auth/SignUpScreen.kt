@@ -81,7 +81,7 @@ fun SignUpScreen(
         acceptedTerms: Boolean,
     ) -> Unit = { _, _, _, _, _, _ -> },
     onLoginClick: () -> Unit = {},
-    onGoogleSignIn: () -> Unit = {},
+    onGoogleSignIn: (acceptedTerms: Boolean) -> Unit = {},
     loading: Boolean = false,
     viewModel: SignUpViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
@@ -263,7 +263,7 @@ fun SignUpScreen(
 
         CleansiaOutlinedButton(
             text = stringResource(R.string.login_continue_with_google),
-            onClick = onGoogleSignIn,
+            onClick = { onGoogleSignIn(acceptedTerms) },
             leadingIcon = Icons.Outlined.Mail,
             enabled = !loading,
         )

@@ -31,6 +31,21 @@ class BackendKeyStringsTest {
         "recurring_booking.starts_on_in_past",
     )
 
+    /**
+     * Every refusal `Auth/GoogleAuth` can answer this app with. `auth.social_account_not_found` is
+     * the one a sign-in gets for an identity that matches no account — reachable from the sign-in
+     * screen, which carries no terms tick and so may never provision.
+     */
+    private val googleAuthKeys = listOf(
+        "auth.apple_type_error",
+        "auth.external_type_error",
+        "auth.google_type_error",
+        "auth.internal_type_error",
+        "auth.invalid_google_token",
+        "auth.social_account_not_found",
+        "validation.invalid_password",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -52,9 +67,18 @@ class BackendKeyStringsTest {
 
     @Test
     fun `every recurring-booking refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(recurringBookingKeys)
+    }
+
+    @Test
+    fun `every google-auth refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(googleAuthKeys)
+    }
+
+    private fun assertAllResolve(keys: List<String>) {
         val raw = locales.flatMap { locale ->
             val declared = declared(locale)
-            recurringBookingKeys
+            keys
                 .filterNot { resourceName(it) in declared }
                 .map { "$locale/${resourceName(it)} ($it)" }
         }

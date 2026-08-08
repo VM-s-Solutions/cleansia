@@ -559,6 +559,28 @@ wanted (a payout-token **reference**, not a number).
 
 ## A4. Answer 4 — the invoice: **the owner supplied the specification**
 
+> 🔴 **CORRECTION, 2026-08-08 (PM). This section is STALE and I have now relayed two false claims
+> out of it, four days apart. Read the corrections before anything else on this page.**
+>
+> | This section says | What HEAD says |
+> |---|---|
+> | *"The VS exists and prints"* | **False, and always was.** `SetVariableSymbol` and
+> `GenerateVariableSymbol` have **zero production callers** — every caller is a test file. No production
+> path has ever written one, the PDF renders the field only when non-empty so it never prints, and the
+> `PaymentReference` fallback is read by **no layout at all**. Being designed in
+> `drafts/NNNN-payout-invoice-variable-symbol-*`. |
+> | *"The current document runs in the OPPOSITE DIRECTION… the two parties are the wrong way round"* |
+> **Fixed on this branch** by `3a4c18a9` / `946200c1` / `53d0bfab`. `DefaultInvoiceLayoutBuilder`'s own
+> doc comment now reads *"the cleaner is the SUPPLIER and Cleansia is the CUSTOMER"*. T-0522 is
+> `in_review`. |
+>
+> **Why this keeps happening, and the fix.** A dated planning snapshot reads as current because nothing
+> on the page says otherwise, and the sentences are written in the present tense. This is the same root
+> cause the assign-and-confirm lead found in `architecture/decisions/preferred-cleaner-dispatch.md`
+> (*"Nothing is shipped yet"*, false and re-inherited by an agent). **Treat every claim on this page as
+> of 2026-08-02 and verify at HEAD before relaying it** — I did not, twice.
+
+
 > The owner sent a photo of a Czech ISDOC invoice they issued themselves.
 
 **This is the single most valuable thing in the batch.** T-0508's own AC said *"what would help most:

@@ -1993,7 +1993,8 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
 - **(b) Cap the hold at one hour** whenever the promise is shown. Keeps the copy honest everywhere and keeps two rounds, but shortens the favourite's window sharply on long-lead bookings, which is where the perk is worth most.
 - **(c) Drop the one-hour number** from the post-booking screen entirely and say what the platform actually does. Honest in every case; loses a reassurance customers currently get at the moment they have just paid.
 - Default taken: **none.** Nothing is built on either reading, and the assignment feature is held until this is answered — building it under (a) and later choosing (b) means redoing the copy in five languages on two platforms.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **(c) — drop the one-hour number.** The post-booking screen stops stating an absolute time. It says what the platform actually does; it does not promise a deadline the dispatch mechanism has never been able to guarantee — and could not guarantee even before the favourite-cleaner hold existed, since an order can always reach its cleaning time unclaimed.
+  **Consequence:** the copy change is a five-locale edit on **both** mobile apps (`booking_success_t2_*` and the iOS catalog twins). Web does not carry this screen. **`Q-ASSIGN-02`'s two rounds are unaffected** and the assignment feature is unblocked.
 
 ---
 

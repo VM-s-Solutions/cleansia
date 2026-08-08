@@ -339,7 +339,7 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): keep ADR-0006 behavior. The shipped 173b UX honors it defensively — the
   resolve copy does NOT over-promise ("submitted", not "refunded"; Stripe may-remain-pending disclaimer).
 - Status: **owner/security confirmation pending** (carried at Wave-3 close, sprint-5 §8.3 item 5).
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Keep "Resolved + pending refund row".** The dispute resolves and the failed refund is carried as its own pending row rather than deferring the resolution or surfacing a separate failure state.
 
 ---
 
@@ -597,7 +597,7 @@ _No open Wave-1 *planning* questions remain._
   **not conditional** on this answer — the regen-time typecheck fires earlier than any branch-protection
   rule can (before a commit exists), and the `master` push build is either the safety net (this question
   answered "no") or harmless redundancy (answered "yes"). The two compose; neither substitutes.
-- **Answer (owner, 2026-08-07):** **Owner: *"I need to have it only once."*** Read as an instruction about the DUPLICATE ENTRY, not about branch protection: this question was filed twice and must exist once. The duplicate is retired below; the branch-protection decision itself remains unanswered and non-blocking.
+- **Answer (owner, 2026-08-08):** **Do not think about it — branch protection is the owner's concern.** Closed. No agent may change repository settings in any case, and nothing is blocked on it.
   self-approval / admin-bypass posture)_
 
 ---
@@ -1424,7 +1424,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   self-billed invoice rather than an ordinary one.
 - Default if unanswered: nothing is printed. If the answer requires an **immutable acceptance date** on
   the document, that is a separate design trigger — say so explicitly if it does.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Nothing printed.** The invoice carries no statement that it was issued by the platform on the supplier's behalf. The recorded default stands, and it is now a decision rather than an unanswered default.
 
 ### Q-SELFBILL-04 — [blocking: no] May a cleaner withdraw from self-billing in-app, and what follows?
 - Raised by: architect (ADR-0041), filed by PM 2026-08-06
@@ -1435,7 +1435,9 @@ neither has an answer to give yet, because the artifact being approved does not 
 - Why it matters: it is a product question, not a schema one. The record already supports a revocation
   action, so answering it later costs no migration.
 - Default if unanswered: not exposed in v1.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Withdrawal does not exist as a concept here.** Verbatim: *"It's impossible for them to withdraw something. We'll send them money manually from our bank account to their bank account when the invoice is created, also putting a special variable number that is written in the invoice."*
+  **Two facts in that answer are bigger than the question asked, and are carried into the PM notes below:** **(i)** payout is a **manual bank transfer performed by a person**, not an automated payout rail; **(ii)** the **variable symbol printed on the invoice is the reconciliation key** for that transfer. So a cleaner cannot withdraw from self-billing because there is nothing running to withdraw *from* — each payment is an individual human act against an individual invoice.
+  Nothing is exposed in v1, as the default said. ADR-0041's `Action.Revoked` stays in the record as unused capacity — it is accepted and immutable, and removing it would cost a superseding ADR for no gain.
 
 ### Q-SELFBILL-05 — [blocking: no] Does an operator recording your countersigned paper contract count as the agreement?
 - Raised by: architect (ADR-0041), filed by PM 2026-08-06
@@ -1448,7 +1450,7 @@ neither has an answer to give yet, because the artifact being approved does not 
   and redacted on erasure until you constrain it. Constraining it makes it cheaper to handle.
 - Default if unanswered: yes, an admin may record it, kept permanently distinct from a self-service tick;
   the reference field is treated as PII and redacted on erasure.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Yes** — an operator recording the owner's countersigned paper contract counts as the agreement, kept permanently distinct from a self-service tick. The contract-reference field is treated as personal data and redacted on erasure until its content is constrained.
 
 ---
 
@@ -1771,3 +1773,75 @@ If the owner ever wants a hard floor — e.g. the company's incorporation date �
 and no redesign.
 
 
+
+---
+
+# PM notes on the 2026-08-08 answers
+
+## N9 — `Q-SELFBILL-04` answered more than it was asked, and the extra part is architectural
+
+The question was *"may a cleaner withdraw from self-billing in-app?"* The answer is **no, because the
+concept does not apply** — and the reason discloses two facts that no artifact in this repo currently
+states:
+
+> *"We'll send them money manually from our bank account to their bank account when the invoice is
+> created, also putting a special variable number that is written in the invoice."*
+
+**(i) The payout rail is a human doing a bank transfer.** There is no automated payout provider, no
+scheduled disbursement, no batch file. Each payment is an individual act by a person, against an
+individual invoice. That is why withdrawal is meaningless: there is nothing running to withdraw from.
+
+**(ii) The variable symbol printed on the invoice is the reconciliation key** between that manual
+transfer and the invoice it settles.
+
+**What this changes, and what it confirms:**
+
+- **It confirms `EmployeeInvoice.VariableSymbol` is load-bearing, not decorative.** It already exists,
+  is generated per employee per pay period, and prints. Under this answer it is the *only* link between
+  money leaving the bank and the invoice it paid. Anything that changes how it is generated, or that
+  lets two invoices share one, is a **reconciliation defect**, not a cosmetic one. The invoice rebuild
+  ticket must treat it that way.
+- **It reframes what the stored payout details are for.** `EmployeePayoutDetails` holds an IBAN so a
+  **human** can type it into a banking screen — not so a payment API can consume it. That does not
+  change the storage or the reveal-audit design, both of which are right either way, but it does change
+  what "correct" means: a malformed IBAN fails at a bank counter, not at an API boundary, so there is no
+  machine downstream that will catch it for us.
+- **It makes "paid" an unobserved state.** Nothing in the system can know a transfer happened; only a
+  person does. Whether the platform needs a way to record that, and who records it, is not something the
+  owner was asked and is **not** assumed here — filed as `Q-PAYOUT-04` below.
+
+## N10 — the remaining self-billing answers close the set
+
+`Q-SELFBILL-01`…`-06` are now all answered. **The only outstanding self-billing input is the agreement
+text itself** (`Q-SELFBILL-01`: a lawyer will review it in future), which gates the feature's
+activation and nothing else — schema, endpoints and clients ship inert until reviewed text exists.
+
+## N11 — deploy sequencing: the owner will hold
+
+Owner, 2026-08-08: *"I'll hold the deploy until everything is ready."* So the release gate recorded in
+`ab699b6a` — that the generated clients cannot send the new consent flag, and deploying the backend
+before regeneration plus the web facade change would stop web social signup provisioning — is
+**managed by holding, not by racing**. Mobile consent ticks, the client regeneration and the currency
+DTO can therefore all batch into one regeneration rather than forcing two.
+
+---
+
+### Q-PAYOUT-04 — [blocking: no] Nothing in the system can know an invoice was actually paid. Should it?
+- Raised by: PM, from the owner's `Q-SELFBILL-04` answer
+- Owner: owner
+- Resolve-by: post-launch
+- Date: 2026-08-08
+- Question: you pay each cleaner by **manual bank transfer**, referencing the variable symbol printed on
+  their invoice. That means the platform never observes the payment — no webhook, no statement import,
+  nothing. So an invoice's state stops at "generated" and the fact that money moved lives only in your
+  bank account and your head. Three options: **(a)** leave it — you know what you paid, and the invoice
+  is the record; **(b)** an admin marks an invoice paid, giving the platform a date and a person, which
+  is a small screen and an audit row; **(c)** import bank statements and match on the variable symbol —
+  much more work, and the only option that is self-verifying.
+- Why it matters: it decides whether "which cleaners have I not paid yet" is a question the platform can
+  answer or one you answer from your bank. It also decides whether a cleaner can ever see *paid* rather
+  than *invoiced*, which is the single most common support question in this shape of business.
+- Default taken: **(a) — leave it.** Nothing is built, and this is recorded rather than assumed because
+  the answer that produced it was about withdrawal, not about payment tracking. You were never asked
+  this.
+- Answer: _(owner fills in)_

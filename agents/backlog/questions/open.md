@@ -2084,3 +2084,19 @@ So a cleaner in Prague is notified about a job in Ostrava — 300 km away — an
 - **Answer (owner, 2026-08-08):** **Make the distance configurable per employee.** So neither of the three options as written — the cleaner sets their own radius rather than the platform picking one, and rather than the copy being softened to match a country-wide reality.
   **This is a build, and it makes the shipped copy true rather than deleting it** — including the address permission justification, which promises *"distance from your home"*. The one geocoded point on a cleaner is their address, so that is what the radius is measured from unless the owner says otherwise.
   **Two things the answer does not settle and that the build must not guess:** what happens to a cleaner who has **set no radius**, and what happens to one whose address **has no coordinates** — silently sending them nothing would be a regression from today's country-wide behaviour, and silently sending them everything makes the copy false again for exactly the people it is least able to serve.
+
+---
+
+### Q-VS-01 — [blocking: no] Is a Czech variable symbol really ten numeric digits, and is a bare sequence acceptable to your accountant?
+- Raised by: architect (payout variable-symbol draft) · Owner: owner (with the accountant) · Resolve-by: pre-prod · 2026-08-08
+- Question: the platform encodes *"numeric, at most 10 digits"* for the variable symbol in four places — but **all four are an earlier agent's encoding, not your accountant's**, and the loosest of them accepts one to ten digits. No agent may assert a tax-law requirement. So: is that constraint right, and is a plain sequence (a year followed by a running number) acceptable as the payment reference on a self-billed payout invoice, or does your accountant expect it derived from something — the invoice number, the cleaner's registration number, the period?
+- Why it matters: it does **not** block the build — the design fits under any narrower answer. It blocks calling the constraint *verified* rather than *assumed*, and the number goes on a document your accountant reads.
+- Default taken: ten digits, a four-digit year followed by a six-digit running number, first digit never zero.
+- Answer: _(owner fills in)_
+
+### Q-VS-03 — [blocking: no, but it decides whether a later migration is a contingency or a plan] Does every payout leave one bank account you control — including if a franchise ever runs cleaners here?
+- Raised by: architect (challenger, payout variable-symbol draft) · Owner: owner · Resolve-by: pre-prod · 2026-08-08
+- Question: the case for one **global** reference namespace rests on the sentence *"the payer's account is one account."* If a franchise operator ever runs cleaners on Cleansia, would they pay **their own** cleaners from **their own** bank account, or would payouts still leave yours?
+- Why it matters: if payouts always leave your account, global is right forever. If a franchise pays from its own, then a statement line already belongs to exactly one account, per-tenant references become sufficient, and a cross-tenant volume-inference channel the design currently accepts would be a cost paid for nothing. **It does not block the build** — global is the cheapest correct shape today either way, and the shipped index is already global. It decides whether narrowing that index later is a contingency or a scheduled migration, and narrowing it **fails on pre-existing duplicates** and is owner-only, so it is far cheaper to know before the first franchise has invoices than after.
+- Default taken: global, as the shipped index already is.
+- Answer: _(owner fills in)_

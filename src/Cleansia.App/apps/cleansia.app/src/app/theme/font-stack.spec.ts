@@ -30,6 +30,11 @@ interface FontFamilyDeclaration {
   families: string[];
 }
 
+interface CompiledStylesheet {
+  stylesheet: string;
+  css: string;
+}
+
 interface ProjectConfiguration {
   targets: { build: { options: { styles: string[] } } };
 }
@@ -55,6 +60,25 @@ function buildStylesheets(): string[] {
   return project.targets.build.options.styles;
 }
 
+function compiledStylesheets(): CompiledStylesheet[] {
+  return buildStylesheets().map((stylesheet) => ({
+    stylesheet,
+    css: compile(join(FRONTEND_DIR, stylesheet), { quietDeps: true }).css,
+  }));
+}
+
+const COMPILED_STYLESHEETS = compiledStylesheets();
+
+function indexHtml(): string {
+  return readFileSync(join(APP_DIR, 'src', 'index.html'), 'utf8');
+}
+
+function fontFamilyValues(source: string): string[] {
+  return (source.match(/font-family\s*:[^;}]+/g) ?? []).map((match) =>
+    match.slice(match.indexOf(':') + 1).trim()
+  );
+}
+
 function splitFamilies(value: string): string[] {
   return value
     .replace(/!important/g, '')
@@ -70,12 +94,8 @@ function splitFamilies(value: string): string[] {
 
 function collectFontFamilyDeclarations(): FontFamilyDeclaration[] {
   const declarations: FontFamilyDeclaration[] = [];
-  for (const stylesheet of buildStylesheets()) {
-    const css = compile(join(FRONTEND_DIR, stylesheet), {
-      quietDeps: true,
-    }).css;
-    for (const match of css.match(/font-family\s*:[^;}]+/g) ?? []) {
-      const value = match.slice(match.indexOf(':') + 1).trim();
+  for (const { stylesheet, css } of COMPILED_STYLESHEETS) {
+    for (const value of fontFamilyValues(css)) {
       if (value.includes('var(')) continue;
       declarations.push({
         stylesheet,
@@ -87,8 +107,25 @@ function collectFontFamilyDeclarations(): FontFamilyDeclaration[] {
   return declarations;
 }
 
+function referencedFamilies(): Set<string> {
+  const sources = [
+    ...COMPILED_STYLESHEETS.map((entry) => entry.css),
+    indexHtml(),
+  ];
+  const families = new Set<string>();
+  for (const source of sources) {
+    for (const value of fontFamilyValues(source)) {
+      const literals = value
+        .replace(/var\(\s*--[\w-]+\s*,?/g, '')
+        .replace(/\)/g, '');
+      for (const family of splitFamilies(literals)) families.add(family);
+    }
+  }
+  return families;
+}
+
 function loadedWebFontFamilies(): Set<string> {
-  const html = readFileSync(join(APP_DIR, 'src', 'index.html'), 'utf8');
+  const html = indexHtml();
   const families = new Set<string>();
   for (const request of html.match(/fonts\.googleapis\.com\/css2\?[^"']+/g) ??
     []) {
@@ -158,5 +195,15 @@ describe(`font stack — Cyrillic-capable fallback (${APP_NAME})`, () => {
     expect(loaded.size).toBeGreaterThan(0);
     expect(relied.length).toBeGreaterThan(0);
     expect(relied.filter((family) => !loaded.has(family))).toEqual([]);
+  });
+});
+
+describe(`web font requests — every requested family is used (${APP_NAME})`, () => {
+  it('names every requested family in a font-family declaration', () => {
+    const loaded = loadedWebFontFamilies();
+    const referenced = referencedFamilies();
+    expect(loaded.size).toBeGreaterThan(0);
+    expect(referenced.size).toBeGreaterThan(0);
+    expect([...loaded].filter((family) => !referenced.has(family))).toEqual([]);
   });
 });

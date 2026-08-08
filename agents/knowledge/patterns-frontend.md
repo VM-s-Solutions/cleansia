@@ -1001,3 +1001,23 @@ sets it on `.grid > .col`), so a rail's usable width is its `width` minus its ow
 `.cleansia-title--<size>` class, so changing size silently changes both type and styling. Pass
 `[level]="1"` instead — a page's own title is the `h1` whatever size it is drawn at. Leave `level` off
 and nothing changes. Every auth screen carries `[level]="1"` for exactly this reason (T-0444).
+
+## Request only the web font families you actually name
+
+`index.html`'s Google Fonts `<link>` is on the critical path, and the production build **inlines the
+whole response into the built `index.html`** — `@font-face` blocks and all — so an unused family is
+paid for on every cold visit *and* in the bundle. Admin and partner each requested Kanit at all 18
+weights while no `font-family` in the tree named it: 82 inlined `@font-face` blocks and a 31 kB
+`index.html`, against 10 and 6.9 kB once dropped (T-0566).
+
+The reverse direction is **not** a rule — a declared family may legitimately go unrequested. System
+stacks (`sans-serif`, `Menlo`, `Consolas`), icon fonts (`primeicons`) and CDN faces are all named
+without a Google Fonts request, so "every declared family must be requested" would flag correct code.
+
+**Enforced by:** `apps/*/src/app/theme/font-stack.spec.ts` — **T1-CI**. It compiles the app's build
+stylesheets and parses its `index.html`, so it holds both sides of the comparison. The guard lives in
+the three **app** projects, not the shared library: `nx affected` selects only the owning app for an
+`index.html` change (verified —
+`nx show projects --affected --files=apps/cleansia-admin.app/src/index.html` returns
+`cleansia-admin.app` and its e2e project alone, never `assets`), and the `Unit tests (affected)` step
+is not `continue-on-error`.

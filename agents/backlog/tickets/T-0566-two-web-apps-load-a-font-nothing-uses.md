@@ -69,3 +69,43 @@ next dead loader, and it costs one assertion because T-0472 already put both inp
 Do **not** widen the guard to "every declared family must be requested" — that is the opposite
 direction and it is legitimately violated by system stacks (`sans-serif`, `monospace`, `Menlo`,
 `primeicons`, `Consolas`). The signal is **requested but never referenced**, not the reverse.
+
+## Review
+
+**AC1 — leftover, not an unwired design. Proceeding was correct.** Three independent lines of
+evidence:
+
+1. Kanit has never appeared in a `font-family` declaration in *any* Angular stylesheet, in any commit.
+   `git log -S Kanit --all --name-only` lists no `.scss`/`.css` under `src/Cleansia.App` — only the
+   three `index.html` files.
+2. The only `font-family` declarations naming Kanit anywhere in the repo are the six **email
+   templates** (`email-templates/*.html:17`), where it is a *fallback*: `font-family: 'Nunito',
+   'Kanit', sans-serif`. Those templates carry the byte-identical 18-weight `<link>` the apps had. The
+   app request is a copy-paste of the email-template `<head>`: the loader came across, the declaration
+   did not.
+3. The same request was already deleted from the **customer** app in `61f7f58a` (2026-04-04) with no
+   replacement stylesheet, and nothing regressed in the four months since. Admin and partner were
+   simply missed by that sweep.
+
+So nothing is missing downstream of the link — there is no design waiting on a stylesheet. Kanit's
+only role in this codebase is as an email-template fallback, which is untouched.
+
+**Catalog-edit routing:** one entry added to `patterns-frontend.md` ("Request only the web font
+families you actually name"), routed **inline**.
+- *Test 1 (code sweep)* — does not fire, zero baseline by construction. Sweep: all three apps
+  compiled and diffed request-set against reference-set; unreferenced requests are `[]` for admin,
+  partner and customer after this ticket, which is the new assertion passing in all three projects
+  (24/19/28 tests green).
+- *Test 2 (narrowing)* — floor claimed. Searched `agents/knowledge/*.md` for `index.html`,
+  `google fonts`, `googleapis`, `web font`, `font-family`, `preconnect`, `typeface`. Only hits:
+  `patterns-frontend.md:147` (`index.html` as the `app-root` shell), `patterns-backend.md:1447`
+  (`libfontconfig1`, a container package), `patterns-mobile.md:635` (iOS `CleansiaTypography`). None
+  reaches web font *requests* at any level of generality — first statement, not a narrowing.
+- *Test 3 (unbuilt stack)* — does not fire; all three web apps were built and their suites run here.
+- Inline is not free: the gate ships with the entry (`apps/*/src/app/theme/font-stack.spec.ts`,
+  **T1-CI** — `frontend-ci.yml:85` `Unit tests (affected)` is not `continue-on-error`).
+
+**Not fixed here, reported instead** (both are the *inverse* direction the ticket forbids guarding, and
+both are pre-existing): the customer app declares Poppins `800` in 8 rules and Nunito `500` in 53 rules
+while requesting neither weight, so those render at the nearest requested weight. Admin and partner
+declare Poppins in their compiled CSS but request it in no app — known and accepted in `55ad850e`.

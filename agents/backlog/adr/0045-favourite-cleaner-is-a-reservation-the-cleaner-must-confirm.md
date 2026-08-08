@@ -1,6 +1,20 @@
 # ADR-NNNN — The favourite cleaner is **assigned**, and assignment is a **reservation they must confirm**: ADR-0036's exclusivity mechanism is kept **byte-for-byte** and given the four things it lacks — a **name**, an explicit **decline**, a **customer-visible state**, and a **customer-facing exit** — where the reservation is **never an `OrderEmployee` row**, the release stays a **clock comparison with no actor**, the **confirm is `TakeOrder` unchanged**, and the **only new actor is a 5-minute sweep that ANNOUNCES the lapse and releases nothing**; the customer's re-offer is **capped at two rounds** (Invariant H relaxed 90% → **80%**) and *"a random cleaner"* is ruled to be **the open board, named** — not a second dispatch model
 
-- **Status:** `proposed` — drafted 2026-08-08 by the `architect` in **author** mode, on direct owner
+- **Status:** `accepted` — PM, 2026-08-08, on the round-3 lead's own terms: a delta review of the
+  transcription against its closed list, no further adversarial round. Four things spot-checked at HEAD
+  before accepting, not taken from the reports: the section the challenge found stale really is shipped
+  (event, both producers, display registration, corrected copy, keyset on all three mirrors); the
+  one-hour promise is now dropped on **both** platforms, so this ADR's standing constraint has a verify
+  step that passes rather than one that fails; the two-round cap's 19%-against-20% margin and the three
+  legs of the no-assignment-row argument were each re-derived by a second instance; and the transcription
+  corrected 19 citations including one of the lead's own.
+  **One ruling is mine rather than the lead's** and is marked as such in §PM ruling: the flag gains a
+  fifth term so it cannot read `true` where the server refuses. The lead's four-term list predates the
+  item that made recurring occurrences refuse; their interaction was never in front of it. The answer is
+  forced by this ADR's own blocking finding — that a flag reading `true` where the mechanism cannot
+  deliver is a defect — so shipping a second known instance of it in the same release is not a position
+  this document can hold.
+- **Superseded status line (transcription author):** `proposed` — drafted 2026-08-08 by the `architect` in **author** mode, on direct owner
   instruction recorded as the answer to `Q-PROMISE-02`; **revised the same day to fold in the owner's
   answers to all four questions the first draft escalated** (`Q-ASSIGN-01…04`, §Owner rulings).
   **Challenged 2026-08-08** (`adr/challenges/NNNN-favourite-cleaner-reservation.md`, nine findings, five

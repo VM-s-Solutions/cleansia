@@ -6417,6 +6417,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
     rawNonce!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
+    termsAccepted!: boolean;
 
     constructor(data?: IAppleAuthCommand) {
         if (data) {
@@ -6433,6 +6434,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
             this.rawNonce = Data["rawNonce"];
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -6449,6 +6451,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
         data["rawNonce"] = this.rawNonce;
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -6458,6 +6461,7 @@ export interface IAppleAuthCommand {
     rawNonce: string | undefined;
     firstName: string | undefined;
     lastName: string | undefined;
+    termsAccepted: boolean;
 }
 
 export enum AppliedDiscountSource {
@@ -9828,6 +9832,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
     email!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
+    termsAccepted!: boolean;
 
     constructor(data?: IGoogleAuthCommand) {
         if (data) {
@@ -9845,6 +9850,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
             this.email = Data["email"];
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -9862,6 +9868,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
         data["email"] = this.email;
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -9872,6 +9879,7 @@ export interface IGoogleAuthCommand {
     email: string | undefined;
     firstName: string | undefined;
     lastName: string | undefined;
+    termsAccepted: boolean;
 }
 
 export class GrantConsentCommand implements IGrantConsentCommand {

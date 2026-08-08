@@ -6716,6 +6716,9 @@
           "lastName": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8552,6 +8555,9 @@
           "lastName": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

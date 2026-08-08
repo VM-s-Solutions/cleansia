@@ -1686,6 +1686,17 @@ remains open and non-blocking** — I cannot change repository settings in any c
 
 ---
 
+### ✅ RESOLVED 2026-08-08 — express-upgrade quota: fixed in the seed, nothing owed by the owner
+
+> **Owner:** *"All of the data is in DEV only, so fixing the issues would be just a usual drop of db."*
+> **Correct — with one thing that had to change first, which is what I failed to say clearly.** A drop
+> and reseed would have reinstated the zero, because the seed never set the column at all. It does now:
+> both Plus plans carry `ExpressUpgradesPerMonth = 1`. **A drop-and-reseed is now sufficient and
+> nothing is owed by the owner.** The admin-screen route is unnecessary given a planned drop, and is
+> recorded below only as the alternative for an environment that cannot be dropped.
+
+<details><summary>Original entry, kept for the record</summary>
+
 ### 🔴 OWNER DATA STEP (2026-08-08) — the express-upgrade perk is switched OFF in data, on every environment
 - Raised by: backend (`a3ac501a`, verifying `Q-PLUS-02`)
 - Owner: owner — **this is a data change, not a code change; no agent may make it**
@@ -1716,3 +1727,5 @@ correct. Doing only (a) leaves DEV wrong; doing only (b) means the next fresh da
 
 This interacts with the owner's earlier "I'll drop the entire DB" plan: **a drop-and-reseed without (a)
 reinstates the zero.**
+
+</details>

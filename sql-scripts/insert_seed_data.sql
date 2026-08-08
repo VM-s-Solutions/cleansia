@@ -1679,11 +1679,13 @@ INSERT INTO public."MembershipPlans" (
     "DeactivatedBy", "DeactivatedOn", "TenantId",
     "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)', 199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r',
     5.00, 4, true,
+    1,
     1, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
 
@@ -1693,11 +1695,13 @@ INSERT INTO public."MembershipPlans" (
     "DeactivatedBy", "DeactivatedOn", "TenantId",
     "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
     'PLUS_YEARLY', 'Cleansia Plus (Annual)', 2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF',
     5.00, 4, true,
+    1,
     2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
 

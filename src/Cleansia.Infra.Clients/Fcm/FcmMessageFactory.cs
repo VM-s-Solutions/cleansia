@@ -30,6 +30,7 @@ public static class FcmMessageFactory
         new Dictionary<string, IReadOnlyList<string>>
         {
             [NotificationEventCatalog.OrderConfirmed] = OrderNumberArg,
+            [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
             [NotificationEventCatalog.OrderOnTheWay] = OrderNumberArg,
             [NotificationEventCatalog.OrderInProgress] = OrderNumberArg,
             [NotificationEventCatalog.OrderCompleted] = OrderNumberArg,

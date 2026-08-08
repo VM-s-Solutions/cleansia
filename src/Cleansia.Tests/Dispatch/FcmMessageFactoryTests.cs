@@ -318,6 +318,7 @@ public class FcmMessageFactoryTests
             "membership.expiring_soon",
             "order.assignment_cancelled",
             "order.cancelled",
+            "order.cleaner_assigned",
             "order.completed",
             "order.confirmed",
             "order.in_progress",

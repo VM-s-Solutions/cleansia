@@ -141,6 +141,20 @@ describe('CustomerAuthService command payloads', () => {
     });
   });
 
+  // Unlike email registration, both social branches settle the session inside the
+  // response pipeline — so anything the caller records in its own next handler is
+  // already too late for the flush that rides setSession.
+  it.each([
+    ['google', () => service.authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')],
+    ['apple', () => service.authenticateWithApple('idtok', 'raw-nonce')],
+  ])('has already started the session when the %s response reaches the caller', (_, call) => {
+    let loggedInWhenResumed: boolean | null = null;
+
+    call().subscribe(() => (loggedInWhenResumed = service.isLoggedIn()));
+
+    expect(loggedInWhenResumed).toBe(true);
+  });
+
   it('sends the email and language on forgot password', () => {
     service.forgotPassword('a@b.cz').subscribe();
 

@@ -175,6 +175,7 @@
       "error": "Registration failed. Please try again.",
       "terms_agreement": "I agree to the terms",
       "terms_and_conditions": "I agree to the <a href='/terms'>Terms of Service</a> and the <a href='/privacy'>Privacy Policy</a>",
+      "social_terms_required": "Accept the Terms of Service and the Privacy Policy to continue with Google or Apple.",
       "validation": {
         "password_lowercase": "At least one lowercase letter",
         "password_uppercase": "At least one uppercase letter",

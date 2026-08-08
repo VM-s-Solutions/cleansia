@@ -169,6 +169,48 @@
     width: 100%;
   }
 
+  // A provider button signs the visitor up outright, so the block is held out of
+  // reach of both pointer and keyboard until the terms box is ticked: `inert`
+  // takes the providers out of hit-testing and the tab order, and the lock above
+  // them turns a click into the reason instead of nothing.
+  &__social {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.75rem;
+  }
+
+  &__social-providers {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1.5rem;
+
+    &--locked {
+      opacity: 0.45;
+      filter: grayscale(1);
+    }
+  }
+
+  &__social-lock {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    cursor: not-allowed;
+    border-radius: 12px;
+
+    &:focus-visible {
+      outline: 2px solid var(--cleansia-primary, #0284c7);
+      outline-offset: 2px;
+    }
+  }
+
+  &__social-note {
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--text-color-secondary, #64748b);
+  }
+
   // ─── REFERRAL CODE ROW (Wolt-style) ───
   // Click-to-open dialog. Renders the chip + clear-X once a code is applied.
   &__referral {

@@ -1,4 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -13,7 +14,7 @@ import { loadCustomerUser } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { firstValueFrom, takeUntil } from 'rxjs';
+import { firstValueFrom, map, takeUntil } from 'rxjs';
 
 /**
  * Discriminated union for the optional referral-code input on the signup form.
@@ -37,7 +38,16 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly signupConsent = inject(SignupConsentService);
 
+  private readonly termsControl = new FormControl(false, [
+    Validators.requiredTrue,
+  ]);
+
   formGroup = this.createFormGroup();
+
+  readonly termsAccepted = toSignal(
+    this.termsControl.valueChanges.pipe(map(() => this.isTermsTicked())),
+    { initialValue: false }
+  );
 
   // ─── Referral input state ───────────────────────────────────
   //
@@ -120,7 +130,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     }
 
     const { email, password, firstName, lastName, referralCode } = this.formGroup.value;
-    const termsAccepted = this.formGroup.get('terms')?.value === true;
+    const termsAccepted = this.isTermsTicked();
     // Bad/empty referral codes are NOT a blocker per the spec — we send the
     // raw value (when non-empty) and let the backend silently skip on failure.
     const trimmedReferral = (referralCode as string | undefined)?.trim();
@@ -144,6 +154,8 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   }
 
   googleRegister(credential: string) {
+    if (!this.isTermsTicked()) return this.socialSignUpBlocked();
+
     const decoded = JSON.parse(atob(credential.split('.')[1]));
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
@@ -153,6 +165,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
           this.authService.setSession(authResult);
+          this.recordSignupConsent(authResult.email);
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);
@@ -175,12 +188,15 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     firstName?: string,
     lastName?: string
   ): void {
+    if (!this.isTermsTicked()) return this.socialSignUpBlocked();
+
     this.authService
       .authenticateWithApple(identityToken, rawNonce, firstName, lastName)
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
           this.authService.setSession(authResult);
+          this.recordSignupConsent(authResult.email);
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);
@@ -189,6 +205,29 @@ export class RegisterFacade extends UnsubscribeControlDirective {
           this.snackbarService.showApiError(err, 'auth.register.error');
         },
       });
+  }
+
+  /**
+   * A provider button signs the visitor up outright, so an untick has to stop it
+   * and say why — the control it names is on the same screen but easy to miss.
+   */
+  socialSignUpBlocked(): void {
+    this.snackbarService.showErrorTranslated('auth.register.social_terms_required');
+  }
+
+  /**
+   * The social branches hold a session by the time this runs, so the tick goes
+   * straight out instead of waiting for a later sign-in. The tick is re-read
+   * rather than captured at the click: the box stays live behind the provider
+   * popup, and an untick is not a tick.
+   */
+  private recordSignupConsent(email: string | undefined): void {
+    if (!email || !this.isTermsTicked()) return;
+    this.signupConsent.recordForActiveSession(email);
+  }
+
+  private isTermsTicked(): boolean {
+    return this.termsControl.value === true;
   }
 
   /**
@@ -223,7 +262,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       ]),
       // Optional — never required. Bad codes don't block submit.
       referralCode: new FormControl(''),
-      terms: new FormControl(false, [Validators.requiredTrue]),
+      terms: this.termsControl,
     });
   }
 }

@@ -105,6 +105,32 @@ describe('SignupConsentService', () => {
     expect(grantedBodies()).toHaveLength(2);
   });
 
+  it('delivers a tick taken during a live session without waiting for the next one', () => {
+    service.recordForActiveSession('  Jan@Example.COM ');
+
+    expect(grantedBodies()).toEqual([
+      { consentType: ConsentType.TermsOfService },
+      { consentType: ConsentType.PrivacyPolicy },
+    ]);
+    expect(grantedBodies().map((body) => body['consentType'])).not.toContain(
+      ConsentType.MarketingEmails
+    );
+  });
+
+  it('keeps a live-session tick for the next session when delivery fails', () => {
+    gdprClient.consentsGet.mockReturnValueOnce(
+      throwError(() => new Error('offline'))
+    );
+
+    service.recordForActiveSession('jan@example.com');
+
+    expect(gdprClient.consentsPost).not.toHaveBeenCalled();
+
+    service.flush('jan@example.com');
+
+    expect(grantedBodies()).toHaveLength(2);
+  });
+
   it('does nothing at all when no tick was recorded', () => {
     service.flush('jan@example.com');
 

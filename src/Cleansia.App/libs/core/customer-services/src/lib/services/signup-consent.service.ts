@@ -41,6 +41,16 @@ export class SignupConsentService {
     });
   }
 
+  /**
+   * For the branches that already hold a session when the tick is taken — the
+   * social sign-ups mint one before the caller is resumed. Still parked first,
+   * so a delivery that fails is retried at the next session start.
+   */
+  recordForActiveSession(email: string): void {
+    this.record(email);
+    this.flush(email);
+  }
+
   flush(email: string | null | undefined): void {
     try {
       const pending = this.read();

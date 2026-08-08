@@ -175,6 +175,7 @@
       "error": "Registrace se nezdařila. Zkuste to prosím znovu.",
       "terms_agreement": "Souhlasím s podmínkami",
       "terms_and_conditions": "Souhlasím s <a href='/terms'>obchodními podmínkami</a> a <a href='/privacy'>zásadami ochrany osobních údajů</a>",
+      "social_terms_required": "Pro pokračování přes Google nebo Apple potvrďte souhlas s obchodními podmínkami a zásadami ochrany osobních údajů.",
       "validation": {
         "password_lowercase": "Alespoň jedno malé písmeno",
         "password_uppercase": "Alespoň jedno velké písmeno",

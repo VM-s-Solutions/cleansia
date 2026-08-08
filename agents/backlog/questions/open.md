@@ -1975,3 +1975,22 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
 - **Answer (owner, 2026-08-08):** **The reservation is confirmed. Verbatim:** *"They either have to confirm that they took this order and then there is a message for the customer that it was confirmed. If it's declined then it's gonna propose to find another cleaner, if no found and none confirmed then a random is assigned."*
   **This settles the design and adds one thing the draft did not have:** a **customer-facing confirmation message** when the cleaner confirms. That is a new customer-targeted notification, and it is the first thing in this flow the customer hears rather than infers.
   **One ambiguity I am recording rather than resolving silently.** *"a random is assigned"* has two readings. **(i)** the job goes to the **open board** and whoever takes it first ends up with it — which *looks* random to the customer and is exactly what the platform does today; or **(ii)** the platform actively **picks** a cleaner and assigns them. I am building **(i)**, because it is what `Q-ASSIGN-01`'s *"promise, not a name"* answer describes (*"the first available cleaner"*), it needs no new dispatch model, and it cannot put a job on someone who never agreed to it. **Say so if you meant (ii)** — that is a genuinely different product, in which a cleaner can be given work they never accepted.
+
+---
+
+### 🔴 Q-PROMISE-03 — [blocking: **YES** for the assignment feature] Two answers you gave a day apart cannot both hold
+- Raised by: architect (challenger, assign-and-confirm draft) · Owner: owner · Resolve-by: **before the assignment flow is built** · 2026-08-08
+- **This is not a new question. It is a collision between two of your own answers, and neither was given with the other in view.** Surfacing it is the PM's fault for asking them separately.
+
+**Answer A — `Q-PROMISE-01`, 2026-08-07.** Asked whether the screen shown right after booking is telling the truth when it states, as a number, in five languages, on both mobile apps, that a cleaner is assigned **within 1 hour**. You answered: **yes, it is true and must be kept, in PROD.** The copy is live and unconditional today — `booking_success_t2_title` / `_t2_desc`: *"Cleaner being assigned · Within 1 hour"* (verified at `customer-app/src/main/res/values/strings.xml:758-759` and in the iOS catalog).
+
+**Answer B — `Q-ASSIGN-02`, 2026-08-08.** Asked whether two rounds of offering a favourite cleaner is the right cap. You answered: **keep two.** Each round holds the job for **10% of its remaining lead time, capped at 12 hours**, during which **no other cleaner can see or take it**.
+
+**Why they cannot both hold.** Round one alone withholds the job for longer than an hour as soon as the lead time exceeds **ten hours** — on a next-day booking that is about **2 hours 24 minutes**, before the second round. So a customer who picks a favourite cleaner is shown a one-hour promise the mechanism is not trying to keep. The withheld-share invariant the cap is derived from is a **share** of lead time; it structurally cannot bound an **absolute** one-hour figure.
+
+**Three ways out — this is the decision:**
+- **(a) Soften the copy when a favourite is chosen.** The one-hour line stays for ordinary bookings; a booking with a preferred cleaner says something else. Cheapest, and it is the only option that changes no mechanism — but it makes the promise conditional, which is a product statement.
+- **(b) Cap the hold at one hour** whenever the promise is shown. Keeps the copy honest everywhere and keeps two rounds, but shortens the favourite's window sharply on long-lead bookings, which is where the perk is worth most.
+- **(c) Drop the one-hour number** from the post-booking screen entirely and say what the platform actually does. Honest in every case; loses a reassurance customers currently get at the moment they have just paid.
+- Default taken: **none.** Nothing is built on either reading, and the assignment feature is held until this is answered — building it under (a) and later choosing (b) means redoing the copy in five languages on two platforms.
+- Answer: _(owner fills in)_

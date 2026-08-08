@@ -1257,6 +1257,7 @@
     <string name="error_membership_swap_same_plan">У вас уже є цей план.</string>
     <string name="error_order_not_completed">Оцінити замовлення можна лише після завершення.</string>
     <string name="error_order_preferred_employee_not_eligible">Вибраний клінер недоступний для цього замовлення.</string>
+    <string name="error_order_preferred_employee_membership_required">Вибір улюбленого прибиральника — перевага Cleansia Plus.</string>
     <string name="error_order_total_price_positive">Загальна вартість повинна бути додатною</string>
     <string name="error_receipt_not_found">Квитанцію не знайдено</string>
     <string name="error_recurring_booking_ends_on_before_start">Дата завершення має бути після дати початку.</string>

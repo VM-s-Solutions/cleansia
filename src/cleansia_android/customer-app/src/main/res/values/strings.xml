@@ -1286,6 +1286,7 @@
     <string name="error_membership_swap_same_plan">You\'re already on this plan.</string>
     <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
+    <string name="error_order_preferred_employee_membership_required">Choosing your favourite cleaner is a Cleansia Plus benefit.</string>
     <string name="error_order_total_price_positive">Total price must be positive</string>
     <string name="error_receipt_not_found">Receipt not found</string>
     <string name="error_recurring_booking_ends_on_before_start">The end date must be after the start date.</string>

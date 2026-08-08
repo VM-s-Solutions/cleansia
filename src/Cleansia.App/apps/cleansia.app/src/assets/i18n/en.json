@@ -1497,6 +1497,9 @@
       },
       "issue": {
         "description_required": "Please describe the issue before submitting."
+      },
+      "preferred_employee": {
+        "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit."
       }
     },
     "address": {

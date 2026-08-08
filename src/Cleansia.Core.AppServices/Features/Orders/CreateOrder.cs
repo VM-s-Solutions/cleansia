@@ -19,6 +19,7 @@ public class CreateOrder
         private readonly IServiceRepository _serviceRepository;
         private readonly IOrderPricingCalculator _pricingCalculator;
         private readonly IOrderRepository _orderRepository;
+        private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
 
         public Validator(
@@ -27,12 +28,14 @@ public class CreateOrder
             ICurrencyRepository currencyRepository,
             IOrderPricingCalculator pricingCalculator,
             IOrderRepository orderRepository,
+            IUserMembershipRepository userMembershipRepository,
             IUserSessionProvider userSessionProvider)
         {
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
             _pricingCalculator = pricingCalculator;
             _orderRepository = orderRepository;
+            _userMembershipRepository = userMembershipRepository;
             _userSessionProvider = userSessionProvider;
 
             RuleFor(x => x.PaymentType)
@@ -152,14 +155,39 @@ public class CreateOrder
                 .MaximumLength(2000)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId)
-                && !string.IsNullOrEmpty(_userSessionProvider.GetUserId()), () =>
+            // ONE ordered chain, never a second RuleFor: the class-level default is Continue, so a
+            // parallel chain would report both refusals and the client renders whichever it reads first.
+            // Entitlement leads because it is the answer that reveals least — it does not depend on the
+            // employee id at all, so a caller without Plus learns nothing about anyone by probing.
+            When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId), () =>
             {
                 RuleFor(x => x)
+                    .Cascade(CascadeMode.Stop)
+                    .MustAsync(CallerHasActiveMembershipAsync)
+                    .WithMessage(BusinessErrorMessage.PreferredEmployeeMembershipRequired)
                     .MustAsync(PreferredEmployeeIsEligibleAsync)
                     .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
                     .WithName(nameof(Command.PreferredEmployeeId));
             });
+        }
+
+        /// <summary>
+        /// The favourite-cleaner perk is Plus-only (owner ruling 2026-08-07, <c>Q-PLUS-03</c>;
+        /// ADR-0039 D12.1 already gates the picker's availability flag on this same answer). The predicate
+        /// is <c>UserMembershipRepository.ActiveForUserQuery</c> — the ONE live-membership predicate the
+        /// platform has, never a second one — so <c>PastDue</c>, <c>Paused</c>, <c>Cancelled</c> and an
+        /// elapsed period are all refused, and a trialing member is allowed: trial withholds only the
+        /// METERED benefits (ADR-0035 AM-18), and this one is not metered.
+        /// </summary>
+        private async Task<bool> CallerHasActiveMembershipAsync(
+            Command command,
+            CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+
+            return !string.IsNullOrEmpty(userId)
+                && await _userMembershipRepository
+                    .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
 
         private async Task<bool> PreferredEmployeeIsEligibleAsync(

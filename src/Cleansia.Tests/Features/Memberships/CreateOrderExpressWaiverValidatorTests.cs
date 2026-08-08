@@ -25,6 +25,7 @@ public class CreateOrderExpressWaiverValidatorTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public CreateOrderExpressWaiverValidatorTests()
@@ -53,6 +54,7 @@ public class CreateOrderExpressWaiverValidatorTests
             _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
+            _userMembershipRepository.Object,
             _session.Object);
 
     private void ArrangePricing(OrderPricingResult result)

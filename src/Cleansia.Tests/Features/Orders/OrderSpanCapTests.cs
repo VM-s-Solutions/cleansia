@@ -271,6 +271,7 @@ public class OrderSpanCapTests
             _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
+            _userMembershipRepository.Object,
             _session.Object);
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>

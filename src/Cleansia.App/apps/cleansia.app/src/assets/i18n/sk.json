@@ -1497,6 +1497,9 @@
       },
       "issue": {
         "description_required": "Pred odoslaním opíšte problém."
+      },
+      "preferred_employee": {
+        "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus."
       }
     },
     "address": {

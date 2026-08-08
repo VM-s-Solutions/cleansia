@@ -31,6 +31,7 @@ public class QuoteOrderSpanCapTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public QuoteOrderSpanCapTests()
@@ -174,6 +175,7 @@ public class QuoteOrderSpanCapTests
             _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
+            _userMembershipRepository.Object,
             _session.Object);
 
     private static QuoteOrder.Command QuoteCommand() =>

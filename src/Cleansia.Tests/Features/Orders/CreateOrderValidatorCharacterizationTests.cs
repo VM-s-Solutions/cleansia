@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -21,6 +22,7 @@ public class CreateOrderValidatorCharacterizationTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public CreateOrderValidatorCharacterizationTests()
@@ -64,6 +66,7 @@ public class CreateOrderValidatorCharacterizationTests
             _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
+            _userMembershipRepository.Object,
             _session.Object);
 
     [Fact]
@@ -196,6 +199,7 @@ public class CreateOrderValidatorCharacterizationTests
     public async Task AC6_PreferredEmployeeIneligible_WithLoggedInUser_FailsPreferredEmployeeNotEligible()
     {
         _session.Setup(s => s.GetUserId()).Returns("user-1");
+        ArrangeActiveMembership("user-1");
         _orderRepository
             .Setup(r => r.UserHasCompletedOrderWithEmployeeAsync(
                 "user-1", "emp-1", It.IsAny<CancellationToken>()))
@@ -212,7 +216,7 @@ public class CreateOrderValidatorCharacterizationTests
     }
 
     [Fact]
-    public async Task AC6_PreferredEmployeeSet_NoUserId_RuleDoesNotFire()
+    public async Task AC6_PreferredEmployeeSet_NoUserId_FailsMembershipRequired()
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
 
@@ -220,7 +224,30 @@ public class CreateOrderValidatorCharacterizationTests
 
         var result = await CreateValidator().ValidateAsync(command);
 
-        Assert.True(result.IsValid);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.PreferredEmployeeId)
+            && e.ErrorMessage == BusinessErrorMessage.PreferredEmployeeMembershipRequired);
+        _orderRepository.Verify(r => r.UserHasCompletedOrderWithEmployeeAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AC6_PreferredEmployeeSet_NoMembership_FailsMembershipRequired()
+    {
+        _session.Setup(s => s.GetUserId()).Returns("user-1");
+        _userMembershipRepository
+            .Setup(r => r.GetActiveForUserNoTrackingAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+
+        var command = CreateOrderTestData.ValidCommand(preferredEmployeeId: "emp-1");
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.PreferredEmployeeId)
+            && e.ErrorMessage == BusinessErrorMessage.PreferredEmployeeMembershipRequired);
         _orderRepository.Verify(r => r.UserHasCompletedOrderWithEmployeeAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -229,6 +256,7 @@ public class CreateOrderValidatorCharacterizationTests
     public async Task AC6_PreferredEmployeeEligible_WithLoggedInUser_Passes()
     {
         _session.Setup(s => s.GetUserId()).Returns("user-1");
+        ArrangeActiveMembership("user-1");
         _orderRepository
             .Setup(r => r.UserHasCompletedOrderWithEmployeeAsync(
                 "user-1", "emp-1", It.IsAny<CancellationToken>()))
@@ -311,5 +339,26 @@ public class CreateOrderValidatorCharacterizationTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(CreateOrder.Command.AccessInstructions)
             && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
+
+    private void ArrangeActiveMembership(string userId)
+    {
+        var plan = MembershipPlan.Create(
+            code: "PLUS",
+            name: "Cleansia Plus",
+            monthlyPriceCzk: 199m,
+            stripePriceId: "price_plus",
+            discountPercentage: 10m,
+            freeCancellationWindowHours: 4,
+            allowsExpressUpgrade: true);
+
+        _userMembershipRepository
+            .Setup(r => r.GetActiveForUserNoTrackingAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserMembership.Create(
+                userId: userId,
+                membershipPlanId: plan.Id,
+                stripeSubscriptionId: "sub_1",
+                currentPeriodStart: DateTime.UtcNow.AddDays(-1),
+                currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
     }
 }

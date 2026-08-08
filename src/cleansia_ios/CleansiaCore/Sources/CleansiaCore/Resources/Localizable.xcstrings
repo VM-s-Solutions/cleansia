@@ -3884,6 +3884,41 @@
         }
       }
     },
+    "error.order.preferred_employee.membership_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Výběr oblíbeného uklízeče je výhoda Cleansia Plus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choosing your favourite cleaner is a Cleansia Plus benefit."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбор любимого уборщика — преимущество Cleansia Plus."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Výber obľúbeného upratovača je výhoda Cleansia Plus."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибір улюбленого прибиральника — перевага Cleansia Plus."
+          }
+        }
+      }
+    },
     "error.order.preferred_employee.not_eligible" : {
       "extractionState" : "manual",
       "localizations" : {

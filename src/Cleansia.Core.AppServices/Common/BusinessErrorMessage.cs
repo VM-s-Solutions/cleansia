@@ -98,6 +98,14 @@ public static class BusinessErrorMessage
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string PreferredEmployeeNotEligible = "order.preferred_employee.not_eligible";
+
+    /// <summary>
+    /// Naming a favourite cleaner is a Cleansia Plus perk (owner ruling 2026-08-07, <c>Q-PLUS-03</c>).
+    /// Its own code rather than <see cref="PreferredEmployeeNotEligible"/>: that one says "not this
+    /// cleaner" and sends the customer back to pick a different one, which is the one instruction that
+    /// cannot resolve a missing subscription.
+    /// </summary>
+    public const string PreferredEmployeeMembershipRequired = "order.preferred_employee.membership_required";
     public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
 
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel

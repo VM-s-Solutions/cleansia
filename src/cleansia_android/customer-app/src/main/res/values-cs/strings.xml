@@ -1260,6 +1260,7 @@
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>
     <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
+    <string name="error_order_preferred_employee_membership_required">Výběr oblíbeného uklízeče je výhoda Cleansia Plus.</string>
     <string name="error_order_total_price_positive">Celková cena musí být kladná</string>
     <string name="error_receipt_not_found">Potvrzení nenalezeno</string>
     <string name="error_recurring_booking_ends_on_before_start">Datum ukončení musí být po datu zahájení.</string>

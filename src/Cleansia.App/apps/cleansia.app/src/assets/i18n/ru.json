@@ -1497,6 +1497,9 @@
       },
       "issue": {
         "description_required": "Опишите проблему перед отправкой."
+      },
+      "preferred_employee": {
+        "membership_required": "Выбор любимого уборщика — преимущество Cleansia Plus."
       }
     },
     "address": {

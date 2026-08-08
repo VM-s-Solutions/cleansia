@@ -756,7 +756,7 @@
     <string name="booking_success_t1_title">Booking received</string>
     <string name="booking_success_t1_desc">Just now</string>
     <string name="booking_success_t2_title">Cleaner being assigned</string>
-    <string name="booking_success_t2_desc">Within 1 hour</string>
+    <string name="booking_success_t2_desc">We\'ll let you know as soon as we find one</string>
     <string name="booking_success_t3_title">Cleaner confirmed</string>
     <string name="booking_success_t3_desc">You\'ll see their profile here</string>
     <string name="booking_success_t4_title">Cleaning day</string>

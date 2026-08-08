@@ -745,7 +745,7 @@
     <string name="booking_success_t1_title">Rezervace přijata</string>
     <string name="booking_success_t1_desc">Právě teď</string>
     <string name="booking_success_t2_title">Přidělujeme uklízeče</string>
-    <string name="booking_success_t2_desc">Do 1 hodiny</string>
+    <string name="booking_success_t2_desc">Dáme vám vědět, jakmile ho najdeme</string>
     <string name="booking_success_t3_title">Uklízeč potvrzen</string>
     <string name="booking_success_t3_desc">Zde uvidíte jeho profil</string>
     <string name="booking_success_t4_title">Den úklidu</string>

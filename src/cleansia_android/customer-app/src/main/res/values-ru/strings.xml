@@ -742,7 +742,7 @@
     <string name="booking_success_t1_title">Бронирование получено</string>
     <string name="booking_success_t1_desc">Только что</string>
     <string name="booking_success_t2_title">Назначаем клинера</string>
-    <string name="booking_success_t2_desc">В течение 1 часа</string>
+    <string name="booking_success_t2_desc">Сообщим, как только его найдём</string>
     <string name="booking_success_t3_title">Клинер подтверждён</string>
     <string name="booking_success_t3_desc">Здесь появится его профиль</string>
     <string name="booking_success_t4_title">День уборки</string>

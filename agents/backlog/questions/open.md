@@ -2029,3 +2029,27 @@ A collision hits the database unique index **after** the handler has returned, s
 **Two green tests are why nobody noticed.** One sets the symbol **by hand** and then proves it maps and validates — the catalog's own named anti-pattern, *a fixture supplying an input production never produces*. Its comment even asserts *"the generated numeric symbol is what reaches the document"*, which is false in production and checked by nothing.
 
 **What I need from you:** nothing yet — this is an architect call on the generator (a per-period sequence, or the existing fiscal-counter claim pattern, rather than a hash), and I will run it. **What you need to know now** is that until it lands, an invoice you pay against has no reference number printed on it. If you have been transcribing something, it is not coming from this document.
+
+---
+
+### 🔴 Q-PROMISE-04 — [blocking: no] The same screen makes a SECOND promise nothing keeps: "We'll remind you 1 hour before"
+- Raised by: android (dropping the one-hour assignment promise) · Owner: owner · Resolve-by: pre-prod · 2026-08-08
+- **Found while fixing the line directly above it**, which is the part worth noting: `Q-PROMISE-03` was one line of a four-step timeline, and the step two rows down has the same shape.
+
+**The copy** (`customer-app/.../values/strings.xml:763`, and its four translations plus the iOS twins):
+*"Cleaning day — **We'll remind you 1 hour before**"*
+
+**What I verified at HEAD:**
+- `NotificationEventCatalog` contains **no reminder event of any kind** — the grep returns nothing.
+- The reminder jobs that exist are for **recurring-order confirmations** (24 h), **pay periods**, and **membership lifecycle**. There is **no pre-cleaning reminder for a one-off order.**
+
+So a customer booking a one-off clean is told they will be reminded an hour before, and nothing sends that reminder.
+
+**This is deliberately NOT covered by the guard I just added.** That guard forbids an absolute time on the *assignment* step, because assignment is a thing the platform cannot promise. A reminder is different — it is an action the platform **fully controls**, so "1 hour before" is a perfectly keepable promise. **The defect is that it is not implemented, not that it is unkeepable.**
+
+**Which is why the fix is probably the opposite of last time:**
+- **(a) Build the reminder.** A timer, an event, a push template on both platforms and the feed row. The promise then becomes true, and it is a genuinely useful notification — arguably the most useful one on the customer's day.
+- **(b) Drop the sentence**, as with the assignment line. Cheapest, and it removes something customers likely value.
+
+- Default taken: **none.** I did not silently edit this line while I was in the file, because unlike the assignment promise this one is worth *keeping* and making true.
+- Answer: _(owner fills in)_

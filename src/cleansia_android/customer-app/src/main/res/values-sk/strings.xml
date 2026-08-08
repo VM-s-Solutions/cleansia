@@ -742,7 +742,7 @@
     <string name="booking_success_t1_title">Rezervácia prijatá</string>
     <string name="booking_success_t1_desc">Práve teraz</string>
     <string name="booking_success_t2_title">Prideľujeme upratovačku</string>
-    <string name="booking_success_t2_desc">Do 1 hodiny</string>
+    <string name="booking_success_t2_desc">Dáme vám vedieť, hneď ako ju nájdeme</string>
     <string name="booking_success_t3_title">Upratovačka potvrdená</string>
     <string name="booking_success_t3_desc">Tu uvidíte jej profil</string>
     <string name="booking_success_t4_title">Deň upratovania</string>

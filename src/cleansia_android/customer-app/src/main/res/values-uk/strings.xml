@@ -742,7 +742,7 @@
     <string name="booking_success_t1_title">Бронювання отримано</string>
     <string name="booking_success_t1_desc">Щойно</string>
     <string name="booking_success_t2_title">Призначаємо клінера</string>
-    <string name="booking_success_t2_desc">Протягом 1 години</string>
+    <string name="booking_success_t2_desc">Повідомимо вас, щойно його знайдемо</string>
     <string name="booking_success_t3_title">Клінер підтверджений</string>
     <string name="booking_success_t3_desc">Тут з’явиться його профіль</string>
     <string name="booking_success_t4_title">День прибирання</string>

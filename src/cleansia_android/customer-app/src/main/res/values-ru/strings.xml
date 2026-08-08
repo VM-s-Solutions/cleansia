@@ -1179,8 +1179,10 @@
     <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
     <string name="notification_channel_dispute_reply_desc">Сообщим, когда поддержка ответит на вашу жалобу.</string>
 
-    <string name="notification_order_confirmed_title">Клинер найден! 🎉</string>
+    <string name="notification_order_confirmed_title">Заказ подтверждён ✅</string>
     <string name="notification_order_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
+    <string name="notification_cleaner_assigned_title">Клинер найден! 🎉</string>
+    <string name="notification_cleaner_assigned_body">К вашему заказу #%1$s назначен клинер. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_order_on_the_way_title">Клинер в пути</string>
     <string name="notification_order_on_the_way_body">Ваш клинер направляется к заказу #%1$s.</string>
     <string name="notification_order_in_progress_title">Уборка началась</string>

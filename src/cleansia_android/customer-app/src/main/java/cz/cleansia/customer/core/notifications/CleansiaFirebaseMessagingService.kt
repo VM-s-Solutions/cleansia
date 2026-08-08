@@ -84,10 +84,11 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
             Triple(serverTitle, serverBody, NotificationCategoryDto.Promo)
         } else {
             val template = NotificationTemplates.templateFor(eventKey) ?: return
-            // Feed-scoped event: the producer wrote a UserNotification row in the
-            // same transaction, so bump the bell badge locally instead of refetching.
-            // Promo is excluded (no feed row v1) and unknown keys returned above.
-            notificationFeedRepository.onPushReceived()
+            // Only a feed-scoped event has a UserNotification row behind it, and the badge
+            // counts rows — so bump it off the keyset, never off "this key has a template".
+            if (CustomerFeedEventKeys.contains(eventKey)) {
+                notificationFeedRepository.onPushReceived()
+            }
             Triple(
                 getString(template.titleRes),
                 NotificationTemplates.formatBody(this, eventKey, template.bodyRes, data),

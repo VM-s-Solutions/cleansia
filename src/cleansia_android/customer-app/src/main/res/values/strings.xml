@@ -1208,8 +1208,10 @@
     <string name="notification_channel_dispute_reply_name">Support replies</string>
     <string name="notification_channel_dispute_reply_desc">Notifies you when support responds to your dispute.</string>
 
-    <string name="notification_order_confirmed_title">Cleaner found! 🎉</string>
+    <string name="notification_order_confirmed_title">Booking confirmed ✅</string>
     <string name="notification_order_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
+    <string name="notification_cleaner_assigned_title">Cleaner found! 🎉</string>
+    <string name="notification_cleaner_assigned_body">A cleaner is assigned to your booking #%1$s. Tap to see the details.</string>
     <string name="notification_order_on_the_way_title">Cleaner is on the way</string>
     <string name="notification_order_on_the_way_body">Your cleaner is heading to your booking #%1$s.</string>
     <string name="notification_order_in_progress_title">Cleaning in progress</string>

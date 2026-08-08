@@ -55,6 +55,7 @@ object NotificationDeepLink {
      */
     fun resolve(eventKey: String, args: Map<String, String>): Any? = when (eventKey) {
         "order.confirmed",
+        "order.cleaner_assigned",
         "order.in_progress",
         "order.completed",
         "order.cancelled",

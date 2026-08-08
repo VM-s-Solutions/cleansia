@@ -25,6 +25,11 @@ object NotificationTemplates {
             R.string.notification_order_confirmed_body,
             NotificationCategoryDto.OrderUpdates,
         )
+        "order.cleaner_assigned" -> Template(
+            R.string.notification_cleaner_assigned_title,
+            R.string.notification_cleaner_assigned_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         "order.on_the_way" -> Template(
             R.string.notification_order_on_the_way_title,
             R.string.notification_order_on_the_way_body,
@@ -95,6 +100,7 @@ object NotificationTemplates {
     fun formatBody(context: Context, eventKey: String, bodyRes: Int, args: Map<String, String>): String =
         when (eventKey) {
             "order.confirmed",
+            "order.cleaner_assigned",
             "order.on_the_way",
             "order.in_progress",
             "order.completed",

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -41,7 +42,8 @@ public class AdminReassignOrder
     public class Handler(
         IOrderRepository orderRepository,
         IEmployeeRepository employeeRepository,
-        IUserSessionProvider userSessionProvider
+        IUserSessionProvider userSessionProvider,
+        INotificationProducer notificationProducer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -96,6 +98,9 @@ public class AdminReassignOrder
             }
 
             order.AddAssignedEmployee(OrderEmployee.Create(order, target));
+
+            await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
+                order, notificationProducer, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

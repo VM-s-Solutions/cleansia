@@ -4,7 +4,6 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -273,20 +272,8 @@ public class TakeOrder
                 statusChanged = true;
             }
 
-            if (statusChanged && !string.IsNullOrEmpty(order.UserId))
-            {
-                await notificationProducer.NotifyAsync(
-                    order.UserId,
-                    NotificationEventCatalog.OrderConfirmed,
-                    new Dictionary<string, string>
-                    {
-                        ["orderId"] = order.Id,
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                    },
-                    order.TenantId,
-                    order.Id,
-                    cancellationToken);
-            }
+            await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
+                order, notificationProducer, cancellationToken);
 
             if (statusChanged && !string.IsNullOrEmpty(order.CustomerEmail))
             {

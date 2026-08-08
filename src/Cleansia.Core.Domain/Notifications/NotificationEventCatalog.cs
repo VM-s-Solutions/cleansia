@@ -24,6 +24,19 @@ public static class NotificationEventCatalog
     public const string RecurringScheduled = "recurring.scheduled";
 
     /// <summary>
+    /// Customer-targeted: a cleaner is now committed to this order. Produced wherever an assignment
+    /// row is created — <c>TakeOrder</c> and <c>AdminReassignOrder</c>. Args: <c>orderId</c> (deep
+    /// link) + <c>orderNumber</c> (loc); no cleaner name, which belongs on the order detail the deep
+    /// link opens rather than on a lock screen.
+    ///
+    /// <para>Distinct from <see cref="OrderConfirmed"/> on purpose. <c>Confirmed</c> is overloaded —
+    /// "money settled" OR "cleaner assigned" — and two of <see cref="OrderConfirmed"/>'s producers
+    /// (the Stripe webhook, the recurring cash confirmation) have no cleaner, so widening that key to
+    /// carry this claim would repeat the overloading one layer up.</para>
+    /// </summary>
+    public const string OrderCleanerAssigned = "order.cleaner_assigned";
+
+    /// <summary>
     /// Partner-side digest. Args: <c>count</c> (decimal-string count of new
     /// eligible orders). Body localized client-side ("N new jobs near you").
     /// </summary>
@@ -73,6 +86,7 @@ public static class NotificationEventCatalog
         PromoNewSitewide => NotificationCategory.Promo,
         DisputeReply => NotificationCategory.DisputeReply,
         RecurringScheduled => NotificationCategory.RecurringScheduled,
+        OrderCleanerAssigned => NotificationCategory.OrderUpdates,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,
         PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,

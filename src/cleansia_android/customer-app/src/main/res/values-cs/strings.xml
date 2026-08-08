@@ -1182,8 +1182,10 @@
     <string name="notification_channel_dispute_reply_name">Odpovědi podpory</string>
     <string name="notification_channel_dispute_reply_desc">Upozorní vás, když podpora odpoví na vaši reklamaci.</string>
 
-    <string name="notification_order_confirmed_title">Uklízeč nalezen! 🎉</string>
+    <string name="notification_order_confirmed_title">Rezervace potvrzena ✅</string>
     <string name="notification_order_confirmed_body">Vaše rezervace #%1$s je potvrzena. Klepněte pro zobrazení detailů.</string>
+    <string name="notification_cleaner_assigned_title">Uklízeč nalezen! 🎉</string>
+    <string name="notification_cleaner_assigned_body">K vaší rezervaci #%1$s je přiřazen uklízeč. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_on_the_way_title">Uklízeč je na cestě</string>
     <string name="notification_order_on_the_way_body">Váš uklízeč míří k rezervaci #%1$s.</string>
     <string name="notification_order_in_progress_title">Úklid probíhá</string>

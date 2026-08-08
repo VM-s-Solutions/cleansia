@@ -1,9 +1,15 @@
 # ADR-NNNN — The favourite cleaner is **assigned**, and assignment is a **reservation they must confirm**: ADR-0036's exclusivity mechanism is kept **byte-for-byte** and given the four things it lacks — a **name**, an explicit **decline**, a **customer-visible state**, and a **customer-facing exit** — where the reservation is **never an `OrderEmployee` row**, the release stays a **clock comparison with no actor**, the **confirm is `TakeOrder` unchanged**, and the **only new actor is a 5-minute sweep that ANNOUNCES the lapse and releases nothing**; the customer's re-offer is **capped at two rounds** (Invariant H relaxed 90% → **80%**) and *"a random cleaner"* is ruled to be **the open board, named** — not a second dispatch model
 
 - **Status:** `proposed` — drafted 2026-08-08 by the `architect` in **author** mode, on direct owner
-  instruction recorded as the answer to `Q-PROMISE-02`. **Not yet challenged.** Numbers are allocated at
-  acceptance; this file lives in `drafts/`.
-- **Date:** 2026-08-08 (drafted)
+  instruction recorded as the answer to `Q-PROMISE-02`; **revised the same day to fold in the owner's
+  answers to all four questions the first draft escalated** (`Q-ASSIGN-01…04`, §Owner rulings). **Not
+  yet challenged.** Numbers are allocated at acceptance; this file lives in `drafts/`.
+- **Date:** 2026-08-08 (drafted) / 2026-08-08 (owner answers folded in)
+- **Owner rulings this ADR carries, and none is reopened by a later reading:** `Q-ASSIGN-01` → **a
+  promise, not a name** (§D5.2) · `Q-ASSIGN-02` → **two rounds stand** (§D5.3) · `Q-ASSIGN-03` → **not
+  now, and it is a BUILD not a flip** (§D13) · `Q-ASSIGN-04` → **the reservation is confirmed**, plus a
+  new owner sentence that adds a customer-facing confirmation message and a terminal state (§D10.2,
+  §D10.3).
 - **Partially supersedes ADR-0036** — in **exactly three places**, enumerated in §D0. Everything else in
   ADR-0036 stands **unchanged and is relied upon**: D1's exclusivity, D2's stored-deadline storage rule
   and its aggregate-owned pair, D3's formula/floor/ceiling, D4 and D4.1's *notify on a wider predicate*,
@@ -37,6 +43,12 @@
   > employee to confirm the order; if not then to offer customer either select another employee that
   > will go through the same flow of approval, or suggest a random cleaner."*
 
+  **and (verbatim, 2026-08-08, answering `Q-ASSIGN-04`) — the sentence that adds the two things the
+  first draft did not have:**
+  > *"They either have to confirm that they took this order and then there is a message for the
+  > customer that it was confirmed. If it's declined then it's gonna propose to find another cleaner,
+  > if no found and none confirmed then a random is assigned."*
+
 ---
 
 > ## AC1 — the ruling, in one sentence a test can check
@@ -64,6 +76,16 @@
 > the order is reserved for one named person, they may accept or refuse, the customer is told, and the
 > platform acts when nobody answers.
 
+> ## AC4 — the customer hears from us exactly once per reservation, and never about a person
+>
+> **A reservation produces exactly one customer-facing message: `order.cleaner_assigned` if it is
+> confirmed, or `order.preferred_offer_closed` if it ends without a confirmation. Never both, never
+> zero, and never one that names a decline, a delay, a reason, or a substitute's identity.**
+>
+> *(`order.cleaner_assigned` is not perk-scoped — it fires for every assignment on the platform, which
+> is how it also retires the false statement in §D10.2. Within a reservation, exactly one of the two
+> fires.)*
+
 ---
 
 ## Context — every citation below was re-verified by reading, 2026-08-08
@@ -85,8 +107,14 @@ Verified:
 digest-bypassing partner push the owner asks for is already shipped**, with its own documented
 contract: it does not stamp `Employee.LastNewJobsDigestAt`, and it rides
 `NotificationCategory.NewJobsAvailable` so a muted cleaner is not pushed around their own mute
-(`NotificationEventCatalog.cs:32-44`). **This ADR adds ZERO partner-targeted notification events**
-(§D10), which is why the notification cost the brief anticipated is not this decision's cost.
+(`NotificationEventCatalog.cs:32-44`).
+
+**⇒ This ADR adds ZERO partner-targeted notification events**, and the claim is checkable rather than
+asserted: `NotificationFeedEventKeys.Partner` is unchanged by this design, and `git diff` on
+`NotificationEventCatalog.cs` adds exactly one constant, whose `GetCategoryFor` arm maps to
+`NotificationCategory.OrderUpdates` — a **customer** category. §D10.
+
+**The customer side is the opposite, and the census there found something worse than a gap.** §D10.2.
 
 ### What else already ships (the whole of ADR-0036 and ADR-0039 landed while their living doc still said "nothing is shipped yet")
 
@@ -113,9 +141,12 @@ valuable paragraph in this document:**
 | *"ask employee to **confirm** the order"* | **SHIPPED as a mechanism, MISSING as a surface.** "Confirm" is `TakeOrder`. The held order appears only on the cleaner's ordinary available board, which is exactly why it reads as *priority*, not *assignment*. |
 | *"if not…"* — an explicit refusal | **MISSING.** There is no decline. Silence is the only refusal, and it is indistinguishable from not having looked. |
 | *"…then offer customer either select another employee… or suggest a random cleaner"* | **MISSING entirely.** The customer is told nothing at any point, and there is no way to change a preference after booking. |
+| *"…there is a message for the customer that it was confirmed"* (2026-08-08) | **MISSING, and the surface that looks like it is a live false statement.** §D10.2 — `order.confirmed`'s customer copy is *"Cleaner found! 🎉"* and two of its three producers have no cleaner, while the third is suppressed on the card path. |
+| *"if no found and none confirmed then a random is assigned"* (2026-08-08) | **SHIPPED as a mechanism** — that is the open board, which is where a lapsed order already is. What is missing is the *sentence*, and §D10.3 rules what it may say. |
 
-**Two of five are missing, and one is a surface.** That is the real size of this feature, and it is why
-this ADR spends most of its length protecting what exists rather than building.
+**Three of seven are missing, one is a surface, and one is a live false statement.** That is the real
+size of this feature, and it is why this ADR spends most of its length protecting what exists rather
+than building.
 
 ### The tension the owner's words create, named precisely
 
@@ -147,7 +178,10 @@ the customer's cleaner arrives) is a different product and a different set of fa
 who never read the push turns up nowhere, and the platform has promised a person it cannot deliver.
 
 **This ADR builds the reservation, not the true assignment**, because the owner's own second clause
-demands it. §Escalations records the one question this leaves open.
+demands it — and **`Q-ASSIGN-04` has now confirmed it explicitly** (2026-08-08). The confirmation is not
+a formality the platform may skip on the cleaner's behalf: *"They **either have to confirm** that they
+took this order…"*. Silence leaves the job un-theirs, which is exactly what the reservation delivers and
+exactly what a true assignment would not.
 
 ---
 
@@ -275,8 +309,8 @@ and give it a confirmation state. **Rejected, on four grounds, three of which ar
 |---|---|---|
 | **a. A name** | a derived customer-facing state (§D7) and a cleaner-facing surface that is *not* the open board (§D9) | one query, one DTO block |
 | **b. A decline** | `DeclinePreferredOffer` — **one write**: `PreferredHoldUntilUtc = now` | one command, no column |
-| **c. Customer-visible state** | the state + the respond-by instant on the customer's order detail | ⚠️ `nswag-regen` |
-| **d. A customer-facing exit** | one message at lapse, and a **capped** re-offer (§D5) | one sweep, two columns |
+| **c. Customer-visible state** | the state + the respond-by instant on the customer's order detail, **plus a message when the cleaner confirms** (§D10.2) | ⚠️ `nswag-regen`, one notification key |
+| **d. A customer-facing exit** | one message at lapse, and a **capped** re-offer (§D5) ending in the open board (§D10.3) | one sweep, two columns, one notification key |
 
 **The confirm is `TakeOrder`, unchanged.** Not a new command, not a widened one, not a bypass. The
 button says "Confirm" instead of "Take"; the request is identical. This is what keeps
@@ -372,10 +406,18 @@ rejected (A5).** It would withhold the order from every *other* eligible cleaner
 by dice, which strictly *slows* the fill; and it would create a second dispatch model beside the pull
 board, for a customer who has just told us they no longer care who comes.
 
-⚠️ **What the customer is *shown* for this option is a product decision and is escalated, not
-defaulted** (`Q-ASSIGN-01`). Showing a **named** substitute would be a promise the platform cannot keep
-— that person may never take the job — and manufacturing that promise is precisely the defect
-`Q-PROMISE-02` was raised about in the first place.
+**What the customer is shown — `Q-ASSIGN-01`, ANSWERED by the owner 2026-08-08: a PROMISE, not a
+name.** The customer is told the platform will find them a cleaner; **no specific person is shown at
+this step.** That is now a binding constraint on the copy and it is checkable:
+
+> **The terminal sentence is about what Cleansia is DOING, never about an outcome or a person.**
+> *"We're finding you a cleaner"* — permitted. *"A cleaner has been assigned"*, *"A cleaner will be
+> assigned"*, or any substitute's **name**, **photo**, **rating** or **ETA** — forbidden.
+
+Naming a substitute would promise that a specific person is coming, which a pull board cannot deliver;
+and *"a cleaner **will** be assigned"* promises an outcome that **no** dispatch model can deliver
+(§D10.3). Manufacturing exactly that kind of promise is the defect `Q-PROMISE-02` was raised about, and
+reproducing it inside the fix would be the worst available outcome.
 
 #### D5.3 — Termination: a **count**, because the window formula does not terminate
 
@@ -401,6 +443,11 @@ public const decimal MinimumOpenBoardShare   = 0.80m;   // was 0.90m under ADR-0
 > **For every SEAT on every order, at least 80% of that seat's fill window is open to the entire board.**
 > Two rounds × a tenth each. The ceiling still binds each round independently, so the absolute worst
 > case is 24 hours of a fill window that is at least 120 hours long.
+
+**`Q-ASSIGN-02` — ANSWERED by the owner 2026-08-08: two rounds stand.** The derived cap is confirmed and
+the Invariant H relaxation (90% → 80%) is accepted. **Settled; not reopened by any later reading.** The
+number remains reasoned rather than measured — ADR-0036's measurement ticket is still a precondition —
+and it is a `const`, so moving it is a backend release with no client impact.
 
 **What happens when the customer keeps choosing people who decline** is therefore: they get exactly one
 second choice, and after it the order is on the open board and the platform stops asking. **Doing
@@ -575,8 +622,11 @@ learns they were passed over, and a decline notifies nobody.
 | **Pay** | untouched — `OrderEmployeePay` is created downstream of completion; no row, no pay. |
 | **Fiscal** | untouched. Nothing here touches receipt registration or the enforcement modes. |
 
-**The writer census: which shipped writers this ADR affects.** `TakeOrder.Handler` (one added write,
-D1.1) and **nothing else**. `AdminReassignOrder` (`:86`, `:98` — the only production caller of
+**The writer census: which shipped writers this ADR affects.** `TakeOrder.Handler` — **two changes, both
+named**: the implicit-decline write (D1.1) and the notification swap (D10.2 #1, which also drops the
+`statusChanged` guard **on the push only**, never on the status-track append). `AdminReassignOrder.Handler`
+— **one change**: it produces `order.cleaner_assigned` too, since it is the other path that creates an
+assignment row. **Nothing else.** `AdminReassignOrder`'s *assignment* behaviour (`:86`, `:98` — the only production caller of
 `UnassignEmployee` and the only non-take assigner) is untouched: an admin assignment during a live
 reservation already consumes it through `OrderVisibility` term 5 (`AssignedEmployees.Any()`), which
 ADR-0036 D5 widened for exactly this case.
@@ -609,14 +659,114 @@ Under a *disclosed* reservation that becomes "you were assigned a job that vanis
 offers list carries the conjunct from day one**; whether `CanBrowseOrderAsync` should also carry it is a
 pre-existing question and is **filed, not decided here**.
 
-### D10 — Notifications: **zero new partner events**, one new customer event
+### D10 — Notifications: **zero new partner events, two new customer events, and one live false statement to retire**
+
+#### D10.1 — The partner side, with its evidence
 
 | Direction | Event | New? |
 |---|---|---|
-| → cleaner, at booking | `order.preferred_offer` | **no** — shipped (`OrderFactory.cs:194`) |
+| → cleaner, at booking | `order.preferred_offer` | **no** — shipped (`NotificationEventCatalog.cs:44`, produced `OrderFactory.cs:194`) |
 | → cleaner, at lapse | *(none)* | **deliberately none.** "You missed a job" is a negative-reinforcement push on a channel the cleaner can mute wholesale. |
 | → cleaner, reminder before the deadline | *(none)* | **out of scope, with a flip condition** (A9): a measured non-response rate on ceiling-length windows. Not invented without evidence. |
-| → **customer**, at lapse or decline | **`order.preferred_offer_closed`** — args `orderId`, `orderNumber` | **yes, one.** Category: a new `NotificationCategory` member, or the existing `OrderUpdates`. Ruled: **`OrderUpdates`** — it is an update about the customer's own order and must not need its own opt-out to be discoverable. |
+
+**`NotificationFeedEventKeys.Partner` (`:47-53`) is unchanged by this ADR.** That is the check, not the
+claim.
+
+#### D10.2 — *"there is a message for the customer that it was confirmed"* — **no existing event covers it, and the one that looks like it is lying**
+
+The instruction was to check before minting. **Checked, and the check found a shipped defect.**
+
+`order.confirmed` has **three** producers. Read individually:
+
+| Producer | Is a cleaner on the job? | Fires? |
+|---|---|---|
+| `HandlePaymentNotification.cs:277-279` — the Stripe webhook | **NO.** Money settled; nobody has looked at the job. | always |
+| `ConfirmRecurringOrder.HandleCashAsync:124-126` — the customer's own confirm | **NO.** The customer tapped a button. | always |
+| `TakeOrder.cs:278-280` — a cleaner really took it | **YES** | **only when `statusChanged`** (`:268-274`) — i.e. only when the previous status was `New` |
+
+And the customer-facing string it renders, verbatim
+(`cleansia_android/customer-app/src/main/res/values/strings.xml:1211-1212`; the same string is in
+`cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings` and
+`NotificationsInboxSheet.swift`):
+
+```xml
+<string name="notification_order_confirmed_title">Cleaner found! 🎉</string>
+<string name="notification_order_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
+```
+
+> **The shipped behaviour is exactly inverted.** A **card** customer is told **"Cleaner found! 🎉"** the
+> moment their card clears — before any cleaner has seen the job — and is told **nothing at all** when a
+> cleaner actually takes it, because the webhook already moved the status to `Confirmed`, so
+> `statusChanged` is `false` on the take. A **recurring cash** customer is told *"Cleaner found!"* in
+> response to their own tap.
+
+This is `CLAUDE.md`'s documented hazard executed literally — *"`Confirmed` is deliberately overloaded —
+'money settled' OR 'cleaner assigned' — so **never** read it as 'a cleaner is on this job'"* — by a push
+template that reads it exactly that way. It is the same class as `Q-PROMISE-02`'s copy: **a sentence
+outrunning its mechanism.**
+
+**Ruling — one new key, and it is NOT scoped to this perk:**
+
+```csharp
+/// Customer-targeted: a cleaner is now committed to this order. Produced wherever an assignment
+/// row is created — TakeOrder (the take AND the preferred cleaner's Confirm, which are the same
+/// command) and AdminReassignOrder. Args: orderId (deep link) + orderNumber (loc). NO cleaner
+/// name: the name already lives on the order detail the deep link opens, and a lock screen is the
+/// wrong place to disclose it. Category: OrderUpdates.
+public const string OrderCleanerAssigned = "order.cleaner_assigned";
+```
+
+Three sub-rulings, each of which a reviewer can check:
+
+1. **`TakeOrder.Handler` produces `order.cleaner_assigned` instead of `order.confirmed`, and the
+   `statusChanged` guard is dropped for it** — the card path is precisely the case that is silent today.
+   (The `statusChanged` guard on the *status-track append* at `:270-274` is untouched, and so is the
+   status-update **email** at `:291-303`; the email is a separate surface and out of scope, noted.)
+2. **`order.confirmed` keeps its two honest producers and loses the cleaner claim in its copy.** After
+   this it means one thing — *your booking is confirmed* — which is what the webhook and the recurring
+   confirm actually establish. **This is a corrective copy change and, per ADR-0035's
+   corrective-ships-first rule, it ships ahead of the mechanism** (ticket **R0**): waiting for the
+   feature is choosing to keep a false statement live for the length of a build.
+3. **Not perk-scoped.** Scoping the new event to preferred-cleaner orders would leave the false
+   statement live for every other customer and would make the experience depend on whether a Plus
+   feature was used. Same key, same call site, no extra cost.
+
+⚠️ **Sequencing constraint, from the file's own doc-comment**
+(`NotificationFeedEventKeys.cs:26-29`): *"A key belongs in a keyset only once the audience's clients
+render it: the unread badge counts every row in the keyset, so a key listed ahead of its client template
+inflates the badge with a row the app drops unrendered."* **So `NotificationFeedEventKeys.Customer`
+gains `OrderCleanerAssigned` in the CLIENT wave, not the backend wave.** The push itself is unaffected
+(it is dispatched off `NotificationEventCatalog`, not the feed keyset); only the feed listing waits.
+
+#### D10.3 — *"if no found and none confirmed then a random is assigned"* — the terminal state
+
+**Mechanism: the open board.** After the second round lapses the order is already there — the clock put
+it there — so "a random cleaner" needs no code at all. **The platform does not pick anyone.** A5's
+rejection stands and is strengthened by `Q-ASSIGN-04`'s own first clause: a cleaner must *confirm*, so a
+model that puts a job on someone who never answered contradicts the same sentence.
+
+> ⚠️ **The sentence outruns the mechanism, and no available mechanism closes the gap — so the copy must
+> close it.** *"a random **is assigned**"* implies a completion: at the end of the ladder, somebody is on
+> the job. **An open board cannot guarantee that** — an order can reach its cleaning time unclaimed,
+> which is the ordinary shipped outcome ADR-0036's Invariant H exists to bound (*"the hold can never be
+> the reason an order goes unfilled"* concedes that orders do). **And actively assigning someone would
+> not close it either** — an assignment the cleaner never read produces a customer who was promised a
+> person and a flat nobody visits, which is a *stronger* false promise, not a weaker one.
+>
+> **Nothing in dispatch can promise a cleaner. Only an operational commitment can** (admin dispatch, a
+> staffed fallback) — a business capability, not an architecture.
+>
+> **⇒ The terminal copy inherits `Q-ASSIGN-01`'s answer verbatim: a promise to FIND, never a claim that
+> one IS found.** The owner's own words for that step — *"the platform will find them a cleaner"* — are
+> the specification, and they are already the right sentence.
+
+**Customer-side events, final:**
+
+| Event | When | New? |
+|---|---|---|
+| **`order.preferred_offer_closed`** — args `orderId`, `orderNumber` | a reservation ended with no confirmation (sweep, §D6) or was declined (§D6.4) | **yes.** Category `OrderUpdates` — an update about the customer's own order must not need its own opt-out to be discoverable. |
+| **`order.cleaner_assigned`** — args `orderId`, `orderNumber` | any cleaner is assigned to any order | **yes** (§D10.2). Category `OrderUpdates`. |
+| `order.confirmed` | booking/money confirmed | **no** — **but its copy is corrected** (§D10.2 #2) |
 
 **Does the 30-minute digest still make sense beside this?** Yes, and the two do not compete. The digest
 emits a **count** of open board work and stamps `Employee.LastNewJobsDigestAt`; the targeted offer is
@@ -656,9 +806,33 @@ the census found, each either handled above or filed:
 | A sweep that clears the pair kills the digest's hold-expiry freshness source | **handled** — D6.1 |
 | Recurring would emit one customer push per occurrence, forever | **handled** — D6.2 |
 | A beneficiary who takes a conflicting job leaves a live reservation nobody can honour | **handled** — D1.1 |
+| **`order.confirmed` tells a card customer "Cleaner found! 🎉" when no cleaner has seen the job, and tells them NOTHING when one takes it** | **handled, and it ships FIRST** — D10.2, ticket **R0** |
 | `CanBrowseOrderAsync` omits the offerability conjunct, so a beneficiary can open a `New`+Card order that may be cancelled under them | **filed, not fixed** — D9 |
 | The web customer wizard has **no preferred-cleaner picker at all** (`order-wizard.facade.ts` sends `undefined`), so a web customer cannot use the perk or the re-offer | **filed** — pre-existing, called out because the customer-side exit is meaningless without it |
 | The perk is effectively **mobile-cleaner-only** until the partner web SPA registers push devices (ADR-0036 D4.1's reachability gate) — so a customer's favourite who works from the web board can never be reserved | **pre-existing, restated** — under "assigned" it is a bigger product fact than it was under a silent hold |
+
+### D13 — Declines are **not recorded**, and the successor to that is a **build**, not a config flip
+
+**`Q-ASSIGN-03` — ANSWERED by the owner 2026-08-08: not now.** No decline policy, nothing enforced, and
+no cleaner is penalised for refusing.
+
+**The reason this needs its own decision section instead of a line in a table** is that the *next*
+reader will assume it is a switch, and it is not:
+
+> **A `DeclinePreferredOffer` writes `PreferredHoldUntilUtc = now` and stores nothing else. After the
+> write, the platform cannot tell a decline from a silence, and it cannot tell how many either has
+> produced.** There is no decline row, no counter, no timestamp, no reason. That is deliberate — a
+> policy nobody has ruled must not accrete from data collected "just in case" — but it means **any
+> future rule of the form "a cleaner who declines N times loses X" requires a schema change and a
+> backfill-less start date first, and it can never be applied retroactively.**
+
+**⇒ Recording declines is the precondition, and it is `A8`'s `PreferredOffer` child table** (the audit
+row per offer), which is the same artifact "never re-offer the same person across rounds" would need.
+When either is wanted, they are one ticket, not two — and until then this ADR's answer to *"can we just
+turn it on?"* is **no**.
+
+*(One consequence worth stating so it is not read as an oversight: `Order.PreferredOfferRound` counts
+**rounds**, not declines, and it is per-order. It can never answer a question about a cleaner.)*
 
 ---
 
@@ -670,7 +844,8 @@ the census found, each either handled above or filed:
 | **A2** | **A new `OrderStatus` (`AwaitingCleanerConfirmation`)** | The fulfilment axis is a property of the *work*. A multi-seat order can have one confirmed and one pending cleaner and one order-level status cannot express that. It also puts a new integer on the wire to three generated clients, forces an arm into `OrderAvailability` and therefore into ten surfaces, and is exactly the "second source of truth for one fact" ADR-0037 D5 forbids. |
 | **A3** | **A sweep that releases the reservation** (deletes/flips it, then notifies) | Reintroduces the failure mode ADR-0036 D2 was written to eliminate: *an order stuck reserved*, with no actor permitted to clear it if the timer is down. Splitting release (clock) from announcement (sweep) costs one column and keeps the catastrophic failure unreachable. |
 | **A4** | **Read-time expiry with the state on the assignment row** — every seat count learns a clock | Threads `now` through `Order.AvailableSpots`/`HasAvailableSpots` (`:136-137`), `OrderSpecification.cs:141` **and** `:163`, `NewJobsDigestService.cs:135`, and `OrderMappers.cs:94`. Five seat-count surfaces, each of which can be forgotten independently — the sprawl ADR-0036 D5 and ADR-0037 D0 exist to prevent. |
-| **A5** | **The platform picks a random substitute and offers them exclusively** | Withholds the order from every other eligible cleaner in favour of one chosen by dice, which strictly slows the fill, and manufactures a second dispatch model beside the pull board. *"Random cleaner"* is the board, named (D5.2). |
+| **A5** | **The platform picks a random substitute and offers them exclusively** — reading (ii) of *"a random is assigned"* | Withholds the order from every other eligible cleaner in favour of one chosen by dice, which strictly slows the fill, and manufactures a second dispatch model beside the pull board. **And it contradicts `Q-ASSIGN-04`'s own first clause** — *"they either have to confirm"* — since a job placed on someone who never answered is precisely what that clause forbids. **Crucially it does NOT buy the guarantee the sentence implies:** an assignment the cleaner never read produces a customer promised a person and a flat nobody visits, which is a *stronger* false promise than an unfilled board slot. *"Random cleaner"* is the board, named (D5.2 / D10.3). |
+| **A14** | **Reuse `order.confirmed` for the confirmation message** instead of minting `order.cleaner_assigned` | Checked, not assumed. It has three producers and **two of them have no cleaner** (`HandlePaymentNotification.cs:277-279`, `ConfirmRecurringOrder.cs:124-126`), while the third is suppressed on the card path by the `statusChanged` guard (`TakeOrder.cs:268-274`). Reusing it would either fire twice for card customers or keep the false statement. **Widening it to mean both things is the overloading `CLAUDE.md` warns about, one layer up.** §D10.2. |
 | **A6** | **Automatic cascade to the next serving cleaner, without asking the customer** | Rejected on the owner's own words — *"offer customer either select another employee… or suggest a random cleaner"* — and because each automatic round spends fill window with no human deciding it is worth spending. |
 | **A7** | **Tell the customer the cleaner declined (or did not answer)** | ADR-0039 D7's neutral-line rule, adopted: a sentence about what Cleansia can offer stays true when the predicate widens; a sentence about what a person did becomes a lie. Plus `Q-AVAIL-04` (lawful basis for disclosing a worker's state to a third party) is **open**, and the one benefit it buys is bought mechanically by D5.1's same-id refusal. |
 | **A8** | **A `PreferredOffer` child table** (an audit row per offer) | Richer — it would support "never re-offer anyone who already declined" across rounds and an offer audit — but it is a table, a migration and a new aggregate member to carry a counter that one `int` carries. **Recorded as the durable answer with its flip condition:** a product need for cross-round exclusion, or an audit requirement on offers. |
@@ -710,35 +885,60 @@ the census found, each either handled above or filed:
     row with `state == none`, never a dropped order. One automated test per client.
 11. **No country code appears in any new handler or validator.** `grep -niE '"(cz|sk|ua|de|pl|us)"'`
     over the new files returns nothing.
+12. **`NotificationFeedEventKeys.Partner` is byte-unchanged.** That is the check behind "zero new
+    partner events"; the claim is not asserted anywhere without it.
+13. **`git grep -n "NotificationEventCatalog.OrderConfirmed"` no longer returns `TakeOrder.cs`** — it
+    returns exactly `HandlePaymentNotification.cs` and `ConfirmRecurringOrder.cs`, the two producers
+    that mean *the booking is confirmed*. A third producer re-creates the overloading (D10.2).
+14. **`grep -rn "Cleaner found" src/` returns nothing** after R0. It currently returns three files
+    (`customer-app/.../values/strings.xml:1211`, `CleansiaCustomer/Resources/Localizable.xcstrings`,
+    `NotificationsInboxSheet.swift`), and every one of them is reachable with no cleaner on the job.
+15. **The card path is no longer silent.** A test: card order → webhook (`Confirmed` + `Paid`) → a
+    cleaner takes it → **exactly one** `order.cleaner_assigned` is produced, and `statusChanged` is
+    `false` throughout. This is the case that produces nothing today.
+16. **No terminal-state string asserts an outcome.** The five locales for the "any cleaner" step
+    contain no word meaning *assigned*, no cleaner name, photo, rating or ETA — `Q-ASSIGN-01` / D10.3.
+    A copy review item, listed here because it is the whole of the ruling's enforcement.
 
 ---
 
 ## Consequences
 
 **Positive**
-- The owner's five asks are delivered with **two new columns, one timer, three commands, one query and
-  zero changes to any of the three shipped rules** (`OrderAvailability`, `OrderVisibility`,
-  `LiveCommitmentsInWindow`).
+- The owner's seven asks are delivered with **two new columns, one timer, three commands, one query,
+  two notification keys and zero changes to any of the three shipped rules** (`OrderAvailability`,
+  `OrderVisibility`, `LiveCommitmentsInWindow`).
 - The customer's promise becomes true in all five locales at once: `cs`/`sk`/`ru`'s *"will be
   preferentially assigned"* is now backed, and `en`/`uk`'s *"prioritized"* is the understatement the
   owner named. **T-0544 / T-0491's copy work gains its ruling** and the affirmative wave is now owed.
 - A cleaner can say no in one tap, which is the first supply-side control this feature has ever had.
+- **A live customer-facing false statement is retired for every customer, not just Plus members** —
+  *"Cleaner found! 🎉"* fired at card clearance — and the card path stops being silent at the one moment
+  the customer most wants to hear from us (D10.2). **This is a strictly bigger win than the perk.**
 
 **Negative, and priced**
-- **Invariant H drops from 90% to 80%.** Two reservations on one booking. Escalated (`Q-ASSIGN-02`).
+- **Invariant H drops from 90% to 80%.** Two reservations on one booking. **Owner-ruled** (`Q-ASSIGN-02`,
+  2026-08-08) on a reasoned rather than measured number.
 - **There is now an actor in this feature.** ADR-0036 had none. The failure modes do not merge (D6/AC2),
   but the operational surface grew by one timer and one receipt column.
 - **⚠️ Two owner-only manual steps**: an `ef-migration` (two additive columns, no backfill, no index) and
   an `nswag-regen` (one nested optional DTO block + two customer endpoints + two partner endpoints).
-- **Six clients change**: three customer apps (state block, re-offer, one error key × 5 locales) and
-  three partner apps (a pending-offers surface + a decline). The web customer app cannot use any of it
-  until it gets a picker at all — filed.
-- **One new customer notification event** × 5 locales × 3 customer apps.
+- **Six clients change**: three customer apps (state block, re-offer, one error key × 5 locales, **two
+  new push/feed templates**) and three partner apps (a pending-offers surface + a decline). The web
+  customer app cannot use any of it until it gets a picker at all — filed.
+- **Two new customer notification events** × 5 locales × 3 customer apps, **plus one corrective copy
+  change to a shipped event** (`order.confirmed`).
+- **The terminal state is a promise the platform cannot guarantee, and this design makes that more
+  visible, not less.** Before, an unfilled order was silent; now the customer has been walked down a
+  ladder that ends there. The copy is constrained to a promise-to-find (D10.3), but **the residual — the
+  rate at which orders reach their cleaning time unclaimed — is pre-existing, unmeasured and unbounded**,
+  and nothing in dispatch can close it. See §Open.
 
 **Tickets this ADR asks the PM to file** *(sizes are relative; none is estimated in hours)*
 
 | # | Carries | Depends on |
 |---|---|---|
+| **R0 — ships FIRST, depends on nothing** | **The corrective copy wave.** `order.confirmed` loses *"Cleaner found! 🎉"* in 5 locales × both mobile customer clients (`values/strings.xml:1211-1212` + the four sibling locales; `Localizable.xcstrings`; `NotificationsInboxSheet.swift`). **ADR-0035's corrective-ships-first rule**: waiting for the mechanism is choosing to keep a false statement live for the length of a build. **No backend change in this ticket** | — |
 | **R1** | The two `Order` columns + the widened `GrantPreferredHold` + `PreferredOffer.StateOf` + `PreferredOfferInvariantTests`. ⚠️ `ef-migration` | — |
 | **R2** | `DeclinePreferredOffer` + the shared `NotifyPreferredOfferClosedAsync` + D1.1's implicit decline in `TakeOrder.Handler` | R1 |
 | **R3** | `NotifyLapsedPreferredOffers` + the timer + the tenancy shape + **the D6.1 digest regression test** | R1, R2 |
@@ -746,8 +946,10 @@ the census found, each either handled above or filed:
 | **R5** | `GetMyPendingOffers` (partner + partner-mobile) with the D9 conjunct set | R1 |
 | **R6** | The customer order-detail DTO block. ⚠️ `nswag-regen` | R1, R4 |
 | **R7** | The three partner clients: the pending-offers surface + Confirm/Decline. **"Confirm" calls `TakeOrder`** | R5 + regen |
-| **R8** | The three customer clients: state, respond-by, "choose another / any cleaner". ⚠️ **the row-dropping mapper pin per client** | R6 + regen |
+| **R8** | The three customer clients: state, respond-by, "choose another / any cleaner". ⚠️ **the row-dropping mapper pin per client**. ⚠️ **the D10.3 copy constraint — a promise to FIND, no name, no outcome** | R6 + regen |
 | **R9** | The affirmative copy wave — five locales, all clients — now that the promise is decided. Feeds T-0491 / T-0544 | R1 |
+| **R10 — backend** | `NotificationEventCatalog.OrderCleanerAssigned` (+ its `GetCategoryFor` arm) · **`TakeOrder.Handler` swaps `OrderConfirmed` → `OrderCleanerAssigned` and drops the `statusChanged` guard on the push only** · `AdminReassignOrder.Handler` produces it too · the D10.2 #1 card-path test. **Does NOT add the key to `NotificationFeedEventKeys.Customer`** | R0 |
+| **R11 — clients** | Push + feed templates for `order.cleaner_assigned` and `order.preferred_offer_closed`, 5 locales × 3 customer apps, **and only then** the two keys are added to `NotificationFeedEventKeys.Customer` — the badge counts every row in the keyset (`NotificationFeedEventKeys.cs:26-29`) | R10 |
 | **F1** *(filed, not built)* | `CanBrowseOrderAsync` omits the offerability conjunct (D9) | — |
 | **F2** *(filed, not built)* | The web customer wizard has no preferred-cleaner picker at all | — |
 | **F3** *(filed, not built)* | A per-template preferred-cleaner surface, which is what would let D6.2's suppression be lifted | — |
@@ -763,6 +965,15 @@ the census found, each either handled above or filed:
   > **A reservation must never consume the beneficiary's capacity.** Cap counters and calendar-overlap
   > predicates key on commitments, not offers. If representing an offer requires teaching either of
   > them a new term, the representation is wrong.
+- `patterns-backend.md` (or `consistency.md`) — a **new** rule, generalised from D10.2 and stated so it
+  is checkable rather than aspirational:
+  > **A notification key means ONE fact. If the column it is produced from is overloaded, the key must
+  > not be.** `Order.CurrentStatus == Confirmed` means *money settled* **or** *a cleaner took it*
+  > (`CLAUDE.md`, "never read it as 'a cleaner is on this job'"). A push key produced from all of its
+  > writers therefore says something false for some of them. **Before adding a producer to an existing
+  > key, read every other producer and ask whether the rendered string is true for each.** The check is
+  > mechanical: for each `NotificationEventCatalog.X`, `git grep` its producers and read the client
+  > string once.
 - `agents/knowledge/roles/preferred-cleaner-hold-resolver.md` — the resolver's "does NOT know" list
   gains: *the round count, the notification receipt, and whether anyone has been told* (it stays a pure
   read; the aggregate owns the counter and the notifier owns the receipt).
@@ -773,41 +984,24 @@ the census found, each either handled above or filed:
 
 ---
 
-## Escalations — decisions I deliberately did not default
+## Owner rulings — all four escalations ANSWERED 2026-08-08, and where each landed
 
-**`Q-ASSIGN-01` (blocking: no — but it blocks R8's copy) — for *"suggest a random cleaner"*, does the
-customer see a NAME, or "the first available cleaner"?**
-The **mechanism** is ruled (D5.2: the open board — the platform does not pick a substitute). What is not
-ruled is what the customer is shown. Naming a substitute would promise that a specific person is coming,
-which the pull board cannot deliver — and manufacturing exactly that kind of promise is what
-`Q-PROMISE-02` was raised about. Default taken: **none**, because the two answers have different diffs
-(a sentence vs. a name + a second picker) and one of them is a promise I may not make.
+**Zero escalations remain open in this ADR.** Each answer is recorded here with the section that
+executes it, so a later reader does not re-derive a settled question.
 
-**`Q-ASSIGN-02` (blocking: no) — Invariant H is relaxed from 90% to 80%. Is two rounds the right price?**
-Verbatim shape of the question: *a favourite-cleaner booking may now consume up to a fifth of its fill
-window across two reservations before it is fully open to the board — where before it consumed a tenth
-across one. Two rounds is derived from `MaxPreferredOfferRounds × PreferredHoldFraction ≤ 0.20`; one
-round would keep ADR-0036's 90% and cost the customer their second choice; three would take it to 27%
-and would break the invariant as a number rather than relax it. At what fill-rate cost do you want us to
-stop?* Default taken: **2**, because it is the smallest number that satisfies the owner's *"offer
-customer another"* clause at all. **We have no fill-rate measurement** — ADR-0036's own measurement
-ticket is still a precondition — so this number is reasoned, not measured, and it is a `const` (a
-backend release to change, no client impact).
+| Question | Owner's answer | Where it landed | Reopened by a later reading? |
+|---|---|---|---|
+| **`Q-ASSIGN-01`** — for the terminal step, does the customer see a **name** or a **promise**? | **A promise, not a name.** The customer is told the platform will find them a cleaner; no specific person is shown. | **D5.2** — a binding, checkable copy constraint (*what Cleansia is doing*, never an outcome or a person), and **D10.3** applies the same rule to the *"a random is assigned"* sentence. Verify #16. | **no** |
+| **`Q-ASSIGN-02`** — Invariant H 90% → 80%; is two rounds the right price? | **Keep two rounds.** The derived cap stands. | **D5.3** — `MaxPreferredOfferRounds = 2`, pinned against `MinimumOpenBoardShare` by `PreferredOfferInvariantTests`. Verify #8. | **no** |
+| **`Q-ASSIGN-03`** — does a cleaner who repeatedly declines lose the perk? | **Not now.** Declines stay unrecorded, nothing enforced. | **D13** — a full section, not a table row, because *the successor is a BUILD, not a config flip*: nothing records a decline, so any future policy needs A8's child table first and can never be applied retroactively. | **no** |
+| **`Q-ASSIGN-04`** — is the *true* assignment wanted, or the reservation? | **The reservation** — *"They either **have to confirm**…"* — plus a new sentence adding a customer-facing confirmation message and a terminal state. | **§Context** (the shape argument), **D10.2** (the confirmation message + the false statement it uncovered), **D10.3** (the terminal state). | **no** |
 
-**`Q-ASSIGN-03` (blocking: no) — does a cleaner who repeatedly declines lose the perk?**
-Not built and not defaulted. A decline is currently free and invisible; whether repeated declines should
-feed `GetMyServingCleaners`, the resolver, or a cleaner's rating is a supply-policy question that will
-otherwise become folklore the first time someone abuses it. Default taken: **none** — nothing records
-declines beyond the deadline write, so no policy can accrete by accident.
-
-**`Q-ASSIGN-04` (blocking: no — but it decides whether a wave 2 exists) — is the *true* assignment ever
-wanted?**
-This ADR builds the **reservation** the owner's own *"ask employee to confirm"* clause describes: the
-cleaner's silence leaves the job un-theirs. The stronger product — *the job is theirs whether or not
-they answer, and the customer's cleaner arrives* — is a different system with different failure modes (a
-cleaner who never read the push turns up nowhere and the platform has promised a person it cannot
-deliver), and it would need the `OrderEmployee` row this ADR rejects, with all four of A1's costs paid
-deliberately. Default taken: **the reservation**, on the owner's second clause.
+**What `Q-ASSIGN-04`'s answer changed in this draft, stated plainly:** it did not change the
+mechanism — the reservation was already what the first draft built — but it **added a customer-facing
+event that the first draft did not have**, and checking where that event should hang turned up a shipped
+customer-facing false statement (D10.2) that is now the first thing this feature ships. **The
+instruction to check rather than assume is what found it**; the first draft's own "adds zero partner
+events" line would have made "so it adds nothing" an easy and wrong inference on the customer side.
 
 ---
 
@@ -828,6 +1022,18 @@ deliberately. Default taken: **the reservation**, on the owner's second clause.
   larger silence than it was.
 - **Admin visibility of a live reservation** — still not decided (ADR-0036 left it open, and this ADR
   adds a customer-facing state that support will be asked about).
+- **The unfilled-at-cleaning-time rate is unmeasured, and D10.3's copy is the only thing standing
+  between the ladder and a promise the platform cannot keep.** Nothing in dispatch can guarantee a
+  cleaner; only an operational commitment can. **Offered to the PM as a non-blocking owner question
+  rather than filed here** (I do not hold `questions/open.md`), in this shape: *"the flow now ends with
+  'we're finding you a cleaner'. Some orders reach their cleaning time with nobody on them — that is
+  true today and this feature does not change it, but it does now arrive at the end of a conversation
+  we started. Do you want an operational fallback (admin dispatch / a staffed cleaner) at that point,
+  or is 'we're still looking' the final state?"* **No default taken** — a fallback is a business
+  capability, not an architecture, and building either answer's copy before it is settled is a guess.
+- **`order.confirmed`'s remaining copy is a corrective, not a redesign.** R0 removes the cleaner claim;
+  what the string *should* say instead (*"Your booking is confirmed"*) is a copy-panel call, and the
+  affirmative wave (R9) is where it belongs.
 
 ---
 

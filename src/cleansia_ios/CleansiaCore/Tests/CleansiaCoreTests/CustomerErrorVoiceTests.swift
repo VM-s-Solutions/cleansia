@@ -82,6 +82,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "auth.invalid_reset_token": "ChangePassword",
         "auth.refresh_token_reused": "RefreshToken",
         "auth.same_reset_password": "ChangePassword",
+        "auth.social_account_not_found": "AppleAuth, GoogleAuth",
         "auth.too_many_attempts": "ChangePassword, ConfirmUserEmail",
         "city.not_serviced": "OrderAddressResolver",
         "common.invalid_enum_value": "ConfirmRecurringOrder, CreateDispute, CreateOrder +3 more",

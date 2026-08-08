@@ -701,6 +701,41 @@
         }
       }
     },
+    "error.auth.social_account_not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find an account for that sign-in. Please sign up first."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы не нашли аккаунт для этого входа. Сначала зарегистрируйтесь."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми не знайшли облікового запису для цього входу. Спочатку зареєструйтеся."
+          }
+        }
+      }
+    },
     "error.auth.too_many_attempts" : {
       "extractionState" : "manual",
       "localizations" : {

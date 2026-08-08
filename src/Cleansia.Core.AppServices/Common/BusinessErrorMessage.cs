@@ -16,6 +16,11 @@ public static class BusinessErrorMessage
     public const string InvalidConfirmationCode = "auth.invalid_confirmation_code";
     public const string InvalidGoogleUserToken = "auth.invalid_google_token";
     public const string InvalidAppleUserToken = "auth.invalid_apple_token";
+    // Google/Apple resolved a valid identity that matches no account, on a call that did not assert the
+    // signup terms tick. Sign-in refuses rather than provisioning: the consent record we want is the one
+    // made when the account was created, so the tick belongs on the signup screen alone — asking a
+    // returning user to re-accept on every sign-in is both odd and evidentially worthless.
+    public const string SocialAccountNotFound = "auth.social_account_not_found";
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";

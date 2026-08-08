@@ -1233,6 +1233,7 @@
     <string name="error_device_not_found">Это устройство больше не зарегистрировано.</string>
     <string name="error_address_mapbox_coords_required">Пожалуйста, выберите адрес из подсказок.</string>
     <string name="error_auth_invalid_apple_token">Недействительный токен Apple</string>
+    <string name="error_auth_social_account_not_found">Мы не нашли аккаунт для этого входа. Сначала зарегистрируйтесь.</string>
     <string name="error_auth_too_many_attempts">Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз.</string>
     <string name="error_company_not_found">Информация о компании не найдена</string>
     <string name="error_country_not_existing_id">Страна не найдена</string>

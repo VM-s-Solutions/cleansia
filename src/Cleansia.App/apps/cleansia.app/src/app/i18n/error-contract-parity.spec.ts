@@ -121,6 +121,10 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // the thing that is missing when it lands.
   'auth.invalid_google_token',
   'auth.invalid_apple_token',
+  // Social sign-in provisions nothing: the terms tick lives on the signup screen, so a Google/Apple
+  // identity that matches no account is refused here and sent there. Reachable from BOTH the login
+  // and the register screen, since they share one endpoint.
+  'auth.social_account_not_found',
   // User — register / profile
   'user.email_confirmed',
   'user.existing_email',

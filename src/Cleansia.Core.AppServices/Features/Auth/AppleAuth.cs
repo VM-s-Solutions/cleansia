@@ -48,11 +48,17 @@ public class AppleAuth
         }
     }
 
+    // TermsAccepted is what tells a signup apart from a sign-in: only the signup screen carries the terms
+    // tick, and only a call that asserts it may bring an account into existence. It is client-asserted
+    // and deliberately so — a checkbox is not a fact the server can observe — so it is NOT an
+    // authorization control; it is the record of which screen the account was created from. It defaults
+    // to false so a caller that says nothing gets the sign-in-only behaviour.
     public record Command(
         string IdentityToken,
         string RawNonce,
         string? FirstName,
-        string? LastName)
+        string? LastName,
+        bool TermsAccepted = false)
         : ICommand<JwtTokenResponse>;
 
     public class Handler(
@@ -167,6 +173,12 @@ public class AppleAuth
 
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
+            }
+
+            if (!command.TermsAccepted)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
             }
 
             // The display name comes from the command when Apple sent one — it only ever does on the FIRST

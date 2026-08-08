@@ -1233,6 +1233,7 @@
     <string name="error_device_not_found">Toto zariadenie už nie je registrované.</string>
     <string name="error_address_mapbox_coords_required">Vyberte prosím adresu z návrhov.</string>
     <string name="error_auth_invalid_apple_token">Neplatný Apple token</string>
+    <string name="error_auth_social_account_not_found">K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte.</string>
     <string name="error_auth_too_many_attempts">Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.</string>
     <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>

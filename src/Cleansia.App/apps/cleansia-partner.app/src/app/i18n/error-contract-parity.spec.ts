@@ -123,6 +123,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.invalid_reset_token',
   'auth.refresh_token_reused',
   'auth.same_reset_password',
+  // Same GoogleAuth endpoint as the customer host: an identity matching no account is refused rather
+  // than provisioned, so the partner surface can return it too.
+  'auth.social_account_not_found',
   'auth.too_many_attempts',
   // Shared field-level rules
   'common.max_length',

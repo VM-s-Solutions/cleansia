@@ -1434,6 +1434,7 @@
       "invalid_confirmation_code": "Tento potvrdzovací kód je neplatný alebo vypršal.",
       "invalid_google_token": "Prihlásenie cez Google sa nepodarilo. Skúste to znova.",
       "invalid_apple_token": "Prihlásenie cez Apple sa nepodarilo. Skúste to znova.",
+      "social_account_not_found": "K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte.",
       "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
       "invalid_reset_token": "Tento kód na obnovenie hesla je neplatný alebo vypršal.",
       "same_reset_password": "Vaše nové heslo sa musí líšiť od súčasného.",

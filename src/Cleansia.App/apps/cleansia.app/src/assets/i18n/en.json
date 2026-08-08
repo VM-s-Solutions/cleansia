@@ -1434,6 +1434,7 @@
       "invalid_confirmation_code": "That confirmation code is invalid or has expired.",
       "invalid_google_token": "Google sign-in failed. Please try again.",
       "invalid_apple_token": "Apple sign-in failed. Please try again.",
+      "social_account_not_found": "We couldn't find an account for that sign-in. Please sign up first.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
       "invalid_reset_token": "That reset code is invalid or has expired.",
       "same_reset_password": "Your new password must be different from your current one.",

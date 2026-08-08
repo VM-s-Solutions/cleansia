@@ -69,6 +69,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "auth.invalid_google_token": "GoogleAuth",
         "auth.invalid_refresh_token": "RefreshToken",
         "auth.refresh_token_reused": "RefreshToken",
+        "auth.social_account_not_found": "GoogleAuth",
         "auth.too_many_attempts": "ConfirmUserEmail",
         "common.max_length": "AddOrderNote, BaseAuthValidator, ReportOrderIssue +7 more",
         "common.required": "AddOrderNote, BaseAuthValidator, CompleteOrder +37 more",

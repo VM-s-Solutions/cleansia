@@ -1019,6 +1019,7 @@
       "invalid_confirmation_code": "Недействительный код подтверждения",
       "invalid_google_token": "Недействительный токен Google",
       "invalid_apple_token": "Недействительный токен Apple",
+      "social_account_not_found": "Аккаунт для этого входа не найден. Сначала зарегистрируйтесь.",
       "invalid_password_format": "Недопустимый формат пароля",
       "invalid_reset_token": "Недействительный токен для сброса пароля",
       "same_reset_password": "Новый пароль совпадает со старым",

@@ -268,7 +268,7 @@ _No open Wave-1 *planning* questions remain._
   existing catalog items are flagged **incomplete / needs-translation** until a translation is supplied
   (they are not auto-filled and there is no fallback). No `Language.IsDefault`/`SetDefaultLanguage` work.
   CC-02/CC-03/CC-04 were never gated on this and proceed regardless.
-- _(superseded answer placeholder removed)_ _(owner fills in — choose (a) Language.IsDefault + fallback, or (b) mandatory-all + documented
+- _(superseded placeholder — the live answer is the bullet above; retained line neutralised 2026-08-08)_ _(choose (a) Language.IsDefault + fallback, or (b) mandatory-all + documented
   add-a-language behavior)_
 
 ### Q-W3-2 — [blocking: no] Currency on the partner "my period pay" summary
@@ -716,7 +716,7 @@ _No open Wave-1 *planning* questions remain._
   lint gate can be flipped to blocking) both sharpen the same edge from the workflow side; this
   question is the repo-settings side of it.
 - Default taken: **none applied** — no agent can change repo settings, and nothing is blocked on it.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Do not think about it — branch protection is the owner's concern.** Same ruling as the sibling `Q-CI-01`; recorded on both entries so neither reads as open. No agent can change repository settings in any case.
 
 ---
 
@@ -1705,7 +1705,7 @@ remains open and non-blocking** — I cannot change repository settings in any c
   than an architecture one.
 - Default taken: **none, deliberately.** Nothing was invented for the sign-in screen. The signup gate
   ships as ruled; this stays open and visible rather than being silently defaulted either way.
-- Answer: _(owner fills in)_
+- Answer: _(answered above — this copy is the archived original)_
 
 ---
 

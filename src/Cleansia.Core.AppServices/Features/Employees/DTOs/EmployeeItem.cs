@@ -29,4 +29,5 @@ public record EmployeeItem(
     BlobFileDto? ProfilePhoto,
     Code Profile,
     Code AuthenticationType,
-    Dictionary<string, List<TimeRange>>? Availability);
+    Dictionary<string, List<TimeRange>>? Availability,
+    int? JobRadiusKm);

@@ -88,8 +88,12 @@ public class EmployeeSelfUpdateIdInertTests
         new UpdateIdentificationInfo.Command(
             employeeId, CountryId, "AB12345", EmployeeEntityType.NaturalPerson, CountryId, "12345678", null, null));
 
+    private Task<ValidationResult> ValidateJobRadiusAsync(string? employeeId) => ValidateAsync(
+        new UpdateJobRadius.Validator(_employees.Object, _session.Object),
+        new UpdateJobRadius.Command(employeeId, 50));
+
     public static TheoryData<string> Features =>
-        ["PersonalInfo", "AddressInfo", "EmergencyContact", "Availability", "IdentificationInfo"];
+        ["PersonalInfo", "AddressInfo", "EmergencyContact", "Availability", "IdentificationInfo", "JobRadius"];
 
     private Task<ValidationResult> ValidateAsync(string feature, string? employeeId) => feature switch
     {
@@ -98,6 +102,7 @@ public class EmployeeSelfUpdateIdInertTests
         "EmergencyContact" => ValidateEmergencyContactAsync(employeeId),
         "Availability" => ValidateAvailabilityAsync(employeeId),
         "IdentificationInfo" => ValidateIdentificationInfoAsync(employeeId),
+        "JobRadius" => ValidateJobRadiusAsync(employeeId),
         _ => throw new ArgumentOutOfRangeException(nameof(feature)),
     };
 

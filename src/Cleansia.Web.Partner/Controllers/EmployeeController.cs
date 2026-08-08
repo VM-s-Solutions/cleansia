@@ -61,6 +61,17 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
         return HandleResult<UpdateBankDetails.Response>(result);
     }
 
+    [HttpPut("UpdateJobRadius")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateJobRadius.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateJobRadius([FromBody] UpdateJobRadius.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<UpdateJobRadius.Response>(result);
+    }
+
     [HttpGet("GetMyPayoutDetails")]
     [Permission(Policy.CanViewEmployeePayoutDetails)]
     [ProducesResponseType(typeof(MyPayoutDetails), StatusCodes.Status200OK)]

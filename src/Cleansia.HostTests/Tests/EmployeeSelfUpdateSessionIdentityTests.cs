@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
@@ -27,6 +28,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         BankDetails,
         IdentificationInfo,
         FullProfile,
+        JobRadius,
     }
 
     // Seeded baselines from DomainSeed.BuildCompleteEmployee — what an untouched victim still reads.
@@ -42,6 +44,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     private const string WrittenAvailabilityDay = "2026-09-01";
     private const string WrittenPassportId = "SELFPASS9";
     private const string WrittenIban = "CZ3155000000005885638003";
+    private const int WrittenJobRadiusKm = 50;
 
     private sealed record Seeded(string UserId, string EmployeeId, string Email);
 
@@ -74,6 +77,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         Route.BankDetails => "/api/Employee/UpdateBankDetails",
         Route.IdentificationInfo => "/api/Employee/UpdateIdentificationInfo",
         Route.FullProfile => "/api/Employee/UpdateEmployee",
+        Route.JobRadius => "/api/Employee/UpdateJobRadius",
         _ => throw new ArgumentOutOfRangeException(nameof(route)),
     };
 
@@ -146,6 +150,10 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
             ["documents"] = null,
             ["availability"] = null,
         },
+        Route.JobRadius => new()
+        {
+            ["radiusKm"] = WrittenJobRadiusKm,
+        },
         _ => throw new ArgumentOutOfRangeException(nameof(route)),
     };
 
@@ -194,6 +202,9 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
                 Assert.Equal(WrittenFirstName, employee.User!.FirstName);
                 Assert.Equal(WrittenStreet, employee.Address!.Street);
                 break;
+            case Route.JobRadius:
+                Assert.Equal(WrittenJobRadiusKm, employee.JobRadiusKm);
+                break;
         }
     }
 
@@ -224,6 +235,10 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
                 Assert.Equal(SeededFirstName, employee.User!.FirstName);
                 Assert.Equal(SeededStreet, employee.Address!.Street);
                 break;
+            case Route.JobRadius:
+                // The seeded cleaner has never chosen one, and that null is the country-wide default.
+                Assert.Null(employee.JobRadiusKm);
+                break;
         }
     }
 
@@ -240,6 +255,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]
+    [InlineData(Route.JobRadius)]
     public async Task Save_with_no_employee_id_at_all_updates_the_callers_own_row(Route route)
     {
         var caller = await SeedCleanerAsync($"esu-noid-{route}@hosttests.local");
@@ -261,6 +277,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]
+    [InlineData(Route.JobRadius)]
     public async Task Save_naming_another_cleaner_updates_the_caller_and_leaves_the_victim_untouched(Route route)
     {
         var caller = await SeedCleanerAsync($"esu-caller-{route}@hosttests.local");
@@ -284,6 +301,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]
+    [InlineData(Route.JobRadius)]
     public async Task Save_carrying_the_callers_own_employee_id_still_works(Route route)
     {
         var caller = await SeedCleanerAsync($"esu-ownid-{route}@hosttests.local");
@@ -316,6 +334,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [Theory]
     [InlineData(Route.FullProfile)]
     [InlineData(Route.BankDetails)]
+    [InlineData(Route.JobRadius)]
     public async Task Partner_web_host_routes_are_callable_without_an_employee_id(Route route)
     {
         var caller = await SeedCleanerAsync($"esu-web-{route}@hosttests.local");
@@ -330,6 +349,7 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [Theory]
     [InlineData(Route.FullProfile)]
     [InlineData(Route.BankDetails)]
+    [InlineData(Route.JobRadius)]
     public async Task Partner_web_host_ignores_a_foreign_employee_id(Route route)
     {
         var caller = await SeedCleanerAsync($"esu-web-caller-{route}@hosttests.local");
@@ -341,6 +361,42 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         HttpAssert.IsOk(response);
         await AssertUntouchedAsync(route, victim.EmployeeId);
         await AssertWrittenAsync(route, caller.EmployeeId);
+    }
+
+    /// <summary>
+    /// A radius outside the bounds is refused with the contract code — and, crucially, the row keeps its
+    /// previous value. The handler is <c>internal</c>, so this is the only place the validator's verdict
+    /// can be seen reaching a client.
+    /// </summary>
+    [Fact]
+    public async Task An_out_of_range_job_radius_is_refused_and_leaves_the_row_unchanged()
+    {
+        var caller = await SeedCleanerAsync("esu-radius-range@hosttests.local");
+
+        var response = await MobileClient(TokenFor(caller, MobileAudience))
+            .PutAsync("/api/Employee/UpdateJobRadius", JsonContent.Create(new { radiusKm = 100_000 }));
+
+        await HttpAssert.RejectedAsync(response, BusinessErrorMessage.EmployeeJobRadiusOutOfRange);
+        await AssertUntouchedAsync(Route.JobRadius, caller.EmployeeId);
+    }
+
+    /// <summary>
+    /// Clearing the radius is a legitimate write, not a missing field: it is how a cleaner asks for the
+    /// country-wide board back, and it must survive MVC's binding of an absent/null member.
+    /// </summary>
+    [Fact]
+    public async Task A_null_job_radius_clears_the_preference()
+    {
+        var caller = await SeedCleanerAsync("esu-radius-clear@hosttests.local");
+        var client = MobileClient(TokenFor(caller, MobileAudience));
+
+        HttpAssert.IsOk(await client.PutAsync(
+            "/api/Employee/UpdateJobRadius", JsonContent.Create(new { radiusKm = WrittenJobRadiusKm })));
+        await AssertWrittenAsync(Route.JobRadius, caller.EmployeeId);
+
+        HttpAssert.IsOk(await client.PutAsync(
+            "/api/Employee/UpdateJobRadius", JsonContent.Create(new { radiusKm = (int?)null })));
+        await AssertUntouchedAsync(Route.JobRadius, caller.EmployeeId);
     }
 
     [Fact]

@@ -108,6 +108,24 @@ public class TimerSweepFailureBranchTests
     }
 
     [Fact]
+    public async Task SendPreCleaningReminders_Failure_Result_Does_Not_Throw()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<SendPreCleaningReminders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<SendPreCleaningReminders.Response>());
+
+        var handler = new SendPreCleaningRemindersHandler(
+            _mediator.Object, NullLogger<SendPreCleaningRemindersHandler>.Instance);
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
+
+        Assert.Null(ex);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<SendPreCleaningReminders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task ExpireStaleReferrals_Failure_Result_Does_Not_Throw()
     {
         _mediator

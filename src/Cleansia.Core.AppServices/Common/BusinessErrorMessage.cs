@@ -189,6 +189,7 @@ public static class BusinessErrorMessage
     public const string EmployeeNotApproved = "employee.not_approved";
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
+    public const string EmployeeJobRadiusOutOfRange = "employee.job_radius_out_of_range";
 
     // Employee Documents
     public const string DocumentNotFound = "employee_document.not_found";

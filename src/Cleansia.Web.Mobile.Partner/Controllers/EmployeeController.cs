@@ -126,6 +126,17 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
         return HandleResult<UpdateAvailability.Response>(result);
     }
 
+    [HttpPut("UpdateJobRadius")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateJobRadius.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateJobRadius([FromBody] UpdateJobRadius.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<UpdateJobRadius.Response>(result);
+    }
+
     [HttpPost("SaveMyDocuments")]
     [Permission(Policy.CanUploadEmployeeDocument)]
     [EnableRateLimiting("auth")]

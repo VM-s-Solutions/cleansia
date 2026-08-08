@@ -14,10 +14,18 @@ namespace Cleansia.Core.AppServices.Services;
 /// The "new jobs available" digest sweep. Its cadence is the timer's, not this class's — the
 /// <c>SendNewJobsDigestCron</c> app-setting (production default: hourly, on the hour).
 ///
-/// Targeting (v1):
+/// Targeting:
 ///   - <see cref="Domain.Users.Employee.ContractStatus"/> ∈ { Approved, Active }
 ///   - <see cref="Domain.Users.Employee.WorkCountryId"/> matches the order's
-///     customer-address country
+///     customer-address country. This is jurisdiction, not geography, and it is
+///     unconditional — the radius below narrows WITHIN it and never replaces it.
+///   - The order is within <see cref="Domain.Users.Employee.JobRadiusKm"/> of the cleaner's
+///     home address, per <see cref="Domain.Orders.JobProximity"/> — the sentence the partner
+///     app has been promising ("jobs near you", "distance from your home"). A cleaner with no
+///     radius, or whose home never geocoded, keeps the country-wide board; an order whose own
+///     address never geocoded is not counted as near. The rule owns all three fallbacks and
+///     explains why the cleaner-side ones fail open while the order-side one fails closed.
+///     Two stages: a coarse bounding box in SQL, the exact great-circle test in memory.
 ///   - The order satisfies <see cref="Domain.Orders.OrderAvailability"/> — the one
 ///     offerability rule every surface reads — has a free spot, isn't
 ///     already assigned to this cleaner, and hasn't started yet
@@ -101,7 +109,10 @@ public class NewJobsDigestService(
                 e.UserId,
                 e.WorkCountryId!,
                 e.TenantId,
-                e.LastNewJobsDigestAt))
+                e.LastNewJobsDigestAt,
+                e.JobRadiusKm,
+                e.Address!.Latitude,
+                e.Address!.Longitude))
             .ToListAsync(cancellationToken);
 
         if (cleaners.Count == 0)
@@ -113,6 +124,8 @@ public class NewJobsDigestService(
         var totalEnqueued = 0;
         var totalSkippedNoNewJobs = 0;
         var totalSkippedMuted = 0;
+        var totalRadiusUnusable = 0;
+        var totalDroppedFarAway = 0;
 
         foreach (var cleaner in cleaners)
         {
@@ -138,11 +151,36 @@ public class NewJobsDigestService(
                     .Where(OrderAvailability.IsOfferableSql)
                     .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));
 
+                // "Near you", when the cleaner asked for it. The work-country term above is
+                // jurisdiction and stays unconditionally; this narrows within it and never widens.
+                var radiusApplies = JobProximity.Applies(
+                    cleaner.JobRadiusKm, cleaner.HomeLatitude, cleaner.HomeLongitude);
+                if (radiusApplies)
+                {
+                    board = board.Where(JobProximity.WithinBoundingBoxSql(JobProximity.BoundingBox(
+                        cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value, cleaner.JobRadiusKm!.Value)));
+                }
+                else if (cleaner.JobRadiusKm is not null)
+                {
+                    // The cleaner asked for a radius and we cannot honour it, because their home never
+                    // geocoded. Counting it is the whole point: this fallback is silent by design (they
+                    // keep the country-wide board), so nothing else would ever surface the gap.
+                    totalRadiusUnusable++;
+                }
+
                 // Pull just enough to make a decision: count + the cleaning times the not-busy
-                // filter needs. Bounded by the floor above and by the freshness rule.
+                // filter needs, plus the coordinates the exact distance test needs. Bounded by the
+                // floor above and by the freshness rule.
                 var newOrders = await ApplyFreshness(
                         board, sinceUtc, releasedWindow, cleaner.EmployeeId, sweepStartedAtUtc)
-                    .Select(o => new { o.Id, o.CleaningDateTime, o.EstimatedTime })
+                    .Select(o => new
+                    {
+                        o.Id,
+                        o.CleaningDateTime,
+                        o.EstimatedTime,
+                        Latitude = o.CustomerAddress!.Latitude,
+                        Longitude = o.CustomerAddress!.Longitude,
+                    })
                     .ToListAsync(cancellationToken);
 
                 if (newOrders.Count == 0)
@@ -157,6 +195,16 @@ public class NewJobsDigestService(
                 var takeable = 0;
                 foreach (var o in newOrders)
                 {
+                    // Exact great-circle test over the box's superset, and it runs BEFORE the overlap
+                    // check because that one is a database round trip per candidate.
+                    if (radiusApplies && !JobProximity.IsWithinRadius(
+                        cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value,
+                        o.Latitude, o.Longitude, cleaner.JobRadiusKm!.Value))
+                    {
+                        totalDroppedFarAway++;
+                        continue;
+                    }
+
                     var overlaps = await orderRepository.HasOverlappingOrderIgnoringTenantAsync(
                         cleaner.EmployeeId,
                         o.CleaningDateTime,
@@ -217,10 +265,12 @@ public class NewJobsDigestService(
         }
 
         logger.LogInformation(
-            "NewJobsDigest sweep complete: enqueued={Enqueued} skippedNoNewJobs={NoNew} skippedMuted={Muted} of {Total} cleaners",
+            "NewJobsDigest sweep complete: enqueued={Enqueued} skippedNoNewJobs={NoNew} skippedMuted={Muted} droppedFarAway={FarAway} radiusUnusable={RadiusUnusable} of {Total} cleaners",
             totalEnqueued,
             totalSkippedNoNewJobs,
             totalSkippedMuted,
+            totalDroppedFarAway,
+            totalRadiusUnusable,
             cleaners.Count);
     }
 
@@ -347,5 +397,8 @@ public class NewJobsDigestService(
         string UserId,
         string WorkCountryId,
         string? TenantId,
-        DateTimeOffset? LastDigestAt);
+        DateTimeOffset? LastDigestAt,
+        int? JobRadiusKm,
+        double? HomeLatitude,
+        double? HomeLongitude);
 }

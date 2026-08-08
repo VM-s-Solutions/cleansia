@@ -280,6 +280,15 @@ public class Order : Auditable, ITenantEntity
     /// </summary>
     public DateTime? RecurringReminderSentAt { get; private set; }
 
+    /// <summary>
+    /// Timestamp when the "your cleaning starts in about an hour" push was dispatched for this one-off
+    /// order. Null until the pre-cleaning sweep fires; never cleared. Disjoint from
+    /// <see cref="RecurringReminderSentAt"/> in both population and meaning — that one is the 24h-ahead
+    /// CONFIRM prompt on a recurring occurrence, this one is the T-1h notice the booking-confirmation
+    /// screen promises.
+    /// </summary>
+    public DateTime? PreCleaningReminderSentAt { get; private set; }
+
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
 
@@ -406,6 +415,16 @@ public class Order : Auditable, ITenantEntity
     public Order MarkRecurringReminderSent(DateTime sentAtUtc)
     {
         RecurringReminderSentAt ??= sentAtUtc;
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the instant the pre-cleaning reminder was dispatched. First stamp wins, so a re-entrant
+    /// sweep cannot move it forward and re-open the order to a second reminder.
+    /// </summary>
+    public Order MarkPreCleaningReminderSent(DateTime sentAtUtc)
+    {
+        PreCleaningReminderSentAt ??= sentAtUtc;
         return this;
     }
 

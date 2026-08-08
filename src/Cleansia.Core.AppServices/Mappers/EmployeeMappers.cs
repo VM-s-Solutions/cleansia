@@ -69,7 +69,8 @@ public static class EmployeeMappers
                     tr.Start.ToString(@"hh\:mm"),
                     tr.End.ToString(@"hh\:mm")
                 )).ToList()
-            ));
+            ),
+            JobRadiusKm: employee.JobRadiusKm);
     }
 
     public static AdminEmployeeListItem MapToAdminDto(this Employee employee)

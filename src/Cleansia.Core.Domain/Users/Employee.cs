@@ -80,6 +80,33 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// How far from their home address this cleaner wants to be told about work, in kilometres
+    /// (Q-FEED-03). Read by the new-jobs digest through <see cref="Orders.JobProximity"/>.
+    ///
+    /// <para><b>NULL means "no preference expressed", and that is a meaningful value, not a missing
+    /// one</b> — it keeps today's country-wide reach. There is deliberately no backfilled default: a
+    /// number nobody chose would silently cut an existing cleaner's job notifications down to it, and a
+    /// notification that stops arriving produces no complaint from the person it costs.</para>
+    /// </summary>
+    public int? JobRadiusKm { get; private set; }
+
+    /// <summary>
+    /// Sets or clears the digest radius. Null clears it back to country-wide; the range is the
+    /// validator's business error first, so reaching the throw means a non-HTTP caller bypassed it.
+    /// </summary>
+    public Employee SetJobRadius(int? radiusKm)
+    {
+        if (radiusKm is { } value
+            && (value < Orders.JobProximity.MinRadiusKm || value > Orders.JobProximity.MaxRadiusKm))
+        {
+            throw new ArgumentOutOfRangeException(nameof(radiusKm), value, "Job radius is out of range");
+        }
+
+        JobRadiusKm = radiusKm;
+        return this;
+    }
+
     public ContractStatus ContractStatus { get; private set; } = ContractStatus.Pending;
 
     [MaxLength(500)]

@@ -53,6 +53,32 @@ public class FeedKeysetClientReadinessTests
     }
 
     /// <summary>
+    /// The pre-cleaning reminder is held out of both lists for the same reason and on the same terms:
+    /// the backend wave that makes the booking screen's "we'll remind you 1 hour before" true ships
+    /// without client copy, so the push is data-only on iOS and the inbox stays empty rather than
+    /// counting a row no app can draw. The wave that ships <c>push.order.starting_soon.title|body</c> in
+    /// both iOS catalogs and the Android template deletes this test, registers the display map entry,
+    /// and only then adds the key to the customer keyset.
+    /// </summary>
+    [Fact]
+    public void The_Pre_Cleaning_Reminder_Is_Dispatched_But_Not_Yet_Feed_Or_Display_Registered()
+    {
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.OrderStartingSoon));
+        Assert.DoesNotContain(NotificationEventCatalog.OrderStartingSoon, FcmMessageFactory.ApnsDisplayMap.Keys);
+    }
+
+    /// <summary>
+    /// It is silenceable, and under the category the customer already has: a new
+    /// <see cref="NotificationCategory"/> is a bool COLUMN on <c>UserNotificationPreferences</c> plus a
+    /// toggle in every client, and someone who muted order updates has already answered this question.
+    /// </summary>
+    [Fact]
+    public void The_Pre_Cleaning_Reminder_Is_Mutable_Under_Order_Updates() =>
+        Assert.Equal(
+            NotificationCategory.OrderUpdates,
+            NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.OrderStartingSoon));
+
+    /// <summary>
     /// Both are operational notices about a cleaner's own working day, so neither is silenceable — the
     /// null category is what makes <c>SendPushNotificationHandler</c> skip the mute gate. Making either
     /// mutable is not a code change: a category is a bool COLUMN on <c>UserNotificationPreferences</c>,

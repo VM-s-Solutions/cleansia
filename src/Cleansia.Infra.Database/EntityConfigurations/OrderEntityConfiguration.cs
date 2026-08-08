@@ -130,6 +130,14 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.RecurringReminderSentAt)
             .IsRequired(false);
 
+        // Stamped by the T-1h pre-cleaning sweep. Deliberately NOT indexed: the sweep's leading terms are
+        // CurrentStatus = Confirmed plus a fifteen-minute CleaningDateTime range, which
+        // IX_Orders_CurrentStatus_CleaningDateTime serves exactly, and this column is a residual filter
+        // over the handful of rows that survives it. A partial index on the non-null rows would index
+        // precisely what the predicate excludes.
+        builder.Property(o => o.PreCleaningReminderSentAt)
+            .IsRequired(false);
+
         builder.Property(o => o.Extras)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, bool>>())
             .Metadata

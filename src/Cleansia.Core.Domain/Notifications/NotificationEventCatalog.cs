@@ -37,12 +37,31 @@ public static class NotificationEventCatalog
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
 
     /// <summary>
+    /// Customer-targeted: the cleaning this customer booked starts in about an hour. The promise the
+    /// booking-confirmation screen makes ("We'll remind you 1 hour before") — entirely within the
+    /// platform's control, and until now made by nothing. Args: <c>orderNumber</c> (loc) +
+    /// <c>orderId</c> (deep link).
+    ///
+    /// <para>One-off orders only. A recurring occurrence's reminder is
+    /// <see cref="RecurringScheduled"/>, which is a different message at a different lead time — it
+    /// asks the customer to CONFIRM 24h out, where this one only tells them the day has come.</para>
+    ///
+    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/> rather than a category of
+    /// its own: a new category is a bool COLUMN on <c>UserNotificationPreferences</c> plus a toggle in
+    /// every client, and a customer who silenced order updates has already said what they want.</para>
+    /// </summary>
+    public const string OrderStartingSoon = "order.starting_soon";
+
+    /// <summary>
     /// Partner-side digest. Args: <c>count</c> (decimal-string count of new
     /// eligible orders). Body localized client-side ("N new jobs near you").
     ///
-    /// <para>The client copy says "near you"; the server's proximity term is the cleaner's
-    /// <c>WorkCountryId</c> matched against the order address's country, and nothing narrower —
-    /// there is no radius, no city match and no employee coordinate on this path.</para>
+    /// <para>The client copy says "near you", and the server now means it: the count is the cleaner's
+    /// work country narrowed by their own <c>Employee.JobRadiusKm</c> around their home address
+    /// (<see cref="Orders.JobProximity"/>). <b>The copy is still not true for everyone</b> — a cleaner
+    /// who has set no radius, and one whose home never geocoded, both keep the country-wide board by
+    /// design, and the args carry no way for the client to tell those apart. Making the wording follow
+    /// the reality needs a second loc arg or a second event key, i.e. new strings in both apps.</para>
     /// </summary>
     public const string NewJobsAvailable = "order.new_available";
 
@@ -114,6 +133,7 @@ public static class NotificationEventCatalog
         DisputeReply => NotificationCategory.DisputeReply,
         RecurringScheduled => NotificationCategory.RecurringScheduled,
         OrderCleanerAssigned => NotificationCategory.OrderUpdates,
+        OrderStartingSoon => NotificationCategory.OrderUpdates,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,
         PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,

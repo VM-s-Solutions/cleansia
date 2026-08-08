@@ -3206,6 +3206,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("ReceiptId")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("PreCleaningReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("RecurringReminderSentAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4660,6 +4663,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int?>("JobRadiusKm")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("LastNewJobsDigestAt")
                         .HasColumnType("timestamp with time zone");

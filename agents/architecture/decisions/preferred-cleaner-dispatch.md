@@ -27,8 +27,29 @@
 > notified of the price change** (that notification **does not exist** — ticket **P-3**). D8.6's named
 > asymmetry is now a **ruled** asymmetry. ADR-0036 carries a second dated amendment (AM-A / AM-B).
 >
-> **Nothing is shipped yet.** "Current shape" means *the decision is made*, not *the code exists* — see
-> §Consumers and the three preconditions.
+> 🔴 **CORRECTION, 2026-08-08 (lead, assign-and-confirm panel). This page said "Nothing is shipped yet."
+> That is FALSE and it cost a round.** An ADR author read this page's premise plus a pre-fix source file
+> and wrote a whole section designing work that already existed; a challenger caught it, and one of the
+> draft's verification steps would have deleted correct customer copy. **Do not trust the dated snapshot
+> below without re-reading HEAD.** Verified at HEAD by the lead, by opening each file:
+>
+> | Claim on this page | Truth at HEAD |
+> |---|---|
+> | *"Nothing is shipped yet"* (was line 30) | **False.** ADR-0036's mechanism ships. |
+> | *"**Consumption** — **None.** No query, no ordering, no notification, no assignment reads `PreferredEmployeeId`"* | **False on all four.** The pair is `Order.cs:246` / `:264`, written only by `GrantPreferredHold` (`:424-435`) and dropped only by `ClearPreferredHold` (`:438-443`, sole production caller `:689`). Both forms of the visibility rule are `OrderVisibility.cs:36-52`, and `TakeOrder`'s existence gate conjoins it at `TakeOrder.cs:88`. The targeted push is produced at `OrderFactory.cs:192-205` under `NotificationEventCatalog.PreferredOffer` (`:57`), is in the partner feed keyset (`NotificationFeedEventKeys.cs:51`) and has live five-locale partner copy (`partner-app/src/main/res/values/strings.xml:1244-1245`). |
+> | *"**No membership check** — a non-member can set it today"* | **False for the hold path**: `PreferredCleanerHoldResolver.cs:42-47` returns `Declined(NoMembership)` with no active membership, ahead of seven further gates (`:32-100`). *(The `CreateOrder`-side gate was not re-verified in this pass — re-read before citing it.)* |
+> | *"`RecurringBookingTemplate` has no field to pass"* | **False.** `MaterializeRecurringBookingTemplate.cs:240` carries `template.PreferredEmployeeId` into every occurrence. |
+> | *(not on this page at all)* | The window is `BookingPolicy.ComputePreferredHold` (`:171-180`) — `min(lead × 0.10, 12 h)`, zero below `2 × StandardLeadTimeHours` — with the fraction at `:159` and the ceiling at `:160`. |
+>
+> **Also shipped 2026-08-08, in an independent lane:** the customer-side `order.cleaner_assigned`
+> notification (`NotificationEventCatalog.cs:37`, one shared producer `OrderCleanerAssignedNotifier.cs`,
+> both assignment call sites, both customer clients, five locales), and `order.confirmed`'s copy
+> corrected to *"Booking confirmed ✅"* (`customer-app/…/values/strings.xml:1211`). **A new ADR must not
+> propose minting that key.**
+>
+> **This page is rewritten in full when the assign-and-confirm ADR is accepted** (it is `proposed`, under
+> `backlog/adr/drafts/`, revised after a challenge round — see its §Verdict). The correction above is a
+> statement of fact and applies no unaccepted decision.
 >
 > Companion pages: [`membership-benefits.md`](./membership-benefits.md) (ADR-0035 — the express waiver
 > this composes with), [`push-notifications.md`](./push-notifications.md) (ADR-0025 — the display
@@ -37,9 +58,14 @@
 
 ---
 
-## Today (shipped, verified 2026-08-02)
+## Today (a DATED SNAPSHOT — verified 2026-08-02, **superseded 2026-08-08**; read the correction banner above first)
 
-**The customer can express a preference. The platform does nothing with it.**
+> ⚠️ **This table describes the code as it stood on 2026-08-02, before ADR-0036 and ADR-0039 landed.**
+> Its "Consumption — None", "No membership check" and "Copy" rows are false at HEAD. It is kept because
+> the *capture* and *picker* rows are still the honest starting point of the story, not because the
+> table as a whole is current. **Cite HEAD, never this table.**
+
+**On 2026-08-02: the customer could express a preference and the platform did nothing with it.**
 
 | Layer | State |
 |---|---|

@@ -1994,3 +1994,37 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
 - **(c) Drop the one-hour number** from the post-booking screen entirely and say what the platform actually does. Honest in every case; loses a reassurance customers currently get at the moment they have just paid.
 - Default taken: **none.** Nothing is built on either reading, and the assignment feature is held until this is answered — building it under (a) and later choosing (b) means redoing the copy in five languages on two platforms.
 - Answer: _(owner fills in)_
+
+---
+
+### 🔴 The variable symbol is NOT on the invoice — and I told you twice that it was
+- Raised by: backend (`37aec315`, building mark-as-paid) · Owner: **owner + architect** · Resolve-by: **before you pay anyone through this flow**
+- Not a question. A correction and a blocking finding.
+
+**What you told me** (`Q-SELFBILL-04`, 2026-08-08): *"We'll send them money manually from our bank account to their bank account when the invoice is created, also putting a special variable number that is written in the invoice."*
+
+**What I told you, twice:** that the variable symbol *"already exists, is generated per employee per pay period, and prints"*, and is *"the reconciliation key"*. I took that from `status/sprint-15.md` §A4 and relayed it without checking.
+
+**What is actually true, verified at HEAD by grep:**
+
+1. `EmployeeInvoice.SetVariableSymbol` and `EmployeeInvoice.GenerateVariableSymbol` have **zero production callers**. The only callers anywhere are four test files.
+2. So **every invoice row has `VariableSymbol = NULL`.**
+3. The PDF renders the field only when it is non-empty, so **it never prints**.
+4. The fallback field `PaymentReference` exists on the PDF model and is **rendered by no layout at all** (`grep` over the whole PDF service returns only its declaration).
+
+**Therefore the payout invoice carries no payment reference of any kind.** The number you put on the bank transfer is not on the document you are transcribing it from, and nothing in the platform can link a transfer back to the invoice it settled. "Mark this invoice paid" currently records a claim that cannot be reconciled against anything.
+
+**And the generator would not be safe to simply switch on.** It is a hash of the employee id joined to a hash of the pay-period id. Within one pay period the second half is constant, so two cleaners are separated only by a 10,000-bucket hash:
+
+| cleaners in one pay period | chance of at least one collision |
+|---|---|
+| 25 | 3 % |
+| 50 | 11.5 % |
+| 100 | **39 %** |
+| 150 | **67 %** |
+
+A collision hits the database unique index **after** the handler has returned, so it surfaces as an unhandled exception — a poison message for a single invoice, or a **failed batch** in the pay-period job. There is no catch, no business error and no fallback.
+
+**Two green tests are why nobody noticed.** One sets the symbol **by hand** and then proves it maps and validates — the catalog's own named anti-pattern, *a fixture supplying an input production never produces*. Its comment even asserts *"the generated numeric symbol is what reaches the document"*, which is false in production and checked by nothing.
+
+**What I need from you:** nothing yet — this is an architect call on the generator (a per-period sequence, or the existing fiscal-counter claim pattern, rather than a hash), and I will run it. **What you need to know now** is that until it lands, an invoice you pay against has no reference number printed on it. If you have been transcribing something, it is not coming from this document.

@@ -231,7 +231,7 @@ _No open Wave-1 *planning* questions remain._
   It does **not** block starting Wave 2 — T-0231 ships even-split. The owner should, before any DE/AT/ES or
   high-value-bundle refund goes live, either (a) confirm even-split is acceptable for all current bundles, or
   (b) set real weights via T-0232. AUD-02p is now split: weighting capability = T-0232, schema/backfill = T-0231.
-- **Answer (owner, 2026-08-07):** **Even weights, adjusted in the admin UI later.**
+- **Answer (owner, 2026-08-08):** **Go with the default** — even weights backfilled for existing packages, adjusted per bundle through the admin package-pricing screen when a specific bundle needs it.
   even-split is acceptable for all current bundles)_
 
 ---
@@ -393,7 +393,7 @@ _No open Wave-1 *planning* questions remain._
   the **seam is unchanged** either way, so this is a provider choice, not an architecture change.
 - Default taken (non-blocking): **No** — MapKit by default; Mapbox only if a specific parity gap (custom
   style, service-area polygon overlay, a sheet UX MapKit can't match) forces one surface onto it.
-- **Answer (owner, 2026-08-07):** **No Mapbox-identical requirement — and the PARITY DIRECTION IS REVERSED.** Owner: *"iOS has to be primary, so Android has to be similar to iOS, not the other way around. For iOS use MapKit, for Android use Mapbox."* iOS keeps MapKit and Android keeps Mapbox, so the two maps are deliberately NOT identical. ⚠️ The reversal contradicts the shipped parity principle (Android is the reference implementation iOS mirrors) — see the PM note appended below.
+- **Answer (owner, 2026-08-08):** **No, the iOS map must not mirror Android's** — but the owner wants them to **look similar**, and asks whether MapKit can carry a **custom style**. So: MapKit stays on iOS and Mapbox stays on Android (per the 2026-08-07 ruling that iOS is the primary platform), and the open item is now a *visual* one — how close MapKit can be brought to the Mapbox styling. That is a research-plus-design task, not a provider decision, and it is **not** blocking. Filed as `Q-IOS-05` below rather than answered here, because what MapKit can and cannot restyle on the iOS 16 floor is a fact nobody in this repo has established.
 
 ### Q-IOS-03 — [blocking: no] Add trusted-device to the mobile clients (iOS + Android)?
 - Raised by: architect (IOS-ADR / ADR-0013 D10)
@@ -407,7 +407,11 @@ _No open Wave-1 *planning* questions remain._
   clients" — if wanted, design it once and ship Android + iOS together.
 - Default taken (non-blocking): **omit from iOS v1 to match Android** (the field is optional, so omitting
   it is fully supported).
-- **Answer (owner, 2026-08-07):** **Owner believes the trusted-device flow may already be built on both platforms and asked for it to be checked first.** See the PM finding appended below this block — this answer is not final until that check is recorded.
+- **Answer (owner, 2026-08-08):** *"I don't understand trusted device. Wdym by that? It's already built, no?"* — **the owner is right, and my earlier note was wrong in its framing. It IS built, and it is live on web.**
+  **What the feature is:** after too many failed password attempts an account is locked out. A *trusted device* is allowed past that lockout, so a legitimate user fumbling their own password on their own device is not locked out while an attacker on an unfamiliar device still is (`LoginValidator.AccountIsNotLockedOutOrTrustedDevice`, `:119`).
+  **How a device proves it is trusted:** it presents a still-valid **refresh token** from a previous successful login. On web the browser does not send anything special — the three hosts read it from the refresh-token cookie and enrich the command server-side (`Web.Customer/AuthController.cs:40`, `Web.Partner/…:52`, `Web.Admin/AdminAuthController.cs:34`). **So the feature works today, on all three web apps.**
+  **The real gap, restated correctly:** the mobile login commands accept the token **in the body** (`MobileLogin.cs:37`, `MobilePartnerLogin.cs:38`) and **no mobile app fills it in**. So a cleaner or customer who is locked out cannot get past it on their **phone**, even from the device they always use — while the same person on the web app can. My earlier phrasing (*"the server accepts a token no client has ever sent"*) was literally true of mobile and gave the wrong impression about the feature as a whole.
+  **Decision needed is therefore much smaller than "build trusted device":** should the mobile apps send their stored refresh token on login so lockout behaves the same as on web? **Default: yes** — it is a few lines per app and removes an inconsistency where the phone is stricter than the browser. Not blocking; no answer required unless the owner disagrees.
   mobile clients)_
 
 ---
@@ -565,7 +569,7 @@ _No open Wave-1 *planning* questions remain._
   stance, not a technical one.
 - Default taken (non-blocking): **excluded from feed v1**; revisit together with the ADR-0025 promo
   iOS-display follow-up ticket so marketing surfaces are decided once, coherently.
-- **Answer (owner, 2026-08-07):** **Exclude sitewide promo pushes from feed v1.**
+- **Answer (owner, 2026-08-08):** **Excluded.** Promo pushes do not appear in the customer notifications feed, which matches the behaviour today. Confirmed as a decision rather than a default.
 
 ---
 
@@ -1844,4 +1848,64 @@ DTO can therefore all batch into one regeneration rather than forcing two.
 - Default taken: **(a) — leave it.** Nothing is built, and this is recorded rather than assumed because
   the answer that produced it was about withdrawal, not about payment tracking. You were never asked
   this.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **(b) — an admin marks the invoice paid.** Verbatim: *"I'd assume that only when we send money then we manually mark the invoice as paid."* So the platform learns about payment from a person, not from a bank feed: whoever makes the transfer records it, which gives the invoice a paid date and an actor. Bank-statement matching **(c)** is not built. This makes *"which cleaners have I not paid yet"* answerable in the app, and lets a cleaner see **paid** rather than only **invoiced**.
+
+---
+
+# PM notes, 2026-08-08 (second batch)
+
+## N12 — I was wrong about trusted device, and the correction matters
+
+I reported it as *"the server accepts a token no client has ever sent"*, which reads as **not built**. The
+owner pushed back — *"it's already built, no?"* — and they are right. Re-read at HEAD:
+
+- `Web.Customer/Controllers/AuthController.cs:40`, `Web.Partner/Controllers/AuthController.cs:52` and
+  `Web.Admin/Controllers/AdminAuthController.cs:34` each do
+  `command with { TrustedDeviceToken = RefreshTokenFromCookieOrBody(string.Empty) }`.
+- So **all three web apps supply it today**, from the refresh-token cookie, and the lockout bypass works.
+
+My statement was true **of mobile only**. Generalising it to "no client" was the error, and it made a
+shipped feature look absent. The gap is narrow: mobile accepts the token in the request body and no
+mobile app fills it in, so lockout is **stricter on the phone than in the browser** for the same person.
+
+## N13 — Android having no Apple sign-in is correct, not a gap
+
+Owner: *"The android mustn't have apple sign-in since it's android."* Agreed and recorded. I reported it
+as a *product gap*; it is a **deliberate platform difference**. Nothing is owed. The Android consent
+string naming only Google (`45ebffb9`) is right for the same reason, and the iOS string naming both is
+right on iOS.
+
+## N14 — the clients have been regenerated, so the web send-half is unblocked
+
+Owner: *"All of the clients were regenerated."* That clears the release gate recorded in `ab699b6a`. The
+remaining web work is small and is **not** a regeneration: pass the signup tick through
+`CustomerAuthService.authenticateWithGoogle` / `…Apple` into the now-regenerated command, exactly as
+Android (`45ebffb9`) and iOS (`03b80211`) already do. Until that lands, web social **signup** still
+refuses new users on deploy; web social **sign-in** is unaffected.
+
+## N15 — `Q-PAYOUT-04` answered (b), which is a build, not a note
+
+An admin marking an invoice paid needs: a paid state and a paid-at stamp on the invoice, an action on
+the admin invoice screen, an audit row (the audit engine already covers admin actions), and the cleaner
+seeing **paid** rather than **invoiced**. It also gives the platform the answer to *"who have I not paid
+yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run migration**.
+
+---
+
+### Q-IOS-05 — [blocking: no] How close can MapKit be brought to the Mapbox styling?
+- Raised by: PM, from the owner's `Q-IOS-02` answer
+- Owner: owner (design), after an iOS spike establishes what is possible
+- Resolve-by: post-launch
+- Date: 2026-08-08
+- Question: you ruled that iOS keeps MapKit and Android keeps Mapbox, and that the two need not be
+  identical — but you would like them to **look similar**, and asked whether MapKit can take a custom
+  style. Nobody in this repo has established what MapKit can actually restyle on the iOS 16 floor, so
+  the honest first step is a spike rather than an answer: enumerate what is controllable (map
+  configuration and point-of-interest filtering, overlay and annotation styling, and whether the base
+  cartography's colours can be influenced at all), against the specific things the Android custom style
+  does. Then you choose how close is close enough.
+- Why it matters: it is purely visual and blocks nothing, but it is the kind of item that silently
+  becomes "we'll do it later" and never gets measured. Naming the unknown makes it decidable.
+- Default taken: **stock MapKit styling**, which is what ships today. Nothing changes until the spike
+  says what is available.
+- Answer: _(owner fills in, after the spike)_

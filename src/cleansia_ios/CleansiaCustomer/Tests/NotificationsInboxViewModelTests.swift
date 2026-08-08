@@ -172,6 +172,22 @@ final class NotificationsInboxViewModelTests: XCTestCase {
         XCTAssertEqual(received, [.order(orderId: "o-42")])
     }
 
+    func testTapCleanerAssignedRowEmitsTheOrderDestination() async {
+        client.pageResults = [NotificationFixtures.page([
+            NotificationFixtures.item(id: "n-1", eventKey: "order.cleaner_assigned", args: ["orderId": "o-7"])
+        ])]
+        let vm = makeVM()
+        await vm.onOpen()
+
+        var received: [CustomerNotificationDestination] = []
+        let token = vm.tapped.sink { received.append($0) }
+        defer { token.cancel() }
+
+        await vm.tap(id: "n-1")
+
+        XCTAssertEqual(received, [.order(orderId: "o-7")])
+    }
+
     func testTapRowWithoutTargetMarksReadWithoutNavigating() async {
         client.pageResults = [NotificationFixtures.page([
             NotificationFixtures.item(id: "n-1", eventKey: "order.completed", args: [:])

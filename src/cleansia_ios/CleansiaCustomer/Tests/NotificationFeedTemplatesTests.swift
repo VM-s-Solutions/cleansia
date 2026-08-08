@@ -19,6 +19,27 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertTrue(rendered.body.contains("A-1042"))
     }
 
+    func testCleanerAssignedRowSurvivesTheFeedKeysetFilter() {
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "n-1", eventKey: "order.cleaner_assigned")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["n-1"])
+    }
+
+    func testCleanerAssignedRowRendersTheOrderNumber() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.cleaner_assigned",
+            args: ["orderNumber": "A-1042"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.cleaner_assigned.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.cleaner_assigned.body"), "A-1042")
+        )
+        XCTAssertTrue(rendered.body.contains("A-1042"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
     func testArglessEventsRenderTheTemplateVerbatim() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: "dispute.reply", args: [:]))
         XCTAssertEqual(rendered.body, L10n.localized("push.dispute.reply.body"))

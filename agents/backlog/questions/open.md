@@ -1653,3 +1653,33 @@ remains open and non-blocking** — I cannot change repository settings in any c
 ### Q-CI-01 (second occurrence) — RETIRED 2026-08-07
 - Duplicate of the `Q-CI-01` filed 2026-07-30. Retired at the owner's instruction (*"I need to have it
   only once"*). The surviving entry keeps the open branch-protection decision.
+
+---
+
+### Q-CONSENT-02 — [blocking: no] Signing IN with Google/Apple creates an account too — and that screen has no checkbox
+- Raised by: frontend (social signup gate, `f6cba0e0`)
+- Owner: owner
+- Resolve-by: pre-prod
+- Date: 2026-08-08
+- Question: `Q-CONSENT-01` is now built — the Google and Apple buttons on the **sign-up** screen are gated
+  on the terms tick. But the customer **sign-in** screen carries the same two buttons and has **no
+  checkbox**, and the backend **auto-provisions an account** when no user matches the social identity
+  (`GoogleAuth.cs:124` calls `User.CreateWithGoogle` then `userRepository.Add`; `AppleAuth.cs:176` is
+  the twin). **Verified independently.** So a brand-new visitor who taps "Sign in with Google" gets an
+  account created with **no consent record anywhere** — the exact hole the signup gate just closed, one
+  screen over.
+  Three shapes, and the choice is yours because each is a different product:
+  **(a)** put the same checkbox on the sign-in screen — consistent evidence, but it asks a returning
+  user to re-accept every time they sign in, which is odd and arguably meaningless;
+  **(b)** let the social buttons sign in **only an existing account**, and refuse an unknown identity
+  with "no account found — sign up first". This makes sign-in mean sign-in, and routes every new user
+  through the gated signup. It is a **behaviour change for a flow that works today**;
+  **(c)** keep auto-provisioning and record nothing, accepting that social sign-in is an ungated
+  account-creation path.
+- Why it matters: it is the same evidentiary gap, and closing it on one screen while leaving it open on
+  the other is worse than either answer — it looks closed. (b) is the shape most products use, but it
+  turns a currently-working one-tap flow into a two-step one, and that is a conversion decision rather
+  than an architecture one.
+- Default taken: **none, deliberately.** Nothing was invented for the sign-in screen. The signup gate
+  ships as ruled; this stays open and visible rather than being silently defaulted either way.
+- Answer: _(owner fills in)_

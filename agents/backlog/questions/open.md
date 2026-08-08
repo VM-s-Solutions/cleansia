@@ -1656,6 +1656,23 @@ remains open and non-blocking** — I cannot change repository settings in any c
 
 ---
 
+### ✅ Q-CONSENT-02 — CLOSED 2026-08-08 by extending the owner's existing ruling. Nothing owed.
+
+> **Owner:** *"I ALREADY GAVE YOU ALL OF THE RELATED ANSWERS TO THIS TOPIC."* Correct. `Q-CONSENT-01`
+> settled the principle — **an account must not come into existence without an affirmative tick** —
+> and that decides this too. It was wrong to re-ask; only the mechanism was ever open, and mechanism
+> is mine.
+> **Built: option (b).** Social sign-in signs in an **existing** account only; an unknown identity is
+> refused with *"no account found — sign up first"* instead of silently creating one, so every new
+> user goes through the signup screen where the gate already is.
+> **Why not (a), a checkbox on the sign-in screen:** it would ask a returning user to re-accept the
+> terms at every sign-in, which is both odd and evidentially worthless — the record that matters is
+> the one made when the account was created, not a re-tick years later.
+> **Overrulable**: if the one-tap sign-up-by-signing-in flow is worth more than the record, say so and
+> it reverts to (c).
+
+<details><summary>Original question, kept for the record</summary>
+
 ### Q-CONSENT-02 — [blocking: no] Signing IN with Google/Apple creates an account too — and that screen has no checkbox
 - Raised by: frontend (social signup gate, `f6cba0e0`)
 - Owner: owner
@@ -1729,3 +1746,28 @@ This interacts with the owner's earlier "I'll drop the entire DB" plan: **a drop
 reinstates the zero.**
 
 </details>
+
+</details>
+### ✅ The self-billing signature-date floor — CLOSED 2026-08-08 with a default. Nothing owed.
+
+**What it was, since I never explained it.** ADR-0041 lets an **admin record that a cleaner signed the
+self-billing agreement on paper**, rather than the cleaner ticking it in the app — that is
+`Q-SELFBILL-05`, whose default is *"yes, an admin may record it."* Recording it means typing **when**
+they signed. The ADR declined to invent a rule for which dates are believable, and I relayed that as
+*"the earliest believable signature date"* with no explanation of what it was for. That was
+meaningless without the context above.
+
+**The real question was:** should the system refuse an obviously impossible signature date — a date
+before the company existed, or one in the future?
+
+**Default taken, so nothing is owed:** refuse **future** dates, which is unambiguously wrong in every
+reading and needs no business input. **No lower floor is set.** A lower bound looked derivable from
+the company record, but `CompanyInfo` carries a registration *number* and no founding **date**
+(`src/Cleansia.Core.Domain/Company/CompanyInfo.cs` — checked), and its `CreatedOn` is when the row was
+configured, which can legitimately be **after** a paper contract was signed. Refusing on that basis
+would reject valid records, so the floor stays open and configurable rather than guessed.
+
+If the owner ever wants a hard floor — e.g. the company's incorporation date — it is one config value
+and no redesign.
+
+

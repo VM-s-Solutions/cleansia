@@ -51,9 +51,28 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void Customer_Keyset_Is_The_Eleven_Customer_Events()
+    public void Customer_Keyset_Is_Exactly_The_Customer_Targeted_Events()
     {
-        Assert.Equal(11, NotificationFeedEventKeys.Customer.Count);
+        // Asserts the LIST, not a count. A count in the assertion — and worse, in the test name — is
+        // the thing a later author leaves stale, and what has to be re-checked on every addition is
+        // which events a client can render, not how many there are. Same shape as the partner keyset
+        // below, and the same reasoning FcmMessageFactoryTests states for the APNs display map.
+        Assert.Equal(
+            [
+                NotificationEventCatalog.OrderConfirmed,
+                NotificationEventCatalog.OrderCleanerAssigned,
+                NotificationEventCatalog.OrderOnTheWay,
+                NotificationEventCatalog.OrderInProgress,
+                NotificationEventCatalog.OrderCompleted,
+                NotificationEventCatalog.OrderCancelled,
+                NotificationEventCatalog.OrderRefunded,
+                NotificationEventCatalog.DisputeReply,
+                NotificationEventCatalog.RecurringScheduled,
+                NotificationEventCatalog.MembershipExpiringSoon,
+                NotificationEventCatalog.MembershipCancellationEffective,
+                NotificationEventCatalog.LoyaltyTierUpgrade,
+            ],
+            NotificationFeedEventKeys.Customer);
         Assert.Equal(NotificationFeedEventKeys.Customer.Count, NotificationFeedEventKeys.Customer.Distinct().Count());
     }
 

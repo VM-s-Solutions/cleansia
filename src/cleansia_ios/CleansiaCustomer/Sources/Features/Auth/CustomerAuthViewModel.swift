@@ -389,39 +389,73 @@ final class CustomerAuthViewModel: ViewModel {
         }
     }
 
+    /// The SIGN-IN screen's provider buttons. They assert nothing, so an identity the server has
+    /// never seen is refused there rather than turned into an account nobody consented to.
     func signInWithGoogle() async {
-        if socialState.isSubmitting { return }
-        socialState = .submitting
+        guard beginSocial() else { return }
         let result = await socialProvider.signInWithGoogle()
-        await handleSocial(result)
+        await handleSocial(result, termsAccepted: false)
     }
 
     func signInWithApple() async {
-        if socialState.isSubmitting { return }
-        socialState = .submitting
+        guard beginSocial() else { return }
         let result = await socialProvider.signInWithApple()
-        await handleSocial(result)
+        await handleSocial(result, termsAccepted: false)
     }
 
-    private func handleSocial(_ result: SocialSignInResult) async {
+    /// The SIGN-UP screen's provider buttons. A tap here creates the account outright, so it is
+    /// refused until the terms box is ticked — and the tick travels with the call, because the
+    /// server provisions a new identity only for a request that asserts it.
+    func signUpWithGoogle() async {
+        guard signupConsentGiven(), beginSocial() else { return }
+        let result = await socialProvider.signInWithGoogle()
+        await handleSocial(result, termsAccepted: true)
+    }
+
+    func signUpWithApple() async {
+        guard signupConsentGiven(), beginSocial() else { return }
+        let result = await socialProvider.signInWithApple()
+        await handleSocial(result, termsAccepted: true)
+    }
+
+    /// The tick is re-read at the tap rather than captured when the screen drew: the box stays
+    /// live behind the provider sheet, and an untick is not a tick.
+    private func signupConsentGiven() -> Bool {
+        if signUpForm.acceptTerms { return true }
+        snackbar.showError(L10n.Auth.socialTermsRequired)
+        return false
+    }
+
+    private func beginSocial() -> Bool {
+        if socialState.isSubmitting { return false }
+        socialState = .submitting
+        return true
+    }
+
+    /// Parked BEFORE the auth call, not after: a social signup comes back holding a live session
+    /// and the spine flushes any parked tick from inside that same call, so a tick parked
+    /// afterwards misses the only delivery this flow performs.
+    private func parkSignupTick(email: String, accepted: Bool) async {
+        await signupConsent.recordSignupTick(email: email, accepted: accepted)
+    }
+
+    private func handleSocial(_ result: SocialSignInResult, termsAccepted: Bool) async {
         switch result {
         case let .google(credential):
-            let auth = await socialAuthClient.googleAuth(
-                token: credential.idToken,
-                googleId: credential.googleId,
-                email: credential.email,
-                firstName: credential.firstName,
-                lastName: credential.lastName
-            )
+            await parkSignupTick(email: credential.email, accepted: termsAccepted)
+            let auth = await socialAuthClient.googleAuth(credential, termsAccepted: termsAccepted)
             socialState = .idle
             emit(auth, fallbackEmail: credential.email)
         case let .apple(credential):
-            let auth = await socialAuthClient.appleAuth(
-                identityToken: credential.identityToken,
-                rawNonce: credential.rawNonce,
-                firstName: credential.firstName,
-                lastName: credential.lastName
+            // Apple hands the client no address of its own, so the identity token's claim is the
+            // only one available before the call. A token that carries none parks nothing rather
+            // than guessing: delivery matches on the address the SERVER later names, so a wrong
+            // key would silently never deliver.
+            await parkSignupTick(
+                email: JwtDecoder.email(of: credential.identityToken) ?? "",
+                accepted: termsAccepted
             )
+            let auth = await socialAuthClient.appleAuth(credential, termsAccepted: termsAccepted)
             socialState = .idle
             emit(auth, fallbackEmail: "")
         case .cancelled:

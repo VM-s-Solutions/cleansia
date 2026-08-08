@@ -37,13 +37,14 @@ final class SocialAuthSpineTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
 
-        _ = await client.googleAuth(
+        _ = await client.googleAuth(GoogleAuthRequest(
             token: "g-id-token",
             googleId: "g-123",
             email: "a@b.cz",
             firstName: "Jana",
-            lastName: "Nováková"
-        )
+            lastName: "Nováková",
+            termsAccepted: false
+        ))
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "GoogleAuth"))
         XCTAssertEqual(request.httpMethod, "POST")
@@ -56,17 +57,57 @@ final class SocialAuthSpineTests: XCTestCase {
         XCTAssertEqual(body["lastName"] as? String, "Nováková")
     }
 
+    /// The argument has to reach the WIRE, not just the request struct: `GoogleAuth.Command` and
+    /// `AppleAuth.Command` default `TermsAccepted` to `false`, so a dropped field is an absent
+    /// field is a refusal — and nothing in a view-model suite mocking this client can see it.
+    func testGoogleAuthPutsTheAssertedTickOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.googleAuth(googleRequest(termsAccepted: true))
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "GoogleAuth")))
+        XCTAssertEqual(body["termsAccepted"] as? Bool, true)
+    }
+
+    func testAppleAuthPutsTheAssertedTickOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.appleAuth(appleRequest(termsAccepted: true))
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "AppleAuth")))
+        XCTAssertEqual(body["termsAccepted"] as? Bool, true)
+    }
+
+    /// The sign-in half of the same contract: the flag is present and false, never omitted. An
+    /// omitted field binds to `false` too, so this pins the shape as well as the value.
+    func testAnUnassertedSocialCallSendsTheFlagAsFalseRatherThanOmittingIt() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.googleAuth(googleRequest(termsAccepted: false))
+        _ = await client.appleAuth(appleRequest(termsAccepted: false))
+
+        for path in ["GoogleAuth", "AppleAuth"] {
+            let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: path)))
+            XCTAssertNotNil(body["termsAccepted"], "\(path) omitted the consent flag")
+            XCTAssertEqual(body["termsAccepted"] as? Bool, false)
+        }
+    }
+
     func testAppleAuthPostsContractBodyToAppleAuthPath() async throws {
         let store = MemTokenStore()
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
 
-        _ = await client.appleAuth(
+        _ = await client.appleAuth(AppleAuthRequest(
             identityToken: "apple-identity-token",
             rawNonce: "raw-nonce-xyz",
             firstName: "Jan",
-            lastName: "Novák"
-        )
+            lastName: "Novák",
+            termsAccepted: false
+        ))
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "AppleAuth"))
         XCTAssertEqual(request.httpMethod, "POST")
@@ -89,8 +130,8 @@ final class SocialAuthSpineTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
 
-        _ = await client.googleAuth(token: "t", googleId: "g", email: "a@b.cz", firstName: "A", lastName: "B")
-        _ = await client.appleAuth(identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil)
+        _ = await client.googleAuth(googleRequest(termsAccepted: false))
+        _ = await client.appleAuth(appleRequest(termsAccepted: false))
 
         for path in ["GoogleAuth", "AppleAuth"] {
             let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: path))
@@ -107,9 +148,7 @@ final class SocialAuthSpineTests: XCTestCase {
             (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r1"}"#.utf8))
         }
 
-        let result = await client.googleAuth(
-            token: "t", googleId: "g", email: "a@b.cz", firstName: "A", lastName: "B"
-        )
+        let result = await client.googleAuth(googleRequest(termsAccepted: false))
 
         guard case .success(.authenticated) = result else { return XCTFail("expected authenticated") }
         XCTAssertEqual(store.current()?.accessToken, access)
@@ -123,9 +162,7 @@ final class SocialAuthSpineTests: XCTestCase {
             (200, Data(#"{"token":"","isEmailConfirmed":false,"email":"a@b.cz"}"#.utf8))
         }
 
-        let result = await client.appleAuth(
-            identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil
-        )
+        let result = await client.appleAuth(appleRequest(termsAccepted: false))
 
         guard case let .success(.unverifiedEmail(email, hasToken)) = result else {
             return XCTFail("expected unverifiedEmail")
@@ -140,12 +177,25 @@ final class SocialAuthSpineTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (401, Data(#"{"errorCode":"auth.invalid_apple_user_token"}"#.utf8)) }
 
-        let result = await client.appleAuth(
-            identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil
-        )
+        let result = await client.appleAuth(appleRequest(termsAccepted: false))
 
         guard case let .failure(error) = result else { return XCTFail("expected failure") }
         XCTAssertEqual(error.code, "auth.invalid_apple_user_token")
+    }
+
+    private func googleRequest(termsAccepted: Bool) -> GoogleAuthRequest {
+        GoogleAuthRequest(
+            token: "t",
+            googleId: "g",
+            email: "a@b.cz",
+            firstName: "A",
+            lastName: "B",
+            termsAccepted: termsAccepted
+        )
+    }
+
+    private func appleRequest(termsAccepted: Bool) -> AppleAuthRequest {
+        AppleAuthRequest(identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil, termsAccepted: termsAccepted)
     }
 
     private func decodeBody(_ request: URLRequest) throws -> [String: Any] {

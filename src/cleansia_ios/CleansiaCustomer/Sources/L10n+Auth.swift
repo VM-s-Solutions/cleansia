@@ -206,6 +206,10 @@ extension L10n {
             localized("login_continue_with_google")
         }
 
+        static var socialTermsRequired: String {
+            localized("register_social_terms_required")
+        }
+
         static var socialNoAccount: String {
             localized("auth_social_no_account")
         }

@@ -45,7 +45,9 @@ final class SignupConsentSessionHookTests: XCTestCase {
         let client = try makeClient()
         respondWithSession(email: "relay@privaterelay.appleid.com", isEmailConfirmed: true)
 
-        _ = await client.appleAuth(identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil)
+        _ = await client.appleAuth(AppleAuthRequest(
+            identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil, termsAccepted: true
+        ))
 
         XCTAssertEqual(delivery.sessionEmails, ["relay@privaterelay.appleid.com"])
     }
@@ -54,13 +56,14 @@ final class SignupConsentSessionHookTests: XCTestCase {
         let client = try makeClient()
         respondWithSession(email: "server@example.com", isEmailConfirmed: true)
 
-        _ = await client.googleAuth(
+        _ = await client.googleAuth(GoogleAuthRequest(
             token: "t",
             googleId: "g",
             email: "typed@example.com",
             firstName: "Ada",
-            lastName: "Lovelace"
-        )
+            lastName: "Lovelace",
+            termsAccepted: true
+        ))
 
         XCTAssertEqual(delivery.sessionEmails, ["server@example.com"])
     }

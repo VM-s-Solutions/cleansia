@@ -32,8 +32,8 @@ struct SignUpView: View {
             onAcceptTermsChange: vm.onAcceptTermsChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.signUp() } },
-            onApple: { Task { await vm.signInWithApple() } },
-            onGoogle: { Task { await vm.signInWithGoogle() } }
+            onApple: { Task { await vm.signUpWithApple() } },
+            onGoogle: { Task { await vm.signUpWithGoogle() } }
         )
         .onReceive(vm.outcome) { onOutcome($0) }
     }
@@ -191,7 +191,12 @@ private struct SignUpContent: View {
 
                 Spacer().frame(height: Spacing.m)
 
-                SocialSignInSection(isLoading: isSocialLoading, onApple: onApple, onGoogle: onGoogle)
+                SocialSignInSection(
+                    isLoading: isSocialLoading,
+                    lockNote: form.acceptTerms ? nil : L10n.Auth.socialTermsRequired,
+                    onApple: onApple,
+                    onGoogle: onGoogle
+                )
 
                 Spacer().frame(height: Spacing.l)
 

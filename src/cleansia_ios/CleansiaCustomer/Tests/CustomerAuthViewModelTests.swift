@@ -628,6 +628,173 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(provider.googleCallCount, 0)
     }
 
+    // MARK: - The signup gate (Q-CONSENT-01) and the sign-in refusal (Q-CONSENT-02)
+
+    /// The tick is what tells a signup apart from a sign-in on the wire; the two screens hit one
+    /// endpoint and differ in nothing else. Asserted through the production path with the gate
+    /// live and satisfied — never by disabling the gate first.
+    func testSignUpWithGoogleAssertsTheTickOnTheRequest() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithGoogle()
+
+        XCTAssertEqual(social.lastGoogle?.termsAccepted, true)
+    }
+
+    func testSignUpWithAppleAssertsTheTickOnTheRequest() async {
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: nil, lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithApple()
+
+        XCTAssertEqual(social.lastApple?.termsAccepted, true)
+    }
+
+    /// An untick stops the flow at the tap: no provider sheet, no request, and no spinner left
+    /// running. The refusal is spoken, because a control that does nothing explains nothing.
+    func testSignUpWithGoogleWithoutTheTickNeverStartsTheFlow() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(false)
+
+        await vm.signUpWithGoogle()
+
+        XCTAssertEqual(provider.googleCallCount, 0)
+        XCTAssertEqual(social.googleCallCount, 0)
+        XCTAssertEqual(vm.socialState, .idle)
+        XCTAssertEqual(snackbar.current?.text, L10n.Auth.socialTermsRequired)
+        XCTAssertEqual(snackbar.current?.severity, .error)
+    }
+
+    func testSignUpWithAppleWithoutTheTickNeverStartsTheFlow() async {
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: nil, lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(false)
+
+        await vm.signUpWithApple()
+
+        XCTAssertEqual(provider.appleCallCount, 0)
+        XCTAssertEqual(social.appleCallCount, 0)
+        XCTAssertEqual(vm.socialState, .idle)
+        XCTAssertEqual(snackbar.current?.text, L10n.Auth.socialTermsRequired)
+    }
+
+    /// The sign-in screen has no terms box, so its buttons assert nothing — and the tick is a
+    /// property of the METHOD, not of the object's state. One view model, both screens: a ticked
+    /// signup form left behind on the same instance must not leak into a sign-in request.
+    func testSignInWithGoogleAssertsNothingEvenWithTheSignUpBoxTicked() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(social.googleCallCount, 1)
+        XCTAssertEqual(social.lastGoogle?.termsAccepted, false)
+    }
+
+    func testSignInWithAppleAssertsNothingEvenWithTheSignUpBoxTicked() async {
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: nil, lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signInWithApple()
+
+        XCTAssertEqual(social.appleCallCount, 1)
+        XCTAssertEqual(social.lastApple?.termsAccepted, false)
+    }
+
+    /// The refusal an unasserted call now earns. It must read as itself — "no account, sign up
+    /// first" — and not collapse into the generic "couldn't sign you in" or the raw business key.
+    func testTheSocialAccountNotFoundRefusalRendersItsOwnMessage() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        social.googleResult = .failure(ApiError(code: "auth.social_account_not_found", httpStatus: 400))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        let localizer = ApiErrorLocalizer()
+
+        await vm.signInWithGoogle()
+
+        let shown = snackbar.current?.text
+        XCTAssertEqual(shown, localizer.message(for: ApiError(code: "auth.social_account_not_found")))
+        XCTAssertNotEqual(shown, "auth.social_account_not_found", "the catalog entry is missing")
+        XCTAssertNotEqual(shown, localizer.message(forStatus: 400))
+        XCTAssertNotEqual(shown, L10n.Auth.socialFailed)
+        XCTAssertNil(received())
+    }
+
+    /// The GDPR record the tick owes, parked against the address the provider named so the spine
+    /// can deliver it from inside the very call that opens the session.
+    func testASocialSignUpParksTheTickAgainstTheProviderAddress() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithGoogle()
+
+        XCTAssertEqual(signupConsent.parked.filter(\.accepted).map(\.email), ["a@b.cz"])
+    }
+
+    /// Apple never hands the client an address, so the identity token's claim is the only key
+    /// available before the session exists.
+    func testAnAppleSignUpParksTheTickAgainstTheIdentityTokenAddress() async {
+        provider.appleResult = .apple(.init(
+            identityToken: unsignedJwt(email: "relay@privaterelay.appleid.com"),
+            rawNonce: "raw",
+            firstName: nil,
+            lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithApple()
+
+        XCTAssertEqual(
+            signupConsent.parked.filter(\.accepted).map(\.email),
+            ["relay@privaterelay.appleid.com"]
+        )
+    }
+
+    func testASocialSignInParksNoAcceptedTick() async {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(signupConsent.parked.filter(\.accepted).count, 0)
+    }
+
+    private func unsignedJwt(email: String) -> String {
+        let payload = Data(#"{"email":"\#(email)"}"#.utf8)
+            .base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        return "header.\(payload).signature"
+    }
+
     func testAppleNonceFlowRawToBackendHashedToApple() {
         let raw = Nonce.randomRaw()
         let other = Nonce.randomRaw()
@@ -717,29 +884,18 @@ private final class FakeSocialAuthClient: SocialAuthClient {
     var appleResult: ApiResult<LoginOutcome> = .success(.authenticated)
     private(set) var googleCallCount = 0
     private(set) var appleCallCount = 0
-    private(set) var lastGoogle: (token: String, googleId: String, email: String)?
-    private(set) var lastApple: (identityToken: String, rawNonce: String)?
+    private(set) var lastGoogle: GoogleAuthRequest?
+    private(set) var lastApple: AppleAuthRequest?
 
-    func googleAuth(
-        token: String,
-        googleId: String,
-        email: String,
-        firstName _: String,
-        lastName _: String
-    ) async -> ApiResult<LoginOutcome> {
+    func googleAuth(_ request: GoogleAuthRequest) async -> ApiResult<LoginOutcome> {
         googleCallCount += 1
-        lastGoogle = (token, googleId, email)
+        lastGoogle = request
         return googleResult
     }
 
-    func appleAuth(
-        identityToken: String,
-        rawNonce: String,
-        firstName _: String?,
-        lastName _: String?
-    ) async -> ApiResult<LoginOutcome> {
+    func appleAuth(_ request: AppleAuthRequest) async -> ApiResult<LoginOutcome> {
         appleCallCount += 1
-        lastApple = (identityToken, rawNonce)
+        lastApple = request
         return appleResult
     }
 }

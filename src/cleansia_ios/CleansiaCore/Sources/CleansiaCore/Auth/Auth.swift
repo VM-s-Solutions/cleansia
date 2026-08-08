@@ -133,36 +133,12 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         }
     }
 
-    public func googleAuth(
-        token: String,
-        googleId: String,
-        email: String,
-        firstName: String,
-        lastName: String
-    ) async -> ApiResult<LoginOutcome> {
-        let body = GoogleAuthRequest(
-            token: token,
-            googleId: googleId,
-            email: email,
-            firstName: firstName,
-            lastName: lastName
-        )
-        return await socialAuth(path: "api/Auth/GoogleAuth", body: body, fallbackEmail: email)
+    public func googleAuth(_ request: GoogleAuthRequest) async -> ApiResult<LoginOutcome> {
+        await socialAuth(path: "api/Auth/GoogleAuth", body: request, fallbackEmail: request.email)
     }
 
-    public func appleAuth(
-        identityToken: String,
-        rawNonce: String,
-        firstName: String?,
-        lastName: String?
-    ) async -> ApiResult<LoginOutcome> {
-        let body = AppleAuthRequest(
-            identityToken: identityToken,
-            rawNonce: rawNonce,
-            firstName: firstName,
-            lastName: lastName
-        )
-        return await socialAuth(path: "api/Auth/AppleAuth", body: body, fallbackEmail: "")
+    public func appleAuth(_ request: AppleAuthRequest) async -> ApiResult<LoginOutcome> {
+        await socialAuth(path: "api/Auth/AppleAuth", body: request, fallbackEmail: "")
     }
 
     private func socialAuth(

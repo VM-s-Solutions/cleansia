@@ -27543,6 +27543,40 @@
         }
       }
     },
+    "register_social_terms_required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept the Terms of Service and Privacy Policy to continue with Google or Apple."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro pokračování přes Google nebo Apple potvrďte souhlas s Podmínkami služby a Zásadami ochrany soukromí."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pre pokračovanie cez Google alebo Apple potvrďte súhlas s Podmienkami služby a Zásadami ochrany súkromia."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб продовжити через Google або Apple, прийміть Умови використання та Політику конфіденційності."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы продолжить через Google или Apple, примите Условия использования и Политику конфиденциальности."
+          }
+        }
+      }
+    },
     "register_terms_toggle" : {
       "localizations" : {
         "en" : {

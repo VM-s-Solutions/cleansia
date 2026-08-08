@@ -3,8 +3,15 @@ import SwiftUI
 
 struct SocialSignInSection: View {
     let isLoading: Bool
+    /// Non-nil dims the pair and says why they will refuse. They stay tappable on purpose: the
+    /// refusal is the explanation, and a dead control with no reason is a dead end.
+    let lockNote: String?
     let onApple: () -> Void
     let onGoogle: () -> Void
+
+    private var dimmed: Bool {
+        isLoading || lockNote != nil
+    }
 
     var body: some View {
         VStack(spacing: Spacing.s) {
@@ -13,10 +20,19 @@ struct SocialSignInSection: View {
             AppleIDButton(action: onApple)
                 .frame(height: 56)
                 .disabled(isLoading)
+                .opacity(dimmed ? 0.5 : 1)
 
             GoogleSignInButton(action: onGoogle)
                 .disabled(isLoading)
-                .opacity(isLoading ? 0.5 : 1)
+                .opacity(dimmed ? 0.5 : 1)
+
+            if let lockNote {
+                Text(lockNote)
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
         }
     }
 }
@@ -46,8 +62,18 @@ private struct GoogleSignInButton: View {
 #if DEBUG
     struct SocialSignInSection_Previews: PreviewProvider {
         static var previews: some View {
-            SocialSignInSection(isLoading: false, onApple: {}, onGoogle: {})
-                .padding()
+            Group {
+                SocialSignInSection(isLoading: false, lockNote: nil, onApple: {}, onGoogle: {})
+                    .previewDisplayName("Unlocked")
+                SocialSignInSection(
+                    isLoading: false,
+                    lockNote: "Accept the Terms of Service and Privacy Policy to continue with Google or Apple.",
+                    onApple: {},
+                    onGoogle: {}
+                )
+                .previewDisplayName("Locked")
+            }
+            .padding()
         }
     }
 #endif

@@ -58,6 +58,7 @@ public struct GoogleAuthRequest: Encodable, Sendable {
     public let email: String
     public let firstName: String
     public let lastName: String
+    public let termsAccepted: Bool
 }
 
 public struct AppleAuthRequest: Encodable, Sendable {
@@ -65,4 +66,5 @@ public struct AppleAuthRequest: Encodable, Sendable {
     public let rawNonce: String
     public let firstName: String?
     public let lastName: String?
+    public let termsAccepted: Bool
 }

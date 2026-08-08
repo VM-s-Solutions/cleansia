@@ -2053,3 +2053,31 @@ So a customer booking a one-off clean is told they will be reminded an hour befo
 
 - Default taken: **none.** I did not silently edit this line while I was in the file, because unlike the assignment promise this one is worth *keeping* and making true.
 - Answer: _(owner fills in)_
+
+---
+
+### 🔴 Q-FEED-03 — [blocking: no] "Jobs near you" is country-wide. The apps have been promising proximity that does not exist
+- Raised by: backend (partner-notification lane) · Owner: owner · Resolve-by: pre-prod · 2026-08-08
+- **You asked for an hourly digest of new jobs *nearby*. The cadence is shipped. "Nearby" is not — and it never was.**
+
+**What the digest actually filters on**, verified at HEAD: `o.CustomerAddress.CountryId == cleaner.WorkCountryId`. That is **country**. There is no radius, no city match, and **zero** references to latitude, longitude, distance or radius anywhere on that code path.
+
+So a cleaner in Prague is notified about a job in Ostrava — 300 km away — and the notification calls it *"near you"*.
+
+**Three shipped strings promise proximity**, on the partner Android app alone (each with four translations, and iOS twins):
+- `notification_new_jobs_body` — *"%1$d new jobs available **near you**"*
+- `onboarding_ready_body` — *"see available jobs **near you**"*
+- `address_why_reason_jobs` — ***"Show you jobs near you, with distance from your home"***
+
+**The third is the one to look at.** It is the justification shown to a cleaner explaining **why the app is asking for their home address** — and it promises *distance from your home*, which is computed nowhere. The address is geocoded and stored; nothing reads those coordinates for targeting.
+
+**Why the data exists but is unused, which is the interesting part.** The service-area model is explicit that it validates the **customer's** address only — its own comment says *"Employee addresses do NOT have to match — cleaners can live anywhere and commute into served cities."* So the platform deliberately does not tie a cleaner to a place, and "nearby" has no definition to compute against.
+
+**This is the same class as the one-hour promise you just dropped**: copy selling something the mechanism does not deliver. It is bigger, though — that was one line, this is a feature.
+
+**What has to be decided before it can even be a ticket:** what defines a cleaner's area?
+- **(a) A radius from their home address** — the data exists and is geocoded; it makes the address-permission justification true. But it ties work to where someone lives, which the service-area model deliberately avoided.
+- **(b) An explicit opt-in** — the cleaner picks the cities or areas they will travel to. More honest and more work, and it is what the "commute into served cities" comment implies.
+- **(c) Keep it country-wide and fix the copy** — cheapest, immediately honest, and loses nothing that exists today. The three strings become *"new jobs available"*.
+- Default taken: **none.** The cadence you asked for shipped; the proximity did not, and I did not invent a definition. **Note that (c) is available immediately and independently** — the copy is false today regardless of which way you eventually go.
+- Answer: _(owner fills in)_

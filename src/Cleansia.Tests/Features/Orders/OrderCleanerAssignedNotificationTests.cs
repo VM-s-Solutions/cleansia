@@ -124,8 +124,9 @@ public class OrderCleanerAssignedNotificationTests
             new AdminReassignOrder.Command(OrderId, OtherEmployeeId, TakerEmployeeId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        var sent = Assert.Single(_sent);
-        Assert.Equal(NotificationEventCatalog.OrderCleanerAssigned, sent.EventKey);
+        // Filtered rather than sole: the same handler also tells the incoming cleaner, on their own
+        // partner key. What this pins is that the CUSTOMER hears the claim exactly once.
+        var sent = Assert.Single(_sent, s => s.EventKey == NotificationEventCatalog.OrderCleanerAssigned);
         Assert.Equal(CustomerUserId, sent.UserId);
         Assert.Equal(order.DisplayOrderNumber, sent.Args["orderNumber"]);
     }

@@ -19,7 +19,7 @@ public class TimerScheduleConfigTests
     private const string MaterializeCron = "0 0 2 * * *";
     private const string RemindersCron = "0 30 2 * * *";
     private const string MembershipCron = "0 0 3 * * *";
-    private const string DigestCron = "0 0,30 * * * *";
+    private const string DigestCron = "0 0 * * * *";
     private const string ExpireReferralsCron = "0 30 3 * * *";
 
     private static readonly IConfiguration ProductionDefaults = BuildProductionDefaults();
@@ -50,6 +50,41 @@ public class TimerScheduleConfigTests
         var effective = ResolveToken(token);
 
         Assert.Equal(expectedCron, effective);
+    }
+
+    /// <summary>
+    /// The cadence as a PROPERTY of the schedule rather than a string comparison: the digest opens at
+    /// most one notification window per clock hour. String equality above pins the committed default;
+    /// this pins what the owner actually asked for, so any expression that reintroduces a sub-hourly
+    /// window — <c>0 0,30</c>, <c>0 *&#47;20</c>, a second minute field entry — fails here whatever it
+    /// is spelled like. The digest watermark advances to the sweep start, so the sweep interval IS the
+    /// per-cleaner rate limit.
+    /// </summary>
+    [Fact]
+    public void Digest_opens_at_most_one_window_per_clock_hour()
+    {
+        var digest = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendNewJobsDigestTimerFunction))));
+
+        var dayStart = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+
+        var fires = new List<DateTime>();
+        var cursor = dayStart.AddSeconds(-1);
+        while (true)
+        {
+            cursor = digest.NextOccurrence(cursor);
+            if (cursor >= dayEnd)
+            {
+                break;
+            }
+
+            fires.Add(cursor);
+        }
+
+        Assert.Equal(
+            fires.Select(f => f.Hour).Distinct().Count(),
+            fires.Count);
+        Assert.Equal(24, fires.Select(f => f.Hour).Distinct().Count());
     }
 
     [Fact]

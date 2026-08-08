@@ -3,7 +3,7 @@
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-        "_comment_TimerCron": "Dev override for the recurring/notification timer crons. Production defaults (0 0 2, 0 30 2, 0 0 3, 0 0,30, 0 30 3) ship in appsettings.json; promotion is config-only. These dev Values override appsettings.json so local runs fire on a fast cadence without a code change.",
+        "_comment_TimerCron": "Dev override for the recurring/notification timer crons. Production defaults (0 0 2, 0 30 2, 0 0 3, 0 0 *, 0 30 3) ship in appsettings.json; promotion is config-only. These dev Values override appsettings.json so local runs fire on a fast cadence without a code change.",
         "MaterializeRecurringBookingsCron": "0 */2 * * * *",
         "SendRecurringOrderRemindersCron": "0 */2 * * * *",
         "SendMembershipLifecycleNotificationsCron": "0 */2 * * * *",

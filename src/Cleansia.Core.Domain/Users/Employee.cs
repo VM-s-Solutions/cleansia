@@ -63,8 +63,8 @@ public class Employee : Auditable, ITenantEntity
 
     /// <summary>
     /// Timestamp of the last "new jobs available" digest push delivered to
-    /// this cleaner. Used by the 30-min digest sweep to find newly-eligible
-    /// orders since the cleaner was last notified. Null = never notified
+    /// this cleaner. Used by the digest sweep to find newly-eligible orders
+    /// since the cleaner was last notified. Null = never notified
     /// (cleaner gets all currently-eligible orders on first digest).
     /// </summary>
     public DateTimeOffset? LastNewJobsDigestAt { get; private set; }

@@ -47,9 +47,10 @@ public enum NotificationCategory
 
     /// <summary>
     /// Partner-side digest: "N new jobs available near you". Fired by the
-    /// 30-min sweep, NOT per-order, so cleaners aren't pinged for every
+    /// periodic sweep, NOT per-order, so cleaners aren't pinged for every
     /// individual booking. Targeted by work country + approved/active +
-    /// not-busy at the digest time.
+    /// not-busy at the digest time — "near you" is the client's wording, the
+    /// server's scope is the whole work COUNTRY.
     /// </summary>
     NewJobsAvailable = 12,
 }

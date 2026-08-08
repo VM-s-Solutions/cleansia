@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// 30-min "new jobs available" digest sweep.
+/// The "new jobs available" digest sweep. Its cadence is the timer's, not this class's — the
+/// <c>SendNewJobsDigestCron</c> app-setting (production default: hourly, on the hour).
 ///
 /// Targeting (v1):
 ///   - <see cref="Domain.Users.Employee.ContractStatus"/> ∈ { Approved, Active }
@@ -48,10 +49,10 @@ namespace Cleansia.Core.AppServices.Services;
 /// A cleaner who has never been digested has no watermark and no released window: the
 /// whole open board is new to them, bounded by the not-started-yet floor.
 ///
-/// Throttling: this method IS the rate-limit — the timer's 30-min cadence
-/// caps each cleaner to at most one digest per interval. No per-event
-/// dedup store is needed because cleaners are only notified about orders
-/// that are fresh to them personally.
+/// Throttling: this method IS the rate-limit — the timer's cadence caps each
+/// cleaner to at most one digest per interval. No per-event dedup store is
+/// needed because cleaners are only notified about orders that are fresh to
+/// them personally.
 ///
 /// Opt-out: each candidate's <see cref="UserNotificationPreferences.NewJobsAvailable"/>
 /// gates the enqueue. Cleaners can disable the category and never

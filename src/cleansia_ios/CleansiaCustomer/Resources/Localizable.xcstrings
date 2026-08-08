@@ -24081,6 +24081,76 @@
         }
       }
     },
+    "push.order.cleaner_assigned.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K vaší rezervaci #%1$@ je přiřazen uklízeč. Klepněte pro zobrazení detailů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A cleaner is assigned to your booking #%1$@. Tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "К вашему заказу #%1$@ назначен клинер. Нажмите, чтобы посмотреть подробности."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K vašej rezervácii #%1$@ je priradený upratovač. Ťuknutím zobrazíte detaily."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "До вашого замовлення #%1$@ призначено клінера. Натисніть, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.cleaner_assigned.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uklízeč nalezen! 🎉"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaner found! 🎉"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клинер найден! 🎉"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upratovač nájdený! 🎉"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клінера знайдено! 🎉"
+          }
+        }
+      }
+    },
     "push.order.completed.body" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24192,31 +24262,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uklízeč nalezen! 🎉"
+            "value" : "Rezervace potvrzena ✅"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cleaner found! 🎉"
+            "value" : "Booking confirmed ✅"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Клинер найден! 🎉"
+            "value" : "Заказ подтверждён ✅"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upratovač nájdený! 🎉"
+            "value" : "Rezervácia potvrdená ✅"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Клінера знайдено! 🎉"
+            "value" : "Замовлення підтверджено ✅"
           }
         }
       }

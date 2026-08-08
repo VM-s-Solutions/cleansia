@@ -11496,6 +11496,74 @@
         }
       }
     },
+    "push.order.cleaner_assigned.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K zakázce č. %1$@ je přiřazen uklízeč. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A cleaner is assigned to job #%1$@. Tap to see the details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К заказу №%1$@ назначен клинер. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K zákazke č. %1$@ je priradený upratovač. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До замовлення №%1$@ призначено клінера. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.cleaner_assigned.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uklízeč přiřazen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaner assigned"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клинер назначен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovač priradený"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клінера призначено"
+          }
+        }
+      }
+    },
     "push.order.completed.body": {
       "localizations": {
         "cs": {

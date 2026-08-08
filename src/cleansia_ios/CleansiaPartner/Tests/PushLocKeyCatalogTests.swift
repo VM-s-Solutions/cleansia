@@ -7,7 +7,9 @@ import XCTest
 ///
 /// `events` mirrors `FcmMessageFactory.ApnsDisplayMap` and no count is stated
 /// anywhere — a number in a doc comment goes stale silently, and this array
-/// already did. The list itself is pinned server-side by
+/// already did. It may lead the map by an event and never trail it: the copy
+/// ships before the registration, so an event is listed here for the length of
+/// one backend change. The list itself is pinned server-side by
 /// `ApnsDisplayMapIosCatalogSyncTests`, which reads this catalog off disk and
 /// so fails on the backend PR that registers an event without shipping copy.
 final class PushLocKeyCatalogTests: XCTestCase {
@@ -15,6 +17,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
         "order.confirmed",
+        "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",
@@ -32,6 +35,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     ]
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
+        "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",

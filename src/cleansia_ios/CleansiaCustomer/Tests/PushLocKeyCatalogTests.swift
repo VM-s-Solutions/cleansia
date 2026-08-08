@@ -7,7 +7,9 @@ import XCTest
 ///
 /// `events` mirrors `FcmMessageFactory.ApnsDisplayMap` and no count is stated
 /// anywhere — a number in a doc comment goes stale silently, and this array
-/// already did. The list itself is pinned server-side by
+/// already did. It may lead the map by an event and never trail it: the copy
+/// ships before the registration, so an event is listed here for the length of
+/// one backend change. The list itself is pinned server-side by
 /// `ApnsDisplayMapIosCatalogSyncTests`, which reads this catalog off disk and
 /// so fails on the backend PR that registers an event without shipping copy.
 ///
@@ -18,6 +20,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
         "order.confirmed",
+        "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",
@@ -35,6 +38,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     ]
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
+        "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",
@@ -44,6 +48,15 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.new_available",
         "order.preferred_offer",
         "order.assignment_cancelled"
+    ]
+
+    /// The word each locale uses for the person — i.e. the claim being made.
+    private let cleanerWord = [
+        "en": "Cleaner",
+        "cs": "Uklízeč",
+        "sk": "Upratovač",
+        "uk": "Клінер",
+        "ru": "Клинер"
     ]
 
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {
@@ -76,6 +89,39 @@ final class PushLocKeyCatalogTests: XCTestCase {
                     )
                 }
             }
+        }
+    }
+
+    /// `order.cleaner_assigned` is the only event that may claim a cleaner is on the
+    /// job. `order.confirmed` is also produced by the Stripe webhook and by the
+    /// customer confirming a recurring occurrence, on neither of which has a cleaner
+    /// seen the order.
+    func testNoConfirmationCopyClaimsACleaner() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let word = try XCTUnwrap(cleanerWord[language])
+            for key in ["push.order.confirmed.title", "push.order.confirmed.body"] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                XCTAssertNil(
+                    value.range(of: word, options: .caseInsensitive),
+                    "\(key) still claims a cleaner in \(language): \(value)"
+                )
+            }
+        }
+    }
+
+    func testTheCleanerClaimMovedToTheAssignmentTitleRatherThanBeingDeleted() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let word = try XCTUnwrap(cleanerWord[language])
+            let value = try XCTUnwrap(
+                table["push.order.cleaner_assigned.title"],
+                "push.order.cleaner_assigned.title in \(language)"
+            )
+            XCTAssertNotNil(
+                value.range(of: word, options: .caseInsensitive),
+                "push.order.cleaner_assigned.title no longer names the cleaner in \(language): \(value)"
+            )
         }
     }
 

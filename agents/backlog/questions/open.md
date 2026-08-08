@@ -1909,3 +1909,67 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
 - Default taken: **stock MapKit styling**, which is what ships today. Nothing changes until the spike
   says what is available.
 - Answer: _(owner fills in, after the spike)_
+
+---
+
+## Favourite-cleaner assignment questions (2026-08-08) — raised by the design of the owner's assign-and-confirm request
+
+> Context, because the phrase alone means nothing: the owner asked that a cleaner with a free slot be
+> **assigned** rather than merely prioritised, be **notified** when a customer books, and be asked to
+> **confirm** — and that on refusal the customer be offered another cleaner through the same flow, or a
+> random one. The design draft answers that. These four are the parts it deliberately did **not**
+> decide, because each is a product or policy call rather than an engineering one.
+
+### Q-ASSIGN-01 — [blocking: no] When we offer "a random cleaner", does the customer see a NAME or a promise?
+- Raised by: architect (assign-and-confirm draft) · Owner: owner · Resolve-by: pre-prod · 2026-08-08
+- Question: your flow ends with *"or suggest a random cleaner"*. Two very different products fit that.
+  **(a)** we show a **specific person** — name, photo, rating — and the customer accepts them, which
+  means that cleaner then goes through the same confirm-or-decline loop and can also say no.
+  **(b)** we show **no name** — *"we'll assign the first available cleaner"* — and the job simply goes
+  to the open board, where whoever takes it first gets it.
+- Why it matters: (a) is warmer and is what "suggest a cleaner" sounds like, but it can decline again,
+  and each round costs the customer another wait. (b) always terminates, is what the platform actually
+  does under the hood today, and is the one promise we can keep without qualification. **This is the
+  same failure class as the checkout copy where three languages promise assignment and two promise only
+  priority** — a sentence that outruns the mechanism.
+- Default taken: **none.** The mechanism is decided either way; only the promise is open, and a promise
+  is not the architect's to make.
+- Answer: _(owner fills in)_
+
+### Q-ASSIGN-02 — [blocking: no] Two rounds of asking, before the job goes to everyone. Is two right?
+- Raised by: architect · Owner: owner · Resolve-by: pre-prod · 2026-08-08
+- Question: when a favourite cleaner declines or does not answer, the customer may pick again. The draft
+  caps that at **two rounds**, then the job opens to the whole board. Two is **derived, not measured**:
+  each round holds the job off the open board for a slice of its lead time, and the cap is what keeps
+  the total held share inside the platform's own floor for how much of the board must stay open.
+  Raising it to three means a job can spend more of its life invisible to everyone else, which is how a
+  booking ends up with nobody on it.
+- Why it matters: it trades the customer's preference against the job actually getting filled. Two is a
+  defensible starting point; it is not a measured one, and the measurement it would need does not exist
+  yet.
+- Default taken: **two rounds**, which is what the draft specifies and pins with a test.
+- Answer: _(owner fills in)_
+
+### Q-ASSIGN-03 — [blocking: no] Should a cleaner who keeps declining lose the favourite perk?
+- Raised by: architect · Owner: owner · Resolve-by: post-launch · 2026-08-08
+- Question: nothing today records that a cleaner declined — the reservation simply lapses. So no policy
+  can accrete by accident, which is deliberate. But should repeated declining have a consequence: they
+  stop being offered first, they are told, or nothing at all?
+- Why it matters: being offered first is a real advantage, and a cleaner who always declines it while
+  keeping the badge is taking the benefit without the obligation. Equally, declining a job at a bad time
+  is legitimate and punishing it makes the perk hostile. Recording declines is the precondition for
+  either answer and is **not** built.
+- Default taken: **nothing recorded, nothing enforced.**
+- Answer: _(owner fills in)_
+
+### Q-ASSIGN-04 — [blocking: no] Should the job ever be simply THEIRS, without confirming?
+- Raised by: architect · Owner: owner · Resolve-by: post-launch · 2026-08-08
+- Question: the draft builds a **reservation the cleaner must confirm**, because you said *"ask employee
+  to confirm the order."* The stronger reading of *"he has to be assigned"* would be that the job is
+  theirs whether or not they answer, and they must actively decline to give it up. Which did you mean?
+- Why it matters: the difference is who carries the risk of silence. Under the built design, silence
+  releases the job to everyone — the customer is never left with a cleaner who is not coming. Under the
+  stronger reading, silence keeps the job assigned to someone who may never show, which is worse for the
+  customer and better for the cleaner.
+- Default taken: **the reservation**, built from your own "ask employee to confirm" clause.
+- Answer: _(owner fills in)_

@@ -94,9 +94,15 @@ class AuthRepositoryImpl @Inject constructor(
         password: String,
         rememberMe: Boolean,
     ): ApiResult<LoginOutcome> {
+        val trustedDeviceToken = tokenStore.current()?.trustedDeviceToken
         val result = safeApiCall(json) {
             authApi.authLogin(
-                MobilePartnerLoginCommand(email = email, password = password, rememberMe = rememberMe),
+                MobilePartnerLoginCommand(
+                    email = email,
+                    password = password,
+                    rememberMe = rememberMe,
+                    trustedDeviceToken = trustedDeviceToken,
+                ),
             )
         }
 

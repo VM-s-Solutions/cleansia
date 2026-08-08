@@ -66,11 +66,18 @@ class AuthRepository(
 
     // ─── Login + register ───
 
-    suspend fun login(email: String, password: String, rememberMe: Boolean): ApiResult<AuthSuccess> =
-        when (val result = safeApiCall(json) { api.login(LoginRequest(email, password, rememberMe)) }) {
+    suspend fun login(email: String, password: String, rememberMe: Boolean): ApiResult<AuthSuccess> {
+        val body = LoginRequest(
+            email = email,
+            password = password,
+            rememberMe = rememberMe,
+            trustedDeviceToken = tokenStore.current()?.trustedDeviceToken,
+        )
+        return when (val result = safeApiCall(json) { api.login(body) }) {
             is ApiResult.Success -> handleAuthBody(result.data)
             is ApiResult.Error -> result
         }
+    }
 
     suspend fun register(
         email: String,

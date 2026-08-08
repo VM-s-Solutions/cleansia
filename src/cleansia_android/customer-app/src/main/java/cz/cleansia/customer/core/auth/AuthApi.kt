@@ -61,6 +61,12 @@ data class LoginRequest(
     val email: String,
     val password: String,
     val rememberMe: Boolean,
+    /**
+     * Optional trusted-device marker — the refresh token from a previous session, which lets a
+     * locked-out account sign in from its own device. Null when nothing is stored, and the
+     * converter drops null keys, so "no previous session" reaches the server as an absent field.
+     */
+    val trustedDeviceToken: String? = null,
 )
 
 @Serializable

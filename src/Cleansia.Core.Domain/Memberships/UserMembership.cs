@@ -47,9 +47,10 @@ public class UserMembership : Auditable, ITenantEntity
     /// End of the current Stripe billing period, and the second half of
     /// <see cref="IsActive"/>: benefits stop the moment it passes.
     ///
-    /// <para>It does <b>not</b> bound the express-waiver quota. That quota is two per CALENDAR month
-    /// (owner ruling), counted on <c>(TenantId, UserId, BenefitKind, PeriodKey)</c> — deliberately not on
-    /// this row, so it carries across a mid-month plan switch and does not reset on re-subscribe.</para>
+    /// <para>It does <b>not</b> bound the express-waiver quota. That quota is per CALENDAR month, sized by
+    /// <see cref="MembershipPlan.ExpressUpgradesPerMonth"/> and counted on
+    /// <c>(TenantId, UserId, BenefitKind, PeriodKey)</c> — deliberately not on this row, so it carries
+    /// across a mid-month plan switch and does not reset on re-subscribe.</para>
     ///
     /// <para>There is no grace window. <c>PastDue</c> is not <see cref="MembershipStatus.Active"/>, so
     /// every benefit stops on the first payment failure (owner ruling 2026-08-03).</para>

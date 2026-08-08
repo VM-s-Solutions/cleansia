@@ -2052,7 +2052,8 @@ So a customer booking a one-off clean is told they will be reminded an hour befo
 - **(b) Drop the sentence**, as with the assignment line. Cheapest, and it removes something customers likely value.
 
 - Default taken: **none.** I did not silently edit this line while I was in the file, because unlike the assignment promise this one is worth *keeping* and making true.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Build the reminder.** The line stays and becomes true. This is the case where the promise was keepable all along — a reminder is entirely within the platform's control — so the defect was the missing implementation, not the sentence.
+  Scope: a pre-cleaning reminder for a **one-off** order at the stated hour, its notification event, push copy in five locales on both platforms, and the feed row. The recurring-order reminder that already exists is a different job with a different lead time and is not the model to copy blindly.
 
 ---
 
@@ -2080,4 +2081,6 @@ So a cleaner in Prague is notified about a job in Ostrava — 300 km away — an
 - **(b) An explicit opt-in** — the cleaner picks the cities or areas they will travel to. More honest and more work, and it is what the "commute into served cities" comment implies.
 - **(c) Keep it country-wide and fix the copy** — cheapest, immediately honest, and loses nothing that exists today. The three strings become *"new jobs available"*.
 - Default taken: **none.** The cadence you asked for shipped; the proximity did not, and I did not invent a definition. **Note that (c) is available immediately and independently** — the copy is false today regardless of which way you eventually go.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Make the distance configurable per employee.** So neither of the three options as written — the cleaner sets their own radius rather than the platform picking one, and rather than the copy being softened to match a country-wide reality.
+  **This is a build, and it makes the shipped copy true rather than deleting it** — including the address permission justification, which promises *"distance from your home"*. The one geocoded point on a cleaner is their address, so that is what the radius is measured from unless the owner says otherwise.
+  **Two things the answer does not settle and that the build must not guess:** what happens to a cleaner who has **set no radius**, and what happens to one whose address **has no coordinates** — silently sending them nothing would be a regression from today's country-wide behaviour, and silently sending them everything makes the copy false again for exactly the people it is least able to serve.

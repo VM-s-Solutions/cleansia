@@ -213,6 +213,7 @@ public static class BusinessErrorMessage
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
+    public const string InvoiceNotApproved = "payroll.invoice.not_approved";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";

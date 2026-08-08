@@ -2603,7 +2603,9 @@
         "pdf_generation_failed": "Failed to generate PDF",
         "template_not_found": "Invoice template not found",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
-        "already_cancelled": "Invoice has already been cancelled"
+        "already_cancelled": "Invoice has already been cancelled",
+        "already_paid": "Invoice has already been marked paid",
+        "not_approved": "Invoice must be approved before it can be marked paid"
       },
       "unpaid_invoices_exist": "Unpaid invoices exist",
       "pay": {

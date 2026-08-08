@@ -2603,7 +2603,9 @@
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "template_not_found": "Šablona faktury nenalezena",
         "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
-        "already_cancelled": "Faktura již byla zrušena"
+        "already_cancelled": "Faktura již byla zrušena",
+        "already_paid": "Faktura již byla označena jako zaplacená",
+        "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou"
       },
       "unpaid_invoices_exist": "Existují nezaplacené faktury",
       "pay": {

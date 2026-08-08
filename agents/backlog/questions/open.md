@@ -1683,3 +1683,36 @@ remains open and non-blocking** — I cannot change repository settings in any c
 - Default taken: **none, deliberately.** Nothing was invented for the sign-in screen. The signup gate
   ships as ruled; this stays open and visible rather than being silently defaulted either way.
 - Answer: _(owner fills in)_
+
+---
+
+### 🔴 OWNER DATA STEP (2026-08-08) — the express-upgrade perk is switched OFF in data, on every environment
+- Raised by: backend (`a3ac501a`, verifying `Q-PLUS-02`)
+- Owner: owner — **this is a data change, not a code change; no agent may make it**
+- Resolve-by: **before anyone tests the Plus express perk**
+- Not a question — a **step**. Recorded here because it is the only place the owner reads.
+
+**What is true today, verified three ways:**
+
+1. `sql-scripts/insert_seed_data.sql` contains the string `ExpressUpgradesPerMonth` **zero times** — the
+   `PLUS_MONTHLY` / `PLUS_YEARLY` INSERT column lists (`:1677-1703`) omit it entirely.
+2. The column is `IsRequired().HasDefaultValue(0)`, so both plans land on **0**.
+3. `ExpressWaiverResolver.cs:52` returns early when `ExpressUpgradesPerMonth <= 0`.
+
+**Therefore no Plus member on a freshly seeded database receives any express waiver** — a perk
+advertised on web, Android and iOS, switched off in data. It is fail-closed and it is not the owner's
+ruling of **1**.
+
+**Two ways to land it; the second also fixes the already-deployed DEV database:**
+
+- **(a)** Add `"ExpressUpgradesPerMonth"` and the value `1` to both INSERT column lists in the seed.
+  ⚠️ This fixes **new** databases only. The seed's INSERTs are `WHERE NOT EXISTS`, so they **no-op on
+  existing rows** — a re-run will not retro-fix DEV.
+- **(b)** Set it to `1` on both plans through the **admin Membership Plans screen**. No deploy, and it
+  reaches the live DEV rows. `UpdateMembershipPlan` already exposes the field.
+
+**Recommended: do both** — (b) now so DEV is correct, (a) so the next seeded environment is born
+correct. Doing only (a) leaves DEV wrong; doing only (b) means the next fresh database is wrong again.
+
+This interacts with the owner's earlier "I'll drop the entire DB" plan: **a drop-and-reseed without (a)
+reinstates the zero.**

@@ -67,6 +67,11 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   // 'auth.invalid_reset_token' on screen.
   authinvalidresettoken: 'api.auth.invalid_reset_token',
   authsameresetpassword: 'api.auth.same_reset_password',
+  // Social sign-in that matches no account. The sign-in pair asserts no terms
+  // tick, so the backend refuses rather than provisioning, and the login
+  // facade's showApiError replaces the interceptor's translated snackbar —
+  // without this entry the screen prints 'auth.social_account_not_found'.
+  authsocialaccountnotfound: 'api.auth.social_account_not_found',
 };
 
 @Injectable({

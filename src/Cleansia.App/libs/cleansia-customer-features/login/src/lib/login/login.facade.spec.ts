@@ -10,10 +10,14 @@ import { LoginFacade } from './login.facade';
 
 describe('LoginFacade (customer)', () => {
   let facade: LoginFacade;
+  // Both pairs are stubbed so wiring the sign-in screen to the signup entry
+  // point shows up as a called mock instead of a crash on an absent method.
   let authService: {
     login: jest.Mock;
-    authenticateWithGoogle: jest.Mock;
-    authenticateWithApple: jest.Mock;
+    signInWithGoogle: jest.Mock;
+    signInWithApple: jest.Mock;
+    signUpWithGoogle: jest.Mock;
+    signUpWithApple: jest.Mock;
     setSession: jest.Mock;
   };
   let snackbar: {
@@ -24,11 +28,27 @@ describe('LoginFacade (customer)', () => {
   };
   let router: { navigate: jest.Mock };
 
+  /** Google hands the callback an ID token; the facade reads its payload segment. */
+  const CREDENTIAL = [
+    'header',
+    btoa(
+      JSON.stringify({
+        sub: 'google-subject',
+        email: 'jan@example.com',
+        given_name: 'Jan',
+        family_name: 'Novák',
+      })
+    ),
+    'signature',
+  ].join('.');
+
   beforeEach(() => {
     authService = {
       login: jest.fn(),
-      authenticateWithGoogle: jest.fn(),
-      authenticateWithApple: jest.fn(),
+      signInWithGoogle: jest.fn().mockReturnValue(of({ isEmailConfirmed: true })),
+      signInWithApple: jest.fn().mockReturnValue(of({ isEmailConfirmed: true })),
+      signUpWithGoogle: jest.fn().mockReturnValue(of({ isEmailConfirmed: true })),
+      signUpWithApple: jest.fn().mockReturnValue(of({ isEmailConfirmed: true })),
       setSession: jest.fn(),
     };
     snackbar = {
@@ -91,13 +111,11 @@ describe('LoginFacade (customer)', () => {
   });
 
   it('appleLogin forwards the RAW nonce untouched and signs the user in', () => {
-    authService.authenticateWithApple.mockReturnValue(of({ isEmailConfirmed: true }));
-
     facade.appleLogin('id-token', 'raw-nonce', 'Jan', 'Novák');
 
     // The server hashes this value itself — sending the hash instead fails
     // every sign-in with a generic error, so pin the argument order.
-    expect(authService.authenticateWithApple).toHaveBeenCalledWith(
+    expect(authService.signInWithApple).toHaveBeenCalledWith(
       'id-token',
       'raw-nonce',
       'Jan',
@@ -107,12 +125,47 @@ describe('LoginFacade (customer)', () => {
     expect(router.navigate).toHaveBeenCalled();
   });
 
+  // This screen has no terms checkbox and must never assert one. The signup
+  // entry point is the only thing that does, so reaching it from here would
+  // provision an unknown identity — which is the whole refusal being tested.
+  it.each([
+    ['Google', (f: LoginFacade) => f.googleLogin(CREDENTIAL), 'signInWithGoogle', 'signUpWithGoogle'],
+    ['Apple', (f: LoginFacade) => f.appleLogin('id-token', 'raw-nonce'), 'signInWithApple', 'signUpWithApple'],
+  ])('takes the %s SIGN-IN entry point, the one that asserts nothing', (_, run, signIn, signUp) => {
+    run(facade);
+
+    expect(authService[signIn as keyof typeof authService]).toHaveBeenCalled();
+    expect(authService[signUp as keyof typeof authService]).not.toHaveBeenCalled();
+  });
+
+  // An identity with no account is turned away rather than signed up, and the
+  // reason has to survive to the snackbar — a generic fallback here reads as an
+  // outage instead of "register first".
+  it.each([
+    ['Google', (f: LoginFacade) => f.googleLogin(CREDENTIAL), 'signInWithGoogle'],
+    ['Apple', (f: LoginFacade) => f.appleLogin('id-token', 'raw-nonce'), 'signInWithApple'],
+  ])('surfaces the %s refusal of an identity that has no account', (_, run, signIn) => {
+    (authService[signIn as keyof typeof authService] as jest.Mock).mockReturnValue(
+      throwError(() => ({
+        detail: 'auth.social_account_not_found',
+        errors: { TermsAccepted: 'auth.social_account_not_found' },
+      }))
+    );
+
+    run(facade);
+
+    expect(snackbar.showApiError).toHaveBeenCalledWith(expect.anything(), 'auth.login.error');
+    const [reported] = snackbar.showApiError.mock.calls[0];
+    expect(extractApiErrorCode(reported)).toBe('auth.social_account_not_found');
+    expect(authService.setSession).not.toHaveBeenCalled();
+  });
+
   it('surfaces an Apple sign-in error via showApiError (no swallow)', () => {
     // The shape matters: NSwag throws the ProblemDetails BARE, so this is what
     // a real 401 looks like on the way out of the service. Asserting only
     // `expect.anything()` here would stay green even if the error resolved to
     // nothing and the user saw the generic fallback instead of the real reason.
-    authService.authenticateWithApple.mockReturnValue(
+    authService.signInWithApple.mockReturnValue(
       throwError(() => ({
         detail: 'auth.google_type_error',
         errors: { IdentityToken: 'auth.google_type_error' },

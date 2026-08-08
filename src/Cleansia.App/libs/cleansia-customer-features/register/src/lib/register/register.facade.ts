@@ -160,7 +160,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
     this.authService
-      .authenticateWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .signUpWithGoogle(credential, googleId, email, firstName || '', lastName || '')
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
@@ -191,7 +191,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     if (!this.isTermsTicked()) return this.socialSignUpBlocked();
 
     this.authService
-      .authenticateWithApple(identityToken, rawNonce, firstName, lastName)
+      .signUpWithApple(identityToken, rawNonce, firstName, lastName)
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {

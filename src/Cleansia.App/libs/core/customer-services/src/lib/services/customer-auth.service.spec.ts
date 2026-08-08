@@ -15,11 +15,19 @@ describe('CustomerAuthService command payloads', () => {
   let userClient: Record<string, jest.Mock>;
   let gdprClient: Record<string, jest.Mock>;
 
+  function bodyAt(
+    client: Record<string, jest.Mock>,
+    method: string,
+    index: number
+  ): Record<string, unknown> {
+    return client[method].mock.calls[index][0].toJSON();
+  }
+
   function sentBody(
     client: Record<string, jest.Mock>,
     method: string
   ): Record<string, unknown> {
-    return client[method].mock.calls[0][0].toJSON();
+    return bodyAt(client, method, 0);
   }
 
   function configure(currentLang: string): void {
@@ -116,9 +124,12 @@ describe('CustomerAuthService command payloads', () => {
     });
   });
 
-  it('sends the google identity', () => {
+  // Provisioning is gated on the tick: a google signup that fails to assert it
+  // is refused with `auth.social_account_not_found` instead of creating the
+  // account, so the flag belongs in the pinned body rather than beside it.
+  it('sends the google identity and the asserted tick on a signup', () => {
     service
-      .authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')
+      .signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')
       .subscribe();
 
     expect(sentBody(authClient, 'googleAuth')).toEqual({
@@ -127,26 +138,62 @@ describe('CustomerAuthService command payloads', () => {
       email: 'a@b.cz',
       firstName: 'Jan',
       lastName: 'Novak',
+      termsAccepted: true,
     });
   });
 
-  it('sends the raw nonce alongside the apple identity token', () => {
-    service.authenticateWithApple('idtok', 'raw-nonce', 'Jan').subscribe();
+  it('sends the raw nonce and the asserted tick on an apple signup', () => {
+    service.signUpWithApple('idtok', 'raw-nonce', 'Jan').subscribe();
 
     expect(sentBody(authClient, 'appleAuth')).toEqual({
       identityToken: 'idtok',
       rawNonce: 'raw-nonce',
       firstName: 'Jan',
       lastName: undefined,
+      termsAccepted: true,
     });
+  });
+
+  // Sign-in asserts nothing on purpose (Q-CONSENT-02): an identity it does not
+  // recognize must be turned away, not signed up behind the visitor's back.
+  it.each([
+    ['google', 'googleAuth', () => service.signInWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')],
+    ['apple', 'appleAuth', () => service.signInWithApple('idtok', 'raw-nonce')],
+  ])('asserts no tick on a %s sign-in', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(authClient, method)['termsAccepted']).toBe(false);
+  });
+
+  // One root-provided service serves the signup and the sign-in screen, so the
+  // flag has to come from the method called and from nothing that survives it.
+  it.each([
+    [
+      'google',
+      'googleAuth',
+      () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak'),
+      () => service.signInWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak'),
+    ],
+    [
+      'apple',
+      'appleAuth',
+      () => service.signUpWithApple('idtok', 'raw-nonce', 'Jan'),
+      () => service.signInWithApple('idtok', 'raw-nonce'),
+    ],
+  ])('does not carry a preceding %s signup tick into a later sign-in', (_, method, signUp, signIn) => {
+    signUp().subscribe();
+
+    signIn().subscribe();
+
+    expect(bodyAt(authClient, method, 1)['termsAccepted']).toBe(false);
   });
 
   // Unlike email registration, both social branches settle the session inside the
   // response pipeline — so anything the caller records in its own next handler is
   // already too late for the flush that rides setSession.
   it.each([
-    ['google', () => service.authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')],
-    ['apple', () => service.authenticateWithApple('idtok', 'raw-nonce')],
+    ['google', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')],
+    ['apple', () => service.signUpWithApple('idtok', 'raw-nonce')],
   ])('has already started the session when the %s response reaches the caller', (_, call) => {
     let loggedInWhenResumed: boolean | null = null;
 

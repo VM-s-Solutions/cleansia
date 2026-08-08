@@ -21,8 +21,8 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
   let referralClient: { validate: jest.Mock };
   let authService: {
     register: jest.Mock;
-    authenticateWithGoogle: jest.Mock;
-    authenticateWithApple: jest.Mock;
+    signUpWithGoogle: jest.Mock;
+    signUpWithApple: jest.Mock;
     setSession: jest.Mock;
   };
   let snackbar: {
@@ -41,8 +41,8 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
     referralClient = { validate: jest.fn() };
     authService = {
       register: jest.fn().mockReturnValue(of({})),
-      authenticateWithGoogle: jest.fn(),
-      authenticateWithApple: jest.fn(),
+      signUpWithGoogle: jest.fn(),
+      signUpWithApple: jest.fn(),
       setSession: jest.fn(),
     };
     snackbar = {
@@ -158,7 +158,7 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
 
 describe('RegisterFacade — Sign in with Apple', () => {
   let facade: RegisterFacade;
-  let authService: { authenticateWithApple: jest.Mock; setSession: jest.Mock };
+  let authService: { signUpWithApple: jest.Mock; setSession: jest.Mock };
   let snackbar: {
     showApiError: jest.Mock;
     showErrorTranslated: jest.Mock;
@@ -167,7 +167,7 @@ describe('RegisterFacade — Sign in with Apple', () => {
   let router: { navigate: jest.Mock };
 
   beforeEach(() => {
-    authService = { authenticateWithApple: jest.fn(), setSession: jest.fn() };
+    authService = { signUpWithApple: jest.fn(), setSession: jest.fn() };
     snackbar = {
       showApiError: jest.fn(),
       showErrorTranslated: jest.fn(),
@@ -194,13 +194,13 @@ describe('RegisterFacade — Sign in with Apple', () => {
   });
 
   it('forwards the RAW nonce and the first-authorization name untouched', () => {
-    authService.authenticateWithApple.mockReturnValue(of({}));
+    authService.signUpWithApple.mockReturnValue(of({}));
 
     facade.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novák');
 
     // The server hashes this value itself — sending the hash instead fails
     // every sign-up with a generic error, so pin the argument order.
-    expect(authService.authenticateWithApple).toHaveBeenCalledWith(
+    expect(authService.signUpWithApple).toHaveBeenCalledWith(
       'id-token',
       'raw-nonce',
       'Jan',
@@ -214,7 +214,7 @@ describe('RegisterFacade — Sign in with Apple', () => {
     // Bare ProblemDetails — the shape NSwag actually throws. Pinning the
     // resolved key as well as the fallback keeps this from passing while the
     // user is shown the generic message instead of the real reason.
-    authService.authenticateWithApple.mockReturnValue(
+    authService.signUpWithApple.mockReturnValue(
       throwError(() => ({
         detail: 'auth.invalid_apple_token',
         errors: { IdentityToken: 'auth.invalid_apple_token' },
@@ -363,9 +363,13 @@ describe('RegisterFacade — the consent ticked at signup', () => {
 describe('RegisterFacade — the consent ticked at a social signup', () => {
   let facade: RegisterFacade;
   let gdprClient: Record<string, jest.Mock>;
+  // Both pairs are stubbed so wiring a signup screen to the sign-in entry point
+  // shows up as a called mock instead of a crash on an absent method.
   let authService: {
-    authenticateWithGoogle: jest.Mock;
-    authenticateWithApple: jest.Mock;
+    signUpWithGoogle: jest.Mock;
+    signUpWithApple: jest.Mock;
+    signInWithGoogle: jest.Mock;
+    signInWithApple: jest.Mock;
     setSession: jest.Mock;
   };
   let router: { navigate: jest.Mock };
@@ -406,8 +410,10 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
   beforeEach(() => {
     localStorage.clear();
     authService = {
-      authenticateWithGoogle: jest.fn().mockReturnValue(of(SESSION)),
-      authenticateWithApple: jest.fn().mockReturnValue(of(SESSION)),
+      signUpWithGoogle: jest.fn().mockReturnValue(of(SESSION)),
+      signUpWithApple: jest.fn().mockReturnValue(of(SESSION)),
+      signInWithGoogle: jest.fn().mockReturnValue(of(SESSION)),
+      signInWithApple: jest.fn().mockReturnValue(of(SESSION)),
       setSession: jest.fn(),
     };
     router = { navigate: jest.fn() };
@@ -490,15 +496,31 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
     ]);
   });
 
+  // The signup screen must reach the entry point that asserts the tick. A screen
+  // wired to the wrong one still passes every behavioural test below — the gate
+  // blocks both and both mint a session — so read the call itself.
   it.each([
-    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'authenticateWithGoogle'],
-    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'authenticateWithApple'],
-  ])('creates no account at all on %s while the box is unticked', (_, run, clientCall) => {
+    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'signUpWithGoogle', 'signInWithGoogle'],
+    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'signUpWithApple', 'signInWithApple'],
+  ])('takes the %s SIGNUP entry point, the one that asserts the tick', (_, run, signUp, signIn) => {
+    tick(true);
+
+    run(facade);
+
+    expect(authService[signUp as keyof typeof authService]).toHaveBeenCalled();
+    expect(authService[signIn as keyof typeof authService]).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'signUpWithGoogle', 'signInWithGoogle'],
+    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'signUpWithApple', 'signInWithApple'],
+  ])('creates no account at all on %s while the box is unticked', (_, run, signUp, signIn) => {
     tick(false);
 
     run(facade);
 
-    expect(authService[clientCall as keyof typeof authService]).not.toHaveBeenCalled();
+    expect(authService[signUp as keyof typeof authService]).not.toHaveBeenCalled();
+    expect(authService[signIn as keyof typeof authService]).not.toHaveBeenCalled();
     expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
     expect(authService.setSession).not.toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
@@ -512,21 +534,21 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
   // blocker cannot see that; this is the guard that does.
   it('grants nothing when the box is unticked while the provider popup is open', () => {
     const pending$ = new Subject<JwtTokenResponse>();
-    authService.authenticateWithGoogle.mockReturnValue(pending$.asObservable());
+    authService.signUpWithGoogle.mockReturnValue(pending$.asObservable());
     tick(true);
 
     facade.googleRegister(CREDENTIAL);
     tick(false);
     pending$.next(SESSION);
 
-    expect(authService.authenticateWithGoogle).toHaveBeenCalled();
+    expect(authService.signUpWithGoogle).toHaveBeenCalled();
     expect(authService.setSession).toHaveBeenCalled();
     expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
   });
 
   it.each([
-    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'authenticateWithGoogle'],
-    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'authenticateWithApple'],
+    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'signUpWithGoogle'],
+    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'signUpWithApple'],
   ])('grants nothing when the %s sign-up itself failed', (_, run, clientCall) => {
     (authService[clientCall as keyof typeof authService] as jest.Mock).mockReturnValue(
       throwError(() => ({ errors: { Token: 'auth.invalid_google_token' } }))

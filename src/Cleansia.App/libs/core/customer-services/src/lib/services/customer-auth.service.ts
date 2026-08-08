@@ -102,12 +102,59 @@ export class CustomerAuthService {
       .pipe(map(() => true));
   }
 
-  authenticateWithGoogle(
+  /**
+   * Signup and sign-in are four methods rather than two with a flag because the
+   * consent assertion has to be a property of the call. One root-provided
+   * service serves both screens, so anything the flag could be read from
+   * outlives the call that set it — and a ticked signup form reaching a sign-in
+   * request provisions an account nobody agreed to. An identity the sign-in
+   * pair does not recognize is refused with `auth.social_account_not_found`.
+   */
+  signUpWithGoogle(
     token: string,
     googleId: string,
     email: string,
     firstName: string,
     lastName: string
+  ): Observable<JwtTokenResponse> {
+    return this.googleAuth(token, googleId, email, firstName, lastName, true);
+  }
+
+  signInWithGoogle(
+    token: string,
+    googleId: string,
+    email: string,
+    firstName: string,
+    lastName: string
+  ): Observable<JwtTokenResponse> {
+    return this.googleAuth(token, googleId, email, firstName, lastName, false);
+  }
+
+  signUpWithApple(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): Observable<JwtTokenResponse> {
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true);
+  }
+
+  signInWithApple(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): Observable<JwtTokenResponse> {
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false);
+  }
+
+  private googleAuth(
+    token: string,
+    googleId: string,
+    email: string,
+    firstName: string,
+    lastName: string,
+    termsAccepted: boolean
   ): Observable<JwtTokenResponse> {
     const command = new GoogleAuthCommand();
     command.token = token;
@@ -115,6 +162,7 @@ export class CustomerAuthService {
     command.email = email;
     command.firstName = firstName;
     command.lastName = lastName;
+    command.termsAccepted = termsAccepted;
 
     return this.customerClient.authClient.googleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {
@@ -128,17 +176,19 @@ export class CustomerAuthService {
    * `rawNonce` is the RAW nonce; Apple was handed its SHA-256. See
    * `createAppleNonce`.
    */
-  authenticateWithApple(
+  private appleAuth(
     identityToken: string,
     rawNonce: string,
-    firstName?: string,
-    lastName?: string
+    firstName: string | undefined,
+    lastName: string | undefined,
+    termsAccepted: boolean
   ): Observable<JwtTokenResponse> {
     const command = new AppleAuthCommand();
     command.identityToken = identityToken;
     command.rawNonce = rawNonce;
     command.firstName = firstName;
     command.lastName = lastName;
+    command.termsAccepted = termsAccepted;
 
     return this.customerClient.authClient.appleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {

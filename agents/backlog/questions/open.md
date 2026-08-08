@@ -1908,7 +1908,7 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
   becomes "we'll do it later" and never gets measured. Naming the unknown makes it decidable.
 - Default taken: **stock MapKit styling**, which is what ships today. Nothing changes until the spike
   says what is available.
-- Answer: _(owner fills in, after the spike)_
+- **Answer (owner, 2026-08-08):** **No restyle. One thing only: the map PIN.** Verbatim: *"Don't do anything, except the pointer on the map. I want to change it to be the same as in android app if possible. The blue one."* So the MapKit base cartography is left stock, and the single change is the **marker/annotation** on iOS matching the Android app's blue pin. That is an annotation-view change, not a base-map style — which is the half of MapKit that is fully controllable, so the *"if possible"* is almost certainly a yes. Scoped to a small iOS ticket; the spike this question originally asked for is **no longer needed**.
 
 ---
 
@@ -1934,7 +1934,7 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
   priority** — a sentence that outruns the mechanism.
 - Default taken: **none.** The mechanism is decided either way; only the promise is open, and a promise
   is not the architect's to make.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **(b) — a promise, not a name.** The customer is told the platform will find them a cleaner; no specific person is shown at that step. This is the only option that always terminates and the only promise the mechanism can keep without qualification.
 
 ### Q-ASSIGN-02 — [blocking: no] Two rounds of asking, before the job goes to everyone. Is two right?
 - Raised by: architect · Owner: owner · Resolve-by: pre-prod · 2026-08-08
@@ -1948,7 +1948,7 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
   defensible starting point; it is not a measured one, and the measurement it would need does not exist
   yet.
 - Default taken: **two rounds**, which is what the draft specifies and pins with a test.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Keep two rounds.** The derived cap stands and is pinned by a test.
 
 ### Q-ASSIGN-03 — [blocking: no] Should a cleaner who keeps declining lose the favourite perk?
 - Raised by: architect · Owner: owner · Resolve-by: post-launch · 2026-08-08
@@ -1960,7 +1960,7 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
   is legitimate and punishing it makes the perk hostile. Recording declines is the precondition for
   either answer and is **not** built.
 - Default taken: **nothing recorded, nothing enforced.**
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **Not now.** Declines stay unrecorded and nothing is enforced, so no policy can accrete by accident. Revisit only if declining becomes a real pattern — and note that **recording declines is the precondition** for any future answer here, so it is a build, not a config flip.
 
 ### Q-ASSIGN-04 — [blocking: no] Should the job ever be simply THEIRS, without confirming?
 - Raised by: architect · Owner: owner · Resolve-by: post-launch · 2026-08-08
@@ -1972,4 +1972,6 @@ yet"*, which today lives only in the owner's bank. Schema change ⇒ **owner-run
   stronger reading, silence keeps the job assigned to someone who may never show, which is worse for the
   customer and better for the cleaner.
 - Default taken: **the reservation**, built from your own "ask employee to confirm" clause.
-- Answer: _(owner fills in)_
+- **Answer (owner, 2026-08-08):** **The reservation is confirmed. Verbatim:** *"They either have to confirm that they took this order and then there is a message for the customer that it was confirmed. If it's declined then it's gonna propose to find another cleaner, if no found and none confirmed then a random is assigned."*
+  **This settles the design and adds one thing the draft did not have:** a **customer-facing confirmation message** when the cleaner confirms. That is a new customer-targeted notification, and it is the first thing in this flow the customer hears rather than infers.
+  **One ambiguity I am recording rather than resolving silently.** *"a random is assigned"* has two readings. **(i)** the job goes to the **open board** and whoever takes it first ends up with it — which *looks* random to the customer and is exactly what the platform does today; or **(ii)** the platform actively **picks** a cleaner and assigns them. I am building **(i)**, because it is what `Q-ASSIGN-01`'s *"promise, not a name"* answer describes (*"the first available cleaner"*), it needs no new dispatch model, and it cannot put a job on someone who never agreed to it. **Say so if you meant (ii)** — that is a genuinely different product, in which a cleaner can be given work they never accepted.

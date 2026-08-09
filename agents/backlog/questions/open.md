@@ -2226,3 +2226,30 @@ behaviour change on a surface nobody asked about, so it was flagged rather than 
    detail they opened. Adding a coarse field is a DTO shape change (`manual_step: nswag-regen`), so it is
    a follow-up ticket rather than part of the security fix. **No client drops the row** — iOS, Android and
    web all handle a null address and gate their maps on coordinates.
+
+---
+
+## N19 — the partner apps never tell the server what language the cleaner picked (2026-08-09)
+
+Raised by the Android lane at the end of an unrelated ticket, verified by me before it was actioned.
+
+`agents/knowledge/patterns-mobile.md:558` already states the rule — *"a local preference the server
+also stores needs a sync seam, not just a DataStore write"* — and names the **customer** implementation
+plus its iOS mirror. The **partner** apps have none, on either platform: all three `setLanguage` call
+sites write DataStore and stop.
+
+**What that actually costs is worse than mis-addressed email.**
+`PayPeriodBackgroundService.cs:230` reads `employee.User.PreferredLanguageCode ?? "en"` and threads it
+through **two** things — the period-closed email **and the rendered invoice PDF** (`:237`, `:269`,
+`:301`, `:341`). So a cleaner who switches the app to Czech keeps receiving their **payout invoice, a
+tax document they file**, in whatever language signup happened to send. The app shows them one language
+and the document that matters is in another, and nothing on either side ever disagrees out loud.
+
+Being fixed on both platforms, no owner input needed. The difficulty is not the push — it is that the
+server's update path takes a **profile**, so a command carrying only the language blanks every other
+field on the row. That is why the customer app has a seam rather than a line in a view model.
+
+**This also closes the loop on why the E9 allowlist read the way it did.** `consistency.md:279` exempts
+`AppSettingsRepository` from the session-wipe set because it *"holds device-level prefs"* — and the
+language genuinely is one. What the allowlist could not say is that a device-level preference may still
+have a server-side twin. Those are different questions, and this is the case where they part company.

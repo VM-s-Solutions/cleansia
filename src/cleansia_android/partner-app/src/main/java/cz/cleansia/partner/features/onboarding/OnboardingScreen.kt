@@ -47,6 +47,7 @@ import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.core.settings.LanguagePreferenceSync
 import cz.cleansia.partner.features.settings.LanguageChooser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -63,6 +64,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository,
+    private val languageSync: LanguagePreferenceSync,
 ) : ViewModel() {
     fun markSeen() {
         viewModelScope.launch { appSettingsRepository.markOnboardingSeen() }
@@ -71,19 +73,25 @@ class OnboardingViewModel @Inject constructor(
     /**
      * Persists the language chosen on the intro screen.
      *
-     * Only persists — applying it to the running process is the caller's job
-     * (see [AppLocale]), exactly as the profile picker does it. Keeping the
-     * `AppCompatDelegate` call out of the ViewModel is what lets this be
-     * covered by a plain-JVM unit test.
+     * Applying it to the running process is the caller's job (see [AppLocale]), exactly as the
+     * profile picker does it. Keeping the `AppCompatDelegate` call out of the ViewModel is what lets
+     * this be covered by a plain-JVM unit test.
      *
      * The value has to land in DataStore rather than anywhere else because
      * that is what `AppSettingsRepository.emailLanguageTag()` reads when
      * `RegisterViewModel` stamps the confirmation email's language — routing
      * it through the store is also what runs `SupportedLanguages.resolve`, and
      * a raw device tag would fail the backend's `LanguageValidator` outright.
+     *
+     * Nobody is signed in on this carousel, so [languageSync] has no row to update and answers that
+     * from the token store without a request. It is called anyway so the three chooser surfaces stay
+     * one line of code, and the session question keeps exactly one answer.
      */
     fun setLanguage(language: LanguagePreference) {
-        viewModelScope.launch { appSettingsRepository.setLanguage(language) }
+        viewModelScope.launch {
+            appSettingsRepository.setLanguage(language)
+            languageSync.send(appSettingsRepository.emailLanguageTag())
+        }
     }
 }
 

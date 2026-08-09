@@ -1,19 +1,29 @@
 package cz.cleansia.partner.features.onboarding
 
+import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.settings.SupportedLanguages
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.core.settings.LiveLanguagePreferenceSync
+import cz.cleansia.partner.data.user.UserRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,6 +36,10 @@ import org.junit.Test
  * chain renders its copy, `RegisterEmployee` has already stamped
  * `PreferredLanguageCode` and queued the mail. The lock screen's chooser is a
  * display preference only.
+ *
+ * Nobody is signed in for this carousel, so there is no row to update and nothing to push. The seam
+ * has to reach that conclusion without a request: an unauthenticated call would 401, and the shared
+ * authenticator's first act on a 401 is to reach for a refresh token this handset does not have.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnboardingViewModelTest {
@@ -34,8 +48,23 @@ class OnboardingViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private val appSettingsRepository: AppSettingsRepository = mockk(relaxed = true)
+    private val userRepository: UserRepository = mockk(relaxed = true)
+    private val tokenStore: TokenStore = mockk(relaxed = true)
 
-    private fun viewModel() = OnboardingViewModel(appSettingsRepository)
+    @Before
+    fun setUp() {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        every { tokenStore.current() } returns null
+    }
+
+    private fun TestScope.viewModel() = OnboardingViewModel(
+        appSettingsRepository = appSettingsRepository,
+        languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()),
+    )
+
+    /** Stands in for the injected `@ApplicationScope`, on the scheduler `advanceUntilIdle` drives. */
+    private fun TestScope.syncScope() =
+        CoroutineScope(StandardTestDispatcher(testScheduler) + SupervisorJob())
 
     @Test
     fun `setLanguage persists the choice to the settings store`() = runTest {
@@ -43,6 +72,20 @@ class OnboardingViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { appSettingsRepository.setLanguage(LanguagePreference.Czech) }
+    }
+
+    @Test
+    fun `the pre-login chooser pushes nothing and does not throw`() = runTest {
+        viewModel().setLanguage(LanguagePreference.Czech)
+        advanceUntilIdle()
+
+        // Called again directly: the detached push is what has to reach "no session" without a
+        // request, and the ViewModel's own launch would hide anything thrown inside it.
+        LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()).send("cs")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { userRepository.getCurrentUser() }
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) }
     }
 
     @Test

@@ -8,6 +8,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.core.settings.LanguagePreferenceSync
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.navigation.NavRoute
@@ -116,6 +117,7 @@ class RegistrationLockViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
+    private val languageSync: LanguagePreferenceSync,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistrationLockUiState())
@@ -124,11 +126,19 @@ class RegistrationLockViewModel @Inject constructor(
     /**
      * The lock screen is the only surface a cleaner sees between signing up and
      * being approved, so it owns the display-language control for that window.
-     * Persists only — applying it to the running process is the caller's job,
-     * exactly as the intro and the profile picker do it.
+     * Applying it to the running process is the caller's job, exactly as the
+     * intro and the profile picker do it.
+     *
+     * A cleaner here has a session and no approval, so the push still goes out:
+     * `[RequireCompleteProfile]` gates the mobile host's Order, Dashboard and
+     * EmployeePayroll controllers, and `UserController` is deliberately not one
+     * of them.
      */
     fun setLanguage(language: LanguagePreference) {
-        viewModelScope.launch { appSettingsRepository.setLanguage(language) }
+        viewModelScope.launch {
+            appSettingsRepository.setLanguage(language)
+            languageSync.send(appSettingsRepository.emailLanguageTag())
+        }
     }
 
     init {

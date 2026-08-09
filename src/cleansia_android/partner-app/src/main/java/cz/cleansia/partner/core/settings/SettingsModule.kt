@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,4 +36,12 @@ object SettingsModule {
         @AppSettingsDataStore dataStore: DataStore<Preferences>,
         @ApplicationContext context: Context,
     ): AppSettingsRepository = AppSettingsRepository(dataStore, context)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class LanguagePreferenceSyncModule {
+    @Binds
+    @Singleton
+    abstract fun bindLanguagePreferenceSync(impl: LiveLanguagePreferenceSync): LanguagePreferenceSync
 }

@@ -631,6 +631,45 @@ describe('error-contract parity (admin app)', () => {
     });
   }
 
+
+  // ── Presence is not translation ─────────────────────────────────────────────
+  //
+  // Every assertion above this line is satisfied by an English string copied into
+  // five files: the key exists, resolves, is non-empty, and the five key sets
+  // match. That is exactly how a "translated" key ships untranslated, and it is
+  // the one shape none of them can see.
+  //
+  // iOS has carried this check since its catalog guard was written
+  // (StringCatalogCompletenessTests, rule (c) — "no non-English value equal to
+  // the English source"). The web side never had it. Baseline measured
+  // 2026-08-09 before the assertion was added: 559 api.* keys across all three
+  // apps, four non-English locales each, ZERO echoes — so it lands with no
+  // allow-list, and the first entry anyone needs will be a deliberate argument
+  // rather than a grandfathered clause.
+  //
+  // Scoped to api.* on purpose. These are backend refusals — prose a person
+  // reads when something went wrong — and there is no such thing as a
+  // locale-invariant one. The wider bundle legitimately carries product names
+  // and format-only strings, which is why iOS needs an allow-list and this
+  // does not.
+  it('no api.* value is left as the English source in another locale', () => {
+    const en = readLocale('en');
+    const echoed: string[] = [];
+
+    for (const key of [...namespaceKeySet(en, 'api')]) {
+      const source = resolveKey(en, key);
+      if (typeof source !== 'string' || source.trim().length === 0) continue;
+
+      for (const locale of LOCALES.filter((l) => l !== 'en')) {
+        if (resolveKey(readLocale(locale), key) === source) {
+          echoed.push(`${key} (${locale})`);
+        }
+      }
+    }
+
+    expect(echoed.sort()).toEqual([]);
+  });
+
   it('the generic fallback key resolves in all five locales', () => {
     for (const locale of LOCALES) {
       const data = readLocale(locale);

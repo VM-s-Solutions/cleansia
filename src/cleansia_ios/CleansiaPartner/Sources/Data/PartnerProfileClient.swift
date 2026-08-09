@@ -4,7 +4,10 @@ import Foundation
 
 protocol PartnerProfileClient: AnyObject {
     func getCurrentEmployee() async -> ApiResult<EmployeeItem>
+    func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile>
     func checkCurrentEmployee() async -> ApiResult<RegistrationCompletionStatus>
+
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?>
 
     func updatePersonalInfo(_ command: UpdatePersonalInfoCommand) async -> ApiResult<Void>
     func updateAddressInfo(_ command: UpdateAddressInfoCommand) async -> ApiResult<Void>
@@ -30,9 +33,21 @@ final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
         }
     }
 
+    func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerEmployeeEndpoints.getCurrentEmployeeProfile()
+        }
+    }
+
     func checkCurrentEmployee() async -> ApiResult<RegistrationCompletionStatus> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerEmployeeAPI.employeeCheckCurrentEmployee()
+        }
+    }
+
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerEmployeeEndpoints.updateJobRadius(command).radiusKm
         }
     }
 

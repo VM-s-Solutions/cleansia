@@ -64,6 +64,8 @@ struct PartnerShellView: View {
                 client: container.dashboardClient,
                 notificationBadge: container.notificationBadge,
                 notificationFeedClient: container.notificationFeedClient,
+                profileClient: container.profileClient,
+                settings: container.appSettings,
                 snackbar: container.snackbar,
                 onOpenEarnings: { model.selectEarnings() },
                 onOpenOrders: { model.selectOrders() },

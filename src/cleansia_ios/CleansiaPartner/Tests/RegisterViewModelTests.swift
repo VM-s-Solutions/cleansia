@@ -24,6 +24,15 @@ final class RegisterViewModelTests: XCTestCase {
     }
 
     private final class FakeSettings: AppSettingsStore {
+        private(set) var answeredPrompts: Set<String> = []
+        func hasAnsweredPrompt(_ prompt: String, userId: String) -> Bool {
+            answeredPrompts.contains("\(prompt)/\(userId)")
+        }
+
+        func markPromptAnswered(_ prompt: String, userId: String) {
+            answeredPrompts.insert("\(prompt)/\(userId)")
+        }
+
         var hasSeenOnboarding = false
         func markOnboardingSeen() {
             hasSeenOnboarding = true

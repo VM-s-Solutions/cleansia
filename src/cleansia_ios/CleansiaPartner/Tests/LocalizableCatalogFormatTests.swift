@@ -23,7 +23,8 @@ final class LocalizableCatalogFormatTests: XCTestCase {
     private static let borrowedWordingEvents = [
         "order.starting_soon",
         "order.assigned",
-        "order.assignment_revoked"
+        "order.assignment_revoked",
+        "order.preferred_offer_closed"
     ]
 
     private func iosRoot() -> URL {

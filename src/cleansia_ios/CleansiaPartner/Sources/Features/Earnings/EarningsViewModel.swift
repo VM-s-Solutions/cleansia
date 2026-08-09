@@ -17,7 +17,7 @@ final class EarningsViewModel: ViewModel {
             state = .loading
         }
 
-        let employeeId = await client.getCurrentEmployee().loadedEmployeeId
+        let employeeId = await client.getCurrentEmployeeProfile().loadedEmployeeId
 
         switch await client.getStats(employeeId: employeeId) {
         case let .success(stats):
@@ -30,8 +30,8 @@ final class EarningsViewModel: ViewModel {
     }
 }
 
-private extension ApiResult where Success == EmployeeItem {
+private extension ApiResult where Success == EmployeeProfile {
     var loadedEmployeeId: String? {
-        try? get().id
+        try? get().employee.id
     }
 }

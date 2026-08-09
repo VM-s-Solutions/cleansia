@@ -7,6 +7,7 @@ struct ProfileData: Equatable {
     let employee: EmployeeItem
     let contractStatus: ContractStatus?
     var payoutSummary: String?
+    var jobRadiusKm: Int?
 }
 
 @MainActor
@@ -29,21 +30,29 @@ final class ProfileViewModel: ViewModel {
 
     func load() async {
         state = .loading
-        switch await client.getCurrentEmployee() {
-        case let .success(employee):
+        switch await client.getCurrentEmployeeProfile() {
+        case let .success(profile):
             // Status and payout destination are fire-and-forget — a failed fetch just hides
             // the chip and leaves the bank row on its placeholder.
             let status = await (client.checkCurrentEmployee()).valueOrNil
             let payout = await (client.getMyPayoutDetails()).valueOrNil.flatMap { $0 }
             state = .loaded(ProfileData(
-                employee: employee,
+                employee: profile.employee,
                 contractStatus: status?.contractStatus,
-                payoutSummary: PayoutAccountSummary.text(for: payout)
+                payoutSummary: PayoutAccountSummary.text(for: payout),
+                jobRadiusKm: profile.jobRadiusKm
             ))
         case let .failure(error):
             state = .error(error)
             snackbar.showError(localizer.message(for: error))
         }
+    }
+
+    func applyJobRadius(_ radiusKm: Int?) {
+        guard case let .loaded(data) = state else { return }
+        var updated = data
+        updated.jobRadiusKm = radiusKm
+        state = .loaded(updated)
     }
 
     func signOut() async {

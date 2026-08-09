@@ -7,6 +7,7 @@ enum ProfileRoute: Hashable {
     case bank(onboarding: Bool)
     case emergency
     case documents
+    case jobRadius
     case language
     case theme
     case devices

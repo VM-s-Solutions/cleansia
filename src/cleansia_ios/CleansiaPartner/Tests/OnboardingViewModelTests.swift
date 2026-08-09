@@ -6,6 +6,15 @@ import XCTest
 @MainActor
 final class OnboardingViewModelTests: XCTestCase {
     private final class FakeSettings: AppSettingsStore {
+        private(set) var answeredPrompts: Set<String> = []
+        func hasAnsweredPrompt(_ prompt: String, userId: String) -> Bool {
+            answeredPrompts.contains("\(prompt)/\(userId)")
+        }
+
+        func markPromptAnswered(_ prompt: String, userId: String) {
+            answeredPrompts.insert("\(prompt)/\(userId)")
+        }
+
         var hasSeenOnboarding = false
         private(set) var markCount = 0
         func markOnboardingSeen() {

@@ -80,6 +80,38 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
+    func testTheHubReadsTheRadiusOffTheSameEmployeeFetch() async {
+        client.profileResult = .success(
+            EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 35)
+        )
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.jobRadiusKm, 35)
+    }
+
+    func testASavedRadiusRefreshesTheHubRowWithoutARefetch() async {
+        client.profileResult = .success(
+            EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 35)
+        )
+        let vm = makeVM()
+        await vm.load()
+
+        vm.applyJobRadius(nil)
+        XCTAssertNil(vm.state.loadedValue?.jobRadiusKm)
+
+        vm.applyJobRadius(80)
+        XCTAssertEqual(vm.state.loadedValue?.jobRadiusKm, 80)
+    }
+
+    func testApplyingARadiusToAnUnloadedHubIsANoOp() {
+        let vm = makeVM()
+
+        vm.applyJobRadius(80)
+
+        XCTAssertTrue(vm.state.isLoading)
+    }
+
     func testSignOutEmitsEffectAndLogsOut() async {
         let vm = makeVM()
         var emitted = false

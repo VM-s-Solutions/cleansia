@@ -5,7 +5,7 @@ import Foundation
 protocol PartnerDashboardClient {
     func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto>
     func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreviewResponse>
-    func getCurrentEmployee() async -> ApiResult<EmployeeItem>
+    func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile>
 }
 
 struct LivePartnerDashboardClient: PartnerDashboardClient {
@@ -21,9 +21,9 @@ struct LivePartnerDashboardClient: PartnerDashboardClient {
         }
     }
 
-    func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
+    func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerEmployeeAPI.employeeGetCurrentEmployee()
+            try await PartnerEmployeeEndpoints.getCurrentEmployeeProfile()
         }
     }
 }

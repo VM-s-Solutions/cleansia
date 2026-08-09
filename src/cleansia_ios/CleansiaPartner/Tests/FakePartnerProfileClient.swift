@@ -5,6 +5,8 @@ import CleansiaPartnerApi
 @MainActor
 final class FakePartnerProfileClient: PartnerProfileClient {
     var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
+    var profileResult: ApiResult<EmployeeProfile>?
+    var jobRadiusResult: ApiResult<Int?> = .success(nil)
     var statusResult: ApiResult<RegistrationCompletionStatus> = .success(RegistrationCompletionStatus())
     var servicedCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var allCountriesResult: ApiResult<[CountryListItem]> = .success([])
@@ -28,9 +30,21 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     private(set) var deletedDocumentId: String?
     private(set) var checkCount = 0
     private(set) var servicedCountriesCallCount = 0
+    private(set) var jobRadiusCommand: UpdateJobRadiusCommand?
 
     func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
         employeeResult
+    }
+
+    /// Defaults to the employee the other sections read, so a test that only cares about the radius
+    /// sets `profileResult` and every other test keeps working off `employeeResult`.
+    func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
+        profileResult ?? employeeResult.map { EmployeeProfile(employee: $0) }
+    }
+
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?> {
+        jobRadiusCommand = command
+        return jobRadiusResult
     }
 
     func checkCurrentEmployee() async -> ApiResult<RegistrationCompletionStatus> {

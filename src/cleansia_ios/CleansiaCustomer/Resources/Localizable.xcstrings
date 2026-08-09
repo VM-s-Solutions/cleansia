@@ -27958,6 +27958,76 @@
           }
         }
       }
+    },
+    "push.order.preferred_offer_closed.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše rezervace je otevřená všem uklízečům"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your booking is open to all cleaners"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш заказ открыт для всех клинеров"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša rezervácia je otvorená všetkým upratovačom"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваше замовлення відкрите для всіх клінерів"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer_closed.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu — klepněte pro zobrazení detailů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team — tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды — нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu — ťuknite pre zobrazenie detailov."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди — натисніть, щоб переглянути деталі."
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

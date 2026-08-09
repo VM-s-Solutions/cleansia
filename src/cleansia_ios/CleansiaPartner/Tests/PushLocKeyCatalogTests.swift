@@ -31,6 +31,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "membership.cancellation_effective",
         "order.new_available",
         "order.preferred_offer",
+        "order.preferred_offer_closed",
         "order.assignment_cancelled",
         "order.assigned",
         "order.assignment_revoked",
@@ -48,6 +49,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "recurring.scheduled",
         "order.new_available",
         "order.preferred_offer",
+        "order.preferred_offer_closed",
         "order.assignment_cancelled",
         "order.assigned",
         "order.assignment_revoked"
@@ -61,6 +63,16 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "sk": "zruš",
         "uk": "скасов",
         "ru": "отмен"
+    ]
+
+    /// A decline and a silent lapse produce the same event, so the copy may name neither outcome —
+    /// stems for both "refused" and "did not answer", per locale.
+    private let outcomeWords = [
+        "en": ["declin", "refus", "reject", "turned down", "answer", "respond", "repl", "ignor"],
+        "cs": ["odmít", "odmit", "odpověd", "neozval", "reagoval"],
+        "sk": ["odmiet", "odmietn", "odpoved", "neozval", "reagoval"],
+        "uk": ["відмов", "відповід", "відповів", "зреагував"],
+        "ru": ["отказ", "отклон", "ответ", "отклик", "отреагиров"]
     ]
 
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {
@@ -145,6 +157,27 @@ final class PushLocKeyCatalogTests: XCTestCase {
                     value.range(of: word, options: .caseInsensitive),
                     "\(key) says \(word) in \(language): \(value)"
                 )
+            }
+        }
+    }
+
+    /// One producer, three paths — an explicit decline, a five-minute lapse, and a cleaner taking a
+    /// conflicting job. The customer is told the hold ended and never which of the three ended it.
+    func testThePreferredOfferClosureNamesNeitherOutcome() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let words = try XCTUnwrap(outcomeWords[language])
+            for key in [
+                "push.order.preferred_offer_closed.title",
+                "push.order.preferred_offer_closed.body"
+            ] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                for word in words {
+                    XCTAssertNil(
+                        value.range(of: word, options: .caseInsensitive),
+                        "\(key) says \(word) in \(language): \(value)"
+                    )
+                }
             }
         }
     }

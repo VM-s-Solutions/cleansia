@@ -6,7 +6,9 @@ struct DashboardView: View {
     @ObservedObject private var notificationBadge: NotificationBadgeModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showNotifications = false
+    @State private var showJobRadius = false
     private let notificationFeedClient: NotificationFeedClient
+    private let profileClient: PartnerProfileClient
     private let snackbar: SnackbarController
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
@@ -16,14 +18,17 @@ struct DashboardView: View {
         client: PartnerDashboardClient,
         notificationBadge: NotificationBadgeModel,
         notificationFeedClient: NotificationFeedClient,
+        profileClient: PartnerProfileClient,
+        settings: AppSettingsStore,
         snackbar: SnackbarController,
         onOpenEarnings: @escaping () -> Void = {},
         onOpenOrders: @escaping () -> Void = {},
         onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in }
     ) {
-        _vm = StateObject(wrappedValue: DashboardViewModel(client: client))
+        _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings))
         self.notificationBadge = notificationBadge
         self.notificationFeedClient = notificationFeedClient
+        self.profileClient = profileClient
         self.snackbar = snackbar
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
@@ -40,6 +45,16 @@ struct DashboardView: View {
                     snackbar: snackbar,
                     onDestination: onNotificationDestination
                 )
+                .snackbarHost(snackbar, bottomInset: Spacing.m)
+            }
+            .sheet(isPresented: $showJobRadius) {
+                NavigationStack {
+                    JobRadiusSectionView(
+                        client: profileClient,
+                        snackbar: snackbar,
+                        onSaved: { _ in showJobRadius = false }
+                    )
+                }
                 .snackbarHost(snackbar, bottomInset: Spacing.m)
             }
             .task { await vm.load() }
@@ -63,9 +78,15 @@ struct DashboardView: View {
             DashboardContent(
                 data: data,
                 unreadBadge: notificationBadge.badgeLabel,
+                showsJobRadiusPrompt: vm.showsJobRadiusPrompt,
                 onOpenEarnings: onOpenEarnings,
                 onOpenOrders: onOpenOrders,
-                onNotificationTap: { showNotifications = true }
+                onNotificationTap: { showNotifications = true },
+                onChooseJobRadius: {
+                    vm.answerJobRadiusPrompt()
+                    showJobRadius = true
+                },
+                onKeepEveryJob: vm.answerJobRadiusPrompt
             )
         }
     }
@@ -96,22 +117,31 @@ struct DashboardContent: View {
     @Environment(\.locale) private var locale
     let data: DashboardData
     let unreadBadge: String?
+    let showsJobRadiusPrompt: Bool
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
     let onNotificationTap: () -> Void
+    let onChooseJobRadius: () -> Void
+    let onKeepEveryJob: () -> Void
 
     init(
         data: DashboardData,
         unreadBadge: String? = nil,
+        showsJobRadiusPrompt: Bool = false,
         onOpenEarnings: @escaping () -> Void,
         onOpenOrders: @escaping () -> Void,
-        onNotificationTap: @escaping () -> Void = {}
+        onNotificationTap: @escaping () -> Void = {},
+        onChooseJobRadius: @escaping () -> Void = {},
+        onKeepEveryJob: @escaping () -> Void = {}
     ) {
         self.data = data
         self.unreadBadge = unreadBadge
+        self.showsJobRadiusPrompt = showsJobRadiusPrompt
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
         self.onNotificationTap = onNotificationTap
+        self.onChooseJobRadius = onChooseJobRadius
+        self.onKeepEveryJob = onKeepEveryJob
     }
 
     var body: some View {
@@ -123,6 +153,12 @@ struct DashboardContent: View {
                     unreadBadge: unreadBadge,
                     onNotificationTap: onNotificationTap
                 )
+                if showsJobRadiusPrompt {
+                    JobRadiusPromptCard(
+                        onChooseRadius: onChooseJobRadius,
+                        onKeepEveryJob: onKeepEveryJob
+                    )
+                }
                 HeroCard(hero: data.hero, currencyCode: data.currencyCode, onOpenOrders: onOpenOrders)
                 WeeklyEarningsCard(data: data, onClick: onOpenEarnings)
                 if let period = data.payPeriod {
@@ -319,6 +355,13 @@ private struct HeroRowCard: View {
                     onOpenOrders: {}
                 )
                 .previewDisplayName("Loaded · available-work hero")
+                DashboardContent(
+                    data: sample(hero: .empty),
+                    showsJobRadiusPrompt: true,
+                    onOpenEarnings: {},
+                    onOpenOrders: {}
+                )
+                .previewDisplayName("Loaded · job-radius prompt")
             }
             .background(CleansiaColors.background)
         }

@@ -7,7 +7,7 @@ import XCTest
 final class DashboardViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
         var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
-        var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
+        var employeeResult: ApiResult<EmployeeProfile> = .success(EmployeeProfile(employee: EmployeeItem()))
         var previewResult: ApiResult<AvailableJobsPreviewResponse> = .success(AvailableJobsPreviewResponse())
         private(set) var statsEmployeeId: String??
         private(set) var previewLimit: Int?
@@ -22,25 +22,32 @@ final class DashboardViewModelTests: XCTestCase {
             return previewResult
         }
 
-        func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
+        func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
             employeeResult
         }
     }
 
     private var client: FakeDashboardClient!
+    private var settings: UserDefaultsAppSettingsStore!
+    private var suiteName: String!
 
     override func setUp() {
         super.setUp()
         client = FakeDashboardClient()
+        suiteName = "DashboardViewModelTests.\(UUID().uuidString)"
+        settings = UserDefaultsAppSettingsStore(defaults: UserDefaults(suiteName: suiteName)!)
     }
 
     override func tearDown() {
+        UserDefaults().removePersistentDomain(forName: suiteName)
+        settings = nil
+        suiteName = nil
         client = nil
         super.tearDown()
     }
 
     private func makeViewModel() -> DashboardViewModel {
-        DashboardViewModel(client: client)
+        DashboardViewModel(client: client, settings: settings)
     }
 
     func testInitialStateIsLoading() {
@@ -49,7 +56,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testStatsSuccessMapsToLoaded() async {
-        client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana"))
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1", firstName: "Jana")))
         client.statsResult = .success(DashboardStatsDto(
             thisMonthCompletedOrders: 5,
             lastMonthCompletedOrders: 4,
@@ -130,6 +137,71 @@ final class DashboardViewModelTests: XCTestCase {
         await vm.load()
 
         XCTAssertEqual(vm.state.loadedValue?.hero, .empty)
+    }
+
+    func testACleanerWithNoRadiusIsPromptedUntilTheyAnswer() async {
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+
+        let vm = makeViewModel()
+        await vm.load()
+        XCTAssertTrue(vm.showsJobRadiusPrompt)
+
+        vm.answerJobRadiusPrompt()
+        XCTAssertFalse(vm.showsJobRadiusPrompt)
+
+        let next = makeViewModel()
+        await next.load()
+        XCTAssertFalse(next.showsJobRadiusPrompt)
+    }
+
+    /// Keeping the country-wide board leaves the radius null, so the prompt has to be spent by the
+    /// ANSWER — a gate re-derived from the stored value would ask this cleaner again every launch.
+    func testKeepingEveryJobSpendsThePromptEvenThoughTheRadiusStaysNull() async {
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        let vm = makeViewModel()
+        await vm.load()
+        vm.answerJobRadiusPrompt()
+
+        let next = makeViewModel()
+        await next.load()
+
+        XCTAssertFalse(next.showsJobRadiusPrompt)
+    }
+
+    func testACleanerWhoAlreadySetARadiusIsNotPrompted() async {
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 25))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertFalse(vm.showsJobRadiusPrompt)
+    }
+
+    func testThePromptIsKeyedPerCleanerSoASecondAccountOnTheDeviceStillGetsIt() async {
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        let first = makeViewModel()
+        await first.load()
+        first.answerJobRadiusPrompt()
+
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-2"), jobRadiusKm: nil))
+        let other = makeViewModel()
+        await other.load()
+
+        XCTAssertTrue(other.showsJobRadiusPrompt)
+    }
+
+    /// The ask is not spent by an outage: a failed read cannot tell "no preference" from "unknown".
+    func testAFailedEmployeeReadNeitherPromptsNorSpendsTheAsk() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let failing = makeViewModel()
+        await failing.load()
+        XCTAssertFalse(failing.showsJobRadiusPrompt)
+
+        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        let recovered = makeViewModel()
+        await recovered.load()
+
+        XCTAssertTrue(recovered.showsJobRadiusPrompt)
     }
 
     func testPreviewFailureStillLoadsWithEmptyHero() async {

@@ -1506,6 +1506,41 @@
         }
       }
     },
+    "error.employee.job_radius_out_of_range" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvolte vzdálenost mezi 1 a 500 km."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a distance between 1 and 500 km."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите расстояние от 1 до 500 км."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvoľte vzdialenosť medzi 1 a 500 km."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть відстань від 1 до 500 км."
+          }
+        }
+      }
+    },
     "error.employee.not_allowed_to_update" : {
       "extractionState" : "stale",
       "localizations" : {

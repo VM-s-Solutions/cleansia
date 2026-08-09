@@ -157,7 +157,7 @@ struct RegistrationLockView: View {
             DocumentsSectionView(client: profileClient, snackbar: snackbar)
         case .language:
             LanguagePickerView(preferences: preferences, onSelected: { path.removeLast() })
-        case .emergency, .theme, .devices:
+        case .emergency, .jobRadius, .theme, .devices:
             EmptyView()
         }
     }

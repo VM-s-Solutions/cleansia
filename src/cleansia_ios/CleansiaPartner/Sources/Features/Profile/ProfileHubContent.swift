@@ -85,6 +85,12 @@ struct ProfileHubContent: View {
 
     private var preferenceRows: [ProfileHubRowItem] {
         [
+            ProfileHubRowItem(
+                icon: "location.circle",
+                title: L10n.JobRadius.title,
+                summary: JobRadiusSelection(radiusKm: data.jobRadiusKm).summary,
+                route: .jobRadius
+            ),
             ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, route: .language),
             ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, route: .theme),
             ProfileHubRowItem(

@@ -10646,6 +10646,380 @@
         }
       }
     },
+    "job_radius_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vzdálenost pro upozornění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job alert distance"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расстояние для уведомлений"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vzdialenosť pre upozornenia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстань для сповіщень"
+          }
+        }
+      }
+    },
+    "job_radius_summary_all_jobs": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázky kdekoli ve vaší zemi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs anywhere in your country"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказы в любой точке вашей страны"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazky kdekoľvek vo vašej krajine"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення будь-де у вашій країні"
+          }
+        }
+      }
+    },
+    "job_radius_summary_within": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázky do %1$d km od domova"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs within %1$d km of home"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказы в пределах %1$d км от дома"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazky do %1$d km od domova"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення в межах %1$d км від дому"
+          }
+        }
+      }
+    },
+    "job_radius_explainer": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mění se jen to, na které nové zakázky vás upozorníme. Nabídka dál zobrazuje všechny zakázky ve vaší zemi a kteroukoli z nich si můžete vzít."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This changes only which new jobs we notify you about. The job board still lists every job in your country, and you can take any of them."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это меняет только то, о каких новых заказах мы вам сообщаем. В списке по-прежнему есть все заказы в вашей стране, и вы можете взять любой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mení sa len to, na ktoré nové zákazky vás upozorníme. Ponuka naďalej zobrazuje všetky zákazky vo vašej krajine a ktorúkoľvek si môžete vziať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це змінює лише те, про які нові замовлення ми вас сповіщаємо. У списку й далі є всі замовлення у вашій країні, і ви можете взяти будь-яке."
+          }
+        }
+      }
+    },
+    "job_radius_limit_label": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upozorňovat jen na zakázky v okolí"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only notify me about nearby jobs"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уведомлять только о заказах поблизости"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upozorňovať len na zákazky v okolí"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сповіщати лише про замовлення поблизу"
+          }
+        }
+      }
+    },
+    "job_radius_limit_off_hint": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budeme vás upozorňovat na každou novou zakázku ve vaší zemi."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll notify you about every new job in your country."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы будем сообщать вам о каждом новом заказе в вашей стране."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budeme vás upozorňovať na každú novú zákazku vo vašej krajine."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми сповіщатимемо вас про кожне нове замовлення у вашій країні."
+          }
+        }
+      }
+    },
+    "job_radius_value": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d km"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d km"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d км"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d km"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d км"
+          }
+        }
+      }
+    },
+    "job_radius_prompt_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na které nové zakázky vás máme upozorňovat?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which new jobs should we tell you about?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "О каких новых заказах вам сообщать?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na ktoré nové zákazky vás máme upozorňovať?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Про які нові замовлення вас сповіщати?"
+          }
+        }
+      }
+    },
+    "job_radius_prompt_body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teď vás upozorňujeme na každou novou zakázku ve vaší zemi. Vyberte vzdálenost od domova a uslyšíte jen o těch blízkých — v nabídce uvidíte dál všechny."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right now we notify you about every new job in your country. Pick a distance from home to hear only about the ones near you — the board still shows them all."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас мы сообщаем вам о каждом новом заказе в вашей стране. Выберите расстояние от дома, чтобы слышать только о ближайших — в списке по-прежнему будут все."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz vás upozorňujeme na každú novú zákazku vo vašej krajine. Vyberte vzdialenosť od domova a budete počuť len o tých blízkych — v ponuke uvidíte naďalej všetky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зараз ми сповіщаємо вас про кожне нове замовлення у вашій країні. Виберіть відстань від дому, щоб чути лише про ті, що поруч — у списку й далі будуть усі."
+          }
+        }
+      }
+    },
+    "job_radius_prompt_choose": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybrat vzdálenost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a distance"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать расстояние"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybrať vzdialenosť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрати відстань"
+          }
+        }
+      }
+    },
+    "job_radius_prompt_keep_all": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponechat všechny zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep every job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оставить все заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponechať všetky zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залишити всі замовлення"
+          }
+        }
+      }
+    },
     "profile_group_work_legal": {
       "localizations": {
         "cs": {
@@ -17197,6 +17571,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення %1$@ — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення."
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer_closed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše rezervace je otevřená všem uklízečům"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your booking is open to all cleaners"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш заказ открыт для всех клинеров"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša rezervácia je otvorená všetkým upratovačom"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше замовлення відкрите для всіх клінерів"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer_closed.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu — klepněte pro zobrazení detailů."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team — tap to see the details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды — нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu — ťuknite pre zobrazenie detailov."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди — натисніть, щоб переглянути деталі."
           }
         }
       }

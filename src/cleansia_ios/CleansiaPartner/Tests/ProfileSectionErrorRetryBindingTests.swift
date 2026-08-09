@@ -11,7 +11,8 @@ final class ProfileSectionErrorRetryBindingTests: XCTestCase {
         "CleansiaPartner/Sources/Features/Profile/Address/AddressSectionView.swift",
         "CleansiaPartner/Sources/Features/Profile/Identification/IdentificationSectionView.swift",
         "CleansiaPartner/Sources/Features/Profile/Bank/BankSectionView.swift",
-        "CleansiaPartner/Sources/Features/Profile/Emergency/EmergencySectionView.swift"
+        "CleansiaPartner/Sources/Features/Profile/Emergency/EmergencySectionView.swift",
+        "CleansiaPartner/Sources/Features/Profile/JobRadius/JobRadiusSectionView.swift"
     ]
 
     func testEverySectionHandsTheScaffoldItsErrorState() throws {

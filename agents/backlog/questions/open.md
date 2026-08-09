@@ -2310,3 +2310,85 @@ then has to reproduce exactly, and inventing it twice independently is how they 
 (`OrderListProjectionEquivalenceTests` compares both `MapToDto` overloads by full serialization, so any
 divergence reddens), so this is tidiness with a guard already on it, not a live risk. Touching the list
 projection carries more risk than the tidiness buys. **A ticket, not a drive-by.**
+
+---
+
+## N21 — OWNER ANSWERS, 2026-08-09 (batch 7). All seven recorded verbatim.
+
+### ✅ Q-VS-01 — ANSWERED: **"Confirm"**
+The ten-digit numeric constraint is real and a bare sequence is acceptable to the accountant. ADR-0046's
+format (`YYYY` + a six-digit per-year ordinal, first digit never zero) is now **verified, not assumed**,
+and §D8's caveat that no agent may assert a tax-law requirement is discharged. Nothing to build — the
+design already fits.
+
+### ✅ Q-VS-03 — ANSWERED: **"No, we won't have franchises, DON'T OVERCOMPLICATE THINGS"**
+Payouts always leave one bank account the owner controls. So the **global** reference namespace is right
+**permanently**, not contingently, and `IX_EmployeeInvoices_VariableSymbol` on the bare column is its
+final shape.
+
+Two consequences, and the second is the instruction rather than the answer:
+1. ADR-0046 §D3.2's written-down flip — *"add a tenant term to the counter key and replace the index with
+   `(TenantId, VariableSymbol) NULLS NOT DISTINCT`"* — is **retired**, not merely deferred. The
+   cross-tenant volume-inference channel it was hedging against is a cost paid for a scenario that will
+   not happen.
+2. **"Don't overcomplicate things" is a standing instruction and is recorded as one.** The contingency
+   above cost real words in an ADR, and a reviewer check, for a case the owner already knew was
+   impossible. The lesson for future panels: **ask whether the hedge's premise is real before pricing the
+   hedge.** A written-down flip is not free — it is a thing every future reader has to read.
+
+### ✅ Q-BROWSE-01 — ANSWERED: **option (b)**
+Add the offerability conjunct to the browse gate **and** delay the preferred-offer push until the order
+is offerable. So the cleaner is told slightly later, and every notification we send leads somewhere.
+
+This is a build on both halves, and it also closes an exposure the owner did not have to weigh: a
+`Completed` order is not offerable, so the half-crewed finished job whose seat stays open forever stops
+being browsable at all. That is the interaction with Q-CREW-01 below, resolved by this answer rather than
+by that one.
+
+### ✅ Q-CREW-01 — ANSWERED: **"if there is no second cleaner then there is no option for us and 1 of the cleaners have to complete the job"**
+Solo completion of a two-seat job is **allowed and must stay allowed**. No full-crew rule on
+`CompleteOrder`. Nothing to build; the current behaviour is ratified.
+
+The second half of the question — whether the **customer** is told their two-cleaner booking was worked
+by one — was not answered and is **not re-asked**. Default taken: **no notification**, because the
+customer already sees the assigned crew on their own order detail, and a message whose only content is
+"fewer people came than planned" invites a complaint about a service the owner has just said we have no
+alternative to. If that default is wrong it costs one string, not a design.
+
+### ✅ Q-DISCOUNT-01 — ANSWERED: **"yes, he would see that he sees the benefits"**
+The three discount amounts stay visible to a browsing cleaner. The default taken by inaction is now a
+ruling, which is the whole reason it was written down. Nothing to build.
+
+### ✅ Q-IOS-04 — CLOSED as already built, not answered
+The owner delegated it (*"do what you think is the best for long-term approach"*). Checked the tree
+before deciding: **the decision was already made, and made the same way.** `AppleAuth` exists as an
+anonymous endpoint on **both** customer hosts — `Cleansia.Web.Mobile.Customer/Controllers/AuthController.cs:62`
+and `Cleansia.Web.Customer/Controllers/AuthController.cs:65` — sharing one command and handler
+(`Features/Auth/AppleAuth.cs`), exactly the `googleauth`-analogous shape the question offered as its
+first option, with the browser flow as the only difference. It shipped in the July batch (`798e16e3`).
+Nothing to build and nothing to ratify.
+
+### ✅ Q-AZURE-01 — ANSWERED with data, and one premise in the answer is wrong
+The owner supplied both figures the question asked for: **Log Analytics €49.29** is the largest service
+line (App Service €23.51, Container Registry €5.46, Storage €2.56, **Azure Monitor €0.63** — so the
+investigation's "Alerts are €0.63 and not €50" attribution is **confirmed**), and ingestion is
+**27.29 GB/month → $81.61 at list**, all of it Analytics-tier, zero Basic and zero Auxiliary.
+
+The owner's conclusion — *"I don't think that we need this one since we have App Insights and Sentry"* —
+**cannot be executed as written**, and this is recorded rather than quietly reinterpreted:
+`deploy/bicep/modules/appInsights.bicep:59` sets `WorkspaceResourceId: logAnalytics.id` and
+`IngestionMode: 'LogAnalytics'`. **Application Insights is workspace-based here — the €49.29 "Log
+Analytics" line IS App Insights' data.** Deleting the workspace deletes App Insights with it. There is no
+version of "drop Log Analytics, keep App Insights" that exists.
+
+**What does deliver the saving, on the same bill:** the volume, not the product. Two settings, both
+already parameterised and both currently at their most expensive values on DEV:
+- `appInsights.bicep:22` — `samplingPercentage = env == 'prod' ? 50 : 100`. **DEV samples nothing.**
+- `appInsights.bicep:25` — `dailyCapGb = env == 'prod' ? 5 : 1`. 27.29 GB over 31 days is ~0.88 GB/day,
+  so DEV is running just under a cap that has therefore never fired.
+
+Sampling DEV at 20–25 % takes the line down roughly proportionally with no code change and no loss of
+exception telemetry (`host.json` already excludes `Exception` from sampling). **The genuinely free half
+first:** find out which tables the 27 GB is in before choosing a number — the original question's second
+query. If it is `AppDependencies` (every SQL round trip), the honest fix is narrowing what is collected
+rather than sampling what we then cannot read.

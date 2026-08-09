@@ -2704,6 +2704,75 @@
         }
       }
     },
+    "/api/Employee/UpdateJobRadius": {
+      "put": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_UpdateJobRadius",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Employee/SaveMyDocuments": {
       "post": {
         "tags": [
@@ -6157,6 +6226,194 @@
         }
       }
     },
+    "/api/Order/MyPendingOffers": {
+      "get": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_MyPendingOffers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Order/DeclinePreferredOffer": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_DeclinePreferredOffer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ServiceCity": {
       "get": {
         "tags": [
@@ -6409,7 +6666,7 @@
             "type": "string",
             "nullable": true
           },
-          "customerAddress": {
+          "customerAddressApproximate": {
             "type": "string",
             "nullable": true
           },
@@ -6801,6 +7058,26 @@
             "nullable": true
           },
           "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeclinePreferredOffer_Command": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeclinePreferredOffer_Response": {
+        "type": "object",
+        "properties": {
+          "orderId": {
             "type": "string",
             "nullable": true
           }
@@ -7317,6 +7594,11 @@
                 "$ref": "#/components/schemas/TimeRange"
               }
             },
+            "nullable": true
+          },
+          "jobRadiusKm": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -8407,6 +8689,10 @@
           "address": {
             "$ref": "#/components/schemas/OrderAddress"
           },
+          "customerAddressApproximate": {
+            "type": "string",
+            "nullable": true
+          },
           "rooms": {
             "type": "integer",
             "format": "int32"
@@ -8539,6 +8825,25 @@
             },
             "nullable": true
           },
+          "requiredEmployees": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxEmployees": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "availableSpots": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assignedEmployeesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasAvailableSpots": {
+            "type": "boolean"
+          },
           "receiptNumber": {
             "type": "string",
             "nullable": true
@@ -8574,6 +8879,9 @@
           "expressWaiverForfeitedOnCancel": {
             "type": "boolean",
             "nullable": true
+          },
+          "preferredOffer": {
+            "$ref": "#/components/schemas/PreferredOfferDetails"
           }
         },
         "additionalProperties": false
@@ -9075,6 +9383,52 @@
           "ProviderPayoutToken"
         ]
       },
+      "PendingOfferItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "cleaningDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estimatedTime": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "respondByUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerAddressApproximate": {
+            "type": "string",
+            "nullable": true
+          },
+          "rooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PeriodPaySummaryDto": {
         "type": "object",
         "properties": {
@@ -9179,6 +9533,43 @@
         "x-enumNames": [
           "Before",
           "After"
+        ]
+      },
+      "PreferredOfferDetails": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/PreferredOfferState"
+          },
+          "cleanerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "respondByUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "canChooseAnother": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PreferredOfferState": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "None",
+          "AwaitingConfirmation",
+          "Accepted",
+          "Closed"
         ]
       },
       "ProblemDetails": {
@@ -10263,6 +10654,36 @@
         "properties": {
           "employeeId": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateJobRadius_Command": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateJobRadius_Response": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },

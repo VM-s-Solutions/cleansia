@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260723182623_Initial")]
+    [Migration("20260809183249_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3226,6 +3226,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("PaymentType")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("PreCleaningReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PreferredEmployeeId")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
@@ -3251,9 +3254,6 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("ReceiptId")
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("PreCleaningReminderSentAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("RecurringReminderSentAt")
                         .HasColumnType("timestamp with time zone");

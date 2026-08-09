@@ -318,6 +318,24 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PayoutReferenceCounters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Year = table.Column<int>(type: "integer", nullable: false),
+                    Value = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayoutReferenceCounters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PayPeriods",
                 columns: table => new
                 {
@@ -341,24 +359,6 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PayPeriods", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PayoutReferenceCounters",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Year = table.Column<int>(type: "integer", nullable: false),
-                    Value = table.Column<long>(type: "bigint", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PayoutReferenceCounters", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -3187,6 +3187,12 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PayoutReferenceCounters_Year",
+                table: "PayoutReferenceCounters",
+                column: "Year",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PayPeriods_EndDate",
                 table: "PayPeriods",
                 column: "EndDate");
@@ -3210,12 +3216,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_PayPeriods_TenantId",
                 table: "PayPeriods",
                 column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PayoutReferenceCounters_Year",
-                table: "PayoutReferenceCounters",
-                column: "Year",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProcessedMessages_MessageKey",
@@ -3702,6 +3702,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "PackageServices");
 
             migrationBuilder.DropTable(
+                name: "PayoutReferenceCounters");
+
+            migrationBuilder.DropTable(
                 name: "ProcessedMessages");
 
             migrationBuilder.DropTable(
@@ -3775,9 +3778,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "PayPeriods");
-
-            migrationBuilder.DropTable(
-                name: "PayoutReferenceCounters");
 
             migrationBuilder.DropTable(
                 name: "ServiceCategories");

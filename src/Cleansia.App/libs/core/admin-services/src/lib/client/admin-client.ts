@@ -10999,6 +10999,11 @@ export interface IAdminPayrollClient {
      * @return OK
      */
     generateInvoice(body?: GenerateInvoiceCommand | undefined): Observable<GenerateInvoiceResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assignInvoiceVariableSymbol(body?: AssignInvoiceVariableSymbolCommand | undefined): Observable<AssignInvoiceVariableSymbolResponse>;
 }
 
 @Injectable({
@@ -11291,6 +11296,83 @@ export class AdminPayrollClient implements IAdminPayrollClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = GenerateInvoiceResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assignInvoiceVariableSymbol(body?: AssignInvoiceVariableSymbolCommand | undefined): Observable<AssignInvoiceVariableSymbolResponse> {
+        let url = this.baseUrl + "/api/AdminPayroll/assign-invoice-variable-symbol";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAssignInvoiceVariableSymbol(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAssignInvoiceVariableSymbol(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AssignInvoiceVariableSymbolResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AssignInvoiceVariableSymbolResponse>;
+        }));
+    }
+
+    protected processAssignInvoiceVariableSymbol(response: HttpResponseBase): Observable<AssignInvoiceVariableSymbolResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AssignInvoiceVariableSymbolResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -15744,6 +15826,90 @@ export class ApproveInvoiceResponse implements IApproveInvoiceResponse {
 
 export interface IApproveInvoiceResponse {
     invoiceId: string | undefined;
+}
+
+export class AssignInvoiceVariableSymbolCommand implements IAssignInvoiceVariableSymbolCommand {
+    invoiceId!: string | undefined;
+    languageCode!: string | undefined;
+
+    constructor(data?: IAssignInvoiceVariableSymbolCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.invoiceId = Data["invoiceId"];
+            this.languageCode = Data["languageCode"];
+        }
+    }
+
+    static fromJS(data: any): AssignInvoiceVariableSymbolCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AssignInvoiceVariableSymbolCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["invoiceId"] = this.invoiceId;
+        data["languageCode"] = this.languageCode;
+        return data;
+    }
+}
+
+export interface IAssignInvoiceVariableSymbolCommand {
+    invoiceId: string | undefined;
+    languageCode: string | undefined;
+}
+
+export class AssignInvoiceVariableSymbolResponse implements IAssignInvoiceVariableSymbolResponse {
+    invoiceId!: string | undefined;
+    variableSymbol!: string | undefined;
+    pdfBlobUrl!: string | undefined;
+
+    constructor(data?: IAssignInvoiceVariableSymbolResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.invoiceId = Data["invoiceId"];
+            this.variableSymbol = Data["variableSymbol"];
+            this.pdfBlobUrl = Data["pdfBlobUrl"];
+        }
+    }
+
+    static fromJS(data: any): AssignInvoiceVariableSymbolResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AssignInvoiceVariableSymbolResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["invoiceId"] = this.invoiceId;
+        data["variableSymbol"] = this.variableSymbol;
+        data["pdfBlobUrl"] = this.pdfBlobUrl;
+        return data;
+    }
+}
+
+export interface IAssignInvoiceVariableSymbolResponse {
+    invoiceId: string | undefined;
+    variableSymbol: string | undefined;
+    pdfBlobUrl: string | undefined;
 }
 
 export class AssignedEmployeeDto implements IAssignedEmployeeDto {
@@ -22928,6 +23094,7 @@ export class OrderItem implements IOrderItem {
     customerEmail!: string | undefined;
     customerPhone!: string | undefined;
     address!: OrderAddress;
+    customerAddressApproximate!: string | undefined;
     rooms!: number;
     bathrooms!: number;
     extras!: { [key: string]: boolean; } | undefined;
@@ -22957,6 +23124,11 @@ export class OrderItem implements IOrderItem {
     createdOn!: Date;
     updatedOn!: Date | undefined;
     assignedEmployees!: AssignedEmployeeDto[] | undefined;
+    requiredEmployees!: number;
+    maxEmployees!: number;
+    availableSpots!: number;
+    assignedEmployeesCount!: number;
+    hasAvailableSpots!: boolean;
     receiptNumber!: string | undefined;
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
@@ -22965,6 +23137,7 @@ export class OrderItem implements IOrderItem {
     isAssignedToCurrentUser!: boolean;
     hasAfterPhotos!: boolean;
     expressWaiverForfeitedOnCancel!: boolean | undefined;
+    preferredOffer!: PreferredOfferDetails;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -22983,6 +23156,7 @@ export class OrderItem implements IOrderItem {
             this.customerEmail = Data["customerEmail"];
             this.customerPhone = Data["customerPhone"];
             this.address = Data["address"] ? OrderAddress.fromJS(Data["address"]) : undefined as any;
+            this.customerAddressApproximate = Data["customerAddressApproximate"];
             this.rooms = Data["rooms"];
             this.bathrooms = Data["bathrooms"];
             if (Data["extras"]) {
@@ -23034,6 +23208,11 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["assignedEmployees"])
                     this.assignedEmployees!.push(AssignedEmployeeDto.fromJS(item));
             }
+            this.requiredEmployees = Data["requiredEmployees"];
+            this.maxEmployees = Data["maxEmployees"];
+            this.availableSpots = Data["availableSpots"];
+            this.assignedEmployeesCount = Data["assignedEmployeesCount"];
+            this.hasAvailableSpots = Data["hasAvailableSpots"];
             this.receiptNumber = Data["receiptNumber"];
             if (Array.isArray(Data["orderNotes"])) {
                 this.orderNotes = [] as any;
@@ -23050,6 +23229,7 @@ export class OrderItem implements IOrderItem {
             this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
             this.hasAfterPhotos = Data["hasAfterPhotos"];
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
+            this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
         }
     }
 
@@ -23068,6 +23248,7 @@ export class OrderItem implements IOrderItem {
         data["customerEmail"] = this.customerEmail;
         data["customerPhone"] = this.customerPhone;
         data["address"] = this.address ? this.address.toJSON() : undefined as any;
+        data["customerAddressApproximate"] = this.customerAddressApproximate;
         data["rooms"] = this.rooms;
         data["bathrooms"] = this.bathrooms;
         if (this.extras) {
@@ -23119,6 +23300,11 @@ export class OrderItem implements IOrderItem {
             for (let item of this.assignedEmployees)
                 data["assignedEmployees"].push(item ? item.toJSON() : undefined as any);
         }
+        data["requiredEmployees"] = this.requiredEmployees;
+        data["maxEmployees"] = this.maxEmployees;
+        data["availableSpots"] = this.availableSpots;
+        data["assignedEmployeesCount"] = this.assignedEmployeesCount;
+        data["hasAvailableSpots"] = this.hasAvailableSpots;
         data["receiptNumber"] = this.receiptNumber;
         if (Array.isArray(this.orderNotes)) {
             data["orderNotes"] = [];
@@ -23135,6 +23321,7 @@ export class OrderItem implements IOrderItem {
         data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
         data["hasAfterPhotos"] = this.hasAfterPhotos;
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
+        data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         return data;
     }
 }
@@ -23146,6 +23333,7 @@ export interface IOrderItem {
     customerEmail: string | undefined;
     customerPhone: string | undefined;
     address: OrderAddress;
+    customerAddressApproximate: string | undefined;
     rooms: number;
     bathrooms: number;
     extras: { [key: string]: boolean; } | undefined;
@@ -23175,6 +23363,11 @@ export interface IOrderItem {
     createdOn: Date;
     updatedOn: Date | undefined;
     assignedEmployees: AssignedEmployeeDto[] | undefined;
+    requiredEmployees: number;
+    maxEmployees: number;
+    availableSpots: number;
+    assignedEmployeesCount: number;
+    hasAvailableSpots: boolean;
     receiptNumber: string | undefined;
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
@@ -23183,6 +23376,7 @@ export interface IOrderItem {
     isAssignedToCurrentUser: boolean;
     hasAfterPhotos: boolean;
     expressWaiverForfeitedOnCancel: boolean | undefined;
+    preferredOffer: PreferredOfferDetails;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -25181,6 +25375,61 @@ export interface IPayrollReportDto {
 export enum PhotoType {
     Before = 1,
     After = 2,
+}
+
+export class PreferredOfferDetails implements IPreferredOfferDetails {
+    state!: PreferredOfferState;
+    cleanerName!: string | undefined;
+    respondByUtc!: Date | undefined;
+    canChooseAnother!: boolean;
+
+    constructor(data?: IPreferredOfferDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.state = Data["state"];
+            this.cleanerName = Data["cleanerName"];
+            this.respondByUtc = Data["respondByUtc"] ? new Date(Data["respondByUtc"].toString()) : undefined as any;
+            this.canChooseAnother = Data["canChooseAnother"];
+        }
+    }
+
+    static fromJS(data: any): PreferredOfferDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new PreferredOfferDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        data["cleanerName"] = this.cleanerName;
+        data["respondByUtc"] = this.respondByUtc ? this.respondByUtc.toISOString() : undefined as any;
+        data["canChooseAnother"] = this.canChooseAnother;
+        return data;
+    }
+}
+
+export interface IPreferredOfferDetails {
+    state: PreferredOfferState;
+    cleanerName: string | undefined;
+    respondByUtc: Date | undefined;
+    canChooseAnother: boolean;
+}
+
+export enum PreferredOfferState {
+    None = 0,
+    AwaitingConfirmation = 1,
+    Accepted = 2,
+    Closed = 3,
 }
 
 export class PreviewTierThresholdImpactQuery implements IPreviewTierThresholdImpactQuery {

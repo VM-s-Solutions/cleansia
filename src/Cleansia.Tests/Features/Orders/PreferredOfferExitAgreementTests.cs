@@ -55,6 +55,11 @@ public class PreferredOfferExitAgreementTests
         _orderAccessService
             .Setup(s => s.CanBrowseOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The order's own customer clears the STRICT gate too; the detail handler reads it to decide
+        // whether this caller is entitled to the customer's own data.
+        _orderAccessService
+            .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _employeeRepository
             .Setup(r => r.GetQueryable())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
@@ -127,6 +132,9 @@ public class PreferredOfferExitAgreementTests
     {
         Arrange("live-reservation");
         _orderAccessService.Setup(s => s.IsCustomerCaller()).Returns(false);
+        _orderAccessService
+            .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
         _session
             .Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
             .Returns(new Claim(ClaimTypes.Role, UserProfile.Employee.ToString()));

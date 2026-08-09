@@ -13,11 +13,12 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0043 D4 on the single-photo order intake. What an order photo discloses is the uploading
-/// CLEANER's device identity and, for anything shot away from the job, that cleaner's own location — and
-/// the fetch set is not enumerable at upload time, because <c>GetOrderPhotos</c> gates on
-/// <c>CanBrowseOrderAsync</c>, which admits any tenant cleaner while a seat is open. A device serial is a
-/// stable cross-order correlation key, so it walks straight through the two controls that deliberately
-/// withhold cleaner identity from a fetcher.
+/// CLEANER's device identity and, for anything shot away from the job, that cleaner's own location.
+/// <c>GetOrderPhotos</c> now gates on <c>CanAccessOrderAsync</c>, so the fetch set is enumerable —
+/// the customer, the rest of the crew, and administrators — but it is still not the uploader alone,
+/// which is the answer that would retire the scrub. A device serial is a stable cross-order
+/// correlation key, so it walks straight through the two controls that deliberately withhold cleaner
+/// identity from a fetcher.
 /// </summary>
 public class UploadOrderPhotoMetadataScrubTests
 {

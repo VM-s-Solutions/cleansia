@@ -89,7 +89,7 @@ public class GetOrderPhotosServedTypeTests
 
         var accessService = new Mock<IOrderAccessService>();
         accessService
-            .Setup(s => s.CanBrowseOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var blobClient = new Mock<IBlobContainerClient>();

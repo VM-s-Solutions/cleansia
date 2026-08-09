@@ -51,6 +51,11 @@ public class GetOrderDetails
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // Browse admits a cleaner to an order they have not taken so they can judge it; only the
+            // strict gate entitles a caller to the customer. Read from the same seam that granted
+            // access rather than re-deriving "assigned or owner" here, so the two cannot disagree.
+            var isEntitledToCustomerData = await orderAccessService.CanAccessOrderAsync(order, cancellationToken);
+
             // Photos count is cheap to look up and lets the partner
             // mobile gate the Complete slide client-side. Same query
             // CompleteOrder.Validator uses, so the two stay in sync.
@@ -118,7 +123,7 @@ public class GetOrderDetails
                     order.Id, order.AssignedEmployees.Count > 0, cancellationToken)
                 : null;
 
-            return BusinessResult.Success(order.MapToDetail(
+            var detail = order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
                 hasAfterPhotos,
@@ -126,7 +131,11 @@ public class GetOrderDetails
                 expressWaiverForfeitedOnCancel,
                 isCustomerCaller
                     ? await ResolvePreferredOfferAsync(order, DateTime.UtcNow, cancellationToken)
-                    : null));
+                    : null);
+
+            return BusinessResult.Success(isEntitledToCustomerData
+                ? detail
+                : detail.RedactForBrowsingCleaner());
         }
 
         /// <summary>

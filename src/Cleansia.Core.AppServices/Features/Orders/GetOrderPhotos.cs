@@ -55,8 +55,12 @@ public class GetOrderPhotos
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
+            // Strict, not browse: every photo is an interior view of a private dwelling handed over as
+            // a signed URL that works outside Cleansia auth and can be forwarded. Nothing about the
+            // inside of the home is part of deciding whether to take the job, and the write paths were
+            // already assignment-gated.
             var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
-            if (order == null || !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken))
+            if (order == null || !await orderAccessService.CanAccessOrderAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));

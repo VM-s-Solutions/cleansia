@@ -2192,3 +2192,37 @@ database drop and re-seed** before it will start against this branch.
 **Not a manual step, but it belongs beside them:** ADR-0046's counter table is an owner-only migration
 that rides **nothing** — the ADR originally planned to fold it into a pending T-0522 pass, and that
 pass turned out to have already landed. It is its own window, and there is no code for it yet.
+
+---
+
+## N18 — the PII fix landed, and it left two follow-ups plus one question (2026-08-09)
+
+`b2a8cf62`. Every field is mutation-proved (25 mutations, all red, each restored byte-exact) and the
+half-crewed scenario is pinned over real Postgres. Three things it did **not** decide:
+
+### Q-DISCOUNT-01 — [blocking: no] Should a browsing cleaner see that the customer holds a Plus plan?
+
+`TierDiscountAmount`, `MembershipDiscountAmount` and `PromoDiscountAmount` are **kept** on the redacted
+detail. Each is a non-zero number that discloses the customer holds a loyalty tier, a Cleansia Plus
+membership, or used a promo code. They were kept for a defensible reason — **they are already unblanked
+on the list row today**, so blanking only the detail would recreate the list/detail mismatch this whole
+fix exists to remove — but "consistent with the list" is not the same as "right". Blanking both is a
+behaviour change on a surface nobody asked about, so it was flagged rather than taken.
+- **(a)** Blank all three on both surfaces for a non-entitled cleaner. The cleaner still sees
+  `TotalPrice` and their own `EstimatedCleanerPay`, which is what the take decision needs.
+- **(b)** Keep them. A discount amount is arguably commercial rather than personal.
+- Default taken: **(b) by inaction**, and that is exactly why it is written down.
+
+### Two follow-ups the fix created, being closed on this branch
+
+1. **iOS shows a spurious error toast.** `OrderDetailView.swift:45` fires `photosVM.load()`
+   unconditionally on every detail open, while the photos *section* is correctly gated on assignment.
+   With photos now behind the strict gate, a cleaner opening an **Available** order gets a toast reading
+   *"Order not found."* over a screen that is otherwise correct. One line on the iOS side; routed.
+   Android and web are unaffected — both gate the fetch itself.
+2. **A browsing cleaner now sees no location at all on the detail.** `OrderItem` has no coarse-location
+   counterpart to `OrderListItem`'s approximate address, so blanking the address record removes the zone
+   as well as the street. The cleaner sees the zone on the Available card they tapped and nothing on the
+   detail they opened. Adding a coarse field is a DTO shape change (`manual_step: nswag-regen`), so it is
+   a follow-up ticket rather than part of the security fix. **No client drops the row** — iOS, Android and
+   web all handle a null address and gate their maps on coordinates.

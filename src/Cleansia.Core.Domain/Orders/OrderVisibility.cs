@@ -42,7 +42,10 @@ public static class OrderVisibility
 
     /// <summary>
     /// The same five terms for a materialized entity. Sole caller:
-    /// <c>OrderAccessService.CanBrowseOrderAsync</c>, which covers order detail and order photos.
+    /// <c>OrderAccessService.CanBrowseOrderAsync</c>, which covers order DETAIL only — order photos
+    /// moved to the strict <c>CanAccessOrderAsync</c> gate on 2026-08-09, because a non-assignee was
+    /// receiving a SAS URL per photograph of the customer's home. The detail it still admits is
+    /// PII-redacted for anyone the order does not belong to (<c>OrderPiiRedaction</c>).
     /// </summary>
     public static bool NotHeldFrom(Order order, string? employeeId, DateTime nowUtc)
         => order.PreferredHoldUntilUtc == null

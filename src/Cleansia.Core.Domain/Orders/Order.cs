@@ -396,10 +396,11 @@ public class Order : Auditable, ITenantEntity
         // How to get in ("key under the mat", "gate code 4455"). Separate from
         // specialInstructions because the two answer different questions, and
         // because keeping them apart leaves room to release them on different
-        // terms later. NOTE: there is no such gate today — OrderMappers maps
-        // this unconditionally and every partner/admin surface renders it at
-        // any status, exactly like specialInstructions. Treat it as no more
-        // protected than the rest of the order until that changes.
+        // terms later. That room is now used: OrderPiiRedaction blanks this —
+        // with the address, the phone and the confirmation code — for a cleaner
+        // the order does not belong to, so a browsing cleaner reads the job's
+        // scope and not the customer's door code. An ENTITLED reader (the
+        // customer, an assigned cleaner, an admin) still gets it at any status.
         string? accessInstructions = null) => new()
         {
             CustomerName = customerName,

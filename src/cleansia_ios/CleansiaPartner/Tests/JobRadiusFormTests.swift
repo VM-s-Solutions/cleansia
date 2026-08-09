@@ -8,7 +8,7 @@ final class JobRadiusFormTests: XCTestCase {
         XCTAssertTrue((JobRadiusBounds.minimumKm ... JobRadiusBounds.maximumKm).contains(JobRadiusBounds.startingKm))
     }
 
-    func testAnUnsetRadiusIsTheAnywhereChoiceAndGoesOnTheWireAsNull() {
+    func testAnUnsetRadiusIsTheAnywhereChoiceAndCarriesNoDistance() {
         let form = JobRadiusForm(radiusKm: nil)
 
         XCTAssertFalse(form.isLimited)

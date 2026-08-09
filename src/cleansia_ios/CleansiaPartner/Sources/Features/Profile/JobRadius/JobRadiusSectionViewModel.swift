@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import Combine
 import Foundation
 
@@ -23,10 +24,10 @@ final class JobRadiusSectionViewModel: ViewModel {
 
     func load() async {
         state = .loading
-        switch await client.getCurrentEmployeeProfile() {
-        case let .success(profile):
-            employeeId = profile.employee.id ?? ""
-            form = JobRadiusForm(radiusKm: profile.jobRadiusKm)
+        switch await client.getCurrentEmployee() {
+        case let .success(employee):
+            employeeId = employee.id ?? ""
+            form = JobRadiusForm(radiusKm: employee.jobRadiusKm)
             state = .loaded(())
         case let .failure(error):
             state = .error(error)

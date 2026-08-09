@@ -7,7 +7,7 @@ import XCTest
 final class DashboardViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
         var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
-        var employeeResult: ApiResult<EmployeeProfile> = .success(EmployeeProfile(employee: EmployeeItem()))
+        var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
         var previewResult: ApiResult<AvailableJobsPreviewResponse> = .success(AvailableJobsPreviewResponse())
         private(set) var statsEmployeeId: String??
         private(set) var previewLimit: Int?
@@ -22,7 +22,7 @@ final class DashboardViewModelTests: XCTestCase {
             return previewResult
         }
 
-        func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
+        func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
             employeeResult
         }
     }
@@ -56,7 +56,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testStatsSuccessMapsToLoaded() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1", firstName: "Jana")))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana"))
         client.statsResult = .success(DashboardStatsDto(
             thisMonthCompletedOrders: 5,
             lastMonthCompletedOrders: 4,
@@ -140,7 +140,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testACleanerWithNoRadiusIsPromptedUntilTheyAnswer() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: nil))
 
         let vm = makeViewModel()
         await vm.load()
@@ -157,7 +157,7 @@ final class DashboardViewModelTests: XCTestCase {
     /// Keeping the country-wide board leaves the radius null, so the prompt has to be spent by the
     /// ANSWER — a gate re-derived from the stored value would ask this cleaner again every launch.
     func testKeepingEveryJobSpendsThePromptEvenThoughTheRadiusStaysNull() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: nil))
         let vm = makeViewModel()
         await vm.load()
         vm.answerJobRadiusPrompt()
@@ -169,7 +169,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testACleanerWhoAlreadySetARadiusIsNotPrompted() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 25))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: 25))
 
         let vm = makeViewModel()
         await vm.load()
@@ -178,12 +178,12 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testThePromptIsKeyedPerCleanerSoASecondAccountOnTheDeviceStillGetsIt() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: nil))
         let first = makeViewModel()
         await first.load()
         first.answerJobRadiusPrompt()
 
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-2"), jobRadiusKm: nil))
+        client.employeeResult = .success(EmployeeItem(id: "emp-2", jobRadiusKm: nil))
         let other = makeViewModel()
         await other.load()
 
@@ -197,7 +197,7 @@ final class DashboardViewModelTests: XCTestCase {
         await failing.load()
         XCTAssertFalse(failing.showsJobRadiusPrompt)
 
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: nil))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: nil))
         let recovered = makeViewModel()
         await recovered.load()
 

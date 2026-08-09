@@ -19,9 +19,7 @@ final class JobRadiusSectionViewModelTests: XCTestCase {
     }
 
     private func seed(id: String = "emp-1", radiusKm: Int?) {
-        client.profileResult = .success(
-            EmployeeProfile(employee: EmployeeItem(id: id), jobRadiusKm: radiusKm)
-        )
+        client.employeeResult = .success(EmployeeItem(id: id, jobRadiusKm: radiusKm))
     }
 
     func testLoadSeedsTheControlFromTheEmployeeReadModel() async {
@@ -44,7 +42,7 @@ final class JobRadiusSectionViewModelTests: XCTestCase {
     }
 
     func testLoadFailureBecomesTheErrorStateAndSnackbars() async {
-        client.profileResult = .failure(ApiError(httpStatus: 500))
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
         let vm = makeVM()
 
         await vm.load()
@@ -99,6 +97,20 @@ final class JobRadiusSectionViewModelTests: XCTestCase {
         XCTAssertFalse(vm.action.isSubmitting)
     }
 
+    /// The server's echo is what the control ends up showing, so a save that came back clamped or
+    /// cleared leaves the slider on the stored value rather than on what was asked for.
+    func testTheControlIsReseededFromTheSavedValueRatherThanTheRequest() async {
+        seed(radiusKm: 30)
+        client.jobRadiusResult = .success(nil)
+        let vm = makeVM()
+        await vm.load()
+
+        vm.setKilometres(500)
+        await vm.save()
+
+        XCTAssertEqual(vm.form.selection, .anywhere)
+    }
+
     func testSaveFailureSurfacesOnTheActionStateAndEmitsNothing() async {
         seed(radiusKm: nil)
         client.jobRadiusResult = .failure(
@@ -136,7 +148,7 @@ final class JobRadiusSectionViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
 
-        client.profileResult = .failure(ApiError(httpStatus: 500))
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
         await vm.load()
         await vm.save()
 

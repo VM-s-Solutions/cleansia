@@ -19,8 +19,8 @@ final class DashboardViewModel: ViewModel {
     func load() async {
         state = .loading
 
-        let profile = try? await client.getCurrentEmployeeProfile().get()
-        employeeId = profile?.employee.id
+        let employee = try? await client.getCurrentEmployee().get()
+        employeeId = employee?.id
 
         switch await client.getStats(employeeId: employeeId) {
         case let .success(stats):
@@ -28,13 +28,13 @@ final class DashboardViewModel: ViewModel {
             state = .loaded(DashboardData.from(
                 stats: stats,
                 preview: preview,
-                firstName: profile?.employee.firstName
+                firstName: employee?.firstName
             ))
         case let .failure(error):
             state = .error(error)
         }
 
-        resolveJobRadiusPrompt(radiusKm: profile?.jobRadiusKm, employeeRead: profile != nil)
+        resolveJobRadiusPrompt(radiusKm: employee?.jobRadiusKm, employeeRead: employee != nil)
     }
 
     /// Both answers are answers, so either one spends the ask. A cleaner who taps through to the

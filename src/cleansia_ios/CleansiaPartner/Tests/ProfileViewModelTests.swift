@@ -81,9 +81,7 @@ final class ProfileViewModelTests: XCTestCase {
     }
 
     func testTheHubReadsTheRadiusOffTheSameEmployeeFetch() async {
-        client.profileResult = .success(
-            EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 35)
-        )
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: 35))
         let vm = makeVM()
         await vm.load()
 
@@ -91,9 +89,7 @@ final class ProfileViewModelTests: XCTestCase {
     }
 
     func testASavedRadiusRefreshesTheHubRowWithoutARefetch() async {
-        client.profileResult = .success(
-            EmployeeProfile(employee: EmployeeItem(id: "emp-1"), jobRadiusKm: 35)
-        )
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: 35))
         let vm = makeVM()
         await vm.load()
 

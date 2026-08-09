@@ -15,26 +15,8 @@ final class PartnerUserWireTests: XCTestCase {
     override func setUp() {
         super.setUp()
         bodies = WireBodies()
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [GenMockURLProtocol.self]
-        PartnerGeneratedAuth.install(
-            bridge: GeneratedClientAuthBridge(
-                headerAdapter: HeaderAdapter(deviceIdProvider: WireDeviceId()),
-                tokenStore: SessionTokenStore(signedIn: true),
-                sessionRefresher: SessionRefresher(
-                    tokenStore: SessionTokenStore(signedIn: true),
-                    refreshClient: NeverRefreshing(),
-                    sessionManager: SessionManager(),
-                    sessionScopedCaches: SessionScopedCacheRegistry()
-                ),
-                session: URLSession(configuration: config)
-            ),
-            basePath: "https://api.test"
-        )
-        CleansiaPartnerApiAPI.apiResponseQueue = DispatchQueue(label: "cz.cleansia.wire.test")
-        GenMockURLProtocol.handler = { [bodies] request in
-            bodies?.record(request)
-            return request.url?.path == "/api/User/GetCurrent"
+        GeneratedWireSpine.install(recording: bodies) { request in
+            request.url?.path == "/api/User/GetCurrent"
                 ? (200, Self.profileBody)
                 : (200, Data(#"{"id":"user-1"}"#.utf8))
         }
@@ -134,9 +116,8 @@ final class PartnerUserWireTests: XCTestCase {
 
     private func push(profile: Data? = nil, languageCode: String = "uk") async {
         if let profile {
-            GenMockURLProtocol.handler = { [bodies] request in
-                bodies?.record(request)
-                return request.url?.path == "/api/User/GetCurrent"
+            GeneratedWireSpine.install(recording: bodies) { request in
+                request.url?.path == "/api/User/GetCurrent"
                     ? (200, profile)
                     : (200, Data(#"{"id":"user-1"}"#.utf8))
             }
@@ -145,70 +126,5 @@ final class PartnerUserWireTests: XCTestCase {
             tokenStore: SessionTokenStore(signedIn: true),
             client: LivePartnerUserClient()
         ).push(languageCode: languageCode)
-    }
-}
-
-private final class WireBodies: @unchecked Sendable {
-    private let lock = NSLock()
-    private var recorded: [(path: String, method: String, body: Data?)] = []
-
-    func record(_ request: URLRequest) {
-        lock.withLock {
-            recorded.append((
-                path: request.url?.path ?? "",
-                method: request.httpMethod ?? "",
-                body: Self.readBody(from: request)
-            ))
-        }
-    }
-
-    var paths: [String] {
-        lock.withLock { recorded.map(\.path) }
-    }
-
-    func method(ofPath path: String) -> String? {
-        lock.withLock { recorded.last { $0.path == path }?.method }
-    }
-
-    func text(ofPath path: String) -> String? {
-        data(ofPath: path).flatMap { String(data: $0, encoding: .utf8) }
-    }
-
-    func json(ofPath path: String) -> [String: Any]? {
-        data(ofPath: path).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-    }
-
-    private func data(ofPath path: String) -> Data? {
-        lock.withLock { recorded.last { $0.path == path }?.body }
-    }
-
-    /// `URLSession` moves an uploaded body onto `httpBodyStream`, so reading `httpBody` alone reports
-    /// every request as empty.
-    private static func readBody(from request: URLRequest) -> Data? {
-        if let httpBody = request.httpBody { return httpBody }
-        guard let stream = request.httpBodyStream else { return nil }
-        stream.open()
-        defer { stream.close() }
-        var data = Data()
-        let size = 4096
-        var buffer = [UInt8](repeating: 0, count: size)
-        while stream.hasBytesAvailable {
-            let read = stream.read(&buffer, maxLength: size)
-            if read <= 0 { break }
-            data.append(buffer, count: read)
-        }
-        return data
-    }
-}
-
-private struct WireDeviceId: DeviceIdProviding {
-    var deviceId: String {
-        "device-wire"
-    }
-}
-
-private struct NeverRefreshing: AuthRefreshing {
-    func refresh(refreshToken _: String) async -> RefreshCallResult {
-        .retryable
     }
 }

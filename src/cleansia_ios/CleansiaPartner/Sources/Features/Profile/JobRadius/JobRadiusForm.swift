@@ -16,7 +16,8 @@ enum JobRadiusBounds {
 }
 
 /// The radius narrows the "new jobs near you" digest and nothing else — not the board, not the take
-/// gate. `anywhere` is a first-class choice that goes on the wire as null.
+/// gate. `anywhere` is a first-class choice and carries no distance at all — never a zero, which the
+/// server refuses as out of range.
 enum JobRadiusSelection: Equatable {
     case anywhere
     case within(Int)

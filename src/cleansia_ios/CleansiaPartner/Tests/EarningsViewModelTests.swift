@@ -7,7 +7,7 @@ import XCTest
 final class EarningsViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
         var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
-        var employeeResult: ApiResult<EmployeeProfile> = .success(EmployeeProfile(employee: EmployeeItem()))
+        var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
         private(set) var statsCallCount = 0
         private(set) var statsEmployeeId: String??
 
@@ -21,7 +21,7 @@ final class EarningsViewModelTests: XCTestCase {
             .success(AvailableJobsPreviewResponse())
         }
 
-        func getCurrentEmployeeProfile() async -> ApiResult<EmployeeProfile> {
+        func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
             employeeResult
         }
     }
@@ -58,7 +58,7 @@ final class EarningsViewModelTests: XCTestCase {
     }
 
     func testLoadResolvesOwnEmployeeIdForStats() async {
-        client.employeeResult = .success(EmployeeProfile(employee: EmployeeItem(id: "emp-1")))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         client.statsResult = .success(DashboardStatsDto())
 
         let vm = makeViewModel()

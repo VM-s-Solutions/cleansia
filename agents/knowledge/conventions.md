@@ -214,6 +214,34 @@ property on the generated model is optional"); **behavioural claims require exec
 mutation leaves that suite green"). The operative question is *can the next reader verify this by
 reading what is in the repo?* — if that stops being true for a claim, the claim has become behavioural.
 
+### A claim about the tree cites the tree — never another artifact
+
+The generalization of the rule above, and it is the one that keeps being broken. **A claim about the
+state of the code — a column exists, a path is down, a call site is the only one, a migration is
+pending — is cited at `file:line` in the tree, read at the moment of writing.** A ticket status log, a
+sprint status section, a living decision page and a prior ADR are all *records of a past reading*.
+They were true when written; nothing updates them when the tree moves, and nothing fails when they
+drift. Quoting one in the present tense converts somebody's stale sentence into your artifact's load-
+bearing fact.
+
+**The discriminator:** does the sentence assert what the tree *is*, or what somebody *decided*? Cite
+artifacts for **decisions, rulings and rationale** — that is what they are for, and an owner ruling or
+an accepted ADR is authoritative wherever it is quoted. Cite the **tree** for **state**. A ticket's
+*"we chose the required-parameter form"* is quotable; its *"the invoice path is down until the
+migration is regenerated"* is not — re-open the migration.
+
+**Cost of getting it wrong, measured:** three instances in one sprint — a living decision page, a
+sprint status section, and an ADR that took *"the invoice PDF path is down at HEAD"* from a ticket
+status log four days stale and hung four sequencing statements plus its only owner-only-migration cost
+mitigation on it. In each case the artifact's *conclusion* survived and its *plan* did not, which is
+the expensive half.
+
+**Enforced by:** the panel lead's adjudication — `process/deliberation.md` **step 5**, which re-derives
+every blocking finding from the tree rather than from either document, and records the divergence when
+one appears — **T3-HUMAN**. *(Not mechanizable: "is this citation a code-state claim or a decision
+claim?" needs a reader. A checker cannot tell `T-0522:203` quoted for a ruling from the same line
+quoted for a column.)*
+
 ### The price of a law — a constraining entry names its enforcer and declares its tier (ADR-0032)
 
 An entry that constrains **call sites** — code other people write — states, inline:

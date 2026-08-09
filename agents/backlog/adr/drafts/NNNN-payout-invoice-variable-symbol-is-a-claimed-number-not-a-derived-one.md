@@ -627,9 +627,20 @@ questions:
 
 ## Challenge
 
-*(Challengers write here. Author has not been challenged yet — `process/deliberation.md` step 2.)*
+**Challenged 2026-08-08 by the `architect` in challenger mode. The full text is
+`agents/backlog/adr/challenges/NNNN-payout-invoice-variable-symbol.md`** — twelve findings
+(CH-VS-1 … CH-VS-12), seven of them raised as blocking (1, 2, 3, 4, 5, 6, 8), plus thirteen
+"found sound" items naming what was attacked and held, plus one new owner question (Q-VS-03, since
+filed at `agents/backlog/questions/open.md:2097-2102`). The challenge file stays as the record; it is
+not duplicated here.
 
-**Where the author expects to be attacked, named so a challenger does not have to find them:**
+**Disposition of the six places the author pre-named as attack surfaces** (below): #2 became
+**CH-VS-1** and stands. #1 and #5 became **CH-VS-10** and **CH-VS-11(a)** and stand as amendments.
+#3 became **CH-VS-2/CH-VS-8** and stands. #6 (§D6.4's carve-out) was attacked and **held** —
+challenge "found sound" #8. #4 (§D4.3 with possibly zero rows) was not pressed; it is Q-VS-02, which
+is **not filed** — see the Verdict's note to the PM.
+
+**Where the author expected to be attacked, named so a challenger did not have to find them:**
 
 1. **§D3.2 accepts a cross-tenant inference channel.** Is a global counter really forced, or is
    `(TenantId, VariableSymbol) NULLS NOT DISTINCT` the better trade once you accept the migration?
@@ -648,8 +659,421 @@ questions:
 
 ## Defense
 
-*(Author fills after the challenge.)*
+*No author defense round was run.* At the PM's direction the panel **lead adjudicated the challenge
+directly** (`process/deliberation.md` step 5), re-deriving every blocking finding from the tree rather
+than from either document. Where a finding is marked **conceded** in the Verdict, the concession is the
+lead's and the revision is specified for the author to transcribe — the Verdict's closed list is the
+defense's replacement, not a summary of one.
 
 ## Verdict
 
-*(Lead fills. A challenge stands unless defended or conceded.)*
+**Adjudicated 2026-08-09 by the `architect` in lead mode.** Method: `Read` / `Glob` / `Grep` only —
+no shell, no `git`, no test run, no database. **No number below is inherited from the draft or from the
+challenge**; every one was re-derived from a file opened during this adjudication and is cited at
+`file:line`. Where my re-derivation *differs* from the challenger's, I say so — twice it does.
+
+### Outcome: **REVISE.** Not accept-and-number.
+
+**All twelve findings stand.** Seven were raised as blocking and all seven survive re-derivation; the
+five non-blocking amendments are all correct and two of them get *stronger* why-nots than the
+challenger had. **The decision itself survives intact** — *claim the number, do not compute it*, the
+counter-row allocator, printing unconditionally, and refusing to backfill a printed document are all
+upheld, and none of the twelve touches them. What fails is the supporting layer: one inherited fact,
+one under-specified commit boundary, one rule aimed at a population it cannot reach, one unspecified
+column in a conflict arbiter, one caller-property-stated-as-API-property, and one unsound lemma the
+draft declared unarguable.
+
+The revision is **transcription, not deliberation**: §"The closed list" below is a complete, numbered
+set of edits with their reviewer-check deltas. Nothing in it requires a new decision.
+
+### Per-finding ruling
+
+| # | Ruling | Reason (re-derived at HEAD) |
+|---|---|---|
+| **CH-VS-1** | **STANDS — conceded** | Verified, and **more strongly than the challenger claimed**. Not only are the three named columns in the committed migration (`Initial.cs:556-558`), but **every** mapped property of `CountryInvoiceConfig` (`CountryInvoiceConfig.cs:11-58`) appears in `Initial.cs:548-559` — so there is no *other* unmigrated column that could take the path down. `LegalDisclaimerReviewStatus` is `nullable: false` (`:557`) and `ConstantSymbol` is `varchar(4)` (`:558`), so *"three nullable columns"* is wrong twice over. Provenance confirmed: `T-0522-….md:203-206`, dated 2026-08-04, present-tense-when-written, never updated. **The invoice PDF path renders today.** → **R1** |
+| **CH-VS-2** | **STANDS — conceded, with a magnitude correction** | Mechanism exact: `CleansiaDbContext.Rollback()` (`:107-113`) sets **every** tracked entry to `Unchanged`; `RefundService.cs:103` is the precedent and does call it; `CommitAsync` (`CleansiaDbContext.cs:67-100`) ends in a **context-wide** `SaveChangesAsync` (`:99`) — this codebase has no per-entity commit. **Correction:** the challenger's *with-`Rollback()`* branch ("discards every other cleaner's tracked invoice") describes the **current `:187`-only** shape, not D2.3(a)'s. Under a per-employee commit each prior invoice is already durable. The residue that *does* survive is the `period.Close()` case — see the joint ruling below. → **R2** |
+| **CH-VS-3** | **STANDS — conceded, all four legs** | (a) `MarkAsPaid` throws unless `Approved` (`EmployeeInvoice.cs:254-257`) and `MarkInvoicePaid` refuses a `Paid` invoice three times (`:46-47`, `:24-30`, `:93-98`) — there is no path to attach a note to an already-paid invoice. (b) the eligible set is a strict subset of D4.3's. (c) `invoice-detail.component.ts:106-108` calls `this.facade.markAsPaid()` **with no argument** and `invoice-detail.facade.ts:79-88` assigns that absent parameter — the field ships `undefined` on every attempt. (d) the existing `RuleFor(x => x.BankTransferNote)` (`:53-55`) is a **separate root rule** under the class-level `Continue` default; a `MustAsync` there would deref `null` on a bad id, which the three `invoice!` reads at `:65/:71/:77` avoid only by sitting in the `Cascade.Stop` chain. → **R3** |
+| **CH-VS-4** | **STANDS — conceded** | The draft never says what `Scope` holds, who supplies it, or that it is `NOT NULL`, and it sits in the `ON CONFLICT` arbiter. The trap is documented *in the file the ADR copies*: `FiscalCounterRepository.cs:30-32` on nulls-distinct, and `FiscalCounter.cs:13-18` explicitly trains the reader that the scope string *"is the extension point"* and binds *"NOT merely the tenant"* — so `Scope = tenantId` is the reading the precedent invites, and reviewer check #5 as written passes on it. → **R4** |
+| **CH-VS-5** | **STANDS — conceded, both halves** | `FiscalCounterRepository.cs:28-30` says the opposite of D2.4 **for the same statement**: *"Running through the context's connection joins the caller's open transaction … bound to the same commit/rollback."* The draft's *conclusion* holds at HEAD only because no payout path opens one — `UnitOfWorkPipelineBehavior.cs:13-33` opens none, `PayPeriodBackgroundService.CloseExpiredPeriodsAndOpenNewAsync` (`:107-197`) opens none. The catalog half is right and is **the architect's to close, not the developer's**: `consistency.md:346-353` makes the deviating form *"a self-committing write inside a handler **with no sanctioned-exception doc-comment**"*, `patterns-backend.md:641-644` scopes the law identically, and this ADR introduces the **second** such write. → **R5** |
+| **CH-VS-6** | **STANDS — conceded. The conclusion survives; the argument is replaced.** | Full ruling below. The `(EmployeeId, PayPeriodId)` unique index is at `EmployeeInvoiceEntityConfiguration.cs:123-124` as cited. → **R6** |
+| **CH-VS-7** | **STANDS (amendment)** — and gets a **third** why-not the challenger did not have | `deliberation.md:61-62` requires alternatives in the record and D9's ten rows do not include "allocate on a row that already exists". The rejection is now stronger than the challenger's own: **`PayPeriod.Update` mutates `StartDate`** (`PayPeriod.cs:76`, assignment at `:94`), so the reference's prefix would be a mutable column. D9-F's two weak clauses go. → **R7** |
+| **CH-VS-8** | **STANDS — conceded** | `PayPeriodBackgroundService.cs:352/:359/:360/:361/:371` confirmed: the invoice is mutated three times **after** the render/upload. Under "commit" singular those rides the next commit. Loop structure confirmed: `foreach tenantGroup` `:133` → `foreach period` `:144` → `foreach employee` `:219`; `period.Close()` at **`:148`**, one level up from the employee loop; tenant override `:138-142`; group commit `:187`. Ruled jointly with CH-VS-2. → **R2** |
+| **CH-VS-9** | **STANDS (amendment)**, census extended by two | `PayoutInvoiceLayoutTests.cs:292` confirmed — and the challenger **missed `:64`**, `Assert.Contains(fields, f => f.Value == "0001000001")`, which is the assertion that would keep it green. The three `"VS …"` notes it lists are *assertions*; their sources are `MarkInvoicePaidAdminOnlyTests.cs:68` (a default parameter) and `MarkInvoicePaidTests.cs:77`. The twelve-fixture census reproduces **exactly**: 14 call sites of `Create`/`CreateFromOrderPays`, 2 production, 12 fixture. → **R8** |
+| **CH-VS-10** | **STANDS (amendment)** | Reinforced by an event later than the challenge: **Q-VS-03 is now filed** (`questions/open.md:2097-2102`). You cannot ask the owner whether the premise holds and call the conclusion "forced" in the same document. → **R9** |
+| **CH-VS-11** | **STANDS (amendment)** — and (b) **upgrades from "record it" to "fix it in one clause"** | (a) the prefix is the allocation year by D1's own definition. (b) confirmed: `RETURNING` reports the post-increment value and the increment has auto-committed, so the counter runs permanently past the cap, platform-wide. The repair belongs **in the statement**, not after it. → **R10** |
+| **CH-VS-12** | **STANDS (amendment)** | (a) `FileExtensions.cs:40` reads `PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol` — literally a fallback expression, and the conclusion survives only because `Create` always sets it (`EmployeeInvoice.cs:126`) and `SetPaymentReference` (`:224-228`) has **zero callers** (verified). (b) confirmed: **four** methods (`:122`, `:131`, `:140`, `:155`), five cases. → **R11** |
+
+**Consensus is NOT reached at this revision. Zero blocking challenges will remain once R1–R17 land**;
+none of them reopens a decision, so no second panel round is needed — the author transcribes, the lead
+re-reads against the closed list, the PM numbers and accepts.
+
+---
+
+### The identity ruling (CH-VS-6) — **the challenger is right, and the principle is statelessness, not bit width**
+
+**The bit-counting re-derives and is irrelevant.** 26 Crockford-base-32 characters × 5 bits = 130 bits
+per ULID, two of them 260; `log₂(10¹⁰) = 10 × 3.321928 = 33.219`. Both numbers are right.
+`EmployeeInvoiceEntityConfiguration.cs:13-19` confirms `HasMaxLength(26)` on both id columns. But
+pigeonhole rules out injectivity **on the full type domain**, and injectivity is only ever *required*
+on the **realized** set — which is small. §D9-I is a derivation that is injective on it, in the same
+file, and D9 rejects D9-I **on cost**, not on impossibility. §D1 as written would rule out §D9-I. Two
+sections of one ADR contradict each other, and the one that is wrong is the one that says *"so this is
+settled and not re-litigated."*
+
+**One correction to the challenger's reasoning, which the ADR must not copy.** The challenger cites the
+`(EmployeeId, PayPeriodId)` unique index (`EmployeeInvoiceEntityConfiguration.cs:123-124`) as the thing
+that *"already pins that set unique"*. It does not make anything injective. It bounds `|R|` at
+(#cleaners × #periods) — one invoice per employee-period — and that is all. It is the *premise* of the
+counterexample, not the counterexample. Do not cite it as if it helps.
+
+**One correction to the challenger's replacement lemma, which is slightly too strong.** *"…requires at
+least one input to be a small ordinal **the platform** assigned"* — an **externally** assigned dense
+identifier would serve equally (a cleaner's registration number, a bank-assigned id). The operative
+property is **density**, not authorship. Allocation is how you *obtain* density when nothing dense is
+in hand — which is this platform's situation, and that is the honest reason.
+
+**What §D1 must argue instead** (this is the sentence the ADR carries, and the one a future reader may
+rely on):
+
+> Ten decimal digits is a **dense** codomain: 10¹⁰ points, all of them reachable. `EmployeeId` and
+> `PayPeriodId` are `Ulid.NewUlid()` values — 130-bit, sparse, and drawn by the id generator, not
+> chosen by the platform. A function of those two values **alone** is therefore fixed *before* the
+> realized set exists and cannot be chosen to be injective on it; its collision probability is strictly
+> positive and grows monotonically with the row count, at every width that fits in ten digits.
+> Injectivity into ten digits requires at least one input drawn from a **dense** identifier space — an
+> ordinal that somebody assigned. The platform holds no such identifier for an employee or for a pay
+> period, so it must **introduce** one, and introducing one is allocation. **§D9-I is not a
+> counterexample to "allocate" — it is an instance of it that allocates twice**, which is exactly why
+> §D9 rejects it on cost and not on impossibility.
+
+**And the arithmetic that must replace the pigeonhole line in §D9-A, because the honest version is also
+the stronger one.** Under the same birthday model §Context §3 already uses,
+`p(n) ≈ 1 − e^(−n(n−1)/(2·10¹⁰))` for a *perfect* ten-digit hash: at n = 10 000 the exponent is
+≈ 0.005 → **≈0.50 %**; at n = 100 000 it is ≈ 0.5 → **≈39 %**. So widening the hash is *enormously*
+better than today's 10 000-bucket generator, and §D9-A must say so. It is rejected because the
+probability **never reaches zero, the failure is silent, it lands on a bank transfer, and it gets worse
+every year the platform runs** — not because "no hash is injective here", which a reader who checks the
+arithmetic will find false.
+
+**Delete *"so this is settled and not re-litigated."*** An ADR earns non-re-litigation by carrying an
+argument that survives being checked. Foreclosing with an unsound lemma is worse than not foreclosing:
+the next author cites §D1 verbatim to reject a design that is fine, reads §D9-I, and stops trusting the
+document. **This is why CH-VS-6 was correctly raised as blocking despite changing no decision.**
+
+---
+
+### CH-VS-2 + CH-VS-8, ruled together (as the challenger asked)
+
+**The primitive must be stated before the invariant.** `IUnitOfWork.CommitAsync` →
+`BaseRepository.CommitAsync` (`:171-174`) → `CleansiaDbContext.CommitAsync` (`:67-100`) ends in a
+**context-wide** `SaveChangesAsync` (`:99`). **There is no per-entity commit in this codebase.** So
+§D2.3(a)'s *"commit inside the loop"* does not mean "commit this employee's changes" — it means "commit
+everything the change tracker holds, including whatever the two enclosing loops mutated". Every
+disagreement in CH-VS-2 and CH-VS-8 follows from that one sentence being absent.
+
+**Ruling — the ADR specifies two commits per employee, named, and states what each carries:**
+
+- **C1** — after `_employeeInvoiceRepository.Add(invoice)` and the `AssignToInvoice` loop
+  (`:334-339`), **before** `GenerateInvoicePdfAsync` (`:352`). It makes the reference durable before any
+  document carrying it exists. **It also persists `period.Close()`** (`:148`, one loop level up) and is
+  therefore a behaviour change the ADR must name: the period close becomes durable at the *first
+  invoicing employee* instead of at `:187`.
+- **C2** — after `SetPdfBlobUrl` / `ClearPdfGenerationError` (`:360-361`) **and** after
+  `SetPdfGenerationError` in the catch (`:371`). Without C2 those three mutations ride the next
+  employee's commit or `:187`, and CH-VS-8's loss is real.
+
+**On a failed C1** — the only commit that can raise `23505` on `VariableSymbol` — call `Rollback()`
+(`BaseRepository.cs:181-184` → `CleansiaDbContext.cs:107-113`) **and state in the ADR body that it is
+context-global**. Its scope at that instant, under C1/C2, is: this employee's `Added` invoice and
+`Modified` order-pays, **plus `period.Close()` if and only if no earlier employee in this period has
+already committed**. Then continue the loop.
+
+**§D6.3's promise is corrected, not deleted.** What is true and may be claimed:
+
+> An allocator failure, or a duplicate on C1, skips one cleaner; every other cleaner in the group is
+> still invoiced. **Except** on the *first invoicing employee of a period*: there the `Rollback()` also
+> reverts `period.Close()`, the period stays `Open`, `:119-122` re-selects it on the next tick, and its
+> period-closed emails are sent a second time. **No duplicate invoice results** — `:312-323` skips an
+> employee who already has one — and no money moves.
+
+Delete the unqualified *"one cleaner is skipped and logged; every other cleaner in the group is
+invoiced."* And record the challenger's over-reach so the ADR's own record is right: the
+*with-`Rollback()`* "discards every other cleaner's tracked invoice" describes the **current**
+`:187`-only shape, not C1/C2.
+
+**The stronger fix is available and I rule against taking it in this ADR.** Committing `period.Close()`
+at `:148` *before* `SendPeriodClosedEmailsAsync` removes the duplicate-email residue entirely. Its cost:
+a crash mid-emails leaves the period `Closed` with an untreated tail, recoverable only through the admin
+`GenerateInvoice` path (`GenerateInvoice.cs:87`) and **with no re-sent email**. Trading a duplicate email
+for a silent untreated tail is a worse trade, and it is a pay-period-job decision that does not belong to
+a variable-symbol ADR. **Record the option and the reason for declining it**, so the next author does not
+"fix" it without seeing the trade.
+
+---
+
+### Does any ruling move a schema shape? **Yes — one, and it is on the proposed table only.**
+
+1. **`PayoutReferenceCounters` loses its `Scope` column** (R4). The key becomes **`(Year)`**, with
+   `Year` a non-nullable `int` and one UNIQUE index on it alone. This removes the entire CH-VS-4 hazard
+   class by construction: a non-nullable `int` key cannot reproduce the nulls-distinct collapse
+   `FiscalCounterRepository.cs:30-32` documents, so no `.AreNullsDistinct(false)` retrofit is in play.
+   Rationale to carry in D2.1: **the ADR cannot name a second value for a scope**, and D3.1's decision
+   is that there is exactly one namespace — a scope column is in tension with the decision it would sit
+   under. If Q-VS-03 ever forces per-tenant namespaces, the tenant term is added *then*, in the same
+   owner-only migration that replaces the `EmployeeInvoices` index — which D3.2 already writes down.
+2. **Nothing else moves.** `IX_EmployeeInvoices_VariableSymbol` is untouched — verified still
+   `HasIndex(e => e.VariableSymbol).IsUnique().HasFilter("\"VariableSymbol\" IS NOT NULL")` at
+   `EmployeeInvoiceEntityConfiguration.cs:116-118`. `CountryInvoiceConfigs` needs nothing (CH-VS-1).
+   `BankTransferNote` keeps its `varchar(500)` (`:83-84`) and its optionality (R3). The column stays
+   nullable (D4.5 survives untouched).
+3. **The migration rides nothing.** CH-VS-1 removes the ADR's only mitigation for its owner-only step:
+   **there is no pending T-0522 pass to ride.** The counter table is **its own `ef-migration` request**,
+   owner-only. Pre-prod it folds into `Initial` rather than stacking (CLAUDE.md, *Manual Steps*), but it
+   is a separate owner window and must be asked for as one, in §Applies-to and in §Consequences.
+
+---
+
+### The closed list — transcription, not deliberation
+
+Each item names its target section, what it must say, and the reviewer-check delta. Nothing here
+requires a new decision.
+
+**R1 (CH-VS-1) — rewrite §D5.6 end to end.**
+1. Delete *"The invoice PDF path is down at HEAD"* and *"Shipping this ADR's work without it changes
+   nothing observable, because the document does not render either way."*
+2. State instead: T-0522's three columns are **shipped** — `LegalDisclaimerLanguageCode varchar(5)
+   nullable`, `LegalDisclaimerReviewStatus integer **NOT NULL**`, `ConstantSymbol varchar(4) nullable`
+   at `Initial.cs:556-558`, matched in `20260723182623_Initial.Designer.cs` and
+   `CleansiaDbContextModelSnapshot.cs`; **every** mapped property of `CountryInvoiceConfig`
+   (`CountryInvoiceConfig.cs:11-58`) is present in `Initial.cs:548-559`, so no other column on this
+   entity is unmigrated. **The invoice PDF path renders today.**
+3. Delete *"three nullable columns"*.
+4. State: **this ADR's counter table is its own owner-only `ef-migration` request**; there is no pending
+   pass to ride. Fix the §Applies-to cost line and the §Consequences line *"which is why it must ride
+   T-0522's already-pending pass rather than asking for a second one."*
+5. **Re-decide the D5.1/D5.3 sequencing explicitly, in §D5.1**, now that the document renders: landing
+   D5.1 before any symbol exists makes every payout invoice print `Variabilní symbol —`. **Ruling: that
+   is correct and intended** — D5.1's own argument is that absence must be loud, and a field that
+   silently vanishes is what produced this defect. But it must appear as a *decision with its
+   consequence stated*, not as a side effect: *"between D5.1 landing and the first allocated symbol,
+   every rendered payout invoice prints `—` for the variable symbol."* Add the constraint that D5.1/D5.3
+   **do not ship a release ahead of D2.2** — the window is a deploy, not a sprint.
+6. §Method declaration #2 gains one sentence naming what was not re-verified (see R17).
+
+**R2 (CH-VS-2 + CH-VS-8) — rewrite §D2.3 and §D6.3 together**, exactly as the joint ruling above
+specifies: the context-wide-commit sentence first; **C1** and **C2** named with what each carries; the
+`period.Close()` durability change named; `Rollback()` named at the failed-C1 site with its
+context-global scope stated **in the ADR body, not in a ticket**; §D6.3's promise replaced with the
+quoted corrected form; the challenger's over-reach recorded; the hoist-the-close option recorded and
+declined with its reason.
+
+**R3 (CH-VS-3) — delete §D4.4 and replace it with a precondition on the strong control.**
+1. **Delete D4.4 entirely**, including *"For an invoice already paid against no reference, the
+   compensating record already exists and becomes mandatory."* The mechanism cannot serve that
+   population and the mandatory form fails 100 % of attempts against a UI that ships `undefined`.
+2. **Replace it:** `MarkInvoicePaid` **refuses** an invoice whose `VariableSymbol` is null, with a new
+   `BusinessErrorMessage.InvoiceReferenceMissing = "invoice.reference_missing"` whose message names the
+   remedy (*"Assign a payment reference before recording the transfer."*). The remedy is D4.3's
+   assign-and-regenerate command, on the same screen.
+3. **Placement is load-bearing and must be written:** the new rule joins the existing `InvoiceId`
+   `Cascade.Stop` chain (`MarkInvoicePaid.cs:40-51`) **after `ApprovedAsync`** — *not* as a new root
+   `RuleFor`. A root rule runs under FluentValidation's class-level `Continue` default and would
+   `GetByIdAsync(...)!.VariableSymbol` on `null` for a bad id; the three existing `invoice!` reads
+   (`:65`, `:71`, `:77`) are safe only because they sit inside that chain.
+4. **`BankTransferNote` stays exactly as it is** — optional, `varchar(500)`
+   (`EmployeeInvoiceEntityConfiguration.cs:83-84`), root rule `MaximumLength(500)` unchanged
+   (`MarkInvoicePaid.cs:53-55`), display-only at `invoice-detail.component.html:268-275`. The ADR must
+   not make it mandatory and must not claim it as a control it cannot write.
+5. **Name the residual honestly:** if the owner has *already* transferred against a null-symbol invoice,
+   the refusal is an obstacle and the platform cannot detect that case. The stated path is: assign via
+   D4.3 (the row gains a reference the transfer did not quote), and put the bank's own transaction id
+   in the **optional** `BankTransferNote` on the mark-paid. Route this to **Q-VS-02**, whose second leg
+   already asks it — **do not open a new question**.
+6. **§Applies-to:** no admin note dialog (it was never scoped, and is no longer needed); **one** admin
+   action + confirm for the D4.3 command; **two** `api.*` keys ×5 on the admin app, not one.
+
+**R4 (CH-VS-4) — delete `Scope`.** §D2.1's statement becomes `ON CONFLICT ("Year") DO UPDATE …`; the
+entity carries `Year` (`int`, non-nullable) and `Value` and no scope column; the unique index is on
+`(Year)` alone. Carry the rationale from the schema-shape section above, including *why* a scope column
+is in tension with D3.1 and *when* a tenant term would be added instead. Reviewer check #5 is rewritten
+(R14).
+
+**R5 (CH-VS-5) — restate D2.4's mechanism, add the invariant, register the exception.**
+1. Replace *"`Context.Database.SqlQueryRaw` auto-commits"* with: *"`SqlQueryRaw` runs on the context's
+   connection and **joins an ambient transaction if one is open** — `FiscalCounterRepository.cs:28-30`
+   documents exactly that for this statement. It auto-commits here **because no payout path opens one**:
+   `UnitOfWorkPipelineBehavior.cs:13-33` opens none and
+   `PayPeriodBackgroundService.CloseExpiredPeriodsAndOpenNewAsync` (`:107-197`) opens none."*
+2. Add the rule, in §D2.1, as a checkable invariant: **"The payout reference allocator MUST NOT be
+   called inside an explicit transaction."** Both of D2.4's properties depend on it — the gap semantics,
+   **and** the duration of the row lock `ON CONFLICT … DO UPDATE` takes on the single counter row.
+   Under a long transaction that one row serializes every concurrent payroll run for its life, which is
+   a global contention channel a design that never mentions locking would introduce silently.
+3. **Catalog obligation, in the same change** (architect's, per the pattern-evolution loop): this is the
+   codebase's **second** self-committing write inside a handler. `consistency.md:346-353` makes the
+   deviating form *"a self-committing write inside a handler with no sanctioned-exception
+   doc-comment"* and names `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync` as the one
+   exception, *"because it says so, not because it exists"*. So: the ADR **mandates** the
+   sanctioned-exception doc-comment on the allocator in the `PromoCodeRepository.cs:28-38` shape, and
+   §Applies-to gains the `consistency.md` edit adding the second named exception.
+
+**R6 (CH-VS-6) — replace §D1's closing argument** with the quoted paragraph in the identity ruling;
+delete *"so this is settled and not re-litigated"*; do **not** cite the `(EmployeeId, PayPeriodId)`
+index as if it aids injectivity; rewrite **§D9-A**'s why-not around the two derived figures (≈0.50 % at
+n = 10 000, ≈39 % at n = 100 000) and the four real reasons — never zero, silent, on a bank transfer,
+monotonically worse.
+
+**R7 (CH-VS-7) — add the missing §D9 row and fix §D9-F.**
+1. **New row K — allocate an ordinal on the `PayPeriod` row that already exists**
+   (`yyMMdd(StartDate) ‖ NNNN`): zero new tables, entities or role cards. **Rejected on three grounds,
+   the first of which is new:** (i) **`PayPeriod.Update` mutates `StartDate`** (`PayPeriod.cs:76`,
+   assignment at `:94`), so the reference's own prefix is a mutable column — an admin correcting a
+   period's dates changes what the next reference means and desynchronizes it from the ones already
+   printed; (ii) two tenants whose periods share a `StartDate` both allocate ordinal 1 and collide under
+   the global index, the exact failure §D3.2 exists to prevent; (iii) 9 999 cleaners per period is a
+   reachable cap where 999 999 per year is not.
+2. **§D9-F:** delete *"starting it high is a magic number in DDL that no test can see"*
+   (`HasSequence(...).StartsAt(...)` lands in `CleansiaDbContextModelSnapshot.cs`, which is where this
+   repo asserts schema facts) and *"there is no sequence anywhere in this schema to pattern-match
+   against"* (novelty, from an ADR introducing a new table). Keep the year-reset argument and add the
+   strong one: **a sequence is not an inspectable, auditable, correctable row** — `FiscalCounter` is
+   deliberately a row for that reason (`FiscalCounter.cs:7-23`) — and R10's cap repair needs a `WHERE`
+   clause on the update, which a bare `nextval` has nowhere to put.
+
+**R8 (CH-VS-9) — extend §D7's census, name one fixture constant, add a scoped literal check.**
+1. Add **`PayoutInvoiceLayoutTests.cs:292`** (`VariableSymbol = "0001000001"`) **and `:64`**
+   (`Assert.Contains(fields, f => f.Value == "0001000001")` — the assertion that keeps it green; the
+   challenger named only `:292`).
+2. The `"VS 0001000001"` notes are `BankTransferNote` fixtures whose sources are
+   `MarkInvoicePaidAdminOnlyTests.cs:68` and `MarkInvoicePaidTests.cs:77`. **Ruling: scope the new check
+   to the `VariableSymbol` position only** — a bank-transfer note is free text and may legitimately
+   quote whatever a bank shows.
+3. §Applies-to says *"two creation call sites"*; it must say **two production call sites
+   (`GenerateInvoice.cs:87`, `PayPeriodBackgroundService.cs:328`) plus twelve fixture call sites that
+   gain the parameter** — census verified exact: `DomainSeed.cs:160`, `PayrollMockFactory.cs:52`,
+   `EmployeeInvoiceEntityTests.cs:19/:34/:58/:76`, `MarkInvoicePaidTests.cs:26`,
+   `MarkInvoicePaidNotifyTests.cs:26`, `AdminInvoiceAdjustmentHandlerTests.cs:25`,
+   `FiscalReconciliationQueryTests.cs:337`, `PayoutInvoicePdfDataTests.cs:195/:211`.
+4. **Connect the loop §D7 leaves open:** those twelve fixtures will hand-author a symbol production
+   never produces — `patterns-backend.md:443-462`, the rule §D7 itself invokes. Say in §D7 that
+   replacement test **#2** (the production census through the real handler and the real background
+   service) is what discharges it, and name one canonical fixture constant so twelve files do not each
+   invent a literal.
+
+**R9 (CH-VS-10) — replace "forced, not chosen" in §D3.2** with: *global is the **cheapest correct shape
+today** — the shipped index is already global (`EmployeeInvoiceEntityConfiguration.cs:116-118`), it has
+no NULLS-DISTINCT hole because it carries no `TenantId`, and production is single-tenant. It is
+**contingent** on D3.1's *"the payer's account is one account"*, which is exactly what **Q-VS-03** asks
+(`questions/open.md:2097-2102`). The flip is written down and **must be re-examined the moment that
+premise stops holding.**
+
+**R10 (CH-VS-11) — two fixes.**
+1. **(a) §D1.3 must state, in D1.3 itself,** that the prefix is the **year of allocation and is not the
+   accounting year of the work** — a December period closed on 2 January produces `2027…`. Record the
+   alternative (key the counter on `PayPeriod.EndDate`'s year) **and its cost**: `GenerateInvoice.Handler`
+   holds only `PayPeriodId` (`GenerateInvoice.cs:87-91`), so it would need a `PayPeriod` load. Note that
+   **Q-VS-01's answer may move it**. **Do not file a new question.**
+2. **(b) §D1.5's "No wrap, ever" becomes true rather than aspirational: put the cap in the statement.**
+   `DO UPDATE SET "Value" = "PayoutReferenceCounters"."Value" + 1 WHERE
+   "PayoutReferenceCounters"."Value" < 999999`. The row then stops at the cap instead of running away
+   past it, and the failure is repairable by the year rolling over rather than by a manual `UPDATE` on a
+   poisoned counter. **`RETURNING` yields no row when the `WHERE` is false**, so the ADR must state that
+   the empty result maps to a named business error
+   (`BusinessErrorMessage.InvoiceReferenceCapacityExhausted = "invoice.reference_capacity_exhausted"`)
+   and **not** to an unguarded `allocated[0]` — `FiscalCounterRepository.cs:63` reads exactly that and
+   copying the shape unguarded is the defect. Add the runbook line: within a year there is no remedy but
+   the year.
+
+**R11 (CH-VS-12) — two citation fixes.**
+1. §D5.3: `FileExtensions.cs:40` **is** a fallback expression. Correct sentence: *"its only fallback is
+   to the variable symbol, and it is unreachable because `Create` always sets the field
+   (`EmployeeInvoice.cs:126`) and `SetPaymentReference` (`:224-228`) has no caller"* — the zero-caller
+   fact is verified and is worth carrying, because it is what makes the fallback dead.
+2. §D7 step 2: **four** test methods (`:122`, `:131`, `:140`, `:155`), **five** cases.
+
+**R12 — one thing neither side raised, and it is a positive the ADR should claim.**
+`EmployeeInvoiceSpecification` already exposes an **exact-match filter on `VariableSymbol`** in the
+admin invoice query (`:14` the filter property, `:60-62` the predicate, `:112` the wiring). That is the
+reconciliation loop closing — the owner reads a line off a bank statement and finds the invoice by the
+number. Cite it in §Consequences (Positive), and note that it makes D1.2's no-leading-zero property
+concrete: a symbol typed without the zero a bank form dropped matches **nothing**, silently.
+
+**R13 — rewrite §Applies-to** once R1/R3/R4/R5/R8 land: its own `ef-migration` (no ride); one new table
+with a `(Year)` key and no `Scope`; two production + twelve fixture call sites; one admin action for
+D4.3 and **no** note dialog; two `api.*` keys ×5; one `consistency.md` edit.
+
+**R14 — reviewer-check delta** (§"How a reviewer verifies compliance"). Checks 1–4, 7–14 stand as
+written; #9's key list grows.
+- **#5 replaced:** *"The counter's key is exactly `(Year)`. Open the entity: no `Scope`, no `TenantId`,
+  does not implement `ITenantEntity`; `Year` is a non-nullable `int`; the unique index is on `(Year)`
+  alone. **A key with any second column fails this check.**"*
+- **#6 replaced:** *"**Two** commits per employee in `PayPeriodBackgroundService`. C1 sits between
+  `Add`/`AssignToInvoice` and `GenerateInvoicePdfAsync`; C2 sits after
+  `SetPdfBlobUrl`/`ClearPdfGenerationError` **and** after `SetPdfGenerationError` in the catch. **A
+  single commit per employee fails this check.** Read the call order, not the comments."*
+- **#9 extended:** the five admin locales carry `api.invoice.reference_unavailable`,
+  `api.invoice.reference_missing` **and** `api.invoice.reference_capacity_exhausted`, proved by
+  `error-contract-parity.spec.ts`.
+- **New #15:** *"A failed C1 is followed by `Rollback()` at that call site, and the ADR's
+  tracker-scope sentence is repeated as a comment there."*
+- **New #16:** *"The allocator carries a sanctioned-exception doc-comment in the
+  `PromoCodeRepository.cs:28-38` shape, `consistency.md`'s post-commit deviating-form list names it as
+  the second exception, and no allocator call site sits inside a `BeginTransactionAsync` scope."*
+- **New #17:** *"The cap is in the SQL: the `DO UPDATE` carries `WHERE "Value" < 999999`, and an empty
+  `RETURNING` result maps to `invoice.reference_capacity_exhausted` — not to an unguarded
+  `allocated[0]`."*
+- **New #18:** *"`MarkInvoicePaid` refuses a null-symbol invoice with `invoice.reference_missing`, and
+  the rule is **inside** the `InvoiceId` `Cascade.Stop` chain after `ApprovedAsync`, not a new root
+  `RuleFor`. `BankTransferNote` is still optional and its `MaximumLength(500)` root rule is
+  unchanged."*
+- **New #19:** *"No `VariableSymbol` literal anywhere in the tree begins with `0` — including
+  `InvoicePdfData` fixtures (`PayoutInvoiceLayoutTests.cs:64`, `:292`). `BankTransferNote` fixtures are
+  out of scope."*
+
+**R15 — acceptance-time artefacts** (not before; the text moves on twelve points first).
+- Living doc `agents/architecture/decisions/payout-invoice-references.md`.
+- Role card `agents/knowledge/roles/payout-reference-allocator.md`. Its **"does NOT know"** list must
+  carry, at minimum: **the tenant** (it has no tenant term and must not acquire one without the D3.2
+  flip), **the invoice** (it returns a number, never a row, and never writes `EmployeeInvoices`), and
+  **the pay period** (the year it keys on is the year of allocation, R10a). If a scenario forces it to
+  know any of the three, the responsibility is wrong or a collaborator is missing.
+
+**R16 — §Method declaration #2** gains: *"the T-0522 ticket status log was **not** re-verified against
+the tree, and that is what produced the §D5.6 error CH-VS-1 caught."*
+
+**R17 — process rule, third recurrence, landed in the catalog with this verdict.** See below.
+
+---
+
+### The recurring finding: this is the **third** stale-document propagation this sprint
+
+After a living decision page and a sprint status section, an ADR took a **code-state** claim from a
+ticket status log (`T-0522-….md:203-206`, true on 2026-08-04, never updated) and asserted it in the
+present tense — inside a document whose own §Method declaration forswears exactly that, having applied
+the rule to its brief and not to the ticket. Three instances of one failure is a missing rule, not
+three mistakes.
+
+**Landed, per the pattern-evolution loop:** `agents/knowledge/conventions.md` gains
+**"A claim about the tree cites the tree — never another artifact"**, sited beside the existing
+`### Cross-stack claims (ADR-0033 D2)` evidence rule it generalizes, carrying an
+`**Enforced by:**` line and a tier token as `conventions.md` §"The price of a law" requires. It is
+**T3-HUMAN** — the discriminator ("is this citation a code-state claim?") needs a reader, not a regex —
+and its named enforcer is `deliberation.md` step 5, the lead's own gate, which is where all three
+instances were or should have been caught. **This is a rule, not a note: it puts §D5.6 in violation as
+written**, which is the routing test's own Test-1 signal.
+
+---
+
+### Notes to the PM (I did not act on these — you hold the files)
+
+1. **`Q-VS-02` is not filed.** `Q-VS-01` and `Q-VS-03` are at `questions/open.md:2090-2102`; a grep for
+   Q-VS-02 and for its subject returns nothing. The draft raises it verbatim in §D8 and **R3 item 5 now
+   routes a second question to it** (has money already left against a null-symbol invoice). If it was
+   dropped deliberately, §D8 should say so; if not, it wants filing. It remains non-blocking either way
+   — every default it names is already taken in the design.
+2. **The number and the acceptance are yours.** The draft stays in `drafts/` at `proposed`; I did not
+   allocate a number and did not accept it.
+3. **Ticket shape, if it helps:** R1/R6/R9/R10a/R11/R12/R16 are pure text and can land in one pass.
+   R2+R3+R4+R5+R7+R8+R10b+R13+R14 change what gets built and should be re-read against this list before
+   the ADR is numbered. **R4 is the only one that moves a schema shape**, and it moves the *proposed*
+   table only.

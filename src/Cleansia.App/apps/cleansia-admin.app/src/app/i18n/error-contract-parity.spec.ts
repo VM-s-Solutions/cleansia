@@ -403,6 +403,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.invoice.invalid_status',
   'payroll.invoice.not_approved',
   'payroll.invoice.not_found',
+  // ADR-0046 — the payout invoice's variabilni symbol. All four are raised on
+  // admin-reachable routes (AdminPayrollController.GenerateInvoice /
+  // AssignInvoiceVariableSymbol, AdminInvoiceController.MarkInvoicePaid), so a missing
+  // locale renders the generic error on the one screen where an admin has to act on it.
+  'payroll.invoice.reference_already_assigned',
+  'payroll.invoice.reference_capacity_exhausted',
+  'payroll.invoice.reference_missing',
+  'payroll.invoice.reference_unavailable',
   'payroll.no_unpaid_order_pays',
   'payroll.pay_period.not_found',
   'payroll.pay_period.not_open',
@@ -475,20 +483,8 @@ const ADMIN_PAYOUT_EDITOR_KEYS: readonly string[] = [
   'validation.payout.swift_required',
 ];
 
-// ADR-0046 — the payout invoice's variabilní symbol. All four are raised on admin-reachable routes
-// (AdminPayrollController.GenerateInvoice / AssignInvoiceVariableSymbol, AdminInvoiceController
-// .MarkInvoicePaid), so a missing locale here is a refusal rendering as the generic
-// "An error occurred. Please try again." on the one screen where the admin has to act on it.
-const ADMIN_PAYOUT_REFERENCE_ERROR_KEYS: readonly string[] = [
-  'payroll.invoice.reference_unavailable',
-  'payroll.invoice.reference_missing',
-  'payroll.invoice.reference_capacity_exhausted',
-  'payroll.invoice.reference_already_assigned',
-];
-
 const PAYOUT_KEYS = [
   ...ADMIN_PAYOUT_SURFACE_ERROR_KEYS,
-  ...ADMIN_PAYOUT_REFERENCE_ERROR_KEYS,
   ...ADMIN_PAYOUT_EDITOR_KEYS,
 ];
 

@@ -341,6 +341,19 @@ public class UpdateXxx
 - `CustomerApiController`/`PartnerApiController`/`AdminApiController` + `HandleResult` + `Policy.CanXxx`.
 - `IUserSessionProvider.GetUserId()` for identity (S1). Ownership check in the handler (S3).
 - `manual_step: ef-migration` (schema) and `manual_step: nswag-regen` (DTO/endpoint) — owner-only.
+  **Pre-prod there is exactly ONE migration, `Initial`, and it is REGENERATED — never hand-folded.**
+  Editing `<id>_Initial.cs`, `<id>_Initial.Designer.cs` and `CleansiaDbContextModelSnapshot.cs` by
+  hand to slot in a new table or column is **withdrawn** (owner ruling, 2026-08-09). It was not
+  producing wrong schema — a column-by-column comparison of the last hand-folded `Initial` against
+  the regenerated one matched exactly on 69 tables, 1113 columns and 232 indexes, and the migration
+  agreed with the snapshot. What it produced was a diff **nobody can review**: EF emits
+  `CreateTable` blocks in its own order, so a moved block reads as a deletion plus an addition and a
+  genuine omission is indistinguishable from a reordering. Regenerating makes the diff mean
+  something. Two consequences a ticket must carry: the migration **id and filename change every
+  time**, and `__EFMigrationsHistory` keys on the id, so **DEV must be dropped and re-seeded** or an
+  existing database reports "up to date" and silently misses every new column.
+  **Enforced by:** `Cleansia.IntegrationTests`, which applies the real migration to real Postgres —
+  **T1-CI**.
 
 ## Order status reads & list projections (the CurrentStatus discipline)
 

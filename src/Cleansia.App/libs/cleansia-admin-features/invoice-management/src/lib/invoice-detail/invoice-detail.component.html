@@ -87,6 +87,17 @@
             (onClick)="onMarkPaid()"
             [loading]="facade.actionLoading()"
           />
+          } @if (facade.canAssignVariableSymbol()) {
+          <cleansia-button
+            *cleansiaPermission="Policy.CanGenerateInvoice"
+            [label]="
+              'pages.invoice_detail.actions.assign_variable_symbol' | translate
+            "
+            icon="pi pi-hashtag"
+            severity="info"
+            (onClick)="confirmAssignVariableSymbol()"
+            [loading]="facade.actionLoading()"
+          />
           } @if (facade.canCancel()) {
           <cleansia-button
             *cleansiaPermission="Policy.CanCancelInvoice"
@@ -312,3 +323,5 @@
     }
   </div>
 </div>
+
+<p-confirmDialog />

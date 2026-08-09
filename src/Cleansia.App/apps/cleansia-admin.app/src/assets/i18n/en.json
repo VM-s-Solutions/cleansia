@@ -1500,6 +1500,7 @@
       "actions": {
         "approve": "Approve Invoice",
         "mark_paid": "Mark as Paid",
+        "assign_variable_symbol": "Assign Payment Reference",
         "cancel": "Cancel Invoice",
         "download": "Download PDF",
         "regenerate_pdf": "Regenerate PDF"
@@ -1528,12 +1529,19 @@
         "reason_label": "Cancellation Reason",
         "reason_placeholder": "Enter the reason for cancellation..."
       },
+      "assign_variable_symbol_confirm": {
+        "title": "Assign payment reference?",
+        "message": "This claims a payment reference for this invoice and regenerates its PDF. The number can never be changed, reused or given to another invoice.",
+        "yes": "Assign"
+      },
       "messages": {
         "load_error": "Failed to load invoice details",
         "approve_success": "Invoice approved successfully",
         "approve_error": "Failed to approve invoice",
         "mark_paid_success": "Invoice marked as paid successfully",
         "mark_paid_error": "Failed to mark invoice as paid",
+        "assign_variable_symbol_success": "Payment reference {{variableSymbol}} assigned and the invoice PDF regenerated.",
+        "assign_variable_symbol_pdf_stale": "Payment reference {{variableSymbol}} assigned, but the invoice PDF was not regenerated. Use Regenerate PDF.",
         "cancel_success": "Invoice cancelled successfully",
         "cancel_error": "Failed to cancel invoice",
         "download_error": "Failed to download invoice",

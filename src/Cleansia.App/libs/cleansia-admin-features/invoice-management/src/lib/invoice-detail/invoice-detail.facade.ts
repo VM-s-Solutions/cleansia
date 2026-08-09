@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   ApproveInvoiceCommand,
+  AssignInvoiceVariableSymbolCommand,
   CancelInvoiceCommand,
   EmployeeInvoiceDetailDto,
   EmployeeInvoiceStatus,
@@ -103,6 +104,51 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
           );
           this.loadInvoiceDetail(inv.id!);
         }
+      });
+  }
+
+  assignVariableSymbol(): void {
+    const inv = this.invoice();
+    if (!inv?.id) return;
+
+    this.actionLoading.set(true);
+
+    const command = new AssignInvoiceVariableSymbolCommand();
+    command.invoiceId = inv.id;
+    command.languageCode = this.translate.currentLang || 'en';
+
+    this.adminClient.adminPayrollClient
+      .assignInvoiceVariableSymbol(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.actionLoading.set(false))
+      )
+      .subscribe((response) => {
+        if (!response) return;
+
+        const variableSymbol = response.variableSymbol;
+
+        // The reference is committed before the PDF is re-rendered, so an absent
+        // blob url means a durable number on a document that does not print it —
+        // the one outcome that must not read as an unqualified success.
+        if (response.pdfBlobUrl) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.invoice_detail.messages.assign_variable_symbol_success',
+              { variableSymbol }
+            )
+          );
+        } else {
+          this.snackbarService.showError(
+            this.translate.instant(
+              'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale',
+              { variableSymbol }
+            )
+          );
+        }
+
+        this.loadInvoiceDetail(inv.id!);
       });
   }
 
@@ -291,5 +337,16 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   canDownload(): boolean {
     return !!this.invoice()?.pdfBlobName;
+  }
+
+  canAssignVariableSymbol(): boolean {
+    const inv = this.invoice();
+    if (!inv || inv.variableSymbol) return false;
+
+    return (
+      inv.status === EmployeeInvoiceStatus.Pending ||
+      inv.status === EmployeeInvoiceStatus.Approved ||
+      inv.status === EmployeeInvoiceStatus.Disputed
+    );
   }
 }

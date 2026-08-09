@@ -1500,6 +1500,7 @@
       "actions": {
         "approve": "Schváliť faktúru",
         "mark_paid": "Označiť ako zaplatenú",
+        "assign_variable_symbol": "Priradiť variabilný symbol",
         "cancel": "Zrušiť faktúru",
         "download": "Stiahnuť PDF",
         "regenerate_pdf": "Obnoviť PDF"
@@ -1528,12 +1529,19 @@
         "reason_label": "Dôvod zrušenia",
         "reason_placeholder": "Zadajte dôvod zrušenia..."
       },
+      "assign_variable_symbol_confirm": {
+        "title": "Priradiť variabilný symbol?",
+        "message": "Týmto faktúre pridelíte variabilný symbol a obnovíte jej PDF. Číslo už nemožno zmeniť, znova použiť ani prideliť inej faktúre.",
+        "yes": "Priradiť"
+      },
       "messages": {
         "load_error": "Nepodarilo sa načítať detail faktúry",
         "approve_success": "Faktúra bola úspešne schválená",
         "approve_error": "Nepodarilo sa schváliť faktúru",
         "mark_paid_success": "Faktúra bola úspešne označená ako zaplatená",
         "mark_paid_error": "Nepodarilo sa označiť faktúru ako zaplatenú",
+        "assign_variable_symbol_success": "Variabilný symbol {{variableSymbol}} bol priradený a PDF faktúry obnovené.",
+        "assign_variable_symbol_pdf_stale": "Variabilný symbol {{variableSymbol}} bol priradený, ale PDF faktúry sa nepodarilo obnoviť. Použite Obnoviť PDF.",
         "cancel_success": "Faktúra bola úspešne zrušená",
         "cancel_error": "Nepodarilo sa zrušiť faktúru",
         "download_error": "Nepodarilo sa stiahnuť faktúru",

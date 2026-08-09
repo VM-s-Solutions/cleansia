@@ -813,6 +813,7 @@
       "actions": {
         "approve": "Schválit fakturu",
         "mark_paid": "Označit jako zaplacenou",
+        "assign_variable_symbol": "Přiřadit variabilní symbol",
         "cancel": "Zrušit fakturu",
         "download": "Stáhnout PDF",
         "regenerate_pdf": "Přegenerovat PDF"
@@ -841,12 +842,19 @@
         "reason_label": "Důvod zrušení",
         "reason_placeholder": "Zadejte důvod zrušení..."
       },
+      "assign_variable_symbol_confirm": {
+        "title": "Přiřadit variabilní symbol?",
+        "message": "Tímto faktuře přidělíte variabilní symbol a přegenerujete její PDF. Číslo už nelze změnit, znovu použít ani přidělit jiné faktuře.",
+        "yes": "Přiřadit"
+      },
       "messages": {
         "load_error": "Nepodařilo se načíst detail faktury",
         "approve_success": "Faktura byla úspěšně schválena",
         "approve_error": "Nepodařilo se schválit fakturu",
         "mark_paid_success": "Faktura byla úspěšně označena jako zaplacená",
         "mark_paid_error": "Nepodařilo se označit fakturu jako zaplacenou",
+        "assign_variable_symbol_success": "Variabilní symbol {{variableSymbol}} byl přiřazen a PDF faktury přegenerováno.",
+        "assign_variable_symbol_pdf_stale": "Variabilní symbol {{variableSymbol}} byl přiřazen, ale PDF faktury se nepodařilo přegenerovat. Použijte Přegenerovat PDF.",
         "cancel_success": "Faktura byla úspěšně zrušena",
         "cancel_error": "Nepodařilo se zrušit fakturu",
         "download_error": "Nepodařilo se stáhnout fakturu",

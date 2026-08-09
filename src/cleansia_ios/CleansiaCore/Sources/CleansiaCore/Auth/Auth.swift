@@ -71,7 +71,12 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     }
 
     public func login(email: String, password: String, rememberMe: Bool = true) async -> ApiResult<LoginOutcome> {
-        let request = LoginRequest(email: email, password: password, rememberMe: rememberMe)
+        let request = LoginRequest(
+            email: email,
+            password: password,
+            rememberMe: rememberMe,
+            trustedDeviceToken: tokenStore.current()?.trustedDeviceToken
+        )
         let result: ApiResult<JwtTokenResponseDto> = await post(
             path: "api/Auth/Login",
             body: request,

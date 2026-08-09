@@ -2468,3 +2468,31 @@ to the existing evidence rules, and it is **filed rather than written** because 
   validator on this path passes by construction, so only network and 5xx reach it.
 - **Dead code:** the `updateUserCurrent` action, its `updateCurrent$` effect and `selectCurrentUser` in
   `libs/data-access/partner-stores` have no dispatchers or readers.
+
+---
+
+## N24 — a catalog entry two lanes independently reached for, and it cannot be written inline (2026-08-09)
+
+Both the Android detail-rendering lane and the backend redaction lane arrived at the same sentence, and
+neither could land it:
+
+> **A redacted field's replacement is rendered off the field's own arrival. The client never re-derives
+> entitlement, and never hides a field the server populated.**
+
+It is the rule that decided the Android predicate correctly. `isAssignedToCurrentUser` **is** on the
+wire, so choosing `address == null` instead was a real choice — and the right one, because `b2a8cf62`
+redacts on `CanAccessOrderAsync`, deliberately **not** on assignment: an employee who books a cleaning
+for their own home arrives at that handler as the order's **customer**, with a full address and
+`isAssignedToCurrentUser` false. A client gating the address on that flag would redact their own data
+from them, and would be a second authorization implementation living beside the server's.
+
+**It routes to the Architect and cannot be written inline, because Test 1 fires.** A sweep of the partner
+app returns shipped call sites that gate *populated* fields on exactly that flag — the phone and SMS
+chips on `CustomerCard`, the access-instructions card, the work sections, and three arms of the primary
+action. An entry worded as above puts all of them in violation, so it needs a deviation entry and a
+canonicalization ticket alongside it, which a feature lane may not file for itself.
+
+Recorded here so the next panel has the sweep already done. Catalog files searched, for the record:
+`patterns-mobile.md` and `consistency.md` for `redact|PII|coarse|approximate|entitle` — nothing governs
+client-side rendering of a server-redacted field today (`consistency.md:297` is header redaction in
+logging; `patterns-mobile.md:1227` is a repository read-scope gate).

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Cleansia.Core.Domain.Users;
 using Moq;
 
@@ -28,7 +29,8 @@ public class MarkInvoicePaidNotifyTests
             payPeriodId: "pp-1",
             totalOrders: 3,
             subTotal: 900m,
-            currencyId: "cur-czk");
+            currencyId: "cur-czk",
+            variableSymbol: PayrollMockFactory.TestVariableSymbol);
         invoice.Approve("admin-1");
 
         if (employeeUserId is not null)

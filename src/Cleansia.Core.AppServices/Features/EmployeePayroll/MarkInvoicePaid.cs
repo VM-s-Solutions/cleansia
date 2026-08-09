@@ -48,7 +48,13 @@ public class MarkInvoicePaid
                 .MustAsync(NotCancelledAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceAlreadyCancelled)
                 .MustAsync(ApprovedAsync)
-                .WithMessage(BusinessErrorMessage.InvoiceNotApproved);
+                .WithMessage(BusinessErrorMessage.InvoiceNotApproved)
+                // Inside this chain, never a root rule: the class-level default is Continue, so a root
+                // rule would run for an unknown id and dereference the null GetByIdAsync returns. It is
+                // also the forward statement of what this whole reference exists for — you do not
+                // record a transfer against a document that carries no reference.
+                .MustAsync(HasVariableSymbolAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceReferenceMissing);
 
             RuleFor(x => x.BankTransferNote)
                 .MaximumLength(500)
@@ -75,6 +81,12 @@ public class MarkInvoicePaid
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
             return invoice!.Status == EmployeeInvoiceStatus.Approved;
+        }
+
+        private async Task<bool> HasVariableSymbolAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return !string.IsNullOrEmpty(invoice!.VariableSymbol);
         }
     }
 

@@ -225,6 +225,10 @@ public static class BusinessErrorMessage
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
     public const string InvoiceNotApproved = "payroll.invoice.not_approved";
+    public const string InvoiceReferenceUnavailable = "payroll.invoice.reference_unavailable";
+    public const string InvoiceReferenceMissing = "payroll.invoice.reference_missing";
+    public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";
+    public const string InvoiceReferenceAlreadyAssigned = "payroll.invoice.reference_already_assigned";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";

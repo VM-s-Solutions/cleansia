@@ -37,7 +37,6 @@ public static class FileExtensions
             InvoiceNumber = invoice.InvoiceNumber,
             VariableSymbol = invoice.VariableSymbol,
             ConstantSymbol = countryContext?.ConstantSymbol,
-            PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol,
             GeneratedAt = invoice.GeneratedAt,
             DueDate = invoice.CalculateDueDate(Constants.PayoutInvoice.PaymentTermsDays),
             Supplier = supplier,

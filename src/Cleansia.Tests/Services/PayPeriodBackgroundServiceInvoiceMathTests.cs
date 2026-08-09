@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
@@ -38,8 +39,16 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
     private readonly Mock<IPdfService> _pdfService = new();
     private readonly Mock<IBlobContainerClientFactory> _blobContainerClientFactory = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
 
     private EmployeeInvoice? _addedInvoice;
+
+    public PayPeriodBackgroundServiceInvoiceMathTests()
+    {
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+    }
 
     private PayPeriodBackgroundService CreateService() => new(
         _payPeriodRepository.Object,
@@ -57,7 +66,8 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _countryConfigurationRepository.Object,
         _pdfService.Object,
         _blobContainerClientFactory.Object,
-        _tenantProvider.Object);
+        _tenantProvider.Object,
+        _payoutReferenceAllocator.Object);
 
     private void ArrangePeriodCloseWithPays(params OrderEmployeePay[] pays)
     {

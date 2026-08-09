@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
@@ -27,7 +28,8 @@ public class AdminInvoiceAdjustmentHandlerTests
             payPeriodId: "period-1",
             totalOrders: 2,
             subTotal: 200m,
-            currencyId: "currency-1");
+            currencyId: "currency-1",
+            variableSymbol: PayrollMockFactory.TestVariableSymbol);
         invoice.Id = InvoiceId;
         return invoice;
     }

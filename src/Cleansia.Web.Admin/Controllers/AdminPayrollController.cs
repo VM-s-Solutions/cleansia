@@ -63,4 +63,17 @@ public class AdminPayrollController(IMediator mediator) : ApiController(mediator
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<GenerateInvoice.Response>(result);
     }
+
+    [HttpPost("assign-invoice-variable-symbol")]
+    [Permission(Policy.CanGenerateInvoice)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AssignInvoiceVariableSymbol.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> AssignInvoiceVariableSymbol([FromBody] AssignInvoiceVariableSymbol.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AssignInvoiceVariableSymbol.Response>(result);
+    }
 }

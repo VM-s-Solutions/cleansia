@@ -18,6 +18,17 @@ public static class DbConstraintViolation
     // explicit RESTRICT catalog FKs surface as a raw 500.
     private static readonly string[] ForeignKeyViolationStates = ["23503", "23001"];
 
+    private static readonly string[] UniqueViolationStates = ["23505"];
+
+    /// <summary>
+    /// True when the exception was caused by a unique-constraint violation — a concurrent (or
+    /// hand-written) insert losing a race against a UNIQUE index. Callers that need this must FLUSH the
+    /// insert themselves: the <c>UnitOfWorkPipelineBehavior</c> commit runs after the handler returns,
+    /// so a try/catch around a merely-tracked <c>Add</c> catches nothing (S7b).
+    /// </summary>
+    public static bool IsUniqueViolation(DbUpdateException exception) =>
+        HasSqlState(exception, UniqueViolationStates);
+
     /// <summary>
     /// True when the exception was caused by a foreign-key/restrict constraint violation — here, an
     /// ON DELETE RESTRICT catalog reference rejecting the delete because a row references the row being

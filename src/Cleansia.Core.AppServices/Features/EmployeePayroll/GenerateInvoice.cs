@@ -70,7 +70,8 @@ public class GenerateInvoice
         ICurrencyRepository currencyRepository,
         ICurrencyResolutionService currencyResolutionService,
         IEmployeeInvoiceRepository invoiceRepository,
-        IOrderEmployeePayRepository orderEmployeePayRepository)
+        IOrderEmployeePayRepository orderEmployeePayRepository,
+        IPayoutReferenceAllocator payoutReferenceAllocator)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -84,17 +85,46 @@ public class GenerateInvoice
                 ? await currencyRepository.GetByCodeAsync(currencyCode, cancellationToken)
                 : null) ?? await currencyRepository.GetDefaultAsync(cancellationToken);
 
+            var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
+            if (variableSymbol.IsFailure)
+            {
+                return BusinessResult.Failure<Response>(variableSymbol.Error!);
+            }
+
             var invoice = EmployeeInvoice.CreateFromOrderPays(
                 command.EmployeeId,
                 command.PayPeriodId,
                 orderPays,
-                currency.Id);
+                currency.Id,
+                variableSymbol.Value!);
 
             invoiceRepository.Add(invoice);
 
             foreach (var orderPay in orderPays)
             {
                 orderPay.AssignToInvoice(invoice.Id);
+            }
+
+            // This handler does NOT own its own commit — UnitOfWorkPipelineBehavior commits after it
+            // returns, so a duplicate variable symbol would reach the unique index there and surface as
+            // an unhandled DbUpdateException (a 500 on the admin path, a poisoned message on the queue
+            // one). FLUSH here and own the failure: the allocator makes a duplicate impossible by
+            // construction, so this is the backstop for a hand-written INSERT or a restored counter row,
+            // and it must be a refusal the admin can act on rather than a stack trace.
+            try
+            {
+                await invoiceRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                // Detach the rejected insert so the pipeline's later CommitAsync cannot retry it and
+                // re-raise the same 23505. Nothing was persisted, so Remove() on a still-Added entity
+                // simply detaches it.
+                invoiceRepository.Remove(invoice);
+
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(EmployeeInvoice.VariableSymbol),
+                    BusinessErrorMessage.InvoiceReferenceUnavailable));
             }
 
             return BusinessResult.Success(new Response(invoice.Id));

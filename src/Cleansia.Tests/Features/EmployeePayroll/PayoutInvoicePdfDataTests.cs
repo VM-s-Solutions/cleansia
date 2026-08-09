@@ -136,27 +136,20 @@ public class PayoutInvoicePdfDataTests
     [Fact]
     public void Variable_Symbol_Is_Not_Derived_From_The_Invoice_Number()
     {
-        var invoice = Invoice();
-        invoice.SetVariableSymbol(EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1"));
+        var data = Map(invoice: Invoice());
 
-        var data = Map(invoice: invoice);
-
+        Assert.NotNull(data.VariableSymbol);
         Assert.NotEqual(data.InvoiceNumber, data.VariableSymbol);
     }
 
-    // The specimen's variabilní symbol equals its invoice number because the owner's invoice numbers
-    // are numeric. This platform's are not (INV-yyyyMM-XXXXX), and a VS is numeric and at most ten
-    // digits — so the generated numeric symbol is what reaches the document, not the invoice number.
     [Fact]
-    public void Variable_Symbol_Is_Carried_Through_And_Stays_A_Valid_Numeric_Symbol()
+    public void Variable_Symbol_Is_Carried_Through_To_The_Document_Unchanged()
     {
         var invoice = Invoice();
-        invoice.SetVariableSymbol(EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1"));
 
         var data = Map(invoice: invoice);
 
         Assert.Equal(invoice.VariableSymbol, data.VariableSymbol);
-        Assert.Matches("^[0-9]{1,10}$", data.VariableSymbol!);
     }
 
     [Fact]
@@ -192,7 +185,7 @@ public class PayoutInvoicePdfDataTests
     public void Line_Item_Total_Excludes_Bonus_And_Deduction_So_The_Lines_Sum_To_The_SubTotal()
     {
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m, deductionPay: 40m) };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 
@@ -208,7 +201,7 @@ public class PayoutInvoicePdfDataTests
             PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m),
             PayrollMockFactory.OrderPay(basePay: 250m, deductionPay: 40m)
         };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 

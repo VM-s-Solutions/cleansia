@@ -178,8 +178,12 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
         fields.Add(new InvoiceField(Labels.Iban, supplier.Iban));
         fields.Add(new InvoiceField(Labels.Swift, supplier.Swift));
 
-        if (!string.IsNullOrWhiteSpace(data.VariableSymbol))
-            fields.Add(new InvoiceField(Labels.VariableSymbol, data.VariableSymbol));
+        // Unconditional, unlike the constant symbol below, and the asymmetry is deliberate: a
+        // konstantní symbol is legitimately absent outside CZ, while a variabilní symbol never is. On a
+        // document whose whole purpose is to be paid, a missing payment reference must render as "—"
+        // rather than vanish — a conditional is what made "no reference" indistinguishable from "this
+        // document has no reference field" for as long as it did.
+        fields.Add(new InvoiceField(Labels.VariableSymbol, data.VariableSymbol));
 
         if (!string.IsNullOrWhiteSpace(data.ConstantSymbol))
             fields.Add(new InvoiceField(Labels.ConstantSymbol, data.ConstantSymbol));

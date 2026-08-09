@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -33,6 +34,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly IPdfService _pdfService;
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
     private readonly ITenantProvider _tenantProvider;
+    private readonly IPayoutReferenceAllocator _payoutReferenceAllocator;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -50,7 +52,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ICountryConfigurationRepository countryConfigurationRepository,
         IPdfService pdfService,
         IBlobContainerClientFactory blobContainerClientFactory,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        IPayoutReferenceAllocator payoutReferenceAllocator)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -68,6 +71,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _pdfService = pdfService;
         _blobContainerClientFactory = blobContainerClientFactory;
         _tenantProvider = tenantProvider;
+        _payoutReferenceAllocator = payoutReferenceAllocator;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -325,17 +329,55 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
                        await _currencyRepository.GetDefaultAsync(cancellationToken);
 
+        var variableSymbol = await _payoutReferenceAllocator.AllocateAsync(cancellationToken);
+        if (variableSymbol.IsFailure)
+        {
+            _logger.LogError(
+                "Could not allocate a payout reference for employee {EmployeeId} / period {PeriodId} ({Error}); skipping this employee's invoice",
+                employee.Id,
+                period.Id,
+                variableSymbol.Error?.Message);
+            return null;
+        }
+
         var invoice = EmployeeInvoice.CreateFromOrderPays(
             employee.Id,
             period.Id,
             orderPays,
-            currency!.Id);
+            currency!.Id,
+            variableSymbol.Value!);
 
         _employeeInvoiceRepository.Add(invoice);
 
         foreach (var orderPay in orderPays)
         {
             orderPay.AssignToInvoice(invoice.Id);
+        }
+
+        // C1 — make the reference durable BEFORE any document carrying it is rendered, uploaded or
+        // emailed. Today the whole group commits at the end, after every cleaner has already been
+        // emailed their PDF, so one bad row means everyone has an invoice in their inbox and no
+        // invoice row exists for any of them.
+        try
+        {
+            await _unitOfWork.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+        {
+            // Rollback() is context-global — it sets EVERY tracked entry to Unchanged, including
+            // period.Close() if no earlier employee in this period has already committed. So on the
+            // FIRST invoicing employee of a period this also reverts the close: the period stays Open,
+            // is re-selected on the next tick, and its period-closed emails go out a second time. No
+            // duplicate invoice results (the already-has-one guard above skips it) and no money moves.
+            _unitOfWork.Rollback();
+
+            _logger.LogError(
+                ex,
+                "Duplicate payout reference {VariableSymbol} for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
+                variableSymbol.Value,
+                employee.Id,
+                period.Id);
+            return null;
         }
 
         var language = await _languageRepository.GetByCodeAsync(languageCode, cancellationToken) ??
@@ -360,6 +402,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             invoice.SetPdfBlobUrl(pdfBlobUrl);
             invoice.ClearPdfGenerationError();
 
+            // C2 — without it these mutations ride the NEXT employee's commit and are lost with
+            // whatever fails next.
+            await _unitOfWork.CommitAsync(cancellationToken);
+
             var fileName = $"{invoice.InvoiceNumber}.pdf";
             return (pdfBytes, fileName);
         }
@@ -369,6 +415,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             // Mark invoice with error but don't fail entire process
             invoice.SetPdfGenerationError(ex.Message);
+
+            // C2 on the failure arm too: the PDF-error state for the employee whose generation just
+            // failed is exactly what is lost if it rides a later commit that also fails.
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             // Invoice will be created without PDF
             // Admin can regenerate PDF later via RegenerateInvoicePdf endpoint

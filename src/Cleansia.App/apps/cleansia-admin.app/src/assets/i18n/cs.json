@@ -2605,7 +2605,11 @@
         "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
         "already_cancelled": "Faktura již byla zrušena",
         "already_paid": "Faktura již byla označena jako zaplacená",
-        "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou"
+        "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
+        "reference_unavailable": "Tento variabilní symbol se již používá. Zkuste to prosím znovu.",
+        "reference_missing": "Před zaznamenáním platby přiřaďte variabilní symbol.",
+        "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
+        "reference_already_assigned": "Tato faktura již variabilní symbol má."
       },
       "unpaid_invoices_exist": "Existují nezaplacené faktury",
       "pay": {

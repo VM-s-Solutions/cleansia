@@ -5,7 +5,6 @@ public record InvoicePdfData
     public required string InvoiceNumber { get; init; }
     public string? VariableSymbol { get; init; }
     public string? ConstantSymbol { get; init; }
-    public string? PaymentReference { get; init; }
     public required DateTime GeneratedAt { get; init; }
     public DateTime? DueDate { get; init; }
 

@@ -348,9 +348,19 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   referencing a not-yet-committed row under an FK, must ride the pipeline's `SaveChangesAsync` or run
   **strictly after** the commit. Deviating form: a raw `SqlQueryRaw`/`ExecuteUpdate` write inside a
   command handler that references `Order.Id` (or any sibling aggregate id created in the same request),
-  **or a self-committing write inside a handler with no sanctioned-exception doc-comment** — the
-  documented exception is `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync`, and it is an
-  exception because it says so, not because it exists.
+  **or a self-committing write inside a handler with no sanctioned-exception doc-comment** — there are
+  exactly **two** documented exceptions, and each is an exception because it says so, not because it
+  exists:
+  1. `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync` — the global promo cap must be claimed or
+     rejected on its own, independently of the order commit.
+  2. `PayoutReferenceCounterRepository.AllocateNextAsync` (ADR-0046 §D2.1) — a payout invoice's
+     *variabilní symbol* must be claimed **before** any row or document can carry it, so the allocation
+     deliberately does **not** roll back with the caller: an invoice that fails to commit leaves a
+     **gap**, which is correct for a payment reference (it is not a fiscal document number, and only
+     `FiscalCounter` owes gaplessness). Its self-commit is a **caller** property, not an API one —
+     `SqlQueryRaw` joins an ambient transaction if one is open — so the invariant travels with it:
+     **no allocator call site may sit inside a `BeginTransactionAsync` scope**, or both the gap
+     semantics and the single-counter-row lock duration break.
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a

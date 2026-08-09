@@ -2605,7 +2605,11 @@
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
         "already_cancelled": "Invoice has already been cancelled",
         "already_paid": "Invoice has already been marked paid",
-        "not_approved": "Invoice must be approved before it can be marked paid"
+        "not_approved": "Invoice must be approved before it can be marked paid",
+        "reference_unavailable": "That payment reference is already in use. Please try again.",
+        "reference_missing": "Assign a payment reference before recording the transfer.",
+        "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
+        "reference_already_assigned": "This invoice already has a payment reference."
       },
       "unpaid_invoices_exist": "Unpaid invoices exist",
       "pay": {

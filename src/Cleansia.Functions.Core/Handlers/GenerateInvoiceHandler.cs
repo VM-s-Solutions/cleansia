@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
@@ -68,6 +69,19 @@ public class GenerateInvoiceHandler(
             logger.LogInformation(
                 "GenerateInvoice succeeded for employee {EmployeeId} / period {PayPeriodId} → invoice {InvoiceId}",
                 message.EmployeeId, message.PayPeriodId, result.Value?.InvoiceId);
+        }
+        else if (result.Error?.Message == BusinessErrorMessage.InvoiceReferenceUnavailable)
+        {
+            // The ONE named exception to the ack-everything rule below, because its reasoning is false
+            // here: a retry allocates a DIFFERENT payout reference, so retrying genuinely can change
+            // the verdict. Acking would leave an invoice that never exists and nobody told about.
+            // (reference_capacity_exhausted is the opposite case and stays on the ack lane — a retry
+            // inside the same year allocates nothing.)
+            logger.LogError(
+                "GenerateInvoice hit a duplicate payout reference for employee {EmployeeId} / period {PayPeriodId}; throwing so the queue retries with a fresh one",
+                message.EmployeeId, message.PayPeriodId);
+            throw new InvalidOperationException(
+                $"Payout reference unavailable for employee {message.EmployeeId} / period {message.PayPeriodId}");
         }
         else
         {

@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
@@ -334,7 +335,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 basePay: 500m,
                 totalPay: 500m));
 
-            var invoice = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk");
+            var invoice = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk",
+                variableSymbol: PayrollMockFactory.TestVariableSymbol);
             seed.Add(invoice);
             await seed.CommitAsync(CancellationToken.None);
         }

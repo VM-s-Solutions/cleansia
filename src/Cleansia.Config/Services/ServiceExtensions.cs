@@ -224,6 +224,10 @@ public static class ServiceExtensions
         services.AddScoped<IPayoutDetailsValidator, PayoutDetailsValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
+        // ADR-0046 — claims a payout invoice's variabilní symbol from the durable per-year counter.
+        // Registered here rather than in the Functions host because both creation paths need it: the
+        // admin GenerateInvoice command and the pay-period batch.
+        services.AddScoped<IPayoutReferenceAllocator, PayoutReferenceAllocator>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();

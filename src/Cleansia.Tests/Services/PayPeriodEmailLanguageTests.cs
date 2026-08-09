@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
@@ -51,6 +52,7 @@ public class PayPeriodEmailLanguageTests
     private readonly Mock<IPdfService> _pdfService = new();
     private readonly Mock<IBlobContainerClientFactory> _blobContainerClientFactory = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
@@ -61,6 +63,10 @@ public class PayPeriodEmailLanguageTests
 
     public PayPeriodEmailLanguageTests()
     {
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+
         _emailService
             .Setup(s => s.SendPeriodClosedEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
@@ -176,7 +182,8 @@ public class PayPeriodEmailLanguageTests
             _countryConfigurationRepository.Object,
             _pdfService.Object,
             _blobContainerClientFactory.Object,
-            _tenantProvider.Object);
+            _tenantProvider.Object,
+            _payoutReferenceAllocator.Object);
     }
 
     private PeriodReminderBackgroundService CreateReminderService()

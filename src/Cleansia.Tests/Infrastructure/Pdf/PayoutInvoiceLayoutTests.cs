@@ -2,6 +2,7 @@ using System.Globalization;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Infrastructure.Pdf;
@@ -61,7 +62,7 @@ public class PayoutInvoiceLayoutTests
         Assert.Contains(fields, f => f.Value == "CZ3155000000005885638003");
         Assert.Contains(fields, f => f.Value == "5885638003/5500");
         Assert.Contains(fields, f => f.Value == "RZBCCZPP");
-        Assert.Contains(fields, f => f.Value == "0001000001");
+        Assert.Contains(fields, f => f.Value == PayrollMockFactory.TestVariableSymbol);
         Assert.DoesNotContain(fields, f => f.Value == "CZ1101000000001234567890");
     }
 
@@ -289,9 +290,8 @@ public class PayoutInvoiceLayoutTests
     private static InvoicePdfData Data() => new()
     {
         InvoiceNumber = "INV-202603-A1B2C",
-        VariableSymbol = "0001000001",
+        VariableSymbol = PayrollMockFactory.TestVariableSymbol,
         ConstantSymbol = "0308",
-        PaymentReference = "INV-202603-A1B2C",
         GeneratedAt = new DateTime(2026, 3, 2, 9, 0, 0, DateTimeKind.Utc),
         DueDate = new DateTime(2026, 3, 16),
         Supplier = Supplier(),

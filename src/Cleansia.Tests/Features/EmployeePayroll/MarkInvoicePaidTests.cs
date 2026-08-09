@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
@@ -28,7 +29,8 @@ public class MarkInvoicePaidTests
             payPeriodId: "period-1",
             totalOrders: 2,
             subTotal: 900m,
-            currencyId: "currency-1");
+            currencyId: "currency-1",
+            variableSymbol: PayrollMockFactory.TestVariableSymbol);
         invoice.Id = InvoiceId;
 
         switch (status)
@@ -194,5 +196,60 @@ public class MarkInvoicePaidTests
 
         Assert.False(result.IsValid);
         Assert.Equal(BusinessErrorMessage.Required, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>
+    /// You do not record a transfer against a document that carries no reference: nothing on a bank
+    /// statement could ever be matched back to it, which is the whole failure ADR-0046 closes. The
+    /// remedy the message names is the one-time assign command, on the same screen.
+    /// </summary>
+    [Fact]
+    public async Task An_Approved_Invoice_With_No_Variable_Symbol_Cannot_Be_Marked_Paid()
+    {
+        var invoice = InvoiceIn(EmployeeInvoiceStatus.Approved);
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.VariableSymbol))!
+            .GetSetMethod(nonPublic: true)!
+            .Invoke(invoice, [null]);
+        Arrange(invoice);
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.InvoiceReferenceMissing, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>
+    /// The rule sits INSIDE the InvoiceId Cascade.Stop chain, never as a root RuleFor: the class-level
+    /// default is Continue, so a root rule would run for an unknown id and dereference the null
+    /// GetByIdAsync returns. This is the test that goes red if somebody moves it out.
+    /// </summary>
+    [Fact]
+    public async Task The_Reference_Rule_Does_Not_Run_For_An_Unknown_Invoice()
+    {
+        _invoiceRepository
+            .Setup(r => r.ExistsAsync(InvoiceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _invoiceRepository
+            .Setup(r => r.GetByIdAsync(InvoiceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((EmployeeInvoice?)null);
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.InvoiceNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task BankTransferNote_Stays_Optional_And_Capped_At_500()
+    {
+        Arrange(InvoiceIn(EmployeeInvoiceStatus.Approved));
+
+        var absent = await CreateValidator().ValidateAsync(new MarkInvoicePaid.Command(InvoiceId, null, null));
+        var tooLong = await CreateValidator()
+            .ValidateAsync(new MarkInvoicePaid.Command(InvoiceId, new string('x', 501), null));
+
+        Assert.True(absent.IsValid);
+        Assert.False(tooLong.IsValid);
+        Assert.Equal(BusinessErrorMessage.MaxLength, Assert.Single(tooLong.Errors).ErrorMessage);
     }
 }

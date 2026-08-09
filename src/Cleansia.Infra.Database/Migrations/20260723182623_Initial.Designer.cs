@@ -1670,6 +1670,44 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("PayPeriods");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.PayoutReferenceCounter", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year")
+                        .IsUnique();
+
+                    b.ToTable("PayoutReferenceCounters", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
                 {
                     b.Property<string>("Id")

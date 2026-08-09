@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.HostTests.Infrastructure;
@@ -162,7 +163,8 @@ public static class DomainSeed
             payPeriodId: payPeriodId,
             totalOrders: 1,
             subTotal: 1000m,
-            currencyId: CurrencyId);
+            currencyId: CurrencyId,
+            variableSymbol: PayrollMockFactory.NextTestVariableSymbol());
         if (tenantId is not null) invoice.TenantId = tenantId;
         return invoice;
     }

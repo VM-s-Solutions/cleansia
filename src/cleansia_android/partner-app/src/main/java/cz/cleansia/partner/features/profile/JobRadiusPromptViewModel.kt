@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,11 +27,15 @@ sealed interface JobRadiusPromptUiState {
  * "Never set a radius" is not the same question as "never been asked". A null radius is a legitimate
  * standing choice — the country-wide board — so asking on the null alone would re-ask the cleaner who
  * chose it, every launch, forever. The device remembers the ask; the server owns the preference.
+ *
+ * The ask belongs to the cleaner, not to the handset: on a shared company phone a device-global
+ * memory asks whoever signs in first and never asks anyone after them.
  */
 @HiltViewModel
 class JobRadiusPromptViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val appSettingsRepository: AppSettingsRepository,
+    private val employeeIdResolver: EmployeeIdResolver,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<JobRadiusPromptUiState>(JobRadiusPromptUiState.Hidden)
@@ -38,12 +43,13 @@ class JobRadiusPromptViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            if (appSettingsRepository.hasAnsweredJobRadiusPrompt()) return@launch
+            val employeeId = employeeIdResolver.resolve() ?: return@launch
+            if (appSettingsRepository.hasAnsweredJobRadiusPrompt(employeeId)) return@launch
             val radius = (profileRepository.getJobRadius() as? ApiResult.Success)?.data ?: return@launch
             if (radius.jobRadiusKm == null) {
                 _uiState.value = JobRadiusPromptUiState.Visible
             } else {
-                appSettingsRepository.markJobRadiusPromptAnswered()
+                appSettingsRepository.markJobRadiusPromptAnswered(employeeId)
             }
         }
     }
@@ -55,6 +61,9 @@ class JobRadiusPromptViewModel @Inject constructor(
 
     private fun answer() {
         _uiState.value = JobRadiusPromptUiState.Hidden
-        viewModelScope.launch { appSettingsRepository.markJobRadiusPromptAnswered() }
+        viewModelScope.launch {
+            val employeeId = employeeIdResolver.resolve() ?: return@launch
+            appSettingsRepository.markJobRadiusPromptAnswered(employeeId)
+        }
     }
 }

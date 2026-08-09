@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -147,6 +148,59 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
         Assert.Equal("2", Assert.Single(pushes)["count"]);
     }
 
+    /// <summary>
+    /// ADR-0045 D6.1 — the regression guard most likely to be lost. The lapse sweep runs between the
+    /// two digests and announces the closure to the customer; the held job must STILL come back to the
+    /// board's notification channel afterwards.
+    ///
+    /// <para>The tidy-looking implementation of that sweep clears the hold pair after notifying, so its
+    /// own predicate becomes self-idempotent with zero new columns. It would erase the disjunct above
+    /// before the 30-minute digest ever saw it, and the order would leave the notification channel
+    /// permanently — board-only, findable solely by someone who happens to scroll. That is the defect
+    /// ADR-0036 spent a panel round closing, restored through a back door, and it is why the sweep
+    /// carries a receipt column instead.</para>
+    /// </summary>
+    [Fact]
+    public async Task The_Lapse_Sweep_Leaves_The_Job_Recoverable_By_The_Digest()
+    {
+        await SeedAsync(heldForRival: true);
+
+        Assert.Equal("1", Assert.Single(await RunSweepAsync())["count"]);
+
+        var watermark = await ReadWatermarkAsync();
+        Assert.NotNull(watermark);
+        await ExpireHoldAsync("order-held", watermark.Value.UtcDateTime.AddTicks(1));
+
+        await RunLapseSweepAsync();
+
+        Assert.Equal("1", Assert.Single(await RunSweepAsync())["count"]);
+    }
+
+    /// <summary>
+    /// The announcement really did happen, so the assertion above is not passing because the sweep
+    /// silently matched nothing.
+    /// </summary>
+    private async Task RunLapseSweepAsync()
+    {
+        var tenantProvider = new FixedTenantProvider(null);
+        await using var ctx = new CleansiaDbContext(
+            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
+            new TestUserSessionProvider("system", "system@cleansia.test"),
+            tenantProvider);
+
+        var handler = new NotifyLapsedPreferredOffers.Handler(
+            new OrderRepository(ctx),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            tenantProvider,
+            ctx,
+            NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance);
+
+        var result = await handler.Handle(new NotifyLapsedPreferredOffers.Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value!.NotifiedCount);
+    }
+
     private async Task<IReadOnlyList<Dictionary<string, string>>> RunSweepAsync()
     {
         await using var ctx = NewContext(tenantId: null);
@@ -243,7 +297,11 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
         var held = NewOfferableOrder("order-held", HeldSlot);
         if (heldForRival)
         {
-            held.GrantPreferredHold(holdBeneficiary ?? RivalEmployeeId, DateTime.UtcNow.AddHours(3));
+            held.GrantPreferredHold(
+                holdBeneficiary ?? RivalEmployeeId,
+                DateTime.UtcNow.AddHours(3),
+                DateTime.UtcNow,
+                BookingPolicy.MaxPreferredOfferRounds);
         }
 
         seed.Add(held);

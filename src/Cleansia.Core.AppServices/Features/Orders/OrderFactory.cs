@@ -183,7 +183,11 @@ public sealed class OrderFactory(
 
         if (preferredCleaner.HoldUntilUtc is { } holdUntilUtc)
         {
-            order.GrantPreferredHold(input.PreferredEmployeeId!, holdUntilUtc);
+            order.GrantPreferredHold(
+                input.PreferredEmployeeId!,
+                holdUntilUtc,
+                input.NowUtc,
+                BookingPolicy.MaxPreferredOfferRounds);
         }
 
         // The notify predicate is WIDER than the hold's (ADR-0036 D4.1): a booking with too little lead

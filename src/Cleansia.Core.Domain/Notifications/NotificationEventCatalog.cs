@@ -53,6 +53,25 @@ public static class NotificationEventCatalog
     public const string OrderStartingSoon = "order.starting_soon";
 
     /// <summary>
+    /// Customer-targeted: the cleaner this customer asked for did not take the booking, and the order is
+    /// back with the whole board (ADR-0045 D6). Args: <c>orderNumber</c> (loc) + <c>orderId</c> (deep
+    /// link). Produced by exactly two callers through one notifier — the 5-minute lapse sweep and the
+    /// cleaner's explicit decline — so the sentence and its args are byte-identical on both paths.
+    ///
+    /// <para><b>One sentence covers both outcomes, and that is the whole of the guarantee.</b> The
+    /// customer learns that the offer ended and is offered a second choice; they are never told that a
+    /// named person refused, and never told that a named person did not answer. A per-path string would
+    /// re-introduce exactly the disclosure the neutral line exists to prevent, and
+    /// <c>Q-AVAIL-04</c> — which lawful basis covers telling a third party what a worker did — is
+    /// open.</para>
+    ///
+    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/>: an update about the
+    /// customer's own order must not need its own opt-out to be discoverable, and someone who silenced
+    /// order updates has already answered the question.</para>
+    /// </summary>
+    public const string PreferredOfferClosed = "order.preferred_offer_closed";
+
+    /// <summary>
     /// Partner-side digest. Args: <c>count</c> (decimal-string count of new
     /// eligible orders). Body localized client-side ("N new jobs near you").
     ///
@@ -134,6 +153,7 @@ public static class NotificationEventCatalog
         RecurringScheduled => NotificationCategory.RecurringScheduled,
         OrderCleanerAssigned => NotificationCategory.OrderUpdates,
         OrderStartingSoon => NotificationCategory.OrderUpdates,
+        PreferredOfferClosed => NotificationCategory.OrderUpdates,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,
         PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,

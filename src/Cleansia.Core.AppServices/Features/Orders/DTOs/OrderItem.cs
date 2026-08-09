@@ -88,5 +88,15 @@ public record OrderItem(
     /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field simply
     /// omits it and behaves exactly as before.</para>
     /// </summary>
-    bool? ExpressWaiverForfeitedOnCancel = null
+    bool? ExpressWaiverForfeitedOnCancel = null,
+    /// <summary>
+    /// ADR-0045 D7.2 — the state of the customer's favourite-cleaner reservation on this order.
+    /// CUSTOMER-ONLY: null for every other caller, so no cleaner ever learns an order was reserved for
+    /// someone else and nobody ever learns they were passed over.
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field omits
+    /// it and behaves exactly as before. An absent block must render as "no offer" and must never drop
+    /// the order row — both mobile mappers carry a row-dropping idiom that would.</para>
+    /// </summary>
+    PreferredOfferDetails? PreferredOffer = null
 );

@@ -68,6 +68,33 @@ public class FeedKeysetClientReadinessTests
     }
 
     /// <summary>
+    /// ADR-0045 D10.2 — the one key that ADR mints is held out of both lists on the same terms: no
+    /// customer client carries "your favourite didn't take it" copy yet, so the push is data-only on iOS
+    /// and the inbox stays empty rather than counting a row no app can draw. The wave that ships
+    /// <c>push.order.preferred_offer_closed.title|body</c> in both iOS catalogs and the Android template
+    /// deletes this test, registers the display-map entry, and only then adds the key to the customer
+    /// keyset.
+    /// </summary>
+    [Fact]
+    public void The_Preferred_Offer_Closure_Is_Dispatched_But_Not_Yet_Feed_Or_Display_Registered()
+    {
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.PreferredOfferClosed));
+        Assert.DoesNotContain(
+            NotificationEventCatalog.PreferredOfferClosed, FcmMessageFactory.ApnsDisplayMap.Keys);
+    }
+
+    /// <summary>
+    /// Silenceable under the category the customer already has — an update about their own order must
+    /// not need its own opt-out to be discoverable, and a new <see cref="NotificationCategory"/> is a
+    /// bool COLUMN plus a toggle in every client.
+    /// </summary>
+    [Fact]
+    public void The_Preferred_Offer_Closure_Is_Mutable_Under_Order_Updates() =>
+        Assert.Equal(
+            NotificationCategory.OrderUpdates,
+            NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.PreferredOfferClosed));
+
+    /// <summary>
     /// It is silenceable, and under the category the customer already has: a new
     /// <see cref="NotificationCategory"/> is a bool COLUMN on <c>UserNotificationPreferences</c> plus a
     /// toggle in every client, and someone who muted order updates has already answered this question.

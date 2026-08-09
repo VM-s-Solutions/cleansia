@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
@@ -137,7 +138,13 @@ public class OrderVisibilityTests
             }
             else
             {
-                order.GrantPreferredHold(preferredEmployeeId, holdUntilUtc.Value);
+                // Granted an hour before its own deadline, which is what production does — so an
+                // already-expired fixture is a real past grant rather than a write the aggregate refuses.
+                order.GrantPreferredHold(
+                    preferredEmployeeId,
+                    holdUntilUtc.Value,
+                    holdUntilUtc.Value.AddHours(-1),
+                    BookingPolicy.MaxPreferredOfferRounds);
             }
         }
 

@@ -111,6 +111,16 @@ public static class BusinessErrorMessage
     /// cannot resolve a missing subscription.
     /// </summary>
     public const string PreferredEmployeeMembershipRequired = "order.preferred_employee.membership_required";
+
+    /// <summary>
+    /// ADR-0045 D5.1 — the customer's second choice is not available on this order. ONE key for all five
+    /// structural refusals (the same cleaner as the row already carries, an order that already has a
+    /// cleaner, a live reservation belonging to someone else, a lead time too short to withhold a seat,
+    /// and a recurring occurrence) because ADR-0036 D5.2 forbids an error key that names the exclusivity:
+    /// a per-reason code would let the customer distinguish "someone else is still considering it" from
+    /// "your favourite passed", which is precisely what no surface may disclose.
+    /// </summary>
+    public const string PreferredOfferClosed = "order.preferred_offer_closed";
     public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
 
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel

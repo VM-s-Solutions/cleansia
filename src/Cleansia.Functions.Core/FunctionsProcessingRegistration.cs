@@ -53,6 +53,7 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<SendMembershipLifecycleNotificationsHandler>();
         services.AddScoped<SendRecurringOrderRemindersHandler>();
         services.AddScoped<SendPreCleaningRemindersHandler>();
+        services.AddScoped<NotifyLapsedPreferredOffersHandler>();
         services.AddScoped<SendNewJobsDigestTimerHandler>();
         services.AddScoped<ExpireStaleReferralsHandler>();
         // ADR-0029 — the direct-APNs live-activity dispatch consumer + its 24h stale-token janitor.

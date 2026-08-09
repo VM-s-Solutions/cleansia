@@ -3192,6 +3192,14 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTime?>("PreferredHoldUntilUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("PreferredOfferLapseNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PreferredOfferRound")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("PromoCodeId")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");

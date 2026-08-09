@@ -196,6 +196,14 @@ public class OrderCleanerAssignedNotificationTests
         }
 
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository
+            .Setup(r => r.GetLiveReservationsForBeneficiaryInWindowAsync(
+                It.IsAny<string>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         return order;
     }
 

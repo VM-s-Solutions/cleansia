@@ -212,4 +212,22 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<IReadOnlyList<GetMyServingCleaners.Response>>(result);
     }
+
+    // ADR-0045 D5.1 — the customer's second and final choice, offered at the lapse and never before it.
+    // The same resolver the booking ran, against the order's own persisted slot; no client input
+    // decides a server answer. Rate-limited on the "auth" window for the same reason MyServingCleaners
+    // is: it is a per-subject question about a named cleaner's availability.
+    [HttpPost("ChoosePreferredCleaner")]
+    [Permission(Policy.CanCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ChoosePreferredCleaner.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ChoosePreferredCleaner(
+        [FromBody] ChoosePreferredCleaner.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ChoosePreferredCleaner.Response>(result);
+    }
 }

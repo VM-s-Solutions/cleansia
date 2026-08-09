@@ -115,6 +115,20 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.PreferredHoldUntilUtc)
             .IsRequired(false);
 
+        // ADR-0045 — how many preferred-cleaner reservations this order has carried. NOT NULL with a
+        // DATABASE default of 0, which is what makes the column additive with no backfill: every
+        // pre-existing row and every writer that does not name the column reads as "no rounds spent".
+        builder.Property(o => o.PreferredOfferRound)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        // Stamped by the 5-minute lapse sweep and by an explicit decline, cleared by a new grant.
+        // Deliberately NOT indexed, for the same reason as the deadline above: it is a residual filter
+        // over the small population of orders whose reservation has just ended, and a partial index on
+        // the non-null rows would index precisely what the predicate excludes.
+        builder.Property(o => o.PreferredOfferLapseNotifiedAt)
+            .IsRequired(false);
+
         // Dispute webhook lookup: charge.dispute.* events resolve the order by payment intent
         // (GetByStripePaymentIntentIdIgnoringTenantAsync) on an anonymous hot path.
         builder.HasIndex(o => o.StripePaymentIntentId);

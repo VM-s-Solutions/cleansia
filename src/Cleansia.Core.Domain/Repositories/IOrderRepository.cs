@@ -125,6 +125,27 @@ public interface IOrderRepository : IRepository<Order, string>
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// ADR-0045 D1.1 — orders that still hold a LIVE preferred-cleaner reservation for
+    /// <paramref name="employeeId"/> and overlap <c>[windowStartUtc, windowEndUtc)</c>. Read once, right
+    /// after that cleaner commits to a job in the same window, so a reservation nobody can honour is
+    /// ended at the moment it becomes unhonourable rather than left running for hours against a
+    /// customer who was told someone was considering their booking.
+    ///
+    /// <para>A fourth TERMINAL SHAPE over the one window filter <see cref="HasOverlappingOrderAsync"/>
+    /// and <see cref="GetBusyEmployeeIdsInWindowAsync"/> share — never a second overlap predicate,
+    /// which ADR-0039 D3.2 rejects outright. It differs from its siblings in the other half only: they
+    /// select on the ASSIGNMENT, this one on the RESERVATION.</para>
+    ///
+    /// <para>TENANT-SCOPED: the sole caller is <c>TakeOrder</c>, a request path with a claim.</para>
+    /// </summary>
+    Task<IReadOnlyList<Order>> GetLiveReservationsForBeneficiaryInWindowAsync(
+        string employeeId,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// True if the given user has previously had a Completed order assigned to
     /// the given employee. Used to validate <c>PreferredEmployeeId</c> on new
     /// bookings — customers can only request cleaners they've already worked

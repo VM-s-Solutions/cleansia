@@ -1044,6 +1044,8 @@ namespace Cleansia.Infra.Database.Migrations
                     MembershipPlanIdAtPurchase = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     PreferredEmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     PreferredHoldUntilUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PreferredOfferRound = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    PreferredOfferLapseNotifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RecurringTemplateId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     RecurringReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     PreCleaningReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

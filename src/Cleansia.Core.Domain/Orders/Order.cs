@@ -264,6 +264,34 @@ public class Order : Auditable, ITenantEntity
     public DateTime? PreferredHoldUntilUtc { get; private set; }
 
     /// <summary>
+    /// ADR-0045 D5.3 — how many preferred-cleaner reservations this order has ever carried. The
+    /// booking's own choice is round 1 and the customer's single re-offer is round 2;
+    /// <see cref="GrantPreferredHold"/> is the sole writer and increments once per grant, which is what
+    /// makes <c>Round &lt; max</c> admit exactly two.
+    ///
+    /// <para>A COUNT is required because the window formula does not terminate: it recomputes off the
+    /// current lead time, so each round is ~90% of the previous one and reaching the eight-hour floor
+    /// from a seven-day booking takes about thirty rounds. A lead-time floor is not a loop bound.</para>
+    ///
+    /// <para>It counts ROUNDS, not declines, and it is per-order — it can never answer a question about
+    /// a cleaner (ADR-0045 D13).</para>
+    /// </summary>
+    public int PreferredOfferRound { get; private set; }
+
+    /// <summary>
+    /// ADR-0045 D6 — when the customer was told this reservation ended without a confirmation. The
+    /// receipt exists so the 5-minute lapse sweep does not prompt twice, and it is a separate column
+    /// rather than a cleared hold pair because <c>NewJobsDigestService.ApplyFreshness</c> reads that
+    /// pair to decide a lapsed order is NEW AGAIN to every other cleaner — nulling it would drop the
+    /// order out of the notification channel permanently. Precedent:
+    /// <see cref="RecurringReminderSentAt"/>.
+    ///
+    /// <para>Per RESERVATION, not per order: <see cref="GrantPreferredHold"/> clears it, so a second
+    /// round's lapse is announced too.</para>
+    /// </summary>
+    public DateTime? PreferredOfferLapseNotifiedAt { get; private set; }
+
+    /// <summary>
     /// FK back to the <see cref="Bookings.RecurringBookingTemplate"/> that spawned
     /// this order. Null for one-off orders. Set by the materializer; lets the
     /// confirm-recurring flow find the originating template for things like
@@ -436,11 +464,25 @@ public class Order : Auditable, ITenantEntity
 
     /// <summary>
     /// ADR-0036 — the ONLY writer of the (<see cref="PreferredEmployeeId"/>,
-    /// <see cref="PreferredHoldUntilUtc"/>) pair. Writing both together is what makes a deadline with no
-    /// beneficiary — an order nobody may take and no actor may release — unreachable: a safety property
-    /// defended by a reviewer remembering to null the companion field is not a safety property.
+    /// <see cref="PreferredHoldUntilUtc"/>) pair, and ADR-0045 D5.3's only writer of
+    /// <see cref="PreferredOfferRound"/>. Writing both halves of the pair together is what makes a
+    /// deadline with no beneficiary — an order nobody may take and no actor may release — unreachable:
+    /// a safety property defended by a reviewer remembering to null the companion field is not a
+    /// safety property.
+    ///
+    /// <para>ADR-0045 D5.1 widened this from "set once, at creation" to re-callable, and the structural
+    /// invariants it keeps are below. The one that can actually fail is <b>no live reservation for
+    /// someone else</b>, and it is phrased on the HOLD rather than on the preference column:
+    /// <see cref="Create"/> writes <see cref="PreferredEmployeeId"/> independently of any hold, so an
+    /// invariant on the preference would refuse re-offers that never held anything and permit ones that
+    /// do.</para>
+    ///
+    /// <para><paramref name="maxRounds"/> is a platform policy number the application layer owns
+    /// (<c>BookingPolicy.MaxPreferredOfferRounds</c>) — this entity stays policy-ignorant, the same way
+    /// <see cref="CalculateRequiredEmployees"/> takes the spare-seat count.</para>
     /// </summary>
-    public Order GrantPreferredHold(string preferredEmployeeId, DateTime untilUtc)
+    public Order GrantPreferredHold(
+        string preferredEmployeeId, DateTime untilUtc, DateTime nowUtc, int maxRounds)
     {
         if (string.IsNullOrWhiteSpace(preferredEmployeeId))
         {
@@ -448,8 +490,63 @@ public class Order : Auditable, ITenantEntity
                 "A preferred hold requires a beneficiary who can act on it.", nameof(preferredEmployeeId));
         }
 
+        if (untilUtc <= nowUtc)
+        {
+            throw new ArgumentException(
+                "A preferred hold must end in the future; a zero-length reservation burns a round and "
+                + "withholds nothing.",
+                nameof(untilUtc));
+        }
+
+        if (_assignedEmployees.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "An order that already has a cleaner has no reservation to grant.");
+        }
+
+        if (PreferredHoldUntilUtc > nowUtc && PreferredEmployeeId != preferredEmployeeId)
+        {
+            throw new InvalidOperationException(
+                "A live reservation belongs to another cleaner who was told the job was theirs.");
+        }
+
+        if (PreferredOfferRound >= maxRounds)
+        {
+            throw new InvalidOperationException(
+                $"This order has already carried {PreferredOfferRound} preferred-cleaner reservations.");
+        }
+
         PreferredEmployeeId = preferredEmployeeId;
         PreferredHoldUntilUtc = untilUtc;
+        PreferredOfferRound++;
+        PreferredOfferLapseNotifiedAt = null;
+        return this;
+    }
+
+    /// <summary>
+    /// ADR-0045 D6.4 / D1.1 — the cleaner passes: the reservation ends now. One write, and the
+    /// beneficiary stays on the row so the customer's re-offer can refuse the same person without
+    /// anybody being told who it was. Never moves the deadline forward, so a second decline racing the
+    /// lapse sweep cannot re-open a reservation the clock already closed.
+    /// </summary>
+    public Order EndPreferredHold(DateTime endedAtUtc)
+    {
+        if (PreferredHoldUntilUtc > endedAtUtc)
+        {
+            PreferredHoldUntilUtc = endedAtUtc;
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the instant the customer was told this reservation closed. First stamp wins, so a
+    /// re-entrant sweep cannot prompt twice; <see cref="GrantPreferredHold"/> clears it because the
+    /// receipt belongs to the reservation, not to the order.
+    /// </summary>
+    public Order MarkPreferredOfferLapseNotified(DateTime notifiedAtUtc)
+    {
+        PreferredOfferLapseNotifiedAt ??= notifiedAtUtc;
         return this;
     }
 

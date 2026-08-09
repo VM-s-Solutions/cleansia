@@ -160,6 +160,30 @@ public static class BookingPolicy
     public const int PreferredHoldCeilingHours = 12;
 
     /// <summary>
+    /// ADR-0045 D5.3 — total preferred-cleaner reservations one order may ever carry: the booking's own
+    /// choice, plus exactly one re-offer. The number is DERIVED, not chosen:
+    /// <c>MaxPreferredOfferRounds * <see cref="PreferredHoldFraction"/></c> is the share of a seat's
+    /// fill window this feature may consume, and <c>PreferredOfferInvariantTests</c> pins it at
+    /// <c>&lt;= 1 - <see cref="MinimumOpenBoardShare"/></c>. Raising it requires lowering the fraction
+    /// or re-ruling the invariant; neither number moves alone.
+    ///
+    /// <para>A COUNT rather than a lead-time bound, because the window formula recomputes off the
+    /// CURRENT lead and so decays without terminating — from a seven-day booking it takes about thirty
+    /// rounds to reach the eight-hour floor.</para>
+    /// </summary>
+    public const int MaxPreferredOfferRounds = 2;
+
+    /// <summary>
+    /// ADR-0045 D0 — Invariant H, relaxed from ADR-0036's 0.90m by owner ruling <c>Q-ASSIGN-02</c>: at
+    /// least this share of every SEAT's fill window is open to the entire board, across all rounds.
+    ///
+    /// <para>The pinned bound is a CONSERVATIVE over-estimate — it sums fractions of the ORIGINAL lead
+    /// where round two only ever gets a fraction of the REMAINING lead, so the true worst case is 19%
+    /// against this 20%. It is not tight at equality and must not be "fixed" into tightness.</para>
+    /// </summary>
+    public const decimal MinimumOpenBoardShare = 0.80m;
+
+    /// <summary>
     /// ADR-0036 D3 — how long the customer's preferred cleaner gets first refusal on the order's first
     /// seat. <see cref="TimeSpan.Zero"/> means no hold may be granted for this lead time; the targeted
     /// notification is granted on a wider predicate and survives that (D4.1).

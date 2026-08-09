@@ -32,6 +32,7 @@ public class GetOrderDetailsPartnerTranslationsTests
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderEmployeePayRepository = new();
     private readonly Mock<IOrderPhotoRepository> _orderPhotoRepository = new();
+    private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
 
     private GetOrderDetails.Handler CreateHandler() =>
@@ -42,6 +43,7 @@ public class GetOrderDetailsPartnerTranslationsTests
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
+            _employeeRepository.Object,
             _expressWaiverConsumer.Object);
 
     private void ArrangeEmployeeCaller(Order order)

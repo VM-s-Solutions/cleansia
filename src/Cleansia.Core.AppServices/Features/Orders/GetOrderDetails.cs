@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -38,6 +39,7 @@ public class GetOrderDetails
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IOrderPhotoRepository orderPhotoRepository,
+        IEmployeeRepository employeeRepository,
         IExpressWaiverConsumer expressWaiverConsumer) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
@@ -121,7 +123,40 @@ public class GetOrderDetails
                 isAssignedToCurrentUser,
                 hasAfterPhotos,
                 isCustomerCaller,
-                expressWaiverForfeitedOnCancel));
+                expressWaiverForfeitedOnCancel,
+                isCustomerCaller
+                    ? await ResolvePreferredOfferAsync(order, DateTime.UtcNow, cancellationToken)
+                    : null));
+        }
+
+        /// <summary>
+        /// ADR-0045 D7.2. Customer-only by its one call site: a cleaner must never learn that an order
+        /// is reserved for somebody else, and nobody is ever told they were passed over.
+        /// </summary>
+        private async Task<PreferredOfferDetails> ResolvePreferredOfferAsync(
+            Order order, DateTime nowUtc, CancellationToken cancellationToken)
+        {
+            var beneficiaryIsAssigned = !string.IsNullOrEmpty(order.PreferredEmployeeId)
+                && order.AssignedEmployees.Any(ae => ae.EmployeeId == order.PreferredEmployeeId);
+
+            var state = PreferredOffer.StateOf(
+                order.PreferredEmployeeId, order.PreferredHoldUntilUtc, beneficiaryIsAssigned, nowUtc);
+
+            var cleanerName = string.IsNullOrEmpty(order.PreferredEmployeeId)
+                ? null
+                : await employeeRepository.GetQueryable()
+                    .AsNoTracking()
+                    .Where(e => e.Id == order.PreferredEmployeeId && e.User != null)
+                    .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
+                    .FirstOrDefaultAsync(cancellationToken);
+
+            return new PreferredOfferDetails(
+                State: state,
+                CleanerName: cleanerName,
+                RespondByUtc: state == PreferredOfferState.AwaitingConfirmation
+                    ? order.PreferredHoldUntilUtc
+                    : null,
+                CanChooseAnother: PreferredOfferExit.IsOpen(order, nowUtc));
         }
     }
 }

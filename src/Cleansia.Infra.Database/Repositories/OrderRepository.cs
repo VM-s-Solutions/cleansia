@@ -309,6 +309,18 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return busy.ToHashSet(StringComparer.Ordinal);
     }
 
+    public async Task<IReadOnlyList<Order>> GetLiveReservationsForBeneficiaryInWindowAsync(
+        string employeeId,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        return await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+            .Where(o => o.PreferredEmployeeId == employeeId && o.PreferredHoldUntilUtc > nowUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     /// <summary>
     /// The ONE definition of "occupied in this window" — the scan floor, the interval overlap and the
     /// live-commitment status set. Returns a queryable and terminates nothing, so the boolean form keeps

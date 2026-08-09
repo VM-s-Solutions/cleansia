@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -191,7 +192,10 @@ public class PreferredHoldVisibilityAgreementTests(PostgresContainerFixture fixt
             }
             else
             {
-                order.GrantPreferredHold(scenario.Beneficiary, until);
+                // Granted an hour before its own deadline, which is what production does — so an
+                // already-expired fixture is a real past grant rather than a write the aggregate refuses.
+                order.GrantPreferredHold(
+                    scenario.Beneficiary, until, until.AddHours(-1), BookingPolicy.MaxPreferredOfferRounds);
             }
         }
 

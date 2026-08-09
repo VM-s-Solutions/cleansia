@@ -275,6 +275,9 @@ public class TakeOrder
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
                 order, notificationProducer, cancellationToken);
 
+            await EndReservationsThisCommitmentCannotHonourAsync(
+                order, employeeId!, DateTime.UtcNow, cancellationToken);
+
             if (statusChanged && !string.IsNullOrEmpty(order.CustomerEmail))
             {
                 try
@@ -290,6 +293,34 @@ public class TakeOrder
             }
 
             return BusinessResult.Success(new Response(order.Id, employeeId!));
+        }
+
+        /// <summary>
+        /// ADR-0045 D1.1 — taking a conflicting job IS a decline. Nothing re-checks the beneficiary's
+        /// slot between the grant and the confirmation, deliberately; the only way they can become busy
+        /// is by committing to something else, and this is that moment. Left alone, the customer would
+        /// keep being told someone is considering their booking who provably cannot confirm it, for up
+        /// to twelve hours.
+        ///
+        /// <para>The order just taken is excluded: the beneficiary CONFIRMED it, so it earns
+        /// <c>order.cleaner_assigned</c> and never also the closure message — AC4's "never both".</para>
+        /// </summary>
+        private async Task EndReservationsThisCommitmentCannotHonourAsync(
+            Order takenOrder, string employeeId, DateTime nowUtc, CancellationToken cancellationToken)
+        {
+            var stranded = await orderRepository.GetLiveReservationsForBeneficiaryInWindowAsync(
+                employeeId,
+                takenOrder.CleaningDateTime,
+                takenOrder.CleaningDateTime.AddMinutes(takenOrder.EstimatedTime),
+                nowUtc,
+                cancellationToken);
+
+            foreach (var reserved in stranded.Where(o => o.Id != takenOrder.Id))
+            {
+                reserved.EndPreferredHold(nowUtc);
+                await PreferredOfferClosedNotifier.NotifyPreferredOfferClosedAsync(
+                    reserved, notificationProducer, nowUtc, cancellationToken);
+            }
         }
     }
 }

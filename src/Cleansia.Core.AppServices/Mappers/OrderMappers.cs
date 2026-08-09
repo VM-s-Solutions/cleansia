@@ -219,7 +219,8 @@ public static class OrderMappers
         bool isAssignedToCurrentUser = false,
         bool hasAfterPhotos = false,
         bool isCustomerCaller = false,
-        bool? expressWaiverForfeitedOnCancel = null)
+        bool? expressWaiverForfeitedOnCancel = null,
+        PreferredOfferDetails? preferredOffer = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -265,9 +266,23 @@ public static class OrderMappers
             EstimatedCleanerPay: estimatedCleanerPay,
             IsAssignedToCurrentUser: isAssignedToCurrentUser,
             HasAfterPhotos: hasAfterPhotos,
-            ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel
+            ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
+            PreferredOffer: preferredOffer
         );
     }
+
+    public static PendingOfferItem MapToDto(this PendingOfferRow row) =>
+        new(
+            Id: row.Id,
+            DisplayOrderNumber: row.DisplayOrderNumber,
+            CleaningDateTime: row.CleaningDateTime,
+            EstimatedTime: row.EstimatedTime,
+            RespondByUtc: row.RespondByUtc,
+            CustomerAddressApproximate: BuildApproximateAddress(row.City, row.ZipCode),
+            Rooms: row.Rooms,
+            Bathrooms: row.Bathrooms,
+            TotalPrice: row.TotalPrice,
+            CurrencyCode: row.CurrencyCode);
 
     public static OrderNoteDto MapToDto(this OrderNote note)
     {

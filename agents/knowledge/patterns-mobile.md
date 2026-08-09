@@ -511,6 +511,24 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
 
+> **A copy-only change is a silent NON-RUN on Android, and a mutation proof against one is worthless
+> until it is forced.** The locale guards read `res/values*/strings.xml` **off disk**, through a path
+> Gradle does not know is an input. Change only a string *value* and nothing Gradle tracks moves — the
+> R class is byte-identical — so `testDebugUnitTest` reports `UP-TO-DATE`, and `cleanTestDebugUnitTest`
+> then restores the same result `FROM-CACHE`. Measured 2026-08-09 on the closed-offer copy: a
+> deliberately wrong translation **passed the mutation twice** before the run was forced.
+>
+> So: any check whose evidence is a resource file, not code, is verified with
+> `./gradlew :<module>:testDebugUnitTest --rerun-tasks --no-build-cache`, and the report says how many
+> tasks **executed**. `N tasks up-to-date` is a non-run, not a pass — the same rule as capturing
+> `EXIT=$?` before a pipe, one layer up. CI's fresh checkout is what has actually been running these
+> assertions; locally they have been skipped since the first one was written.
+>
+> The same exposure exists on iOS for `StringCatalogCompletenessTests` and the push-key catalog tests,
+> which read the three `.xcstrings` off disk from `#filePath`. **Enforced by:** nothing automatic —
+> **T3-HUMAN**, and the named enforcer is the ticket's evidence line, which must state executed-task
+> counts rather than "green".
+
 **A conditional list of chips/pills/rows is a pure resolver, never a `buildList` inside the
 composable.** `MembershipPerks.resolve(response) -> List<MembershipPerk>` (customer
 `features/membership/MembershipPerks.kt`, mirrored by iOS `MembershipPerks.swift`) returns **semantic

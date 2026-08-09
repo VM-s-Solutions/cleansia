@@ -2165,3 +2165,30 @@ in to the partner app, which you may want to know before the next TestFlight bui
   both go through the tenant query filter — but the pin is missing while four sibling routes have one.
 - Photo rows written **before** ADR-0043 landed may still carry EXIF; there was no backfill, and
   whether any such rows exist was **not established** (it needs the database, not the tree).
+
+---
+
+## N17 — manual steps the branch has accumulated (2026-08-09). **All owner-run; none blocks further work.**
+
+Recording them together because three separate lanes each hit one, and the third is not the one anybody
+would predict.
+
+**1. `manual_step: nswag-regen` — web.** Two features shipped server-side with no web client:
+`UpdateJobRadius` (`ae86be42`) and ADR-0045's four preferred-offer endpoints (`51799dbe`). The partner
+and customer TypeScript clients cannot call either until the specs are regenerated.
+
+**2. `manual_step: mobile-spec-regen` — Android and iOS.** Sharper than the web one, because it fails
+**silently** rather than by absence. `src/cleansia_android/openapi/partner-mobile-api.json` was dumped
+2026-08-08 13:37; the radius landed at 22:31 the same day. So the committed spec has no
+`UpdateJobRadius` path — and, quieter, **no `jobRadiusKm` field on `EmployeeItem`**, which means the
+profile call the app *already makes* decodes the value away. Nothing warns; the field simply arrives as
+null forever. Both mobile lanes worked around it with a hand-written client on the existing
+`PeriodPayApi` precedent, and both collapse into the generated client at the next dump.
+
+**3. `manual_step: ef-migration`.** `Initial` has been amended in place on this branch (the pre-prod
+convention), most recently by ADR-0045's preferred-offer columns and the radius column. **DEV needs a
+database drop and re-seed** before it will start against this branch.
+
+**Not a manual step, but it belongs beside them:** ADR-0046's counter table is an owner-only migration
+that rides **nothing** — the ADR originally planned to fold it into a pending T-0522 pass, and that
+pass turned out to have already landed. It is its own window, and there is no code for it yet.

@@ -226,6 +226,26 @@ public static class DomainSeed
         order.AddOrderStatus(confirmed);
     }
 
+    /// <summary>An <see cref="OrderPhoto"/> on <paramref name="orderId"/>. The blob URL carries the
+    /// Azurite path shape (<c>/account/container/blob</c>) so <c>GetOrderPhotos</c>' SAS minting
+    /// recovers the blob name the same way it does against the emulator.</summary>
+    public static OrderPhoto OrderPhoto(
+        string orderId, string capturedByEmployeeId, PhotoType photoType, string fileName,
+        string? tenantId = null)
+    {
+        var photo = Cleansia.Core.Domain.Orders.OrderPhoto.Create(
+            orderId: orderId,
+            photoType: photoType,
+            blobUrl: $"http://127.0.0.1:10000/devstoreaccount1/order-photos/host-tests/{fileName}",
+            fileName: fileName,
+            originalFileName: fileName,
+            fileSizeBytes: 2048,
+            contentType: "image/jpeg",
+            capturedByEmployeeId: capturedByEmployeeId);
+        if (tenantId is not null) photo.TenantId = tenantId;
+        return photo;
+    }
+
     public static Dispute Dispute(string orderId, string ownerUserId, string? tenantId = null)
     {
         var dispute = new Dispute(

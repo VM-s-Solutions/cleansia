@@ -2424,3 +2424,47 @@ catalog claims fixed in `1aee881a`.
 **Practical ordering, unchanged in shape:** drop and re-seed DEV → **one** regen pass covering items 2,
 4, 5 and 6 together (all additive, no ordering constraint between them) → the mobile spec dump → rebuild
 the mobile clients.
+
+---
+
+## N23 — partner web's language sync landed, and it surfaced two things bigger than itself (2026-08-09)
+
+`14c1f78f`. Partner web was the third surface that never told the server the cleaner's language — the
+register entry that scoped this work said *"both platforms"* and never considered the browser.
+
+**A correction to my own brief, and it is worse than I framed it.** I told the lane to grep two roots and
+it found a third: `libs/data-access/partner-stores/src/lib/user/user.effects.ts:110` **does** call
+`updateCurrentUser` and **does** set `languageCode` — but the action has **zero dispatchers**, and the
+partner profile page saves the *Employee*, never the user. `selectCurrentUser` has zero readers. So
+`User.PreferredLanguageCode` had **no writer at all** on partner web, not merely no language writer.
+(Filed below as a cleanup, not deleted in-lane, because deleting it would have obscured the diff.)
+
+### A cross-stack testing fact that two independent lanes hit today
+
+Both are recorded because two instances in one day is a pattern, not an anecdote, and neither is
+obvious from reading the test.
+
+1. **iOS** (`d1784833`): assertions distinguishing `.gmt` from `TimeZone.current` are **unobservable
+   when the machine is GMT** — live on a CEST desk, **inert on a UTC CI runner**.
+2. **Web** (`14c1f78f`): the same, plus a mechanism — **V8 caches the timezone at isolate startup**, so
+   writing `process.env.TZ` inside a spec is *silently ignored* (measured: the offset stayed `-120`).
+   The lane's first mutation **survived** because of it. Pinned via a Jest `globalSetup`, with a guard
+   test that reddens if the pinning is removed.
+
+**The uncomfortable half:** CI is a UTC runner, so for this defect class **no probe of any shape can
+expose the bug there** — local and UTC days coincide by definition. These tests protect a developer
+machine and a real user's handset; they cannot protect the pipeline. That belongs in the catalog next
+to the existing evidence rules, and it is **filed rather than written** because the rule that landed in
+`1aee881a` is about claims decaying and this is a different law needing its own panel.
+
+### Two findings the lane declined, correctly
+
+- **A failed language push still raises a toast.** `HttpErrorInterceptorFn`
+  (`libs/core/services/.../http-error.interceptor.ts:31`) fires on every non-404/403 error with **no
+  per-request opt-out** — no `HttpContext` suppression mechanism exists anywhere in the workspace. The
+  facade is silent; the interceptor is not, which contradicts the "silent on failure" contract all three
+  surfaces now share. The fix is a suppression token on a **shared, three-app** interceptor plus a
+  catalog entry — a cross-app mechanism a feature lane may not ratify. Exposure is low: every business
+  validator on this path passes by construction, so only network and 5xx reach it.
+- **Dead code:** the `updateUserCurrent` action, its `updateCurrent$` effect and `selectCurrentUser` in
+  `libs/data-access/partner-stores` have no dispatchers or readers.

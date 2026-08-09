@@ -73,7 +73,7 @@ class JobRadiusViewModel @Inject constructor(
     private fun load() {
         viewModelScope.launch {
             _uiState.value = JobRadiusUiState.Loading
-            when (val result = profileRepository.getJobRadius()) {
+            when (val result = profileRepository.getCurrentEmployee()) {
                 is ApiResult.Success -> {
                     val saved = result.data.jobRadiusKm
                     _uiState.value = JobRadiusUiState.Loaded(

@@ -2,9 +2,9 @@ package cz.cleansia.partner.features.profile
 
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.settings.AppSettingsRepository
-import cz.cleansia.partner.data.profile.JobRadiusSnapshot
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -48,8 +48,8 @@ class JobRadiusPromptViewModelTest {
     @Test
     fun `a cleaner who has never been asked and has no radius sees the prompt`() = runTest {
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = null))
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -60,8 +60,8 @@ class JobRadiusPromptViewModelTest {
     @Test
     fun `a cleaner who already set a radius is never asked again`() = runTest {
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = 30))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = 30))
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -78,7 +78,7 @@ class JobRadiusPromptViewModelTest {
         advanceUntilIdle()
 
         assertEquals(JobRadiusPromptUiState.Hidden, vm.uiState.value)
-        coVerify(exactly = 0) { repository.getJobRadius() }
+        coVerify(exactly = 0) { repository.getCurrentEmployee() }
     }
 
     /**
@@ -90,8 +90,8 @@ class JobRadiusPromptViewModelTest {
         coEvery { employeeIdResolver.resolve() } returns "emp-2"
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns true
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-2") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-2", jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-2", jobRadiusKm = null))
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -103,8 +103,8 @@ class JobRadiusPromptViewModelTest {
     fun `the ask is spent against the cleaner who answered and no one else`() = runTest {
         coEvery { employeeIdResolver.resolve() } returns "emp-2"
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-2") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-2", jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-2", jobRadiusKm = null))
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -119,7 +119,7 @@ class JobRadiusPromptViewModelTest {
     @Test
     fun `a failed read hides the prompt without spending the one ask`() = runTest {
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns false
-        coEvery { repository.getJobRadius() } returns ApiResult.Error(ApiError.Network("offline"))
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Error(ApiError.Network("offline"))
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -137,7 +137,7 @@ class JobRadiusPromptViewModelTest {
         advanceUntilIdle()
 
         assertEquals(JobRadiusPromptUiState.Hidden, vm.uiState.value)
-        coVerify(exactly = 0) { repository.getJobRadius() }
+        coVerify(exactly = 0) { repository.getCurrentEmployee() }
         coVerify(exactly = 0) { appSettings.markJobRadiusPromptAnswered(any()) }
     }
 
@@ -148,8 +148,8 @@ class JobRadiusPromptViewModelTest {
     @Test
     fun `keeping every job answers the prompt locally and writes nothing`() = runTest {
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = null))
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -164,8 +164,8 @@ class JobRadiusPromptViewModelTest {
     @Test
     fun `opening the picker also spends the one ask`() = runTest {
         coEvery { appSettings.hasAnsweredJobRadiusPrompt("emp-1") } returns false
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = null))
         val vm = viewModel()
         advanceUntilIdle()
 

@@ -7,7 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.data.profile.JobRadiusSnapshot
+import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -54,8 +54,8 @@ class JobRadiusViewModelTest {
     private fun viewModel() = JobRadiusViewModel(repository, errorTranslator, snackbar, appContext)
 
     private fun loaded(radiusKm: Int?) {
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = radiusKm))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = radiusKm))
     }
 
     @Test
@@ -86,7 +86,7 @@ class JobRadiusViewModelTest {
 
     @Test
     fun `a failed load lands on Error and tells the cleaner`() = runTest {
-        coEvery { repository.getJobRadius() } returns ApiResult.Error(ApiError.Network("offline"))
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Error(ApiError.Network("offline"))
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -97,7 +97,7 @@ class JobRadiusViewModelTest {
 
     @Test
     fun `retry re-runs the load`() = runTest {
-        coEvery { repository.getJobRadius() } returns ApiResult.Error(ApiError.Network("offline"))
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Error(ApiError.Network("offline"))
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -180,7 +180,7 @@ class JobRadiusViewModelTest {
      */
     @Test
     fun `save refuses to run when the load failed`() = runTest {
-        coEvery { repository.getJobRadius() } returns ApiResult.Error(ApiError.Network("offline"))
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Error(ApiError.Network("offline"))
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -192,8 +192,8 @@ class JobRadiusViewModelTest {
 
     @Test
     fun `save refuses to run when the employee id never arrived`() = runTest {
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = null, jobRadiusKm = null))
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = null, jobRadiusKm = null))
         val vm = viewModel()
         advanceUntilIdle()
 

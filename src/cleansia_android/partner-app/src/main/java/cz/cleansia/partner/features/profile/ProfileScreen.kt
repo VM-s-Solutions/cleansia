@@ -201,7 +201,7 @@ fun ProfileScreen(
                         ProfileSectionRow(
                             icon = Icons.Outlined.MyLocation,
                             title = stringResource(R.string.job_radius_title),
-                            summary = jobRadiusSummary(s.jobRadiusKm),
+                            summary = jobRadiusSummary(s.employee.jobRadiusKm),
                             onClick = onNavigateToJobRadius,
                         )
                         RowDivider()

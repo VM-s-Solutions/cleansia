@@ -37,7 +37,6 @@ sealed interface ProfileUiState {
         val employee: EmployeeItem,
         val contractStatus: ContractStatus? = null,
         val payoutSummary: String? = null,
-        val jobRadiusKm: Int? = null,
     ) : ProfileUiState
 }
 
@@ -77,14 +76,10 @@ class ProfileViewModel @Inject constructor(
             // stays hidden and the bank row keeps whatever it had.
             val status = (profileRepository.getRegistrationStatus() as? ApiResult.Success)?.data
             val payout = (profileRepository.getPayoutDetails() as? ApiResult.Success)?.data
-            // Read separately from the employee above because the generated EmployeeItem predates
-            // the server's jobRadiusKm field and drops it; see JobRadiusApi.
-            val radius = (profileRepository.getJobRadius() as? ApiResult.Success)?.data
             (_uiState.value as? ProfileUiState.Loaded)?.let { loaded ->
                 _uiState.value = loaded.copy(
                     contractStatus = status?.contractStatus ?: loaded.contractStatus,
                     payoutSummary = payoutAccountSummary(payout) ?: loaded.payoutSummary,
-                    jobRadiusKm = if (radius != null) radius.jobRadiusKm else loaded.jobRadiusKm,
                 )
             }
         }

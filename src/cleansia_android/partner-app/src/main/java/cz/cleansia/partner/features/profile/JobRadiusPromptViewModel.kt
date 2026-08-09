@@ -45,8 +45,8 @@ class JobRadiusPromptViewModel @Inject constructor(
         viewModelScope.launch {
             val employeeId = employeeIdResolver.resolve() ?: return@launch
             if (appSettingsRepository.hasAnsweredJobRadiusPrompt(employeeId)) return@launch
-            val radius = (profileRepository.getJobRadius() as? ApiResult.Success)?.data ?: return@launch
-            if (radius.jobRadiusKm == null) {
+            val employee = (profileRepository.getCurrentEmployee() as? ApiResult.Success)?.data ?: return@launch
+            if (employee.jobRadiusKm == null) {
                 _uiState.value = JobRadiusPromptUiState.Visible
             } else {
                 appSettingsRepository.markJobRadiusPromptAnswered(employeeId)

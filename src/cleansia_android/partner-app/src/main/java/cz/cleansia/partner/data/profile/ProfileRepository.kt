@@ -14,6 +14,7 @@ import cz.cleansia.partner.api.model.UpdateAvailabilityTimeRangeDto
 import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateEmergencyContactCommand
 import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
+import cz.cleansia.partner.api.model.UpdateJobRadiusCommand
 import cz.cleansia.partner.api.model.UpdatePersonalInfoCommand
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
@@ -148,11 +149,14 @@ interface ProfileRepository {
     /**
      * How far from home this cleaner wants to be TOLD about work. It narrows the "new jobs near you"
      * digest alone — the board still shows every job in their country and they can still take one
-     * anywhere, so no copy around this may suggest the board shrinks.
+     * anywhere, so no copy around this may suggest the board shrinks. The current value is read off
+     * [EmployeeItem.jobRadiusKm].
+     *
+     * [radiusKm] `null` asks for the country-wide digest back — a choice, not an omission. The
+     * app-wide `Json` runs with `explicitNulls = false`, so it leaves as an ABSENT member and binds
+     * to the server's `SetJobRadius(null)`. Never substitute `0`: the server reads that as a
+     * zero-kilometre radius and rejects it as out of range.
      */
-    suspend fun getJobRadius(): ApiResult<JobRadiusSnapshot>
-
-    /** [radiusKm] `null` asks for the country-wide digest back; see [UpdateJobRadiusCommand]. */
     suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit>
 
     suspend fun getMyDocuments(): ApiResult<List<GetMyDocumentsMyDocumentDto>>
@@ -167,7 +171,6 @@ interface ProfileRepository {
 @Singleton
 class ProfileRepositoryImpl @Inject constructor(
     private val employeeApi: EmployeeApi,
-    private val jobRadiusApi: JobRadiusApi,
     private val json: Json,
 ) : ProfileRepository, SessionScopedCache {
 
@@ -329,12 +332,9 @@ class ProfileRepositoryImpl @Inject constructor(
         )
     }.map { }
 
-    override suspend fun getJobRadius(): ApiResult<JobRadiusSnapshot> =
-        safeApiCall(json) { jobRadiusApi.getCurrentEmployeeJobRadius() }
-
     override suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit> =
         safeApiCall(json) {
-            jobRadiusApi.updateJobRadius(
+            employeeApi.employeeUpdateJobRadius(
                 UpdateJobRadiusCommand(employeeId = employeeId, radiusKm = radiusKm),
             )
         }.map { }

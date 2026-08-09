@@ -7,6 +7,8 @@ import cz.cleansia.partner.api.model.MyPayoutDetails
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateBankDetailsResponse
+import cz.cleansia.partner.api.model.UpdateJobRadiusCommand
+import cz.cleansia.partner.api.model.UpdateJobRadiusResponse
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
@@ -36,7 +38,6 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 class ProfileRepositoryTest {
 
     private lateinit var employeeApi: EmployeeApi
-    private lateinit var jobRadiusApi: JobRadiusApi
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     /** Matches NetworkModule's instance — `explicitNulls = false` is what drops a cleared radius. */
@@ -45,10 +46,18 @@ class ProfileRepositoryTest {
     @Before
     fun setUp() {
         employeeApi = mockk()
-        jobRadiusApi = mockk()
     }
 
-    private fun newRepo() = ProfileRepositoryImpl(employeeApi, jobRadiusApi, json)
+    private fun newRepo() = ProfileRepositoryImpl(employeeApi, json)
+
+    private fun wireRepo(server: MockWebServer) = ProfileRepositoryImpl(
+        Retrofit.Builder()
+            .baseUrl(server.url("/"))
+            .addConverterFactory(wireJson.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(EmployeeApi::class.java),
+        json,
+    )
 
     @Test
     fun clear_resetsRegistrationStatusWatermark() = runTest {
@@ -139,22 +148,60 @@ class ProfileRepositoryTest {
         )
     }
 
+    /**
+     * The decode, over a socket, because the field is the whole reason the radius screen once had
+     * its own hand-written client: `EmployeeItem` predated `jobRadiusKm` and the generated decoder
+     * dropped it silently. A mocked API hands back a Kotlin object and would never have noticed.
+     * This is the seed for the radius control — if it decodes away again, the toggle reads "every
+     * job" for a cleaner who set 40 km.
+     */
     @Test
-    fun getJobRadius_readsTheRadiusOffTheEmployeeTheGeneratedModelPredates() = runTest {
-        coEvery { jobRadiusApi.getCurrentEmployeeJobRadius() } returns
-            Response.success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = 40))
+    fun getCurrentEmployee_decodesTheJobRadiusOffTheWire() = runTest {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("""{"id":"emp-1","firstName":"Jan","jobRadiusKm":40}"""),
+            )
 
-        val result = newRepo().getJobRadius()
+            val result = wireRepo(server).getCurrentEmployee()
 
-        assertEquals(40, (result as ApiResult.Success).data.jobRadiusKm)
-        assertEquals("emp-1", result.data.id)
+            assertEquals(40, (result as ApiResult.Success).data.jobRadiusKm)
+            assertEquals("emp-1", result.data.id)
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    /** A cleaner on the country-wide board reads back as null, not as a zero-kilometre radius. */
+    @Test
+    fun getCurrentEmployee_readsAnAbsentJobRadiusAsNoLimit() = runTest {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("""{"id":"emp-1","firstName":"Jan"}"""),
+            )
+
+            val result = wireRepo(server).getCurrentEmployee()
+
+            assertNull((result as ApiResult.Success).data.jobRadiusKm)
+        } finally {
+            server.shutdown()
+        }
     }
 
     @Test
     fun updateJobRadius_sendsTheChosenKilometres() = runTest {
         val command = slot<UpdateJobRadiusCommand>()
-        coEvery { jobRadiusApi.updateJobRadius(capture(command)) } returns
-            Response.success(UpdateJobRadiusResult(employeeId = "emp-1", radiusKm = 25))
+        coEvery { employeeApi.employeeUpdateJobRadius(capture(command)) } returns
+            Response.success(UpdateJobRadiusResponse(employeeId = "emp-1", radiusKm = 25))
 
         newRepo().updateJobRadius(employeeId = "emp-1", radiusKm = 25)
 
@@ -178,14 +225,8 @@ class ProfileRepositoryTest {
                     .setHeader("Content-Type", "application/json")
                     .setBody("""{"employeeId":"emp-1"}"""),
             )
-            val wireApi = Retrofit.Builder()
-                .baseUrl(server.url("/"))
-                .addConverterFactory(wireJson.asConverterFactory("application/json".toMediaType()))
-                .build()
-                .create(JobRadiusApi::class.java)
 
-            ProfileRepositoryImpl(employeeApi, wireApi, json)
-                .updateJobRadius(employeeId = "emp-1", radiusKm = null)
+            wireRepo(server).updateJobRadius(employeeId = "emp-1", radiusKm = null)
 
             val request = server.takeRequest()
             val body = request.body.readUtf8()

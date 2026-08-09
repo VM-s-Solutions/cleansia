@@ -7,10 +7,10 @@ import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.api.model.MyPayoutDetails
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.auth.AuthRepository
-import cz.cleansia.partner.data.profile.JobRadiusSnapshot
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,8 +50,6 @@ class ProfileViewModelTest {
         every { errorTranslator.translate(any()) } returns "translated error"
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
         coEvery { repository.getRegistrationStatus() } returns ApiResult.Error(ApiError.Network("down"))
-        coEvery { repository.getJobRadius() } returns
-            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = null))
     }
 
     private fun viewModel() = ProfileViewModel(repository, authRepository, errorTranslator, snackbar)
@@ -76,5 +74,23 @@ class ProfileViewModelTest {
         advanceUntilIdle()
 
         assertNull((vm.uiState.value as ProfileUiState.Loaded).payoutSummary)
+    }
+
+    /**
+     * The radius row used to cost a second `GetCurrentEmployee` because the generated `EmployeeItem`
+     * dropped `jobRadiusKm`. It now rides on the employee the hub already loaded — one read, one
+     * source of truth for the value the row summarises.
+     */
+    @Test
+    fun `the radius row rides on the one employee read the hub already makes`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(EmployeeItem(id = "emp-1", jobRadiusKm = 40))
+        coEvery { repository.getPayoutDetails() } returns ApiResult.Success(null)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(40, (vm.uiState.value as ProfileUiState.Loaded).employee.jobRadiusKm)
+        coVerify(exactly = 1) { repository.getCurrentEmployee() }
     }
 }

@@ -18,9 +18,12 @@ final class PreferencesModel: ObservableObject {
     @Published private(set) var theme: Theme
 
     private let settings: AppSettingsStore
-    private let languageSync: LanguagePreferenceSync?
+    /// Required, with no default, because the only thing that would notice a dropped injection is the
+    /// language a payout invoice PDF renders in — a tax document the cleaner files, decided server-side
+    /// from `User.PreferredLanguageCode`. `SettingsViewModel.kt` takes it the same way.
+    private let languageSync: LanguagePreferenceSync
 
-    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync? = nil) {
+    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync) {
         self.settings = settings
         self.languageSync = languageSync
         languageTag = settings.languageTag
@@ -73,7 +76,7 @@ final class PreferencesModel: ObservableObject {
         CoreL10n.apply(languageTag: resolved)
         languageTag = resolved
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
-        languageSync?.send(languageCode: resolved)
+        languageSync.send(languageCode: resolved)
     }
 
     func setTheme(_ theme: Theme) {

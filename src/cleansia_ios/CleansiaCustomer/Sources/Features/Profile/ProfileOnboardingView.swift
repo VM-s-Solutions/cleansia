@@ -104,8 +104,13 @@ private struct ProfileOnboardingContent: View {
                             helper: L10n.Onboarding.phoneHelper
                         )
                         .padding(.top, showNameFields ? Spacing.m : 28)
-                        OnboardingDateField(birthDate: $birthDate)
-                            .padding(.top, Spacing.m)
+                        BirthDateField(
+                            birthDate: $birthDate,
+                            label: L10n.Onboarding.birthDateLabel,
+                            placeholder: L10n.Onboarding.birthDatePlaceholder,
+                            helper: L10n.Onboarding.birthDateHelper
+                        )
+                        .padding(.top, Spacing.m)
                     }
                     .padding(.horizontal, Spacing.ml)
                     .padding(.bottom, Spacing.xl)
@@ -157,63 +162,6 @@ private struct ProfileOnboardingContent: View {
         .padding(.horizontal, Spacing.ml)
         .padding(.vertical, Spacing.s)
         .background(CleansiaColors.background)
-    }
-}
-
-private struct OnboardingDateField: View {
-    @Binding var birthDate: Date?
-    @State private var showPicker = false
-
-    private static let formatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter
-    }()
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(L10n.Onboarding.birthDateLabel)
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Button {
-                showPicker = true
-            } label: {
-                HStack {
-                    Image(systemName: "calendar")
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Text(
-                        birthDate.map { Self.formatter.string(from: $0) }
-                            ?? L10n.Onboarding.birthDatePlaceholder
-                    )
-                    .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(birthDate == nil ? CleansiaColors.onSurfaceVariant : CleansiaColors.onSurface)
-                    Spacer()
-                }
-                .padding(Spacing.m)
-                .background(CleansiaColors.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .stroke(CleansiaColors.outline, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-            }
-            .buttonStyle(.plain)
-            Text(L10n.Onboarding.birthDateHelper)
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .padding(.horizontal, Spacing.xxs)
-        }
-        .sheet(isPresented: $showPicker) {
-            DatePicker(
-                L10n.Onboarding.birthDateLabel,
-                selection: Binding(get: { birthDate ?? Date() }, set: { birthDate = $0 }),
-                in: ...Date(),
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-            .padding()
-            .presentationDetents([.medium])
-        }
     }
 }
 

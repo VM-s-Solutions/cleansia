@@ -20,6 +20,8 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
             "order.completed",
             "order.cancelled",
             "order.refunded",
+            "order.starting_soon",
+            "order.preferred_offer_closed",
             "recurring.scheduled"
         ]
         for key in keys {
@@ -95,12 +97,28 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         ))
     }
 
-    func testPartnerOnlyNewAvailableResolvesToNil() {
-        XCTAssertNil(CustomerNotificationDeepLink.resolve(
-            eventKey: "order.new_available",
-            orderId: nil,
-            disputeId: nil
-        ))
+    func testPartnerOnlyEventsResolveToNil() {
+        for key in [
+            "order.new_available",
+            "order.assigned",
+            "order.assignment_revoked",
+            "order.assignment_cancelled",
+            "order.preferred_offer"
+        ] {
+            XCTAssertNil(
+                CustomerNotificationDeepLink.resolve(eventKey: key, orderId: "ord-1", disputeId: nil),
+                key
+            )
+        }
+    }
+
+    func testStartingSoonAndPreferredOfferClosedWithoutOrderIdResolveToNil() {
+        for key in ["order.starting_soon", "order.preferred_offer_closed"] {
+            XCTAssertNil(
+                CustomerNotificationDeepLink.resolve(eventKey: key, orderId: nil, disputeId: nil),
+                key
+            )
+        }
     }
 
     func testResolveFromUserInfoMapsEventKeyAndOrderId() {

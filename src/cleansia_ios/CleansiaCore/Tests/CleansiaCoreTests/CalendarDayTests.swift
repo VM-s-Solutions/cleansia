@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import CleansiaCore
 
@@ -54,6 +55,45 @@ final class CalendarDayTests: XCTestCase {
     func testThePickerCalendarIsPinnedToGreenwich() {
         XCTAssertEqual(CalendarDay.calendar.timeZone.secondsFromGMT(), 0)
         XCTAssertEqual(CalendarDay.calendar.identifier, Calendar.current.identifier)
+    }
+
+    /// The picker is pinned to Greenwich, so the day it shows is the Greenwich day of the bound instant.
+    /// Storing that instant unnormalized is what loses the day: the seed carries a wall-clock time that
+    /// the encoder then re-reads in Greenwich.
+    func testTheDayThePickerShowsIsTheDayThatIsStored() throws {
+        var stored: Date?
+        let binding = CalendarDay.pickerBinding(Binding(get: { stored }, set: { stored = $0 }))
+
+        binding.wrappedValue = try instant(year: 1990, month: 5, day: 10, hour: 23, in: .gmt)
+
+        XCTAssertEqual(stored, try instant(year: 1990, month: 5, day: 10, hour: 0, in: .gmt))
+    }
+
+    /// The onboarding case: the field starts nil, so the picker seeds from `now` and the value that
+    /// reaches the wire is the seed's time of day unless it is dropped. Whatever hour it is here, none
+    /// of it survives.
+    func testAnUnsetFieldSeedsFromNowAndStoresThatDayWithNoTimeOfDay() throws {
+        var stored: Date?
+        let binding = CalendarDay.pickerBinding(Binding(get: { stored }, set: { stored = $0 }))
+
+        let seed = binding.wrappedValue
+        binding.wrappedValue = seed
+
+        let parts = try CalendarDay.calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: XCTUnwrap(stored)
+        )
+        let seedDay = CalendarDay.calendar.dateComponents([.year, .month, .day], from: seed)
+        XCTAssertEqual([parts.hour, parts.minute, parts.second], [0, 0, 0])
+        XCTAssertEqual([parts.year, parts.month, parts.day], [seedDay.year, seedDay.month, seedDay.day])
+    }
+
+    func testAStoredDayIsHandedBackToThePickerUnchanged() throws {
+        let day = try instant(year: 1990, month: 5, day: 10, hour: 0, in: .gmt)
+        var stored: Date? = day
+        let binding = CalendarDay.pickerBinding(Binding(get: { stored }, set: { stored = $0 }))
+
+        XCTAssertEqual(binding.wrappedValue, day)
     }
 
     private func instant(year: Int, month: Int, day: Int, hour: Int, in timeZone: TimeZone) throws -> Date {

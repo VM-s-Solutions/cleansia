@@ -45,6 +45,17 @@ custom_rules:
       - string
     severity: error
 
+  birth_date_picker_is_the_shared_one:
+    name: "A birth date is picked by the shared field"
+    message: "Bind a birth date through CleansiaCore's BirthDateField. A private picker shows the handset's calendar and hands back the wall-clock time of day it was seeded with, which the day encoder then reads in Greenwich — first capture, wrong day. calendar_day_needs_greenwich guards the encoder, not the picker."
+    regex: 'selection:[\s\S]{0,120}?\bbirthDate\b'
+    excluded: ".*/Components/BirthDateField\\.swift"
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    severity: error
+
 force_unwrapping:
   severity: error
 force_cast:

@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// A birth date is a day, not a moment, but it travels through the app as a `Date`. This is the one
 /// instant the app means by a day — midnight UTC — and the one zone it reads and shows one in.
@@ -25,6 +25,17 @@ public enum CalendarDay {
         greenwich.timeZone = .gmt
         let parts = source.dateComponents([.year, .month, .day], from: date)
         return greenwich.date(from: parts) ?? date
+    }
+
+    /// The binding a birth-date `DatePicker` selects through: it bridges the optional day to the
+    /// non-optional `Date` the picker demands, and normalizes every value coming back out. It reads the
+    /// picked instant in `calendar`'s zone — the same one the picker must be pinned to — so the day that
+    /// was shown is the day that is stored.
+    public static func pickerBinding(_ birthDate: Binding<Date?>) -> Binding<Date> {
+        Binding(
+            get: { birthDate.wrappedValue ?? Date() },
+            set: { birthDate.wrappedValue = startOfDay($0, in: calendar.timeZone) }
+        )
     }
 
     public static func text(_ date: Date, locale: Locale) -> String {

@@ -14,6 +14,10 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
             "order.completed",
             "order.cancelled",
             "order.on_the_way",
+            "order.assignment_cancelled",
+            "order.preferred_offer",
+            "order.assigned",
+            "order.assignment_revoked",
             "dispute.reply"
         ]
         for key in keys {
@@ -25,8 +29,30 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
         }
     }
 
+    /// The cleaner is off the job, and the order detail is still the destination: the copy says the job
+    /// moved, and the detail is where they read which day just came off their schedule (Android parity).
+    func testARevokedAssignmentStillOpensTheOrderItWasTakenFrom() {
+        XCTAssertEqual(
+            PartnerNotificationDeepLink.resolve(eventKey: "order.assignment_revoked", orderId: "ord-4"),
+            .order(orderId: "ord-4")
+        )
+    }
+
+    /// Customer-audience keys, which this app carries display copy for but is never sent.
+    func testCustomerOnlyEventsResolveToNil() {
+        for key in ["order.starting_soon", "order.preferred_offer_closed", "order.cleaner_assigned"] {
+            XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: key, orderId: "ord-1"), key)
+        }
+    }
+
     func testOrderEventWithoutIdResolvesToNil() {
         XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: nil))
+    }
+
+    func testAssignmentEventsWithoutIdResolveToNil() {
+        for key in ["order.assigned", "order.assignment_revoked"] {
+            XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: key, orderId: nil), key)
+        }
     }
 
     func testNewAvailableResolvesToOrdersTab() {

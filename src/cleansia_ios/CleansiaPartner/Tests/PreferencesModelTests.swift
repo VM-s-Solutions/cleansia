@@ -29,14 +29,14 @@ final class PreferencesModelTests: XCTestCase {
         let store = makeStore()
         store.setLanguage("cs")
         store.setTheme(.dark)
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         XCTAssertEqual(model.languageTag, "cs")
         XCTAssertEqual(model.theme, .dark)
     }
 
     func testSetLanguageUpdatesPublishedAndStore() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setLanguage("sk")
         XCTAssertEqual(model.languageTag, "sk")
         XCTAssertEqual(store.languageTag, "sk")
@@ -45,21 +45,21 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSetLanguageUnsupportedClampsToResolvedTag() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setLanguage("de")
         // Unsupported clears the store → resolves via locale ("en").
         XCTAssertEqual(model.languageTag, "en")
     }
 
     func testFreshInstallFollowsSystem() {
-        let model = PreferencesModel(settings: makeStore(locale: "uk"))
+        let model = PreferencesModel(settings: makeStore(locale: "uk"), languageSync: SilentLanguageSync())
         XCTAssertTrue(model.isFollowingSystemLanguage)
         XCTAssertEqual(model.languageTag, "uk")
     }
 
     func testSetSystemClearsTagAndResolvesToDeviceLocale() {
         let store = makeStore(locale: "uk")
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setLanguage("sk")
         XCTAssertFalse(model.isFollowingSystemLanguage)
 
@@ -73,7 +73,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testLanguageThenSystemRoundTripsToUnset() {
         let store = makeStore(locale: "cs")
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setLanguage("ru")
         XCTAssertEqual(store.persistedLanguageTag, "ru")
         model.setSystemLanguage()
@@ -83,7 +83,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSelectLanguageBySentinelIdFollowsSystem() {
         let store = makeStore(locale: "uk")
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setLanguage("sk")
 
         model.selectLanguage(id: PreferencesLabels.systemLanguageId)
@@ -95,7 +95,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSelectLanguageByTagPersistsExplicitChoice() {
         let store = makeStore(locale: "en")
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
 
         model.selectLanguage(id: "cs")
 
@@ -106,7 +106,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSetThemeUpdatesPublishedAndStore() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store)
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         model.setTheme(.light)
         XCTAssertEqual(model.theme, .light)
         XCTAssertEqual(store.theme, .light)
@@ -117,6 +117,12 @@ final class PreferencesModelTests: XCTestCase {
         XCTAssertEqual(Theme.light.colorScheme, .light)
         XCTAssertEqual(Theme.dark.colorScheme, .dark)
     }
+}
+
+/// For the tests that are about the local preference state alone. What reaches the server is
+/// `PartnerLanguageCallSiteTests`.
+final class SilentLanguageSync: LanguagePreferenceSync {
+    func send(languageCode _: String) {}
 }
 
 final class PreferencesLabelsTests: XCTestCase {

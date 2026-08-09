@@ -34,6 +34,8 @@ enum CustomerNotificationDeepLink {
              "order.completed",
              "order.cancelled",
              "order.refunded",
+             "order.starting_soon",
+             "order.preferred_offer_closed",
              "recurring.scheduled":
             guard let orderId else { return nil }
             return .order(orderId: orderId)

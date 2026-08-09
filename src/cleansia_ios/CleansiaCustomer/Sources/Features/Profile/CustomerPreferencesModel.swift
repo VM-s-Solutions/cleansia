@@ -9,9 +9,11 @@ final class CustomerPreferencesModel: ObservableObject {
     @Published private(set) var theme: Theme
 
     private let settings: AppSettingsStore
-    private let languageSync: LanguagePreferenceSync?
+    /// Required, with no default: a dropped injection compiles, leaves every test green, and shows up
+    /// only as a server-rendered mail arriving in the language signup happened to send.
+    private let languageSync: LanguagePreferenceSync
 
-    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync? = nil) {
+    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync) {
         self.settings = settings
         self.languageSync = languageSync
         languageTag = settings.languageTag
@@ -44,9 +46,7 @@ final class CustomerPreferencesModel: ObservableObject {
         CoreL10n.apply(languageTag: resolved)
         languageTag = resolved
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
-        if let languageSync {
-            Task { await languageSync.send(languageCode: resolved) }
-        }
+        Task { [languageSync] in await languageSync.send(languageCode: resolved) }
     }
 
     func setTheme(_ theme: Theme) {

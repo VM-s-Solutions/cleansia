@@ -4,6 +4,7 @@ public struct BirthDateField: View {
     @Binding private var birthDate: Date?
     private let label: String
     private let placeholder: String
+    private let helper: String?
     private let errorText: String?
 
     @Environment(\.locale) private var locale
@@ -13,11 +14,13 @@ public struct BirthDateField: View {
         birthDate: Binding<Date?>,
         label: String,
         placeholder: String,
+        helper: String? = nil,
         errorText: String? = nil
     ) {
         _birthDate = birthDate
         self.label = label
         self.placeholder = placeholder
+        self.helper = helper
         self.errorText = errorText
     }
 
@@ -56,10 +59,10 @@ public struct BirthDateField: View {
             }
             .buttonStyle(.plain)
 
-            if let errorText {
-                Text(errorText)
+            if let supporting = errorText ?? helper {
+                Text(supporting)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.error)
+                    .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
                     .padding(.horizontal, Spacing.m)
             }
         }
@@ -69,16 +72,13 @@ public struct BirthDateField: View {
             // otherwise different instants that encode as different days.
             DatePicker(
                 label,
-                selection: Binding(
-                    get: { birthDate ?? Date() },
-                    set: { birthDate = CalendarDay.startOfDay($0, in: .gmt) }
-                ),
+                selection: CalendarDay.pickerBinding($birthDate),
                 in: ...Date(),
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
             .environment(\.calendar, CalendarDay.calendar)
-            .environment(\.timeZone, .gmt)
+            .environment(\.timeZone, CalendarDay.calendar.timeZone)
             .padding()
             .presentationDetents([.medium])
         }
@@ -93,7 +93,8 @@ public struct BirthDateField: View {
                     BirthDateField(
                         birthDate: binding,
                         label: "Date of birth",
-                        placeholder: "Pick a date"
+                        placeholder: "Pick a date",
+                        helper: "Optional — helps us tailor your offers"
                     )
                     BirthDateField(
                         birthDate: .constant(nil),

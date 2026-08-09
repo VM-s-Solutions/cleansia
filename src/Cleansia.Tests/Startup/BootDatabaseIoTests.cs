@@ -16,8 +16,24 @@ namespace Cleansia.Tests.Startup;
 /// the DI graph touches the database, and whether the EF model warm-up stays off the startup path.
 ///
 /// <para>The probe is a loopback listener that accepts and immediately closes, so a connection attempt is
-/// COUNTED rather than timed out — the assertions are about whether a socket was opened at all, not about
-/// how long anything took, which is what keeps them from being flaky on a loaded machine.</para>
+/// COUNTED rather than timed out. Counting is not by itself enough to make these assertions sound: the
+/// connect is synchronous (<c>OpenConnection</c> inside <c>AddDbContextBindings</c>) and so is complete
+/// before composition returns, but the accept that RECORDS it runs on the listener's own loop. A naked
+/// read of the counter therefore races the observation — not the IO — and on a loaded machine loses.</para>
+///
+/// <para>Both directions of that race are closed here, and neither closure may be "simplified" away. The
+/// <c>&gt; 0</c> leg waits on a signal the accept loop sets after the increment, so a starved thread pool
+/// costs latency instead of a red. The <c>== 0</c> legs cannot wait for the absence of an event, so they
+/// open one deliberate CONTROL connection after composing and block until the loop has accepted, counted
+/// and closed THAT one, then assert the total is exactly 1: TCP hands connections to the accept loop in
+/// the order their handshakes completed, so once the control connection has been counted, anything whose
+/// connect COMPLETED during composition has been counted too — which is every connect composition can make
+/// while the one it would make is synchronous.</para>
+///
+/// <para>Without that barrier the <c>== 0</c> legs pass VACUOUSLY — a connection opened during composition
+/// but not yet accepted leaves the counter at 0 and the assertion green, so the five host legs report
+/// success in exactly the case they exist to catch. Reading the counter directly is the bug, not the
+/// simplification.</para>
 /// </summary>
 public class BootDatabaseIoTests
 {
@@ -36,7 +52,7 @@ public class BootDatabaseIoTests
         var services = NewServiceCollection(probe.ConnectionString, out var configuration);
         InvokeAddServices(host, services, configuration);
 
-        Assert.Equal(0, probe.AcceptedConnections);
+        AssertNothingConnectedBesidesTheControlProbe(probe, $"{host}.AddServices");
     }
 
     [Fact]
@@ -62,9 +78,10 @@ public class BootDatabaseIoTests
         var services = NewServiceCollection(probe.ConnectionString, out var configuration);
         services.AddCoreBindings(configuration, ProbeEnvironment, eagerlyReloadNpgsqlTypeCatalog: true);
 
-        Assert.True(probe.AcceptedConnections > 0,
-            "The eager type-catalog probe opened no connection — either the opt-in stopped working or the " +
-            "loopback probe is no longer being reached, which would also make the API-host assertion vacuous.");
+        Assert.True(probe.WaitForConnection(ObservationTimeout),
+            $"The eager type-catalog probe opened no connection within {ObservationTimeout.TotalSeconds:0}s " +
+            "— either the opt-in stopped working or the loopback probe is no longer being reached, which " +
+            "would also make the API-host assertions vacuous.");
     }
 
     [Fact]
@@ -81,7 +98,7 @@ public class BootDatabaseIoTests
 
         Assert.Contains(logger.Information, line => line.Contains("EF model warmed at boot", StringComparison.Ordinal));
         Assert.Empty(logger.Warnings);
-        Assert.Equal(0, probe.AcceptedConnections);
+        AssertNothingConnectedBesidesTheControlProbe(probe, "The EF model warm-up");
     }
 
     /// <summary>
@@ -140,7 +157,22 @@ public class BootDatabaseIoTests
         var secondModel = second.ServiceProvider.GetRequiredService<CleansiaDbContext>().Model;
 
         Assert.Same(firstModel, secondModel);
-        Assert.Equal(0, probe.AcceptedConnections);
+        AssertNothingConnectedBesidesTheControlProbe(probe, "Resolving CleansiaDbContext.Model");
+    }
+
+    private static readonly TimeSpan ObservationTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Returns as soon as the control connection comes back, so the generous timeout is paid only when the
+    /// probe itself is broken — never on the pass path.
+    /// </summary>
+    private static void AssertNothingConnectedBesidesTheControlProbe(ClosingLoopbackListener probe, string subject)
+    {
+        var accepted = probe.DrainWithControlConnection(ObservationTimeout);
+
+        Assert.True(accepted == 1,
+            $"{subject} opened {accepted - 1} database connection(s). Only the test's own control " +
+            "connection may be counted here.");
     }
 
     private static readonly IHostEnvironment ProbeEnvironment = new BootProbeEnvironment();
@@ -213,6 +245,7 @@ public class BootDatabaseIoTests
     {
         private readonly TcpListener listener;
         private readonly CancellationTokenSource cancellation = new();
+        private readonly ManualResetEventSlim connectionAccepted = new();
         private int acceptedConnections;
 
         public ClosingLoopbackListener()
@@ -230,19 +263,42 @@ public class BootDatabaseIoTests
         public string ConnectionString =>
             $"Host=127.0.0.1;Port={Port};Database=cleansia;Username=probe;Password=probe;Timeout=2;Command Timeout=2";
 
+        public bool WaitForConnection(TimeSpan timeout) => connectionAccepted.Wait(timeout);
+
+        /// <summary>
+        /// The barrier the <c>== 0</c> assertions stand on: connects once and returns only after the accept
+        /// loop has counted and closed THAT connection, so every earlier connect is already in the total it
+        /// returns (the accept queue is FIFO). The close is what proves it — the loop increments before it
+        /// disposes the accepted client, so a peer that sees the socket go away has been counted.
+        /// </summary>
+        public int DrainWithControlConnection(TimeSpan timeout)
+        {
+            using var control = new TcpClient();
+            control.Connect(IPAddress.Loopback, Port);
+
+            Assert.True(control.Client.Poll(timeout, SelectMode.SelectRead),
+                "The loopback probe did not accept and close the control connection within " +
+                $"{timeout.TotalSeconds:0}s, so the connection count cannot be trusted.");
+
+            return AcceptedConnections;
+        }
+
         private async Task AcceptLoopAsync()
         {
-            try
+            while (!cancellation.IsCancellationRequested)
             {
-                while (!cancellation.IsCancellationRequested)
+                try
                 {
+                    // Increment and signal BEFORE the client is disposed: DrainWithControlConnection reads
+                    // that close as proof the count already includes it.
                     using var client = await listener.AcceptTcpClientAsync(cancellation.Token);
                     Interlocked.Increment(ref acceptedConnections);
+                    connectionAccepted.Set();
                 }
+                catch (OperationCanceledException) { return; }
+                catch (ObjectDisposedException) { return; }
+                catch (SocketException) { }
             }
-            catch (OperationCanceledException) { }
-            catch (ObjectDisposedException) { }
-            catch (SocketException) { }
         }
 
         public void Dispose()
@@ -250,6 +306,7 @@ public class BootDatabaseIoTests
             cancellation.Cancel();
             listener.Dispose();
             cancellation.Dispose();
+            connectionAccepted.Dispose();
         }
     }
 

@@ -403,6 +403,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.invoice.invalid_status',
   'payroll.invoice.not_approved',
   'payroll.invoice.not_found',
+  // cdd3133b — RegenerateInvoicePdf now RECORDS a failed render on the row instead of
+  // clearing the flag it never set, so this key became reachable rather than theoretical.
+  'payroll.invoice.pdf_generation_failed',
   // ADR-0046 — the payout invoice's variabilni symbol. All four are raised on
   // admin-reachable routes (AdminPayrollController.GenerateInvoice /
   // AssignInvoiceVariableSymbol, AdminInvoiceController.MarkInvoicePaid), so a missing

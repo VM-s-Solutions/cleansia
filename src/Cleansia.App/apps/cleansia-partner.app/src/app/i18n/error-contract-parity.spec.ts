@@ -390,6 +390,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Payroll — invoices, pay periods, pay calculation
   'payroll.employee_not_assigned',
   'payroll.invoice.not_found',
+  // cdd3133b — RegenerateInvoicePdf now RECORDS a failed render on the row instead of
+  // clearing the flag it never set, so this key became reachable rather than theoretical.
+  'payroll.invoice.pdf_generation_failed',
   'payroll.no_active_period',
   'payroll.no_pay_configuration',
   'payroll.pay.already_calculated',

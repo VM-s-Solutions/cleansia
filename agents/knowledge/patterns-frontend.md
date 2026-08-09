@@ -304,7 +304,7 @@ backend adds a customer-reachable `BusinessErrorMessage` constant, add the match
 Note the canonical namespace is **`api.*`**, not `errors.*`. `conventions.md` historically phrased the
 rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow the code: `api.*`.**
 
-**Hard parity rule (enforced by a CI guard):**
+**Hard parity rule** (tier and enforcer declared at the foot of this list):
 - Every customer-reachable backend error key must have a non-empty translation under `api.*` in all
   five customer locales, with **identical `api.*` key sets** across the five files.
 - The guard is `apps/cleansia.app/src/app/i18n/error-contract-parity.spec.ts`. It holds the explicit
@@ -317,14 +317,43 @@ rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow t
   back to `api.common.error_occurred`. Pinned by `http-error.interceptor.spec.ts`.
 - **The guard is per app, because the surface is per app.** The interceptor is shared, so the same
   generic-fallback swallow happens in partner and admin — a partner-only code with no partner
-  translation reads as "An error occurred. Please try again." and the cleaner just retries.
-  `apps/cleansia-partner.app/src/app/i18n/error-contract-parity.spec.ts` is the partner twin
+  translation reads as "An error occurred. Please try again." and the cleaner just retries
   (`order.weekly_limit_reached` was missing from all five partner bundles for as long as the code
-  existed, with only the customer guard in place). Derive an app's contract mechanically — the
-  `BusinessErrorMessage.*` constants referenced by the feature classes **that app's host controllers
-  dispatch** — so it can be re-derived rather than remembered. A key that is genuinely not translated
-  yet goes on the spec's short `PENDING_TRANSLATION` list, which is a **ratchet**: the spec fails if a
-  listed key turns out to be translated (delete the line) or is not a real contract key.
+  existed, with only the customer guard in place).
+- **The contract is derived, and the derivation is the test — not a procedure anyone runs.** Each spec
+  walks its own host's `Controllers/*.cs`, resolves every `Mediator.Send` argument back to a feature
+  class, and reads that class's `BusinessErrorMessage` constants (partner spec `:165-232`). A derived
+  key must land on the app's roster or on an exclusion list, or *"leaves no derived key unclassified"*
+  fails (`:471-479`) — so a key added to a new endpoint arrives on its own. **An unresolved dispatch
+  site is itself a failure** (`expect(surface.unresolved).toEqual([])`, `:458-460`): a controller idiom
+  the resolver cannot read reddens the build instead of silently shrinking the derived set. Floors on
+  controllers / sites / feature classes / keys (`:451-456`) stop an empty walk from agreeing with an
+  empty roster.
+- **Three named lists, three different jobs — do not merge them.** The **roster** is the contract: every
+  entry non-empty in all five locales. **`DELIBERATELY_NOT_TRANSLATED`** is the *only* escape from the
+  coverage test and each entry carries its own reason — today, two Stripe-webhook guards on the customer
+  host whose refusals are returned to a Stripe **server** and never rendered (customer spec `:456-470`).
+  It cannot silence a real gap: the same assertion rejects an entry that is not actually reachable, is
+  also on the roster, is in fact translated, or carries an empty reason (partner spec `:481-503`).
+  **`DECLARED_BUT_NEVER_EMITTED`** is an exact two-way set of roster keys no handler names — 20 on
+  customer (`:483-504`, of which the seven `promo.*` are alive but travel a different road: the enum
+  name rides the `ValidatePromoCode` **response** and the facade maps it), empty on partner (`:431`) and
+  admin (`:451`) — so a constant that dies must be listed and one that revives must leave.
+  **`PENDING_TRANSLATION`** (partner only, `:438`) is the shrink-only ratchet for a key genuinely not
+  translated yet: the spec fails if a listed key turns out to be translated, or is not a real roster key.
+- **Two readings of a controller that are wrong, both already paid for.** `ProducesResponseType` is
+  **not** a dispatch — reading it as one pulled `CreateOrder` onto the *partner* surface through a
+  single stale attribute and injected fifteen false keys. Only `[From…] X.Command` binding and
+  `HandleResult<X.Response>` are read alongside `Mediator.Send` (partner spec `:197-200`), because both
+  are tied to the message the action actually sends. *(The stale attribute was a real shipped defect —
+  `PUT /api/Employee/UpdateEmployee` declared `CreateOrder.Response` while returning
+  `UpdateEmployee.Response`, and NSwag typed the client from it. Fixed at
+  `Cleansia.Web.Partner/Controllers/EmployeeController.cs:43` and now guarded across all five hosts by
+  `DeclaredSuccessResponseMatchesTheReturnedTypeTests` — `:36-43`.)* And do **not** segment a controller
+  per `[HttpX]` action: resolution belongs at the `Mediator.Send` site, bound to the nearest declaration
+  above it (`:108-145`), because action bodies routinely delegate elsewhere
+  (`Cleansia.Web.Customer/Controllers/SavedAddressController.cs:19-52` — five actions, every one a
+  one-line call into a helper).
 - **Admin ships two error namespaces and only one of them is canonical — write `api.*`.** Its bundle
   carries a legacy `errors.*` block (~169 keys) that mirrors `api.*`, read by the per-feature
   `XXX_ERROR_KEY_MAP` resolvers a few admin features still carry (orders, disputes, refunds,
@@ -332,9 +361,26 @@ rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow t
   admin error and resolves `api.${code}` — a new key written only under `errors.*` is therefore
   invisible unless you also hand-write a resolver, which is the thing you are not supposed to add.
   `apps/cleansia-admin.app/src/app/i18n/error-contract-parity.spec.ts` is the admin twin; it guards
-  five-locale key-set parity and non-emptiness over **both** namespaces, and holds a contract list
-  bounded to the surface derived so far rather than pretending to cover all 31 admin controllers.
-  Extend that list when you derive another admin surface.
+  five-locale key-set parity and non-emptiness over **both** namespaces, and its roster is derived from
+  every `Cleansia.Web.Admin/Controllers/*.cs` (31 files). **A partial admin contract list is no longer
+  permitted** — the coverage assertion above forbids it.
+
+**Enforced by:** `apps/*/src/app/i18n/error-contract-parity.spec.ts` — **T1-CI**, `frontend-ci.yml`'s
+*"Unit tests (affected)"* step (`:85-87`), which unlike that workflow's lint step is not
+`continue-on-error`. **Two boundaries the green does not cover, and both are by design.** (1) The walk
+reads `<host>/Controllers/*.cs` only (partner spec `:33-36`), so a dispatch that lives on a shared base
+controller under `Cleansia.Config/Abstractions/` is never a *site* at all; those keys stay on the
+hand-kept roster, which is a superset of the derived set on purpose — the roster carries the
+reachability judgement the walk cannot make. (2) That workflow's push trigger is paths-scoped to
+`src/Cleansia.App/**` (`frontend-ci.yml:12-17`) and the test step is `nx affected`, so a **backend-only**
+change that adds a constant is caught by the next frontend-touching PR rather than by the one that
+opened the gap.
+
+The three specs **duplicate** the ~150-line derivation instead of sharing it, deliberately: each app's
+`tsconfig.spec.json` `include` is limited to its own `src/**/*.spec.ts`
+(`apps/cleansia-partner.app/tsconfig.spec.json:11-16`), and a `libs/shared/*` home would put `fs`/`path`
+tree-walking into a browser-targeted library. Same per-app placement as
+`apps/*/src/app/theme/font-stack.spec.ts` below, for a second and independent reason.
 
 ### "This optional resource does not exist yet" arrives as a failure — normalize it once, at the client lib
 

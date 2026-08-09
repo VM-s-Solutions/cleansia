@@ -109,6 +109,14 @@ reach the client:
 - Stripe customer/subscription ids, token hashes, password hashes
 - Soft-deleted rows leaking through unfiltered queries
 
+**One DTO, two audiences, one projection.** When the same DTO is served to a caller who owns the row
+*and* to one who merely may look at it, the second reading is a **redaction of the first**, held in one
+place and asked from the same seam that granted access — never re-derived per handler and never keyed
+on "is the caller assigned". Reference: `OrderPiiRedaction.cs` for the two shapes,
+`GetOrderDetails.cs:57`/`:136-138` for the predicate and its application. Enforced by the
+`OrderRedactionSurfaceTests` row of the S12 table (**`T1-CI`**), which is where the diagnostic that
+finds this class lives.
+
 ## S5 — Rate limiting on auth + side-effecting endpoints
 
 Auth endpoints (login, register, forgot-password, refresh, confirm-email, resend-confirmation) use
@@ -373,14 +381,39 @@ these bytes?**
 For every upload surface, answer three questions **in writing, on the intake roster**
 (`UploadIntakeRosterTests.cs:39-55` — 14 rows today):
 
-1. **Who fetches these bytes?** If the only fetcher is the uploader, the artifact discloses nothing new
-   — record *"audience: self"*. **That answer expires the moment a second audience is added**, and the
-   ticket that adds one owes the scrub. Read the **authorization gate the fetch actually uses**, not the
-   one you expect: `GetOrderPhotos.cs:59` gates on `CanBrowseOrderAsync`, and
-   `OrderAccessService.cs:68-92` returns `true` for **any** caller with role `Employee` and a resolvable
-   employee id while `order.HasAvailableSpots && OrderVisibility.NotHeldFrom(…)` — so the order-photo
-   audience is **not enumerable at upload time**, and a cleaner's photos are fetchable by a cleaner who
-   never took the job and never will.
+1. **Who fetches these bytes — and what does the response hand them?** Two questions, not one, and a
+   surface can pass the first while failing the second. If the only fetcher is the uploader the artifact
+   discloses nothing new — record *"audience: self"*. **That answer expires the moment a second audience
+   is added**, and the ticket that adds one owes the scrub.
+
+   **The gate.** Read the gate the **fetch** actually uses, not the one you expect.
+   `OrderAccessService.cs:68-91` returns `true` for **any** caller with role `Employee` and a resolvable
+   employee id while `order.HasAvailableSpots && OrderVisibility.NotHeldFrom(…)` — so anything behind
+   that gate has an audience which is **not enumerable at upload time**. Order photos are no longer
+   behind it: `GetOrderPhotos.cs:63` gates on the strict `CanAccessOrderAsync` (`:58-61` records why —
+   a signed URL is a forwardable bearer capability over an interior view of a private dwelling, and
+   nothing inside the home is part of deciding whether to take the job).
+   `GetOrderPhotosAssignmentGateTests:55-68` asserts the loose gate is not even *consulted*, so a
+   fallback cannot quietly re-open it.
+
+   **The projection.** A gate can be right and the response still wrong, and that is the half this law
+   used to miss. The browse gate on `GetOrderDetails.cs:48` was doing its job — a cleaner must read a
+   job before taking it — and the leak was that nothing shaped what "read" returned: the door code, the
+   address with its coordinates, the confirmation code, the crew's surnames and phone numbers. The fix
+   is a **projection**, not a narrower gate. The strict gate is asked *again* at `:57` purely as a
+   redaction predicate and applied at `:136-138`, through one shared rule (`OrderPiiRedaction.cs` —
+   seventeen `OrderItem` members at `:34-54`, the list twin at `:22-32`). Make that predicate the
+   **entitlement**, never "is the caller assigned": an employee who books a cleaning for their own home
+   arrives at that handler as the order's **customer**, and an assignment test would redact their own
+   data from them. It fails **closed** — a later widening of the browse gate redacts by default.
+
+   **The diagnostic, and run it before you go looking for a missing gate: when two routes serve the same
+   entity to the same audience, compare their projections — the narrower one is usually the rule and the
+   wider one is usually the omission.** The list handler had withheld the customer all along and said so
+   in its own comment (`GetPagedOrders.cs:180-183`); the detail route simply never got one, so one extra
+   GET undid the list's withholding. (The projection's *check* — read the DTO's field list — is S4's;
+   Q1 is where you are standing when you discover it, because Q1 is the question that makes you open the
+   fetch route at all.)
 2. **What is it served as?** Server-derived, from a **closed set**, decided on the **read** path so it
    also governs rows written before the rule (`ServedContentType.ServableTypes`, `:34-42`, private
    constructor at `:56`; `text/html` and `image/svg+xml` are absent **by name**, and the mint pins it
@@ -426,10 +459,11 @@ decode.
 **The incident.** `ImageFileValidator` was a 3–4 byte magic-prefix check standing in front of three
 shipped pipelines — the avatar, order photos, dispute evidence; `SaveOrderPhotos` read its stored type
 off the client's own `data:` URI prefix; every employee-document intake stored the string its uploader
-claimed. EXIF GPS and device serials rode into `order-photos`, a container whose fetch set includes
-cleaners with no relationship to the job — defeating by *content* the two controls that deliberately
-withhold cleaner identity by *field* (`GetOrderPhotos.cs:107-109` withholds `CapturedByEmployeeId` and
-the surname from a customer caller; ADR-0036 keeps `PreferredEmployeeId` off every partner DTO). **None
+claimed. EXIF GPS and device serials rode into `order-photos`, a container whose fetch set *then*
+included cleaners with no relationship to the job (the gate has since been tightened — see Q1) —
+defeating by *content* the two controls that deliberately withhold cleaner identity by *field*
+(`GetOrderPhotos.cs:111-116` withholds `CapturedByEmployeeId` and the surname from a customer caller;
+ADR-0036 keeps `PreferredEmployeeId` off every partner DTO). **None
 of it was a violation of S1–S11** — S4 governs DTO fields, S6 governs logs, S8/S10 govern query scoping,
 and none of them reaches inside a byte array. The reviewers were not wrong against the rules; the rules
 were silent. *(All three intakes are hardened at HEAD — `ImageFileValidator` now runs
@@ -446,12 +480,12 @@ reviewer walking the S-series for an upload ticket will not open "DTO leak preve
 
 ### Enforcement (ADR-0032) — per clause, because the clauses are not tiered alike
 
-**Enforced by:** the eleven-row table below — **mixed tier; read the row, not the rule.** The strongest
-clause is `T1-CI` and the weakest has no mechanism at all; a single token would be false for eight of
-the eleven either way.
+**Enforced by:** the twelve-row table below — **mixed tier; read the row, not the rule.** The strongest
+clause is `T1-CI` and the weakest has no mechanism at all; a single token would misdescribe at least
+five rows whichever one you picked.
 
-**Do not read S12 as `T1-CI` wholesale.** Of the eleven rows below, **six** are enforced today, **four**
-are specified and ticketed, and **one has no mechanism at all** and says so. A mechanism that cannot
+**Do not read S12 as `T1-CI` wholesale.** Of the twelve rows below, **seven** are enforced today,
+**four** are specified and ticketed, and **one has no mechanism at all** and says so. A mechanism that cannot
 fail a build is `T2-ADVISORY` however it is labelled — note that
 `check-consistency.mjs` runs in **zero** `.github/` workflows and the frontend lint step is
 `continue-on-error: true`, so neither can carry any clause here.
@@ -462,6 +496,7 @@ fail a build is `T2-ADVISORY` however it is labelled — note that
 | Q2 — accepted set stays inside the servable set | **True by construction and unpinned.** No test reads `SniffedContentType.Signatures` at all (grep: it appears in one `src` file, its own). A seventh row that `ServedContentType` cannot serve reintroduces the defect silently. **What would close it:** assert every `Signatures` MIME reachable from a SAS-served intake resolves to a non-`Opaque` `ServedContentType`, count-asserted first. *(T-0562 pins the adjacent `ExtensionFor` ↔ `ForFileName` round-trip, which is a different assertion.)* | **`(gate pending: T-0458)`** |
 | Q1/Q3 — the roster **enumerates** every intake | `UploadIntakeRosterTests` — count first (`Assert.Equal(ExpectedIntakes.Length, intakes.Count)`, `:64`) so an empty walk cannot agree with an empty roster, then the route-name list (`:66-68`), plus a `[Theory]` naming the four `byte[]`/`IFormFile` routes (`:76-84`) so narrowing the predicate cannot silently pass | **`T1-CI`** |
 | Q1/Q3 — every intake **declares** its audience and its scrub | **Nothing.** The roster's `— <rule>` annotation is asserted by **no** test: `:66-68` splits each row on `" — "` and compares index `[0]` only, so the text after the dash is read by nobody. Adding `audience`/`scrub` columns without changing that assertion buys a string nobody reads. **What would close it:** assert the annotation vocabulary as a closed set, plus a per-intake refusal theory that names the failure's **identity** (that route's error code) and carries a **positive control** per case — `Assert.False(result.IsValid)` alone is green on any un-stubbed constructor dependency | **`(gate pending: T-0458)`** |
+| Q1 — the response **projects**, not just gates | `OrderRedactionSurfaceTests` — every property of `OrderItem` and `OrderListItem` is classified blanked / reshaped / kept, and the coverage assertion runs **both** ways plus a count (`:209-222`), so a field added to either DTO fails the build naming itself; each blanked member is arranged non-empty first (`:146`, `:165`) so a fixture that never set it cannot pass · `OrderDetailBrowsingCleanerRedactionTests` (a unit twin and a real-Postgres twin) reads the same fixture back **in full** as the assigned cleaner, so "blank it for everyone" fails too | **`T1-CI`** |
 | Q3 — the scrub actually removes metadata | `UploadDisputeEvidenceMetadataScrubTests` · `UploadOrderPhotoMetadataScrubTests` · `SaveOrderPhotosMetadataScrubTests` — each reads **the bytes handed to `IBlobContainerClient.UploadAsync`** (a `Callback` copying the stream), never "a helper was called", and asserts the GPS and device sentinels are absent while the image body survives. Each dies to its **own** call site being removed and no other's | **`T1-CI`** |
 | Q3 — the scrub dispatches on bytes, and reports honestly | `ImageMetadata.Scrub` takes `byte[]` and nothing else (`ImageMetadata.cs:35`) · `ImageMetadataDispatchTests` (six payloads no walker claims → `Assert.False(result.Scrubbed)` **and** `Assert.Same(payload, result.Bytes)` — identity, not equality) · the three feature suites each send a format under a deliberately **wrong** declared type / `data:` prefix / file name | **`T1-CI`** |
 | Q3 — orientation degrades, never guesses | `JpegMetadataScrubTests` — 2–8 re-emitted as a **server-synthesized** 36-byte `APP1` written out in the test rather than read from the code (`:23-31`), with `ByteSequence.Count(scrubbed, FF E1) == 1`; 13 unreadable sources (both TIFF byte orders, orientation 0/1/9/65535/absent, bad magic, out-of-range IFD pointers, wrong tag type/count, two disagreeing entries) each emit **no** `APP1`; six malformed containers are **refused, not repaired** (`Assert.Same` on the input). Carries its own anti-vacuity fact — `:43` asserts the fixture *does* contain GPS before asserting the output does not | **`T1-CI`** |
@@ -472,10 +507,12 @@ fail a build is `T2-ADVISORY` however it is labelled — note that
 
 **Reviewer test.** For a ticket that adds or changes an upload route: open the roster row, and ask
 whether its `audience` answer is derived from the gate the *fetch* uses or from the gate the *write*
-uses. On `SaveOrderPhotos` those differ — writing requires assignment (`:115-118`), fetching does not —
-and every wrong audience answer this codebase has produced came from reading the write gate. Then ask
-what the scrub is handed: a `contentType` parameter anywhere on that path is the defect, not a
-convenience. Full context and the trade-off space:
+uses — they are two call sites and either can move alone. On `SaveOrderPhotos` the write gate is
+assignment (`:115-118`); the fetch gate is `GetOrderPhotos.cs:63`, which used to be looser and is now
+strict, so an answer copied from the write side would have been right by accident for a year. Every
+wrong audience answer this codebase has produced came from reading the write gate. Then ask what the
+**response** projects, not only what the gate admits, and what the scrub is handed: a `contentType`
+parameter anywhere on that path is the defect, not a convenience. Full context and the trade-off space:
 `agents/architecture/decisions/user-uploaded-artifacts.md`; the record is **ADR-0043**.
 
 ---
@@ -485,7 +522,8 @@ convenience. Full context and the trade-off space:
 1. `[Permission]` or `[AllowAnonymous]` present (S2)
 2. `userId` enriched from JWT, body not trusted (S1)
 3. Ownership checked for resource-by-id paths (S3)
-4. Response DTO has no leaked fields (S4)
+4. Response DTO has no leaked fields — and where one DTO serves two audiences, the weaker one gets a
+   projection, not just a gate (S4)
 5. No `IgnoreQueryFilters()` without a justifying comment (S8)
 6. `CancellationToken` propagated end-to-end
 7. Rate-limited if auth or external-side-effect (S5)

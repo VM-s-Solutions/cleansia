@@ -74,6 +74,7 @@ import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.orders.toOrderStatus
+import cz.cleansia.partner.features.profile.JobRadiusPromptCard
 import cz.cleansia.partner.ui.theme.BrandGradients
 import cz.cleansia.partner.ui.theme.asList
 import java.time.Duration
@@ -115,6 +116,7 @@ fun DashboardScreen(
     onOpenEarnings: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenDocuments: () -> Unit,
+    onOpenJobRadius: () -> Unit,
     onOpenNotifications: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -209,6 +211,10 @@ fun DashboardScreen(
                 }
             }
         } else {
+            item {
+                JobRadiusPromptCard(onChooseRadius = onOpenJobRadius)
+            }
+
             item {
                 TodayHeroCard(
                     nextJob = nextJob,

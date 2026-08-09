@@ -114,6 +114,7 @@ fun MainScaffold(
                     onOpenEarnings = onOpenEarnings,
                     onOpenProfile = { selectTab(MainTab.Profile) },
                     onOpenDocuments = { onOpenProfileSection(NavRoute.ProfileDocuments) },
+                    onOpenJobRadius = { onOpenProfileSection(NavRoute.PreferenceJobRadius) },
                     onOpenNotifications = onOpenNotifications,
                 )
                 MainTab.Orders -> OrdersListScreen(
@@ -132,6 +133,7 @@ fun MainScaffold(
                     onNavigateToDocuments = { onOpenProfileSection(NavRoute.ProfileDocuments) },
                     onNavigateToLanguage = { onOpenProfileSection(NavRoute.PreferenceLanguage) },
                     onNavigateToTheme = { onOpenProfileSection(NavRoute.PreferenceTheme) },
+                    onNavigateToJobRadius = { onOpenProfileSection(NavRoute.PreferenceJobRadius) },
                     onNavigateToDevices = { onOpenProfileSection(NavRoute.Devices) },
                     onSignedOut = onSignedOut,
                 )

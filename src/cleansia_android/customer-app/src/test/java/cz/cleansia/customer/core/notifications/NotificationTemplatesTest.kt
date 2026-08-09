@@ -34,6 +34,24 @@ class NotificationTemplatesTest {
     private val reminderKeys =
         listOf("notification_order_starting_soon_title", "notification_order_starting_soon_body")
 
+    private val offerClosedKeys = listOf(
+        "notification_order_preferred_offer_closed_title",
+        "notification_order_preferred_offer_closed_body",
+    )
+
+    /**
+     * ADR-0045 D7.3 — a decline and a silent lapse produce the same sentence, so any stem that
+     * distinguishes them is the disclosure the single key exists to prevent. Both halves per locale:
+     * the words for refusing, and the words for not answering.
+     */
+    private val outcomeStems = mapOf(
+        "values" to listOf("declin", "refus", "reject", "turned down", "did not", "didn't", "no answer", "no response", "unanswer"),
+        "values-cs" to listOf("odmít", "zamít", "neodpov", "bez odpov", "nereag"),
+        "values-sk" to listOf("odmiet", "zamiet", "neodpov", "bez odpov", "nereag"),
+        "values-uk" to listOf("відхил", "відмов", "не відповів", "не відповіла", "без відповід", "не відреаг"),
+        "values-ru" to listOf("отклон", "отказ", "не ответил", "без ответа", "не отреаг"),
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -199,6 +217,121 @@ class NotificationTemplatesTest {
                 formatSlots(valueOf(xml, "notification_order_starting_soon_title")!!),
             )
         }
+    }
+
+    @Test
+    fun `templateFor maps the closed preferred offer to the order-updates category`() {
+        val template = NotificationTemplates.templateFor("order.preferred_offer_closed")
+
+        assertEquals(R.string.notification_order_preferred_offer_closed_title, template?.titleRes)
+        assertEquals(R.string.notification_order_preferred_offer_closed_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.OrderUpdates, template?.category)
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber into the closed-offer body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_preferred_offer_closed_body, "A-1042")
+        } returns "The cleaner request for booking #A-1042 has ended."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.preferred_offer_closed",
+            R.string.notification_order_preferred_offer_closed_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("The cleaner request for booking #A-1042 has ended.", body)
+    }
+
+    @Test
+    fun `deep link resolves the closed offer to the order detail`() {
+        assertEquals(
+            Routes.OrderDetail("ord-7"),
+            NotificationDeepLink.resolve("order.preferred_offer_closed", mapOf("orderId" to "ord-7")),
+        )
+    }
+
+    @Test
+    fun `deep link returns null for the closed offer without an orderId`() {
+        assertNull(NotificationDeepLink.resolve("order.preferred_offer_closed", emptyMap()))
+    }
+
+    @Test
+    fun `the closed-offer copy is translated in all five locales`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            offerClosedKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `the four translations of the closed-offer copy are not the English string copied over`() {
+        val english = offerClosedKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            offerClosedKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the closed-offer body takes the order number and the title takes nothing`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            assertEquals(
+                "$locale/strings.xml does not pass exactly the order number to the closed-offer body",
+                listOf("%1\$s"),
+                formatSlots(valueOf(xml, "notification_order_preferred_offer_closed_body")!!),
+            )
+            assertEquals(
+                "$locale/strings.xml puts a format slot on the argless closed-offer title",
+                emptyList<String>(),
+                formatSlots(valueOf(xml, "notification_order_preferred_offer_closed_title")!!),
+            )
+        }
+    }
+
+    /**
+     * The whole of ADR-0045 D7.3: one sentence covers a decline and a silent lapse. Checked in the
+     * source language as well as the translations — a stem list that only matched the translations
+     * would pass while English drifted into naming the outcome.
+     */
+    @Test
+    fun `no closed-offer string says which way the offer ended in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            offerClosedKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                outcomeStems.getValue(locale).forEach { stem ->
+                    assertFalse(
+                        "$locale/strings.xml tells the customer how the offer ended in $key: \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * The client-first rule from the other side. The backend deliberately holds this key out of the
+     * customer feed keyset until both apps carry copy, so a client-side keyset entry would count an
+     * inbox row the feed never returns — the phantom badge, arrived at from here. Push copy first;
+     * the keyset follows the server.
+     */
+    @Test
+    fun `the closed offer renders as push but stays out of the feed keyset`() {
+        assertNotNull(NotificationTemplates.templateFor("order.preferred_offer_closed"))
+        assertFalse(CustomerFeedEventKeys.contains("order.preferred_offer_closed"))
     }
 
     /** The defect: the confirmation fires when the card clears, before any cleaner has seen the job. */

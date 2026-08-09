@@ -1,6 +1,7 @@
 package cz.cleansia.partner.core
 
 import cz.cleansia.partner.features.orders.ProfileSection
+import cz.cleansia.partner.features.profile.JobRadius
 import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,6 +34,26 @@ class BackendKeyStringsTest {
             assertTrue(
                 "$key renders raw — values/strings.xml declares no <string name=\"$resName\">",
                 resName in declared,
+            )
+        }
+    }
+
+    /**
+     * The only refusal `UpdateJobRadius` can return. The client clamps to the same bounds, so this
+     * fires only when the two drift — which is exactly when a raw key is least useful.
+     */
+    @Test
+    fun `the job-radius refusal resolves to a sentence naming the bounds`() {
+        val value = Regex("<string name=\"error_employee_job_radius_out_of_range\">(.*?)</string>")
+            .find(File(resDir, "values/strings.xml").readText())
+            ?.groupValues
+            ?.get(1)
+
+        assertTrue("employee.job_radius_out_of_range renders raw", value != null)
+        listOf(JobRadius.MIN_KM, JobRadius.MAX_KM).forEach { bound ->
+            assertTrue(
+                "the refusal no longer states the bound $bound: \"$value\"",
+                value!!.contains(bound.toString()),
             )
         }
     }

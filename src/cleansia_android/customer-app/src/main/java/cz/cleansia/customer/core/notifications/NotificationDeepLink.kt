@@ -57,6 +57,7 @@ object NotificationDeepLink {
         "order.confirmed",
         "order.cleaner_assigned",
         "order.starting_soon",
+        "order.preferred_offer_closed",
         "order.in_progress",
         "order.completed",
         "order.cancelled",

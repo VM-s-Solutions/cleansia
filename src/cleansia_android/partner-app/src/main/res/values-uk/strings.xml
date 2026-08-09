@@ -1269,4 +1269,17 @@
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
     <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
     <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>
+
+    <string name="job_radius_title">Відстань для сповіщень</string>
+    <string name="job_radius_summary_all_jobs">Замовлення будь-де у вашій країні</string>
+    <string name="job_radius_summary_within">Замовлення в межах %1$d км від дому</string>
+    <string name="job_radius_explainer">Це змінює лише те, про які нові замовлення ми вас сповіщаємо. У списку й далі є всі замовлення у вашій країні, і ви можете взяти будь-яке.</string>
+    <string name="job_radius_limit_label">Сповіщати лише про замовлення поблизу</string>
+    <string name="job_radius_limit_off_hint">Ми сповіщатимемо вас про кожне нове замовлення у вашій країні.</string>
+    <string name="job_radius_value">%1$d км</string>
+    <string name="job_radius_prompt_title">Про які нові замовлення вас сповіщати?</string>
+    <string name="job_radius_prompt_body">Зараз ми сповіщаємо вас про кожне нове замовлення у вашій країні. Виберіть відстань від дому, щоб чути лише про ті, що поруч — у списку й далі будуть усі.</string>
+    <string name="job_radius_prompt_choose">Вибрати відстань</string>
+    <string name="job_radius_prompt_keep_all">Залишити всі замовлення</string>
+    <string name="error_employee_job_radius_out_of_range">Виберіть відстань від 1 до 500 км.</string>
 </resources>

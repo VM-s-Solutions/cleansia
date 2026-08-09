@@ -145,6 +145,16 @@ interface ProfileRepository {
         availability: Map<String, List<Pair<String, String>>>,
     ): ApiResult<Unit>
 
+    /**
+     * How far from home this cleaner wants to be TOLD about work. It narrows the "new jobs near you"
+     * digest alone — the board still shows every job in their country and they can still take one
+     * anywhere, so no copy around this may suggest the board shrinks.
+     */
+    suspend fun getJobRadius(): ApiResult<JobRadiusSnapshot>
+
+    /** [radiusKm] `null` asks for the country-wide digest back; see [UpdateJobRadiusCommand]. */
+    suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit>
+
     suspend fun getMyDocuments(): ApiResult<List<GetMyDocumentsMyDocumentDto>>
 
     suspend fun saveDocuments(
@@ -157,6 +167,7 @@ interface ProfileRepository {
 @Singleton
 class ProfileRepositoryImpl @Inject constructor(
     private val employeeApi: EmployeeApi,
+    private val jobRadiusApi: JobRadiusApi,
     private val json: Json,
 ) : ProfileRepository, SessionScopedCache {
 
@@ -317,6 +328,16 @@ class ProfileRepositoryImpl @Inject constructor(
             ),
         )
     }.map { }
+
+    override suspend fun getJobRadius(): ApiResult<JobRadiusSnapshot> =
+        safeApiCall(json) { jobRadiusApi.getCurrentEmployeeJobRadius() }
+
+    override suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit> =
+        safeApiCall(json) {
+            jobRadiusApi.updateJobRadius(
+                UpdateJobRadiusCommand(employeeId = employeeId, radiusKm = radiusKm),
+            )
+        }.map { }
 
     override suspend fun getMyDocuments(): ApiResult<List<GetMyDocumentsMyDocumentDto>> =
         safeApiCall(json) { employeeApi.employeeGetMyDocuments() }

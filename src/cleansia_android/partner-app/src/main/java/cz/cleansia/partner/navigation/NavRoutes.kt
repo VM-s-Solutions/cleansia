@@ -99,6 +99,12 @@ sealed interface NavRoute {
     @Serializable data object PreferenceLanguage : NavRoute
     @Serializable data object PreferenceTheme : NavRoute
 
+    /**
+     * How far from home this cleaner wants to be told about new work. A preference, not a filter —
+     * it narrows the job-alert digest only, never the board or the take.
+     */
+    @Serializable data object PreferenceJobRadius : NavRoute
+
     /** Device self-service — list registered devices, revoke a lost one. */
     @Serializable data object Devices : NavRoute
 }

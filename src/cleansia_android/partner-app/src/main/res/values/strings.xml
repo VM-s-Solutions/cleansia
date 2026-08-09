@@ -1301,4 +1301,17 @@
     <string name="invoice_view_period_pay">View period pay</string>
     <string name="photo_encode_failed">We couldn\'t process that photo. Please try another one.</string>
     <string name="document_read_failed">We couldn\'t read that file. Please try another one.</string>
+
+    <string name="job_radius_title">Job alert distance</string>
+    <string name="job_radius_summary_all_jobs">Jobs anywhere in your country</string>
+    <string name="job_radius_summary_within">Jobs within %1$d km of home</string>
+    <string name="job_radius_explainer">This changes only which new jobs we notify you about. The job board still lists every job in your country, and you can take any of them.</string>
+    <string name="job_radius_limit_label">Only notify me about nearby jobs</string>
+    <string name="job_radius_limit_off_hint">We\'ll notify you about every new job in your country.</string>
+    <string name="job_radius_value">%1$d km</string>
+    <string name="job_radius_prompt_title">Which new jobs should we tell you about?</string>
+    <string name="job_radius_prompt_body">Right now we notify you about every new job in your country. Pick a distance from home to hear only about the ones near you — the board still shows them all.</string>
+    <string name="job_radius_prompt_choose">Pick a distance</string>
+    <string name="job_radius_prompt_keep_all">Keep every job</string>
+    <string name="error_employee_job_radius_out_of_range">Choose a distance between 1 and 500 km.</string>
 </resources>

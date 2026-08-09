@@ -1266,4 +1266,17 @@
     <string name="invoice_view_period_pay">Zobraziť výplatu za obdobie</string>
     <string name="photo_encode_failed">Túto fotku sa nepodarilo spracovať. Skúste prosím inú.</string>
     <string name="document_read_failed">Tento súbor sa nepodarilo načítať. Skúste prosím iný.</string>
+
+    <string name="job_radius_title">Vzdialenosť pre upozornenia</string>
+    <string name="job_radius_summary_all_jobs">Zákazky kdekoľvek vo vašej krajine</string>
+    <string name="job_radius_summary_within">Zákazky do %1$d km od domova</string>
+    <string name="job_radius_explainer">Mení sa len to, na ktoré nové zákazky vás upozorníme. Ponuka naďalej zobrazuje všetky zákazky vo vašej krajine a ktorúkoľvek si môžete vziať.</string>
+    <string name="job_radius_limit_label">Upozorňovať len na zákazky v okolí</string>
+    <string name="job_radius_limit_off_hint">Budeme vás upozorňovať na každú novú zákazku vo vašej krajine.</string>
+    <string name="job_radius_value">%1$d km</string>
+    <string name="job_radius_prompt_title">Na ktoré nové zákazky vás máme upozorňovať?</string>
+    <string name="job_radius_prompt_body">Teraz vás upozorňujeme na každú novú zákazku vo vašej krajine. Vyberte vzdialenosť od domova a budete počuť len o tých blízkych — v ponuke uvidíte naďalej všetky.</string>
+    <string name="job_radius_prompt_choose">Vybrať vzdialenosť</string>
+    <string name="job_radius_prompt_keep_all">Ponechať všetky zákazky</string>
+    <string name="error_employee_job_radius_out_of_range">Zvoľte vzdialenosť medzi 1 a 500 km.</string>
 </resources>

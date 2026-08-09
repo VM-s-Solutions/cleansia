@@ -7,6 +7,7 @@ import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.api.model.MyPayoutDetails
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.auth.AuthRepository
+import cz.cleansia.partner.data.profile.JobRadiusSnapshot
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -49,6 +50,8 @@ class ProfileViewModelTest {
         every { errorTranslator.translate(any()) } returns "translated error"
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
         coEvery { repository.getRegistrationStatus() } returns ApiResult.Error(ApiError.Network("down"))
+        coEvery { repository.getJobRadius() } returns
+            ApiResult.Success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = null))
     }
 
     private fun viewModel() = ProfileViewModel(repository, authRepository, errorTranslator, snackbar)

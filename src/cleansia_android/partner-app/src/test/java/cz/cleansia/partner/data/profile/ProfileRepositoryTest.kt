@@ -14,6 +14,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -21,6 +23,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * Pins the [SessionScopedCache] contract of [ProfileRepositoryImpl]: the
@@ -32,14 +36,19 @@ import retrofit2.Response
 class ProfileRepositoryTest {
 
     private lateinit var employeeApi: EmployeeApi
+    private lateinit var jobRadiusApi: JobRadiusApi
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    /** Matches NetworkModule's instance — `explicitNulls = false` is what drops a cleared radius. */
+    private val wireJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
 
     @Before
     fun setUp() {
         employeeApi = mockk()
+        jobRadiusApi = mockk()
     }
 
-    private fun newRepo() = ProfileRepositoryImpl(employeeApi, json)
+    private fun newRepo() = ProfileRepositoryImpl(employeeApi, jobRadiusApi, json)
 
     @Test
     fun clear_resetsRegistrationStatusWatermark() = runTest {
@@ -128,5 +137,65 @@ class ProfileRepositoryTest {
             ),
             command.captured,
         )
+    }
+
+    @Test
+    fun getJobRadius_readsTheRadiusOffTheEmployeeTheGeneratedModelPredates() = runTest {
+        coEvery { jobRadiusApi.getCurrentEmployeeJobRadius() } returns
+            Response.success(JobRadiusSnapshot(id = "emp-1", jobRadiusKm = 40))
+
+        val result = newRepo().getJobRadius()
+
+        assertEquals(40, (result as ApiResult.Success).data.jobRadiusKm)
+        assertEquals("emp-1", result.data.id)
+    }
+
+    @Test
+    fun updateJobRadius_sendsTheChosenKilometres() = runTest {
+        val command = slot<UpdateJobRadiusCommand>()
+        coEvery { jobRadiusApi.updateJobRadius(capture(command)) } returns
+            Response.success(UpdateJobRadiusResult(employeeId = "emp-1", radiusKm = 25))
+
+        newRepo().updateJobRadius(employeeId = "emp-1", radiusKm = 25)
+
+        assertEquals(UpdateJobRadiusCommand(employeeId = "emp-1", radiusKm = 25), command.captured)
+    }
+
+    /**
+     * The wire contract, not the Kotlin one. `radiusKm` is `int?` on the command and the app-wide
+     * `Json` drops nulls, so a cleared preference travels as an ABSENT member — which binds to null
+     * and reaches `SetJobRadius(null)`, the country-wide choice. A mocked interface would happily
+     * pass a `0` here; over a socket, `"radiusKm":0` is a radius that matches nothing.
+     */
+    @Test
+    fun updateJobRadius_clearsWithAnAbsentRadiusNeverZero() = runTest {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("""{"employeeId":"emp-1"}"""),
+            )
+            val wireApi = Retrofit.Builder()
+                .baseUrl(server.url("/"))
+                .addConverterFactory(wireJson.asConverterFactory("application/json".toMediaType()))
+                .build()
+                .create(JobRadiusApi::class.java)
+
+            ProfileRepositoryImpl(employeeApi, wireApi, json)
+                .updateJobRadius(employeeId = "emp-1", radiusKm = null)
+
+            val request = server.takeRequest()
+            val body = request.body.readUtf8()
+            assertEquals("PUT", request.method)
+            assertEquals("/api/Employee/UpdateJobRadius", request.path)
+            assertFalse("a cleared radius must not travel as zero", body.contains("\"radiusKm\":0"))
+            assertFalse("a cleared radius must not carry a radius at all", body.contains("radiusKm"))
+            assertTrue("the caller's own id still rides along", body.contains("\"employeeId\":\"emp-1\""))
+        } finally {
+            server.shutdown()
+        }
     }
 }

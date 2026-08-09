@@ -25,6 +25,7 @@ class AppSettingsRepository(private val context: Context) {
         val THEME = stringPreferencesKey("theme")
         val LANGUAGE = stringPreferencesKey("language")
         val ONBOARDING_SEEN = booleanPreferencesKey("onboarding_seen")
+        val JOB_RADIUS_PROMPT_ANSWERED = booleanPreferencesKey("job_radius_prompt_answered")
     }
 
     suspend fun hasSeenOnboarding(): Boolean =
@@ -32,6 +33,18 @@ class AppSettingsRepository(private val context: Context) {
 
     suspend fun markOnboardingSeen() {
         context.dataStore.edit { it[Keys.ONBOARDING_SEEN] = true }
+    }
+
+    /**
+     * Whether the one-time "how far do you want to hear about work" prompt has been answered. It
+     * lives here rather than being derived from the stored radius because a null radius is itself a
+     * valid answer — the country-wide board — and would otherwise re-trigger the prompt forever.
+     */
+    suspend fun hasAnsweredJobRadiusPrompt(): Boolean =
+        context.dataStore.data.map { it[Keys.JOB_RADIUS_PROMPT_ANSWERED] ?: false }.first()
+
+    suspend fun markJobRadiusPromptAnswered() {
+        context.dataStore.edit { it[Keys.JOB_RADIUS_PROMPT_ANSWERED] = true }
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { it.toAppSettings() }

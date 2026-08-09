@@ -1185,6 +1185,8 @@
     <string name="notification_cleaner_assigned_body">До вашого замовлення #%1$s призначено клінера. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_order_starting_soon_title">Прибирання скоро почнеться</string>
     <string name="notification_order_starting_soon_body">Ваше замовлення #%1$s почнеться приблизно за годину. Натисніть, щоб переглянути деталі.</string>
+    <string name="notification_order_preferred_offer_closed_title">Замовлення відкрите для всіх клінерів</string>
+    <string name="notification_order_preferred_offer_closed_body">Запит на обраного клінера для замовлення #%1$s завершено. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_order_on_the_way_title">Клінер у дорозі</string>
     <string name="notification_order_on_the_way_body">Ваш клінер прямує до замовлення #%1$s.</string>
     <string name="notification_order_in_progress_title">Прибирання почалося</string>

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
@@ -76,6 +77,7 @@ fun ProfileScreen(
     onNavigateToDocuments: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTheme: () -> Unit,
+    onNavigateToJobRadius: () -> Unit,
     onNavigateToDevices: () -> Unit,
     onSignedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
@@ -194,6 +196,13 @@ fun ProfileScreen(
                             title = stringResource(R.string.theme),
                             summary = themeSummary(settings.theme),
                             onClick = onNavigateToTheme,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.MyLocation,
+                            title = stringResource(R.string.job_radius_title),
+                            summary = jobRadiusSummary(s.jobRadiusKm),
+                            onClick = onNavigateToJobRadius,
                         )
                         RowDivider()
                         ProfileSectionRow(
@@ -487,6 +496,12 @@ private fun ProfileSectionRow(
 @Composable
 private fun languageSummary(language: LanguagePreference): String =
     LanguageLabels.nativeName(language) ?: stringResource(R.string.language_system)
+
+/** Null is the country-wide digest, which is a stated choice — never "not set". */
+@Composable
+private fun jobRadiusSummary(radiusKm: Int?): String =
+    if (radiusKm == null) stringResource(R.string.job_radius_summary_all_jobs)
+    else stringResource(R.string.job_radius_summary_within, radiusKm)
 
 @Composable
 private fun themeSummary(theme: ThemePreference): String = stringResource(

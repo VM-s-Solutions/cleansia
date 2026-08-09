@@ -1188,6 +1188,8 @@
     <string name="notification_cleaner_assigned_body">K vaší rezervaci #%1$s je přiřazen uklízeč. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_starting_soon_title">Úklid brzy začíná</string>
     <string name="notification_order_starting_soon_body">Vaše rezervace #%1$s začíná přibližně za hodinu. Klepněte pro zobrazení detailů.</string>
+    <string name="notification_order_preferred_offer_closed_title">Rezervace je otevřená všem uklízečům</string>
+    <string name="notification_order_preferred_offer_closed_body">Žádost o vybraného uklízeče u rezervace #%1$s skončila. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_on_the_way_title">Uklízeč je na cestě</string>
     <string name="notification_order_on_the_way_body">Váš uklízeč míří k rezervaci #%1$s.</string>
     <string name="notification_order_in_progress_title">Úklid probíhá</string>

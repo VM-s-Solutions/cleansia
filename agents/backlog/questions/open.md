@@ -2253,3 +2253,52 @@ field on the row. That is why the customer app has a seam rather than a line in 
 `AppSettingsRepository` from the session-wipe set because it *"holds device-level prefs"* — and the
 language genuinely is one. What the allowlist could not say is that a device-level preference may still
 have a server-side twin. Those are different questions, and this is the case where they part company.
+
+---
+
+## N20 — three rows the lanes produced that are yours, not mine (2026-08-09)
+
+Each was found by a lane doing something else, each was declined by that lane for a stated reason, and I
+agree with all three refusals.
+
+### 1. The eager type-catalog probe spends up to 15 s inline in worker composition
+
+`DbContextBindingExtensions.TryEagerlyReloadTypeCatalog` makes a **synchronous** `OpenConnection()`
+inside `ConfigureServices`, on one host only — the isolated Functions worker — and the justification is
+real and documented: its timer triggers can fire before `IHostedService` start, so the catalog must be
+seeded before any consumer can reach the data source. **Making it async would break the ordering
+guarantee that is the whole point**, so that is not the fix.
+
+What costs is the **latency**: no retry, and Npgsql's default 15 s connect timeout, spent inline
+whenever Postgres is not yet up — which under Aspire is the normal cold-start ordering rather than an
+edge case. The narrow row: *bound the probe's connect timeout independently of the connection string*
+(a few seconds), keep it synchronous, keep the swallow.
+
+**One caveat the lane volunteered rather than smoothing over:** it also observed **two** sockets per
+composition where the code makes one `OpenConnection()` call, consistent with `SslMode=Prefer` retrying
+in plaintext — so the worst case may be two timeouts, not one. That doubling is **inferred from the
+socket count, not confirmed** against Npgsql's source or a capture. The fix direction holds either way;
+only the worst-case number moves. Worth five minutes before sizing the bound off "15 doubled".
+
+It touches a host-start path on a live environment, which is why it is here rather than on the branch.
+
+### 2. There is no reconcile-on-sign-in for the language push
+
+Both partner platforms now push the cleaner's language to the server, and both are **silent on
+failure** — the local preference stands, the person is told nothing, and there is no retry. The
+self-heal is a subsequent language change, since the seam re-reads the server's code and re-pushes on
+any drift.
+
+The customer app does not have this exposure because its ordinary profile save carries the language;
+`UpdatePersonalInfoCommand` has no language field, so the partner has no second path. A
+reconcile-on-sign-in — call the seam once after login — would close it on both apps and both platforms.
+**Deliberately not invented in either lane**, because a retry story is a behaviour the other platform
+then has to reproduce exactly, and inventing it twice independently is how they diverge.
+
+### 3. `MapToDto(OrderListRow)` re-derives seat arithmetic the entity already owns
+
+`OrderMappers.cs:94-95` computes `availableSpots = row.MaxEmployees - assignedCount` and
+`HasAvailableSpots: availableSpots > 0` — a second copy of `Order.cs:136-137`. It is currently pinned
+(`OrderListProjectionEquivalenceTests` compares both `MapToDto` overloads by full serialization, so any
+divergence reddens), so this is tidiness with a guard already on it, not a live risk. Touching the list
+projection carries more risk than the tidiness buys. **A ticket, not a drive-by.**

@@ -2392,3 +2392,35 @@ exception telemetry (`host.json` already excludes `Exception` from sampling). **
 first:** find out which tables the 27 GB is in before choosing a number — the original question's second
 query. If it is `AppDependencies` (every SQL round trip), the honest fix is narrowing what is collected
 rather than sampling what we then cannot read.
+
+---
+
+## N22 — the manual-step list was incomplete, and N17 has gone stale (2026-08-09)
+
+An audit reconciled every `manual_step` implied by the branch's code against what N17 actually filed.
+**N17's three are correct and stand.** Four more were implied by commits and filed nowhere — I grepped
+`open.md` for each and got zero hits.
+
+**Add to the regen pass:**
+
+4. **`nswag-regen` — admin: `AssignInvoiceVariableSymbol`.** This is the one with **no paper trail at
+   all**: not in `d410f002`'s message (which flags `ef-migration` only — the word "nswag" does not
+   appear), not in N17, not on the T-0573 row. `AdminPayrollController.cs:67` exposes the route, its
+   four error keys ship in five admin locales, and `admin-client.ts` contains zero occurrences of it.
+   So ADR-0046's own remedy — the command that repairs a symbol-less invoice — **has no button**, while
+   `MarkInvoicePaid` now hard-refuses exactly the rows it repairs.
+5. **`nswag-regen` — partner: the `updateEmployee` return type** (`86229699`). Flagged in that commit,
+   never rolled into the register.
+6. **`nswag-regen` — all three web clients: `OrderItem.CustomerAddressApproximate` and the five seat
+   members** (`572ce5d2`, `538af8f6`). Flagged in both commit messages; N18 mentions the coarse address
+   in prose; the seat members appear nowhere.
+
+**And a correction to N17 itself:** its closing note says ADR-0046's counter table *"is its own window,
+and there is no code for it yet."* `d410f002` shipped the code and folded the table into `Initial`
+1 h 46 m later, so it **rides item 1's window** rather than needing a second one. That note was true
+when written and false ninety minutes later — the same decay class as N21's stale questions and the ten
+catalog claims fixed in `1aee881a`.
+
+**Practical ordering, unchanged in shape:** drop and re-seed DEV → **one** regen pass covering items 2,
+4, 5 and 6 together (all additive, no ordering constraint between them) → the mobile spec dump → rebuild
+the mobile clients.

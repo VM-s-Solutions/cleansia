@@ -12,6 +12,7 @@ import {
 import { CleansiaRegistrationLockComponent } from './components/registration-lock/registration-lock.component';
 import {
   PartnerAuthService,
+  PartnerLanguagePreferenceSyncService,
   RegistrationCompletionService,
 } from '@cleansia/partner-services';
 import { environment } from '../environments/environment';
@@ -60,6 +61,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly registrationService = inject(RegistrationCompletionService);
   private readonly pageTitleService = inject(PageTitleService);
   private readonly dialogService = inject(DialogService);
+  private readonly languageSync = inject(PartnerLanguagePreferenceSyncService);
 
   private readonly destroy$ = new Subject<void>();
   private hasCheckedEmployee = false;
@@ -83,6 +85,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Load codes on app initialization
     this.store.dispatch(loadCodes());
+
+    // Started here, not from a provider: the boot language is chosen by an APP_INITIALIZER that has
+    // already emitted, so subscribing now is what limits the push to a deliberate change.
+    this.languageSync.start();
 
     const currentUrl$ = this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),

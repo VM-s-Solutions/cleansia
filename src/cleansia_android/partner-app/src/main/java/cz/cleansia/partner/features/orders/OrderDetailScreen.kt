@@ -240,12 +240,8 @@ private fun OrderDetailBottomSheetLayout(
     val isInProgress = status == OrderStatus._4
     val darkTheme = isSystemInDarkTheme()
 
-    val hasCoords = order.address?.latitude != null && order.address?.longitude != null
-    // Keep the map visible on Completed too — the location is still
-    // meaningful context (cleaner may want to revisit, customer may
-    // want to confirm where the job happened). Only Cancelled hides
-    // the map, since the visit never happened.
-    val canShowMap = hasCoords && status != OrderStatus._6
+    val location = order.orderLocation()
+    val mapPoint = location.mapPoint(status)
 
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     // Sheet peek = 75% of screen so the map shrinks to ~25% — just
@@ -280,6 +276,7 @@ private fun OrderDetailBottomSheetLayout(
                 OrderDetailSheetContent(
                     order = order,
                     status = status,
+                    location = location,
                     isMine = isMine,
                     isInProgress = isInProgress,
                     inFlight = inFlight,
@@ -295,10 +292,10 @@ private fun OrderDetailBottomSheetLayout(
             },
         ) { _ ->
             Box(modifier = Modifier.fillMaxSize()) {
-                if (canShowMap) {
+                if (mapPoint != null) {
                     MapBackdrop(
-                        latitude = order.address!!.latitude!!,
-                        longitude = order.address!!.longitude!!,
+                        latitude = mapPoint.first,
+                        longitude = mapPoint.second,
                         darkTheme = darkTheme,
                         sheetCoverHeight = sheetPeekHeight,
                     )
@@ -434,6 +431,7 @@ private fun FloatingBackButton(
 private fun OrderDetailSheetContent(
     order: OrderItem,
     status: OrderStatus?,
+    location: OrderLocation,
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
@@ -552,7 +550,7 @@ private fun OrderDetailSheetContent(
             CustomerCard(
                 customerName = order.customerName,
                 customerPhone = order.customerPhone,
-                address = order.address,
+                location = location,
                 isAssignedToCurrentUser = isMine,
             )
 

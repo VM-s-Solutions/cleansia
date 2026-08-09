@@ -918,6 +918,17 @@
         <item quantity="few">+%1$d extra</item>
         <item quantity="other">+%1$d extra</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">Potřeba %1$d uklízeč</item>
+        <item quantity="few">Potřeba %1$d uklízeči</item>
+        <item quantity="other">Potřeba %1$d uklízečů</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d volné místo</item>
+        <item quantity="few">%1$d volná místa</item>
+        <item quantity="other">%1$d volných míst</item>
+    </plurals>
+    <string name="crew_no_spots">Volná místa už nejsou</string>
     <string name="history">Historie</string>
     <string name="you_earn">vyděláte</string>
     <string name="distance_unknown">Lokalita neznámá</string>

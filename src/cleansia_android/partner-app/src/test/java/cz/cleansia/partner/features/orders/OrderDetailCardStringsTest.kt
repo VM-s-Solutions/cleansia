@@ -45,6 +45,9 @@ class OrderDetailCardStringsTest {
     private val scopeCard = card("ScopeCard.kt")
     private val statusTimeline = card("StatusTimeline.kt")
 
+    /** Every counted label the scope card renders — property scope and crew alike. */
+    private val scopePlurals = listOf("scope_rooms", "scope_baths", "crew_size", "crew_spots_open")
+
     @Test
     fun `neither card carries prose of its own`() {
         mapOf("ScopeCard.kt" to scopeCard, "StatusTimeline.kt" to statusTimeline)
@@ -60,8 +63,8 @@ class OrderDetailCardStringsTest {
     }
 
     @Test
-    fun `the scope line counts rooms and baths through the shared plurals`() {
-        listOf("scope_rooms", "scope_baths").forEach { name ->
+    fun `every counted label on the scope card goes through a shared plural`() {
+        scopePlurals.forEach { name ->
             assertTrue(
                 "ScopeCard must read R.plurals.$name — the orders list already does",
                 scopeCard.contains("R.plurals.$name"),
@@ -70,10 +73,10 @@ class OrderDetailCardStringsTest {
     }
 
     @Test
-    fun `both scope plurals declare every quantity their language needs`() {
+    fun `every scope plural declares every quantity its language needs`() {
         locales.forEach { locale ->
             val xml = stringsXml(locale)
-            listOf("scope_rooms", "scope_baths").forEach { name ->
+            scopePlurals.forEach { name ->
                 val quantities = Regex("quantity=\"([^\"]+)\"")
                     .findAll(pluralBody(xml, locale, name))
                     .map { it.groupValues[1] }

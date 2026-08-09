@@ -901,6 +901,19 @@
         <item quantity="many">+%1$d дополнительно</item>
         <item quantity="other">+%1$d дополнительно</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">Нужен %1$d клинер</item>
+        <item quantity="few">Нужны %1$d клинера</item>
+        <item quantity="many">Нужно %1$d клинеров</item>
+        <item quantity="other">Нужно %1$d клинера</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d свободное место</item>
+        <item quantity="few">%1$d свободных места</item>
+        <item quantity="many">%1$d свободных мест</item>
+        <item quantity="other">%1$d свободного места</item>
+    </plurals>
+    <string name="crew_no_spots">Свободных мест нет</string>
     <string name="history">История</string>
     <string name="you_earn">вы заработаете</string>
     <string name="distance_unknown">Локация неизвестна</string>

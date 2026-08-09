@@ -895,6 +895,15 @@
         <item quantity="one">+%1$d extra</item>
         <item quantity="other">+%1$d extras</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">%1$d cleaner needed</item>
+        <item quantity="other">%1$d cleaners needed</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d spot open</item>
+        <item quantity="other">%1$d spots open</item>
+    </plurals>
+    <string name="crew_no_spots">No spots left</string>
     <string name="history">History</string>
     <string name="you_earn">you earn</string>
     <string name="distance_unknown">Location unknown</string>

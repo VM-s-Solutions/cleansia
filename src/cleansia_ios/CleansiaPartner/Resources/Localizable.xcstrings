@@ -11428,6 +11428,146 @@
         }
       }
     },
+    "push.order.assigned.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byla vám přiřazena zakázka č. %1$@. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been assigned job #%1$@. Tap to see the details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам назначен заказ №%1$@. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bola vám priradená zákazka č. %1$@. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам призначено замовлення №%1$@. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.assigned.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nová zakázka v rozvrhu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New job on your schedule"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый заказ в вашем графике"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nová zákazka v rozvrhu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нове замовлення у вашому графіку"
+          }
+        }
+      }
+    },
+    "push.order.assignment_revoked.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job #%1$@ has been reassigned and is no longer on your schedule. Tap for details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ №%1$@ переназначен, его больше нет в вашем графике. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.assignment_revoked.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka přeřazena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job reassigned"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ переназначен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka preradená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення перепризначено"
+          }
+        }
+      }
+    },
     "push.order.cancelled.body": {
       "localizations": {
         "cs": {
@@ -11968,6 +12108,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Повернення коштів"
+          }
+        }
+      }
+    },
+    "push.order.starting_soon.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše rezervace #%1$@ začíná přibližně za hodinu. Klepněte pro zobrazení detailů."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your booking #%1$@ starts in about an hour. Tap to see the details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше бронирование #%1$@ начнётся примерно через час. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša rezervácia #%1$@ začína približne o hodinu. Ťuknite pre zobrazenie podrobností."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше замовлення #%1$@ почнеться приблизно за годину. Натисніть, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.starting_soon.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úklid brzy začíná"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning starts soon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уборка скоро начнётся"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovanie čoskoro začína"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибирання скоро почнеться"
           }
         }
       }

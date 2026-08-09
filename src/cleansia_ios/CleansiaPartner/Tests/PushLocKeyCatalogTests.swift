@@ -23,6 +23,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.starting_soon",
         "dispute.reply",
         "recurring.scheduled",
         "loyalty.tier_upgrade",
@@ -31,6 +32,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.new_available",
         "order.preferred_offer",
         "order.assignment_cancelled",
+        "order.assigned",
+        "order.assignment_revoked",
         "payroll.invoice_paid"
     ]
     private let orderNumberArgEvents: Set<String> = [
@@ -41,10 +44,23 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.starting_soon",
         "recurring.scheduled",
         "order.new_available",
         "order.preferred_offer",
-        "order.assignment_cancelled"
+        "order.assignment_cancelled",
+        "order.assigned",
+        "order.assignment_revoked"
+    ]
+
+    /// The word each locale uses for "cancelled" — i.e. the claim `order.assignment_revoked`
+    /// must never make.
+    private let cancelledWord = [
+        "en": "cancel",
+        "cs": "zruš",
+        "sk": "zruš",
+        "uk": "скасов",
+        "ru": "отмен"
     ]
 
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {
@@ -70,6 +86,10 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         body.contains("%1$@"),
                         "push.\(event).body must carry the %1$@ loc-arg slot in \(language): \(body)"
                     )
+                    XCTAssertEqual(
+                        formatSpecifierCount(body), 1,
+                        "push.\(event).body must carry exactly one slot in \(language): \(body)"
+                    )
                 } else {
                     XCTAssertFalse(
                         body.contains("%"),
@@ -78,6 +98,59 @@ final class PushLocKeyCatalogTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// `FcmMessageFactory` sends `loc-args` but never `title-loc-args`, so a specifier in a title
+    /// reaches the lock screen verbatim.
+    func testNoPushTitleCarriesAFormatSpecifier() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            for event in events {
+                let title = try XCTUnwrap(table["push.\(event).title"], "push.\(event).title in \(language)")
+                XCTAssertEqual(
+                    formatSpecifierCount(title), 0,
+                    "push.\(event).title carries a format specifier in \(language): \(title)"
+                )
+            }
+        }
+    }
+
+    /// `StringCatalogCompletenessTests` makes the same claim over the source catalogs; this one reads
+    /// the COMPILED table, which is what APNs resolves — a key can ship untranslated only here.
+    func testNoPushCopyIsLeftAtEnglish() throws {
+        let english = try localizableTable(for: "en")
+        for language in languages where language != "en" {
+            let table = try localizableTable(for: language)
+            for event in events {
+                for key in ["push.\(event).title", "push.\(event).body"] {
+                    let translated = try XCTUnwrap(table[key], "\(key) in \(language)")
+                    XCTAssertNotEqual(
+                        translated, english[key],
+                        "\(key) is still English in \(language): \(translated)"
+                    )
+                }
+            }
+        }
+    }
+
+    /// An admin reassignment leaves the job going ahead with somebody else. A cleaner who repeats
+    /// "cancelled" to the customer tells them their booking is off.
+    func testTheRevokedAssignmentNeverSaysCancelled() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let word = try XCTUnwrap(cancelledWord[language])
+            for key in ["push.order.assignment_revoked.title", "push.order.assignment_revoked.body"] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                XCTAssertNil(
+                    value.range(of: word, options: .caseInsensitive),
+                    "\(key) says \(word) in \(language): \(value)"
+                )
+            }
+        }
+    }
+
+    private func formatSpecifierCount(_ value: String) -> Int {
+        value.replacingOccurrences(of: "%%", with: "").filter { $0 == "%" }.count
     }
 
     private func localizableTable(for language: String) throws -> [String: String] {

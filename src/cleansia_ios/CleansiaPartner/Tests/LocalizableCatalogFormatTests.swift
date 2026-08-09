@@ -13,6 +13,19 @@ final class LocalizableCatalogFormatTests: XCTestCase {
         "CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings"
     ]
 
+    private static let locales = ["en", "cs", "sk", "uk", "ru"]
+
+    /// A push is addressed to a USER's device tokens, not to an app, so an event only one audience
+    /// ever renders still lands on the sibling bundle — and borrows the owning audience's wording
+    /// rather than being re-voiced. Deliberately NOT the whole cross-audience set:
+    /// `order.cleaner_assigned` is customer-targeted and ships per-audience wording today, so a
+    /// wider roster would fail on copy nobody has agreed to change.
+    private static let borrowedWordingEvents = [
+        "order.starting_soon",
+        "order.assigned",
+        "order.assignment_revoked"
+    ]
+
     private func iosRoot() -> URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -42,5 +55,41 @@ final class LocalizableCatalogFormatTests: XCTestCase {
                 "\(path) is not valid JSON"
             )
         }
+    }
+
+    func testBorrowedWordingIsIdenticalInBothAppCatalogs() throws {
+        let partner = try catalogStrings(at: Self.catalogPaths[0])
+        let customer = try catalogStrings(at: Self.catalogPaths[1])
+        XCTAssertFalse(Self.borrowedWordingEvents.isEmpty, "the roster is empty — this guard asserts nothing")
+
+        for event in Self.borrowedWordingEvents {
+            for key in ["push.\(event).title", "push.\(event).body"] {
+                for locale in Self.locales {
+                    let owned = try XCTUnwrap(
+                        value(of: key, in: partner, locale: locale),
+                        "\(key) [\(locale)] · partner"
+                    )
+                    let borrowed = try XCTUnwrap(
+                        value(of: key, in: customer, locale: locale),
+                        "\(key) [\(locale)] · customer"
+                    )
+                    XCTAssertEqual(owned, borrowed, "\(key) [\(locale)] diverges between the two app catalogs")
+                }
+            }
+        }
+    }
+
+    private func catalogStrings(at path: String) throws -> [String: Any] {
+        let data = try Data(contentsOf: iosRoot().appendingPathComponent(path))
+        let root = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return try XCTUnwrap(root?["strings"] as? [String: Any], "\(path) carries no strings table")
+    }
+
+    private func value(of key: String, in strings: [String: Any], locale: String) -> String? {
+        let entry = strings[key] as? [String: Any]
+        let localizations = entry?["localizations"] as? [String: Any]
+        let localization = localizations?[locale] as? [String: Any]
+        let stringUnit = localization?["stringUnit"] as? [String: Any]
+        return stringUnit?["value"] as? String
     }
 }

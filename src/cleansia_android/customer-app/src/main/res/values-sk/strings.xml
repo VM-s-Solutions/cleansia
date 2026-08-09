@@ -1183,6 +1183,8 @@
     <string name="notification_order_confirmed_body">Vaša rezervácia #%1$s je potvrdená. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_cleaner_assigned_title">Upratovač nájdený! 🎉</string>
     <string name="notification_cleaner_assigned_body">K vašej rezervácii #%1$s je priradený upratovač. Ťuknutím zobrazíte detaily.</string>
+    <string name="notification_order_starting_soon_title">Upratovanie čoskoro začína</string>
+    <string name="notification_order_starting_soon_body">Vaša rezervácia #%1$s začína približne o hodinu. Ťuknite pre zobrazenie podrobností.</string>
     <string name="notification_order_on_the_way_title">Upratovač je na ceste</string>
     <string name="notification_order_on_the_way_body">Váš upratovač smeruje k rezervácii #%1$s.</string>
     <string name="notification_order_in_progress_title">Upratovanie prebieha</string>

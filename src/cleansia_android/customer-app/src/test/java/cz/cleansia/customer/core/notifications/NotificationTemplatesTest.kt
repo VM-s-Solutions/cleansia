@@ -31,6 +31,9 @@ class NotificationTemplatesTest {
         "values-ru" to "Клинер",
     )
 
+    private val reminderKeys =
+        listOf("notification_order_starting_soon_title", "notification_order_starting_soon_body")
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -116,6 +119,88 @@ class NotificationTemplatesTest {
         }
     }
 
+    @Test
+    fun `templateFor maps the pre-cleaning reminder to the order-updates category`() {
+        val template = NotificationTemplates.templateFor("order.starting_soon")
+
+        assertEquals(R.string.notification_order_starting_soon_title, template?.titleRes)
+        assertEquals(R.string.notification_order_starting_soon_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.OrderUpdates, template?.category)
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber into the reminder body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_starting_soon_body, "A-1042")
+        } returns "Your booking #A-1042 starts in about an hour."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.starting_soon",
+            R.string.notification_order_starting_soon_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("Your booking #A-1042 starts in about an hour.", body)
+    }
+
+    @Test
+    fun `deep link resolves the reminder to the order detail`() {
+        assertEquals(
+            Routes.OrderDetail("ord-7"),
+            NotificationDeepLink.resolve("order.starting_soon", mapOf("orderId" to "ord-7")),
+        )
+    }
+
+    @Test
+    fun `deep link returns null for the reminder without an orderId`() {
+        assertNull(NotificationDeepLink.resolve("order.starting_soon", emptyMap()))
+    }
+
+    @Test
+    fun `the reminder copy is translated in all five locales`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reminderKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `the four translations of the reminder copy are not the English string copied over`() {
+        val english = reminderKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            reminderKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the reminder body takes the order number and the title takes nothing`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            assertEquals(
+                "$locale/strings.xml does not pass exactly the order number to the reminder body",
+                listOf("%1\$s"),
+                formatSlots(valueOf(xml, "notification_order_starting_soon_body")!!),
+            )
+            assertEquals(
+                "$locale/strings.xml puts a format slot on the argless reminder title",
+                emptyList<String>(),
+                formatSlots(valueOf(xml, "notification_order_starting_soon_title")!!),
+            )
+        }
+    }
+
     /** The defect: the confirmation fires when the card clears, before any cleaner has seen the job. */
     @Test
     fun `no confirmation string claims a cleaner in any locale`() {
@@ -174,4 +259,8 @@ class NotificationTemplatesTest {
             .find(xml)
             ?.groupValues
             ?.get(1)
+
+    /** Positional and bare alike — a bare `%s` beside a positional one crashes `getString` at runtime. */
+    private fun formatSlots(value: String): List<String> =
+        Regex("%(\\d+\\\$)?[a-zA-Z]").findAll(value).map { it.value }.toList()
 }

@@ -51,6 +51,19 @@ object NotificationTemplates {
             R.string.notification_order_assignment_cancelled_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        // Both admin-reassign events ride order-updates rather than new-jobs: the server returns a
+        // null category for them so they cannot be muted, and new-jobs is the channel a cleaner
+        // silences to stop hearing about work they have not accepted.
+        "order.assigned" -> Template(
+            R.string.notification_order_assigned_title,
+            R.string.notification_order_assigned_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
+        "order.assignment_revoked" -> Template(
+            R.string.notification_order_assignment_revoked_title,
+            R.string.notification_order_assignment_revoked_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         "order.new_available" -> Template(
             R.string.notification_new_jobs_title,
             R.string.notification_new_jobs_body,
@@ -84,6 +97,8 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.assignment_cancelled",
+            "order.assigned",
+            "order.assignment_revoked",
             "order.preferred_offer",
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
             "order.new_available" -> {

@@ -1224,6 +1224,10 @@
 
     <string name="notification_order_assignment_cancelled_title">Zakázka zrušena</string>
     <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
+    <string name="notification_order_assigned_title">Nová zakázka v rozvrhu</string>
+    <string name="notification_order_assigned_body">Byla vám přiřazena zakázka č. %1$s. Klepnutím zobrazíte podrobnosti.</string>
+    <string name="notification_order_assignment_revoked_title">Zakázka přeřazena</string>
+    <string name="notification_order_assignment_revoked_body">Zakázka č. %1$s byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
     <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>

@@ -30,6 +30,11 @@ object NotificationTemplates {
             R.string.notification_cleaner_assigned_body,
             NotificationCategoryDto.OrderUpdates,
         )
+        "order.starting_soon" -> Template(
+            R.string.notification_order_starting_soon_title,
+            R.string.notification_order_starting_soon_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         "order.on_the_way" -> Template(
             R.string.notification_order_on_the_way_title,
             R.string.notification_order_on_the_way_body,
@@ -101,6 +106,7 @@ object NotificationTemplates {
         when (eventKey) {
             "order.confirmed",
             "order.cleaner_assigned",
+            "order.starting_soon",
             "order.on_the_way",
             "order.in_progress",
             "order.completed",

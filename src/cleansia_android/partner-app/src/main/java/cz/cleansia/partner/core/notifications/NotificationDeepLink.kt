@@ -63,6 +63,10 @@ object NotificationDeepLink {
         "order.on_the_way",
         "dispute.reply",
         "order.assignment_cancelled",
+        "order.assigned",
+        // Still the order detail even though the cleaner is off the job: the copy says the job
+        // moved, and the detail is where they can read which day just came off their schedule.
+        "order.assignment_revoked",
         // The targeted offer ships orderId alongside orderNumber precisely so the tap lands on the
         // job the cleaner was asked for — its copy tells them to open it and take it.
         "order.preferred_offer",

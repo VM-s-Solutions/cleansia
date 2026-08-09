@@ -5,8 +5,12 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.navigation.NavRoute
 import io.mockk.every
 import io.mockk.mockk
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -15,6 +19,35 @@ import org.junit.Test
  * [NotificationDeepLink]. Unknown keys drop; the digest key lands on Main.
  */
 class NotificationTemplatesTest {
+
+    private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
+
+    private val reassignKeys = listOf(
+        "notification_order_assigned_title",
+        "notification_order_assigned_body",
+        "notification_order_assignment_revoked_title",
+        "notification_order_assignment_revoked_body",
+    )
+
+    /**
+     * The word each locale uses for a cancelled job. The revocation must not reach for any of them:
+     * the job goes ahead with somebody else, and a cleaner repeating our wording to the customer
+     * would be telling them their booking was cancelled.
+     */
+    private val cancelledWord = mapOf(
+        "values" to "cancel",
+        "values-cs" to "zrušen",
+        "values-sk" to "zrušen",
+        "values-uk" to "скасован",
+        "values-ru" to "отмен",
+    )
+
+    private val resDir: File = sequenceOf(
+        File("src/main/res"),
+        File("partner-app/src/main/res"),
+        File("src/cleansia_android/partner-app/src/main/res"),
+    ).firstOrNull { it.isDirectory }
+        ?: error("partner-app res/ not found from working dir ${File(".").absolutePath}")
 
     @Test
     fun `templateFor maps the new-jobs digest to the new-jobs channel`() {
@@ -172,4 +205,173 @@ class NotificationTemplatesTest {
     fun `deep link resolves an unknown key to null`() {
         assertNull(NotificationDeepLink.resolve("promo.new_sitewide", null, null))
     }
+
+    /**
+     * Both admin-reassign events ride the order-updates channel, not new-jobs: the server returns a
+     * null category for them precisely so they cannot be muted, and new-jobs is the one channel a
+     * cleaner silences to stop hearing about work they have not accepted.
+     */
+    @Test
+    fun `templateFor maps the admin assignment to the order-updates channel`() {
+        val template = NotificationTemplates.templateFor("order.assigned")
+
+        assertEquals(R.string.notification_order_assigned_title, template?.titleRes)
+        assertEquals(R.string.notification_order_assigned_body, template?.bodyRes)
+        assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
+    }
+
+    @Test
+    fun `templateFor maps the assignment revocation to the order-updates channel`() {
+        val template = NotificationTemplates.templateFor("order.assignment_revoked")
+
+        assertEquals(R.string.notification_order_assignment_revoked_title, template?.titleRes)
+        assertEquals(R.string.notification_order_assignment_revoked_body, template?.bodyRes)
+        assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber into the admin assignment body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_assigned_body, "A-1042")
+        } returns "You've been assigned job #A-1042."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.assigned",
+            R.string.notification_order_assigned_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("You've been assigned job #A-1042.", body)
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber into the revocation body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_assignment_revoked_body, "A-1042")
+        } returns "Job #A-1042 has been reassigned."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.assignment_revoked",
+            R.string.notification_order_assignment_revoked_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("Job #A-1042 has been reassigned.", body)
+    }
+
+    @Test
+    fun `deep link resolves the admin assignment to the order detail`() {
+        assertEquals(
+            NavRoute.OrderDetail(orderId = "ord-7"),
+            NotificationDeepLink.resolve("order.assigned", "ord-7", null),
+        )
+    }
+
+    @Test
+    fun `deep link resolves the revocation to the order detail`() {
+        assertEquals(
+            NavRoute.OrderDetail(orderId = "ord-7"),
+            NotificationDeepLink.resolve("order.assignment_revoked", "ord-7", null),
+        )
+    }
+
+    @Test
+    fun `the admin-reassign copy is translated in all five locales`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reassignKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `the four translations of the admin-reassign copy are not the English string copied over`() {
+        val english = reassignKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            reassignKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `each admin-reassign body takes the order number and each title takes nothing`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reassignKeys.forEach { key ->
+                val expected = if (key.endsWith("_body")) listOf("%1\$s") else emptyList()
+                assertEquals(
+                    "$locale/strings.xml passes the wrong format arguments to $key",
+                    expected,
+                    formatSlots(valueOf(xml, key)!!),
+                )
+            }
+        }
+    }
+
+    /** The job goes ahead with someone else — saying "cancelled" hands the cleaner the wrong sentence. */
+    @Test
+    fun `no revocation string calls the job cancelled in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reassignKeys.filter { it.contains("revoked") }.forEach { key ->
+                val value = valueOf(xml, key)!!
+                assertFalse(
+                    "$locale/strings.xml calls the reassigned job cancelled in $key: \"$value\"",
+                    value.contains(cancelledWord.getValue(locale), ignoreCase = true),
+                )
+            }
+        }
+    }
+
+    /**
+     * The badge counts feed rows. A key with a template but no row inflates it, which is the hazard
+     * `NotificationFeedEventKeys`' own doc-comment states, reached from this side.
+     */
+    @Test
+    fun `every feed key renders and the badge bumps off the keyset`() {
+        PartnerFeedEventKeys.all.forEach { key ->
+            assertNotNull(
+                "feed key $key has no template — its row would be dropped unrendered",
+                NotificationTemplates.templateFor(key),
+            )
+        }
+
+        val service = File(
+            resDir.parentFile,
+            "java/cz/cleansia/partner/core/notifications/CleansiaFirebaseMessagingService.kt",
+        )
+        assertTrue("CleansiaFirebaseMessagingService.kt not found next to res/", service.isFile)
+        assertTrue(
+            "the badge bump is no longer gated on the feed keyset",
+            service.readText().contains("if (PartnerFeedEventKeys.contains(eventKey))"),
+        )
+    }
+
+    private fun stringsXml(locale: String): String {
+        val file = File(resDir, "$locale/strings.xml")
+        assertTrue("missing $locale/strings.xml", file.isFile)
+        return file.readText()
+    }
+
+    private fun valueOf(xml: String, key: String): String? =
+        Regex("<string name=\"$key\"[^>]*>(.*?)</string>", RegexOption.DOT_MATCHES_ALL)
+            .find(xml)
+            ?.groupValues
+            ?.get(1)
+
+    /** Positional and bare alike — a bare `%s` beside a positional one crashes `getString` at runtime. */
+    private fun formatSlots(value: String): List<String> =
+        Regex("%(\\d+\\\$)?[a-zA-Z]").findAll(value).map { it.value }.toList()
 }

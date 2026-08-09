@@ -48,9 +48,11 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         val eventKey = data["event_key"] ?: return
         val template = NotificationTemplates.templateFor(eventKey) ?: return
 
-        // Feed-scoped event: the server row already exists, so bump the bell
-        // badge locally instead of refetching. Unknown keys returned above.
-        notificationFeedRepository.onPushReceived()
+        // Only a feed-scoped event has a UserNotification row behind it, and the badge
+        // counts rows — so bump it off the keyset, never off "this key has a template".
+        if (PartnerFeedEventKeys.contains(eventKey)) {
+            notificationFeedRepository.onPushReceived()
+        }
 
         val orderId = data["orderId"]?.takeIf { it.isNotBlank() }
         val title = getString(template.titleRes)

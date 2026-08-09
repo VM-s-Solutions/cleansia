@@ -1282,6 +1282,7 @@ declined with its reason.
    already asks it — **do not open a new question**.
 6. **§Applies-to:** no admin note dialog (it was never scoped, and is no longer needed); **one** admin
    action + confirm for the D4.3 command; **two** `api.*` keys ×5 on the admin app, not one.
+   *(Superseded by Erratum E3 + E4 below: the real number is **four**.)*
 
 **R4 (CH-VS-4) — delete `Scope`.** §D2.1's statement becomes `ON CONFLICT ("Year") DO UPDATE …`; the
 entity carries `Year` (`int`, non-nullable) and `Value` and no scope column; the unique index is on
@@ -1391,7 +1392,7 @@ concrete: a symbol typed without the zero a bank form dropped matches **nothing*
 
 **R13 — rewrite §Applies-to** once R1/R3/R4/R5/R8 land: its own `ef-migration` (no ride); one new table
 with a `(Year)` key and no `Scope`; two production + twelve fixture call sites; one admin action for
-D4.3 and **no** note dialog; two `api.*` keys ×5; one `consistency.md` edit.
+D4.3 and **no** note dialog; **four** `api.*` keys ×5 (see Errata E3 and E4); one `consistency.md` edit.
 
 **R14 — reviewer-check delta** (§"How a reviewer verifies compliance"). Checks 1–4, 7–14 stand as
 written; #9's key list grows.
@@ -1558,4 +1559,44 @@ for this pay period*, so reusing it shows an admin a sentence about a different 
 **`payroll.invoice.reference_already_assigned`** is added, translated in the five admin locales
 alongside the other three. This fills an under-specification rather than overriding a decision — but
 §Applies-to and reviewer check #9 both say **three** `api.*` keys and the real number is **four**.
+
+---
+
+### Erratum E4 — the key count is four everywhere, and the frontend proved it (admin lane, 2026-08-09)
+
+E3 raised the count from three to four by adding `payroll.invoice.reference_already_assigned`. Two
+places in the transcribed closed list still said **two**, and reviewer check #9 still said three. All of
+them now say four.
+
+**The frontend lane discharged it without needing anything**: all four keys already ship under
+`api.payroll.invoice.*` in all five admin locales, and the shared `HttpErrorInterceptorFn` resolves
+`api.${dotValue}` off the ProblemDetails `errors` bag — which `CleansiaApiController.CreateProblemDetails`
+populates on **both** the validation arm and the handler-failure arm. So every key maps by construction,
+with no client key map, no `errors.*` entry, and no generic fallback. `reference_already_assigned` earns
+its existence in practice rather than in theory: reusing `payroll.invoice.already_exists` for it would
+have shown an admin a sentence about a *different fact* (an invoice already exists for this pay period).
+
+### Erratum E5 — §D4.3's "re-runnable state" leaves no trace an admin can see
+
+D4.3's ordering is right and the handler implements it: allocate → stamp → **commit** → regenerate, so a
+failed regeneration keeps the number on the row and the regeneration is re-runnable. **What the ADR did
+not notice is that nothing on the row records that it failed.** `RegenerateInvoicePdf` calls
+`SetPdfBlobUrl` / `ClearPdfGenerationError` on its **success** path only and never `SetPdfGenerationError`
+on failure — so after a refetch `pdfGenerationFailed` still reads false, the PDF-status banner still reads
+healthy, and the stored document lacks the number the row claims.
+
+The **only** live signal is the transient `PdfBlobUrl == null` on the response, which the admin UI now
+branches on with an explicit *"reference assigned, but the PDF was not regenerated"* message. If that
+message is dismissed or missed, the ADR's own "just re-run the regenerate" instruction survives solely in
+a server log line.
+
+Two smaller notes from the same reading, recorded so neither is rediscovered as a defect:
+- The response collapses *"regenerate failed"* and *"regenerate returned no URL"* into one `null`. The UI
+  reads null as failure — the conservative direction, over-warning rather than under-warning.
+- **D4.3's gate has three arms and a client can read only two.** `EmployeeInvoiceDetailDto` carries
+  `status` and `variableSymbol` but no `isCancelled`, so the button's visibility predicate is faithful
+  *today only by a domain coincidence*: `EmployeeInvoice.Cancel()` is the sole writer of `IsCancelled` and
+  sets `Status = Cancelled` in the same statement. Safety is unaffected — the server's gate reads the
+  entity — so this is visibility fidelity, not correctness. Pinning the coincidence costs nothing; putting
+  `isCancelled` on the DTO costs a regen.
 

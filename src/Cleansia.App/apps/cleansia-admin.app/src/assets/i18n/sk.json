@@ -2625,7 +2625,8 @@
       "invalid_duration": "Neplatná dĺžka výplatného obdobia",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "not_closed": "Výplatné obdobie nie je uzavreté"
+      "not_closed": "Výplatné obdobie nie je uzavreté",
+      "already_paid": "Výplatné obdobie už bolo zaplatené"
     },
     "pay_config": {
       "service_or_package_required": "Je vyžadovaná služba alebo balíček",
@@ -2667,7 +2668,9 @@
       "not_existing_id": "Krajina nebola nájdená",
       "not_found": "Krajina nebola nájdená",
       "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
-      "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa"
+      "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa",
+      "not_serviced": "V tejto krajine nepôsobíme.",
+      "required": "Krajina je povinná."
     },
     "company": {
       "not_found": "Informácie o spoločnosti neboli nájdené",
@@ -2678,7 +2681,10 @@
       "not_found": "Reklamácia nebola nájdená",
       "already_exists": "Reklamácia pre túto objednávku už existuje",
       "invalid_refund_amount": "Neplatná suma vrátenia",
-      "max_length_exceeded": "Bola prekročená maximálna dĺžka"
+      "max_length_exceeded": "Bola prekročená maximálna dĺžka",
+      "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
+      "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená."
     },
     "admin_user": {
       "not_found": "Administrátor nebol nájdený",
@@ -2723,7 +2729,8 @@
       "not_found": "Služba nebola nájdená",
       "in_use": "Nie je možné odstrániť službu, pretože sa práve používa",
       "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky",
-      "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk"
+      "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk",
+      "category_not_found": "Kategória služby sa nenašla."
     },
     "package": {
       "not_found": "Balíček nebol nájdený",
@@ -2764,6 +2771,51 @@
       "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
       "country_required": "Vyberte krajinu.",
       "city_not_serviced": "V tomto meste zatiaľ nepôsobíme."
+    },
+    "audit": {
+      "not_found": "Záznam auditu sa nenašiel."
+    },
+    "feature_flag": {
+      "already_exists": "Prepínač funkcie s týmto názvom a rozsahom už existuje.",
+      "not_found": "Prepínač funkcie sa nenašiel."
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "Tento počet bodov prekračuje limit povolený pre ručnú úpravu.",
+      "reason_required": "Pre ručnú úpravu bodov sa vyžaduje dôvod.",
+      "tier_config_not_found": "Nastavenie vernostnej úrovne sa nenašlo.",
+      "tier_perks_json_invalid": "Výhody úrovne musia byť platný JSON."
+    },
+    "promo": {
+      "amount_must_be_positive": "Výška zľavy musí byť väčšia ako nula.",
+      "code_already_exists": "Zľavový kód s týmto kódom už existuje.",
+      "code_invalid_format": "Formát zľavového kódu nie je platný.",
+      "not_found": "Zľavový kód sa nenašiel.",
+      "percent_out_of_range": "Percento zľavy je mimo povoleného rozsahu.",
+      "validity_range_invalid": "Dátum platnosti od nesmie byť neskorší ako dátum platnosti do."
+    },
+    "service_city": {
+      "already_exists": "Toto mesto už je v zozname obsluhovaných miest.",
+      "not_found": "Obsluhované mesto sa nenašlo."
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "Plán s týmto kódom už existuje.",
+        "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
+        "not_found": "Plán členstva sa nenašiel."
+      }
+    },
+    "referral": {
+      "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
+      "not_found": "Odporúčanie sa nenašlo.",
+      "not_qualified": "Odporúčanie nie je v stave „uznané“.",
+      "reason_required": "Vyžaduje sa dôvod."
+    },
+    "refund": {
+      "line_invalid": "Jedna z vybraných položiek nie je súčasťou tejto objednávky.",
+      "lines_required": "Vyberte aspoň jednu službu alebo balíček na vrátenie.",
+      "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
+      "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
+      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."
     }
   },
   "cookies": {

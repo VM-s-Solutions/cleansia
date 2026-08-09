@@ -2625,7 +2625,8 @@
       "invalid_duration": "Invalid pay period duration",
       "overlapping_period": "Pay period overlaps with an existing period",
       "has_order_pays": "Cannot delete pay period that has associated order pays",
-      "not_closed": "Pay period is not closed"
+      "not_closed": "Pay period is not closed",
+      "already_paid": "Pay period has already been paid"
     },
     "pay_config": {
       "service_or_package_required": "Either service or package is required",
@@ -2667,7 +2668,9 @@
       "not_existing_id": "Country not found",
       "not_found": "Country not found",
       "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use"
+      "in_use": "Cannot delete country because it is currently in use",
+      "not_serviced": "This country is not serviced.",
+      "required": "A country is required."
     },
     "company": {
       "not_found": "Company information not found",
@@ -2678,7 +2681,10 @@
       "not_found": "Dispute not found",
       "already_exists": "Dispute already exists for this order",
       "invalid_refund_amount": "Invalid refund amount",
-      "max_length_exceeded": "Maximum length exceeded"
+      "max_length_exceeded": "Maximum length exceeded",
+      "not_owned_by_user": "This dispute belongs to a different user.",
+      "already_resolved": "This dispute has already been resolved and cannot be changed.",
+      "invalid_status_transition": "This status change is not allowed for the current dispute state."
     },
     "admin_user": {
       "not_found": "Admin user not found",
@@ -2723,7 +2729,8 @@
       "not_found": "Service not found",
       "in_use": "Cannot delete service because it is currently in use",
       "translations_required": "Translations are required for all supported languages",
-      "missing_translation_for_language": "Missing translation for required language"
+      "missing_translation_for_language": "Missing translation for required language",
+      "category_not_found": "Service category not found."
     },
     "package": {
       "not_found": "Package not found",
@@ -2764,6 +2771,51 @@
       "country_not_serviced": "We don't currently operate in this country.",
       "country_required": "Please select a country.",
       "city_not_serviced": "We don't currently serve this city."
+    },
+    "audit": {
+      "not_found": "Audit entry not found."
+    },
+    "feature_flag": {
+      "already_exists": "A feature flag with this name and scope already exists.",
+      "not_found": "Feature flag not found."
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
+      "reason_required": "A reason is required for a manual points adjustment.",
+      "tier_config_not_found": "Loyalty tier configuration not found.",
+      "tier_perks_json_invalid": "The tier perks must be valid JSON."
+    },
+    "promo": {
+      "amount_must_be_positive": "The discount amount must be greater than zero.",
+      "code_already_exists": "A promo code with this code already exists.",
+      "code_invalid_format": "The promo code format is not valid.",
+      "not_found": "Promo code not found.",
+      "percent_out_of_range": "The discount percentage is outside the allowed range.",
+      "validity_range_invalid": "The valid-from date must not be after the valid-until date."
+    },
+    "service_city": {
+      "already_exists": "This city is already on the serviced list.",
+      "not_found": "Serviced city not found."
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "A plan with this code already exists.",
+        "discount_out_of_range": "Discount must be between 0 and 100.",
+        "not_found": "Membership plan not found."
+      }
+    },
+    "referral": {
+      "not_accepted": "The referral is not in the accepted state.",
+      "not_found": "Referral not found.",
+      "not_qualified": "The referral is not in the qualified state.",
+      "reason_required": "A reason is required."
+    },
+    "refund": {
+      "line_invalid": "One of the selected lines is not part of this order.",
+      "lines_required": "Select at least one service or package to refund.",
+      "nothing_refundable": "There is nothing left to refund on this order.",
+      "order_not_refundable": "This order is not eligible for a refund.",
+      "override_reason_required": "A justification is required to refund outside the allowed window."
     }
   },
   "cookies": {

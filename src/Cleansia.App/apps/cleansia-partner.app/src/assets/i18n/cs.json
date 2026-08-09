@@ -1161,7 +1161,8 @@
       "documents_missing": "Nahrajte požadované dokumenty",
       "not_approved": "Váš účet není schválen pro práci na zakázkách",
       "already_approved": "Zaměstnanec již byl schválen",
-      "already_rejected": "Zaměstnanec již byl zamítnut"
+      "already_rejected": "Zaměstnanec již byl zamítnut",
+      "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah"
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",

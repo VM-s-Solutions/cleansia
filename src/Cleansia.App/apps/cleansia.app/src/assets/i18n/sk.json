@@ -1445,14 +1445,19 @@
     },
     "common": {
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
-      "error_occurred": "Vyskytla sa chyba"
+      "error_occurred": "Vyskytla sa chyba",
+      "required": "Toto pole je povinné.",
+      "max_length": "Táto hodnota je príliš dlhá.",
+      "min_length": "Táto hodnota je príliš krátka.",
+      "invalid_enum_value": "Táto možnosť nie je platná."
     },
     "user": {
       "email_confirmed": "Táto e-mailová adresa je už potvrdená.",
       "existing_email": "Účet s týmto e-mailom už existuje.",
       "not_existing_email": "Účet s týmto e-mailom sme nenašli.",
       "existing_phone_number": "Toto telefónne číslo sa už používa.",
-      "not_found": "Tento účet sme nenašli."
+      "not_found": "Tento účet sme nenašli.",
+      "not_allowed_to_update": "Nemáte oprávnenie meniť tento účet."
     },
     "language": {
       "not_supported": "Tento jazyk nie je podporovaný."
@@ -1501,8 +1506,10 @@
         "description_required": "Pred odoslaním opíšte problém."
       },
       "preferred_employee": {
-        "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus."
-      }
+        "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus.",
+        "not_eligible": "Vybrať si môžete iba upratovača, ktorý u vás už dokončil upratovanie."
+      },
+      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -1518,7 +1525,8 @@
     },
     "country": {
       "not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
-      "required": "Vyberte krajinu."
+      "required": "Vyberte krajinu.",
+      "not_existing_id": "Túto krajinu sme nenašli."
     },
     "city": {
       "not_serviced": "V tomto meste zatiaľ nepôsobíme."
@@ -1594,6 +1602,22 @@
     "device": {
       "invalid_platform": "Táto platforma zariadenia nie je podporovaná.",
       "not_found": "Toto zariadenie sme nenašli."
+    },
+    "currency": {
+      "invalid": "Táto mena nie je podporovaná."
+    },
+    "email": {
+      "invalid_format": "Zadajte platnú e-mailovú adresu."
+    },
+    "general": {
+      "not_found": "Nenašli sme, čo hľadáte."
+    },
+    "validation": {
+      "date_must_be_in_past": "Dátum musí byť v minulosti.",
+      "invalid_age": "Zadajte platný vek.",
+      "invalid_date": "Zadajte platný dátum.",
+      "invalid_password": "Toto heslo nie je platné.",
+      "must_be_positive": "Hodnota musí byť väčšia ako nula."
     }
   },
   "loyalty": {

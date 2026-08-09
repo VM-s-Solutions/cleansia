@@ -2625,7 +2625,8 @@
       "invalid_duration": "Neplatná délka platebního období",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "not_closed": "Platební období není uzavřeno"
+      "not_closed": "Platební období není uzavřeno",
+      "already_paid": "Platební období již bylo zaplaceno"
     },
     "pay_config": {
       "service_or_package_required": "Je vyžadována buď služba nebo balíček",
@@ -2667,7 +2668,9 @@
       "not_existing_id": "Země nenalezena",
       "not_found": "Země nenalezena",
       "iso_code_already_exists": "Země s tímto ISO kódem již existuje",
-      "in_use": "Zemi nelze smazat, protože je aktuálně používána"
+      "in_use": "Zemi nelze smazat, protože je aktuálně používána",
+      "not_serviced": "V této zemi nepůsobíme.",
+      "required": "Země je povinná."
     },
     "company": {
       "not_found": "Informace o společnosti nenalezeny",
@@ -2678,7 +2681,10 @@
       "not_found": "Spor nenalezen",
       "already_exists": "Spor pro tuto objednávku již existuje",
       "invalid_refund_amount": "Neplatná částka vrácení peněz",
-      "max_length_exceeded": "Překročena maximální délka"
+      "max_length_exceeded": "Překročena maximální délka",
+      "not_owned_by_user": "Tento spor patří jinému uživateli.",
+      "already_resolved": "Tento spor již byl vyřešen a nelze jej změnit.",
+      "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena."
     },
     "admin_user": {
       "not_found": "Administrátor nenalezen",
@@ -2723,7 +2729,8 @@
       "not_found": "Služba nenalezena",
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
       "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
-      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk"
+      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk",
+      "category_not_found": "Kategorie služby nebyla nalezena."
     },
     "package": {
       "not_found": "Balíček nenalezen",
@@ -2764,6 +2771,51 @@
       "country_not_serviced": "V této zemi zatím nepůsobíme.",
       "country_required": "Vyberte zemi.",
       "city_not_serviced": "V tomto městě zatím nepůsobíme."
+    },
+    "audit": {
+      "not_found": "Záznam auditu nebyl nalezen."
+    },
+    "feature_flag": {
+      "already_exists": "Přepínač funkce s tímto názvem a rozsahem již existuje.",
+      "not_found": "Přepínač funkce nebyl nalezen."
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "Tento počet bodů překračuje limit povolený pro ruční úpravu.",
+      "reason_required": "Pro ruční úpravu bodů je vyžadován důvod.",
+      "tier_config_not_found": "Nastavení věrnostní úrovně nebylo nalezeno.",
+      "tier_perks_json_invalid": "Výhody úrovně musí být platný JSON."
+    },
+    "promo": {
+      "amount_must_be_positive": "Výše slevy musí být větší než nula.",
+      "code_already_exists": "Slevový kód s tímto kódem již existuje.",
+      "code_invalid_format": "Formát slevového kódu není platný.",
+      "not_found": "Slevový kód nebyl nalezen.",
+      "percent_out_of_range": "Procento slevy je mimo povolený rozsah.",
+      "validity_range_invalid": "Datum platnosti od nesmí být pozdější než datum platnosti do."
+    },
+    "service_city": {
+      "already_exists": "Toto město už je v seznamu obsluhovaných měst.",
+      "not_found": "Obsluhované město nebylo nalezeno."
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "Plán s tímto kódem již existuje.",
+        "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
+        "not_found": "Plán členství nebyl nalezen."
+      }
+    },
+    "referral": {
+      "not_accepted": "Doporučení není ve stavu „přijaté“.",
+      "not_found": "Doporučení nebylo nalezeno.",
+      "not_qualified": "Doporučení není ve stavu „uznané“.",
+      "reason_required": "Je vyžadován důvod."
+    },
+    "refund": {
+      "line_invalid": "Jedna z vybraných položek není součástí této objednávky.",
+      "lines_required": "Vyberte alespoň jednu službu nebo balíček k vrácení.",
+      "nothing_refundable": "Na této objednávce již není co vrátit.",
+      "order_not_refundable": "Tuto objednávku nelze vrátit.",
+      "override_reason_required": "Pro vrácení mimo povolenou lhůtu je vyžadováno odůvodnění."
     }
   },
   "cookies": {

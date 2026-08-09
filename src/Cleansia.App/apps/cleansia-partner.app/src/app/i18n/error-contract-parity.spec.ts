@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { existsSync, readdirSync, readFileSync } from 'fs';
+import { dirname, join, relative } from 'path';
 
 const LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
 type Locale = (typeof LOCALES)[number];
@@ -19,15 +19,23 @@ function findSolutionDir(): string {
 
 const SOLUTION_DIR = findSolutionDir();
 
+const APP_SERVICES_DIR = join(SOLUTION_DIR, 'Cleansia.Core.AppServices');
+
 const BUSINESS_ERROR_MESSAGE_PATH = join(
-  SOLUTION_DIR,
-  'Cleansia.Core.AppServices/Common/BusinessErrorMessage.cs'
+  APP_SERVICES_DIR,
+  'Common/BusinessErrorMessage.cs'
 );
 
-const TAKE_ORDER_PATH = join(
+const FEATURES_DIR = join(APP_SERVICES_DIR, 'Features');
+
+// The host that serves this app: Cleansia.Web.Partner listens on :5000 and the
+// partner dev server proxies /api to it (apps/cleansia-partner.app/proxy.conf.json).
+const HOST_CONTROLLERS_DIR = join(
   SOLUTION_DIR,
-  'Cleansia.Core.AppServices/Features/Orders/TakeOrder.cs'
+  'Cleansia.Web.Partner/Controllers'
 );
+
+const TAKE_ORDER_PATH = join(FEATURES_DIR, 'Orders/TakeOrder.cs');
 
 const I18N_DIR = join(
   SOLUTION_DIR,
@@ -73,6 +81,172 @@ function keysEmittedBy(emitterPath: string): string[] {
   return [...emitted].sort();
 }
 
+function listCsFiles(dir: string): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) found.push(...listCsFiles(full));
+    else if (entry.name.endsWith('.cs')) found.push(full);
+  }
+  return found;
+}
+
+function featureFilesByClassName(): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  for (const file of listCsFiles(FEATURES_DIR)) {
+    const className = file.slice(file.lastIndexOf('/') + 1, -'.cs'.length);
+    index.set(className, [...(index.get(className) ?? []), file]);
+  }
+  return index;
+}
+
+const MESSAGE_TYPE = '(?:Command|Query|Request)';
+
+// The type a `Mediator.Send(x)` argument was bound to, resolved against the
+// declaration nearest ABOVE the call — a parameter (`[FromBody] X.Command x`), a
+// construction (`var x = new X.Query(...)`), or a `with` copy of either.
+function resolveMessageType(
+  source: string,
+  before: number,
+  identifier: string,
+  depth = 0
+): string | undefined {
+  if (depth > 3) return undefined;
+  const head = source.slice(0, before);
+  let nearest: string | undefined;
+  let nearestAt = -1;
+  const declarations = [
+    new RegExp(`\\b([A-Z]\\w*)\\.${MESSAGE_TYPE}\\??\\s+${identifier}\\b`, 'g'),
+    new RegExp(`\\b${identifier}\\s*=\\s*new\\s+([A-Z]\\w*)\\.${MESSAGE_TYPE}\\b`, 'g'),
+  ];
+  for (const regex of declarations) {
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(head)) !== null) {
+      if (match.index > nearestAt) {
+        nearestAt = match.index;
+        nearest = match[1];
+      }
+    }
+  }
+  const withCopy = new RegExp(`\\b${identifier}\\s*=\\s*(\\w+)\\s+with\\b`, 'g');
+  let copyAt = -1;
+  let copiedFrom: string | undefined;
+  let match: RegExpExecArray | null;
+  while ((match = withCopy.exec(head)) !== null) {
+    if (match.index > copyAt) {
+      copyAt = match.index;
+      copiedFrom = match[1];
+    }
+  }
+  if (copiedFrom && copyAt > nearestAt) {
+    return resolveMessageType(source, copyAt, copiedFrom, depth + 1);
+  }
+  return nearest;
+}
+
+interface DispatchSite {
+  controller: string;
+  expression: string;
+  featureClass?: string;
+}
+
+interface HostSurface {
+  controllers: number;
+  sites: DispatchSite[];
+  unresolved: DispatchSite[];
+  featureClasses: Set<string>;
+  keys: Map<string, Set<string>>;
+}
+
+// Walks the controllers of the host that serves this app, resolves what each one
+// dispatches to a feature file, and reads the BusinessErrorMessage constants out
+// of it. Only what the tree actually contains: a key added to a new endpoint
+// shows up here without anyone remembering to paste it into the roster below.
+function deriveHostSurface(): HostSurface {
+  const featureFiles = featureFilesByClassName();
+  const constants = parseBusinessErrorConstants();
+  const sites: DispatchSite[] = [];
+  const featureClasses = new Set<string>();
+  const keys = new Map<string, Set<string>>();
+  const controllers = readdirSync(HOST_CONTROLLERS_DIR).filter((f) =>
+    f.endsWith('.cs')
+  );
+
+  for (const controller of controllers) {
+    const source = readFileSync(join(HOST_CONTROLLERS_DIR, controller), 'utf8');
+    const dispatched = new Set<string>();
+
+    const send = /Mediator\.Send(?:<[^>]*>)?\(\s*(new\s+)?(\w+)(?:\.(?:Command|Query|Request))?/g;
+    let match: RegExpExecArray | null;
+    while ((match = send.exec(source)) !== null) {
+      const isConstruction = !!match[1];
+      const name = isConstruction
+        ? match[2]
+        : resolveMessageType(source, match.index, match[2]);
+      const site: DispatchSite = {
+        controller,
+        expression: `Mediator.Send(${isConstruction ? 'new ' : ''}${match[2]})`,
+        featureClass: name && featureFiles.has(name) ? name : undefined,
+      };
+      sites.push(site);
+      if (site.featureClass) dispatched.add(site.featureClass);
+    }
+
+    // MVC binds the message straight onto the action, and HandleResult<X.Response>
+    // names the same feature class the send returned; both are dispatches too.
+    const bindings = [
+      new RegExp(`\\[From\\w+\\]\\s*([A-Z]\\w*)\\.${MESSAGE_TYPE}\\b`, 'g'),
+      /HandleResult<\s*([A-Z]\w*)\.(?:Response|Command|Query|Request)\s*>/g,
+    ];
+    for (const regex of bindings) {
+      while ((match = regex.exec(source)) !== null) {
+        if (featureFiles.has(match[1])) dispatched.add(match[1]);
+      }
+    }
+
+    for (const name of dispatched) {
+      featureClasses.add(name);
+      for (const file of featureFiles.get(name) ?? []) {
+        const emitted = /BusinessErrorMessage\.(\w+)/g;
+        const fileSource = readFileSync(file, 'utf8');
+        while ((match = emitted.exec(fileSource)) !== null) {
+          const value = constants.get(match[1]);
+          if (!value) continue;
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )}`;
+          keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+        }
+      }
+    }
+  }
+
+  return {
+    controllers: controllers.length,
+    sites,
+    unresolved: sites.filter((s) => !s.featureClass),
+    featureClasses,
+    keys,
+  };
+}
+
+function keysEmittedAnywhere(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const emitted = new Set<string>();
+  for (const file of listCsFiles(APP_SERVICES_DIR)) {
+    if (file.endsWith('BusinessErrorMessage.cs')) continue;
+    const source = readFileSync(file, 'utf8');
+    const regex = /BusinessErrorMessage\.(\w+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(source)) !== null) {
+      const value = constants.get(match[1]);
+      if (value) emitted.add(value);
+    }
+  }
+  return emitted;
+}
+
 function flattenKeys(obj: unknown, prefix = ''): Set<string> {
   const keys = new Set<string>();
   if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
@@ -110,10 +284,14 @@ function resolveKey(
 
 // Partner-surface error contract: the BusinessErrorMessage dot-values the
 // Partner API (Cleansia.Web.Partner) can return and the shared
-// HttpErrorInterceptor resolves under the api.* namespace. Derived
-// mechanically — every constant referenced by a feature class that a
-// Cleansia.Web.Partner controller dispatches — so it can be re-derived rather
-// than remembered. Customer/admin-only codes are excluded by design.
+// HttpErrorInterceptor resolves under the api.* namespace.
+//
+// This list is HAND-KEPT and that is deliberate: it carries the reachability
+// judgement deriveHostSurface() cannot make, since a feature class can emit keys
+// that no partner branch reaches. What it is no longer allowed to be is the only
+// input — deriveHostSurface() reads the controllers, and every key it finds must
+// appear here or in DELIBERATELY_NOT_TRANSLATED with a reason. A list that is
+// merely remembered cannot fail on a key added after it was written.
 const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Auth — partner login / confirm / reset / refresh
   'auth.insufficient_privileges',
@@ -154,6 +332,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.time_conflict',
   'order.weekly_limit_reached',
   // Employee profile + documents
+  'employee.job_radius_out_of_range',
   'employee.not_allowed_to_update',
   'employee.not_approved',
   'employee.not_found',
@@ -163,6 +342,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee_document.unauthorized',
   'general.not_found',
   // Order photos + document uploads
+  'file.count_exceeded',
   'file.invalid_file_type',
   'file.required',
   'file.size_exceeded',
@@ -235,6 +415,21 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'payment.stripe_signature_required',
 ];
 
+// Reachable from a Cleansia.Web.Partner controller and deliberately left out of
+// the contract above. This is the only escape from the coverage test, so each
+// entry states why the cleaner can never read the string — "we did not get to it
+// yet" is PENDING_TRANSLATION, not this list.
+const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
+  key: string;
+  reason: string;
+}> = [];
+
+// Roster keys that no BusinessErrorMessage reference anywhere in
+// Cleansia.Core.AppServices emits — the constant is declared and dead. Asserted
+// as an exact set in both directions: a roster entry that goes dead has to be
+// listed or deleted, and one that comes back to life has to leave.
+const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [];
+
 // Contract keys that have no partner translation yet. Every entry here is a
 // cleaner who gets "An error occurred. Please try again." instead of the real
 // reason, so the list may only ever shrink: translate the key in all five
@@ -248,6 +443,73 @@ const TRANSLATED_CONTRACT_KEYS = PARTNER_SURFACE_ERROR_KEYS.filter(
 
 describe('error-contract parity (partner app)', () => {
   const en = readLocale('en');
+
+  describe('the partner surface derived from Cleansia.Web.Partner', () => {
+    const surface = deriveHostSurface();
+    const excluded = DELIBERATELY_NOT_TRANSLATED.map((e) => e.key);
+
+    it('reaches real controllers and real dispatch sites', () => {
+      expect(surface.controllers).toBeGreaterThanOrEqual(15);
+      expect(surface.sites.length).toBeGreaterThanOrEqual(60);
+      expect(surface.featureClasses.size).toBeGreaterThanOrEqual(55);
+      expect(surface.keys.size).toBeGreaterThanOrEqual(70);
+    });
+
+    it('resolves every dispatch site to a feature file', () => {
+      expect(surface.unresolved).toEqual([]);
+    });
+
+    it('walks controller to feature file to constant to dot-value', () => {
+      expect([...(surface.keys.get('employee.job_radius_out_of_range') ?? [])]).toEqual([
+        'EmployeeController -> Employees/UpdateJobRadius.cs',
+      ]);
+      expect([...(surface.keys.get('order.not_takeable') ?? [])]).toContain(
+        'OrderController -> Orders/TakeOrder.cs'
+      );
+    });
+
+    it('leaves no derived key unclassified', () => {
+      const unclassified = [...surface.keys.keys()]
+        .filter(
+          (key) =>
+            !PARTNER_SURFACE_ERROR_KEYS.includes(key) && !excluded.includes(key)
+        )
+        .sort();
+      expect(unclassified).toEqual([]);
+    });
+
+    it('excludes only keys that really are reachable and really are untranslated', () => {
+      const notReachable = excluded.filter((key) => !surface.keys.has(key));
+      const alsoOnTheContract = excluded.filter((key) =>
+        PARTNER_SURFACE_ERROR_KEYS.includes(key)
+      );
+      const actuallyTranslated = excluded.filter((key) =>
+        resolveKey(en, `api.${key}`)
+      );
+      const unexplained = DELIBERATELY_NOT_TRANSLATED.filter(
+        (entry) => entry.reason.trim().length === 0
+      ).map((entry) => entry.key);
+      expect({
+        notReachable,
+        alsoOnTheContract,
+        actuallyTranslated,
+        unexplained,
+      }).toEqual({
+        notReachable: [],
+        alsoOnTheContract: [],
+        actuallyTranslated: [],
+        unexplained: [],
+      });
+    });
+
+    it('reports contract keys the backend no longer emits anywhere', () => {
+      const emitted = keysEmittedAnywhere();
+      const dead = PARTNER_SURFACE_ERROR_KEYS.filter(
+        (key) => !emitted.has(key)
+      ).sort();
+      expect(dead).toEqual([...DECLARED_BUT_NEVER_EMITTED].sort());
+    });
+  });
 
   it('every partner-surface key exists as a BusinessErrorMessage value', () => {
     const backendValues = parseBusinessErrorValues();

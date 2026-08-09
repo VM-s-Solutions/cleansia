@@ -1445,14 +1445,19 @@
     },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
-      "error_occurred": "An error occurred"
+      "error_occurred": "An error occurred",
+      "required": "This field is required.",
+      "max_length": "This value is too long.",
+      "min_length": "This value is too short.",
+      "invalid_enum_value": "That option isn't valid."
     },
     "user": {
       "email_confirmed": "This email address is already confirmed.",
       "existing_email": "An account with this email already exists.",
       "not_existing_email": "We couldn't find an account with this email.",
       "existing_phone_number": "This phone number is already in use.",
-      "not_found": "We couldn't find that account."
+      "not_found": "We couldn't find that account.",
+      "not_allowed_to_update": "You're not allowed to change this account."
     },
     "language": {
       "not_supported": "That language isn't supported."
@@ -1501,8 +1506,10 @@
         "description_required": "Please describe the issue before submitting."
       },
       "preferred_employee": {
-        "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit."
-      }
+        "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit.",
+        "not_eligible": "You can only choose a cleaner who has already completed a job for you."
+      },
+      "preferred_offer_closed": "This job can no longer be offered to a specific cleaner."
     },
     "address": {
       "already_exists": "You already have this address saved.",
@@ -1518,7 +1525,8 @@
     },
     "country": {
       "not_serviced": "We don't currently operate in this country.",
-      "required": "Please select a country."
+      "required": "Please select a country.",
+      "not_existing_id": "We couldn't find that country."
     },
     "city": {
       "not_serviced": "We don't currently serve this city."
@@ -1594,6 +1602,22 @@
     "device": {
       "invalid_platform": "This device platform isn't supported.",
       "not_found": "We couldn't find that device."
+    },
+    "currency": {
+      "invalid": "That currency isn't supported."
+    },
+    "email": {
+      "invalid_format": "Please enter a valid email address."
+    },
+    "general": {
+      "not_found": "We couldn't find what you were looking for."
+    },
+    "validation": {
+      "date_must_be_in_past": "The date must be in the past.",
+      "invalid_age": "Please enter a valid age.",
+      "invalid_date": "Please enter a valid date.",
+      "invalid_password": "That password isn't valid.",
+      "must_be_positive": "The value must be greater than zero."
     }
   },
   "loyalty": {

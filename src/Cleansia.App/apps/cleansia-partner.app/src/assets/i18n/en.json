@@ -1161,7 +1161,8 @@
       "documents_missing": "Upload required documents",
       "not_approved": "Your account is not approved to work on orders",
       "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected"
+      "already_rejected": "Employee has already been rejected",
+      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range"
     },
     "employee_document": {
       "not_found": "Document not found",

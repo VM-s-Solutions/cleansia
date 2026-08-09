@@ -2497,6 +2497,21 @@ Recorded here so the next panel has the sweep already done. Catalog files search
 client-side rendering of a server-redacted field today (`consistency.md:297` is header redaction in
 logging; `patterns-mobile.md:1227` is a repository read-scope gate).
 
+**Update, same evening: the iOS lane reached the same entry independently and routed it to the Architect
+for a DIFFERENT reason, which is worth more than either argument alone.** Android routed it because
+**Test 1 fires** — shipped call sites gate populated fields on `isAssignedToCurrentUser`, so the entry
+puts them in violation. iOS routed it because **Test 2 fires**: `patterns-mobile.md:430-447` already says
+*"a number the server computes has no client-side twin … render the discriminator, never re-derive it"*,
+which governs this at a level of generality that covers it — so a redaction-specific form is **carving
+within an existing sentence's scope, not filling a vacuum**.
+
+Two lanes, two platforms, two independent routing tests, same destination. The entry the panel writes
+should probably be a **narrowing of `:430-447`** rather than a new law, with the deviation entry Android's
+sweep already enumerates. iOS's own suggested wording, for the panel to start from: *"when the server
+redacts a field for a caller class and ships a coarse substitute, the client models the pair as one
+sealed three-case value discriminated by the **arrival** of the precise field — never by a flag that
+re-derives entitlement client-side."*
+
 ---
 
 ## N25 — the partner-web radius control, and a testing hole under the whole workspace (2026-08-09)

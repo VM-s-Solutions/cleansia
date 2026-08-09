@@ -171,7 +171,13 @@
       "swift_code_hint": "Potřebujeme ho jen tehdy, když je vaše banka v jiné zemi, než ve které pracujete.",
       "bank_name": "Název banky",
       "bank_account_holder": "Majitel účtu",
-      "bank_account_holder_hint": "Nepovinné — jméno, které má banka u účtu, pokud se liší od vašeho."
+      "bank_account_holder_hint": "Nepovinné — jméno, které má banka u účtu, pokud se liší od vašeho.",
+      "job_radius": "Vzdálenost pro upozornění",
+      "job_radius_explainer": "Mění se jen to, na které nové zakázky vás upozorníme. Nabídka dál zobrazuje všechny zakázky ve vaší zemi a kteroukoli z nich si můžete vzít.",
+      "job_radius_limit": "Upozorňovat jen na zakázky v okolí",
+      "job_radius_off_hint": "Budeme vás upozorňovat na každou novou zakázku ve vaší zemi.",
+      "job_radius_distance": "Vzdálenost od domova (km)",
+      "job_radius_distance_hint": "Mezi {{min}} a {{max}} km."
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -831,7 +837,9 @@
         "file_transformation_error": "Nepodařilo se zpracovat nahrané soubory. Zkuste to prosím znovu.",
         "bank_details_saved": "Bankovní údaje byly uloženy",
         "bank_details_load_error": "Vaše bankovní údaje se nepodařilo načíst. Zkuste to prosím znovu.",
-        "not_loaded": "Profil se ještě nenačetl"
+        "not_loaded": "Profil se ještě nenačetl",
+        "job_radius_saved": "Vzdálenost pro upozornění byla uložena",
+        "job_radius_load_error": "Nepodařilo se načíst vaši vzdálenost pro upozornění. Zkuste to prosím znovu."
       },
       "documents": {
         "load_error": "Nepodařilo se načíst dokumenty. Zkuste to prosím znovu.",

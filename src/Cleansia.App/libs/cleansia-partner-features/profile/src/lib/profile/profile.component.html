@@ -25,6 +25,12 @@
     <!-- Availability Section -->
     <cleansia-profile-availability [facade]="facade" />
 
+    <!-- Job alert distance — its own endpoint, so its own save -->
+    <cleansia-partner-profile-job-radius
+      [facade]="facade.jobRadiusFacade"
+      (retry)="facade.refreshProfile()"
+    />
+
     <!-- Bank Details Section — its own endpoint, so its own form and save -->
     <cleansia-partner-profile-bank [facade]="facade.bankFacade" />
 

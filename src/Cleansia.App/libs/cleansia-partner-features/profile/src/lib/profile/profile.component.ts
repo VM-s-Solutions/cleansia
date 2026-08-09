@@ -16,10 +16,12 @@ import {
   ProfileAvailabilityComponent,
   ProfileBankComponent,
   ProfileDocumentsComponent,
+  ProfileJobRadiusComponent,
 } from '../components';
 import { ProfileFacade } from './profile.facade';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
+import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
 
 @Component({
   selector: 'cleansia-partner-profile',
@@ -37,9 +39,15 @@ import { ProfileDocumentsFacade } from './profile-documents.facade';
     ProfileAvailabilityComponent,
     ProfileBankComponent,
     ProfileDocumentsComponent,
+    ProfileJobRadiusComponent,
   ],
   templateUrl: './profile.component.html',
-  providers: [ProfileBankFacade, ProfileDocumentsFacade, ProfileFacade],
+  providers: [
+    ProfileBankFacade,
+    ProfileDocumentsFacade,
+    ProfileJobRadiusFacade,
+    ProfileFacade,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {

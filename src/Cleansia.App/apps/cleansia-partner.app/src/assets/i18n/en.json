@@ -171,7 +171,13 @@
       "swift_code_hint": "Only needed when your bank is in a different country than the one you work in.",
       "bank_name": "Bank Name",
       "bank_account_holder": "Account holder",
-      "bank_account_holder_hint": "Optional — the name your bank has on the account, if it differs from yours."
+      "bank_account_holder_hint": "Optional — the name your bank has on the account, if it differs from yours.",
+      "job_radius": "Job alert distance",
+      "job_radius_explainer": "This changes only which new jobs we notify you about. The job board still lists every job in your country, and you can take any of them.",
+      "job_radius_limit": "Only notify me about nearby jobs",
+      "job_radius_off_hint": "We'll notify you about every new job in your country.",
+      "job_radius_distance": "Distance from home (km)",
+      "job_radius_distance_hint": "Between {{min}} and {{max}} km."
     },
     "dashboard": {
       "title": "Dashboard",
@@ -831,7 +837,9 @@
         "file_transformation_error": "Failed to process uploaded files. Please try again.",
         "bank_details_saved": "Bank details saved",
         "bank_details_load_error": "We could not load your bank details. Please try again.",
-        "not_loaded": "Profile not loaded yet"
+        "not_loaded": "Profile not loaded yet",
+        "job_radius_saved": "Job alert distance saved",
+        "job_radius_load_error": "We could not load your job alert distance. Please try again."
       },
       "documents": {
         "load_error": "Failed to load documents. Please try again.",

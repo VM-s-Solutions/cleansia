@@ -2496,3 +2496,55 @@ Recorded here so the next panel has the sweep already done. Catalog files search
 `patterns-mobile.md` and `consistency.md` for `redact|PII|coarse|approximate|entitle` — nothing governs
 client-side rendering of a server-redacted field today (`consistency.md:297` is header redaction in
 logging; `patterns-mobile.md:1227` is a repository read-scope gate).
+
+---
+
+## N25 — the partner-web radius control, and a testing hole under the whole workspace (2026-08-09)
+
+`89c8da1f`. All three partner surfaces now have the control.
+
+### The finding that outlives the ticket
+
+**`jsdom` has no `Blob.prototype.text`, so the shared error interceptor's blob branch is untested across
+the entire workspace — and it is the branch production takes.**
+
+The NSwag clients issue `responseType: 'blob'`, so every real refusal arrives as a Blob and
+`parseBlobToJson` is what turns it into a translatable key. Under jest that rejects, and **every**
+refusal silently falls through to the generic `api.common.error_occurred` catch. The lane's five locale
+cases were red for exactly this until it added a spec-local polyfill.
+`libs/core/services/src/lib/interceptors/http-error.interceptor.spec.ts` only ever exercises the
+**non-blob** branch — the one production does not take.
+
+So the interceptor that every app depends on to turn a backend refusal into a sentence a person can read
+has its real path covered by nothing, and any test asserting "this refusal renders its message" is
+passing on the fallback rather than the message. That is the same class as the boot-IO assertions and the
+birth-date assertion found earlier today: **a guard that passes without looking.** It wants a shared
+polyfill in the jest setup plus a test of the blob branch itself, and it is a cross-app change on a
+shared file, so it is filed rather than done in a feature lane.
+
+### A decision worth preserving, because "do what mobile did" would have been wrong
+
+The lane **declined** to build the one-time onboarding prompt on web, and argued it rather than skipping
+it:
+
+1. The radius tunes the **push** digest, and partner web has **no push channel at all** — a sweep for
+   Firebase / web-push / service-worker / device registration across the partner app and its libs returns
+   nothing. A web-only cleaner would be asked to tune a notification that surface never delivers.
+2. Web lands on Orders, not a dashboard, so mobile's *"the only screen every cleaner opens"* argument
+   does not transfer; the analytics dashboard would spend the ask on the smallest audience.
+3. A **third** per-client "already asked" flag re-asks the cleaner who answered *"keep every job"* on
+   their phone — that answer is a **null radius**, invisible to another client's flag. Two clients already
+   carry that seam; a third on the weakest surface worsens a known defect for no delivery benefit.
+
+If web push for partner ever ships, reason 1 retires and it is worth revisiting.
+
+### Two smaller ones
+
+- **The wire form diverges deliberately from iOS.** Web sends `radiusKm` **absent** where iOS sends an
+  explicit `null`: the generated member is `number | undefined`, so assigning null is a type error and
+  hand-editing the client is forbidden. Both bind to the same `int?`, and the backend lane's binder probe
+  established that absent and null are equivalent. Pinned over the real bytes either way, and never `0`.
+- **Copy, pre-existing, cross-app:** `api.employee.job_radius_out_of_range` reads *"The travel radius you
+  entered…"* in all five partner locales. "Travel radius" mildly implies an eligibility or commute
+  constraint rather than a notification one, which is the exact confusion the whole feature's copy works
+  to avoid. Left alone — it is a copy decision spanning three surfaces.

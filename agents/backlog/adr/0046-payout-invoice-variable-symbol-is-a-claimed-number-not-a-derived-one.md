@@ -1528,3 +1528,34 @@ implementing ticket is a migration of five locales times however many apps reach
 naming call within a category the tree already fixed, not a decision the panel deferred, which is why
 it is an erratum and not a second round.
 
+---
+
+### Erratum E2 — `Auditable` cannot satisfy §D2.1's statement and reviewer check #5 at the same time (build lane, 2026-08-09)
+
+§D2.1's `INSERT … ON CONFLICT` writes `"CreatedBy"` / `"CreatedOn"` and updates `"UpdatedBy"` /
+`"UpdatedOn"`. Those four columns exist only on `Auditable` (`Common/Auditable.cs:3`) — and `Auditable`
+also declares `public string? TenantId` at `:5`, which its entity configuration maps to a **column plus
+an index**. So `: Auditable` gives you the audit columns *and* a `TenantId` column, and reviewer check
+#5 says in terms that **a key with any second column fails**, with the entity carrying no `TenantId` at
+all.
+
+The ADR's phrase *"one new tenant-global counter entity"* hides that fork. It is resolved the way this
+codebase's own tenant-global lane already resolves it — `ProcessedMessage` (ADR-0010) is
+`: BaseEntity` with what it needs declared explicitly — so `PayoutReferenceCounter : BaseEntity`
+declares the four audit columns itself and takes a plain `IEntityTypeConfiguration`. **The table has no
+`TenantId` column**, asserted against `information_schema` rather than against the model.
+
+No decision moves: §D3.2 wanted a counter with no tenant term and that is what exists. What was wrong
+was the assumption that the base class the audit columns come from is free of one.
+
+### Erratum E3 — D4.3's gate needs a fourth key, and §Applies-to says three
+
+D4.3 gates the one-time assignment on `VariableSymbol IS NULL` **and** a live status **and** not
+cancelled — but names a key for neither the status arm nor the **already-has-a-symbol** arm. Neither
+existing key is true for the latter: `payroll.invoice.already_exists` means *an invoice already exists
+for this pay period*, so reusing it shows an admin a sentence about a different fact.
+
+**`payroll.invoice.reference_already_assigned`** is added, translated in the five admin locales
+alongside the other three. This fills an under-specification rather than overriding a decision — but
+§Applies-to and reviewer check #9 both say **three** `api.*` keys and the real number is **four**.
+

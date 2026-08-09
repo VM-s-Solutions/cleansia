@@ -16,7 +16,10 @@ struct CleansiaPartnerApp: App {
         let container = PartnerAppContainer(snackbar: snackbar)
         container.installGeneratedClientAuth()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
-        _preferences = StateObject(wrappedValue: PreferencesModel(settings: container.appSettings))
+        _preferences = StateObject(wrappedValue: PreferencesModel(
+            settings: container.appSettings,
+            languageSync: container.languageSync
+        ))
         self.container = container
     }
 

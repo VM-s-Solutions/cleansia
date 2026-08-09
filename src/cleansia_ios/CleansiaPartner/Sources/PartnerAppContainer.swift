@@ -71,6 +71,7 @@ final class PartnerAppContainer: AppContainer {
     let payrollClient: PartnerPayrollClient = LivePartnerPayrollClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
+    let userClient: PartnerUserClient = LivePartnerUserClient()
     let devicesClient: PartnerDevicesClient
     let orderClient: PartnerOrderClient = LivePartnerOrderClient()
     let ordersStaleness = OrdersStaleness()
@@ -79,6 +80,10 @@ final class PartnerAppContainer: AppContainer {
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
     lazy var serviceArea = ServiceAreaProvider(dataSource: PartnerServiceAreaDataSource(client: profileClient))
+    lazy var languageSync: LanguagePreferenceSync = LiveLanguagePreferenceSync(
+        tokenStore: authStack.spine.tokenStore,
+        client: userClient
+    )
     let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel

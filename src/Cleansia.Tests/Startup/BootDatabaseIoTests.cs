@@ -21,16 +21,20 @@ namespace Cleansia.Tests.Startup;
 /// before composition returns, but the accept that RECORDS it runs on the listener's own loop. A naked
 /// read of the counter therefore races the observation — not the IO — and on a loaded machine loses.</para>
 ///
-/// <para>Both directions of that race are closed here, and neither closure may be "simplified" away. The
-/// <c>&gt; 0</c> leg waits on a signal the accept loop sets after the increment, so a starved thread pool
-/// costs latency instead of a red. The <c>== 0</c> legs cannot wait for the absence of an event, so they
-/// open one deliberate CONTROL connection after composing and block until the loop has accepted, counted
-/// and closed THAT one, then assert the total is exactly 1: TCP hands connections to the accept loop in
-/// the order their handshakes completed, so once the control connection has been counted, anything whose
-/// connect COMPLETED during composition has been counted too — which is every connect composition can make
-/// while the one it would make is synchronous.</para>
+/// <para>Both directions of that race are closed by ONE primitive, which may not be "simplified" away:
+/// after composing, the test opens a deliberate CONTROL connection and blocks until the accept loop has
+/// accepted, counted and closed THAT one. TCP hands connections to the accept loop in the order their
+/// handshakes completed, so once the control connection has been counted, anything whose connect COMPLETED
+/// during composition has been counted too — which is every connect composition can make while the one it
+/// would make is synchronous. The <c>== 0</c> legs then assert the total is exactly 1, their own control
+/// connection; the <c>&gt; 0</c> leg asserts it is more than 1.</para>
 ///
-/// <para>Without that barrier the <c>== 0</c> legs pass VACUOUSLY — a connection opened during composition
+/// <para>Neither leg waits on a clock, and that is deliberate on both sides. Waiting for a SIGNAL would
+/// answer the <c>&gt; 0</c> leg, but only by spending a whole timeout budget to conclude "never" — and it
+/// would settle for a connection opened at any point inside that budget rather than during composition.
+/// The barrier answers the same question in milliseconds and pins it to composition.</para>
+///
+/// <para>Without the barrier the <c>== 0</c> legs pass VACUOUSLY — a connection opened during composition
 /// but not yet accepted leaves the counter at 0 and the assertion green, so the five host legs report
 /// success in exactly the case they exist to catch. Reading the counter directly is the bug, not the
 /// simplification.</para>
@@ -78,10 +82,12 @@ public class BootDatabaseIoTests
         var services = NewServiceCollection(probe.ConnectionString, out var configuration);
         services.AddCoreBindings(configuration, ProbeEnvironment, eagerlyReloadNpgsqlTypeCatalog: true);
 
-        Assert.True(probe.WaitForConnection(ObservationTimeout),
-            $"The eager type-catalog probe opened no connection within {ObservationTimeout.TotalSeconds:0}s " +
-            "— either the opt-in stopped working or the loopback probe is no longer being reached, which " +
-            "would also make the API-host assertions vacuous.");
+        var accepted = probe.DrainWithControlConnection(ObservationTimeout);
+
+        Assert.True(accepted > 1,
+            "The eager type-catalog probe opened no connection while composing — either the opt-in stopped " +
+            "working or the loopback probe is no longer being reached, which would also make the API-host " +
+            "assertions vacuous. Only the test's own control connection was counted.");
     }
 
     [Fact]
@@ -245,7 +251,6 @@ public class BootDatabaseIoTests
     {
         private readonly TcpListener listener;
         private readonly CancellationTokenSource cancellation = new();
-        private readonly ManualResetEventSlim connectionAccepted = new();
         private int acceptedConnections;
 
         public ClosingLoopbackListener()
@@ -263,10 +268,8 @@ public class BootDatabaseIoTests
         public string ConnectionString =>
             $"Host=127.0.0.1;Port={Port};Database=cleansia;Username=probe;Password=probe;Timeout=2;Command Timeout=2";
 
-        public bool WaitForConnection(TimeSpan timeout) => connectionAccepted.Wait(timeout);
-
         /// <summary>
-        /// The barrier the <c>== 0</c> assertions stand on: connects once and returns only after the accept
+        /// The barrier every assertion in this class stands on: connects once and returns only after the accept
         /// loop has counted and closed THAT connection, so every earlier connect is already in the total it
         /// returns (the accept queue is FIFO). The close is what proves it — the loop increments before it
         /// disposes the accepted client, so a peer that sees the socket go away has been counted.
@@ -289,11 +292,10 @@ public class BootDatabaseIoTests
             {
                 try
                 {
-                    // Increment and signal BEFORE the client is disposed: DrainWithControlConnection reads
-                    // that close as proof the count already includes it.
+                    // Increment BEFORE the client is disposed: DrainWithControlConnection reads that close
+                    // as proof the count already includes it.
                     using var client = await listener.AcceptTcpClientAsync(cancellation.Token);
                     Interlocked.Increment(ref acceptedConnections);
-                    connectionAccepted.Set();
                 }
                 catch (OperationCanceledException) { return; }
                 catch (ObjectDisposedException) { return; }
@@ -306,7 +308,6 @@ public class BootDatabaseIoTests
             cancellation.Cancel();
             listener.Dispose();
             cancellation.Dispose();
-            connectionAccepted.Dispose();
         }
     }
 

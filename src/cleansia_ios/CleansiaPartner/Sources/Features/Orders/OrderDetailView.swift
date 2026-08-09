@@ -42,7 +42,7 @@ struct OrderDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .task { await vm.load() }
-            .task { await photosVM.load() }
+            .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
             .onReceive(photosVM.mutated) { Task { await vm.load() } }
     }

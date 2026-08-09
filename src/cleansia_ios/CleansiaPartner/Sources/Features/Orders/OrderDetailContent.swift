@@ -23,14 +23,6 @@ struct OrderDetailContent: View {
             || !(order.specialInstructions ?? "").trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    /// Work tools (checklist) show for the assignee while the order is active
-    /// (Confirmed / OnTheWay / InProgress); the checklist is interactive only
-    /// once InProgress.
-    private var showWorkSections: Bool {
-        order.isAssignedToCurrentUser
-            && (order.status == ._2 || order.status == ._3 || order.status == ._4)
-    }
-
     private var checklistInteractive: Bool {
         order.status == ._4
     }
@@ -104,7 +96,7 @@ struct OrderDetailContent: View {
                     if showFromCustomerCard {
                         FromCustomerNotesCard(order: order)
                     }
-                    if showWorkSections {
+                    if order.showsWorkSections {
                         CleaningChecklistView(
                             order: order,
                             checkedIds: checklistVM.checkedIds,
@@ -121,7 +113,7 @@ struct OrderDetailContent: View {
                             vm: notesVM
                         )
                     }
-                    if showWorkSections {
+                    if order.showsWorkSections {
                         PhotosSection(
                             vm: photosVM,
                             canUploadBefore: canUploadBefore,

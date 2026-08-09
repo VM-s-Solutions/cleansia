@@ -129,6 +129,16 @@ extension OrderDetail {
         coordinate != nil && status != ._6
     }
 
+    /// The cleaner is on this job and the job is live (Confirmed / OnTheWay / InProgress): the work
+    /// tools show, and the photo rails with them. It is also the gate on the photo FETCH, because
+    /// `GetOrderPhotos` serves only a caller the strict access check admits and every photo is a
+    /// forwardable signed URL into a private home. One value for both, so a change to what is on
+    /// screen cannot leave behind a request nobody makes — the property Android gets structurally by
+    /// creating the photos view model inside the section itself.
+    var showsWorkSections: Bool {
+        isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
+    }
+
     /// The formatted sum the cleaner takes in cash, or nil when the wire carried no
     /// total — the cash-collection confirmation then asks without naming an amount
     /// rather than guessing one.

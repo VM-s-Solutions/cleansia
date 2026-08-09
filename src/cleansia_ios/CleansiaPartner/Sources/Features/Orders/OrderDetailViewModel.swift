@@ -58,6 +58,12 @@ final class OrderDetailViewModel: ViewModel {
         self.snackbar = snackbar
     }
 
+    /// Re-read on every state change, never decided once at screen-open: the cleaner can take the job
+    /// with the detail already in front of them, and the rails appear the moment they do.
+    var canReadPhotos: Bool {
+        state.loadedValue?.showsWorkSections == true
+    }
+
     /// The one valid primary action for the loaded order (the shared machine).
     var primaryAction: OrderPrimaryAction {
         guard let order = state.loadedValue else { return .none }

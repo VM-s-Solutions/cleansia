@@ -36,14 +36,14 @@ final class OrderPhotosViewModelTests: XCTestCase {
         let vm = makeVM()
         XCTAssertTrue(vm.state.isLoading)
 
-        await vm.load()
+        await vm.load(isAuthorized: true)
         XCTAssertEqual(vm.state.loadedValue?.map(\.id), ["p1"])
     }
 
     func testLoadFailureWithNoCacheTransitionsToErrorAndSnackbars() async {
         client.getPhotosResult = .failure(ApiError(code: "network.unreachable"))
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         guard case .error = vm.state else { return XCTFail("expected error") }
         XCTAssertNotNil(snackbar.current)
@@ -52,7 +52,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
     func testUploadSuccessClearsUploadingFiresMutatedAndRefetches() async {
         client.getPhotosResult = .success([])
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
         let fetchesBefore = client.getPhotosCallCount
 
         var mutatedFired = false
@@ -73,7 +73,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         client.getPhotosResult = .success([])
         client.commandResult = .failure(ApiError(httpStatus: 500))
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         var mutatedFired = false
         let cancellable = vm.mutated.sink { mutatedFired = true }
@@ -89,7 +89,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
     func testDeleteSuccessClearsDeletingIdAndFiresMutated() async {
         client.getPhotosResult = .success([OrderPhoto(id: "p1", photoType: ._1, blobUrl: nil)])
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         var mutatedFired = false
         let cancellable = vm.mutated.sink { mutatedFired = true }
@@ -106,7 +106,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         client.getPhotosResult = .success([OrderPhoto(id: "p1", photoType: ._1, blobUrl: nil)])
         client.commandResult = .failure(ApiError(httpStatus: 500))
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         var mutatedFired = false
         let cancellable = vm.mutated.sink { mutatedFired = true }
@@ -123,7 +123,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         client.getPhotosResult = .success([])
         client.suspendCommands = true
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         let first = Task { await vm.upload(type: ._1, image: image()) }
         while client.photoCommands.isEmpty {
@@ -142,7 +142,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         client.getPhotosResult = .success([OrderPhoto(id: "p1", photoType: ._1, blobUrl: nil)])
         client.suspendCommands = true
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         let first = Task { await vm.delete(photoId: "p1") }
         while client.photoCommands.isEmpty {
@@ -162,7 +162,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
             OrderPhoto(id: "b2", photoType: ._1, blobUrl: nil)
         ])
         let vm = makeVM()
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         let photos = try? XCTUnwrap(vm.state.loadedValue)
         XCTAssertEqual(photos?.filter { $0.photoType == ._1 }.map(\.id), ["b1", "b2"])
@@ -177,7 +177,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         // constructed id, never synthesized.
         client.getPhotosResult = .success([])
         let vm = makeVM(orderId: "order-xyz")
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         await vm.upload(type: ._2, image: image())
 
@@ -189,7 +189,7 @@ final class OrderPhotosViewModelTests: XCTestCase {
         // P2: the deletable id comes from this VM's own getPhotos response.
         client.getPhotosResult = .success([OrderPhoto(id: "owned-photo", photoType: ._1, blobUrl: nil)])
         let vm = makeVM(orderId: "order-1")
-        await vm.load()
+        await vm.load(isAuthorized: true)
 
         let owned = try? XCTUnwrap(vm.state.loadedValue?.first?.id)
         await vm.delete(photoId: owned ?? "")

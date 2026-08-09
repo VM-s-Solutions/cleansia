@@ -2100,3 +2100,68 @@ So a cleaner in Prague is notified about a job in Ostrava — 300 km away — an
 - Why it matters: if payouts always leave your account, global is right forever. If a franchise pays from its own, then a statement line already belongs to exactly one account, per-tenant references become sufficient, and a cross-tenant volume-inference channel the design currently accepts would be a cost paid for nothing. **It does not block the build** — global is the cheapest correct shape today either way, and the shipped index is already global. It decides whether narrowing that index later is a contingency or a scheduled migration, and narrowing it **fails on pre-existing duplicates** and is owner-only, so it is far cheaper to know before the first franchise has invoices than after.
 - Default taken: global, as the shipped index already is.
 - Answer: _(owner fills in)_
+
+---
+
+## N16 — a security read of the browse gate found something wider than the gap it was sent for (2026-08-09)
+
+I asked for a characterization of one thing: `OrderAccessService.CanBrowseOrderAsync`
+(`src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:88-91`) admits a cleaner on
+`HasAvailableSpots && NotHeldFrom` with **no offerability conjunct**, so it disagrees with the board,
+the take gate and `GetMyPendingOffers`, all of which read `OrderAvailability`. That is real and it is
+recorded in two places in the tree as *verified and deliberately not touched*.
+
+**It is the second-most-important thing missing from that gate.** The first is that `GetOrderDetails`
+applies **no pre-take PII redaction at all**, while its sibling list handler applies a documented one
+(`GetPagedOrders.cs:180-194`: *"Full PII, the exact geocoded coordinates, and the confirmation code
+stay hidden until the caller takes the job"*). So for every order on the Available board, one extra
+`GET /api/Order/GetById` returns exactly what the list just withheld — customer name, e-mail, phone,
+full street address with latitude and longitude, the `AccessInstructions` **door code**, the
+confirmation code, and the other cleaners' personal phone numbers. `GetOrderPhotos` likewise hands a
+non-assignee a one-hour SAS URL per photograph of the customer's home interior.
+
+**Being fixed now, no owner input needed:** the redaction parity and the photos gate. Nothing here is
+a new rule — it is the list's own rule applied to the detail, and the write paths for photos were
+already assignment-gated.
+
+**Four things that are NOT being fixed silently, listed so they are yours to see:**
+
+### Q-BROWSE-01 — [blocking: no] Should the browse gate refuse orders a cleaner could never take?
+
+Adding the offerability conjunct makes the detail agree with the three surfaces it currently
+contradicts. **It has one real cost**, which is why it is a question and not a fix: the
+preferred-offer push fires at order *creation* (`OrderFactory.cs:196-207`), when a **card** order is
+`New` + `Pending` and therefore not yet offerable, and its deep link opens the order detail. Today
+that tap works. After the conjunct it fails until the Stripe webhook lands — seconds usually, longer
+when Stripe is slow. Cash orders are unaffected.
+- **(a)** Add the conjunct and accept the dead window on card orders.
+- **(b)** Add the conjunct and delay the preferred-offer push until the order is offerable — the
+  cleaner is told slightly later, but every notification we send then leads somewhere.
+- **(c)** Leave the gate wide, now that the PII behind it is redacted.
+- Default taken: **none.** With the PII fix landed the leak is closed either way, so this is now a
+  correctness-and-consistency call rather than an urgent one.
+
+### Q-CREW-01 — [blocking: no] May one cleaner complete a job that was booked for two?
+
+`CompleteOrder.Validator` has **no full-crew rule**, and nothing frees or fills a seat on a terminal
+transition. So a 2-seat order (any 3-hour booking — `RequiredEmployees = ceil(180/120) = 2`) that one
+cleaner took and finished alone stays `Completed` with **seat 2 open forever**. That is what makes the
+browse gate's seat term reach finished jobs at all. Two separate questions in it: should the platform
+**stop** a solo completion, and should the customer be **told** their two-cleaner booking was worked
+by one? I did not guess either.
+
+### The mobile partner API admits an unapproved account — being fixed as parity, not a decision
+
+`MobilePartnerLogin.Handler` gates on `IsActive` and profile only — **no `ContractStatus`, no
+`IsEmailConfirmed`** — and the mobile partner order controller carries **no `[RequireCompleteProfile]`**,
+which the four partner *web* controllers do. Registration is `[AllowAnonymous]`. So a self-registered,
+never-approved account can read order detail on `:5002` today. The web/mobile asymmetry is a defect
+rather than a design, so it is being closed to match web. Flagging it because it changes who can sign
+in to the partner app, which you may want to know before the next TestFlight build.
+
+### Two gaps recorded rather than fixed
+
+- `Order/GetById` and `Order/GetPhotos` have **no cross-tenant host test**. The code path is correct —
+  both go through the tenant query filter — but the pin is missing while four sibling routes have one.
+- Photo rows written **before** ADR-0043 landed may still carry EXIF; there was no backfill, and
+  whether any such rows exist was **not established** (it needs the database, not the tree).

@@ -134,6 +134,42 @@ public class OrderFactoryPreferredHoldTests
     }
 
     /// <summary>
+    /// Q-BROWSE-01 (b). A card order is <c>New</c> + <c>Pending</c> when it leaves the factory, so it is
+    /// not offerable: the browse gate refuses it and <c>CleanupStalePendingOrders</c> may cancel it
+    /// within 15 minutes. The hold is still granted — the seat is genuinely withheld — but the
+    /// announcement waits for the Stripe webhook, which is the write that makes the job real.
+    /// </summary>
+    [Fact]
+    public async Task A_Card_Booking_Grants_The_Hold_And_Announces_Nothing_Yet()
+    {
+        var holdUntilUtc = Now.AddHours(2);
+
+        var order = await CreateAsync(
+            NoPreferredCleanerHold.Grants(holdUntilUtc), Input(PaymentType.Card));
+
+        Assert.Equal(holdUntilUtc, order.PreferredHoldUntilUtc);
+        Assert.Empty(_pushes);
+    }
+
+    /// <summary>
+    /// The same, for the case the money axis refuses regardless of payment type: anything carrying a
+    /// <c>RecurringTemplateId</c> survives only via <c>Paid</c>, so a materialized occurrence is
+    /// announced by the customer's own confirmation, not by the materializer.
+    /// </summary>
+    [Fact]
+    public async Task A_Recurring_Cash_Occurrence_Grants_The_Hold_And_Announces_Nothing_Yet()
+    {
+        var holdUntilUtc = Now.AddHours(2);
+
+        var order = await CreateAsync(
+            NoPreferredCleanerHold.Grants(holdUntilUtc),
+            Input(PaymentType.Cash) with { RecurringTemplateId = "tmpl-weekly-factory" });
+
+        Assert.Equal(holdUntilUtc, order.PreferredHoldUntilUtc);
+        Assert.Empty(_pushes);
+    }
+
+    /// <summary>
     /// The 2-to-8-hour band: too little lead time to withhold a seat, enough to be told. This is what
     /// makes the 8-hour floor a reduction of the perk rather than its absence.
     /// </summary>
@@ -162,8 +198,9 @@ public class OrderFactoryPreferredHoldTests
         string? TenantId,
         string? Subject);
 
-    private async Task<Cleansia.Core.Domain.Orders.Order> CreateAsync(IPreferredCleanerHoldResolver resolver) =>
-        await NewFactory(resolver).CreateAsync(Input(), CancellationToken.None);
+    private async Task<Cleansia.Core.Domain.Orders.Order> CreateAsync(
+        IPreferredCleanerHoldResolver resolver, CreateOrderInput? input = null) =>
+        await NewFactory(resolver).CreateAsync(input ?? Input(), CancellationToken.None);
 
     private OrderFactory NewFactory(IPreferredCleanerHoldResolver resolver) =>
         new(
@@ -178,7 +215,11 @@ public class OrderFactoryPreferredHoldTests
             resolver,
             _notificationProducer.Object);
 
-    private static CreateOrderInput Input() =>
+    /// <summary>
+    /// A one-off CASH booking by default — the one shape that is offerable the instant it exists, which
+    /// is why the announcement rides creation for it and for nothing else.
+    /// </summary>
+    private static CreateOrderInput Input(PaymentType paymentType = PaymentType.Cash) =>
         new(
             UserId: null,
             CustomerName: "Test Customer",
@@ -189,7 +230,7 @@ public class OrderFactoryPreferredHoldTests
             Bathrooms: 1,
             Extras: new Dictionary<string, bool>(),
             CleaningDate: Now.AddDays(3),
-            PaymentType: PaymentType.Cash,
+            PaymentType: paymentType,
             Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],

@@ -19,15 +19,21 @@ using TestConstants = Cleansia.TestUtilities.Constants;
 namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
-/// The scenario nobody believes from a unit test, over a real Postgres: an order whose crew was never
-/// filled and never will be. <c>EstimatedTime = 180</c> gives it two required seats and — with
-/// <c>BookingPolicy.SpareSeatsPerOrder = 0</c> — a cap of two. Cleaner A took it alone and completed
-/// it; nothing on a terminal transition fills or frees a seat, so seat two stays open forever and
-/// <c>CanBrowseOrderAsync</c> keeps admitting every other cleaner to the detail, months later.
+/// Two half-crewed orders over real Postgres, differing only in whether the work is finished, because
+/// the browse gate now reads <c>OrderAvailability</c> (Q-BROWSE-01 (b)) and that is the ONE column the
+/// two disagree about.
 ///
-/// <para>Cleaner B was never on this job. B gets the shape of the work and nothing about the household.
-/// A, who did the job, reads the same row in full through the same route — which is also what proves
-/// the fixture's values reached the mapper rather than never having been written.</para>
+/// <para><b>The live one</b> — <c>Confirmed</c> + <c>Paid</c>, two required seats, one filled — is the
+/// population the redaction exists for: cleaner B is browsing the board and may take seat two. B gets the
+/// shape of the work and nothing about the household; A, who is on the job, reads the same row in full
+/// through the same route, which is what proves the fixture's values reached the mapper rather than never
+/// having been written.</para>
+///
+/// <para><b>The finished one</b> is the exposure the owner's answer closes as a side effect. Nothing on a
+/// terminal transition fills or frees a seat, so a two-seat job one cleaner completed alone kept seat two
+/// open forever and the gate kept admitting strangers to it months later. It is no longer browsable at
+/// all — while A, who did it, still reads it, because the browse branch is only reached past the strict
+/// gate.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture fixture)
@@ -37,7 +43,8 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     private const string CountryId = "country-cz-detred";
     private const string LanguageId = "language-en-detred";
 
-    private const string OrderId = "order-half-crewed";
+    private const string LiveOrderId = "order-half-crewed-live";
+    private const string FinishedOrderId = "order-half-crewed-finished";
     private const string EmployeeAId = "employee-a-detred";
     private const string EmployeeBId = "employee-b-detred";
     private const string UserAId = "user-a-detred";
@@ -59,7 +66,8 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     private const string CustomerNotes = "Cat is friendly.";
     private const string CompletionNotes = "Balcony door was jammed.";
     private const string ConfirmationCode = "H-SECRET-4242";
-    private const string ReceiptNumber = "CZ-2026-000123";
+    private const string LiveReceiptNumber = "CZ-2026-000123";
+    private const string FinishedReceiptNumber = "CZ-2026-000124";
     private const string NoteContent = "Second bathroom needed a re-do.";
     private const string IssueDescription = "Broken tile behind the washing machine.";
     private const string ReviewComment = "Jana was great, the flat is spotless.";
@@ -72,17 +80,17 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     {
         await TestMethod(
             setup: services => ReplaceWithEmployeeSession(services, UserBId, EmployeeBEmail, EmployeeBId),
-            arrange: SeedHalfCrewedCompletedOrder,
-            act: FetchDetailAsync,
+            arrange: SeedBothHalfCrewedOrders,
+            act: provider => FetchDetailAsync(provider, LiveOrderId),
             assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
             {
                 Assert.True(result.IsSuccess);
                 var detail = result.Value!;
 
-                // The scenario itself: a COMPLETED order the browse gate still admits, because its
-                // second seat was never filled. Lose either half and the rest of this test proves less.
-                Assert.Equal(OrderId, detail.Id);
-                Assert.Equal((int)OrderStatus.Completed, detail.OrderStatus.Value);
+                // The scenario itself: an order B could still take, which is exactly why B may open it.
+                // Lose either half and the rest of this test proves less.
+                Assert.Equal(LiveOrderId, detail.Id);
+                Assert.Equal((int)OrderStatus.Confirmed, detail.OrderStatus.Value);
 
                 Assert.Equal(string.Empty, detail.CustomerName);
                 Assert.Equal(string.Empty, detail.CustomerEmail);
@@ -92,11 +100,9 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Null(detail.AccessInstructions);
                 Assert.Null(detail.SpecialInstructions);
                 Assert.Null(detail.Notes);
-                Assert.Null(detail.CompletionNotes);
                 Assert.Null(detail.ReceiptNumber);
                 Assert.Empty(detail.OrderNotes);
                 Assert.Empty(detail.OrderIssues);
-                Assert.Null(detail.Review);
 
                 var crewMember = Assert.Single(detail.AssignedEmployees);
                 Assert.Equal(CleanerAFirstName, crewMember.FullName);
@@ -111,9 +117,9 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(1500m, detail.TotalPrice);
                 Assert.False(detail.IsAssignedToCurrentUser);
 
-                // The seat state that is the whole reason B can still reach this finished job: the
-                // crew was two, one cleaner did it, seat two is open and always will be. B's detail
-                // says so — the board row already did, and the screen B taps Take on used to not.
+                // The seat state that is the whole reason B can reach this job: the crew is two, one
+                // cleaner is on it, seat two is open. B's detail says so — the board row already did,
+                // and the screen B taps Take on used to not.
                 Assert.Equal(2, detail.RequiredEmployees);
                 Assert.Equal(2, detail.MaxEmployees);
                 Assert.Equal(1, detail.AssignedEmployeesCount);
@@ -129,8 +135,8 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     {
         await TestMethod(
             setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
-            arrange: SeedHalfCrewedCompletedOrder,
-            act: FetchDetailAsync,
+            arrange: SeedBothHalfCrewedOrders,
+            act: provider => FetchDetailAsync(provider, FinishedOrderId),
             assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
             {
                 Assert.True(result.IsSuccess);
@@ -150,7 +156,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(SpecialInstructions, detail.SpecialInstructions);
                 Assert.Equal(CustomerNotes, detail.Notes);
                 Assert.Equal(CompletionNotes, detail.CompletionNotes);
-                Assert.Equal(ReceiptNumber, detail.ReceiptNumber);
+                Assert.Equal(FinishedReceiptNumber, detail.ReceiptNumber);
                 Assert.Single(detail.OrderNotes, n => n.Content == NoteContent);
                 Assert.Single(detail.OrderIssues, i => i.Description == IssueDescription);
                 Assert.Equal(ReviewComment, detail.Review!.Comment);
@@ -164,14 +170,35 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
             });
     }
 
+    /// <summary>
+    /// Q-BROWSE-01 (b). The order still has an open seat and always will, so every term the gate used to
+    /// consult still admits B — only offerability refuses. Answered as <c>OrderNotFound</c>, the same
+    /// refusal a missing order returns, so the response discloses nothing about a household B has no
+    /// relationship with.
+    /// </summary>
+    [Fact]
+    public async Task A_Finished_Job_With_A_Seat_Nobody_Will_Ever_Fill_Is_No_Longer_Browsable()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserBId, EmployeeBEmail, EmployeeBId),
+            arrange: SeedBothHalfCrewedOrders,
+            act: provider => FetchDetailAsync(provider, FinishedOrderId),
+            assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.OrderNotFound, result.Error!.Message);
+                return Task.CompletedTask;
+            });
+    }
+
     [Fact]
     public async Task A_Cleaner_Who_Never_Took_The_Job_Gets_No_Photo_Urls()
     {
         await TestMethod(
             setup: services => ReplaceWithEmployeeSession(services, UserBId, EmployeeBEmail, EmployeeBId),
-            arrange: SeedHalfCrewedCompletedOrder,
+            arrange: SeedBothHalfCrewedOrders,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new GetOrderPhotos.Query(OrderId)),
+                .Send(new GetOrderPhotos.Query(LiveOrderId)),
             assert: (CleansiaDbContext _, BusinessResult<GetOrderPhotos.Response> result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -185,9 +212,9 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     {
         await TestMethod(
             setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
-            arrange: SeedHalfCrewedCompletedOrder,
+            arrange: SeedBothHalfCrewedOrders,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new GetOrderPhotos.Query(OrderId)),
+                .Send(new GetOrderPhotos.Query(FinishedOrderId)),
             assert: (CleansiaDbContext _, BusinessResult<GetOrderPhotos.Response> result) =>
             {
                 Assert.True(result.IsSuccess);
@@ -195,8 +222,9 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
             });
     }
 
-    private static async Task<BusinessResult<OrderItem>> FetchDetailAsync(IServiceProvider provider) =>
-        await provider.GetRequiredService<IMediator>().Send(new GetOrderDetails.Query(OrderId));
+    private static async Task<BusinessResult<OrderItem>> FetchDetailAsync(
+        IServiceProvider provider, string orderId) =>
+        await provider.GetRequiredService<IMediator>().Send(new GetOrderDetails.Query(orderId));
 
     private static Task ReplaceWithEmployeeSession(
         IServiceCollection services, string userId, string email, string employeeId)
@@ -211,7 +239,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
         return Task.CompletedTask;
     }
 
-    private static async Task SeedHalfCrewedCompletedOrder(CleansiaDbContext context)
+    private static async Task SeedBothHalfCrewedOrders(CleansiaDbContext context)
     {
         var language = Language.Create("en", "English");
         language.Id = LanguageId;
@@ -233,6 +261,36 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
         context.Add(employeeA);
         context.Add(employeeB);
 
+        // The live one: everything a Confirmed + Paid card order can carry, receipt included — the
+        // webhook generates one at settlement, so it is populated here rather than hand-set on a state
+        // that could not produce it.
+        var live = NewHalfCrewedOrder(LiveOrderId, employeeA, DateTime.UtcNow.AddDays(3));
+        live.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, live));
+        live.AddNote(OrderNote.Create(LiveOrderId, EmployeeAId, NoteContent));
+        live.AddIssue(OrderIssue.Create(LiveOrderId, EmployeeAId, IssueDescription));
+        context.Add(live);
+        context.Add(OrderReceipt.Create(
+            LiveOrderId, LiveReceiptNumber, "receipt.pdf", "receipts/receipt.pdf", LanguageId));
+        context.Add(NewAfterPhoto(LiveOrderId));
+
+        var finished = NewHalfCrewedOrder(FinishedOrderId, employeeA, DateTime.UtcNow.AddDays(-30));
+        finished.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, finished));
+        finished.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, finished));
+        finished.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, finished));
+        finished.CompleteOrder(175, CompletionNotes);
+        finished.AddNote(OrderNote.Create(FinishedOrderId, EmployeeAId, NoteContent));
+        finished.AddIssue(OrderIssue.Create(FinishedOrderId, EmployeeAId, IssueDescription));
+        finished.AddReview(OrderReview.Create(FinishedOrderId, "customer-user-detred", 5, ReviewComment));
+        context.Add(finished);
+        context.Add(OrderReceipt.Create(
+            FinishedOrderId, FinishedReceiptNumber, "receipt.pdf", "receipts/receipt.pdf", LanguageId));
+        context.Add(NewAfterPhoto(FinishedOrderId));
+
+        await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static Order NewHalfCrewedOrder(string orderId, Employee cleanerA, DateTime cleaningDateTime)
+    {
         var order = Order.Create(
             customerName: CustomerName,
             customerEmail: CustomerEmail,
@@ -242,14 +300,14 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
             rooms: 3,
             bathrooms: 2,
             extras: new Dictionary<string, bool> { ["insideOven"] = true },
-            cleaningDateTime: DateTime.UtcNow.AddDays(-30),
+            cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
             specialInstructions: SpecialInstructions,
             accessInstructions: AccessInstructions);
-        order.Id = OrderId;
+        order.Id = orderId;
         order.Created(TestConstants.TestUserSession.TestUserName, DateTime.UtcNow.AddDays(-33));
         order.UpdateEstimatedTime(180);
 
@@ -259,30 +317,19 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
         typeof(Order).GetProperty(nameof(Order.ConfirmationCode))!.SetValue(order, ConfirmationCode);
         typeof(Order).GetProperty(nameof(Order.Notes))!.SetValue(order, CustomerNotes);
 
-        order.AddAssignedEmployee(OrderEmployee.Create(order, employeeA));
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, order));
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
-        order.CompleteOrder(175, CompletionNotes);
-
-        order.AddNote(OrderNote.Create(OrderId, EmployeeAId, NoteContent));
-        order.AddIssue(OrderIssue.Create(OrderId, EmployeeAId, IssueDescription));
-        order.AddReview(OrderReview.Create(OrderId, "customer-user-detred", 5, ReviewComment));
-
-        context.Add(order);
-        context.Add(OrderReceipt.Create(OrderId, ReceiptNumber, "receipt.pdf", "receipts/receipt.pdf", LanguageId));
-        context.Add(OrderPhoto.Create(
-            orderId: OrderId,
-            photoType: PhotoType.After,
-            blobUrl: "https://account.blob.core.windows.net/order-photos/2026/order/after.jpg",
-            fileName: "after.jpg",
-            originalFileName: "after.jpg",
-            fileSizeBytes: 2048,
-            contentType: "image/jpeg",
-            capturedByEmployeeId: EmployeeAId));
-
-        await context.CommitAsync(CancellationToken.None);
+        order.AddAssignedEmployee(OrderEmployee.Create(order, cleanerA));
+        return order;
     }
+
+    private static OrderPhoto NewAfterPhoto(string orderId) => OrderPhoto.Create(
+        orderId: orderId,
+        photoType: PhotoType.After,
+        blobUrl: "https://account.blob.core.windows.net/order-photos/2026/order/after.jpg",
+        fileName: "after.jpg",
+        originalFileName: "after.jpg",
+        fileSizeBytes: 2048,
+        contentType: "image/jpeg",
+        capturedByEmployeeId: EmployeeAId);
 
     private static Employee CreateApprovedEmployee(
         string userId, string employeeId, string email, string first, string last, string phone)

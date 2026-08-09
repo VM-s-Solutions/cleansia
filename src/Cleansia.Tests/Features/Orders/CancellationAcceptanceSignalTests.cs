@@ -115,6 +115,7 @@ public class CancellationAcceptanceSignalTests
             _tenantProvider.Object,
             _pending.Object,
             _producer.Object,
+            NoPreferredCleanerHold.Resolver,
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
@@ -125,6 +126,7 @@ public class CancellationAcceptanceSignalTests
             _stripeClient.Object,
             _pending.Object,
             _producer.Object,
+            NoPreferredCleanerHold.Resolver,
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 
     private AdminOverrideOrderStatus.Handler CreateAdminOverrideHandler() =>

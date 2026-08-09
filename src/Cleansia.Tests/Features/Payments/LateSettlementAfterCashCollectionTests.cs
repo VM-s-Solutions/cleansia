@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.Tests.Features.Orders;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Stripe;
@@ -58,6 +59,7 @@ public class LateSettlementAfterCashCollectionTests
         _tenantProvider.Object,
         _pending.Object,
         _producer.Object,
+        NoPreferredCleanerHold.Resolver,
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)

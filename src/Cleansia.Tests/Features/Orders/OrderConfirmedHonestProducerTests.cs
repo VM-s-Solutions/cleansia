@@ -84,6 +84,7 @@ public class OrderConfirmedHonestProducerTests
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
             _pending.Object,
             _notificationProducer.Object,
+            NoPreferredCleanerHold.Resolver,
             NullLogger<ConfirmRecurringOrder.Handler>.Instance)
             .Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
@@ -139,6 +140,7 @@ public class OrderConfirmedHonestProducerTests
             new Mock<ITenantProvider>().Object,
             _pending.Object,
             _notificationProducer.Object,
+            NoPreferredCleanerHold.Resolver,
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

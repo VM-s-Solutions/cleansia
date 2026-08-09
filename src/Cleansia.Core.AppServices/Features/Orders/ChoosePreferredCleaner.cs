@@ -2,7 +2,6 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -140,17 +139,8 @@ public class ChoosePreferredCleaner
             order.GrantPreferredHold(
                 command.EmployeeId, holdUntilUtc, nowUtc, BookingPolicy.MaxPreferredOfferRounds);
 
-            await notificationProducer.NotifyAsync(
-                recipient.UserId,
-                NotificationEventCatalog.PreferredOffer,
-                new Dictionary<string, string>
-                {
-                    ["orderId"] = order.Id,
-                    ["orderNumber"] = order.DisplayOrderNumber,
-                },
-                recipient.TenantId,
-                order.Id,
-                cancellationToken);
+            await PreferredOfferNotifier.NotifyIfOfferableAsync(
+                order, recipient, notificationProducer, cancellationToken);
 
             return BusinessResult.Success(
                 new Response(order.Id, holdUntilUtc, order.PreferredOfferRound));

@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -190,24 +189,6 @@ public sealed class OrderFactory(
                 BookingPolicy.MaxPreferredOfferRounds);
         }
 
-        // The notify predicate is WIDER than the hold's (ADR-0036 D4.1): a booking with too little lead
-        // time to withhold a seat still earns the targeted offer. The signal rides the outbox and the
-        // shortest hold the policy can grant is 48 minutes, so it lands inside the window it announces.
-        if (preferredCleaner.Recipient is { } recipient)
-        {
-            await notificationProducer.NotifyAsync(
-                recipient.UserId,
-                NotificationEventCatalog.PreferredOffer,
-                new Dictionary<string, string>
-                {
-                    ["orderId"] = order.Id,
-                    ["orderNumber"] = order.DisplayOrderNumber,
-                },
-                recipient.TenantId,
-                order.Id,
-                cancellationToken);
-        }
-
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).
         var countryId = input.Address.CountryId;
@@ -225,6 +206,18 @@ public sealed class OrderFactory(
         }
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+
+        // Sits after the only write of CurrentStatus because the seam reads that column; before the
+        // write it reads New only because New happens to be the enum's zero.
+        //
+        // The notify predicate is WIDER than the hold's (ADR-0036 D4.1) — too little lead time to
+        // withhold a seat still earns the targeted offer — and NARROWER than the preference: an order
+        // that is not yet offerable is announced by whichever site makes it so (Q-BROWSE-01 (b)), the
+        // Stripe webhook for card and the customer's confirm for recurring. A cash one-off is offerable
+        // the moment it exists, which is why it is the only shape announced here.
+        await PreferredOfferNotifier.NotifyIfOfferableAsync(
+            order, preferredCleaner.Recipient, notificationProducer, cancellationToken);
+
         orderRepository.Add(order);
         return order;
     }

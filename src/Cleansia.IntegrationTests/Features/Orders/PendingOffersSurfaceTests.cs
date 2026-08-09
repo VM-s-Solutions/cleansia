@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -114,7 +115,12 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
                 Assert.Equal(Live, offer.RespondByUtc, TimeSpan.FromSeconds(1));
                 Assert.Equal("Brno · 602", offer.CustomerAddressApproximate);
                 Assert.Equal("CZK", offer.CurrencyCode);
-                Assert.DoesNotContain("Held St", offer.CustomerAddressApproximate);
+
+                // Over the SERIALIZED row, not over the coarse field: the seeded street is real
+                // ("Held St 7"), and asserting a coarse string does not contain it is true by
+                // construction and blind to any member added later. This one reddens for a new member
+                // that carries the street, whatever it is called.
+                Assert.DoesNotContain("Held St", JsonSerializer.Serialize(offer));
 
                 return Task.CompletedTask;
             });

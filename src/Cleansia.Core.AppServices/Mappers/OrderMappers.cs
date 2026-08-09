@@ -381,6 +381,9 @@ public static class OrderMappers
         };
     }
 
+    private static string BuildApproximateAddress(Address? address) =>
+        address == null ? string.Empty : BuildApproximateAddress(address.City, address.ZipCode);
+
     /// <summary>
     /// Coarse location string safe to show to cleaners *before* they accept
     /// the order — no street name, no house number. Mirrors how Wolt/Bolt
@@ -397,11 +400,13 @@ public static class OrderMappers
     /// already identifies the broad district (whole Praha 4); leaving the
     /// last two digits would narrow it to a specific street group, which
     /// defeats the privacy intent.
+    ///
+    /// <para>This is the pre-acceptance ceiling for EVERY cleaner-facing surface, which is why it is
+    /// public rather than a mapper-local helper: <c>OrderListItem</c>, <c>OrderItem</c>,
+    /// <c>PendingOfferItem</c> and the dashboard's available-jobs preview all read it. A second
+    /// spelling of "city + partial postcode" is how the ceiling stops being one decision.</para>
     /// </summary>
-    private static string BuildApproximateAddress(Address? address) =>
-        address == null ? string.Empty : BuildApproximateAddress(address.City, address.ZipCode);
-
-    private static string BuildApproximateAddress(string? rawCity, string? rawZipCode)
+    public static string BuildApproximateAddress(string? rawCity, string? rawZipCode)
     {
         var city = rawCity?.Trim();
         if (string.IsNullOrEmpty(city)) return string.Empty;

@@ -59,6 +59,17 @@ enum OrdersFormat {
         L10n.Orders.extras(count)
     }
 
+    /// The same " · " join the list card uses for rooms and baths: the seat facts are the same
+    /// class of fact, and a second visual language for them is how the two surfaces come to
+    /// disagree.
+    static func crewLine(_ crew: OrderCrew) -> String {
+        let seats = switch crew {
+        case let .spotsOpen(_, openSpots): L10n.Orders.crewSpotsOpen(openSpots)
+        case .full: L10n.Orders.crewNoSpots
+        }
+        return [L10n.Orders.crewSize(crew.crewSize), seats].joined(separator: " · ")
+    }
+
     static func addressLine(_ order: OrderListItem, distanceKm: Double?) -> String? {
         let address = nonBlank(order.customerAddress) ?? nonBlank(order.customerAddressApproximate)
         let distance = distanceKm.map { L10n.Orders.kmAway(distanceString($0)) }

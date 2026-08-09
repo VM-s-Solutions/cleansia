@@ -376,12 +376,15 @@ private struct OrderMetadataRow: View {
             pay: 1200,
             currencyCode: "CZK",
             currencySymbol: "Kč",
-            address: OrderDetailAddress(street: "Vinohradská 12", city: "Praha", zipCode: "120 00"),
-            coordinate: Coordinate(latitude: 50.0755, longitude: 14.4378),
+            location: .precise(.init(
+                line: "Vinohradská 12, Praha, 120 00",
+                coordinate: Coordinate(latitude: 50.0755, longitude: 14.4378)
+            )),
             customerName: "Jana Nováková",
             customerPhone: "+420 777 123 456",
             rooms: 3,
             bathrooms: 2,
+            crew: .spotsOpen(crewSize: 2, openSpots: 1),
             services: [
                 OrderDetailService(id: "svc-standard", name: "Standard clean"),
                 OrderDetailService(id: "svc-window", name: "Window clean")

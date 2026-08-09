@@ -14,13 +14,13 @@ struct OrderDetail: Equatable {
     let currencyCode: String?
     let currencySymbol: String?
 
-    let address: OrderDetailAddress?
-    let coordinate: Coordinate?
+    let location: OrderLocation
     let customerName: String?
     let customerPhone: String?
 
     let rooms: Int
     let bathrooms: Int
+    let crew: OrderCrew?
     let services: [OrderDetailService]
     let packages: [OrderDetailPackage]
     let extras: [String]
@@ -37,19 +37,6 @@ struct OrderDetail: Equatable {
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]
-}
-
-struct OrderDetailAddress: Equatable {
-    let street: String?
-    let city: String?
-    let zipCode: String?
-
-    var singleLine: String? {
-        let parts = [street, city, zipCode]
-            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
-    }
 }
 
 /// Name + the stable backend id: the checklist persists ticks under id-based keys
@@ -122,11 +109,11 @@ struct OrderDetailPayment: Equatable {
 }
 
 extension OrderDetail {
-    /// Whether the full-bleed map is shown: coords present AND the order is not
-    /// Cancelled (the visit never happened) — the `canShowMap` parity
-    /// (OrderDetailScreen.kt:165).
-    var canShowMap: Bool {
-        coordinate != nil && status != ._6
+    /// Where the full-bleed map centres, or nil when there is nothing precise to point at — a
+    /// browsing cleaner who only got the coarse zone, an order that predates the geocoding
+    /// backfill, or a cancelled visit that never happened.
+    var mapCoordinate: Coordinate? {
+        location.mapPoint(status: status)
     }
 
     /// The cleaner is on this job and the job is live (Confirmed / OnTheWay / InProgress): the work
@@ -159,22 +146,13 @@ extension OrderDetail {
         currencyCode = item.currency?.code ?? item.currency?.symbol
         currencySymbol = item.currency?.symbol
 
-        if let address = item.address {
-            self.address = OrderDetailAddress(street: address.street, city: address.city, zipCode: address.zipCode)
-            if let lat = address.latitude, let lon = address.longitude {
-                coordinate = Coordinate(latitude: lat, longitude: lon)
-            } else {
-                coordinate = nil
-            }
-        } else {
-            address = nil
-            coordinate = nil
-        }
+        location = OrderLocation(item)
         customerName = item.customerName
         customerPhone = item.customerPhone
 
         rooms = item.rooms ?? 0
         bathrooms = item.bathrooms ?? 0
+        crew = OrderCrew(item)
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
                 .map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }

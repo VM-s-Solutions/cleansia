@@ -127,6 +127,18 @@ extension L10n {
             format("scope_extras", count)
         }
 
+        static func crewSize(_ count: Int) -> String {
+            format("crew_size", count)
+        }
+
+        static func crewSpotsOpen(_ count: Int) -> String {
+            format("crew_spots_open", count)
+        }
+
+        static var crewNoSpots: String {
+            localized("crew_no_spots")
+        }
+
         static var inProgressNow: String {
             localized("in_progress_now")
         }

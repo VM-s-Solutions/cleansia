@@ -67,14 +67,17 @@ final class OrderDetailMappingTests: XCTestCase {
 
     func testMapsAddressAndCoordinate() {
         let detail = OrderDetail(makeItem())
-        XCTAssertEqual(detail.address?.singleLine, "Vinohradská 12, Praha, 120 00")
-        XCTAssertEqual(detail.coordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
+        XCTAssertEqual(detail.location.line, "Vinohradská 12, Praha, 120 00")
+        XCTAssertEqual(
+            detail.location.navigationTarget?.coordinate,
+            Coordinate(latitude: 50.0755, longitude: 14.4378)
+        )
     }
 
     func testNilCoordinateWhenAddressLacksLatLon() {
         var item = makeItem()
         item.address = OrderAddress(street: "X", city: "Y", zipCode: "Z")
-        XCTAssertNil(OrderDetail(item).coordinate)
+        XCTAssertNil(OrderDetail(item).location.navigationTarget?.coordinate)
     }
 
     func testMapsScopeServicesPackagesAndActiveExtrasOnly() {
@@ -143,20 +146,20 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertFalse(detail.payment.hasBreakdown)
     }
 
-    func testCanShowMapTrueWithCoordsAndNotCancelled() {
-        XCTAssertTrue(OrderDetail(makeItem()).canShowMap)
+    func testMapCoordinateResolvesWithCoordsAndNotCancelled() {
+        XCTAssertEqual(OrderDetail(makeItem()).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
     }
 
-    func testCanShowMapFalseWhenCancelled() {
+    func testMapCoordinateIsNilWhenCancelled() {
         var item = makeItem()
         item.orderStatus = Code(value: 6)
-        XCTAssertFalse(OrderDetail(item).canShowMap)
+        XCTAssertNil(OrderDetail(item).mapCoordinate)
     }
 
-    func testCanShowMapFalseWhenNoCoordinate() {
+    func testMapCoordinateIsNilWhenNoCoordinate() {
         var item = makeItem()
         item.address = OrderAddress(street: "X")
-        XCTAssertFalse(OrderDetail(item).canShowMap)
+        XCTAssertNil(OrderDetail(item).mapCoordinate)
     }
 
     func testCashDueLabelFormatsTheOrderTotalWithItsCurrency() {

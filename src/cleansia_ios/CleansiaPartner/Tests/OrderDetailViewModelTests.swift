@@ -32,7 +32,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         item.id = id
         item.displayOrderNumber = "ORD-1"
         item.orderStatus = Code(value: status)
-        item.address = OrderAddress(latitude: 50.0, longitude: 14.0)
+        item.address = OrderAddress(street: "Vinohradská 12", city: "Praha", latitude: 50.0, longitude: 14.0)
         item.isAssignedToCurrentUser = isMine
         item.hasAfterPhotos = hasAfterPhotos
         item.paymentType = paymentType.map { Code(value: $0) }
@@ -80,25 +80,39 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    func testCanShowMapHidesOnlyOnCancelled() async {
+    func testMapHidesOnlyOnCancelled() async {
         client.byIdResult = .success(loadedItem(status: 5)) // Completed → still shows
         let completedVM = makeVM()
         await completedVM.load()
-        XCTAssertEqual(completedVM.state.loadedValue?.canShowMap, true)
+        XCTAssertEqual(completedVM.state.loadedValue?.mapCoordinate, Coordinate(latitude: 50.0, longitude: 14.0))
 
         client.byIdResult = .success(loadedItem(status: 6)) // Cancelled → hides
         let cancelledVM = makeVM()
         await cancelledVM.load()
-        XCTAssertEqual(cancelledVM.state.loadedValue?.canShowMap, false)
+        XCTAssertNil(cancelledVM.state.loadedValue?.mapCoordinate)
     }
 
-    func testCanShowMapFalseWhenNoCoordinate() async {
+    func testMapHidesWhenNoCoordinate() async {
         var item = loadedItem()
         item.address = OrderAddress(street: "X")
         client.byIdResult = .success(item)
         let vm = makeVM()
         await vm.load()
-        XCTAssertEqual(vm.state.loadedValue?.canShowMap, false)
+        XCTAssertNil(vm.state.loadedValue?.mapCoordinate)
+    }
+
+    /// The regression: the server nulls `address` for a browsing cleaner and sends the coarse
+    /// zone instead, and the screen showed neither. The zone arrives; the map does not.
+    func testBrowsingCleanerGetsTheZoneAndNoMap() async {
+        var item = loadedItem(isMine: false)
+        item.address = nil
+        item.customerAddressApproximate = "Praha · 120"
+        client.byIdResult = .success(item)
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue?.location.line, "Praha · 120")
+        XCTAssertNil(vm.state.loadedValue?.location.navigationTarget)
+        XCTAssertNil(vm.state.loadedValue?.mapCoordinate)
     }
 
     // MARK: primaryAction via the shared machine

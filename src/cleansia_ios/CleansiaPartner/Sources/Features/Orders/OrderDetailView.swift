@@ -81,10 +81,9 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func mapBackdrop(_ order: OrderDetail) -> some View {
-        // The View never imports MapKit — the provider encapsulates it. On
-        // Cancelled (no coords / never-visited) a plain surface stands in for
-        // the map.
-        if order.canShowMap, let coordinate = order.coordinate {
+        // The View never imports MapKit — the provider encapsulates it. A plain surface stands in
+        // whenever the location resolved to nothing precise to point at.
+        if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
             CleansiaColors.primaryContainer

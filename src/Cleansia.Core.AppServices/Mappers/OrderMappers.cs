@@ -230,6 +230,7 @@ public static class OrderMappers
             CustomerEmail: order.CustomerEmail,
             CustomerPhone: order.CustomerPhone,
             Address: order.CustomerAddress.MapToOrderAddress(),
+            CustomerAddressApproximate: BuildApproximateAddress(order.CustomerAddress),
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
             Extras: order.Extras.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),

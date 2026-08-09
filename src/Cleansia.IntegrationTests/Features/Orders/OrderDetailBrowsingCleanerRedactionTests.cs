@@ -51,6 +51,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
+    private const string ApproximateAddress = "Praha · 120";
     private const double Latitude = 50.073658;
     private const double Longitude = 14.418540;
     private const string AccessInstructions = "Code 1234 at the gate, second door on the left.";
@@ -101,7 +102,9 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(CleanerAFirstName, crewMember.FullName);
                 Assert.Null(crewMember.PhoneNumber);
 
-                // The job itself survives, or the browse branch would be closed by accident.
+                // The job itself survives, or the browse branch would be closed by accident — and the
+                // coarse zone with it, which the board row B tapped through was already showing.
+                Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
                 Assert.Equal(3, detail.Rooms);
                 Assert.Equal(2, detail.Bathrooms);
                 Assert.Equal(180, detail.EstimatedTime);
@@ -132,6 +135,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(ZipCode, detail.Address.ZipCode);
                 Assert.Equal(Latitude, detail.Address.Latitude);
                 Assert.Equal(Longitude, detail.Address.Longitude);
+                Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
                 Assert.Equal(ConfirmationCode, detail.ConfirmationCode);
                 Assert.Equal(AccessInstructions, detail.AccessInstructions);
                 Assert.Equal(SpecialInstructions, detail.SpecialInstructions);

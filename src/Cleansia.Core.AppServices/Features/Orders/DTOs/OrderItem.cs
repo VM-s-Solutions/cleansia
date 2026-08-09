@@ -12,6 +12,16 @@ public record OrderItem(
     string CustomerEmail,
     string CustomerPhone,
     OrderAddress? Address,
+    /// <summary>
+    /// City + zip-prefix combo safe to show before the cleaner accepts the job, e.g. "Praha · 120".
+    /// The same value and the same builder as <c>OrderListItem.CustomerAddressApproximate</c>: the
+    /// board row and the detail behind it describe one order to one caller, so the coarse location
+    /// cannot be on one and missing from the other. Always populated when the address has a city;
+    /// the backend never blanks this field, including for a browsing cleaner whose
+    /// <see cref="Address"/> is nulled — deciding whether a job is worth taking is a question about
+    /// distance.
+    /// </summary>
+    string CustomerAddressApproximate,
     int Rooms,
     int Bathrooms,
     Dictionary<string, bool> Extras,

@@ -19,6 +19,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 public class OrderRedactionSurfaceTests
 {
+    private const string ApproximateAddress = "Praha · 120";
+
     private static readonly string[] DetailBlanked =
     [
         nameof(OrderItem.CustomerName),
@@ -47,12 +49,14 @@ public class OrderRedactionSurfaceTests
     /// <summary>
     /// Everything a cleaner reads to decide whether to take the job, plus the identifiers they arrived
     /// with. None of it describes the customer: the discount amounts are already unblanked on the list
-    /// row, the timestamps and counts are job state, and <c>EstimatedCleanerPay</c> is the browse
-    /// branch's whole purpose.
+    /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is city + zip
+    /// prefix and survives on the list row for the same reason, and <c>EstimatedCleanerPay</c> is the
+    /// browse branch's whole purpose.
     /// </summary>
     private static readonly string[] DetailKept =
     [
         nameof(OrderItem.Id),
+        nameof(OrderItem.CustomerAddressApproximate),
         nameof(OrderItem.DisplayOrderNumber),
         nameof(OrderItem.Rooms),
         nameof(OrderItem.Bathrooms),
@@ -175,6 +179,24 @@ public class OrderRedactionSurfaceTests
         Assert.Equal(Read(populated, member), Read(populated.RedactForBrowsingCleaner(), member));
     }
 
+    /// <summary>
+    /// The kept theory compares the member against itself before and after, which a fixture that never
+    /// populated it satisfies with <c>"" == ""</c>. The coarse location is the one kept member whose
+    /// entire content is the point — a cleaner deciding on a job needs to know where it is — so both
+    /// shapes are pinned against the literal instead, on one assertion, because the two routes
+    /// disagreeing about it is precisely the bug this field closed.
+    /// </summary>
+    [Fact]
+    public void The_Coarse_Location_Survives_On_Both_Shapes_With_Its_Value()
+    {
+        Assert.Equal(
+            ApproximateAddress,
+            FullyPopulatedDetail().RedactForBrowsingCleaner().CustomerAddressApproximate);
+        Assert.Equal(
+            ApproximateAddress,
+            FullyPopulatedListItem().RedactForBrowsingCleaner().CustomerAddressApproximate);
+    }
+
     [Fact]
     public void The_Reshaped_Crew_Keeps_Its_Ids_And_Loses_Its_Contact_Details()
     {
@@ -240,6 +262,7 @@ public class OrderRedactionSurfaceTests
             CustomerEmail: "jana@example.test",
             CustomerPhone: "+420777123456",
             Address: new OrderAddress("Vinohradska 12", "Praha", "12000", "Czechia", 50.0755, 14.4378),
+            CustomerAddressApproximate: ApproximateAddress,
             Rooms: 3,
             Bathrooms: 2,
             Extras: new Dictionary<string, bool> { ["insideOven"] = true },
@@ -287,7 +310,7 @@ public class OrderRedactionSurfaceTests
             CustomerEmail: "jana@example.test",
             CustomerPhone: "+420777123456",
             CustomerAddress: "Vinohradska 12, Praha, 12000",
-            CustomerAddressApproximate: "Praha · 120",
+            CustomerAddressApproximate: ApproximateAddress,
             DisplayOrderNumber: "ORD-ABCD1234",
             Rooms: 3,
             Bathrooms: 2,

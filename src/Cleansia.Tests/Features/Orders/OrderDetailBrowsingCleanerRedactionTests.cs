@@ -38,6 +38,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
+    private const string ApproximateAddress = "Praha · 120";
     private const double Latitude = 50.0755;
     private const double Longitude = 14.4378;
     private const string AccessInstructions = "Code 1234 at the gate.";
@@ -78,6 +79,21 @@ public class OrderDetailBrowsingCleanerRedactionTests
     {
         var detail = await BrowsingCleanerDetailAsync();
 
+        Assert.Null(detail.Address);
+    }
+
+    /// <summary>
+    /// The street goes, the zone stays. Blanking the address as a whole record took the coarse location
+    /// with it and left the detail screen — the one a cleaner opens to decide whether the job is worth
+    /// taking — saying nothing at all about where the work is, while the board row they tapped through
+    /// still showed it.
+    /// </summary>
+    [Fact]
+    public async Task Browsing_Cleaner_Still_Gets_The_Coarse_Location()
+    {
+        var detail = await BrowsingCleanerDetailAsync();
+
+        Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
         Assert.Null(detail.Address);
     }
 
@@ -183,6 +199,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Equal(ZipCode, detail.Address.ZipCode);
         Assert.Equal(Latitude, detail.Address.Latitude);
         Assert.Equal(Longitude, detail.Address.Longitude);
+        Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
         Assert.Equal(AccessInstructions, detail.AccessInstructions);
         Assert.Equal(SpecialInstructions, detail.SpecialInstructions);
         Assert.Equal(CustomerNotes, detail.Notes);
@@ -215,6 +232,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Equal(CustomerName, detail.CustomerName);
         Assert.Equal(AccessInstructions, detail.AccessInstructions);
         Assert.NotNull(detail.Address);
+        Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
         Assert.Equal(ReviewComment, detail.Review!.Comment);
 
         // The pre-existing customer-facing masking of the cleaner is unchanged.
@@ -238,6 +256,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Equal(CustomerPhone, detail.CustomerPhone);
         Assert.Equal(AccessInstructions, detail.AccessInstructions);
         Assert.Equal(Latitude, detail.Address!.Latitude);
+        Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
         Assert.Equal(ReceiptNumber, detail.ReceiptNumber);
 
         var crewMember = Assert.Single(detail.AssignedEmployees);

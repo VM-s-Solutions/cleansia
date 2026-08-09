@@ -755,7 +755,15 @@ _No open Wave-1 *planning* questions remain._
 
 ---
 
-### Q-PROFILE-01 — [blocking: YES — blocks T-0447 AC2/AC3 end-to-end, and the customer web "Save profile" button is already dead] `UpdateCurrentUser` requires a client-supplied `Id` the customer **web** app cannot obtain
+### ✅ Q-PROFILE-01 — CLOSED 2026-08-09, fixed rather than answered. Nothing owed.
+
+> Re-verified at HEAD before it was put back in front of the owner: `UpdateCurrentUser.cs:110` now carries
+> the `[OWN-DATA]` note *"the row written is ALWAYS the JWT caller's — this id is never read"*, and
+> `Cleansia.HostTests/Tests/UpdateCurrentUserSessionIdentityTests` pins it end to end through the real
+> MVC model binder, including the web client's body-with-no-id shape. The three shapes the question
+> asked the owner to choose between are moot: the id is inert. **Original text below, for the record.**
+
+### Q-PROFILE-01 (original) — [was: blocking YES] `UpdateCurrentUser` requires a client-supplied `Id` the customer **web** app cannot obtain
 - Raised by: frontend (T-0447)
 - Owner: **backend** to author the fix; **owner/architect** to pick which of the three shapes
 - Resolve-by: **pre-prod** (it is in demo scope — the avatar feature was ruled demo scope 2026-07-30)

@@ -2,7 +2,6 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
-using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
@@ -41,7 +40,7 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
     [HttpPut("UpdateEmployee")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
     [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UpdateEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployee.Command command)
     {

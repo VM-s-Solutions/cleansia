@@ -21,6 +21,15 @@ public class OrderRedactionSurfaceTests
 {
     private const string ApproximateAddress = "Praha · 120";
 
+    // A multi-seat order one cleaner short of its crew. Every seat member is therefore non-default:
+    // an unpopulated fixture yields 0 and false, which is precisely what a half-crewed 2-seat order
+    // does NOT produce on any of the five.
+    private const int RequiredEmployees = 2;
+    private const int MaxEmployees = 2;
+    private const int AssignedEmployeesCount = 1;
+    private const int AvailableSpots = 1;
+    private const bool HasAvailableSpots = true;
+
     private static readonly string[] DetailBlanked =
     [
         nameof(OrderItem.CustomerName),
@@ -50,13 +59,19 @@ public class OrderRedactionSurfaceTests
     /// Everything a cleaner reads to decide whether to take the job, plus the identifiers they arrived
     /// with. None of it describes the customer: the discount amounts are already unblanked on the list
     /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is city + zip
-    /// prefix and survives on the list row for the same reason, and <c>EstimatedCleanerPay</c> is the
-    /// browse branch's whole purpose.
+    /// prefix and survives on the list row for the same reason, the five seat members survive on the
+    /// list row for that same reason again, and <c>EstimatedCleanerPay</c> is the browse branch's whole
+    /// purpose.
     /// </summary>
     private static readonly string[] DetailKept =
     [
         nameof(OrderItem.Id),
         nameof(OrderItem.CustomerAddressApproximate),
+        nameof(OrderItem.RequiredEmployees),
+        nameof(OrderItem.MaxEmployees),
+        nameof(OrderItem.AvailableSpots),
+        nameof(OrderItem.AssignedEmployeesCount),
+        nameof(OrderItem.HasAvailableSpots),
         nameof(OrderItem.DisplayOrderNumber),
         nameof(OrderItem.Rooms),
         nameof(OrderItem.Bathrooms),
@@ -197,6 +212,31 @@ public class OrderRedactionSurfaceTests
             FullyPopulatedListItem().RedactForBrowsingCleaner().CustomerAddressApproximate);
     }
 
+    /// <summary>
+    /// The same anti-vacuity problem as the coarse location, and worse: four of the five seat members
+    /// are numeric and one is a bool, so the kept theory's before/after comparison is satisfied by
+    /// <c>0 == 0</c> and <c>false == false</c> — exactly what a fixture that never populated them
+    /// yields. Both shapes are pinned against the literals of a half-crewed two-seat order instead,
+    /// where not one of the five equals its type default.
+    /// </summary>
+    [Fact]
+    public void The_Seat_Counts_Survive_On_Both_Shapes_With_Their_Values()
+    {
+        var detail = FullyPopulatedDetail().RedactForBrowsingCleaner();
+        Assert.Equal(2, detail.RequiredEmployees);
+        Assert.Equal(2, detail.MaxEmployees);
+        Assert.Equal(1, detail.AvailableSpots);
+        Assert.Equal(1, detail.AssignedEmployeesCount);
+        Assert.True(detail.HasAvailableSpots);
+
+        var listItem = FullyPopulatedListItem().RedactForBrowsingCleaner();
+        Assert.Equal(2, listItem.RequiredEmployees);
+        Assert.Equal(2, listItem.MaxEmployees);
+        Assert.Equal(1, listItem.AvailableSpots);
+        Assert.Equal(1, listItem.AssignedEmployeesCount);
+        Assert.True(listItem.HasAvailableSpots);
+    }
+
     [Fact]
     public void The_Reshaped_Crew_Keeps_Its_Ids_And_Loses_Its_Contact_Details()
     {
@@ -292,6 +332,11 @@ public class OrderRedactionSurfaceTests
             CreatedOn: DateTimeOffset.UtcNow.AddDays(-3),
             UpdatedOn: DateTimeOffset.UtcNow.AddHours(-1),
             AssignedEmployees: [new AssignedEmployeeDto("assignment-1", "employee-1", "Petra Svobodova", "+420602987654")],
+            RequiredEmployees: RequiredEmployees,
+            MaxEmployees: MaxEmployees,
+            AvailableSpots: AvailableSpots,
+            AssignedEmployeesCount: AssignedEmployeesCount,
+            HasAvailableSpots: HasAvailableSpots,
             ReceiptNumber: "CZ-2026-000123",
             OrderNotes: [new OrderNoteDto("note-1", "employee-1", "Second bathroom needed a re-do.", DateTimeOffset.UtcNow)],
             OrderIssues: [new OrderIssueDto("issue-1", "employee-1", "Broken tile.", false, null, DateTimeOffset.UtcNow)],
@@ -332,11 +377,11 @@ public class OrderRedactionSurfaceTests
             Currency: new CurrencyListItem("czk", "CZK", "Kč", "Czech Koruna", 1m, true),
             AssignedEmployees: ["assignment-1"],
             SelectedServices: [],
-            RequiredEmployees: 2,
-            MaxEmployees: 2,
-            AvailableSpots: 1,
-            AssignedEmployeesCount: 1,
-            HasAvailableSpots: true,
+            RequiredEmployees: RequiredEmployees,
+            MaxEmployees: MaxEmployees,
+            AvailableSpots: AvailableSpots,
+            AssignedEmployeesCount: AssignedEmployeesCount,
+            HasAvailableSpots: HasAvailableSpots,
             EstimatedCleanerPay: 620m,
             CustomerAddressLatitude: 50.0755,
             CustomerAddressLongitude: 14.4378);

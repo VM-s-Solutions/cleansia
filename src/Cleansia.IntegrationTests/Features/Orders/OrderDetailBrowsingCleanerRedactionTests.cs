@@ -111,6 +111,15 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(1500m, detail.TotalPrice);
                 Assert.False(detail.IsAssignedToCurrentUser);
 
+                // The seat state that is the whole reason B can still reach this finished job: the
+                // crew was two, one cleaner did it, seat two is open and always will be. B's detail
+                // says so — the board row already did, and the screen B taps Take on used to not.
+                Assert.Equal(2, detail.RequiredEmployees);
+                Assert.Equal(2, detail.MaxEmployees);
+                Assert.Equal(1, detail.AssignedEmployeesCount);
+                Assert.Equal(1, detail.AvailableSpots);
+                Assert.True(detail.HasAvailableSpots);
+
                 return Task.CompletedTask;
             });
     }

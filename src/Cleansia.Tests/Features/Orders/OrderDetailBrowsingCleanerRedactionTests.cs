@@ -97,6 +97,28 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Null(detail.Address);
     }
 
+    /// <summary>
+    /// The board row a cleaner tapped through already told them the crew size and whether a seat was
+    /// free; the detail behind it said nothing, so the screen they actually tap Take on was the one
+    /// screen that could not warn them. <c>TakeOrder</c>'s free-seat conjunct then refuses a take the
+    /// detail gave no warning about.
+    ///
+    /// <para>Literals, not a read-back of the fixture: four of the five are numeric and one is a bool,
+    /// so a mapper that stopped populating them would satisfy any assertion phrased as a comparison
+    /// against a default-valued fixture.</para>
+    /// </summary>
+    [Fact]
+    public async Task Browsing_Cleaner_Still_Gets_The_Crew_Size_And_Free_Seats()
+    {
+        var detail = await BrowsingCleanerDetailAsync();
+
+        Assert.Equal(2, detail.RequiredEmployees);
+        Assert.Equal(2, detail.MaxEmployees);
+        Assert.Equal(1, detail.AssignedEmployeesCount);
+        Assert.Equal(1, detail.AvailableSpots);
+        Assert.True(detail.HasAvailableSpots);
+    }
+
     [Fact]
     public async Task Browsing_Cleaner_Gets_No_Access_Instructions()
     {
@@ -370,7 +392,10 @@ public class OrderDetailBrowsingCleanerRedactionTests
         order.Id = OrderId;
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
         order.UpdateEstimatedTime(180);
-        order.SetMaxEmployees(2);
+
+        // Two required seats, no spare, one of them filled below — so none of the five seat members
+        // reads as its type default and a mapper that stopped populating them cannot pass.
+        order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
         order.Created("test", DateTime.UtcNow.AddDays(-3));
 
         var opened = OrderStatusTrack.Create(OrderStatus.New, order);

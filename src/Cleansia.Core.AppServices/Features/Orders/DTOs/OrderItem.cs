@@ -56,6 +56,25 @@ public record OrderItem(
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn,
     IEnumerable<AssignedEmployeeDto> AssignedEmployees,
+    /// <summary>
+    /// Crew size and seat occupancy, the same five members and the same values as on
+    /// <c>OrderListItem</c>. The board row already shows all five to a browsing cleaner, so the detail
+    /// behind it discloses nothing new by repeating them — and without them the screen a cleaner taps
+    /// Take on cannot say whether a seat is free, while <c>TakeOrder</c>'s free-seat conjunct refuses
+    /// the take anyway. Neither <see cref="RequiredEmployees"/> nor <see cref="MaxEmployees"/> is
+    /// derivable client-side, so a client cannot reconstruct the block from the rest of the payload.
+    /// </summary>
+    int RequiredEmployees,
+    int MaxEmployees,
+    /// <summary>
+    /// <c>MaxEmployees - AssignedEmployeesCount</c>, and <c>AvailableSpots &gt; 0</c>. Both are
+    /// derivable from the three members above and are carried anyway, because the list carries them
+    /// and a client that reads one shape and computes the other is how the two come to disagree.
+    /// Server-computed on both shapes from one source, so they cannot.
+    /// </summary>
+    int AvailableSpots,
+    int AssignedEmployeesCount,
+    bool HasAvailableSpots,
     string? ReceiptNumber,
     IEnumerable<OrderNoteDto> OrderNotes,
     IEnumerable<OrderIssueDto> OrderIssues,

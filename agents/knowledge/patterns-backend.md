@@ -976,10 +976,29 @@ When a rule must give one actor **temporary exclusive access** to a work item on
 
 ## Ask N candidates ONE question, not one candidate N questions (ADR-0039)
 
-> **PROPOSED — not yet law.** ADR-0039 is `proposed` and unchallenged as of 2026-08-03.
-> **Enforcer / tier (ADR-0032):** **T3-review** — the shapes below are read from a diff, not detected
-> by a linter. The one mechanical candidate (a repository call inside a `foreach` over a candidate
-> list) is a `check-consistency.mjs` heuristic if it earns its place.
+> **LAW — ADR-0039 is `accepted`.** Its status line reads *"`accepted` — **2026-08-03, by the lead of
+> the defense panel**"* after two challenge lanes (disclosure `CH-D1…D9`, query-cost `CH-Q1…Q7`) and
+> eleven amendments
+> (`agents/backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md:3-9`).
+> **Retires when:** that status line stops reading `accepted`.
+> *(This block said "PROPOSED — not yet law … `proposed` and unchallenged as of 2026-08-03" until
+> 2026-08-09 — the ADR was accepted the same day the banner was written, and a sibling card
+> (`roles/preferred-cleaner-hold-resolver.md:12-18`) had been quoting it as binding throughout. A
+> stale "not yet law" banner over a real rule is worse than no banner: an N-candidate loop could pass
+> review by pointing at it.)*
+>
+> **Enforced by:** ADR-0039 §*"How a reviewer verifies compliance"* **step 1** — *"`rg -n
+> "HasOverlappingOrder" src/ --type cs` — no call inside a loop **on a request path**"*, which carves
+> out `NewJobsDigestService`'s nested loop as expected and **not** a finding — **T3-HUMAN**. *(Not
+> `T3-review`: that is not a tier token. The tokens are in `conventions.md` §"The price of a law".)*
+> ⚠️ **Run the grep; do not copy the ADR's line numbers.** Checked 2026-08-09:
+> `NewJobsDigestService.cs` has loops at `:130` and `:196` and **no `HasOverlappingOrderAsync` call at
+> all**, so the carve-out is currently vacuous and the ADR's `:86 × :135 → :137` no longer points at
+> it. The ADR is `accepted` and immutable — its citation stays as the record of what the panel ruled
+> on; this note is the correction (`consistency.md` §"Catalog claims about the tree", form 3). The one mechanical candidate — a repository call inside a `foreach` over a
+> candidate list — would be a `check-consistency.mjs` heuristic, i.e. **`T2-ADVISORY`** on landing,
+> because that tool is in no `.github/` workflow; it promotes to `T1-CI` only with the backend checker
+> step (`enforcement.md` Rollout 3).
 
 When a screen asks the same yes/no question about a **list** of entities — *"which of these people are
 free at this hour?"*, *"which of these are over their limit?"* — the singular repository method that

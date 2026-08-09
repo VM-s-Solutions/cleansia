@@ -15,7 +15,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
 | Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
 | Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; baseline now empty — all 8 surfaces gated strictly) |
-| iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI** (lint + tests); **no project-specific rules yet** — `.swiftlint.yml` has no `custom_rules:`, and its `included:` omits `CleansiaCustomer/LiveActivity/` + both apps' `Tests/` |
+| iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI — T1-CI** (lint + tests). **Two project-specific rules exist**: `src/cleansia_ios/.swiftlint.yml:27` declares `custom_rules:` with `combine_assign_retains_target` (`:28-36`) and `calendar_day_needs_greenwich` (`:38-46`), both `severity: error` and therefore CI-blocking under `--strict`. ⚠️ **A `custom_rule` only reaches what `included:` lints** (`:1-5`): `CleansiaCore/Sources`, `CleansiaCore/Tests`, `CleansiaPartner/Sources`, `CleansiaCustomer/Sources` — so `CleansiaCustomer/LiveActivity/` and **both apps' `Tests/`** are outside every one of them |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
 
@@ -146,6 +146,53 @@ that gets fixed** both turn CI red; the four were therefore deleted in the same 
 four surfaces, which is the only exit an entry has. All eight surfaces are now gated strictly. The
 summary line always prints the count; the tool never prints a bare `OK`.
 
+## The catalog-claim liveness check — `agents/tools/check-catalog-claims.mjs`
+
+**Specified, NOT yet built.** Rule: `conventions.md` §*"A claim about the tree carries its own
+retirement condition"*; deviating forms: `consistency.md` §*"Catalog claims about the tree"*.
+Tier today: **`(gate pending: catalog-claim-liveness checker — ticket owed)`** → **`T1-CI`** on landing.
+
+**The failure it closes is decay, not mis-citation.** Every one of the six measured instances cited the
+tree correctly at the moment of writing; each became false when the tree moved and **nothing anywhere
+went red**. Two were falsified the same day they were written. So no writing-time human gate can close
+this — the artifact is correct when the gate would run.
+
+**Three checks, all decidable from in-repo text, no compiler and no type graph:**
+
+1. **ADR status agreement.** For each ADR id appearing in `agents/knowledge/**/*.md` +
+   `agents/process/**/*.md` adjacent to a quoted status token, read that ADR's `- **Status:**` line and
+   fail on disagreement. *(The two banner instances; `agents/backlog/adr/*.md` filenames are not stable
+   — resolve by the `NNNN-` prefix, not by full name.)*
+2. **`Retires when: <path> exists` markers.** `fs.existsSync` the path; fail if it exists, because the
+   banner it guards is then false. *(The payout-allocator card.)*
+3. **Citation resolution.** Every `` `Path.ext:N` `` / `:N-M` citation in those trees: the file exists
+   **and** has ≥ `M` lines. It cannot check that the lines *say* what is claimed — that residue is the
+   reader's, permanently, and the entry must not pretend otherwise. *(The 65-line file cited at `:99-109`.)*
+
+**Shape — cross-stack, its own repo-root workflow.** No stack's CI watches `agents/`, so no existing
+workflow can host this: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all trigger on `src/`
+subtrees, and `nx affected` selects zero projects for a markdown-only diff. Same structural argument
+ADR-0037 D7 recorded for `check-available-status-parity.mjs`, and the same answer — a dependency-free
+Node script **outside the Nx workspace** with its own workflow, triggered on `agents/**` **and** on the
+`src/` trees the citations point into (a citation rots when the *cited* file changes, not when the
+catalog does — that trigger is the whole check, not a nicety).
+
+**Anti-vacuity (ADR-0032 D3).** A moved or renamed page must be a hard failure, never a silent pass:
+assert the walker enumerated a non-trivial page count and that each check matched a **known-good
+fixture** embedded in its own test. A run that finds zero citations because a glob broke must be red.
+
+**The ticket owes four things**, and the last is not optional:
+1. the checker + its own acceptance test (mutate one banner / one citation, assert red);
+2. the sweep that drives the baseline to zero across the remaining role cards and catalog pages
+   — six were fixed 2026-08-09, the rest are **unmeasured**;
+3. the repo-root workflow;
+4. **one line extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and citations
+   of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false sentence
+   that survived a pass over its own page.
+
+Until it lands, **nothing enforces the rule**, and the catalog says so rather than implying a reviewer
+will notice: an unnamed human enforcer is `(guidance — no gate)` by this document's own tier table.
+
 ## How the gate works (Reviewer + PM)
 
 - For any ticket touching code, the **Reviewer runs `check-consistency.mjs` scoped to the changed
@@ -197,6 +244,19 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
     accepted ADR rather than as tidying. This list records existing enforcers; it declares no new rule.
     - **Gate-DP §G** of `agents/backlog/ios-app-review-checklist.md` (+ reviewer-check #22) — ADR-0018's
       design-parity gate, on every iOS screen/feature ticket.
+    - ⚠️ **There is no named T3-HUMAN enforcer for catalog-claim *decay*, and one cannot be invented.**
+      Measured 2026-08-09: six `agents/knowledge/` + `agents/process/` artifacts asserted the opposite
+      of the tree, and **all six cited the tree correctly when written** — a card true for 2 h 11 m, two
+      banners outlived by same-day ADR acceptances, a citation rotted by an unrelated refactor, a count
+      wrong twice, and this table's own row 18. None arose in a deliberation, so
+      `conventions.md:239-243`'s enforcer (the panel lead, `deliberation.md` step 5) structurally cannot
+      see them, and widening it to *"the lead also re-reads the catalog"* would be an enforcer named
+      **be careful** — which is what the six already had. The answer is mechanical and specified as a
+      new `T1-CI` gate: `conventions.md` §*"A claim about the tree carries its own retirement
+      condition"* + `consistency.md` §*"Catalog claims about the tree"*, enforced by
+      `agents/tools/check-catalog-claims.mjs`, **`(gate pending: catalog-claim-liveness checker —
+      ticket owed)`**. See §*"The catalog-claim liveness check"* below for why it takes the cross-stack
+      repo-root-workflow shape and what its ticket owes.
     - **reviewer-check 5 "Catalog-edit routing"** — `.claude/agents/reviewer.md`, step 5. Governs **any
       diff touching `agents/knowledge/*.md`**: it runs ADR-0033's three ordered routing tests (does the
       edit put shipped code in violation / does it narrow a governing sentence, with the floor's

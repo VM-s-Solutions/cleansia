@@ -348,19 +348,90 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   referencing a not-yet-committed row under an FK, must ride the pipeline's `SaveChangesAsync` or run
   **strictly after** the commit. Deviating form: a raw `SqlQueryRaw`/`ExecuteUpdate` write inside a
   command handler that references `Order.Id` (or any sibling aggregate id created in the same request),
-  **or a self-committing write inside a handler with no sanctioned-exception doc-comment** — there are
-  exactly **two** documented exceptions, and each is an exception because it says so, not because it
-  exists:
-  1. `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync` — the global promo cap must be claimed or
-     rejected on its own, independently of the order commit.
-  2. `PayoutReferenceCounterRepository.AllocateNextAsync` (ADR-0046 §D2.1) — a payout invoice's
-     *variabilní symbol* must be claimed **before** any row or document can carry it, so the allocation
-     deliberately does **not** roll back with the caller: an invoice that fails to commit leaves a
-     **gap**, which is correct for a payment reference (it is not a fiscal document number, and only
-     `FiscalCounter` owes gaplessness). Its self-commit is a **caller** property, not an API one —
-     `SqlQueryRaw` joins an ambient transaction if one is open — so the invariant travels with it:
-     **no allocator call site may sit inside a `BeginTransactionAsync` scope**, or both the gap
-     semantics and the single-counter-row lock duration break.
+  **or a self-committing write inside a handler with no sanctioned-exception doc-comment**. Each
+  exception is an exception **because it says so, not because it exists**.
+
+  > **This used to say "there are exactly *two*".** It has now been wrong twice — two while four were
+  > shipped, and four while the S7a family was also in scope. **A count is the wrong shape for this**:
+  > nothing fails when the tree gains a fifth, and a reviewer greps this entry to decide whether a new
+  > self-committing write is sanctioned, so an understated list makes them either re-litigate settled
+  > design or reject a legitimate next one. What follows is a **membership test** (normative — it
+  > decides the next case) and a **roster** (descriptive — read from the tree 2026-08-09; it decides
+  > nothing on its own). If a write passes the test and is not on the roster, the **roster** is stale;
+  > add it. If it is on the roster and fails the test, the **write** is the defect.
+
+  **The membership test — four conjuncts, all required.** A self-committing write is sanctioned iff:
+  **(i)** it bypasses the change tracker (`SqlQueryRaw`, `ExecuteSqlRaw`, `ExecuteUpdateAsync`,
+  `ExecuteDeleteAsync`) so it lands on its own, immediately; **(ii)** it is reached from **inside**
+  `UnitOfWorkPipelineBehavior`'s `next(…)` — i.e. from a command **handler** or anything it calls (see
+  the scope note below); **(iii)** it carries a doc-comment, at the method or on its interface member,
+  stating all three of *that it self-commits outside the pipeline*, *why it must land independently of
+  the caller's commit*, and *what it does **not** roll back*; and **(iv)** it references **no row
+  created in the same request** under an FK — that hazard is what ADR-0038 §D3 closed and **no comment
+  waives it** (`PromoCodeRedemptionRepository.cs:31-42` is the write that had to be converted **back**
+  to change-tracked for exactly this reason, and it is therefore *not* on this roster).
+
+  **Counting rule: one entry per method that issues the write** — not per decision, and not per call
+  site. **A compensator is its own entry.** *Adjudicated 2026-08-09; the contrary reading is that
+  `DecrementGlobalRedemptionsAsync` is merely the increment's undo and shares its sanction.* It does
+  not, for three reasons: the roster is **grepped by method name**, so an unlisted method reads as
+  unsanctioned; the compensator can be wrong **independently** of what it compensates (its floor guard,
+  its trigger, and ADR-0038 AM-10's *catch-the-compensation-never-the-operation* obligation are all
+  properties of the decrement alone — `PromoCodeService.cs:163-180` and `:194-210`); and "it is a
+  compensator, so it does not count" is a counting rule that only works for a reader who **already
+  knows the pairing**, which is the knowledge this roster exists to supply. One ADR, two methods, two
+  entries.
+
+  **Scope — a validator is out.** Registration order is Validation-**outer**, UnitOfWork-inner
+  (`Cleansia.Config/Validation/FluentValidationExtensions.cs:35-36`, named in
+  `UnitOfWorkPipelineBehavior.cs:22-26`), so a write from a **validator** never sits inside the unit of
+  work at all and this rule does not reach it. The S7a attempt-budget charges are the live instances —
+  `UserRepository.RecordFailedLoginAsync` (`LoginValidator.cs:156`),
+  `TryChargeConfirmationCodeAttemptAsync` (`ConfirmUserEmail.cs:67`),
+  `TryChargeResetPasswordCodeAttemptAsync` (`ChangePassword.cs:100`). **They are governed by
+  `security-rules.md` S7a, not by this entry**; do not add them here, and do not read their absence as
+  a finding.
+
+  **Roster — family A, claim-before-commit** (a number or slot claimed before anything may carry it):
+  1. `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync` (`:24-48`, comment `:28-38`; call site
+     `PromoCodeService.cs:152`) — the global promo cap must be claimed or rejected on its own,
+     independently of the order commit.
+  2. `PromoCodeRepository.DecrementGlobalRedemptionsAsync` (`:50-64`, comment `:54-58`; call site
+     `PromoCodeService.cs:200`) — **entry 1's compensator, and its own entry.** It runs from a
+     `finally` on *any* non-success, on `CancellationToken.None` because the increment is already
+     durable, and its own `catch` never rethrows.
+  3. `MembershipBenefitUsageRepository.TryReserveSlotAsync` (`:65-119`, statement `:105-107`;
+     declaration on the interface, `IMembershipBenefitUsageRepository.cs:25-29`; reached from
+     `CreateOrder.cs:409` via `ExpressWaiverConsumer.cs:33`) — ADR-0035 Mode A: a price may never be
+     waived without a committed slot. Passes (iv) because `OrderId` is deliberately **nullable** and
+     stamped later by a change-tracked update.
+  4. `PayoutReferenceCounterRepository.AllocateNextAsync` (`:18-74`, comment `:32-41`, statement
+     `:69-71`; contract `IPayoutReferenceCounterRepository.cs:12-17`; call sites `GenerateInvoice.cs:88`,
+     `AssignInvoiceVariableSymbol.cs:103`, `PayPeriodBackgroundService.cs:332`) — ADR-0046 §D2.1: a
+     payout invoice's *variabilní symbol* must be claimed **before** any row or document can carry it,
+     so the allocation deliberately does **not** roll back with the caller: an invoice that fails to
+     commit leaves a **gap**, which is correct for a payment reference (it is not a fiscal document
+     number, and only `FiscalCounter` owes gaplessness). Its self-commit is a **caller** property, not
+     an API one — `SqlQueryRaw` joins an ambient transaction if one is open — so the invariant travels
+     with it: **no allocator call site may sit inside a `BeginTransactionAsync` scope**, or both the gap
+     semantics and the single-counter-row lock duration break. *(The `CommitAsync` calls at
+     `GenerateInvoice.cs:114-118` / `AssignInvoiceVariableSymbol.cs:115-119` are flushes that run
+     **after** the allocation, not transactions around it — not a violation.)*
+
+  **Roster — family B, must land while the command FAILS** (the write is the point *because* the
+  request is refused):
+  5. `UserRepository.RecordFailedCurrentPasswordAttemptAsync` (`:180-194`, comment `:174-179` +
+     `:146-156`) — charged from **inside the handler**, `ChangeOwnPassword.cs:69`, whose own comment
+     (`:57-60`) states the deviation: *"this failure never reaches the unit-of-work commit yet the
+     counter still lands"*. S7a's lockout budget is worthless if it rolls back with the refusal.
+  6. `DeactivateAdminUser.Handler`'s conditional `ExecuteUpdateAsync` (`DeactivateAdminUser.cs:63-76`,
+     comment `:57-61`) — the only roster entry written **in a handler** rather than behind a repository
+     method: an atomic last-active-admin guard where `0 rows ⇒ CannotDeactivateLastAdmin`.
+     ⚠️ **The roster's one incomplete entry.** Its comment satisfies S7a (why it is one statement) but
+     **not conjunct (iii)** — it never says the write self-commits or what it does not roll back. It is
+     listed rather than flagged because the *design* is right and unlisting it would make a correct
+     write read as a violation; the owed fix is **one sentence in that comment**, and the next ticket
+     that touches `DeactivateAdminUser.cs` should write it.
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a
@@ -475,3 +546,40 @@ temporary implementation shipped ahead of its end state carries, on the changed 
   stay true. Assert the **mechanism** instead — the walker resolved `src/` and enumerated a non-trivial
   file count, and the pattern matches a known-good fixture string inside the test. **An empty result is
   legal; an empty scan is not.**
+
+## Catalog claims about the tree — the deviating forms (2026-08-09)
+
+> **Enforced by:** `agents/tools/check-catalog-claims.mjs` —
+> **`(gate pending: catalog-claim-liveness checker — ticket owed)`** → **T1-CI** on landing. Rule and
+> the rejected alternatives: `conventions.md` §*"A claim about the tree carries its own retirement
+> condition"*. **The baseline is non-zero and unmeasured** — six instances were fixed on 2026-08-09;
+> the remaining role cards and catalog pages were not swept. That sweep is part of the ticket.
+
+Four forms are deviations from the day this entry lands. Each is a **form**, not a judgement about the
+claim's truth — three of the four instances below were *true when written*, which is the whole point.
+
+1. **A status banner that names an ADR without quoting that ADR's own status token, and without naming
+   the token as its retirement condition.** *Live instances fixed:*
+   `roles/membership-benefit-usage.md` (PROPOSED over an `accepted` ADR-0035),
+   `patterns-backend.md:979` (*"ADR-0039 is `proposed`"* over an `accepted` ADR-0039),
+   `roles/express-waiver-resolver.md:3-10` (hand-patched 2026-08-05 — the precedent that proves a hand
+   patch does not close a class).
+2. **A "NOT YET BUILT / no ticket yet" banner that does not name the path whose existence retires it.**
+   *Live instance fixed:* `roles/payout-reference-allocator.md` — true for **2 h 11 m**, then falsified
+   by `d410f002`. Writing the card early is **not** the deviation; writing it without the trigger is.
+3. **A `file:line` citation that does not resolve** — file missing, or fewer lines than cited. *Live
+   instance fixed:* `roles/membership-benefit-usage.md` invariants 5 and 6, citing
+   `PromoCodeRedemptionRepository.cs:85-93` and `:99-109` in a **65-line** file, rotted by an unrelated
+   refactor (`da88b695`). The invariants were still **true**; only the evidence was dead — which is the
+   worst variety, because a reader who checks the citation concludes the invariant is dead too.
+4. **Any sentence of the form "there are exactly *N* …" about the tree.** Write a **roster + membership
+   test** instead: the test is normative and keeps deciding the next case, the roster is descriptive and
+   is falsifiable one file at a time. *Live instance fixed:* the self-commit exceptions list in
+   §"Post-commit ordering" limb (a), which was wrong twice — and is now the worked example of the
+   replacement shape.
+
+**Not a deviation, and do not "fix" it:** a claim about the tree inside an **`accepted` ADR**. Accepted
+ADRs are immutable records of a past reading (`adr/README.md`); when the world moves past one, the
+instrument is a **dated record-only closure**, never an edit. `ADR-0032:96`'s *"`.swiftlint.yml` has no
+`custom_rules:` block"* is exactly this — false at HEAD (`src/cleansia_ios/.swiftlint.yml:27`), correct
+to leave standing.

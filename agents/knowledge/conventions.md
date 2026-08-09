@@ -242,6 +242,97 @@ one appears — **T3-HUMAN**. *(Not mechanizable: "is this citation a code-state
 claim?" needs a reader. A checker cannot tell `T-0522:203` quoted for a ruling from the same line
 quoted for a column.)*
 
+### A claim about the tree carries its own retirement condition
+
+**The rule above is not this rule, and its enforcer cannot reach this one.** Measured 2026-08-09: six
+catalog artifacts asserted the opposite of the tree in the directory every developer agent reads
+first. **All six cited the tree, correctly, at the moment of writing.** They were not mis-citations —
+one role card's *"NOT YET BUILT, no ticket is cut"* was true for **2 h 11 m** before `d410f002` shipped
+the whole thing; two status banners were true until the ADRs they named were accepted the same day; one
+`file:line` citation was true until an **unrelated** refactor shortened the file it pointed at. So the
+defect is not the act of citing. It is **decay**, and decay has no authoring event to gate.
+
+That is why `deliberation.md` step 5 is the right enforcer for the rule above and is **structurally
+incapable** of covering this one: a lead adjudicates a deliberation, and none of the six arose in one —
+a card written at acceptance time, an enumerated count, two status banners, a rotted citation, and a
+process page. **Widening step 5 to "the lead also re-reads the catalog" would be a rule whose enforcer
+is *be careful*, which is precisely what these six already were.** The class is also known: the
+`ExpressWaiverResolver` card has carried a **hand-written** "this banner is stale" correction since
+2026-08-05, and the class recurred three more times on one branch anyway — including on a page someone
+edited **without noticing the sentence above their own edit**.
+
+So the repair is not more diligence. It is to **write the claim in a form that decays loudly** — a form
+a machine can evaluate from in-repo text alone, with no type graph and no build.
+
+**Three forms, and they are obligations on the writer:**
+
+1. **A status claim about an ADR quotes that ADR's own status token, and names it as the retirement
+   condition.** Not *"ADR-00NN is proposed"* — write *"**ADR-00NN is `accepted`** (`<adr-file>:3`).
+   **Retires when:** that status line stops reading `accepted`."* Both sides are then greppable text in
+   one repo and a checker can diff them. *(Would have caught: the `MembershipBenefitUsage` card's
+   PROPOSED banner over an `accepted` ADR-0035; `patterns-backend.md`'s *"ADR-0039 is `proposed`"* over
+   an `accepted` ADR-0039; the `ExpressWaiverResolver` precedent.)*
+2. **A "not yet built / not shipped / no ticket yet" claim names the PATH whose existence retires it.**
+   *"**Retires when:** `src/…/Foo.cs` exists."* A checker stats it. Writing a role card **before** the
+   code is legitimate and often the point — it is what the implementer builds against — so the rule is
+   not *"don't write it early"*; it is *"write the trigger that kills the banner"*. *(Would have caught
+   the payout-allocator card two hours after it was written.)*
+3. **A `file:line` citation must resolve** — the file exists, and it has at least that many lines. A
+   checker asserts both. It cannot assert that the cited lines *say* what the entry claims; that stays
+   a reader's job, and an entry may not pretend otherwise. *(Would have caught
+   `PromoCodeRedemptionRepository.cs:99-109` cited from a **65-line** file — the worst variety, because
+   the invariant was still true and a reader who checks the citation concludes it is dead.)*
+
+**And one shape rule: never enumerate a COUNT of tree instances — write a roster with a membership
+test.** *"There are exactly two documented exceptions"* was wrong twice, and a wrong number is invisible:
+it carries no evidence for the reader to check and nothing fails when the tree gains a third. A roster
+is different in kind — every entry is falsifiable by opening one file, a missing entry is discoverable by
+grep, and the **test** (which is normative) keeps deciding the next case even while the **roster**
+(which is only descriptive) is stale. `consistency.md` §"Post-commit ordering" limb (a) is the worked
+example. Deviating form: **any sentence of the shape "there are exactly N …" about code**.
+
+**Enforced by:** `agents/tools/check-catalog-claims.mjs` — **`(gate pending: catalog-claim-liveness
+checker — ticket owed, PM to file; spec below)`**, promoting to **`T1-CI`** on landing.
+
+The gate is specified, not aspirational, and it is specified as `T1-CI` because all three forms above
+are decidable from in-repo text with no compiler: parse `agents/knowledge/**/*.md` +
+`agents/process/**/*.md` for (1) an ADR id adjacent to a quoted status token → read that ADR's
+`- **Status:**` line → fail on disagreement; (2) a `Retires when: <path> exists` marker → `fs.existsSync`
+→ fail if it exists; (3) every `` `Path.ext:N` `` / `:N-M` citation → file exists **and** has ≥ M lines
+→ fail otherwise. It takes the **cross-stack** shape ADR-0032 §D and `enforcement.md` prescribe — a
+dependency-free Node script **outside the Nx workspace with its own repo-root workflow**, the
+`check-available-status-parity.mjs` / `offerability-parity.yml` mold — because **no stack's CI watches
+`agents/`**, so no existing workflow can host it. Like that check, it must fail loudly when its corpus
+is empty or an anchor matches nothing; a green run must mean it *read* the pages.
+
+**Why it is `(gate pending:)` today and not `T1-CI`:** `enforcement.md`'s zero-baseline rule. Six
+instances were fixed on 2026-08-09; the remaining ~40 role cards and five catalog pages were **not**
+swept, so the baseline is non-zero and unmeasured. The ticket owes: the checker, its own acceptance
+test (mutate one banner, assert red), the sweep that drives the baseline to zero, and **one line
+extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and citations of the *whole
+file* a hunk touches — not just the hunk — because the sixth instance was a sentence that survived a
+pass over its own page.
+
+**Until that ticket lands, nothing enforces this, and saying so is the point.** An interim
+"the reviewer will spot it" is `(guidance — no gate)` by the line two sections down, and claiming
+otherwise would make this entry the seventh instance of its own defect.
+
+**Three alternatives were weighed and rejected** — do not re-derive them:
+- **"A role card may not be written before the thing exists."** Rejected. The payout card was *useful*
+  before the code was: it is what the implementer built against, and ADR-0046's panel produced it.
+  Banning it pushes design intent out of the catalog into an ADR nobody re-reads. It is also
+  unenforceable — nothing can tell a card written two hours early from one written two hours late. What
+  survives from it is form 2: early authorship is safe **once it names its own trigger**.
+- **A periodic sweep with a named owner.** Rejected as the primary answer: the *cadence* is the thing
+  that decays, and nothing goes red when a sweep is skipped. The evidence is on the record — one card
+  was hand-patched on 2026-08-05 and the class recurred three times on the next branch. Kept only as
+  the fallback **if the checker cannot be built**, and then it needs a named owner and an **event**
+  trigger (every ADR status transition), never a calendar.
+- **"This is T3-HUMAN and the enforcer is the next reader."** Rejected for forms 1–3, which a machine
+  decides. Kept, explicitly, for the residue: **whether the cited lines say what the entry claims** is
+  not mechanizable and stays with the reader — which is exactly why the mechanical half must be
+  automated, so the reader's attention is spent on the half only they can do.
+
 ### The price of a law — a constraining entry names its enforcer and declares its tier (ADR-0032)
 
 An entry that constrains **call sites** — code other people write — states, inline:

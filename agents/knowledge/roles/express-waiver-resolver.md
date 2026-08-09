@@ -1,12 +1,20 @@
 # Role — `ExpressWaiverResolver` / `IExpressWaiverResolver` (CRC card)
 
-> **✅ 2026-08-05 — BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than
-> deleted, so the reader can see it moved.** `src/Cleansia.Core.AppServices/Services/ExpressWaiverResolver.cs`
-> exists and is called on the pricing path (`OrderPricingCalculator.cs:69-80`, feeding
-> `BookingPolicy.RequiresExpressSurcharge(..., waiverApplies:)` at `:74-76`); the quote carries
-> `ExpressSurchargeWaivedByMembership` / `ExpressUpgradesRemaining` (`:94-95`) and all three clients render
+> **✅ BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than deleted, so
+> the reader can see it moved.** `src/Cleansia.Core.AppServices/Services/ExpressWaiverResolver.cs`
+> exists and is called on the pricing path — `OrderPricingCalculator.cs:13` injects
+> `IExpressWaiverResolver`, `:72` resolves, `:78` feeds
+> `BookingPolicy.RequiresExpressSurcharge(..., waiverApplies:)`, and the quote carries
+> `ExpressSurchargeWaivedByMembership` / `ExpressUpgradesRemaining` at `:97-98`; all three clients render
 > it. The responsibility, collaborators, "does NOT know" list and invariants below are **still the
 > contract** — verify against them, not against the banner.
+> **Retires when:** n/a — this card describes existing code.
+>
+> ⚠️ **This correction is itself the exhibit.** It was hand-written on **2026-08-05** and its own
+> citations had **already drifted three lines** by 2026-08-09 (`:69-80`→`:72`, `:74-76`→`:78`,
+> `:94-95`→`:97-98`) — re-verified and re-cited above. A hand patch fixes an instance and closes no
+> class; that is the evidence behind `conventions.md` §*"A claim about the tree carries its own
+> retirement condition"* and its `(gate pending:)` checker.
 >
 > **⚠️ NOT YET BUILT — but the decision is settled.** *(superseded — see above.)* Introduced by **ADR-0035**
 > (`agents/backlog/adr/0035-metered-membership-benefit-usage.md`), **`accepted`** 2026-08-02 with 16

@@ -955,6 +955,15 @@ non-English value equal to the English source unless it is on an asserted **allo
 (IBAN, platform names, `Cleansia Plus`, format-only strings) — and (d) that allow-list carries no stale entry.
 Adding a locale-invariant string means adding an allow-list entry with a reason, never skipping the check.
 
+> **An allow-list entry names the LOCALES it covers, not just the key.** Most of these entries are
+> invariant everywhere (`IBAN`, `iOS`, `Cleansia Plus`), but several are invariant **only in cs/sk** —
+> `"min"`, `"h"`/`"m"`, `"Bonus"` — and are plainly false for uk/ru, which are Cyrillic. A whole-key
+> exception suppresses every locale, so a Ukrainian value left as the Latin English source is swallowed
+> by the very entry whose reason says *"the Czech word"*, and (d) still passes because cs and sk keep
+> echoing. Both rules are therefore checked per `(catalog, key, locale)`: (c) suppresses only the named
+> locales, and (d) fails an entry that names a locale which no longer echoes — narrow it rather than
+> deleting it. **Enforced by:** `StringCatalogCompletenessTests` (T1-CI, all three iOS test schemes).
+
 **Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
 a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.
 `case verifyEmail(email: String?)` threads the ConfirmEmail resend email (the iOS analogue of Android reading

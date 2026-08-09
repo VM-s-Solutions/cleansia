@@ -35,6 +35,16 @@ custom_rules:
       - string
     severity: error
 
+  calendar_day_needs_greenwich:
+    name: "A calendar day is built in Greenwich"
+    message: "Use OpenAPIDateWithoutTime(day:). The generated initializer defaults timezone to the handset's and adds that offset before formatting, so a day decoded at midnight UTC is sent as the previous day west of Greenwich — and one more day on every save after that."
+    regex: 'OpenAPIDateWithoutTime\(\s*wrappedDate:'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    severity: error
+
 force_unwrapping:
   severity: error
 force_cast:

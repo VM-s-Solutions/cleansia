@@ -27,10 +27,7 @@ public struct BirthDateField: View {
 
     private var displayText: String {
         guard let birthDate else { return placeholder }
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.locale = locale
-        return formatter.string(from: birthDate)
+        return CalendarDay.text(birthDate, locale: locale)
     }
 
     public var body: some View {
@@ -67,13 +64,21 @@ public struct BirthDateField: View {
             }
         }
         .sheet(isPresented: $showPicker) {
+            // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
+            // with, so a day chosen in the handset's calendar and a day decoded off the wire are
+            // otherwise different instants that encode as different days.
             DatePicker(
                 label,
-                selection: Binding(get: { birthDate ?? Date() }, set: { birthDate = $0 }),
+                selection: Binding(
+                    get: { birthDate ?? Date() },
+                    set: { birthDate = CalendarDay.startOfDay($0, in: .gmt) }
+                ),
                 in: ...Date(),
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
+            .environment(\.calendar, CalendarDay.calendar)
+            .environment(\.timeZone, .gmt)
             .padding()
             .presentationDetents([.medium])
         }

@@ -89,7 +89,7 @@ final class PersonalSectionViewModel: ViewModel {
             employeeId: form.employeeId,
             firstName: form.firstName.trimmed,
             lastName: form.lastName.trimmed,
-            birthDate: OpenAPIDateWithoutTime(wrappedDate: form.birthDate),
+            birthDate: OpenAPIDateWithoutTime(day: form.birthDate),
             phone: form.phone.trimmedOrNil
         )
         switch await client.updatePersonalInfo(command) {

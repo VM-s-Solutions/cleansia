@@ -14,9 +14,11 @@ final class PersonalSectionViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
+    /// Greenwich, because that is what a value decoded off the wire carries — the generated decoder
+    /// stores the day at midnight UTC and stamps the formatter's zone, never the handset's.
     private let someBirthDate = OpenAPIDateWithoutTime(
         wrappedDate: Date(timeIntervalSince1970: 662_688_000),
-        timezone: .current
+        timezone: .gmt
     )
 
     private func makeVM() -> PersonalSectionViewModel {
@@ -129,7 +131,10 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.action, .idle)
     }
 
-    func testSaveSendsBirthDateOnCommand() async {
+    /// Asserted as the DAY, not as another `OpenAPIDateWithoutTime`: that type's `==` reads only
+    /// `wrappedDate`, which every initializer stores untouched, so comparing two of them holds whatever
+    /// zone the command was built with — including the one that sends the day before.
+    func testSaveSendsTheBirthDayItselfOnTheCommand() async {
         client.employeeResult = .success(EmployeeItem(
             id: "emp-1",
             firstName: "Jana",
@@ -140,8 +145,28 @@ final class PersonalSectionViewModelTests: XCTestCase {
         await vm.load()
         await vm.save()
 
-        XCTAssertEqual(client.personalCommand?.birthDate, someBirthDate)
+        XCTAssertEqual(client.personalCommand?.birthDate?.rawValue, "1991-01-01")
         XCTAssertNil(vm.form.birthDateError)
+    }
+
+    /// The command reads the day in Greenwich whatever instant the form is holding — it must not depend
+    /// on the picker having normalized it. An instant late in a UTC day is the case that separates the
+    /// two: re-offsetting it by any positive device offset rolls it into the next day.
+    func testSaveSendsTheDayEvenWhenTheStoredInstantIsLateInIt() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            firstName: "Jana",
+            lastName: "N",
+            birthDate: OpenAPIDateWithoutTime(
+                wrappedDate: Date(timeIntervalSince1970: 662_772_600),
+                timezone: .gmt
+            )
+        ))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        XCTAssertEqual(client.personalCommand?.birthDate?.rawValue, "1991-01-01")
     }
 
     /// The email is loaded for the read-only field but never sent — the command has no email field,

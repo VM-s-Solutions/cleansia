@@ -4,7 +4,11 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class UserProfileClientMappingTests: XCTestCase {
-    func testUpdateCommandCarriesIdAndBirthDate() {
+    /// The birth date is asserted as the DAY that reaches the wire. It used to be compared against a
+    /// second call to the same defaulted initializer, which cannot fail: `OpenAPIDateWithoutTime` stores
+    /// `wrappedDate` untouched and its `==` reads only that, so the zone that decides the encoded day is
+    /// invisible to equality and the assertion held for every possible zone, right and wrong alike.
+    func testUpdateCommandCarriesIdAndTheBirthDayItself() {
         let birthDate = Date(timeIntervalSince1970: 641_520_000)
         let update = ProfileUpdate(
             id: "user-42",
@@ -18,11 +22,32 @@ final class UserProfileClientMappingTests: XCTestCase {
         let command = UpdateCurrentUserCommand(update)
 
         XCTAssertEqual(command.id, "user-42")
-        XCTAssertEqual(command.birthDate, OpenAPIDateWithoutTime(wrappedDate: birthDate))
+        XCTAssertEqual(command.birthDate?.rawValue, "1990-05-01")
         XCTAssertEqual(command.firstName, "Grace")
         XCTAssertEqual(command.lastName, "Hopper")
         XCTAssertEqual(command.phoneNumber, "+420999")
         XCTAssertEqual(command.languageCode, "cs")
+    }
+
+    /// The customer twin of the partner characterisation: a day that arrived as midnight UTC must go
+    /// back out as that day, not as the previous one, from a handset west of Greenwich. The instant is
+    /// late in the UTC day because that is the case that separates reading the day in Greenwich from
+    /// re-offsetting it — any positive device offset rolls a late instant into the next day.
+    func testTheBirthDayIsReadInGreenwichSoItSurvivesEveryHandset() {
+        let lateOnTheFourth = Date(timeIntervalSince1970: 400_030_200)
+        let update = ProfileUpdate(
+            id: "user-42",
+            firstName: "Grace",
+            lastName: "Hopper",
+            phoneNumber: nil,
+            birthDate: lateOnTheFourth,
+            languageCode: "cs"
+        )
+
+        let command = UpdateCurrentUserCommand(update)
+
+        XCTAssertEqual(command.birthDate?.timezone.secondsFromGMT(), 0)
+        XCTAssertEqual(command.birthDate?.rawValue, "1982-09-04")
     }
 
     func testMyProfileMapsStatsIntoTheDomainProfile() {

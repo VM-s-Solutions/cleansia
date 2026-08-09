@@ -76,6 +76,23 @@ final class PartnerUserWireTests: XCTestCase {
         XCTAssertEqual(body["languageCode"] as? String, "uk")
     }
 
+    /// A day fed through the profile stub always decodes to midnight UTC, where a positive device offset
+    /// lands inside the same day and the encoded string is unchanged — so the assertion above says
+    /// nothing about which zone the day was read in. Drive the client directly with an instant late in
+    /// the UTC day, which is the case that separates the two.
+    func testTheBirthDayIsReadInGreenwichWhateverInstantCarriesIt() async throws {
+        _ = await LivePartnerUserClient().updateCurrentUser(
+            firstName: "Ondrej",
+            lastName: "Novak",
+            phoneNumber: "",
+            birthDate: Date(timeIntervalSince1970: 400_030_200),
+            languageCode: "uk"
+        )
+
+        let body = try XCTUnwrap(bodies.json(ofPath: Self.updatePath))
+        XCTAssertEqual(body["birthDate"] as? String, "1982-09-04")
+    }
+
     /// The avatar is a three-way choice and a language save says nothing about it.
     func testTheReplayNeverAsksForTheAvatarToBeRemoved() async throws {
         await push()

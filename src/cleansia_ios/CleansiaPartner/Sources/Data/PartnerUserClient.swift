@@ -53,10 +53,7 @@ final class LivePartnerUserClient: PartnerUserClient {
                 firstName: firstName,
                 lastName: lastName,
                 phoneNumber: phoneNumber,
-                // GMT, not the device zone: the generated encoder re-offsets the day by whatever zone
-                // it is handed, and the read normalized it to GMT — `.current` west of UTC would send
-                // the day before the cleaner's birthday.
-                birthDate: birthDate.map { OpenAPIDateWithoutTime(wrappedDate: $0, timezone: .gmt) },
+                birthDate: OpenAPIDateWithoutTime(day: birthDate),
                 languageCode: languageCode,
                 removePhoto: false
             ))

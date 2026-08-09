@@ -98,7 +98,7 @@ extension UpdateCurrentUserCommand {
             firstName: update.firstName,
             lastName: update.lastName,
             phoneNumber: update.phoneNumber?.nilIfBlank,
-            birthDate: OpenAPIDateWithoutTime(wrappedDate: update.birthDate),
+            birthDate: OpenAPIDateWithoutTime(day: update.birthDate),
             photo: update.photo.map(BlobFileDto.init),
             languageCode: update.languageCode,
             removePhoto: update.removePhoto

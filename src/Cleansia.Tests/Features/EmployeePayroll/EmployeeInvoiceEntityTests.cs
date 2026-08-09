@@ -299,6 +299,30 @@ public class EmployeeInvoiceEntityTests
         Assert.NotNull(invoice.CancelledAt);
     }
 
+    // ── the PDF failure record has to survive its own column ─────────
+
+    [Fact]
+    public void SetPdfGenerationError_Truncates_A_Message_Too_Long_For_The_Column()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        invoice.SetPdfGenerationError(new string('x', 5_000));
+
+        Assert.True(invoice.PdfGenerationFailed);
+        Assert.Equal(1000, invoice.PdfGenerationError!.Length);
+    }
+
+    [Fact]
+    public void SetPdfGenerationError_Keeps_A_Message_That_Fits_Verbatim()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        invoice.SetPdfGenerationError("blob storage unreachable");
+
+        Assert.Equal("blob storage unreachable", invoice.PdfGenerationError);
+        Assert.NotNull(invoice.PdfGenerationAttemptedAt);
+    }
+
     [Fact]
     public void UpdateAmounts_On_Pending_Clamps_Negative_Total_To_Zero()
     {

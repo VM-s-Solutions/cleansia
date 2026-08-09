@@ -8,6 +8,8 @@ namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class EmployeeInvoice : Auditable, ITenantEntity
 {
+    private const int PdfGenerationErrorMaxLength = 1000;
+
     [Required]
     public string EmployeeId { get; private set; }
     public Employee? Employee { get; private set; }
@@ -45,7 +47,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
 
     public bool PdfGenerationFailed { get; private set; }
 
-    [MaxLength(1000)]
+    [MaxLength(PdfGenerationErrorMaxLength)]
     public string? PdfGenerationError { get; private set; }
 
     public DateTime? PdfGenerationAttemptedAt { get; private set; }
@@ -201,10 +203,16 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
+    // Truncated to the column width on the way in: the message is an exception's, so its length is
+    // whatever a driver or a layout engine felt like emitting, and an over-long one makes the write
+    // that RECORDS the failure fail — losing the record and replacing a handled refusal with a
+    // truncation error from a completely different layer.
     public EmployeeInvoice SetPdfGenerationError(string error)
     {
         PdfGenerationFailed = true;
-        PdfGenerationError = error;
+        PdfGenerationError = error is { Length: > PdfGenerationErrorMaxLength }
+            ? error[..PdfGenerationErrorMaxLength]
+            : error;
         PdfGenerationAttemptedAt = DateTime.UtcNow;
         return this;
     }

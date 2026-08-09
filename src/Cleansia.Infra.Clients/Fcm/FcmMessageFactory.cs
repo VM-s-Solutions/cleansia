@@ -31,6 +31,9 @@ public static class FcmMessageFactory
         {
             [NotificationEventCatalog.OrderConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
+            [NotificationEventCatalog.OrderStartingSoon] = OrderNumberArg,
+            [NotificationEventCatalog.OrderAssigned] = OrderNumberArg,
+            [NotificationEventCatalog.OrderAssignmentRevoked] = OrderNumberArg,
             [NotificationEventCatalog.OrderOnTheWay] = OrderNumberArg,
             [NotificationEventCatalog.OrderInProgress] = OrderNumberArg,
             [NotificationEventCatalog.OrderCompleted] = OrderNumberArg,

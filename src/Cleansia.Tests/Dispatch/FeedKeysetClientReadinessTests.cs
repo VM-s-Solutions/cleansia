@@ -46,10 +46,14 @@ public class FeedKeysetClientReadinessTests
     [Theory]
     [InlineData(NotificationEventCatalog.OrderAssigned)]
     [InlineData(NotificationEventCatalog.OrderAssignmentRevoked)]
-    public void The_Admin_Reassign_Events_Are_Dispatched_But_Not_Yet_Feed_Or_Display_Registered(string eventKey)
+    public void The_Admin_Reassign_Events_Render_As_Push_But_Are_Not_Yet_Feed_Registered(string eventKey)
     {
+        // Display registered 2026-08-09: both platforms carry the copy, so the push renders.
+        // The FEED half stays held — iOS has no feed template, order-number arm or deep link for
+        // these keys yet, and a keyset row the app drops is the unread count this class exists to
+        // prevent. The wave that ships those three iOS sites deletes this test.
+        Assert.Contains(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
         Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
-        Assert.DoesNotContain(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
     }
 
     /// <summary>
@@ -61,10 +65,11 @@ public class FeedKeysetClientReadinessTests
     /// and only then adds the key to the customer keyset.
     /// </summary>
     [Fact]
-    public void The_Pre_Cleaning_Reminder_Is_Dispatched_But_Not_Yet_Feed_Or_Display_Registered()
+    public void The_Pre_Cleaning_Reminder_Renders_As_Push_But_Is_Not_Yet_Feed_Registered()
     {
+        // Display registered 2026-08-09; the feed half stays held for the same reason as above.
+        Assert.Contains(NotificationEventCatalog.OrderStartingSoon, FcmMessageFactory.ApnsDisplayMap.Keys);
         Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.OrderStartingSoon));
-        Assert.DoesNotContain(NotificationEventCatalog.OrderStartingSoon, FcmMessageFactory.ApnsDisplayMap.Keys);
     }
 
     /// <summary>

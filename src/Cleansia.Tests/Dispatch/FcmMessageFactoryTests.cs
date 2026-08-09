@@ -316,7 +316,9 @@ public class FcmMessageFactoryTests
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",
             "membership.expiring_soon",
+            "order.assigned",
             "order.assignment_cancelled",
+            "order.assignment_revoked",
             "order.cancelled",
             "order.cleaner_assigned",
             "order.completed",
@@ -326,6 +328,7 @@ public class FcmMessageFactoryTests
             "order.on_the_way",
             "order.preferred_offer",
             "order.refunded",
+            "order.starting_soon",
             "payroll.invoice_paid",
             "recurring.scheduled",
         ];

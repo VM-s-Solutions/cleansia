@@ -327,6 +327,7 @@ public class FcmMessageFactoryTests
             "order.new_available",
             "order.on_the_way",
             "order.preferred_offer",
+            "order.preferred_offer_closed",
             "order.refunded",
             "order.starting_soon",
             "payroll.invoice_paid",

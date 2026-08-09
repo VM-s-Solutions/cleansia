@@ -81,11 +81,14 @@ public class FeedKeysetClientReadinessTests
     /// keyset.
     /// </summary>
     [Fact]
-    public void The_Preferred_Offer_Closure_Is_Dispatched_But_Not_Yet_Feed_Or_Display_Registered()
+    public void The_Preferred_Offer_Closure_Renders_As_Push_But_Is_Not_Yet_Feed_Registered()
     {
+        // Display registered 2026-08-09, once both platforms carried the copy (a21dfcc3 iOS,
+        // b996c5d5 Android) — the precondition ApnsDisplayMapIosCatalogSyncTests enforces. The FEED
+        // half stays held: no client has a feed template or a deep-link arm for this key, and a keyset
+        // row the app drops is the inflated unread badge this class exists to prevent.
+        Assert.Contains(NotificationEventCatalog.PreferredOfferClosed, FcmMessageFactory.ApnsDisplayMap.Keys);
         Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.PreferredOfferClosed));
-        Assert.DoesNotContain(
-            NotificationEventCatalog.PreferredOfferClosed, FcmMessageFactory.ApnsDisplayMap.Keys);
     }
 
     /// <summary>

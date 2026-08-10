@@ -12,7 +12,6 @@ using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
-using Cleansia.TestUtilities.MockDataFactories.Languages;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -35,7 +34,6 @@ public class RegenerateInvoicePdfFailureRecordingTests
     private readonly Mock<IPdfService> _pdfService = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
-    private readonly Mock<ILanguageRepository> _languageRepository = new();
     private readonly Mock<ICompanyInfoRepository> _companyInfoRepository = new();
     private readonly Mock<IBlobContainerClientFactory> _blobContainerClientFactory = new();
     private readonly Mock<IBlobContainerClient> _blobContainerClient = new();
@@ -73,9 +71,6 @@ public class RegenerateInvoicePdfFailureRecordingTests
         _orderPayRepository
             .Setup(r => r.GetByInvoiceIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
-        _languageRepository
-            .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(LanguageMockFactory.Generate());
         _pdfService
             .Setup(s => s.GenerateInvoicePdf(
                 It.IsAny<InvoicePdfData>(), It.IsAny<CountryInvoiceContext?>(), It.IsAny<string?>()))
@@ -231,7 +226,6 @@ public class RegenerateInvoicePdfFailureRecordingTests
             _pdfService.Object,
             _currencyRepository.Object,
             _employeeRepository.Object,
-            _languageRepository.Object,
             _companyInfoRepository.Object,
             _blobContainerClientFactory.Object,
             _invoiceRepository.Object,

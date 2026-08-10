@@ -38,7 +38,7 @@ public class RegenerateInvoicePdf
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(languageRepository.ExistsWithCodeAsync)
-                .WithMessage(BusinessErrorMessage.InvoiceNotFound);
+                .WithMessage(BusinessErrorMessage.LanguageNotFound);
         }
     }
 
@@ -46,7 +46,6 @@ public class RegenerateInvoicePdf
         IPdfService pdfService,
         ICurrencyRepository currencyRepository,
         IEmployeeRepository employeeRepository,
-        ILanguageRepository languageRepository,
         ICompanyInfoRepository companyInfoRepository,
         IBlobContainerClientFactory clientFactory,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
@@ -88,7 +87,6 @@ public class RegenerateInvoicePdf
 
                 var orderPays = await orderEmployeePayRepository
                     .GetByInvoiceIdAsync(invoice.Id, cancellationToken);
-                var language = await languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
                 var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
@@ -105,6 +103,10 @@ public class RegenerateInvoicePdf
 
                 var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
 
+                // The document's language is the JURISDICTION's, not the caller's and not the reader's:
+                // it is a tax document, and its legal-notice box is reviewed per country, so a notice
+                // rendered in a language chosen elsewhere is indistinguishable from one written for that
+                // reader's jurisdiction. Same input as the original render, so a re-render reproduces it.
                 var countryCode = employee.Address?.Country?.IsoCode;
                 var pdfBytes = pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
 

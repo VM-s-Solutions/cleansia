@@ -2592,7 +2592,8 @@
       "profile_incomplete": "Employee profile is incomplete",
       "documents_missing": "Required documents are missing",
       "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected"
+      "already_rejected": "Employee has already been rejected",
+      "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them."
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -2652,7 +2653,8 @@
       "distance_rate_negative": "Distance rate cannot be negative",
       "minimum_pay_negative": "Minimum pay cannot be negative",
       "maximum_pay_negative": "Maximum pay cannot be negative",
-      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
+      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
+      "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay."
     },
     "payout": {
       "not_found": "This employee has no payout details on file"

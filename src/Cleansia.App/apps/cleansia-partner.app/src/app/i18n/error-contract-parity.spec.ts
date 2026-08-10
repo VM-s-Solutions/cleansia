@@ -350,6 +350,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'country.not_existing_id',
   'country.not_serviced',
   'dispute.max_length_exceeded',
+  'language.not_found',
   'language.not_supported',
   'validation.date_must_be_in_past',
   'validation.invalid_age',
@@ -374,6 +375,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
   // chain, so every arm of it is reachable from the cleaner's bank-details form;
   // GetMyPayoutDetails returns payout.not_found.
+  'pay_config.last_for_live_catalogue_entry',
   'payout.not_found',
   'validation.payout.account_number_required',
   'validation.payout.country_not_supported',

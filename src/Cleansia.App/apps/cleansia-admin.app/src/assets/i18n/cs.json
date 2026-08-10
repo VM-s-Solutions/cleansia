@@ -2592,7 +2592,8 @@
       "profile_incomplete": "Profil zaměstnance je nekompletní",
       "documents_missing": "Chybí požadované dokumenty",
       "already_approved": "Zaměstnanec již byl schválen",
-      "already_rejected": "Zaměstnanec již byl zamítnut"
+      "already_rejected": "Zaměstnanec již byl zamítnut",
+      "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte."
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",
@@ -2652,7 +2653,8 @@
       "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "minimum_pay_negative": "Minimální mzda nemůže být záporná",
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
-      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda"
+      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
+      "last_for_live_catalogue_entry": "Toto je poslední nastavení odměny pro službu nebo balíček, které se stále používají. Jeho odstraněním by u zakázek zmizela odhadovaná odměna."
     },
     "payout": {
       "not_found": "Tento zaměstnanec nemá uložené platební údaje"

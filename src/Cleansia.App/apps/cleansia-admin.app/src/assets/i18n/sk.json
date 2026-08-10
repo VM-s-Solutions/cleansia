@@ -2592,7 +2592,8 @@
       "profile_incomplete": "Profil zamestnanca nie je kompletný",
       "documents_missing": "Chýbajú požadované dokumenty",
       "already_approved": "Zamestnanec už bol schválený",
-      "already_rejected": "Zamestnanec už bol zamietnutý"
+      "already_rejected": "Zamestnanec už bol zamietnutý",
+      "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte."
     },
     "employee_document": {
       "not_found": "Dokument nebol nájdený",
@@ -2652,7 +2653,8 @@
       "distance_rate_negative": "Sadzba za vzdialenosť nesmie byť záporná",
       "minimum_pay_negative": "Minimálna odmena nesmie byť záporná",
       "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
-      "maximum_less_than_minimum": "Maximálna odmena nesmie byť nižšia ako minimálna odmena"
+      "maximum_less_than_minimum": "Maximálna odmena nesmie byť nižšia ako minimálna odmena",
+      "last_for_live_catalogue_entry": "Toto je posledné nastavenie odmeny pre službu alebo balík, ktoré sa stále používajú. Jeho odstránením by pri zákazkách zmizla odhadovaná odmena."
     },
     "payout": {
       "not_found": "Tento zamestnanec nemá uložené platobné údaje"

@@ -1223,7 +1223,8 @@
       "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "minimum_pay_negative": "Minimální mzda nemůže být záporná",
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
-      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda"
+      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
+      "last_for_live_catalogue_entry": "Toto je poslední nastavení odměny pro službu nebo balíček, které se stále používají. Jeho odstraněním by u zakázek zmizela odhadovaná odměna."
     },
     "payout": {
       "not_found": "Zatím jste nezadali své platební údaje"

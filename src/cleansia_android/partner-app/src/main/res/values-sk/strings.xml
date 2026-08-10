@@ -1308,6 +1308,8 @@
     <string name="offer_empty">Práve teraz na vašu odpoveď nič nečaká.</string>
     <string name="offer_blocked_title">Zákazku sa nám nepodarilo odovzdať</string>
     <string name="offer_blocked_body">%1$s\n\nToto je na nás \u2014 rezervovali sme zákazku na vaše meno bez overenia, takže sa vám to nijako nezapočítava.</string>
+    <string name="offer_release_failed_title">Zákazku sa nepodarilo uvoľniť</string>
+    <string name="offer_release_failed_body">%1$s\n\nNič sa nezmenilo \u2014 ponuka zostáva, ako bola. Skúste to prosím znova neskôr.</string>
     <string name="offers_card_title">Zákazník si vyžiadal vás</string>
     <string name="offers_card_more">+%1$d ďalšie</string>
     <string name="offers_card_cta">Zobraziť, čo čaká</string>

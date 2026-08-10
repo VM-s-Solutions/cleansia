@@ -1,5 +1,7 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.annotation.StringRes
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PendingOfferItem
 import java.time.Instant
 import java.time.ZoneId
@@ -47,4 +49,19 @@ fun soonestOffer(offers: List<PendingOfferItem>): PendingOfferItem? =
 private fun parseInstant(iso: String?): Instant? {
     if (iso.isNullOrBlank()) return null
     return runCatching { Instant.parse(iso) }.getOrNull()
+}
+
+data class OfferRefusalCopy(@StringRes val titleRes: Int, @StringRes val bodyRes: Int)
+
+/**
+ * The two refusals are different events and get different words. A confirm the take gate refuses is
+ * the platform handing back a job it had already put this cleaner's name on — nothing checked the
+ * weekly cap when it was reserved, because a reservation may not spend capacity — so that copy takes
+ * the blame. A decline that fails changed nothing at all and is almost always transient, so that copy
+ * assigns no blame in either direction and says where the offer stands.
+ */
+fun offerRefusalCopy(action: OfferAction): OfferRefusalCopy = when (action) {
+    OfferAction.Confirm -> OfferRefusalCopy(R.string.offer_blocked_title, R.string.offer_blocked_body)
+    OfferAction.Decline ->
+        OfferRefusalCopy(R.string.offer_release_failed_title, R.string.offer_release_failed_body)
 }

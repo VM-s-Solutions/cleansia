@@ -1,10 +1,12 @@
 package cz.cleansia.partner.features.orders
 
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PendingOfferItem
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -100,6 +102,24 @@ class PendingOfferPresentationTest {
     fun `no offers means no soonest`() {
         assertNull(soonestOffer(emptyList()))
         assertNull(soonestOffer(listOf(offer(id = "broken", respondByUtc = null))))
+    }
+
+    /**
+     * A failed handover and a failed release are different events. Sharing one string apologises for a
+     * job that was never handed over, on the one screen where the platform's credibility is the whole
+     * feature — and a `when` inside a composable is invisible to every check we have.
+     */
+    @Test
+    fun `a refused confirm and a refused release do not share a word`() {
+        val confirm = offerRefusalCopy(OfferAction.Confirm)
+        val decline = offerRefusalCopy(OfferAction.Decline)
+
+        assertEquals(R.string.offer_blocked_title, confirm.titleRes)
+        assertEquals(R.string.offer_blocked_body, confirm.bodyRes)
+        assertEquals(R.string.offer_release_failed_title, decline.titleRes)
+        assertEquals(R.string.offer_release_failed_body, decline.bodyRes)
+        assertNotEquals(confirm.titleRes, decline.titleRes)
+        assertNotEquals(confirm.bodyRes, decline.bodyRes)
     }
 
     private fun offer(id: String, respondByUtc: String?) = PendingOfferItem(

@@ -97,7 +97,7 @@ fun OrderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val inFlightAction by viewModel.inFlightAction.collectAsStateWithLifecycle()
-    val actionState by viewModel.actionState.collectAsStateWithLifecycle()
+    val offerRefusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
     val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
@@ -178,15 +178,8 @@ fun OrderDetailScreen(
                     )
                 }
 
-                // Only a DISCLOSED offer earns the framed apology; every other refusal on this screen
-                // already went to the snackbar, exactly as before.
-                val refusedConfirm = (actionState as? ActionState.Error)
-                    ?.takeIf { preferredOffer != null && inFlightAction == null }
-                if (refusedConfirm != null) {
-                    OfferRefusalDialog(
-                        refusal = OfferRefusal(preferredOffer?.displayOrderNumber, refusedConfirm.message),
-                        onDismiss = viewModel::dismissActionError,
-                    )
+                offerRefusal?.let { refusal ->
+                    OfferRefusalDialog(refusal = refusal, onDismiss = viewModel::dismissOfferRefusal)
                 }
 
                 if (confirmingCash) {

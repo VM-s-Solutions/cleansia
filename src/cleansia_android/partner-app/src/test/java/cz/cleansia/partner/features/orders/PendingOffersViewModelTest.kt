@@ -148,21 +148,28 @@ class PendingOffersViewModelTest {
         assertEquals(ActionState.Idle, vm.actionState.value)
     }
 
+    /**
+     * A failed RELEASE is not a failed handover. The job was never handed over, nothing changed, and
+     * almost every cause is transient — so the refusal has to carry which action it belongs to, or the
+     * screen apologises for something that did not happen.
+     */
     @Test
-    fun `a refused decline says so on the snackbar and keeps the row`() = runTest {
+    fun `a refused decline reads as a release failure, not as a handover failure`() = runTest {
         val row = offer("a")
         serverHolds(row)
         val vm = viewModel()
         advanceUntilIdle()
         coEvery { ordersRepository.declinePreferredOffer("a") } returns
-            ApiResult.Error(ApiError.NotFound("order.not_found"))
+            ApiResult.Error(ApiError.Network("down"))
 
         vm.decline(row)
         advanceUntilIdle()
 
-        verify { snackbar.showError("translated error") }
+        assertEquals(OfferAction.Decline, vm.offerRefusal.value?.action)
+        assertEquals("translated error", vm.offerRefusal.value?.reason)
+        assertEquals("CL-a", vm.offerRefusal.value?.displayOrderNumber)
         assertEquals(listOf("a"), (vm.uiState.value as PendingOffersUiState.Loaded).offers.map { it.id })
-        assertNull(vm.attempt.value)
+        verify(exactly = 0) { snackbar.showError(any()) }
     }
 
     /**
@@ -220,8 +227,9 @@ class PendingOffersViewModelTest {
             ActionState.Error("You've reached your weekly order limit."),
             vm.actionState.value,
         )
-        assertEquals("a", vm.attempt.value?.orderId)
-        assertEquals(OfferAction.Confirm, vm.attempt.value?.action)
+        assertEquals(OfferAction.Confirm, vm.offerRefusal.value?.action)
+        assertEquals("CL-a", vm.offerRefusal.value?.displayOrderNumber)
+        assertEquals("You've reached your weekly order limit.", vm.offerRefusal.value?.reason)
     }
 
     @Test
@@ -274,8 +282,30 @@ class PendingOffersViewModelTest {
         vm.dismissRefusal()
 
         assertEquals(ActionState.Idle, vm.actionState.value)
-        assertNull(vm.attempt.value)
+        assertNull(vm.offerRefusal.value)
         assertEquals(listOf("a"), (vm.uiState.value as PendingOffersUiState.Loaded).offers.map { it.id })
+    }
+
+    @Test
+    fun `an action that succeeds clears the refusal left by the one before it`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        val vm = viewModel()
+        advanceUntilIdle()
+        coEvery { ordersRepository.declinePreferredOffer("a") } returns
+            ApiResult.Error(ApiError.Network("down"))
+        vm.decline(row)
+        advanceUntilIdle()
+        assertEquals(OfferAction.Decline, vm.offerRefusal.value?.action)
+
+        coEvery { ordersRepository.declinePreferredOffer("a") } answers {
+            serverAccepts { serverRows = emptyList() }
+            ApiResult.Success(Unit)
+        }
+        vm.decline(row)
+        advanceUntilIdle()
+
+        assertNull(vm.offerRefusal.value)
     }
 
     @Test

@@ -48,6 +48,8 @@ class PendingOfferStringsTest {
         "offer_empty",
         "offer_blocked_title",
         "offer_blocked_body",
+        "offer_release_failed_title",
+        "offer_release_failed_body",
         "offers_card_title",
         "offers_card_more",
         "offers_card_cta",
@@ -75,6 +77,7 @@ class PendingOfferStringsTest {
             "offer_reserved_until_tomorrow" to listOf("%1\$s"),
             "offer_reserved_until_date" to listOf("%1\$s", "%2\$s"),
             "offer_blocked_body" to listOf("%1\$s"),
+            "offer_release_failed_body" to listOf("%1\$s"),
             "offers_card_more" to listOf("%1\$d"),
         )
         locales.forEach { locale ->
@@ -103,7 +106,14 @@ class PendingOfferStringsTest {
             "values-uk" to listOf("клієнт"),
             "values-ru" to listOf("клиент"),
         )
-        listOf("offer_decline_title", "offer_decline_body", "offer_decline_cta", "offer_declined_toast")
+        listOf(
+            "offer_decline_title",
+            "offer_decline_body",
+            "offer_decline_cta",
+            "offer_declined_toast",
+            "offer_release_failed_title",
+            "offer_release_failed_body",
+        )
             .forEach { key ->
                 customerWords.forEach { (locale, words) ->
                     val value = strings(locale).getValue(key).lowercase()

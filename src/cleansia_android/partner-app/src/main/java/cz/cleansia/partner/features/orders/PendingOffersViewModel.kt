@@ -75,6 +75,9 @@ class PendingOffersViewModel @Inject constructor(
     private val _confirmed = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val confirmed: SharedFlow<String> = _confirmed.asSharedFlow()
 
+    private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
+    val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
+
     init {
         if (ordersRepository.arePendingOffersStale()) {
             refresh()
@@ -100,6 +103,7 @@ class PendingOffersViewModel @Inject constructor(
     fun dismissRefusal() {
         _actionState.value = ActionState.Idle
         _attempt.value = null
+        _offerRefusal.value = null
     }
 
     private suspend fun fetch() {
@@ -118,6 +122,7 @@ class PendingOffersViewModel @Inject constructor(
         if (_actionState.value is ActionState.Submitting) return
         _attempt.value = OfferAttempt(orderId, offer.displayOrderNumber, action)
         _actionState.value = ActionState.Submitting
+        _offerRefusal.value = null
 
         viewModelScope.launch {
             when (val result = block(orderId)) {
@@ -131,18 +136,12 @@ class PendingOffersViewModel @Inject constructor(
                     }
                 }
                 is ApiResult.Error -> {
+                    // Both refusals are framed by the screen, in their own words: a snackbar carrying
+                    // the same bare reason would land on top of the sentence that explains it.
                     val reason = errorTranslator.translate(result.error)
-                    when (action) {
-                        // The screen frames this one; a snackbar carrying the same bare reason would
-                        // land on top of the sentence that says the platform, not the cleaner, is at
-                        // fault.
-                        OfferAction.Confirm -> _actionState.value = ActionState.Error(reason)
-                        OfferAction.Decline -> {
-                            _actionState.value = ActionState.Idle
-                            _attempt.value = null
-                            snackbar.showError(reason)
-                        }
-                    }
+                    _actionState.value = ActionState.Error(reason)
+                    _attempt.value = null
+                    _offerRefusal.value = OfferRefusal(action, offer.displayOrderNumber, reason)
                 }
             }
             // The server decides whether the offer survived either outcome — a confirm the cap refused

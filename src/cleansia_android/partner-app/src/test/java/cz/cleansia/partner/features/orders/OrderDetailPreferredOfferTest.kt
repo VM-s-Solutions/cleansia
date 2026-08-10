@@ -152,7 +152,65 @@ class OrderDetailPreferredOfferTest {
             ActionState.Error("You've reached your weekly order limit."),
             vm.actionState.value,
         )
+        assertEquals(OfferAction.Confirm, vm.offerRefusal.value?.action)
+        assertEquals("You've reached your weekly order limit.", vm.offerRefusal.value?.reason)
         verify(exactly = 0) { snackbar.showError(any()) }
+    }
+
+    /**
+     * The bug this pins: every failed action set the same error state and the screen inferred the
+     * framing from "there is a live offer", so failing to RELEASE a job apologised for failing to hand
+     * it over. Nothing was handed over — nothing changed at all — and the causes are transient.
+     */
+    @Test
+    fun `a refused decline on a disclosed offer reads as a release failure`() = runTest {
+        offers.value = listOf(offer(orderId))
+        val vm = viewModel()
+        advanceUntilIdle()
+        coEvery { ordersRepository.declinePreferredOffer(orderId) } returns
+            ApiResult.Error(ApiError.Network("down"))
+
+        vm.declinePreferredOffer()
+        advanceUntilIdle()
+
+        assertEquals(OfferAction.Decline, vm.offerRefusal.value?.action)
+        verify(exactly = 0) { snackbar.showError(any()) }
+    }
+
+    @Test
+    fun `an action that succeeds clears the refusal left by the one before it`() = runTest {
+        offers.value = listOf(offer(orderId))
+        val vm = viewModel()
+        advanceUntilIdle()
+        coEvery { ordersRepository.takeOrder(orderId) } returns
+            ApiResult.Error(ApiError.BadRequest("nope", null, null, "order.weekly_limit_reached"))
+        vm.take()
+        advanceUntilIdle()
+        assertEquals(OfferAction.Confirm, vm.offerRefusal.value?.action)
+
+        coEvery { ordersRepository.declinePreferredOffer(orderId) } answers {
+            offers.value = emptyList()
+            ApiResult.Success(Unit)
+        }
+        vm.declinePreferredOffer()
+        advanceUntilIdle()
+
+        assertNull(vm.offerRefusal.value)
+    }
+
+    @Test
+    fun `dismissing the refusal clears it`() = runTest {
+        offers.value = listOf(offer(orderId))
+        val vm = viewModel()
+        advanceUntilIdle()
+        coEvery { ordersRepository.takeOrder(orderId) } returns
+            ApiResult.Error(ApiError.BadRequest("nope", null, null, "order.weekly_limit_reached"))
+        vm.take()
+        advanceUntilIdle()
+
+        vm.dismissOfferRefusal()
+
+        assertNull(vm.offerRefusal.value)
     }
 
     @Test
@@ -167,5 +225,6 @@ class OrderDetailPreferredOfferTest {
         advanceUntilIdle()
 
         verify { snackbar.showError("translated error") }
+        assertNull("an ordinary job has no offer to apologise about", vm.offerRefusal.value)
     }
 }

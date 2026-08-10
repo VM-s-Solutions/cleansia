@@ -1313,6 +1313,8 @@
     <string name="offer_empty">Сейчас ничего не ждёт вашего ответа.</string>
     <string name="offer_blocked_title">Мы не смогли передать вам этот заказ</string>
     <string name="offer_blocked_body">%1$s\n\nЭто наша вина \u2014 мы зарезервировали заказ на ваше имя без проверки, так что это никак не засчитывается вам в минус.</string>
+    <string name="offer_release_failed_title">Не удалось освободить этот заказ</string>
+    <string name="offer_release_failed_body">%1$s\n\nНичего не изменилось \u2014 предложение осталось прежним. Попробуйте ещё раз чуть позже.</string>
     <string name="offers_card_title">Клиент попросил именно вас</string>
     <string name="offers_card_more">+%1$d ещё</string>
     <string name="offers_card_cta">Посмотреть, что ждёт</string>

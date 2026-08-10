@@ -56,8 +56,16 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 
-/** A refusal the cleaner is owed an explanation for, paired with the offer it belongs to. */
-data class OfferRefusal(val displayOrderNumber: String?, val reason: String)
+/**
+ * A refusal the cleaner is owed an explanation for. It carries the [action] because the two failures
+ * are not the same failure: a refused confirm is the platform handing back a job it had already put
+ * the cleaner's name on, while a refused decline changed nothing at all.
+ */
+data class OfferRefusal(
+    val action: OfferAction,
+    val displayOrderNumber: String?,
+    val reason: String,
+)
 
 @Composable
 fun PendingOffersScreen(
@@ -68,14 +76,12 @@ fun PendingOffersScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
     val attempt by viewModel.attempt.collectAsStateWithLifecycle()
+    val refusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
 
     var pendingDecline by remember { mutableStateOf<PendingOfferItem?>(null) }
 
     LaunchedEffect(viewModel) { viewModel.confirmed.collect { onOpenOrder(it) } }
 
-    val refusal = (actionState as? ActionState.Error)?.let { error ->
-        attempt?.let { OfferRefusal(it.displayOrderNumber, error.message) }
-    }
     val inFlight = attempt?.takeIf { actionState is ActionState.Submitting }
 
     PendingOffersScreenContent(
@@ -197,12 +203,13 @@ fun PendingOffersScreenContent(
  */
 @Composable
 fun OfferRefusalDialog(refusal: OfferRefusal, onDismiss: () -> Unit) {
+    val copy = offerRefusalCopy(refusal.action)
     CleansiaDialog(
         onDismiss = onDismiss,
         title = refusal.displayOrderNumber
-            ?.let { stringResource(R.string.offer_blocked_title) + " · $it" }
-            ?: stringResource(R.string.offer_blocked_title),
-        message = stringResource(R.string.offer_blocked_body, refusal.reason),
+            ?.let { stringResource(copy.titleRes) + " · $it" }
+            ?: stringResource(copy.titleRes),
+        message = stringResource(copy.bodyRes, refusal.reason),
         confirmLabel = stringResource(R.string.ok),
         onConfirm = onDismiss,
     )
@@ -371,7 +378,11 @@ private fun PendingOffersScreenPreview() {
                     ),
                 ),
             ),
-            refusal = OfferRefusal("CL-2026-0042", "You've reached your weekly order limit."),
+            refusal = OfferRefusal(
+                OfferAction.Confirm,
+                "CL-2026-0042",
+                "You've reached your weekly order limit.",
+            ),
             inFlight = null,
             onNavigateBack = {},
             onRetry = {},

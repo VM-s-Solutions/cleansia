@@ -61,6 +61,9 @@ class OrderDetailViewModel @Inject constructor(
         .map { offers -> offers.firstOrNull { it.id == orderId } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
+    val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
+
     init {
         ensureFreshOrCachedAsync()
         ensureOffersFresh()
@@ -97,8 +100,8 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.declinePreferredOffer(orderId)
     }
 
-    fun dismissActionError() {
-        if (_actionState.value is ActionState.Error) _actionState.value = ActionState.Idle
+    fun dismissOfferRefusal() {
+        _offerRefusal.value = null
     }
 
     /**
@@ -150,17 +153,32 @@ class OrderDetailViewModel @Inject constructor(
                     }
                     _actionState.value = ActionState.Idle
                     _inFlightAction.value = null
+                    _offerRefusal.value = null
                     fetch()
                 }
                 is ApiResult.Error -> {
-                    // A confirm the take gate refuses on a job the cleaner was TOLD was theirs is
-                    // framed by the screen as ours rather than theirs; a snackbar carrying the bare
-                    // reason would land on top of that sentence.
-                    val disclosedOffer = action == OrderAction.Take && preferredOffer.value != null
-                    if (!disclosedOffer) {
-                        snackbar.showError(errorTranslator.translate(result.error))
+                    // A refusal ON A DISCLOSED OFFER is framed by the screen in its own words — the
+                    // handover we could not make, or the release that changed nothing — so the bare
+                    // reason must not also arrive as a snackbar on top of it. Everything else on this
+                    // screen still snackbars exactly as before.
+                    val reason = errorTranslator.translate(result.error)
+                    val refusedOfferAction = preferredOffer.value?.let {
+                        when (action) {
+                            OrderAction.Take -> OfferAction.Confirm
+                            OrderAction.DeclineOffer -> OfferAction.Decline
+                            else -> null
+                        }
                     }
-                    _actionState.value = ActionState.Error(errorTranslator.translate(result.error))
+                    if (refusedOfferAction == null) {
+                        snackbar.showError(reason)
+                    } else {
+                        _offerRefusal.value = OfferRefusal(
+                            refusedOfferAction,
+                            preferredOffer.value?.displayOrderNumber,
+                            reason,
+                        )
+                    }
+                    _actionState.value = ActionState.Error(reason)
                     _inFlightAction.value = null
                     // A clean reject almost always means the order moved on
                     // without us — another cleaner took it, or the status

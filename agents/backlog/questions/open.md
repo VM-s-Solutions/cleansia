@@ -474,7 +474,7 @@ _No open Wave-1 *planning* questions remain._
 > — both FALSE. The real risk is rejection vs the published guidelines. The only owner question is the SIWA
 > backend mechanism; it gates **only** the SIWA ticket, not the iOS plan.
 
-### Q-IOS-04 — [blocking: no — gates only the SIWA ticket T-0326] Sign-in-with-Apple backend integration mechanism
+### ✅ Q-IOS-04 — CLOSED 2026-08-09: already built the same way (AppleAuth on both customer hosts). Full text in N21. [was: blocking no — gates only the SIWA ticket T-0326] Sign-in-with-Apple backend integration mechanism
 - Raised by: architect (IOS-COMPLIANCE-ADR / ADR-0016 D2/AR-ACCT-2)
 - Owner: owner (+ architect for the technical shape)
 - Resolve-by: pre-submission
@@ -1687,7 +1687,7 @@ remains open and non-blocking** — I cannot change repository settings in any c
 
 <details><summary>Original question, kept for the record</summary>
 
-### Q-CONSENT-02 — [blocking: no] Signing IN with Google/Apple creates an account too — and that screen has no checkbox
+### ✅ Q-CONSENT-02 — CLOSED 2026-08-08 (see the ✅ block above). [was: blocking no] Signing IN with Google/Apple creates an account too — and that screen has no checkbox
 - Raised by: frontend (social signup gate, `f6cba0e0`)
 - Owner: owner
 - Resolve-by: pre-prod
@@ -2095,14 +2095,14 @@ So a cleaner in Prague is notified about a job in Ostrava — 300 km away — an
 
 ---
 
-### Q-VS-01 — [blocking: no] Is a Czech variable symbol really ten numeric digits, and is a bare sequence acceptable to your accountant?
+### ✅ Q-VS-01 — ANSWERED 2026-08-09 (owner: "Confirm"). Full text in N21. [was: blocking no] Is a Czech variable symbol really ten numeric digits, and is a bare sequence acceptable to your accountant?
 - Raised by: architect (payout variable-symbol draft) · Owner: owner (with the accountant) · Resolve-by: pre-prod · 2026-08-08
 - Question: the platform encodes *"numeric, at most 10 digits"* for the variable symbol in four places — but **all four are an earlier agent's encoding, not your accountant's**, and the loosest of them accepts one to ten digits. No agent may assert a tax-law requirement. So: is that constraint right, and is a plain sequence (a year followed by a running number) acceptable as the payment reference on a self-billed payout invoice, or does your accountant expect it derived from something — the invoice number, the cleaner's registration number, the period?
 - Why it matters: it does **not** block the build — the design fits under any narrower answer. It blocks calling the constraint *verified* rather than *assumed*, and the number goes on a document your accountant reads.
 - Default taken: ten digits, a four-digit year followed by a six-digit running number, first digit never zero.
 - Answer: _(owner fills in)_
 
-### Q-VS-03 — [blocking: no, but it decides whether a later migration is a contingency or a plan] Does every payout leave one bank account you control — including if a franchise ever runs cleaners here?
+### ✅ Q-VS-03 — ANSWERED 2026-08-09 (owner: no franchises, ever). Full text in N21. [was: blocking no, but it decides whether a later migration is a contingency or a plan] Does every payout leave one bank account you control — including if a franchise ever runs cleaners here?
 - Raised by: architect (challenger, payout variable-symbol draft) · Owner: owner · Resolve-by: pre-prod · 2026-08-08
 - Question: the case for one **global** reference namespace rests on the sentence *"the payer's account is one account."* If a franchise operator ever runs cleaners on Cleansia, would they pay **their own** cleaners from **their own** bank account, or would payouts still leave yours?
 - Why it matters: if payouts always leave your account, global is right forever. If a franchise pays from its own, then a statement line already belongs to exactly one account, per-tenant references become sufficient, and a cross-tenant volume-inference channel the design currently accepts would be a cost paid for nothing. **It does not block the build** — global is the cheapest correct shape today either way, and the shipped index is already global. It decides whether narrowing that index later is a contingency or a scheduled migration, and narrowing it **fails on pre-existing duplicates** and is owner-only, so it is far cheaper to know before the first franchise has invoices than after.
@@ -2134,7 +2134,7 @@ already assignment-gated.
 
 **Four things that are NOT being fixed silently, listed so they are yours to see:**
 
-### Q-BROWSE-01 — [blocking: no] Should the browse gate refuse orders a cleaner could never take?
+### ✅ Q-BROWSE-01 — ANSWERED 2026-08-09 (owner: option (b), built in `4fa3e63d`). Full text in N21. [was: blocking no] Should the browse gate refuse orders a cleaner could never take?
 
 Adding the offerability conjunct makes the detail agree with the three surfaces it currently
 contradicts. **It has one real cost**, which is why it is a question and not a fix: the
@@ -2149,7 +2149,7 @@ when Stripe is slow. Cash orders are unaffected.
 - Default taken: **none.** With the PII fix landed the leak is closed either way, so this is now a
   correctness-and-consistency call rather than an urgent one.
 
-### Q-CREW-01 — [blocking: no] May one cleaner complete a job that was booked for two?
+### ✅ Q-CREW-01 — ANSWERED 2026-08-09 (owner: solo completion stays allowed). Full text in N21. [was: blocking no] May one cleaner complete a job that was booked for two?
 
 `CompleteOrder.Validator` has **no full-crew rule**, and nothing frees or fills a seat on a terminal
 transition. So a 2-seat order (any 3-hour booking — `RequiredEmployees = ceil(180/120) = 2`) that one
@@ -2208,7 +2208,7 @@ pass turned out to have already landed. It is its own window, and there is no co
 `b2a8cf62`. Every field is mutation-proved (25 mutations, all red, each restored byte-exact) and the
 half-crewed scenario is pinned over real Postgres. Three things it did **not** decide:
 
-### Q-DISCOUNT-01 — [blocking: no] Should a browsing cleaner see that the customer holds a Plus plan?
+### ✅ Q-DISCOUNT-01 — ANSWERED 2026-08-09 (owner: the cleaner may see it). Full text in N21. [was: blocking no] Should a browsing cleaner see that the customer holds a Plus plan?
 
 `TierDiscountAmount`, `MembershipDiscountAmount` and `PromoDiscountAmount` are **kept** on the redacted
 detail. Each is a non-zero number that discloses the customer holds a loyalty tier, a Cleansia Plus

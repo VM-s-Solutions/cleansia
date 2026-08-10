@@ -32,9 +32,6 @@ param storageAccountName string
 @description('Resource id of the storage account (for the AzureWebJobsStorage MI binding).')
 param storageAccountId string
 
-@description('Application Insights connection string (non-secret; instrumentation only).')
-param appInsightsConnectionString string
-
 @description('Subnet id for regional VNet integration (the Q-INFRA-03 seam). Empty (default) = no VNet integration. MUST be set whenever Postgres/Storage go private — an unintegrated Functions host would lose the DB and every queue at once.')
 param virtualNetworkSubnetId string = ''
 
@@ -98,10 +95,10 @@ var baseAppSettings = [
     name: 'AzureWebJobsStorage__credential'
     value: 'managedidentity'
   }
-  {
-    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-    value: appInsightsConnectionString
-  }
+  // APPLICATIONINSIGHTS_CONNECTION_STRING is deliberately ABSENT, not blank. The worker calls
+  // AddApplicationInsightsTelemetryWorkerService()/ConfigureFunctionsApplicationInsights()
+  // unconditionally and both no-op when the setting is missing; an EMPTY value is a different code
+  // path in the SDK, so blanking it is worse than removing it.
   // App config via Key Vault references (double-underscore -> colon mapping; no app code change).
   {
     name: 'ConnectionStrings__ConnectionString'

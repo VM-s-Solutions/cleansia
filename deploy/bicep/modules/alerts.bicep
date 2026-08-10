@@ -1,14 +1,17 @@
-// Alerting (ADR-0015 D2/D3) — the Action Group + plain ARM metric alerts that make the telemetry
-// actually page someone: per-site Http5xx + latency over the six web hosts, an App Insights
-// exceptions spike (covers the APIs + Functions), and the Postgres health trio. Scopes are built
-// from resource NAMES passed by main.bicep — deploy-time strings, never module outputs, because
-// the per-site for-loop needs a deploy-time array (BCP182); main.bicep carries the explicit
-// dependsOn so the alerts never race the resources they watch.
+// Alerting (ADR-0015 D2/D3) — the Action Group + plain ARM metric alerts that page someone:
+// per-site Http5xx + latency over the six web hosts, the Functions host's health probe, and the
+// Postgres health trio. Scopes are built from resource NAMES passed by main.bicep — deploy-time
+// strings, never module outputs, because the per-site for-loop needs a deploy-time array (BCP182);
+// main.bicep carries the explicit dependsOn so the alerts never race the resources they watch.
 //
 // Env gating: dev = severity 3 + wide windows (owner-inbox noise floor); prod = severity 1-2 +
-// tight windows (paging). Poison-queue depth is NOT here — queue signals need diagnostic settings
-// + a scheduled-query alert, which live in modules/queueAlerts.bicep attached to this module's
-// exported actionGroupId.
+// tight windows (paging).
+//
+// EVERY rule here is a platform metric alert on a resource this template creates — no Log Analytics
+// workspace, no Application Insights component, no scheduled query. That is a constraint, not a
+// coincidence: those two resources were removed, so anything needing them cannot be added back here.
+// What that costs is stated where it is felt, in main.bicep's alerting header — chiefly that no
+// alert fires when a queue message is poisoned.
 
 @description('Deployment stage: dev | prod. Drives severities, thresholds, and windows.')
 @allowed([
@@ -32,9 +35,6 @@ param functionsSiteName string
 @description('Deploy-time resource name of the PostgreSQL Flexible Server (mirrors modules/postgres.bicep naming).')
 param postgresServerName string
 
-@description('Deploy-time resource name of the Application Insights component (mirrors modules/appInsights.bicep naming).')
-param appInsightsName string
-
 @description('Resource tags applied to every alert resource.')
 param tags object = {}
 
@@ -48,8 +48,6 @@ var http5xxSeverity = isProd ? 1 : 3
 var http5xxThreshold = isProd ? 5 : 25
 var latencySeverity = isProd ? 2 : 3
 var responseTimeThresholdSeconds = 2
-var exceptionsSeverity = isProd ? 2 : 3
-var exceptionsThreshold = isProd ? 10 : 25
 
 // ---------------------------------------------------------------------------------------------------
 // Action Group — the one email receiver every alert below fans into. Location is 'global' by design
@@ -187,48 +185,6 @@ resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
 ]
 
 // ---------------------------------------------------------------------------------------------------
-// App Insights exceptions spike — ONE alert over the shared component, so it covers server-side
-// exceptions from every host that PRODUCES to that component: the five APIs (since T-0500) and the
-// Functions host. It has never covered the SSR — that host is Node and reads the connection string in
-// no environment — and between the exporter landing and T-0500 it covered Functions alone while this
-// comment claimed otherwise. A host absent from App Insights cannot move this metric, so widening the
-// claim without widening the producer set is how the alert reads as coverage it does not have.
-// ---------------------------------------------------------------------------------------------------
-
-resource exceptionsAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
-  name: 'alert-exceptions-cleansia-${region}-${env}'
-  location: 'global'
-  tags: tags
-  properties: {
-    description: 'Server exceptions across the five APIs and the Functions host exceeded ${exceptionsThreshold} in ${windowSize}.'
-    severity: exceptionsSeverity
-    enabled: true
-    scopes: [resourceId('Microsoft.Insights/components', appInsightsName)]
-    evaluationFrequency: evaluationFrequency
-    windowSize: windowSize
-    criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-      allOf: [
-        {
-          criterionType: 'StaticThresholdCriterion'
-          name: 'ExceptionsCount'
-          metricNamespace: 'microsoft.insights/components'
-          metricName: 'exceptions/count'
-          operator: 'GreaterThan'
-          threshold: exceptionsThreshold
-          timeAggregation: 'Count'
-        }
-      ]
-    }
-    actions: [
-      {
-        actionGroupId: actionGroup.id
-      }
-    ]
-  }
-}
-
-// ---------------------------------------------------------------------------------------------------
 // Postgres Flexible Server health — failed connections (any failure pages in prod), CPU saturation,
 // and storage headroom (auto-grow still needs a human before the ceiling).
 // ---------------------------------------------------------------------------------------------------
@@ -295,5 +251,5 @@ resource postgresAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
   }
 ]
 
-@description('The Action Group resource id — future alert modules (e.g. the poison-queue scheduled query) attach to it.')
+@description('The Action Group resource id — future alert modules attach to it.')
 output actionGroupId string = actionGroup.id

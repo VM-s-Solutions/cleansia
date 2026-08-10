@@ -14,7 +14,7 @@
 | 2 | Autoscale | `autoscaleEnabled`, `autoscaleMinInstances`, `autoscaleMaxInstances` | `false`, 1, 3 | `true`, 1, 3 | yes |
 | 3 | Postgres HA + geo-backup | `postgresHighAvailabilityMode`, `postgresGeoRedundantBackup`, `postgresBackupRetentionDays` | `Disabled`, `Disabled`, 7 | `ZoneRedundant`, `Enabled`, 35 | yes (geo-backup only at first provision) |
 | 4 | ACR image retention | `acrImageRetentionEnabled`, `acrImageRetentionDays` | `false`, 30 | `true`, 30 | yes |
-| 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapGb`) | 100 (off), 1 GB/day | 50%, 5 GB/day | yes (module params) |
+| 5 | ~~App Insights sampling + ingestion cap~~ | **withdrawn — the resources it tuned no longer exist** (see §5) | — | — | — |
 | 6 | VNet + private endpoints (Q-INFRA-03) | `privateNetworkingEnabled` | `false` | **`false` — the documented flag** | yes, see §6 |
 
 **Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
@@ -55,8 +55,9 @@ Vault references would swap a broken instance into production.
   processes; the 6 slots idle-unload since they are not Always On). On the authored **S1
   (1 vCPU / 1.75 GB)** that is tight at real load (EF + connection pools across 5 .NET APIs), and the
   autoscale rule is CPU-based — it will not relieve MEMORY pressure (scaling out replicates all sites
-  per instance). If prod shows memory-driven recycling (502/503 + worker restarts in App Insights),
-  step the plan SKU to **S2 or P0v3** rather than tuning processes.
+  per instance). If prod shows memory-driven recycling (502/503 + worker restarts), step the plan SKU
+  to **S2 or P0v3** rather than tuning processes. Watch for it in the App Service platform metrics and
+  the Http5xx alert — App Insights is no longer deployed (§5), so there is no worker-restart trace.
 
 **Workflow step (authored):** the six web-host deploy jobs in `.github/workflows/deploy-azure.yml`
 now run the full slot flow whenever `inputs.env == 'prod'`: deploy the artifact to the `staging` slot
@@ -106,16 +107,30 @@ swept. **Dev may flip this on too** (add `param acrImageRetentionEnabled = true`
 `weu.dev.bicepparam`) — the accumulation actually bites the dev registry first; kept default-off only
 to honor the byte-unchanged dev rule.
 
-## 5. App Insights sampling + ingestion cap (module-internal env switch)
+## 5. ~~App Insights sampling + ingestion cap~~ — WITHDRAWN
 
-`modules/appInsights.bicep`, following its existing pattern of env-keyed internals (retention was
-already `env == 'prod' ? 90 : 30`):
+This knob tuned the ingestion volume of a Log Analytics workspace and an Application Insights
+component that **no longer exist in any environment**. The owner ruled the workspace out of DEV and
+out of PROD-for-now: it was the largest single line on the Azure bill (~€49/month) and the sampling
+and daily-cap knobs below were an attempt to bound a cost the platform has now simply stopped paying.
 
-- `samplingPercentage` — prod 50, dev 100 (= off; the property is omitted, preserving the dev shape).
-  SDK adaptive sampling layers on top.
-- `dailyCapGb` — prod **5 GB/day** (was uncapped `{}`), dev keeps its historical 1 GB. `0` = uncapped.
-  **The cap is a runaway-cost breaker, not a budget**: when hit, ingestion stops until the next UTC
-  day and alerts go blind — if it trips in normal operation, raise it rather than live with it.
+`modules/appInsights.bicep` and `modules/queueAlerts.bicep` are deleted. They went together because
+Application Insights is workspace-based only — classic components are retired, and a component
+declared without `WorkspaceResourceId` gets a workspace auto-provisioned beside it, so a "component
+without a workspace" would have re-created the bill under a name the template does not control.
+
+**What a prod go-live now has to accept, stated plainly rather than left to be discovered:**
+
+- Prod exceptions are recorded in **Sentry only**, and only from the five .NET API hosts.
+  `SENTRY_DSN` is therefore mandatory in prod, not optional.
+- The **Functions host has no error telemetry at all** — it loads no Sentry SDK. Its only alert is
+  the `HealthCheckStatus` metric on `/api/health`, which catches a dead host, not a failing job.
+- **A poisoned queue message raises no alert.** The rule was a scheduled-query `LogAlert` over
+  storage diagnostic logs, and Azure Storage has no per-queue metric to rebuild it as a metric alert
+  (`QueueMessageCount` is account-wide, undimensioned, hourly). The durable `DeadLetter` row remains
+  and is the only trace; something has to go looking. Re-deploying `queueAlerts.bicep` — which means
+  re-deploying a workspace — is the only way back, and it is an owner cost decision.
+- Everything in `modules/alerts.bicep` still works: it is entirely platform metric alerts.
 
 ## 6. Q-INFRA-03 — VNet + private endpoints for Postgres + Storage (`privateNetworkingEnabled`)
 
@@ -139,7 +154,8 @@ flag" half of Q-INFRA-03. What flipping it to `true` does, atomically:
    attaches to the existing one.
 4. Storage network ACL default → `Deny` (public endpoint stays on with the `AzureServices` bypass, so
    trusted platform services and ARM control-plane operations — `listKeys` for `derivedSecrets`,
-   diagnostic settings, metric alerts — keep working).
+   metric alerts — keep working). The template deploys no storage diagnostic settings any more: the
+   only one belonged to the deleted poison-queue alert (§5).
 
 **Hard prerequisites before the owner flips it** (why it is not defaulted on):
 

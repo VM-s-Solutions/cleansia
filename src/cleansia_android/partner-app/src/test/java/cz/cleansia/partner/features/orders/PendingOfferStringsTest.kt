@@ -154,6 +154,43 @@ class PendingOfferStringsTest {
     }
 
     /**
+     * "Yours until 18:40" carries no noun, so its possessive has to agree with whatever the rest of
+     * the screen calls the thing — and each language answers differently. The referent is the ORDER on
+     * all three surfaces that render it (the offers row, the detail footer, the dashboard card), and
+     * every language's own feature copy names it: sk `zákazka` and `ponuka` are feminine, ru `заказ` is
+     * masculine, uk `замовлення` is neuter, cs `zakázka` is feminine — and Czech's feminine is
+     * syncretic with its neuter, which is why `Vaše` is right there and wrong in Slovak. That trap is
+     * the reason this is pinned per locale rather than made uniform: a well-meant sweep that "fixed"
+     * cs or uk to match sk would break two locales to fix one.
+     */
+    @Test
+    fun `the reserved-until possessive agrees with the order in every language`() {
+        val expected = mapOf(
+            "values" to "Yours",
+            "values-cs" to "Vaše",
+            "values-sk" to "Vaša",
+            "values-uk" to "Ваше",
+            "values-ru" to "Ваш",
+        )
+        val keys = listOf(
+            "offer_reserved_until_today",
+            "offer_reserved_until_tomorrow",
+            "offer_reserved_until_date",
+        )
+        expected.forEach { (locale, possessive) ->
+            val declared = strings(locale)
+            keys.forEach { key ->
+                val value = declared.getValue(key)
+                assertEquals(
+                    "$locale/$key does not agree with the order it refers to: \"$value\"",
+                    possessive,
+                    value.trim().substringBefore(' '),
+                )
+            }
+        }
+    }
+
+    /**
      * No surface may state a time-to-assignment, and the deadline is an INSTANT rather than a
      * countdown for the same reason: the hold's real expiry is server-side. Copy that spells a
      * duration re-encodes it where nothing can check it.

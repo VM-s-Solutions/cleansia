@@ -1298,9 +1298,9 @@
     <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
     <string name="offers_title">Зарезервировано для вас</string>
     <string name="offers_subtitle">Заказы, в которых клиент попросил именно вас. Подтвердите \u2014 они ваши; откажетесь \u2014 вернутся ко всем.</string>
-    <string name="offer_reserved_until_today">Ваше до %1$s сегодня</string>
-    <string name="offer_reserved_until_tomorrow">Ваше до %1$s завтра</string>
-    <string name="offer_reserved_until_date">Ваше до %1$s, %2$s</string>
+    <string name="offer_reserved_until_today">Ваш до %1$s сегодня</string>
+    <string name="offer_reserved_until_tomorrow">Ваш до %1$s завтра</string>
+    <string name="offer_reserved_until_date">Ваш до %1$s, %2$s</string>
     <string name="offer_reserved_ended">Это резервирование завершилось</string>
     <string name="offer_confirm">Подтвердить</string>
     <string name="offer_slide_to_confirm">Проведите, чтобы подтвердить</string>

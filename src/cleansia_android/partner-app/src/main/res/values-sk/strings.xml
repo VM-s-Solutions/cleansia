@@ -1293,9 +1293,9 @@
     <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
     <string name="offers_title">Rezervované pre vás</string>
     <string name="offers_subtitle">Zákazky, o ktoré si vás zákazník vyžiadal. Keď potvrdíte, sú vaše; keď odmietnete, vrátia sa všetkým.</string>
-    <string name="offer_reserved_until_today">Vaše do %1$s dnes</string>
-    <string name="offer_reserved_until_tomorrow">Vaše do %1$s zajtra</string>
-    <string name="offer_reserved_until_date">Vaše do %1$s, %2$s</string>
+    <string name="offer_reserved_until_today">Vaša do %1$s dnes</string>
+    <string name="offer_reserved_until_tomorrow">Vaša do %1$s zajtra</string>
+    <string name="offer_reserved_until_date">Vaša do %1$s, %2$s</string>
     <string name="offer_reserved_ended">Táto rezervácia sa skončila</string>
     <string name="offer_confirm">Potvrdiť</string>
     <string name="offer_slide_to_confirm">Potvrdiť potiahnutím</string>

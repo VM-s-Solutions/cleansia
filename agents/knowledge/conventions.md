@@ -291,11 +291,17 @@ grep, and the **test** (which is normative) keeps deciding the next case even wh
 (which is only descriptive) is stale. `consistency.md` §"Post-commit ordering" limb (a) is the worked
 example. Deviating form: **any sentence of the shape "there are exactly N …" about code**.
 
-**Enforced by:** `agents/tools/check-catalog-claims.mjs` — **`(gate pending: catalog-claim-liveness
-checker — ticket owed, PM to file; spec below)`**, promoting to **`T1-CI`** on landing.
+**Enforced by:** `agents/tools/check-catalog-claims.mjs` + `.github/workflows/catalog-claims.yml`
+(T-0574) — **`T2-ADVISORY`** today, **`(gate pending: T-0574)`** for the blocking tier. The checker,
+its acceptance test and the workflow have landed; the **self-test half blocks** (its baseline is zero
+by construction), and the **corpus scan runs `--warn`** because the measured baseline is not zero:
+**16** violations before T-0574 changed anything, **15** after it retired `enforcement.md`'s own
+*"Specified, NOT yet built"* banner about this checker. It promotes to **`T1-CI`** — drop `--warn` — when a
+full run reports `FAILED: C1 0 · C2 0 · C3 0`. **The sweep that gets it there is owed and unfiled; PM
+to cut it**, and this sentence is what makes that debt visible rather than implied.
 
-The gate is specified, not aspirational, and it is specified as `T1-CI` because all three forms above
-are decidable from in-repo text with no compiler: parse `agents/knowledge/**/*.md` +
+The gate is not aspirational, and all three forms above are decidable from in-repo text with no
+compiler: parse `agents/knowledge/**/*.md` +
 `agents/process/**/*.md` for (1) an ADR id adjacent to a quoted status token → read that ADR's
 `- **Status:**` line → fail on disagreement; (2) a `Retires when: <path> exists` marker → `fs.existsSync`
 → fail if it exists; (3) every `` `Path.ext:N` `` / `:N-M` citation → file exists **and** has ≥ M lines
@@ -305,17 +311,23 @@ dependency-free Node script **outside the Nx workspace with its own repo-root wo
 `agents/`**, so no existing workflow can host it. Like that check, it must fail loudly when its corpus
 is empty or an anchor matches nothing; a green run must mean it *read* the pages.
 
-**Why it is `(gate pending:)` today and not `T1-CI`:** `enforcement.md`'s zero-baseline rule. Six
-instances were fixed on 2026-08-09; the remaining ~40 role cards and five catalog pages were **not**
-swept, so the baseline is non-zero and unmeasured. The ticket owes: the checker, its own acceptance
-test (mutate one banner, assert red), the sweep that drives the baseline to zero, and **one line
-extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and citations of the *whole
-file* a hunk touches — not just the hunk — because the sixth instance was a sentence that survived a
-pass over its own page.
+**Why the blocking tier is still `(gate pending:)` and not `T1-CI`:** `enforcement.md`'s zero-baseline
+rule. Six instances were fixed on 2026-08-09; the remaining role cards and catalog pages were not
+swept. T-0574 **measured** that baseline instead of guessing at it, and the shape is worth knowing
+before the sweep is planned: **7 are C2-FORM** (a bold "not yet built" banner with no `Retires when:`
+condition — a one-line mechanical fix per site), **8 are C3** (rotted citations, including two into a
+migration filename that no longer exists and one into a file that is gone), and **1 is C1**. Two of
+T-0574's four owed items remain: the **sweep**, and **one line extending
+reviewer-check 5 "Catalog-edit routing"** (`.claude/agents/reviewer.md`) to re-read the banners and
+citations of the *whole file* a hunk touches — not just the hunk — because the sixth instance was a
+sentence that survived a pass over its own page.
 
-**Until that ticket lands, nothing enforces this, and saying so is the point.** An interim
-"the reviewer will spot it" is `(guidance — no gate)` by the line two sections down, and claiming
-otherwise would make this entry the seventh instance of its own defect.
+**What enforces this today, exactly:** the workflow runs on every change to `agents/**`, `src/**` and
+`docs/**` — the cited trees, not just the citing ones, because a citation rots when the *cited* file
+moves. Its self-test is a hard gate; its corpus scan reports. A reach failure (an empty corpus, a
+broken parser, a floor breached) exits 1 **even under `--warn`**: advisory about the catalog's debt,
+never about whether the instrument ran. What it cannot decide — whether the cited lines *say* what the
+entry claims — stays the reader's, and the entry does not pretend otherwise.
 
 **Three alternatives were weighed and rejected** — do not re-derive them:
 - **"A role card may not be written before the thing exists."** Rejected. The payout card was *useful*

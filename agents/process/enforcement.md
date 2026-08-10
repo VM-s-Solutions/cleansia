@@ -15,6 +15,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
 | Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
 | Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; baseline now empty — all 8 surfaces gated strictly) |
+| Catalog-claim liveness (T-0574) | `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`) | the three writer obligations of `conventions.md` §"A claim about the tree carries its own retirement condition" — ADR status agreement, `Retires when:` conditions, `file:line` resolution — over `agents/knowledge/**` + `agents/process/**`, triggered on the **cited** trees (`src/**`, `docs/**`) as well as the citing one | **corpus scan `T2-ADVISORY`** (`--warn`; baseline 16, see below) · **self-test `T1-CI`** (blocking, zero-baseline by construction) · a **reach failure exits 1 even under `--warn`** |
 | iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI — T1-CI** (lint + tests). **Project-specific rules exist**, declared under `custom_rules:` in `src/cleansia_ios/.swiftlint.yml` — each `severity: error` and therefore CI-blocking under `--strict`. **Read the file for the roster; it is not enumerated here.** This sentence said "two" for one afternoon: it was corrected from "none" at 17:05 and a third rule landed at 18:32, which is the decay class `conventions.md` §"A claim about the tree carries its own retirement condition" exists to stop — and its own shape rule, *never enumerate a count of tree instances*, is what this sentence now obeys. ⚠️ **A `custom_rule` only reaches what `included:` lints** (`:1-5`): `CleansiaCore/Sources`, `CleansiaCore/Tests`, `CleansiaPartner/Sources`, `CleansiaCustomer/Sources` — so `CleansiaCustomer/LiveActivity/` and **both apps' `Tests/`** are outside every one of them |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
@@ -148,9 +149,10 @@ summary line always prints the count; the tool never prints a bare `OK`.
 
 ## The catalog-claim liveness check — `agents/tools/check-catalog-claims.mjs`
 
-**Specified, NOT yet built.** Rule: `conventions.md` §*"A claim about the tree carries its own
-retirement condition"*; deviating forms: `consistency.md` §*"Catalog claims about the tree"*.
-Tier today: **`(gate pending: catalog-claim-liveness checker — ticket owed)`** → **`T1-CI`** on landing.
+**Built and running (T-0574), at `T2-ADVISORY`.** Rule: `conventions.md` §*"A claim about the tree
+carries its own retirement condition"*; deviating forms: `consistency.md` §*"Catalog claims about the
+tree"*. Tier today: **`T2-ADVISORY`** for the corpus scan, **`T1-CI`** for its self-test, and
+**`(gate pending: T-0574)`** for the blocking corpus tier — see *Baseline and promotion* below.
 
 **The failure it closes is decay, not mis-citation.** Every one of the six measured instances cited the
 tree correctly at the moment of writing; each became false when the tree moved and **nothing anywhere
@@ -169,6 +171,20 @@ this — the artifact is correct when the gate would run.
    **and** has ≥ `M` lines. It cannot check that the lines *say* what is claimed — that residue is the
    reader's, permanently, and the entry must not pretend otherwise. *(The 65-line file cited at `:99-109`.)*
 
+**What check 3 does and does not decide, as built.** It resolves five citation dialects the catalog
+actually uses — a repo-relative path, a bare basename, an ellipsis abbreviation (`…Foo.cs`,
+`customer-app/…/Bar.kt`), an abbreviated path whose segments are substrings of the real ones
+(`Web.Customer/ServiceCityController.cs`), and a ticket stem (`T-0123.md`) — and it never guesses: an
+ambiguous basename fails only if it fails under **every** candidate. It goes one step past existence
+with **C3B**, which asks whether the backticked subject named immediately before a citation still
+appears inside the cited range. C3B is **advisory and stays advisory**: its hit rate on the corpus is
+52/98, because the catalog also backticks prose and often names a *type* whose declaration is nowhere
+near the cited member. It is a reading prompt, not evidence. A bare `:N-M` **continuation**'s file is
+*inferred*, not read, so its verdict is `C3-SOFT` — printed, never counted, never blocking; binding it
+loosely mis-attributed line numbers across table rows, and a mis-bound finding is a lie in the shape
+of a finding. Deviating form 4 (*"there are exactly N …"*) is **not** mechanized: separating a count of
+tree instances from a count of domain facts (*"two independent axes"*) needs a reader.
+
 **Shape — cross-stack, its own repo-root workflow.** No stack's CI watches `agents/`, so no existing
 workflow can host this: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all trigger on `src/`
 subtrees, and `nx affected` selects zero projects for a markdown-only diff. Same structural argument
@@ -177,21 +193,39 @@ Node script **outside the Nx workspace** with its own workflow, triggered on `ag
 `src/` trees the citations point into (a citation rots when the *cited* file changes, not when the
 catalog does — that trigger is the whole check, not a nicety).
 
-**Anti-vacuity (ADR-0032 D3).** A moved or renamed page must be a hard failure, never a silent pass:
-assert the walker enumerated a non-trivial page count and that each check matched a **known-good
-fixture** embedded in its own test. A run that finds zero citations because a glob broke must be red.
+**Anti-vacuity (ADR-0032 D3), as built.** Every run prints what it FOUND, not only what failed — the
+corpus, ADR and indexed-file counts, and the claims found per obligation — and five things make an
+empty scan illegal: **floors** on each of those counts; a **dumb second scan** for anything shaped
+like `.<known-ext>:N` cross-checked against the character spans the parser consumed, so a regressed
+regex reports itself instead of going green; a self-test that asserts the summary **states its
+corpus** on the happy path; a self-test that runs against an under-populated root **without**
+`--floors=off` and asserts red; and the rule that `--warn` **never** suppresses a reach failure —
+advisory about the catalog's debt, never about whether the instrument ran.
 
-**The ticket owes four things**, and the last is not optional:
-1. the checker + its own acceptance test (mutate one banner / one citation, assert red);
-2. the sweep that drives the baseline to zero across the remaining role cards and catalog pages
-   — six were fixed 2026-08-09, the rest are **unmeasured**;
-3. the repo-root workflow;
-4. **one line extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and citations
-   of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false sentence
-   that survived a pass over its own page.
+**Baseline and promotion.** Measured over the whole corpus before T-0574 changed anything: **16**
+violations — **C1 1** (a role card's status banner disagreeing with ADR-0022's own `accepted` status
+line), **C2 7** (bold "not yet built" banners with no `Retires when:` condition), **C3 8** (rotted
+citations, including two into a migration filename that no longer exists and one into a deleted `.kt`
+file). It stands at **15** after this section's own *"Specified, NOT yet built"* banner — which was
+about this checker — retired on the same commit. Corpus reach at that commit: 34 pages, 46 ADRs,
+6470 indexed files, 20 ADR status claims, 501 citations. That is why the corpus scan ships `--warn`:
+this document's own rule of thumb forbids blocking over a dirty baseline. **Promotion is one edit** —
+drop `--warn` from
+`catalog-claims.yml` — the day a full run reports `FAILED: C1 0 · C2 0 · C3 0`, updating the tier
+token in `conventions.md`, `consistency.md` and this file in the same change.
 
-Until it lands, **nothing enforces the rule**, and the catalog says so rather than implying a reviewer
-will notice: an unnamed human enforcer is `(guidance — no gate)` by this document's own tier table.
+**Two of the ticket's four items remain owed:**
+1. ✅ the checker + its acceptance test (`check-catalog-claims.mjs` / `.test.mjs`, 22 scenarios);
+2. ⬜ the **sweep** that drives the 16 to zero — deliberately NOT done inside T-0574, because fixing
+   the corpus in the same change would have hidden whether the checker works;
+3. ✅ the repo-root workflow (`.github/workflows/catalog-claims.yml`);
+4. ⬜ **one line extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and
+   citations of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false
+   sentence that survived a pass over its own page.
+
+`consistency.md` §*"Catalog claims about the tree"* still carries the pre-landing
+`(gate pending: catalog-claim-liveness checker — ticket owed)` token; it belongs to a different
+file lane and is substituted there, not here.
 
 ## How the gate works (Reviewer + PM)
 
@@ -254,9 +288,9 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
       **be careful** — which is what the six already had. The answer is mechanical and specified as a
       new `T1-CI` gate: `conventions.md` §*"A claim about the tree carries its own retirement
       condition"* + `consistency.md` §*"Catalog claims about the tree"*, enforced by
-      `agents/tools/check-catalog-claims.mjs`, **`(gate pending: catalog-claim-liveness checker —
-      ticket owed)`**. See §*"The catalog-claim liveness check"* below for why it takes the cross-stack
-      repo-root-workflow shape and what its ticket owes.
+      `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`, T-0574) — **`T2-ADVISORY`**
+      for the corpus scan, **`(gate pending: T-0574)`** for the blocking tier. See §*"The catalog-claim
+      liveness check"* below for the measured baseline and the one edit that promotes it.
     - **reviewer-check 5 "Catalog-edit routing"** — `.claude/agents/reviewer.md`, step 5. Governs **any
       diff touching `agents/knowledge/*.md`**: it runs ADR-0033's three ordered routing tests (does the
       edit put shipped code in violation / does it narrow a governing sentence, with the floor's

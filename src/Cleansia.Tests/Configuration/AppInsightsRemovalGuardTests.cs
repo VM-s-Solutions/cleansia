@@ -13,10 +13,20 @@ using Microsoft.Extensions.Options;
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// That Application Insights is GONE and stays gone. The workspace and the component were removed from
-/// both environments by owner ruling — App Insights is workspace-based only, so "keep the component,
-/// drop the Log Analytics workspace" would have re-created the same bill under a name the template does
-/// not control.
+/// That Application Insights is wired, and that the two knobs which decide its bill hold their values.
+///
+/// <para><b>The history is the point.</b> The owner asked to remove Log Analytics and keep App Insights;
+/// that configuration does not exist, because the component is workspace-based and classic App Insights
+/// is retired — deleting the workspace only moves it to an auto-provisioned default with no retention
+/// setting and no cap, which is a cost REGRESSION wearing a cut's clothes. Both were removed, then both
+/// were restored with the cost taken out of the volume instead: dev sampling 100 → 10, which lands
+/// ingestion inside the 5 GB/month free grant, and the cap 1 GB → 500 MB, chosen so that reverting the
+/// sampling change puts dev ABOVE the cap. **The breaker can now catch its own removal**, which the old
+/// 1 GB cap could not — dev ran at ~0.88 GB/day against it and never came within 12% of tripping.</para>
+///
+/// <para>Retention is deliberately not a lever here: 31 days are included in the ingestion price and
+/// App Insights tables keep 90 free, so cutting it saves nothing and only shortens how far back a bug
+/// can be investigated.</para>
 ///
 /// <para>This class used to pin the opposite, and the defect it was written for is worth keeping in view
 /// because it is the failure mode of every wiring change: <c>UseAzureMonitor</c> was added under a commit
@@ -52,26 +62,19 @@ public class AppInsightsRemovalGuardTests
     /// must stay legal.
     /// </summary>
     [Fact]
-    public void NoTemplateHandsAnyHostAnAppInsightsConnectionString()
+    public void EveryHostIsHandedTheConnectionStringAndTheCostKnobsHoldTheirValues()
     {
-        string[] banned =
-        [
-            ConnectionStringAppSetting,
-            "Microsoft.Insights/components",
-            "Microsoft.OperationalInsights/workspaces",
-            "appInsights",
-        ];
+        var main = WithoutComments(File.ReadAllText(RepoPath("deploy", "bicep", "main.bicep")));
+        var module = WithoutComments(File.ReadAllText(RepoPath("deploy", "bicep", "modules", "appInsights.bicep")));
 
-        var offences = DeployTemplates()
-            .SelectMany(file => banned
-                .Where(token => WithoutComments(File.ReadAllText(file)).Contains(token, StringComparison.OrdinalIgnoreCase))
-                .Select(token => $"{Path.GetFileName(file)} → {token}"))
-            .ToList();
+        // Presence is the trivial half — a missing resource is visible in any review. The knob values
+        // are what silently regress into a EUR 49/month line, which is exactly how this got here: the
+        // module shipped with dev sampling at 100 (sampling nothing) under a 1 GB cap that dev never
+        // came within 12% of tripping, so the breaker could not catch the setting that broke it.
+        Assert.Contains(ConnectionStringAppSetting, main, StringComparison.Ordinal);
 
-        Assert.True(offences.Count == 0,
-            "Application Insights / Log Analytics is back in the deployment templates: "
-            + string.Join(", ", offences)
-            + ". The workspace was the largest single line on the Azure bill and both resources were removed together.");
+        Assert.Contains("env == 'prod' ? 50 : 10", module, StringComparison.Ordinal);
+        Assert.Contains("env == 'prod' ? 5000 : 500", module, StringComparison.Ordinal);
     }
 
     /// <summary>

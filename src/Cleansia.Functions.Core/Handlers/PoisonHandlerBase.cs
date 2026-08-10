@@ -11,7 +11,9 @@ namespace Cleansia.Functions.Core.Handlers;
 ///   1. <see cref="IDeadLetterStore.RecordAsync"/> — persist the durable, admin-visible dead-letter
 ///      row (the recovery/replay source). For the two fiscal queues (generate-receipt,
 ///      generate-invoice) this durable row is MANDATORY.
-///   2. <c>LogError</c> — raises the Sentry/AppInsights alert.
+///   2. <c>LogError</c> — raises the Sentry alert. An Error log is what the Functions worker's Sentry
+///      logging provider (<c>AddSentryMonitoring</c>) turns into an event, and that is this host's ONLY
+///      off-box error signal: Application Insights was removed from every environment.
 ///   3. ACK (return, <b>NEVER throw</b>) — acking removes the message from the <c>-poison</c> queue;
 ///      throwing would re-poison it into an endless loop. The durable row is the recovery source.
 ///
@@ -49,8 +51,8 @@ public abstract class PoisonHandlerBase(IDeadLetterStore deadLetterStore, ILogge
             return;
         }
 
-        // 2. Alert. LogError raises the Sentry/AppInsights alert so a poisoned (especially fiscal)
-        //    message is noticed, not silently lost.
+        // 2. Alert. LogError raises the Sentry alert so a poisoned (especially fiscal) message is
+        //    noticed, not silently lost.
         logger.LogError("DEAD-LETTER on {SourceQueue}: {Body}", SourceQueue, body);
 
         // 3. ACK — return without throwing. The Storage-queue runtime deletes the message from

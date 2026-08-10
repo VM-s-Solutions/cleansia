@@ -13,6 +13,16 @@ enum OrderAction: Equatable {
     case complete
     case declineOffer
 
+    /// Only the two reservation actions earn platform-owned framing; every other refusal on the detail
+    /// reaches the snackbar exactly as it always did.
+    var refusalKind: OfferRefusal.Kind? {
+        switch self {
+        case .take: .confirm
+        case .declineOffer: .release
+        case .notifyOnTheWay, .start, .markCashCollected, .complete: nil
+        }
+    }
+
     var mutation: OrdersMutation {
         switch self {
         case .take: .takeOrder
@@ -50,6 +60,11 @@ final class OrderDetailViewModel: ViewModel {
     /// Absent means an ordinary job, which is exactly right for the short-lead band, where the push
     /// fires but nothing is withheld.
     @Published private(set) var preferredOffer: PendingOfferItem?
+    /// The action that produced the current `actionState.error`. It survives into the error precisely
+    /// so a failure to RELEASE cannot wear the framing written for a failure to TAKE. Written only on
+    /// failure and readable only through `refusal`, which is itself gated on the error — so a value
+    /// left over from a previous attempt cannot be observed and never needs clearing.
+    @Published private var refusedAction: OrderAction?
 
     private let orderId: String
     private let client: PartnerOrderClient
@@ -109,6 +124,16 @@ final class OrderDetailViewModel: ViewModel {
 
     func dismissActionError() {
         if case .error = actionState { actionState = .idle }
+    }
+
+    /// A disclosed reservation is the only thing that earns the framing: with no hold this screen is
+    /// the ordinary job it has always been, and its refusals stay on the snackbar.
+    var refusal: OfferRefusal? {
+        guard let reason = actionState.errorMessage,
+              let kind = refusedAction?.refusalKind,
+              let preferredOffer
+        else { return nil }
+        return OfferRefusal(kind: kind, displayOrderNumber: preferredOffer.displayOrderNumber, reason: reason)
     }
 
     private func ensureOffersFresh() async {
@@ -190,10 +215,10 @@ final class OrderDetailViewModel: ViewModel {
             // surface the message, keep the screen, refresh so a stale
             // "takeable" state corrects (e.g. already-taken order).
             inFlightAction = nil
-            // A confirm the take gate refuses on a job the cleaner was TOLD was theirs is framed by
-            // the screen as ours rather than theirs; a snackbar carrying the bare reason would land
-            // on top of that sentence.
-            if !(action == .take && preferredOffer != nil) {
+            refusedAction = action
+            // Whatever the screen frames, it frames alone: a snackbar carrying the same bare reason
+            // would land on top of the sentence that explains which promise broke.
+            if !(action.refusalKind != nil && preferredOffer != nil) {
                 snackbar.showApiError(error)
             }
             actionState = .error(ApiErrorLocalizer().message(for: error))

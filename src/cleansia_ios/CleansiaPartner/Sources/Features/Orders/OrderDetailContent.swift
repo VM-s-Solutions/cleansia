@@ -87,9 +87,7 @@ struct OrderDetailContent: View {
                     onDismiss: { decliningOffer = false }
                 )
             }
-            // Only a DISCLOSED offer earns the framed apology; every other refusal on this screen
-            // already went to the snackbar, exactly as before.
-            if let refusal, preferredOffer != nil, inFlightAction == nil {
+            if let refusal, inFlightAction == nil {
                 OfferRefusalDialog(refusal: refusal, onDismiss: onDismissRefusal)
             }
         }

@@ -33,6 +33,8 @@ final class PendingOfferStringsTests: XCTestCase {
         "offer_blocked_title",
         "offer_blocked_body",
         "offer_blocked_dismiss",
+        "offer_release_failed_title",
+        "offer_release_failed_body",
         "offers_card_title",
         "offers_card_more",
         "offers_card_cta"
@@ -57,6 +59,7 @@ final class PendingOfferStringsTests: XCTestCase {
             "offer_reserved_until_tomorrow": ["%1$@"],
             "offer_reserved_until_date": ["%1$@", "%2$@"],
             "offer_blocked_body": ["%1$@"],
+            "offer_release_failed_body": ["%1$@"],
             "offers_card_more": ["%1$d"]
         ]
         for language in languages {
@@ -85,7 +88,14 @@ final class PendingOfferStringsTests: XCTestCase {
             "uk": ["клієнт"],
             "ru": ["клиент"]
         ]
-        let keys = ["offer_decline_title", "offer_decline_body", "offer_decline_cta", "offer_declined_toast"]
+        let keys = [
+            "offer_decline_title",
+            "offer_decline_body",
+            "offer_decline_cta",
+            "offer_declined_toast",
+            "offer_release_failed_title",
+            "offer_release_failed_body"
+        ]
         for language in languages {
             let table = try localizableTable(for: language)
             for key in keys {
@@ -142,16 +152,74 @@ final class PendingOfferStringsTests: XCTestCase {
         }
     }
 
-    /// The framing takes the blame and the server's reason rides inside it; a body that dropped the
-    /// reason would tell the cleaner nothing about why.
-    func testTheRefusalFramingCarriesTheServersOwnReasonInEveryLanguage() throws {
+    /// Both framings quote the server's own reason; a body that dropped it would tell the cleaner
+    /// nothing about why.
+    func testBothRefusalFramingsCarryTheServersOwnReasonInEveryLanguage() throws {
         let restore = L10n.bundle
         defer { L10n.bundle = restore }
         for language in languages {
             L10n.bundle = try localeBundle(language)
-            let rendered = L10n.Offers.blockedBody("REASON-SENTINEL")
-            XCTAssertTrue(rendered.contains("REASON-SENTINEL"), "\(language) dropped the reason: \(rendered)")
-            XCTAssertFalse(rendered.contains("offer_blocked_body"), "\(language) left the key unresolved")
+            for (rendered, key) in [
+                (L10n.Offers.blockedBody("REASON-SENTINEL"), "offer_blocked_body"),
+                (L10n.Offers.releaseFailedBody("REASON-SENTINEL"), "offer_release_failed_body")
+            ] {
+                XCTAssertTrue(rendered.contains("REASON-SENTINEL"), "\(language)/\(key) dropped the reason")
+                XCTAssertFalse(rendered.contains(key), "\(language) left \(key) unresolved")
+            }
+        }
+    }
+
+    /// The join between the state and the copy: a refusal carries its kind, and each kind reaches for
+    /// its own sentence. Aliasing the two mappings is the same defect as aliasing the two catalog rows.
+    func testEachRefusalKindReachesForItsOwnSentence() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        L10n.bundle = try localeBundle("en")
+
+        let confirm = OfferRefusal(kind: .confirm, displayOrderNumber: "CL-1", reason: "R")
+        let release = OfferRefusal(kind: .release, displayOrderNumber: "CL-1", reason: "R")
+
+        XCTAssertEqual(confirm.headline, L10n.Offers.blockedTitle)
+        XCTAssertEqual(confirm.message, L10n.Offers.blockedBody("R"))
+        XCTAssertEqual(release.headline, L10n.Offers.releaseFailedTitle)
+        XCTAssertEqual(release.message, L10n.Offers.releaseFailedBody("R"))
+        XCTAssertNotEqual(confirm.message, release.message)
+        XCTAssertEqual(release.title, "\(L10n.Offers.releaseFailedTitle) · CL-1")
+    }
+
+    /// A blank order number leaves the headline alone rather than trailing a naked separator.
+    func testARefusalWithNoOrderNumberIsJustTheHeadline() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        L10n.bundle = try localeBundle("en")
+
+        XCTAssertEqual(
+            OfferRefusal(kind: .release, displayOrderNumber: "  ", reason: "R").title,
+            L10n.Offers.releaseFailedTitle
+        )
+        XCTAssertEqual(
+            OfferRefusal(kind: .confirm, displayOrderNumber: nil, reason: "R").title,
+            L10n.Offers.blockedTitle
+        )
+    }
+
+    /// A failure to TAKE and a failure to RELEASE are different failures. The take framing owns the
+    /// platform's mistake — "we put your name on this job without checking" — and saying that when a
+    /// release did not land assigns blame for something nobody did. Aliasing one key to the other is
+    /// the cheapest way to reintroduce exactly that, so the two must never read the same.
+    func testTheTwoRefusalFramingsAreNotTheSameSentence() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for language in languages {
+            L10n.bundle = try localeBundle(language)
+            XCTAssertNotEqual(
+                L10n.Offers.blockedTitle, L10n.Offers.releaseFailedTitle,
+                "\(language) gives a refused release the title written for a refused confirm"
+            )
+            XCTAssertNotEqual(
+                L10n.Offers.blockedBody("R"), L10n.Offers.releaseFailedBody("R"),
+                "\(language) gives a refused release the body written for a refused confirm"
+            )
         }
     }
 

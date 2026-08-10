@@ -129,6 +129,84 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         XCTAssertEqual(snackbar.current?.severity, .error)
     }
 
+    /// A refused CONFIRM is the platform's fault — nothing gates the reservation on the weekly cap, so
+    /// the take gate can refuse a job the cleaner was told was theirs, and the framing takes the blame.
+    func testARefusedConfirmIsFramedAsThePlatformsMistake() async {
+        client.pendingOffersResult = .success([.sample(id: orderId)])
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: "order.weekly_limit_reached", httpStatus: 400))
+
+        await vm.take()
+
+        XCTAssertEqual(vm.refusal?.kind, .confirm)
+        XCTAssertEqual(vm.refusal?.displayOrderNumber, "CL-\(orderId)")
+    }
+
+    /// A refused RELEASE is a different failure and may not wear the blame written for the other one:
+    /// the write simply did not land, nothing was released, and there is no mistake to own in either
+    /// direction.
+    func testARefusedReleaseIsNotFramedAsTheConfirmsMistake() async {
+        client.pendingOffersResult = .success([.sample(id: orderId)])
+        let vm = makeVM()
+        await vm.load()
+        client.declineResult = .failure(ApiError(httpStatus: nil))
+
+        await vm.declinePreferredOffer()
+
+        XCTAssertEqual(vm.refusal?.kind, .release)
+        XCTAssertNotNil(vm.preferredOffer, "a refused release leaves the reservation exactly as it was")
+    }
+
+    /// The screen frames this one too, so the bare reason must not arrive a second time on top of it.
+    func testARefusedReleaseOnADisclosedOfferIsStateNotABareSnackbar() async {
+        client.pendingOffersResult = .success([.sample(id: orderId)])
+        let vm = makeVM()
+        await vm.load()
+        client.declineResult = .failure(ApiError(httpStatus: nil))
+
+        await vm.declinePreferredOffer()
+
+        XCTAssertNil(snackbar.current)
+    }
+
+    /// Only the two reservation actions earn the framing. Any other refusal on this screen already
+    /// went to the snackbar and must keep going there, even while a reservation is disclosed.
+    func testANonReservationRefusalNeverWearsTheOfferFraming() async {
+        client.pendingOffersResult = .success([.sample(id: orderId)])
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: "order.not_in_progress", httpStatus: 400))
+
+        await vm.notifyOnTheWay()
+
+        XCTAssertNil(vm.refusal)
+        XCTAssertEqual(snackbar.current?.severity, .error)
+    }
+
+    func testAnOrdinaryJobNeverProducesAFramedRefusal() async {
+        client.pendingOffersResult = .success([])
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: "order.no_available_spots", httpStatus: 400))
+
+        await vm.take()
+
+        XCTAssertNil(vm.refusal)
+    }
+
+    func testDismissingTheFramedRefusalClearsIt() async {
+        client.pendingOffersResult = .success([.sample(id: orderId)])
+        let vm = makeVM()
+        await vm.load()
+        client.declineResult = .failure(ApiError(httpStatus: nil))
+        await vm.declinePreferredOffer()
+
+        vm.dismissActionError()
+
+        XCTAssertNil(vm.refusal)
+    }
+
     func testDismissingTheFramedRefusalClearsTheActionError() async {
         client.pendingOffersResult = .success([.sample(id: orderId)])
         let vm = makeVM()

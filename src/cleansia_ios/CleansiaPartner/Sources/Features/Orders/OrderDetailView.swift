@@ -74,7 +74,7 @@ struct OrderDetailView: View {
                 primaryAction: vm.primaryAction,
                 inFlightAction: vm.inFlightAction,
                 preferredOffer: vm.preferredOffer,
-                refusal: refusal,
+                refusal: vm.refusal,
                 onConfirm: { action in Task { await vm.dispatch(action) } },
                 onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
                 onDismissRefusal: vm.dismissActionError,
@@ -83,11 +83,6 @@ struct OrderDetailView: View {
                 photosVM: photosVM
             )
         }
-    }
-
-    private var refusal: OfferRefusal? {
-        guard let message = vm.actionState.errorMessage else { return nil }
-        return OfferRefusal(displayOrderNumber: vm.preferredOffer?.displayOrderNumber, reason: message)
     }
 
     @ViewBuilder

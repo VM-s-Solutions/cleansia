@@ -217,6 +217,32 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertFalse(isError(vm.state))
     }
 
+    func testARefusedConfirmIsFramedAsThePlatformsMistake() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: weeklyCapKey, httpStatus: 400))
+
+        await vm.confirm(.sample(id: "a"))
+
+        XCTAssertEqual(vm.refusal?.kind, .confirm)
+        XCTAssertEqual(vm.refusal?.displayOrderNumber, "CL-a")
+    }
+
+    /// The list answers a refused release on the snackbar and keeps no attempt, so nothing here may
+    /// reach for the framing the confirm owns.
+    func testARefusedDeclineOnTheListRaisesNoFraming() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+        client.declineResult = .failure(ApiError(httpStatus: nil))
+
+        await vm.decline(.sample(id: "a"))
+
+        XCTAssertNil(vm.refusal)
+        XCTAssertEqual(snackbar.current?.severity, .error)
+    }
+
     func testDismissingTheRefusalClearsItWithoutTouchingTheList() async {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()

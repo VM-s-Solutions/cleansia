@@ -7612,7 +7612,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@\n\nTo je na nás — napsali jsme k této zakázce vaše jméno, aniž bychom to ověřili, takže se vám nic z toho nepřičítá."
+            "value": "%1$@\n\nTohle je na nás — rezervovali jsme zakázku na vaše jméno, aniž bychom to ověřili, takže se vám to nijak nezapočítává."
           }
         },
         "en": {
@@ -7624,19 +7624,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@\n\nЭто наша вина — мы указали ваше имя на этом заказе без проверки, так что вам это никак не засчитывается."
+            "value": "%1$@\n\nЭто наша вина — мы зарезервировали заказ на ваше имя без проверки, так что это никак не засчитывается вам в минус."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@\n\nTo je na nás — pripísali sme k tejto zákazke vaše meno bez overenia, takže sa vám nič z toho nepripisuje."
+            "value": "%1$@\n\nToto je na nás — rezervovali sme zákazku na vaše meno bez overenia, takže sa vám to nijako nezapočítava."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@\n\nЦе наша провина — ми вказали ваше ім’я на цьому замовленні без перевірки, тож вам це ніяк не зараховується."
+            "value": "%1$@\n\nЦе наша провина — ми зарезервували замовлення на ваше ім'я без перевірки, тож це ніяк не зараховується вам у мінус."
           }
         }
       }
@@ -7680,31 +7680,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázku se nepodařilo předat"
+            "value": "Zakázku se nám nepodařilo předat"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We couldn’t hand this job over"
+            "value": "We couldn't hand this job over"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось передать вам этот заказ"
+            "value": "Мы не смогли передать вам этот заказ"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazku sa nepodarilo odovzdať"
+            "value": "Zákazku sa nám nepodarilo odovzdať"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не вдалося передати вам це замовлення"
+            "value": "Ми не змогли передати вам це замовлення"
           }
         }
       }
@@ -7748,7 +7748,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrzuje se…"
+            "value": "Potvrzuji…"
           }
         },
         "en": {
@@ -7766,7 +7766,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrdzuje sa…"
+            "value": "Potvrdzujem…"
           }
         },
         "uk": {
@@ -7816,7 +7816,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Okamžitě se vrátí všem uklízečům. Nic z toho se vám nepřičítá k tíži a dokud je volná, můžete si ji z nabídky pořád vzít."
+            "value": "Ihned se vrátí všem uklízečům. Nijak se vám to nezapočítává a dokud je volná, můžete si ji z nabídky vzít i vy."
           }
         },
         "en": {
@@ -7828,19 +7828,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Он сразу вернётся ко всем уборщикам. Ничто из этого не идёт вам в минус, и пока он свободен, вы всё ещё можете взять его из списка."
+            "value": "Он сразу вернётся ко всем уборщикам. Это никак не засчитывается вам в минус, и пока он свободен, вы можете взять его из списка."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Okamžite sa vráti všetkým upratovačom. Nič z toho sa vám nepripisuje na ťarchu a kým je voľná, stále si ju môžete z ponuky vziať."
+            "value": "Ihneď sa vráti všetkým upratovačom. Nijako sa vám to nezapočítava a kým je voľná, môžete si ju z ponuky vziať aj vy."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Воно одразу повернеться до всіх прибиральників. Ніщо з цього не зараховується вам у мінус, і поки воно вільне, ви все одно можете взяти його зі списку."
+            "value": "Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку."
           }
         }
       }
@@ -7918,7 +7918,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uvolněno — zakázka je teď otevřená všem uklízečům."
+            "value": "Uvolněno — zakázka je teď otevřená všem."
           }
         },
         "en": {
@@ -7930,19 +7930,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Освобождён — заказ теперь открыт для всех уборщиков."
+            "value": "Освобождено — заказ теперь открыт для всех."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uvoľnené — zákazka je teraz otvorená všetkým upratovačom."
+            "value": "Uvoľnené — zákazka je teraz otvorená všetkým."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Звільнено — замовлення тепер відкрите для всіх прибиральників."
+            "value": "Звільнено — замовлення тепер відкрите для всіх."
           }
         }
       }
@@ -7952,7 +7952,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Právě teď nic nečeká na vaši odpověď."
+            "value": "Právě teď na vaši odpověď nic nečeká."
           }
         },
         "en": {
@@ -7964,19 +7964,87 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сейчас ничто не ждёт вашего ответа."
+            "value": "Сейчас ничего не ждёт вашего ответа."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Práve teraz nič nečaká na vašu odpoveď."
+            "value": "Práve teraz na vašu odpoveď nič nečaká."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Зараз ніщо не чекає на вашу відповідь."
+            "value": "Зараз нічого не чекає на вашу відповідь."
+          }
+        }
+      }
+    },
+    "offer_release_failed_body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\n\nNic se neuvolnilo — zakázka je přesně tak, jak byla, a za chvíli to můžete zkusit znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\n\nNothing was released — the job is exactly as it was, and you can try again in a moment."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\n\nНичего не освобождено — заказ точно такой, каким был, и через мгновение вы можете попробовать снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\n\nNič sa neuvoľnilo — zákazka je presne taká, aká bola, a o chvíľu to môžete skúsiť znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\n\nНічого не звільнено — замовлення точно таке, як було, і за мить ви можете спробувати ще раз."
+          }
+        }
+      }
+    },
+    "offer_release_failed_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázku se nepodařilo uvolnit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't release this job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось освободить этот заказ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazku sa nepodarilo uvoľniť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося звільнити це замовлення"
           }
         }
       }
@@ -8122,7 +8190,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrďte přejetím"
+            "value": "Posunutím potvrďte"
           }
         },
         "en": {
@@ -8140,7 +8208,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrďte potiahnutím"
+            "value": "Posunutím potvrďte"
           }
         },
         "uk": {
@@ -8156,13 +8224,13 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podívat se, co čeká"
+            "value": "Zobrazit, co čeká"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "See what’s waiting"
+            "value": "See what's waiting"
           }
         },
         "ru": {
@@ -8174,7 +8242,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pozrieť, čo čaká"
+            "value": "Zobraziť, čo čaká"
           }
         },
         "uk": {
@@ -8258,7 +8326,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázky, o které vás zákazník požádal. Potvrďte ji a je vaše; odmítněte a vrátí se všem."
+            "value": "Zakázky, o které si vás zákazník vyžádal. Když potvrdíte, jsou vaše; když odmítnete, vrátí se všem."
           }
         },
         "en": {
@@ -8270,19 +8338,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказы, на которые клиент попросил именно вас. Подтвердите — и он ваш; откажитесь — и он вернётся ко всем."
+            "value": "Заказы, в которых клиент попросил именно вас. Подтвердите — они ваши; откажетесь — вернутся ко всем."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazky, o ktoré vás zákazník požiadal. Potvrďte ju a je vaša; odmietnite a vráti sa všetkým."
+            "value": "Zákazky, o ktoré si vás zákazník vyžiadal. Keď potvrdíte, sú vaše; keď odmietnete, vrátia sa všetkým."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення, на які клієнт попросив саме вас. Підтвердьте — і воно ваше; відхиліть — і воно повернеться до всіх."
+            "value": "Замовлення, у яких клієнт попросив саме вас. Підтвердите — вони ваші; відмовитеся — повернуться до всіх."
           }
         }
       }

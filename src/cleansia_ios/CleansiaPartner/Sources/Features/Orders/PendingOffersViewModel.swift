@@ -6,6 +6,13 @@ import Foundation
 enum OfferAction: Equatable {
     case confirm
     case decline
+
+    var refusalKind: OfferRefusal.Kind {
+        switch self {
+        case .confirm: .confirm
+        case .decline: .release
+        }
+    }
 }
 
 /// The offer an action is running against, kept beside the refusal it may produce so the screen can
@@ -59,6 +66,17 @@ final class PendingOffersViewModel: ViewModel {
         store.$offers
             .sink { [weak self] offers in self?.resolveState(offers) }
             .store(in: &cancellables)
+    }
+
+    /// The attempt survives into the error, so the framing can name the order it belongs to and say
+    /// which of the two promises broke.
+    var refusal: OfferRefusal? {
+        guard let reason = actionState.errorMessage, let attempt else { return nil }
+        return OfferRefusal(
+            kind: attempt.action.refusalKind,
+            displayOrderNumber: attempt.displayOrderNumber,
+            reason: reason
+        )
     }
 
     func load() async {

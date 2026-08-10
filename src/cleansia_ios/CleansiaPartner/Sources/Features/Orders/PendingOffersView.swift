@@ -44,7 +44,7 @@ struct PendingOffersView: View {
                     onDismiss: { self.pendingDecline = nil }
                 )
             }
-            if let refusal {
+            if let refusal = vm.refusal {
                 OfferRefusalDialog(refusal: refusal, onDismiss: vm.dismissRefusal)
             }
         }
@@ -54,11 +54,6 @@ struct PendingOffersView: View {
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
         .onReceive(vm.confirmed) { onOpenOrder($0) }
-    }
-
-    private var refusal: OfferRefusal? {
-        guard let message = vm.actionState.errorMessage, let attempt = vm.attempt else { return nil }
-        return OfferRefusal(displayOrderNumber: attempt.displayOrderNumber, reason: message)
     }
 
     private var inFlight: OfferAttempt? {

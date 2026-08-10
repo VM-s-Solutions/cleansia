@@ -3,9 +3,39 @@ import CleansiaPartnerApi
 import SwiftUI
 
 /// A refusal the cleaner is owed an explanation for, paired with the offer it belongs to.
+///
+/// The two refusals are different failures and the copy says so. A refused CONFIRM is the platform's
+/// mistake — nothing gates the reservation on the weekly cap, so the take gate can refuse a job the
+/// cleaner was told was theirs. A refused RELEASE is a write that did not land: nothing changed, no
+/// mistake to own in either direction, and the honest line is to try again.
 struct OfferRefusal: Equatable {
+    enum Kind: Equatable {
+        case confirm
+        case release
+    }
+
+    let kind: Kind
     let displayOrderNumber: String?
     let reason: String
+
+    var headline: String {
+        switch kind {
+        case .confirm: L10n.Offers.blockedTitle
+        case .release: L10n.Offers.releaseFailedTitle
+        }
+    }
+
+    var title: String {
+        guard let displayOrderNumber, !displayOrderNumber.isBlank else { return headline }
+        return "\(headline) · \(displayOrderNumber)"
+    }
+
+    var message: String {
+        switch kind {
+        case .confirm: L10n.Offers.blockedBody(reason)
+        case .release: L10n.Offers.releaseFailedBody(reason)
+        }
+    }
 }
 
 enum OfferLabels {
@@ -42,26 +72,20 @@ struct ReservedForYouRow: View {
     }
 }
 
-/// The platform owns this failure and says so. A reservation spends no capacity, so the take gate can
-/// refuse a job the cleaner was told was theirs — the server's own reason is quoted verbatim, wrapped
-/// in the sentence that puts the mistake where it belongs. Shared with the order detail so the broken
-/// promise reads identically wherever it is met.
+/// The server's own reason is quoted verbatim inside platform-owned framing, and which framing depends
+/// on which promise broke. Shared by the offers list and the order detail so the same failure reads
+/// identically wherever it is met.
 struct OfferRefusalDialog: View {
     let refusal: OfferRefusal
     let onDismiss: () -> Void
 
-    private var title: String {
-        guard let number = refusal.displayOrderNumber, !number.isBlank else { return L10n.Offers.blockedTitle }
-        return "\(L10n.Offers.blockedTitle) · \(number)"
-    }
-
     var body: some View {
         CleansiaDialog(
-            title: title,
+            title: refusal.title,
             confirmLabel: L10n.Offers.blockedDismiss,
             onConfirm: onDismiss,
             onDismiss: onDismiss,
-            message: L10n.Offers.blockedBody(refusal.reason),
+            message: refusal.message,
             icon: "exclamationmark.triangle"
         )
     }

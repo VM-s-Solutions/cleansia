@@ -74,6 +74,14 @@ extension L10n {
             localized("offer_blocked_dismiss")
         }
 
+        static var releaseFailedTitle: String {
+            localized("offer_release_failed_title")
+        }
+
+        static func releaseFailedBody(_ reason: String) -> String {
+            format("offer_release_failed_body", reason)
+        }
+
         static var cardTitle: String {
             localized("offers_card_title")
         }

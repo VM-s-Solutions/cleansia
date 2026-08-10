@@ -2632,3 +2632,47 @@ thing a catalog entry could rule either way, and it is now a precedent whether o
 
 **Not blocking anything.** Recorded so the next reader of that file finds the reasoning rather than
 re-deriving it, and so a panel can rule on the shape without re-discovering the trade.
+
+---
+
+## N28 — the two catalogs had drifted 39 ways, and reconciling them found a grammar trap (2026-08-10)
+
+`81a19cb4` + `ffca9830`. The last of the ADR-0045 client wave, and the finding is about **translation
+review**, not about offers.
+
+Both mobile lanes translated the same 21 keys independently, before the agree-the-wording instruction
+existed. Reconciling them found **39 divergences across cs, sk, uk and ru**; 33 strings were adopted from
+Android and 102 of 110 shared cells are now byte-identical, asserted programmatically after unescaping
+rather than eyeballed.
+
+**The one that mattered most was a dropped actor.** Android's cs read *"Zakázku se **nám** nepodařilo
+předat"*; iOS's read *"Zakázku se nepodařilo předat"*. The English is *"**We** couldn't hand this job
+over"* — and the whole point of that framing is that the platform takes the blame for reserving a job
+without checking the cleaner's cap. An impersonal rendering deletes the apology and leaves a bare report.
+Same in sk, uk and ru. **A translation can be word-correct and still lose the only thing the sentence was
+for.**
+
+**And one went the other way — Android had a grammar error in six strings.** sk and ru used the neuter
+*"Vaše …"* / *"Ваше …"* for a referent that is feminine in Slovak (`zákazka`) and masculine in Russian
+(`заказ`). iOS declined to adopt it and raised it instead of silently diverging.
+
+### The trap, which is why "make them all match" would have been wrong
+
+Czech and Ukrainian were already correct **for different reasons**: Czech's feminine nominative singular
+of *váš* is **syncretic with its neuter**, so `Vaše` is right in cs and wrong one border away in sk. A
+well-meant sweep making all four locales match Slovak would have **broken two to fix one**. The guard
+therefore pins the expected possessive **per locale**, with the referent reasoning in its doc comment, and
+its four mutations run in both directions — reintroducing the error in one string of a language, and
+"fixing" a correct language to match a different one.
+
+Two smaller things the referent check produced that a pattern-match would not have:
+
+- **Slovak had no ambiguity to resolve** — both candidate referents (`zákazka`, `ponuka`) are feminine.
+- **Russian very nearly did.** The ru copy previously carried a competing **neuter** noun,
+  `предложение`, in the release-failure body — under which the neuter form would have been arguable. The
+  wording convergence two commits earlier had replaced that sentence with one using `заказ`. As the lane
+  put it: *"had I done this check before the convergence I would have had to raise it."* The correct
+  answer depended on a change made for an unrelated reason an hour before.
+
+**For the next copy wave:** a five-locale parity guard proves the keys exist and the placeholders survive.
+It cannot see a dropped actor or a wrong gender, and both shipped past one today.

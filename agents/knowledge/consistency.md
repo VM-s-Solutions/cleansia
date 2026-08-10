@@ -583,3 +583,37 @@ ADRs are immutable records of a past reading (`adr/README.md`); when the world m
 instrument is a **dated record-only closure**, never an edit. `ADR-0032:96`'s *"`.swiftlint.yml` has no
 `custom_rules:` block"* is exactly this — false at HEAD (`src/cleansia_ios/.swiftlint.yml:27`), correct
 to leave standing.
+
+## Verbatim wire bodies stored without a clock — the deviating form (2026-08-10)
+
+> **Enforced by:** `DeadLetterRetentionTests` + `DeadLetterRetentionPostgresTests` —
+> **`(gate pending: dead-letter retention sweep + the Failed-outbox-body clock — two tickets owed, PM
+> to file; T-0584 is the first)`** → **`T1-CI`** when both land. Rule and the rejected alternatives:
+> `patterns-backend.md` §*"A durable store of a VERBATIM wire body declares a clock"*; decision:
+> ADR-0002 §"Partial supersede — 2026-08-10 (architect, T-0584)".
+>
+> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
+> test 1), so the superseded form is recorded here and the canonicalization is ticketed rather than
+> assumed. **The baseline is non-zero and measured — two instances, both live at the time of writing.**
+
+**The deviating form:** an entity property holding a **verbatim wire body** whose type appears in no
+retention, prune or GDPR path — i.e. the type name occurs in neither `Features/DataRetention/**` nor
+`GdprDeletionService`. It is a *form*, not a judgement about intent: both instances below were
+deliberate and were **right when written**, which is the whole point.
+
+| Instance | State | Disposition |
+|---|---|---|
+| `DeadLetter.RawBody` (`Core.Domain/DeadLettering/DeadLetter.cs:34-38`) — *"stored as `text` (unbounded) so nothing is truncated"*, no sweep, and the `send-email` body it holds carries the recipient address, the real name and (until `e84aed25`) a live reset token | **being closed** by T-0584's build (two clocks: redact `RawBody` at 7 d, delete the row at 90 d) | the entity + `IDeadLetterStore.RecordAsync`'s *"stored unbounded"* param doc are rewritten by that build |
+| `OutboxMessage.Body` on `Status = Failed` rows (`Core.Domain/Outbox/OutboxMessage.cs:16-17`) — `PruneOutbox` deletes **only** `Dispatched` (`PruneOutbox.cs:72-74`; `IOutboxRetentionConfig.cs:15-17` states it), so a permanently-failed `send-email` row keeps the identical bytes forever | **OPEN** | deliberately **not** folded into T-0584: a `Failed` row is genuinely re-drivable, so it has a real recovery role and its clock is its own decision (ADR-0002 §A8). **Ticket owed.** |
+
+**Two things this class teaches that a "does it have a retention job?" audit would miss.**
+
+1. **"Durable" was read as "permanent" by everyone downstream, including the entity's own author.**
+   ADR-0002 D3 said *durable* and *"the recovery source"*; the docstring turned that into *unbounded*;
+   nobody decided permanence. If a comment answers **truncation**, say separately what answers
+   **retention** — the two words sit one sentence apart and mean unrelated things.
+2. **The recovery role was nominal and nobody had checked.** Nothing read a `DeadLetter` row — no
+   query, no admin endpoint, no replay command (verified 2026-08-10; the claim retires when
+   `IDeadLetterRepository` gains a reader, which ADR-0002 §A3 makes a superseding-ADR event). Before
+   writing a retention rule over a store, *grep its repository for a reader* — the answer changes the
+   **shape** of the rule, not just its numbers.

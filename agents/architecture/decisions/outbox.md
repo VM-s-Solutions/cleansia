@@ -47,7 +47,8 @@ Four load-bearing invariants:
    section below.
 4. **Poison/dead-letter floor + fiscal reconciliation** — every queue has a `<queue>-poison` consumer
    (durable `DeadLetter` row + alert); the two fiscal queues add a reconciliation sweep for the
-   never-enqueued case.
+   never-enqueued case. The row is **evidence with two clocks**, not an archive — see
+   §"Dead-letter retention" below (ADR-0002 partial supersede, 2026-08-10).
 
 ## Honest guarantee table (do not collapse this)
 
@@ -124,6 +125,78 @@ The mode is greppable at the call site (three named `IIdempotencyGuard` members,
 Full rule + rationale: `agents/backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md`;
 catalog entry: `agents/knowledge/patterns-backend.md` ("Queue-consumer idempotency").
 
+## Dead-letter retention — the row is evidence, not an archive (ADR-0002 partial supersede, 2026-08-10)
+
+ADR-0002 D3 called the `DeadLetter` row *"the recovery source"* and the tree read that as *forever*
+(`DeadLetter.cs:34-35`: *"stored as `text` (unbounded) so nothing is truncated"*). That was right when
+the row was the recovery copy of a failed dispatch. It stopped being right once the `send-email` body —
+recipient address, real name, user id, and until `e84aed25` a live reset token — became one of the seven
+bodies that reach it. **Bounded in credential value by the 15-minute code expiry; unbounded in PII
+value.**
+
+**The fact the whole ruling rests on: the recovery role is nominal.** Nothing reads a `DeadLetter` row.
+`IDeadLetterRepository` occurs four times in `src/` — interface, DI comment, the store's ctor, the repo
+class — and **none is a read**; `Cleansia.Web.Admin` has no `DeadLetter` anything. Meanwhile the fiscal
+recovery D3 promised is done by `FiscalReconciliationService`, which **re-derives** the message from the
+order/pay-period rows (`:93,100-104`) off a candidate query with no lower bound on age
+(`OrderRepository.cs:380-410`), every 5 minutes, forever — it never touches the table. And every
+drainer-written dead letter is a **second copy**: `OutboxDrainerService.cs:81,86` marks the outbox row
+`Failed` *and* records the dead letter, and `PruneOutbox` deletes only `Dispatched` rows
+(`PruneOutbox.cs:72-74`).
+
+**Current shape — two clocks, uniform across all seven queues:**
+
+| Clock | What it does | Default | Anchor |
+|---|---|---|---|
+| `BodyRetentionDays` | overwrite `RawBody` with `AnonymizationMarker.Value` (`"[DELETED]"`) | **7** | `DeadLetteredAt` |
+| `RowRetentionDays` | delete the row | **90** | `DeadLetteredAt` |
+
+Delete runs **first**, then redact, so the two steps are disjoint in a run and no cross-field config
+invariant is needed. Lives in a new `PruneDeadLetters` command driven by the **existing**
+`PruneOutboxTimerHandler` (one wakeup, two sends) — *not* in `DataRetentionBackgroundService`, which is
+weekly and short-circuits on a feature flag, and *not* folded into `PruneOutbox`, whose
+"read-terminal-then-delete only … dispatch unchanged" charter must stay literally true.
+
+**The row's identity moves out of the body into columns** (`MessageKey`, `BodyFingerprint`;
+`manual_step: ef-migration`). Required, not adjacent: redaction destroys the only documented handle
+(`RawBody LIKE '%{MessageKey}%'`, `PoisonHandlerBase.cs:95`). Both writers already compute both values
+and discard them (`PoisonHandlerBase.cs:69` vs `:80`; `OutboxDrainerService.cs:85` vs `:86`).
+
+**Why not per-queue retention** (the alternative that looks obviously right): a `switch` on
+`SourceQueue` is a denylist maintained by memory — the exact shape `PoisonAlert` refused one layer up
+(*"fail-closed by construction, not by denylist"*, `PoisonAlert.cs:26-30`) — and its premise is
+backwards. The fiscal bodies are `(OrderId, LanguageCode)` and `(EmployeeId, PayPeriodId,
+LanguageCode)`: **no credential, no PII, ids the key already encodes**, and no recovery that reads the
+row. They are also the only known amplification path — a permanently-failing receipt is re-enqueued
+every 5 minutes forever, minting a new dead-letter row each cycle. The exemption would point at the
+rows that need the clock most.
+
+**Still needed for recovery when the clock runs out?** Redacted anyway, because that state does not
+exist at HEAD: fiscal work is still being re-enqueued by the sweep; drainer bodies survive on the
+`Failed` outbox row; a `send-email` replay after 15 minutes mails a dead token; a stale push or Live
+Activity replay is a harm. **A body past the window is not a recovery asset, it is a stale one.** The
+residual is named as an obligation rather than assumed away: a **new queue declares its dead-letter
+body class** (`re-derivable` / `duplicated-in-outbox` / `not-recoverable-from-body`), and one that can
+claim none of the three decides its retention in its own ADR — until then the defaults apply.
+
+**Conditional, and say so out loud:** this shape holds *because* no replay path exists. Building one
+that reads `RawBody` is a superseding-ADR event, not a feature ticket. The admin read endpoint the row
+actually deserves projects `SourceQueue`/`MessageKey`/`TenantId`/`Error`/`DeadLetteredAt`/`Bytes`/
+`Fingerprint` — **and not the body**.
+
+**Composition with GDPR erasure (T-0583):** different clocks, both needed. Retention is absolute and
+for everyone; erasure is event-driven and for one subject, and must run immediately — a user erased
+today whose dead letter is 2 days old otherwise keeps their name in plaintext for 5 more. Retention
+**bounds** erasure's residual; promoting `MessageKey` makes erasure an indexed prefix match instead of
+a `LIKE` scan. The one subset where **retention is the only erasure**: a row whose body was unparseable
+carries `MessageKey = "<unparseable>"` and has no subject handle by construction.
+
+**Named residual, not fixed here:** `OutboxMessage.Body` on `Failed` rows is the same bytes one table
+over, never pruned — and unlike the dead letter it has a *real* recovery role, so its clock is its own
+decision and its own ticket.
+
+Full record: ADR-0002 §"Partial supersede — 2026-08-10 (architect, T-0584)".
+
 ## Why the rejected options were rejected
 
 - **Enroll the queue/FCM in the EF transaction** — they are not transactional resources; a send can't
@@ -145,6 +218,10 @@ failure result *without* calling `next()`, so UoW never runs) **plus** a defense
 `commit only on BusinessResult { IsSuccess: true }` check in UoW so a future re-swap can't resurrect it.
 
 ## Open questions for Wave-1 (F2-FULL — its own ADR)
+
+> Wave-1 landed (ADR-0008). Items 1–3 are answered there; kept for the trade-off trail. **Item 1's
+> "retention" leg is answered only for `Dispatched` rows** — the `Failed`-row body is still unbounded
+> (see §"Dead-letter retention" → named residual).
 
 1. **Outbox table shape** — columns, the dedup unique index on `(QueueName, MessageKey)`, retention.
 2. **Drainer delivery & locking** — poll vs. `LISTEN/NOTIFY`, lease/visibility, ordering, batch size,

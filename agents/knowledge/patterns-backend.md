@@ -643,6 +643,62 @@ modes in one consumer**, and never hide the mode behind a boolean — the member
 is the greppable evidence of which mode the consumer runs (ADR-0002 verification check #3 logic).
 Role card: `agents/knowledge/roles/idempotency-guard.md`.
 
+## A durable store of a VERBATIM wire body declares a clock, and "durable" never means "forever"
+
+> **LAW.** ADR-0002 §"Partial supersede — 2026-08-10 (architect, T-0584)". Living doc:
+> `agents/architecture/decisions/outbox.md` §"Dead-letter retention".
+> **Enforced by:** `DeadLetterRetentionTests` + `DeadLetterRetentionPostgresTests`
+> (`Cleansia.Tests` / `Cleansia.IntegrationTests`, named steps of `backend-ci.yml`) —
+> **`(gate pending: dead-letter retention sweep + the Failed-outbox-body clock — two tickets owed, PM
+> to file; T-0584 is the first)`** → **`T1-CI`** when both land. **The baseline is non-zero and
+> measured:** `DeadLetter.RawBody` (closed by T-0584) and `OutboxMessage.Body` on `Failed` rows
+> (`PruneOutbox.cs:72-74` prunes only `Dispatched` — still open, ADR-0002 §A8).
+
+A table that stores a message body **as it went on the wire** is storing whatever that message
+carried. On this platform that is `SendEmailMessage(EmailType, Email, UserName, Code, LanguageCode,
+UserId, TenantId)` — recipient address, real name, and the **raw** reset token. So a column holding a
+verbatim body carries, in writing on the entity:
+
+1. **A retention clock with an anchor column**, or a one-line statement of which other clock disposes
+   of the row (e.g. a cascade, or a sweep named by type).
+2. **What the body is FOR**, in the sense of "who reads it" — and if the honest answer is *nobody*,
+   say that. ADR-0002 D3 called the dead-letter row *"the recovery source"* and nothing ever read it;
+   the word carried a permanence nobody had decided.
+
+**"Durable" is a delivery guarantee, not a storage duration.** The two words sit one sentence apart in
+every messaging design and mean unrelated things. If a doc-comment reads *"stored unbounded so nothing
+is truncated"*, it is answering **truncation** and being read as **retention** — write both.
+
+**Redact the body; keep the envelope.** The evidentiary half of a failed message (queue, deterministic
+`MessageKey`, tenant, error, timestamp, byte count, body fingerprint) and its PII half have different
+half-lives, and splitting them costs one predicate. Overwrite with `AnonymizationMarker.Value`
+(`"[DELETED]"`) — the marker the order/dispute/user anonymizers already use — rather than nulling
+(a nullability migration) or truncating.
+
+> **Truncation is redaction that leaks.** The wire body is camelCase-serialized in **declaration
+> order** (`OutboxPendingDispatch.cs:34-39`), so a head-preserving truncation of a `send-email` body
+> keeps `emailType`, `email`, `userName` and drops the already-expired token. It optimizes for the
+> wrong half.
+
+**Do not branch retention on the queue/message type.** Two reasons, and the second is the one that
+surprises people: a `switch` on a type discriminator is a **denylist maintained by memory** — the next
+queue inherits whichever branch falls through — and the intuition about *which* type deserves the long
+window is usually backwards. Here the queues an ADR called MANDATORY carry bodies of pure ids
+(`GenerateReceiptMessage(OrderId, LanguageCode)`), while the one carrying the address, the name and
+the credential had no special status at all. The opposite polarity is already on this path:
+`PoisonAlert` is *"fail-closed by construction, not by denylist"* (`PoisonAlert.cs:26-30`).
+
+**Before redacting, check what the redaction destroys.** If the row's only lookup handle is a
+*substring of the body* — ADR-0002 D3 documented
+`SELECT … WHERE "SourceQueue" = … AND "RawBody" LIKE '%<MessageKey>%'` (`PoisonHandlerBase.cs:95`) —
+then redaction turns the row into an anonymous blob. **Promote the identity to its own indexed
+column first.** The values are usually already computed and thrown away at the write site
+(`PoisonHandlerBase.cs:69` builds the descriptor, `:80` passes none of it).
+
+**Deviating form:** an entity with a verbatim-body column whose doc-comment says "unbounded" and whose
+type appears in **no** retention, prune or GDPR path. Grep test: for each such column, the type name
+must appear in `Features/DataRetention/**` or in `GdprDeletionService`.
+
 ## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
 
 > **LAW.** ADR-0038 `accepted` 2026-08-03 (panel lead's `## Verdict`, amendments AM-1 … AM-11). Living

@@ -37,8 +37,17 @@ class PeriodPayViewModelTest {
         payPeriodId = "pp-1",
         payPeriodLabel = "1 – 15 Jun 2026",
         employeeId = "emp-1",
+        employeeName = "Jana Novak",
         totalOrders = 3,
+        totalBasePay = 3600.0,
+        totalExtrasPay = 300.0,
+        totalExpensesPay = 200.0,
+        totalBonusPay = 150.0,
+        totalDeductionPay = 50.0,
         grandTotal = 4200.0,
+        hasInvoice = false,
+        invoiceId = null,
+        orderPays = emptyList(),
     )
 
     @Before

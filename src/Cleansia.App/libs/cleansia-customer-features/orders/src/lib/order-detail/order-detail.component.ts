@@ -28,7 +28,9 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
+import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
+import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
 
 @Component({
   selector: 'cleansia-customer-order-detail',
@@ -46,8 +48,9 @@ import { OrderDetailFacade } from './order-detail.facade';
     PaymentStatusSeverityPipe,
     PaymentStatusLabelPipe,
     OrderStatusIconPipe,
+    OrderPreferredOfferComponent,
   ],
-  providers: [OrderDetailFacade],
+  providers: [OrderDetailFacade, OrderPreferredOfferFacade],
   templateUrl: './order-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -57,6 +60,7 @@ export class OrderDetailComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly facade = inject(OrderDetailFacade);
+  protected readonly preferredOffer = inject(OrderPreferredOfferFacade);
 
   // Re-expose facade signals so existing template bindings keep working.
   readonly order = this.facade.order;
@@ -81,6 +85,12 @@ export class OrderDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
+    this.preferredOffer.connect({
+      order: this.order,
+      // The offer state is server-derived, so the only way to render what the choice produced is to
+      // read the order again.
+      onChosen: () => orderId && this.loadOrder(orderId),
+    });
     if (orderId) {
       this.loadOrder(orderId);
     }
@@ -168,7 +178,7 @@ export class OrderDetailComponent implements OnInit {
     this.facade.submitReview(this.reviewRating(), this.reviewComment());
   }
 
-  private getLocale(): string {
+  protected getLocale(): string {
     const localeMap: Record<string, string> = {
       cs: 'cs-CZ',
       en: 'en-US',

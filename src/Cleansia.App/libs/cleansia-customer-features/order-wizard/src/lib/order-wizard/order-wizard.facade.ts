@@ -30,6 +30,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -56,6 +57,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly serviceArea = inject(OrderServiceAreaFacade);
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
+  private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
@@ -164,6 +166,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
 
+  // ─── Preferred cleaner (Plus) ───────────────────────────────────
+  //
+  // The roster and its slot answer live in OrderPreferredCleanerFacade, provided alongside this
+  // facade on the component. Re-exposed so the summary step keeps reading the wizard facade.
+  readonly preferredCleanerVisible = this.preferredCleaner.visible;
+  readonly preferredCleanerLoading = this.preferredCleaner.loading;
+  readonly preferredCleanerOptions = this.preferredCleaner.options;
+
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
   // The client-side service-area lookup lives in OrderServiceAreaFacade,
@@ -188,6 +198,20 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
+    this.preferredCleaner.connect({
+      isAuthenticated: () => this.isAuthenticated(),
+      hasMembership: () => this.membership.membership()?.hasMembership === true,
+      currentFormData: () => this.formData(),
+      patchFormData: (partial) => this.updateFormData(partial),
+    });
+  }
+
+  selectPreferredCleaner(employeeId: string | null): void {
+    this.preferredCleaner.select(employeeId);
+  }
+
+  selectedPreferredCleanerId(): string | null {
+    return this.preferredCleaner.selectedEmployeeId();
   }
 
   /** Delegates to the pricing engine — see OrderPricingFacade.refreshQuoteNow. */
@@ -399,6 +423,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   nextStep(): void {
     if (this.activeStep() < this.steps.length - 1) {
       this.activeStep.update((s) => s + 1);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -406,6 +431,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   prevStep(): void {
     if (this.activeStep() > 0) {
       this.activeStep.update((s) => s - 1);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -413,7 +439,19 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  /**
+   * The roster is re-read on every entry to the summary step rather than once, because its
+   * availability answer is about the slot — and the slot is two steps behind, editable, and
+   * routinely changed after a first look at the summary.
+   */
+  private onStepEntered(): void {
+    if (this.activeStep() === this.steps.length - 1) {
+      this.preferredCleaner.refresh();
     }
   }
 
@@ -572,9 +610,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // because a whitespace-only note is not a note.
     command.specialInstructions = data.specialInstructions.trim() || undefined;
     command.accessInstructions = data.entryInstructions.trim() || undefined;
-    // Deliberately unset: `referralCode` is a signup-only benefit the checkout
-    // wizard never populates, and `preferredEmployeeId` waits on the Plus
-    // rollout to surface a cleaner picker. Both stay off the JSON.
+    // The picker only ever offers cleaners the roster returned, but the entitlement, the eligibility
+    // and the seat are all re-decided server-side; an id here asks, it does not reserve.
+    command.preferredEmployeeId = data.preferredEmployeeId ?? undefined;
+    // Deliberately unset: `referralCode` is a signup-only benefit the checkout wizard never
+    // populates. It stays off the JSON.
 
     if (data.paymentType === PaymentType.Card) {
       this.customerClient.paymentClient

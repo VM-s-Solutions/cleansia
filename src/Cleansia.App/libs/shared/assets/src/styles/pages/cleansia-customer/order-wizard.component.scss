@@ -1453,6 +1453,42 @@ $max-width: 1200px;
     }
   }
 
+  // ─── PREFERRED CLEANER (Plus) ───
+  &__preferred {
+    border: 1px solid $border;
+    border-radius: 0.75rem;
+    background: $white;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+
+    &--loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--cl-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $primary;
+      margin-bottom: 0.25rem;
+    }
+
+    &-title {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    &-explainer {
+      font-size: 0.85rem;
+      color: var(--cl-text-secondary);
+      margin: 0 0 0.75rem;
+    }
+  }
+
   // ─── TOTALS ROWS ───
   &__summary-row--discount {
     color: $green;

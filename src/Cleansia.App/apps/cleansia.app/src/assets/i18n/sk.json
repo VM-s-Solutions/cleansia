@@ -1727,6 +1727,25 @@
     "order_detail_make_recurring": "Naplánovať pravidelne",
     "order_detail_make_recurring_plus_required": "Pre pravidelné rozvrhy je potrebné Cleansia Plus."
   },
+  "preferred_cleaner": {
+    "title": "Vyžiadajte si obľúbeného upratovača",
+    "explainer": "Výhoda Plus · požiadame ho ako prvého a hneď ako rezerváciu nemôže prevziať, otvorí sa celému nášmu tímu.",
+    "placeholder": "Vyberte upratovača",
+    "loading": "Načítavame vašich upratovačov…",
+    "unavailable": "Nie je k dispozícii pre tento dátum a čas",
+    "section_title": "Váš obľúbený upratovač",
+    "awaiting_title": "Požiadali sme {{name}}",
+    "awaiting_body": "Rezerváciu pre nich držíme do {{time}}. Ak ju nemôžu prevziať, otvorí sa celému nášmu tímu.",
+    "accepted_title": "Potvrdené: {{name}}",
+    "closed_title": "Otvorené všetkým upratovačom",
+    "closed_body": "Žiadosť o upratovača, ktorého ste si vyžiadali, sa skončila. Táto rezervácia je teraz otvorená celému nášmu tímu.",
+    "choose_another": "Požiadať iného upratovača",
+    "choose_another_hint": "Môžete požiadať ešte jedného upratovača. Požiadame ho ako ďalšieho a ak rezerváciu nemôže prevziať, znova sa otvorí celému nášmu tímu.",
+    "choose_submit": "Požiadať",
+    "choose_success": "Požiadali sme ho.",
+    "list_error": "Vašich upratovačov sa nepodarilo načítať. Skúste to prosím znova.",
+    "list_empty": "Zatiaľ nie je koho požiadať — zoznam sa plní s dokončenými upratovaniami."
+  },
   "enums": {
     "order_status": {
       "new": "Nová",

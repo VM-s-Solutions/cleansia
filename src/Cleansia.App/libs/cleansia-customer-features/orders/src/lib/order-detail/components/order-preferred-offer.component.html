@@ -1,0 +1,95 @@
+@if (facade.visible()) {
+  <div class="order-detail__section order-detail__preferred">
+    <h3>{{ 'preferred_cleaner.section_title' | translate }}</h3>
+
+    @switch (facade.offer().state) {
+      @case (PreferredOfferState.AwaitingConfirmation) {
+        <p class="order-detail__preferred-headline">
+          {{ 'preferred_cleaner.awaiting_title' | translate: { name: facade.offer().cleanerName } }}
+        </p>
+        <p class="order-detail__preferred-body">
+          {{
+            'preferred_cleaner.awaiting_body'
+              | translate: { time: formatRespondBy(facade.offer().respondByUtc) }
+          }}
+        </p>
+      }
+      @case (PreferredOfferState.Accepted) {
+        <p class="order-detail__preferred-headline">
+          {{ 'preferred_cleaner.accepted_title' | translate: { name: facade.offer().cleanerName } }}
+        </p>
+      }
+      @case (PreferredOfferState.Closed) {
+        <p class="order-detail__preferred-headline">
+          {{ 'preferred_cleaner.closed_title' | translate }}
+        </p>
+        <p class="order-detail__preferred-body">
+          {{ 'preferred_cleaner.closed_body' | translate }}
+        </p>
+      }
+    }
+
+    @if (facade.canChooseAnother()) {
+      @if (!facade.picking()) {
+        <p class="order-detail__preferred-body">
+          {{ 'preferred_cleaner.choose_another_hint' | translate }}
+        </p>
+        <cleansia-button
+          [title]="'preferred_cleaner.choose_another' | translate"
+          [icon]="'pi pi-user-plus'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (clickFn)="facade.openPicker()"
+        />
+      } @else if (facade.listLoading()) {
+        <p-skeleton width="100%" height="3rem" />
+      } @else if (facade.listFailed()) {
+        <p class="order-detail__preferred-body">
+          {{ 'preferred_cleaner.list_error' | translate }}
+        </p>
+        <cleansia-button
+          [title]="'global.actions.retry' | translate"
+          [icon]="'pi pi-refresh'"
+          [severity]="'secondary'"
+          (clickFn)="facade.loadRoster()"
+        />
+      } @else if (facade.options().length === 0) {
+        <p class="order-detail__preferred-body">
+          {{ 'preferred_cleaner.list_empty' | translate }}
+        </p>
+        <cleansia-button
+          [title]="'global.actions.close' | translate"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (clickFn)="facade.closePicker()"
+        />
+      } @else {
+        <cleansia-select
+          [options]="facade.options()"
+          [ngModel]="facade.selectedEmployeeId()"
+          (ngModelChange)="onSelect($event)"
+          [placeholder]="'preferred_cleaner.placeholder' | translate"
+          [showClear]="true"
+          [appendTo]="'body'"
+          [showErrors]="false"
+        />
+        <div class="order-detail__preferred-actions">
+          <cleansia-button
+            [title]="'preferred_cleaner.choose_submit' | translate"
+            [icon]="'pi pi-send'"
+            [severity]="'primary'"
+            [loading]="facade.submitting()"
+            [disabled]="!facade.selectedEmployeeId()"
+            (clickFn)="facade.submit()"
+          />
+          <cleansia-button
+            [title]="'global.actions.cancel' | translate"
+            [severity]="'secondary'"
+            [outlined]="true"
+            (clickFn)="facade.closePicker()"
+          />
+        </div>
+      }
+    }
+  </div>
+}

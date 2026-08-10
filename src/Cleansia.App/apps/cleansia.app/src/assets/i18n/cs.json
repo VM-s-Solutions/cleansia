@@ -1727,6 +1727,25 @@
     "order_detail_make_recurring": "Naplánovat opakovaně",
     "order_detail_make_recurring_plus_required": "Pro pravidelné rozvrhy je potřeba Cleansia Plus."
   },
+  "preferred_cleaner": {
+    "title": "Vyžádejte si oblíbeného uklízeče",
+    "explainer": "Výhoda Plus · požádáme ho jako prvního a jakmile rezervaci nemůže převzít, otevře se celému našemu týmu.",
+    "placeholder": "Vyberte uklízeče",
+    "loading": "Načítáme vaše uklízeče…",
+    "unavailable": "Není k dispozici pro toto datum a čas",
+    "section_title": "Váš oblíbený uklízeč",
+    "awaiting_title": "Požádali jsme {{name}}",
+    "awaiting_body": "Rezervaci pro ně držíme do {{time}}. Pokud ji nemohou převzít, otevře se celému našemu týmu.",
+    "accepted_title": "Potvrzeno: {{name}}",
+    "closed_title": "Otevřeno všem uklízečům",
+    "closed_body": "Žádost o uklízeče, kterého jste si vyžádali, skončila. Tato rezervace je nyní otevřená celému našemu týmu.",
+    "choose_another": "Požádat jiného uklízeče",
+    "choose_another_hint": "Můžete požádat ještě jednoho uklízeče. Požádáme ho jako dalšího a pokud rezervaci nemůže převzít, znovu se otevře celému našemu týmu.",
+    "choose_submit": "Požádat",
+    "choose_success": "Požádali jsme ho.",
+    "list_error": "Vaše uklízeče se nepodařilo načíst. Zkuste to prosím znovu.",
+    "list_empty": "Zatím není koho požádat — seznam se plní s dokončenými úklidy."
+  },
   "enums": {
     "order_status": {
       "new": "Nová",

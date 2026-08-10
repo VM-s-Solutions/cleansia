@@ -1727,6 +1727,25 @@
     "order_detail_make_recurring": "Make this recurring",
     "order_detail_make_recurring_plus_required": "Cleansia Plus required to set up recurring schedules."
   },
+  "preferred_cleaner": {
+    "title": "Request your favourite cleaner",
+    "explainer": "Plus benefit · we'll ask them first, and this booking opens to our whole team as soon as they can't take it.",
+    "placeholder": "Choose a cleaner",
+    "loading": "Loading your cleaners…",
+    "unavailable": "Not available for this date and time",
+    "section_title": "Your favourite cleaner",
+    "awaiting_title": "We've asked {{name}}",
+    "awaiting_body": "We're holding this booking for them until {{time}}. If they can't take it, it opens to our whole team.",
+    "accepted_title": "Confirmed by {{name}}",
+    "closed_title": "Open to all cleaners",
+    "closed_body": "The request for the cleaner you asked for has ended. This booking is now open to our whole team.",
+    "choose_another": "Ask a different cleaner",
+    "choose_another_hint": "You can ask one more cleaner. We'll ask them next, and if they can't take it this booking opens to our whole team again.",
+    "choose_submit": "Ask",
+    "choose_success": "We've asked them.",
+    "list_error": "We couldn't load your cleaners. Please try again.",
+    "list_empty": "There's no one to ask yet — the list fills up as your cleanings are completed."
+  },
   "enums": {
     "order_status": {
       "new": "New",

@@ -10,6 +10,7 @@ import {
 } from '@cleansia/components';
 import { OrderWizardFacade } from '../order-wizard.facade';
 import { formatPrice, getItemTranslation, PromoCodeUiState } from '../order-wizard.models';
+import { WizardPreferredCleanerComponent } from './wizard-preferred-cleaner.component';
 
 /**
  * Map the backend's PromoCodeError enum (string) to a localized i18n key.
@@ -30,7 +31,14 @@ const PROMO_ERROR_KEYS: Record<string, string> = {
   selector: 'cleansia-wizard-summary-step',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, InputTextModule, TranslatePipe, CleansiaCodeInputDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    InputTextModule,
+    TranslatePipe,
+    CleansiaCodeInputDialogComponent,
+    WizardPreferredCleanerComponent,
+  ],
   templateUrl: './wizard-summary-step.component.html',
 })
 export class WizardSummaryStepComponent {

@@ -1,0 +1,27 @@
+@if (facade.preferredCleanerLoading()) {
+  <div class="order-wizard__preferred order-wizard__preferred--loading">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>{{ 'preferred_cleaner.loading' | translate }}</span>
+  </div>
+} @else if (facade.preferredCleanerVisible()) {
+  <div class="order-wizard__preferred">
+    <div class="order-wizard__preferred-header">
+      <i class="pi pi-user"></i>
+      <span class="order-wizard__preferred-title">
+        {{ 'preferred_cleaner.title' | translate }}
+      </span>
+    </div>
+    <p class="order-wizard__preferred-explainer">
+      {{ 'preferred_cleaner.explainer' | translate }}
+    </p>
+    <cleansia-select
+      [options]="facade.preferredCleanerOptions()"
+      [ngModel]="facade.selectedPreferredCleanerId()"
+      (ngModelChange)="onSelect($event)"
+      [placeholder]="'preferred_cleaner.placeholder' | translate"
+      [showClear]="true"
+      [appendTo]="'body'"
+      [showErrors]="false"
+    />
+  </div>
+}

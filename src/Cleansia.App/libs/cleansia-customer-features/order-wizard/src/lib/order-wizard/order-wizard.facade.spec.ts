@@ -18,6 +18,7 @@ import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -97,6 +98,7 @@ describe('OrderWizardFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         OrderMembershipFacade,
+        OrderPreferredCleanerFacade,
         OrderPricingFacade,
         OrderPromoFacade,
         OrderSavedAddressFacade,
@@ -678,6 +680,29 @@ describe('OrderWizardFacade', () => {
 
       const command = orderClient.createOrder.mock.calls[0][0];
       expect(command.accessInstructions).toBeUndefined();
+    });
+
+    // Every member of a generated command is optional, so a dropped assignment type-checks.
+    // These pin the serialized body instead (ADR-0031).
+    it('sends the cleaner the customer asked for, and nothing else about them', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        preferredEmployeeId: 'emp-1',
+      });
+
+      await facade.submitOrder();
+
+      const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
+      expect(body.preferredEmployeeId).toBe('emp-1');
+    });
+
+    it('leaves the preference off the body when the customer asked for nobody', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder();
+
+      const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
+      expect(body).not.toHaveProperty('preferredEmployeeId');
     });
 
     it('shows an error and clears submitting when create fails', async () => {

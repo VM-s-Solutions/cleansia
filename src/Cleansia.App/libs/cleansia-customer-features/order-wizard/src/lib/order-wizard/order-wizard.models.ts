@@ -53,6 +53,13 @@ export interface OrderWizardFormData {
    * Backend re-validates and applies the discount inside CreateOrder.Handler.
    */
   promoCode: string;
+  /**
+   * The cleaner the customer asked for — a Cleansia Plus perk, gated server-side on an active
+   * membership plus a previously completed order with that cleaner. It buys them the first offer,
+   * not the job: whether the platform could withhold a seat is the server's answer and lives on the
+   * order, not here.
+   */
+  preferredEmployeeId: string | null;
 }
 
 /**
@@ -97,6 +104,7 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   specialInstructions: '',
   entryInstructions: '',
   promoCode: '',
+  preferredEmployeeId: null,
 };
 
 // ── Validation ──────────────────────────────────────────────

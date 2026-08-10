@@ -16,6 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -54,6 +55,7 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
   templateUrl: './order-wizard.component.html',
   providers: [
     OrderMembershipFacade,
+    OrderPreferredCleanerFacade,
     OrderPricingFacade,
     OrderPromoFacade,
     OrderSavedAddressFacade,

@@ -7,7 +7,11 @@ struct OrderDetailContent: View {
     let order: OrderDetail
     var primaryAction: OrderPrimaryAction = .none
     var inFlightAction: OrderAction?
+    var preferredOffer: PendingOfferItem?
+    var refusal: OfferRefusal?
     var onConfirm: (OrderPrimaryAction) -> Void = { _ in }
+    var onDeclineOffer: () -> Void = {}
+    var onDismissRefusal: () -> Void = {}
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
@@ -47,6 +51,7 @@ struct OrderDetailContent: View {
     }
 
     @State private var confirmingCash = false
+    @State private var decliningOffer = false
 
     private var cashConfirmMessage: String {
         guard let cashAmount = order.cashDueLabel else {
@@ -72,6 +77,20 @@ struct OrderDetailContent: View {
                     icon: "banknote",
                     confirmEnabled: inFlightAction != .markCashCollected
                 )
+            }
+            if decliningOffer {
+                OfferDeclineDialog(
+                    onConfirm: {
+                        decliningOffer = false
+                        onDeclineOffer()
+                    },
+                    onDismiss: { decliningOffer = false }
+                )
+            }
+            // Only a DISCLOSED offer earns the framed apology; every other refusal on this screen
+            // already went to the snackbar, exactly as before.
+            if let refusal, preferredOffer != nil, inFlightAction == nil {
+                OfferRefusalDialog(refusal: refusal, onDismiss: onDismissRefusal)
             }
         }
     }
@@ -130,7 +149,9 @@ struct OrderDetailContent: View {
                 action: primaryAction,
                 inFlightAction: inFlightAction,
                 onConfirm: onConfirm,
-                onCashConfirmRequested: { confirmingCash = true }
+                onCashConfirmRequested: { confirmingCash = true },
+                preferredOffer: preferredOffer,
+                onDeclineOffer: { decliningOffer = true }
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

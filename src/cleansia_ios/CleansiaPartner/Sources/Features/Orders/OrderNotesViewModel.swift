@@ -132,6 +132,14 @@ final class OrderNotesViewModel: ViewModel {
             .success(CleansiaPartnerApi.OrderItem())
         }
 
+        func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {
+            .success([])
+        }
+
+        func declinePreferredOffer(orderId _: String) async -> ApiResult<Void> {
+            .success(())
+        }
+
         func takeOrder(orderId _: String) async -> ApiResult<Void> {
             .success(())
         }

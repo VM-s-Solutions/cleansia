@@ -10,8 +10,10 @@ struct DashboardView: View {
     private let notificationFeedClient: NotificationFeedClient
     private let profileClient: PartnerProfileClient
     private let snackbar: SnackbarController
+    private let pendingOffers: PendingOffersStore
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
+    let onOpenPendingOffers: () -> Void
     let onNotificationDestination: (PartnerNotificationDestination) -> Void
 
     init(
@@ -21,8 +23,10 @@ struct DashboardView: View {
         profileClient: PartnerProfileClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
+        pendingOffers: PendingOffersStore,
         onOpenEarnings: @escaping () -> Void = {},
         onOpenOrders: @escaping () -> Void = {},
+        onOpenPendingOffers: @escaping () -> Void = {},
         onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in }
     ) {
         _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings))
@@ -30,8 +34,10 @@ struct DashboardView: View {
         self.notificationFeedClient = notificationFeedClient
         self.profileClient = profileClient
         self.snackbar = snackbar
+        self.pendingOffers = pendingOffers
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
+        self.onOpenPendingOffers = onOpenPendingOffers
         self.onNotificationDestination = onNotificationDestination
     }
 
@@ -79,6 +85,8 @@ struct DashboardView: View {
                 data: data,
                 unreadBadge: notificationBadge.badgeLabel,
                 showsJobRadiusPrompt: vm.showsJobRadiusPrompt,
+                pendingOffers: pendingOffers,
+                onOpenPendingOffers: onOpenPendingOffers,
                 onOpenEarnings: onOpenEarnings,
                 onOpenOrders: onOpenOrders,
                 onNotificationTap: { showNotifications = true },
@@ -118,6 +126,8 @@ struct DashboardContent: View {
     let data: DashboardData
     let unreadBadge: String?
     let showsJobRadiusPrompt: Bool
+    let pendingOffers: PendingOffersStore?
+    let onOpenPendingOffers: () -> Void
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
     let onNotificationTap: () -> Void
@@ -128,6 +138,8 @@ struct DashboardContent: View {
         data: DashboardData,
         unreadBadge: String? = nil,
         showsJobRadiusPrompt: Bool = false,
+        pendingOffers: PendingOffersStore? = nil,
+        onOpenPendingOffers: @escaping () -> Void = {},
         onOpenEarnings: @escaping () -> Void,
         onOpenOrders: @escaping () -> Void,
         onNotificationTap: @escaping () -> Void = {},
@@ -137,6 +149,8 @@ struct DashboardContent: View {
         self.data = data
         self.unreadBadge = unreadBadge
         self.showsJobRadiusPrompt = showsJobRadiusPrompt
+        self.pendingOffers = pendingOffers
+        self.onOpenPendingOffers = onOpenPendingOffers
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
         self.onNotificationTap = onNotificationTap
@@ -153,6 +167,9 @@ struct DashboardContent: View {
                     unreadBadge: unreadBadge,
                     onNotificationTap: onNotificationTap
                 )
+                if let pendingOffers {
+                    PendingOffersCard(store: pendingOffers, onOpenOffers: onOpenPendingOffers)
+                }
                 if showsJobRadiusPrompt {
                     JobRadiusPromptCard(
                         onChooseRadius: onChooseJobRadius,

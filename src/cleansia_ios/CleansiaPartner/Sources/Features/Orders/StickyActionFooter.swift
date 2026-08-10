@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import SwiftUI
 
 /// The detail screen's primary action area — renders the resolved
@@ -14,6 +15,10 @@ struct StickyActionFooter: View {
     /// full-screen scrim + card, so it belongs at the screen root — not nested inside this footer's
     /// bottom-pinned, surface-backed strip where it would be laid out inside a ~90pt-tall container.
     var onCashConfirmRequested: () -> Void = {}
+    /// The reservation held for this cleaner on this order. Present only where a hold exists, which is
+    /// why the screen degrades to an ordinary job in the short-lead band the push also reaches.
+    var preferredOffer: PendingOfferItem?
+    var onDeclineOffer: () -> Void = {}
 
     private func isBusy(_ orderAction: OrderAction) -> Bool {
         inFlightAction == orderAction
@@ -23,12 +28,23 @@ struct StickyActionFooter: View {
         switch action {
         case .take:
             footer {
-                SlideToConfirm(
-                    idleLabel: L10n.Orders.slideToTake,
-                    busyLabel: L10n.Orders.takingOrder,
-                    isBusy: isBusy(.take),
-                    onConfirm: { onConfirm(.take) }
-                )
+                VStack(spacing: Spacing.xs) {
+                    if let preferredOffer {
+                        ReservedForYouRow(respondByUtc: preferredOffer.respondByUtc)
+                    }
+                    // On a job reserved for them by name the gesture is the same command with a
+                    // different word: confirming IS taking.
+                    SlideToConfirm(
+                        idleLabel: preferredOffer == nil ? L10n.Orders.slideToTake : L10n.Offers.slideToConfirm,
+                        busyLabel: preferredOffer == nil ? L10n.Orders.takingOrder : L10n.Offers.confirming,
+                        isBusy: isBusy(.take),
+                        onConfirm: { onConfirm(.take) }
+                    )
+                    if preferredOffer != nil {
+                        CleansiaTextLink(L10n.Offers.decline, action: onDeclineOffer)
+                            .disabled(inFlightAction != nil)
+                    }
+                }
             }
         case .notifyOnTheWay:
             footer {

@@ -15,14 +15,16 @@ struct OrderDetailView: View {
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
-        mapProvider: MapProvider
+        mapProvider: MapProvider,
+        pendingOffers: PendingOffersStore
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
                 orderId: orderId,
                 client: client,
                 staleness: staleness,
-                snackbar: snackbar
+                snackbar: snackbar,
+                pendingOffers: pendingOffers
             )
         )
         _checklistVM = StateObject(
@@ -71,12 +73,21 @@ struct OrderDetailView: View {
                 order: order,
                 primaryAction: vm.primaryAction,
                 inFlightAction: vm.inFlightAction,
+                preferredOffer: vm.preferredOffer,
+                refusal: refusal,
                 onConfirm: { action in Task { await vm.dispatch(action) } },
+                onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
+                onDismissRefusal: vm.dismissActionError,
                 checklistVM: checklistVM,
                 notesVM: notesVM,
                 photosVM: photosVM
             )
         }
+    }
+
+    private var refusal: OfferRefusal? {
+        guard let message = vm.actionState.errorMessage else { return nil }
+        return OfferRefusal(displayOrderNumber: vm.preferredOffer?.displayOrderNumber, reason: message)
     }
 
     @ViewBuilder

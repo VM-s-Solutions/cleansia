@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaPartnerApi
+import Combine
 import Foundation
 
 /// Per-action discriminator so individual lifecycle buttons can show their own
@@ -10,6 +11,7 @@ enum OrderAction: Equatable {
     case start
     case markCashCollected
     case complete
+    case declineOffer
 
     var mutation: OrdersMutation {
         switch self {
@@ -18,6 +20,7 @@ enum OrderAction: Equatable {
         case .start: .startOrder
         case .markCashCollected: .markCashCollected
         case .complete: .completeOrder
+        case .declineOffer: .declinePreferredOffer
         }
     }
 
@@ -30,6 +33,7 @@ enum OrderAction: Equatable {
         case .start: L10n.Orders.orderStartedToast
         case .markCashCollected: L10n.Orders.cashCollectedToast
         case .complete: L10n.Orders.orderCompletedToast
+        case .declineOffer: L10n.Offers.declinedToast
         case .take: nil
         }
     }
@@ -40,22 +44,35 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var state: UiState<OrderDetail> = .loading
     @Published private(set) var actionState: ActionState = .idle
     @Published private(set) var inFlightAction: OrderAction?
+    /// The reservation held for this cleaner on this order, if there is one. The partner order DTO
+    /// carries no reservation block — that field is customer-only, so no cleaner ever learns an order
+    /// was reserved for someone else — so the disclosure is composed from the cleaner's own offers.
+    /// Absent means an ordinary job, which is exactly right for the short-lead band, where the push
+    /// fires but nothing is withheld.
+    @Published private(set) var preferredOffer: PendingOfferItem?
 
     private let orderId: String
     private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
     private let snackbar: SnackbarController
+    private let pendingOffers: PendingOffersStore
 
     init(
         orderId: String,
         client: PartnerOrderClient,
         staleness: OrdersStaleness,
-        snackbar: SnackbarController
+        snackbar: SnackbarController,
+        pendingOffers: PendingOffersStore
     ) {
         self.orderId = orderId
         self.client = client
         self.staleness = staleness
         self.snackbar = snackbar
+        self.pendingOffers = pendingOffers
+        super.init()
+        pendingOffers.$offers
+            .map { offers in offers.first { $0.id == orderId } }
+            .assign(to: &$preferredOffer)
     }
 
     /// Re-read on every state change, never decided once at screen-open: the cleaner can take the job
@@ -81,7 +98,22 @@ final class OrderDetailViewModel: ViewModel {
         // Kick its off-main decode BEFORE the fetch so it lands while the request is in flight —
         // prewarming after the order loads shares a main-thread turn with the puck's first render.
         AnimatedMascotView.prewarm(.cleaningInProgress)
+        await ensureOffersFresh()
         await fetch()
+    }
+
+    /// Refusing the reservation from the job it belongs to; the same one write the offers list makes.
+    func declinePreferredOffer() async {
+        await run(.declineOffer) { await self.pendingOffers.decline(orderId: self.orderId) }
+    }
+
+    func dismissActionError() {
+        if case .error = actionState { actionState = .idle }
+    }
+
+    private func ensureOffersFresh() async {
+        guard pendingOffers.isStale else { return }
+        _ = await pendingOffers.refresh()
     }
 
     func dispatch(_ action: OrderPrimaryAction) async {
@@ -158,7 +190,12 @@ final class OrderDetailViewModel: ViewModel {
             // surface the message, keep the screen, refresh so a stale
             // "takeable" state corrects (e.g. already-taken order).
             inFlightAction = nil
-            snackbar.showApiError(error)
+            // A confirm the take gate refuses on a job the cleaner was TOLD was theirs is framed by
+            // the screen as ours rather than theirs; a snackbar carrying the bare reason would land
+            // on top of that sentence.
+            if !(action == .take && preferredOffer != nil) {
+                snackbar.showApiError(error)
+            }
             actionState = .error(ApiErrorLocalizer().message(for: error))
             staleness.invalidateOrder(orderId)
             await fetch()

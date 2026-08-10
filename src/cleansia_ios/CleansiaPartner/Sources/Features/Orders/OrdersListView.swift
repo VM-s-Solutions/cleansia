@@ -11,6 +11,7 @@ struct OrdersRootView: View {
     private let checklistStore: CleaningChecklistStore
     private let snackbar: SnackbarController
     private let mapProvider: MapProvider
+    private let pendingOffers: PendingOffersStore
 
     init(
         client: PartnerOrderClient,
@@ -18,6 +19,7 @@ struct OrdersRootView: View {
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
         mapProvider: MapProvider,
+        pendingOffers: PendingOffersStore,
         deepLinkOrderId: Binding<String?> = .constant(nil)
     ) {
         _vm = StateObject(
@@ -29,6 +31,7 @@ struct OrdersRootView: View {
         self.checklistStore = checklistStore
         self.snackbar = snackbar
         self.mapProvider = mapProvider
+        self.pendingOffers = pendingOffers
     }
 
     var body: some View {
@@ -43,7 +46,8 @@ struct OrdersRootView: View {
                             staleness: staleness,
                             checklistStore: checklistStore,
                             snackbar: snackbar,
-                            mapProvider: mapProvider
+                            mapProvider: mapProvider,
+                            pendingOffers: pendingOffers
                         )
                     }
                 }

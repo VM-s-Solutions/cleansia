@@ -23,6 +23,12 @@ protocol PartnerOrderClient: AnyObject {
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
     func getById(orderId: String) async -> ApiResult<OrderItem>
 
+    /// The orders reserved for this cleaner alone until their deadline (ADR-0045).
+    func myPendingOffers() async -> ApiResult<[PendingOfferItem]>
+    /// Refuse a reservation — one server-side write: the hold ends now and the order returns to the
+    /// whole board.
+    func declinePreferredOffer(orderId: String) async -> ApiResult<Void>
+
     func takeOrder(orderId: String) async -> ApiResult<Void>
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void>
     func startOrder(orderId: String) async -> ApiResult<Void>
@@ -103,6 +109,20 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func getById(orderId: String) async -> ApiResult<OrderItem> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerOrderAPI.orderGetById(orderId: orderId)
+        }
+    }
+
+    func myPendingOffers() async -> ApiResult<[PendingOfferItem]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerOrderAPI.orderMyPendingOffers()
+        }
+    }
+
+    func declinePreferredOffer(orderId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderDeclinePreferredOffer(
+                declinePreferredOfferCommand: DeclinePreferredOfferCommand(orderId: orderId)
+            )
         }
     }
 

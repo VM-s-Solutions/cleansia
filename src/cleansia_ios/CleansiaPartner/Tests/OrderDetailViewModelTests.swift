@@ -17,7 +17,13 @@ final class OrderDetailViewModelTests: XCTestCase {
     }
 
     private func makeVM(orderId: String = "order-1") -> OrderDetailViewModel {
-        OrderDetailViewModel(orderId: orderId, client: client, staleness: staleness, snackbar: snackbar)
+        OrderDetailViewModel(
+            orderId: orderId,
+            client: client,
+            staleness: staleness,
+            snackbar: snackbar,
+            pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness)
+        )
     }
 
     private func loadedItem(

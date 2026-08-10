@@ -47,6 +47,18 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// Same observation hook for `getById` (the detail VM's refetch).
     var onGetById: (() -> Void)?
 
+    var pendingOffersResult: ApiResult<[PendingOfferItem]> = .success([])
+    var declineResult: ApiResult<Void> = .success(())
+    private(set) var pendingOffersCallCount = 0
+
+    /// The reservation writes, recorded separately from the lifecycle commands so a test can assert
+    /// that a confirm went to `takeOrder` and nowhere near the decline endpoint.
+    private(set) var pendingOfferCommands: [(name: String, orderId: String)] = []
+
+    /// Fired before the decline returns — lets a test move the server's rows on so the refetch the
+    /// view model always issues sees the write it just made.
+    var onDeclinePreferredOffer: ((String) -> Void)?
+
     func currentEmployeeId() async -> ApiResult<String> {
         employeeIdCallCount += 1
         return employeeIdResult
@@ -85,6 +97,20 @@ final class FakePartnerOrderClient: PartnerOrderClient {
             await withCheckedContinuation { commandGate = $0 }
         }
         return commandResult
+    }
+
+    func myPendingOffers() async -> ApiResult<[PendingOfferItem]> {
+        pendingOffersCallCount += 1
+        return pendingOffersResult
+    }
+
+    /// Deliberately ungated: the re-entry guard test holds a confirm mid-flight and then awaits a
+    /// decline directly, so a deleted guard has to record a call and return rather than deadlock on
+    /// the same gate the confirm is parked on.
+    func declinePreferredOffer(orderId: String) async -> ApiResult<Void> {
+        pendingOfferCommands.append((name: "declinePreferredOffer", orderId: orderId))
+        onDeclinePreferredOffer?(orderId)
+        return declineResult
     }
 
     func takeOrder(orderId: String) async -> ApiResult<Void> {
@@ -162,6 +188,26 @@ final class FakePartnerOrderClient: PartnerOrderClient {
             hasBase64: false
         ))
         return await gated()
+    }
+}
+
+extension PendingOfferItem {
+    static func sample(
+        id: String,
+        respondByUtc: Date? = Date(timeIntervalSince1970: 1_786_000_000)
+    ) -> PendingOfferItem {
+        PendingOfferItem(
+            id: id,
+            displayOrderNumber: "CL-\(id)",
+            cleaningDateTime: Date(timeIntervalSince1970: 1_786_200_000),
+            estimatedTime: 120,
+            respondByUtc: respondByUtc,
+            customerAddressApproximate: "Praha 4 · 14000",
+            rooms: 2,
+            bathrooms: 1,
+            totalPrice: 1200,
+            currencyCode: "CZK"
+        )
     }
 }
 

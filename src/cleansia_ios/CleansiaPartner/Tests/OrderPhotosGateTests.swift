@@ -171,7 +171,13 @@ final class OrderPhotosGateTests: XCTestCase {
     }
 
     private func makeDetailVM() -> OrderDetailViewModel {
-        OrderDetailViewModel(orderId: "order-1", client: client, staleness: staleness, snackbar: snackbar)
+        OrderDetailViewModel(
+            orderId: "order-1",
+            client: client,
+            staleness: staleness,
+            snackbar: snackbar,
+            pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness)
+        )
     }
 
     private func item(status: Int, isMine: Bool) -> OrderItem {

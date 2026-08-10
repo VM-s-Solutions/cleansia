@@ -427,11 +427,11 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   6. `DeactivateAdminUser.Handler`'s conditional `ExecuteUpdateAsync` (`DeactivateAdminUser.cs:63-76`,
      comment `:57-61`) — the only roster entry written **in a handler** rather than behind a repository
      method: an atomic last-active-admin guard where `0 rows ⇒ CannotDeactivateLastAdmin`.
-     ⚠️ **The roster's one incomplete entry.** Its comment satisfies S7a (why it is one statement) but
-     **not conjunct (iii)** — it never says the write self-commits or what it does not roll back. It is
-     listed rather than flagged because the *design* is right and unlisting it would make a correct
-     write read as a violation; the owed fix is **one sentence in that comment**, and the next ticket
-     that touches `DeactivateAdminUser.cs` should write it.
+     Its comment carried S7a's *why it is one statement* but not conjunct (iii) until 2026-08-10
+     (T-0575), when the missing half was appended: **self-commits outside the pipeline → why it must
+     land independently → what it does not roll back**. Recorded because the gap was listed rather
+     than flagged for a reason worth keeping — the *design* was right, and unlisting a correct write
+     would have made it read as a violation. The roster now has no incomplete entry.
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a

@@ -2563,3 +2563,55 @@ If web push for partner ever ships, reason 1 retires and it is worth revisiting.
   entered…"* in all five partner locales. "Travel radius" mildly implies an eligibility or commute
   constraint rather than a notification one, which is the exact confusion the whole feature's copy works
   to avoid. Left alone — it is a copy decision spanning three surfaces.
+
+---
+
+## N26 — the customer half of ADR-0045 shipped, and it confirmed a backend finding twice over (2026-08-10)
+
+`e9815f75` + `677da8cb`. The web wizard never had a partial picker — it had a **deliberate refusal to
+build one**, in a comment at the submit site (*"`preferredEmployeeId` waits on the Plus rollout to
+surface a cleaner picker"*), which ADR-0045 §D12 and ADR-0039 §D7.2 both cite as the known gap. It is
+built now.
+
+### `PreferredOfferExit.IsOpen` — confirmed reachable, and there is a second hole beside it
+
+The backend lane filed this and declined to fix it because it changes what a **customer** may do. The
+web lane independently reached the same line and confirmed the exploit path exactly:
+
+```csharp
+order.RecurringTemplateId is null
+&& order.PreferredOfferRound < BookingPolicy.MaxPreferredOfferRounds
+&& order.AssignedEmployees.Count == 0
+&& !PreferredOffer.HasLiveReservation(...)
+&& BookingPolicy.ComputePreferredHold(order.CleaningDateTime, nowUtc) > TimeSpan.Zero
+```
+
+A **cancelled** order with a future cleaning time and no assignment satisfies **every term**, so
+`canChooseAnother` is true and `ChoosePreferredCleaner` would grant a hold and **push a named cleaner
+about work nobody will do**. (`Completed` is blocked only incidentally, by the assignment count, not by
+intent.)
+
+**Second hole, found while building and closed client-side in `677da8cb`:** `IsOpen` says nothing about
+the **caller**, but the validator's first gate is an active Plus membership — so the flag alone offered
+the re-choose to every non-Plus customer and refused it on tap.
+
+The client now conjoins `orderStatus ∉ {Cancelled, Completed}` and the membership check — both strict
+narrowings of the server's own answer using values already on the same screen, never re-derived policy
+constants. **Both narrowings should be DELETED when `IsOpen` gains its offerability and caller terms.**
+That is the backend row, and it is now confirmed from two directions rather than one.
+
+### A pre-existing copy defect, left for the affirmative-copy wave
+
+`membership.benefit_favorite_body` uses an **assignment verb** in cs and sk — *"bude přednostně
+přiřazen"* / *"bude prednostne priradený"* — on the membership benefits page. ADR-0036's copy constraint
+and ADR-0045's whole design forbid telling a customer their favourite **will be assigned**; the truth is
+that they are **asked**. It is outside the feature's own keys and lives in a shared bundle another lane
+is editing, so it was flagged rather than reworded mid-flight.
+
+### One correction to my own brief, worth recording
+
+I told the lane to follow what the two mobile apps render while an offer is pending. **Neither renders
+anything** — a grep for `preferredOffer` across both trees returns only push and feed template
+registrations. Both have the booking-time picker and the closure push; **the pending state is unbuilt on
+every platform.** So web derived its copy from the ADR plus the one shipped corpus that does exist — the
+five-locale closure push strings — rather than from a shape that was never there.

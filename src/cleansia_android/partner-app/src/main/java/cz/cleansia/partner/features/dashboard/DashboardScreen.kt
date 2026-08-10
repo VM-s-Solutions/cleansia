@@ -74,6 +74,7 @@ import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.orders.toOrderStatus
+import cz.cleansia.partner.features.orders.PendingOffersCard
 import cz.cleansia.partner.features.profile.JobRadiusPromptCard
 import cz.cleansia.partner.ui.theme.BrandGradients
 import cz.cleansia.partner.ui.theme.asList
@@ -118,6 +119,7 @@ fun DashboardScreen(
     onOpenDocuments: () -> Unit,
     onOpenJobRadius: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenPendingOffers: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -211,6 +213,10 @@ fun DashboardScreen(
                 }
             }
         } else {
+            item {
+                PendingOffersCard(onOpenOffers = onOpenPendingOffers)
+            }
+
             item {
                 JobRadiusPromptCard(onChooseRadius = onOpenJobRadius)
             }

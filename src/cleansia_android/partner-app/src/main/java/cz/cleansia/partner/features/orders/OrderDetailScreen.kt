@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.orders
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -70,7 +72,9 @@ import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
@@ -93,6 +97,8 @@ fun OrderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val inFlightAction by viewModel.inFlightAction.collectAsStateWithLifecycle()
+    val actionState by viewModel.actionState.collectAsStateWithLifecycle()
+    val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
     // No local SnackbarHostState — all VMs push directly to the
@@ -129,11 +135,13 @@ fun OrderDetailScreen(
             // input pipeline. iOS hosts it at its ZStack root for the same
             // reason (OrderDetailContent.swift).
             var confirmingCash by remember { mutableStateOf(false) }
+            var decliningOffer by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 OrderDetailBottomSheetLayout(
                     order = s.order,
                     inFlight = inFlightAction,
+                    preferredOffer = preferredOffer,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = checklistViewModel::setChecked,
                     onTake = viewModel::take,
@@ -145,6 +153,7 @@ fun OrderDetailScreen(
                     // slide gesture and the order flips to Completed.
                     onCompleteClick = { viewModel.complete(null, null) },
                     onCashConfirmRequested = { confirmingCash = true },
+                    onDeclineOffer = { decliningOffer = true },
                     // onContentMutated routes through the staleness-gated
                     // refresh path, so photo upload / note add re-fetches
                     // silently (no full-page spinner flash). Repository
@@ -153,6 +162,32 @@ fun OrderDetailScreen(
                     onPhotosChanged = viewModel::onContentMutated,
                     onNavigateBack = onNavigateBack,
                 )
+
+                if (decliningOffer) {
+                    CleansiaDialog(
+                        onDismiss = { decliningOffer = false },
+                        title = stringResource(R.string.offer_decline_title),
+                        message = stringResource(R.string.offer_decline_body),
+                        confirmLabel = stringResource(R.string.offer_decline_cta),
+                        dismissLabel = stringResource(R.string.cancel),
+                        destructive = true,
+                        onConfirm = {
+                            decliningOffer = false
+                            viewModel.declinePreferredOffer()
+                        },
+                    )
+                }
+
+                // Only a DISCLOSED offer earns the framed apology; every other refusal on this screen
+                // already went to the snackbar, exactly as before.
+                val refusedConfirm = (actionState as? ActionState.Error)
+                    ?.takeIf { preferredOffer != null && inFlightAction == null }
+                if (refusedConfirm != null) {
+                    OfferRefusalDialog(
+                        refusal = OfferRefusal(preferredOffer?.displayOrderNumber, refusedConfirm.message),
+                        onDismiss = viewModel::dismissActionError,
+                    )
+                }
 
                 if (confirmingCash) {
                     CleansiaDialog(
@@ -225,6 +260,7 @@ fun OrderDetailScreen(
 private fun OrderDetailBottomSheetLayout(
     order: OrderItem,
     inFlight: OrderAction?,
+    preferredOffer: PendingOfferItem?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -232,6 +268,7 @@ private fun OrderDetailBottomSheetLayout(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
@@ -280,6 +317,7 @@ private fun OrderDetailBottomSheetLayout(
                     isMine = isMine,
                     isInProgress = isInProgress,
                     inFlight = inFlight,
+                    preferredOffer = preferredOffer,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = onToggleChecklistItem,
                     onTake = onTake,
@@ -287,6 +325,7 @@ private fun OrderDetailBottomSheetLayout(
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
                     onCashConfirmRequested = onCashConfirmRequested,
+                    onDeclineOffer = onDeclineOffer,
                     onPhotosChanged = onPhotosChanged,
                 )
             },
@@ -435,6 +474,7 @@ private fun OrderDetailSheetContent(
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
+    preferredOffer: PendingOfferItem?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -442,6 +482,7 @@ private fun OrderDetailSheetContent(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
 ) {
     val showAccessCard = isMine &&
@@ -647,11 +688,13 @@ private fun OrderDetailSheetContent(
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = needsCashCollection,
+            preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
             onCashConfirmRequested = onCashConfirmRequested,
+            onDeclineOffer = onDeclineOffer,
         )
     }
 }
@@ -663,11 +706,13 @@ private fun StickyActionFooter(
     inFlight: OrderAction?,
     canComplete: Boolean,
     needsCashCollection: Boolean,
+    preferredOffer: PendingOfferItem?,
     onTake: () -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -699,6 +744,10 @@ private fun StickyActionFooter(
                     bottom = Spacing.M,
                 ),
         ) {
+            if (preferredOffer != null && !isMine) {
+                ReservedForYouRow(respondByUtc = preferredOffer.respondByUtc)
+                Spacer(Modifier.height(Spacing.S))
+            }
             OrderPrimaryAction(
                 status = status,
                 isAssignedToCurrentUser = isMine,
@@ -710,7 +759,15 @@ private fun StickyActionFooter(
                 onCashConfirmRequested = onCashConfirmRequested,
                 canComplete = canComplete,
                 needsCashCollection = needsCashCollection,
+                isPreferredOffer = preferredOffer != null,
             )
+            if (preferredOffer != null && !isMine) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    TextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
+                        Text(stringResource(R.string.offer_decline))
+                    }
+                }
+            }
         }
     }
 }

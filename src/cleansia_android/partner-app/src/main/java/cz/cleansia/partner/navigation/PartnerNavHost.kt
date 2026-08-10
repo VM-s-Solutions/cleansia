@@ -41,6 +41,7 @@ import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.main.MainScaffold
 import cz.cleansia.partner.features.notifications.NotificationsScreen
 import cz.cleansia.partner.features.orders.OrderDetailScreen
+import cz.cleansia.partner.features.orders.PendingOffersScreen
 import cz.cleansia.partner.features.orders.RegistrationLockScreen
 import cz.cleansia.partner.features.orders.OnboardingChainViewModel
 import cz.cleansia.partner.features.orders.isRegistrationComplete
@@ -191,6 +192,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onOpenProfileSection = { route -> navController.navigate(route) },
                 onOpenEarnings = { navController.navigate(NavRoute.Earnings) },
                 onOpenNotifications = { navController.navigate(NavRoute.Notifications) },
+                onOpenPendingOffers = { navController.navigate(NavRoute.PendingOffers) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
                         popUpTo(navController.graph.id) { inclusive = true }
@@ -207,6 +209,19 @@ fun PartnerNavHost(navController: NavHostController) {
             NotificationsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onOpenRoute = { route -> navController.navigate(route) },
+            )
+        }
+
+        composable<NavRoute.PendingOffers> {
+            PendingOffersScreen(
+                onNavigateBack = { navController.popBackStack() },
+                // A confirmed offer is an ordinary job from that instant on, so it lands on the
+                // detail every other taken job lands on.
+                onOpenOrder = { id ->
+                    navController.navigate(NavRoute.OrderDetail(orderId = id)) {
+                        popUpTo(NavRoute.PendingOffers) { inclusive = true }
+                    }
+                },
             )
         }
 

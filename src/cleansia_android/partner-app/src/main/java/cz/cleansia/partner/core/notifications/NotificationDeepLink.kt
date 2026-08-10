@@ -67,8 +67,13 @@ object NotificationDeepLink {
         // Still the order detail even though the cleaner is off the job: the copy says the job
         // moved, and the detail is where they can read which day just came off their schedule.
         "order.assignment_revoked",
-        // The targeted offer ships orderId alongside orderNumber precisely so the tap lands on the
-        // job the cleaner was asked for — its copy tells them to open it and take it.
+        // The targeted offer stays on the DETAIL rather than moving to the pending-offers surface,
+        // and the reason is that the push fires on a wider predicate than the reservation does: it
+        // is produced from the resolver's recipient, while a hold is granted only when the resolver
+        // also returned a deadline. Below an eight-hour lead there is a recipient and no
+        // reservation, and a card order is pushed before its payment lands, so in both cases the
+        // offers list — which is `hold > now` conjoined with offerability — would be empty. The
+        // detail carries the disclosure and the decline instead, and degrades to an ordinary job.
         "order.preferred_offer",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Payroll payout — open the paid invoice; fall back to the Earnings

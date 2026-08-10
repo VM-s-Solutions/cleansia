@@ -1310,4 +1310,25 @@
     <string name="job_radius_prompt_choose">Vybrat vzdálenost</string>
     <string name="job_radius_prompt_keep_all">Ponechat všechny zakázky</string>
     <string name="error_employee_job_radius_out_of_range">Zvolte vzdálenost mezi 1 a 500 km.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Rezervováno pro vás</string>
+    <string name="offers_subtitle">Zakázky, o které si vás zákazník vyžádal. Když potvrdíte, jsou vaše; když odmítnete, vrátí se všem.</string>
+    <string name="offer_reserved_until_today">Vaše do %1$s dnes</string>
+    <string name="offer_reserved_until_tomorrow">Vaše do %1$s zítra</string>
+    <string name="offer_reserved_until_date">Vaše do %1$s, %2$s</string>
+    <string name="offer_reserved_ended">Tato rezervace skončila</string>
+    <string name="offer_confirm">Potvrdit</string>
+    <string name="offer_slide_to_confirm">Přejetím potvrdit</string>
+    <string name="offer_confirming">Potvrzuji\u2026</string>
+    <string name="offer_decline">Odmítnout</string>
+    <string name="offer_decline_title">Uvolnit tuto zakázku?</string>
+    <string name="offer_decline_body">Ihned se vrátí všem uklízečům. Nijak se vám to nezapočítává a dokud je volná, můžete si ji z nabídky vzít i vy.</string>
+    <string name="offer_decline_cta">Uvolnit</string>
+    <string name="offer_declined_toast">Uvolněno \u2014 zakázka je teď otevřená všem.</string>
+    <string name="offer_empty">Právě teď na vaši odpověď nic nečeká.</string>
+    <string name="offer_blocked_title">Zakázku se nám nepodařilo předat</string>
+    <string name="offer_blocked_body">%1$s\n\nTohle je na nás \u2014 rezervovali jsme zakázku na vaše jméno, aniž bychom to ověřili, takže se vám to nijak nezapočítává.</string>
+    <string name="offers_card_title">Zákazník si vyžádal vás</string>
+    <string name="offers_card_more">+%1$d další</string>
+    <string name="offers_card_cta">Zobrazit, co čeká</string>
 </resources>

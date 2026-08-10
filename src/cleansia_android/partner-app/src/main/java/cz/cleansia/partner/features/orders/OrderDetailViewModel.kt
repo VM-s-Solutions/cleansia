@@ -7,18 +7,22 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, Start, NotifyOnTheWay, MarkCashCollected, Complete }
+enum class OrderAction { Take, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -46,8 +50,20 @@ class OrderDetailViewModel @Inject constructor(
     private val _inFlightAction = MutableStateFlow<OrderAction?>(null)
     val inFlightAction: StateFlow<OrderAction?> = _inFlightAction.asStateFlow()
 
+    /**
+     * The reservation held for this cleaner on this order, if there is one. The partner order DTO
+     * carries no reservation block — that field is customer-only, so no cleaner ever learns an order
+     * was reserved for someone else — so the disclosure is composed from the cleaner's own offers.
+     * Absent means an ordinary job, which is exactly right for the short-lead band, where the push
+     * fires but nothing is withheld.
+     */
+    val preferredOffer: StateFlow<PendingOfferItem?> = ordersRepository.pendingOffers
+        .map { offers -> offers.firstOrNull { it.id == orderId } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     init {
         ensureFreshOrCachedAsync()
+        ensureOffersFresh()
     }
 
     /**
@@ -66,7 +82,24 @@ class OrderDetailViewModel @Inject constructor(
         viewModelScope.launch { fetch() }
     }
 
-    fun onResume() = ensureFreshOrCachedAsync()
+    fun onResume() {
+        ensureFreshOrCachedAsync()
+        ensureOffersFresh()
+    }
+
+    private fun ensureOffersFresh() {
+        if (!ordersRepository.arePendingOffersStale()) return
+        viewModelScope.launch { ordersRepository.refreshPendingOffers() }
+    }
+
+    /** Refusing the reservation from the job it belongs to; the same one write the offers list makes. */
+    fun declinePreferredOffer() = runAction(OrderAction.DeclineOffer) {
+        ordersRepository.declinePreferredOffer(orderId)
+    }
+
+    fun dismissActionError() {
+        if (_actionState.value is ActionState.Error) _actionState.value = ActionState.Idle
+    }
 
     /**
      * @param notifyOnError raise the translated failure on the snackbar. False
@@ -112,12 +145,21 @@ class OrderDetailViewModel @Inject constructor(
                     if (action == OrderAction.Complete) {
                         snackbar.showSuccessKey(R.string.order_completed_toast)
                     }
+                    if (action == OrderAction.DeclineOffer) {
+                        snackbar.showSuccessKey(R.string.offer_declined_toast)
+                    }
                     _actionState.value = ActionState.Idle
                     _inFlightAction.value = null
                     fetch()
                 }
                 is ApiResult.Error -> {
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    // A confirm the take gate refuses on a job the cleaner was TOLD was theirs is
+                    // framed by the screen as ours rather than theirs; a snackbar carrying the bare
+                    // reason would land on top of that sentence.
+                    val disclosedOffer = action == OrderAction.Take && preferredOffer.value != null
+                    if (!disclosedOffer) {
+                        snackbar.showError(errorTranslator.translate(result.error))
+                    }
                     _actionState.value = ActionState.Error(errorTranslator.translate(result.error))
                     _inFlightAction.value = null
                     // A clean reject almost always means the order moved on

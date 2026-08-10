@@ -66,6 +66,7 @@ fun MainScaffold(
     onOpenProfileSection: (NavRoute) -> Unit,
     onOpenEarnings: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenPendingOffers: () -> Unit,
     onSignedOut: () -> Unit,
     backStackEntry: NavBackStackEntry? = null,
 ) {
@@ -116,6 +117,7 @@ fun MainScaffold(
                     onOpenDocuments = { onOpenProfileSection(NavRoute.ProfileDocuments) },
                     onOpenJobRadius = { onOpenProfileSection(NavRoute.PreferenceJobRadius) },
                     onOpenNotifications = onOpenNotifications,
+                    onOpenPendingOffers = onOpenPendingOffers,
                 )
                 MainTab.Orders -> OrdersListScreen(
                     onOrderClick = onOpenOrderDetails,

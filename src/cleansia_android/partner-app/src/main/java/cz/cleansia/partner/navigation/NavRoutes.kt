@@ -41,6 +41,13 @@ sealed interface NavRoute {
     @Serializable data object Orders : NavRoute
     @Serializable data class OrderDetail(val orderId: String) : NavRoute
 
+    /**
+     * Jobs a customer asked for this cleaner by name, held for them until a deadline. Pushed rather
+     * than a bottom-nav tab: a reservation is rare and time-limited, and a permanent tab would show
+     * an empty state to every cleaner every day for it.
+     */
+    @Serializable data object PendingOffers : NavRoute
+
     @Serializable data object Invoices : NavRoute
     @Serializable data class InvoiceDetail(val invoiceId: String) : NavRoute
 

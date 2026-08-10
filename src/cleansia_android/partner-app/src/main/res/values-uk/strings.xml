@@ -1295,4 +1295,25 @@
     <string name="job_radius_prompt_choose">Вибрати відстань</string>
     <string name="job_radius_prompt_keep_all">Залишити всі замовлення</string>
     <string name="error_employee_job_radius_out_of_range">Виберіть відстань від 1 до 500 км.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Зарезервовано для вас</string>
+    <string name="offers_subtitle">Замовлення, у яких клієнт попросив саме вас. Підтвердите \u2014 вони ваші; відмовитеся \u2014 повернуться до всіх.</string>
+    <string name="offer_reserved_until_today">Ваше до %1$s сьогодні</string>
+    <string name="offer_reserved_until_tomorrow">Ваше до %1$s завтра</string>
+    <string name="offer_reserved_until_date">Ваше до %1$s, %2$s</string>
+    <string name="offer_reserved_ended">Це резервування завершилося</string>
+    <string name="offer_confirm">Підтвердити</string>
+    <string name="offer_slide_to_confirm">Проведіть, щоб підтвердити</string>
+    <string name="offer_confirming">Підтверджуємо\u2026</string>
+    <string name="offer_decline">Відхилити</string>
+    <string name="offer_decline_title">Звільнити це замовлення?</string>
+    <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>
+    <string name="offer_decline_cta">Звільнити</string>
+    <string name="offer_declined_toast">Звільнено \u2014 замовлення тепер відкрите для всіх.</string>
+    <string name="offer_empty">Зараз нічого не чекає на вашу відповідь.</string>
+    <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
+    <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
+    <string name="offers_card_title">Клієнт попросив саме вас</string>
+    <string name="offers_card_more">+%1$d ще</string>
+    <string name="offers_card_cta">Подивитися, що чекає</string>
 </resources>

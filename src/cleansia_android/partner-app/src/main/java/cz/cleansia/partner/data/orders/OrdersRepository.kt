@@ -4,12 +4,14 @@ import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.AddOrderNoteCommand
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.CompleteOrderCommand
+import cz.cleansia.partner.api.model.DeclinePreferredOfferCommand
 import cz.cleansia.partner.api.model.GetOrderPhotosResponse
 import cz.cleansia.partner.api.model.MarkCashCollectedCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
+import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.api.model.PhotoType
 import cz.cleansia.partner.api.model.ReportOrderIssueCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosCommand
@@ -24,6 +26,10 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -101,6 +107,23 @@ interface OrdersRepository {
     suspend fun deleteIssue(orderId: String, issueId: String): ApiResult<Unit>
 
     /**
+     * The orders reserved for this cleaner alone until their deadline (ADR-0045). Cached rather than
+     * fetched per screen because three surfaces read the same answer — the dashboard card, the offers
+     * list, and the order detail's "this one is yours until…" banner.
+     */
+    val pendingOffers: StateFlow<List<PendingOfferItem>>
+
+    fun arePendingOffersStale(): Boolean
+
+    suspend fun refreshPendingOffers(): ApiResult<List<PendingOfferItem>>
+
+    /**
+     * Refuse a reservation. One server-side write — the hold ends now and the order returns to the
+     * whole board — so on success the row leaves [pendingOffers] and every surface reading it agrees.
+     */
+    suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit>
+
+    /**
      * `true` if the cached single-order payload for [orderId] is stale and a
      * fresh fetch should be issued. ViewModels use this on screen entry /
      * resume to gate background refreshes: skip the network when the cache
@@ -165,6 +188,11 @@ class OrdersRepositoryImpl @Inject constructor(
         OrdersPane.History to Staleness(),
     )
 
+    private val _pendingOffers = MutableStateFlow<List<PendingOfferItem>>(emptyList())
+    override val pendingOffers: StateFlow<List<PendingOfferItem>> = _pendingOffers.asStateFlow()
+
+    private val pendingOffersStaleness = Staleness()
+
     private fun stalenessFor(orderId: String): Staleness =
         orderStaleness.getOrPut(orderId) { Staleness() }
 
@@ -200,6 +228,27 @@ class OrdersRepositoryImpl @Inject constructor(
         // "fresh". Pane watermarks are fixed instances, so reset in place.
         orderStaleness.clear()
         paneStaleness.values.forEach { it.reset() }
+        _pendingOffers.value = emptyList()
+        pendingOffersStaleness.reset()
+    }
+
+    override fun arePendingOffersStale(): Boolean = pendingOffersStaleness.isStale()
+
+    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOfferItem>> =
+        safeApiCall(json) { orderApi.orderMyPendingOffers() }
+            .onSuccess { offers ->
+                _pendingOffers.value = offers
+                pendingOffersStaleness.markFresh()
+            }
+
+    override suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit> = safeApiCall(json) {
+        orderApi.orderDeclinePreferredOffer(DeclinePreferredOfferCommand(orderId = orderId))
+    }.map { }.onSuccess {
+        _pendingOffers.update { offers -> offers.filterNot { it.id == orderId } }
+        invalidateOrder(orderId)
+        // The order is back with the whole board the instant the hold ends, so the Available pane
+        // is wrong until it refetches.
+        stalenessFor(OrdersPane.Available).reset()
     }
 
     override suspend fun getPaged(

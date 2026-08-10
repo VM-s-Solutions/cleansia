@@ -1323,4 +1323,25 @@
     <string name="job_radius_prompt_choose">Pick a distance</string>
     <string name="job_radius_prompt_keep_all">Keep every job</string>
     <string name="error_employee_job_radius_out_of_range">Choose a distance between 1 and 500 km.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Reserved for you</string>
+    <string name="offers_subtitle">Jobs a customer asked you for. Confirm one and it is yours; decline and it goes back to everyone.</string>
+    <string name="offer_reserved_until_today">Yours until %1$s today</string>
+    <string name="offer_reserved_until_tomorrow">Yours until %1$s tomorrow</string>
+    <string name="offer_reserved_until_date">Yours until %1$s, %2$s</string>
+    <string name="offer_reserved_ended">This reservation has ended</string>
+    <string name="offer_confirm">Confirm</string>
+    <string name="offer_slide_to_confirm">Slide to confirm</string>
+    <string name="offer_confirming">Confirming\u2026</string>
+    <string name="offer_decline">Decline</string>
+    <string name="offer_decline_title">Release this job?</string>
+    <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>
+    <string name="offer_decline_cta">Release it</string>
+    <string name="offer_declined_toast">Released \u2014 the job is open to every cleaner now.</string>
+    <string name="offer_empty">Nothing is waiting for your answer right now.</string>
+    <string name="offer_blocked_title">We couldn\'t hand this job over</string>
+    <string name="offer_blocked_body">%1$s\n\nThat one is on us \u2014 we put your name on this job without checking, so nothing here counts against you.</string>
+    <string name="offers_card_title">A customer asked for you</string>
+    <string name="offers_card_more">+%1$d more</string>
+    <string name="offers_card_cta">See what\'s waiting</string>
 </resources>

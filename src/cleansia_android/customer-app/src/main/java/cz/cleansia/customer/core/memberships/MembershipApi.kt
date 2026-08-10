@@ -56,9 +56,15 @@ class MembershipApi(
         return raw.mapBody { it.toAppDto() }
     }
 
+    /**
+     * Refuses the page where the orders list drops the row. The plans are alternatives to each other —
+     * the screen shows annual beside monthly with "save 18.5 % vs monthly" — so a silently missing row
+     * is not a shorter history but a different purchase, made without the customer ever learning the
+     * option existed.
+     */
     suspend fun getPlans(): Response<List<MembershipPlanDto>> {
         val raw = membershipApi.membershipGetPlans()
-        return raw.mapBody { list -> list?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.mapBody page@{ list -> list.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 
     suspend fun swapPlan(body: SwapMembershipPlanRequest): Response<SwapMembershipPlanResponse> {
@@ -95,43 +101,57 @@ private fun GenCancelMembershipSubscriptionResponse.toAppDto(): CancelMembership
         effectiveEndDate = effectiveEndDate?.toString().orEmpty(),
     )
 
-private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse = GetMyMembershipResponse(
-    hasMembership = this?.hasMembership ?: false,
+/**
+ * `hasMembership` and `cancelRequested` are the two facts every Plus surface gates on, and both
+ * defaulted to the answer that costs the member their benefit: `false` hides the discount from someone
+ * paying for it, and hides "your plan ends on the 3rd" from someone who asked to cancel. Everything
+ * else here is `nullable: true` by design — an absent plan has no price.
+ */
+private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse? {
+    if (this == null) return null
+    return GetMyMembershipResponse(
+    hasMembership = hasMembership ?: return null,
     // Generated GetMyMembership doesn't expose `membershipId` — repo + UI only
     // gate on `hasMembership`, so null is fine here.
     membershipId = null,
-    planCode = this?.planCode,
-    planName = this?.planName,
-    monthlyPriceCzk = this?.monthlyPriceCzk,
-    discountPercentage = this?.discountPercentage,
-    freeCancellationWindowHours = this?.freeCancellationWindowHours,
-    allowsExpressUpgrade = this?.allowsExpressUpgrade,
-    status = this?.status?.toCode(),
-    currentPeriodEnd = this?.currentPeriodEnd?.toString(),
-    cancelRequested = this?.cancelRequested ?: false,
-    billingInterval = this?.billingInterval,
-    monthlyEquivalentPriceCzk = this?.monthlyEquivalentPriceCzk,
-    expressUpgradesPerMonth = this?.expressUpgradesPerMonth,
-    expressUpgradesRemaining = this?.expressUpgradesRemaining,
-    trialEndsAtUtc = this?.trialEndsAtUtc,
-)
+    planCode = planCode,
+    planName = planName,
+    monthlyPriceCzk = monthlyPriceCzk,
+    discountPercentage = discountPercentage,
+    freeCancellationWindowHours = freeCancellationWindowHours,
+    allowsExpressUpgrade = allowsExpressUpgrade,
+    status = status?.toCode() ?: return null,
+    currentPeriodEnd = currentPeriodEnd?.toString(),
+    cancelRequested = cancelRequested ?: return null,
+    billingInterval = billingInterval,
+    monthlyEquivalentPriceCzk = monthlyEquivalentPriceCzk,
+    expressUpgradesPerMonth = expressUpgradesPerMonth,
+    expressUpgradesRemaining = expressUpgradesRemaining,
+    trialEndsAtUtc = trialEndsAtUtc,
+    )
+}
 
 private fun GenMembershipStatus.toCode(): Int = value
 
+/**
+ * Every number on a plan card is a term of the subscription the customer is about to buy, so none of
+ * them defaults. `billingInterval` defaulting to `1` was the sharpest: it silently reframed an annual
+ * plan's price as a monthly one. `allowsExpressUpgrade = false` and `trialPeriodDays = 0` each delete
+ * a benefit the card sells, and `savingsPercentVsMonthly = 0.0` deletes the reason to pick the annual
+ * plan at all.
+ */
 private fun GenGetMembershipPlansResponse.toAppDto(): MembershipPlanDto? {
-    val code = code ?: return null
-    val name = name ?: return null
     return MembershipPlanDto(
-        code = code,
-        name = name,
-        price = price ?: 0.0,
-        monthlyEquivalentPrice = monthlyEquivalentPrice ?: 0.0,
-        billingInterval = billingInterval ?: 1,
-        discountPercentage = discountPercentage ?: 0.0,
-        freeCancellationWindowHours = freeCancellationWindowHours ?: 0,
-        allowsExpressUpgrade = allowsExpressUpgrade ?: false,
-        trialPeriodDays = trialPeriodDays ?: 0,
-        savingsPercentVsMonthly = savingsPercentVsMonthly ?: 0.0,
+        code = code ?: return null,
+        name = name ?: return null,
+        price = price ?: return null,
+        monthlyEquivalentPrice = monthlyEquivalentPrice ?: return null,
+        billingInterval = billingInterval ?: return null,
+        discountPercentage = discountPercentage ?: return null,
+        freeCancellationWindowHours = freeCancellationWindowHours ?: return null,
+        allowsExpressUpgrade = allowsExpressUpgrade ?: return null,
+        trialPeriodDays = trialPeriodDays ?: return null,
+        savingsPercentVsMonthly = savingsPercentVsMonthly ?: return null,
     )
 }
 

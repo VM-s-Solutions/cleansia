@@ -95,7 +95,7 @@ class UserRepository @Inject constructor(
             return httpError(resp.errorBody(), resp.code())
         }
         val body = resp.body() ?: return networkError()
-        _currentUser.value = body.toCurrentUser(userId)
+        _currentUser.value = body.toCurrentUser(userId) ?: return networkError()
         return ApiResult.Success(Unit)
     }
 

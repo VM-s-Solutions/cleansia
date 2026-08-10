@@ -83,18 +83,21 @@ data class CurrentUser(
  * Takes the user id separately because the backend's `MyProfileDto` doesn't
  * carry it — caller pulls it from the JWT.
  */
-internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser = CurrentUser(
-    id = userId,
-    email = email.orEmpty(),
-    firstName = firstName.orEmpty(),
-    lastName = lastName.orEmpty(),
-    phoneNumber = phoneNumber,
-    birthDate = birthDate?.toString(),
-    preferredLanguageCode = preferredLanguageCode,
-    memberSince = memberSince,
-    totalBookings = totalBookings ?: 0,
-    totalSavings = totalSavings ?: 0.0,
-    savingsCurrencyCode = savingsCurrencyCode,
-    avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
-    avatarUrl = profilePhoto?.blobUrl?.takeIf { it.isNotBlank() },
-)
+internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser? {
+    return CurrentUser(
+        id = userId,
+        email = email.orEmpty(),
+        firstName = firstName.orEmpty(),
+        lastName = lastName.orEmpty(),
+        phoneNumber = phoneNumber,
+        birthDate = birthDate?.toString(),
+        preferredLanguageCode = preferredLanguageCode,
+        memberSince = memberSince,
+        // "You have saved 0 Kc" is a claim about this customer's money, not a blank field.
+        totalBookings = totalBookings ?: return null,
+        totalSavings = totalSavings ?: return null,
+        savingsCurrencyCode = savingsCurrencyCode,
+        avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
+        avatarUrl = profilePhoto?.blobUrl?.takeIf { it.isNotBlank() },
+    )
+}

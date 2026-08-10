@@ -30,33 +30,44 @@ class CatalogApi(
 ) {
     suspend fun getServices(): Response<List<ServiceListItem>> {
         val raw = serviceApi.serviceGetOverview()
-        return raw.map { items -> items?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.map page@{ items -> items.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 
     suspend fun getPackages(): Response<List<PackageListItem>> {
         val raw = packageApi.packageGetOverview()
-        return raw.map { items -> items?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.map page@{ items -> items.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 
     suspend fun getExtras(): Response<List<ExtraListItem>> {
         val raw = extraApi.extraGetOverview()
-        return raw.map { items -> items?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.map page@{ items -> items.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 }
 
 /**
- * Re-wrap a [Response] preserving status + headers but mapping the parsed
- * body. Skips mapping on error responses (the body is null / error-shaped
- * anyway).
+ * Re-wrap a [Response] preserving status + headers but mapping the parsed body. A `null` from
+ * [transform] is a refused page, and surfaces as a 200-with-null-body that [CatalogRepository] turns
+ * into an error rather than an empty catalog.
  */
-private inline fun <T, R> Response<T>.map(transform: (T?) -> R): Response<R> =
+private inline fun <T, R> Response<T>.map(transform: (T?) -> R?): Response<R> =
     if (isSuccessful) Response.success(transform(body()), raw())
     else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
 // ─── Generated → hand-written mappers ───
 //
-// Drop items missing a required field (id, name) — these are server bugs we
-// shouldn't render. Better than fabricating placeholder UI from null data.
+// The catalog refuses the page where the orders list drops the row, and the difference is that the
+// catalog *is* the addends. ConfirmStep renders the pre-quote subtotal as
+// `services.filter { it.id in state.selectedServiceIds }.sumOf { … }` — the selection is a set of ids
+// held in BookingState, not a slice of this list — so a dropped row leaves its id selected, still
+// priced by the server on Create, and silently missing from the figure the customer reads before
+// agreeing to it. A smaller, plausible, unmarked total is the exact failure this exists to prevent,
+// and marking the row still leaves the sum undefined. That inverts the drop half of the identity rule
+// too: a service with no id fails the page rather than being dropped.
+//
+// Extras go the same way rather than a third way: `selectedExtraSlugs` is held outside this list too,
+// so a dropped extra is charged on the quote while the picker shows it unselected. A refusal there
+// degrades to no add-on section, which is what CatalogRepository already shows when the endpoint is
+// down, and never a wrong add-on price.
 
 private fun GenServiceListItem.toAppDto(): ServiceListItem? {
     val id = id ?: return null
@@ -65,8 +76,8 @@ private fun GenServiceListItem.toAppDto(): ServiceListItem? {
         id = id,
         name = name,
         description = description,
-        basePrice = basePrice ?: 0.0,
-        perRoomPrice = perRoomPrice ?: 0.0,
+        basePrice = basePrice ?: return null,
+        perRoomPrice = perRoomPrice ?: return null,
         category = category?.toAppDto() ?: return null,
         translations = translations?.mapValues { it.value.toAppDto() },
     )
@@ -79,7 +90,7 @@ private fun GenPackageListItem.toAppDto(): PackageListItem? {
         id = id,
         name = name,
         description = description,
-        price = price ?: 0.0,
+        price = price ?: return null,
         translations = translations?.mapValues { it.value.toAppDto() },
         includedServices = includedServices?.mapNotNull { it.toAppDto() },
     )
@@ -94,8 +105,8 @@ private fun GenExtraListItem.toAppDto(): ExtraListItem? {
         slug = slug,
         name = name,
         description = description,
-        price = price ?: 0.0,
-        displayOrder = displayOrder ?: 0,
+        price = price ?: return null,
+        displayOrder = displayOrder ?: return null,
         translations = translations?.mapValues { it.value.toAppDto() },
     )
 }
@@ -109,7 +120,7 @@ private fun GenCategoryDto.toAppDto(): CategoryDto? {
         slug = slug,
         name = name,
         description = description,
-        displayOrder = displayOrder ?: 0,
+        displayOrder = displayOrder ?: return null,
         translations = translations?.mapValues { it.value.toAppDto() },
     )
 }

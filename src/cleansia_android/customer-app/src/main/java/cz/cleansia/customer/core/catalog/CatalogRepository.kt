@@ -76,13 +76,19 @@ class CatalogRepository @Inject constructor(
                 return httpError(packagesResp.errorBody(), packagesResp.code())
             }
 
-            val servicesBody = servicesResp.body()
-            val packagesBody = packagesResp.body()
+            // A 200 with no body is CatalogApi refusing a price list it could not map faithfully.
+            // orEmpty() here used to turn that into an empty catalog reported as success, so a broken
+            // wire read as "nothing is bookable today" with nothing on screen saying otherwise.
+            val servicesBody = servicesResp.body() ?: return networkError()
+            val packagesBody = packagesResp.body() ?: return networkError()
+            // Extras stay best-effort by existing design: a refusal here degrades to no add-on
+            // section, which is the same thing the customer sees when the endpoint is down, and never
+            // a wrong add-on price.
             val extrasBody = if (extrasResp?.isSuccessful == true) extrasResp.body() else null
             Log.d(TAG, "refresh: parsed servicesBody=${servicesBody?.size} packagesBody=${packagesBody?.size} extrasBody=${extrasBody?.size}")
 
-            _services.value = servicesBody.orEmpty()
-            _packages.value = packagesBody.orEmpty()
+            _services.value = servicesBody
+            _packages.value = packagesBody
             _extras.value = extrasBody.orEmpty()
             _loaded.value = true
             Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} _loaded=true")

@@ -103,7 +103,7 @@ fun ProfileTab(
     val email = user?.email ?: ""
     val tier = stringResource(if (isPlus) R.string.profile_tier_plus else R.string.profile_tier_regular)
     val totalBookings = user?.totalBookings ?: 0
-    val savedDisplay = formatSaved(user?.totalSavings ?: 0.0, user?.savingsCurrencyCode)
+    val savedDisplay = formatSaved(user?.totalSavings, user?.savingsCurrencyCode)
     val memberSince = formatMemberSince(user?.memberSince)
 
     val accountRows = listOf(
@@ -389,7 +389,13 @@ private fun TierBadge(tier: String) {
 
 /** "%.0f Kč" style, mirroring the booking total formatter; symbol-less when the
  *  user has no realized orders (currency null). */
-internal fun formatSaved(amount: Double, currencyCode: String?): String {
+/**
+ * Null is "no profile loaded yet", the same skeleton state the blank name and email above render. It
+ * can no longer be a dropped `totalSavings`: [CurrentUser] refuses that at the wire rather than
+ * telling a customer with 4 800 Kc of savings that they have saved nothing.
+ */
+internal fun formatSaved(amount: Double?, currencyCode: String?): String {
+    if (amount == null) return "\u2014"
     val symbol = when (currencyCode?.uppercase()) {
         "CZK" -> "Kč"
         "EUR" -> "€"

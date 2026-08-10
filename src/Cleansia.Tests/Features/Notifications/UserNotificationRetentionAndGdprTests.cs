@@ -190,6 +190,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new OrderEmployeePayRepository(ctx),
                 new RecurringBookingTemplateRepository(ctx),
                 new UserNotificationRepository(ctx),
+                new DeadLetterRepository(ctx),
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,
                 NullLogger<GdprDeletionService>.Instance);

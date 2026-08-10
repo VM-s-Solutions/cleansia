@@ -28,6 +28,7 @@ public class GdprDeletionService(
     IOrderEmployeePayRepository orderEmployeePayRepository,
     IRecurringBookingTemplateRepository recurringBookingTemplateRepository,
     IUserNotificationRepository userNotificationRepository,
+    IDeadLetterRepository deadLetterRepository,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<GdprDeletionService> logger)
@@ -199,6 +200,10 @@ public class GdprDeletionService(
             .GetFiltered(n => n.UserId == user.Id)
             .ToListAsync(ct);
         userNotificationRepository.RemoveRange(notifications);
+
+        // Id-keyed for the same reason the payout row below is: a poisoned send-email body holds the
+        // subject's address and real name verbatim, and its row has no navigation to a user at all.
+        await deadLetterRepository.RemoveForSubjectAsync(user.Id, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);

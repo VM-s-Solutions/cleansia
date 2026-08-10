@@ -745,6 +745,36 @@ the customer someone is "considering" their booking would be false.
 
 #### D7.2 — On the customer's order detail (⚠️ `nswag-regen`)
 
+> **Amendment, 2026-08-10 — `canChooseAnother` is SEVEN terms, not four.** This section ruled the flag
+> as four; the shipped predicate carries three more, and all three were added because a client had
+> already been forced to re-implement them:
+>
+> - **`OrderAvailability.IsOfferable(...)`** — without it a **cancelled** order with a future cleaning
+>   time and no assignment satisfied every original term. The harm was not the push (the Q-BROWSE-01 (b)
+>   fix already withheld that) — it was a **silent grant**: the hold was written, the customer's one
+>   re-offer round was burned, no cleaner was told, and `NotifyLapsedPreferredOffers` refuses
+>   `Cancelled`/`Completed` rows so **no closure message followed either**. `PreferredOffer.StateOf`
+>   then reported `AwaitingConfirmation`, so a customer's own cancelled booking said a named cleaner was
+>   considering it. That is §D5.1 refusal (4)'s shape — *refuse, not grant-and-burn* — reached through a
+>   different door.
+> - **`callerHasActiveMembership`** — `IsOpen` said nothing about the caller while
+>   `ChoosePreferredCleaner`'s validator gates on Plus, so the flag offered the re-choose to every
+>   non-Plus customer and refused it on tap.
+> - **`RecurringTemplateId is null` is retained and is NOT subsumed** by offerability: a recurring
+>   occurrence with `PaymentStatus.Paid` is offerable.
+>
+> **A status list cannot stand in for the offerability term**, and that was proved rather than argued: a
+> mutation replacing `IsOfferable` with `!= Cancelled && != Completed` left the *money-has-not-landed*
+> row green. An unpaid card booking is refused on the money axis and is in neither status.
+>
+> `Completed` was only ever blocked *incidentally*, by the assignment count — and under the owner's
+> Q-CREW-01 ruling a solo-completed two-seat job keeps its second seat open forever, so that incidental
+> block was never reliable.
+>
+> **Enforced by:** `PreferredOfferExitAgreementTests`, which reads both real code paths — so the flag and
+> the server cannot drift while this text catches up.
+
+
 ```
 preferredOffer: {
   state:          PreferredOfferState      // derived above
@@ -1323,6 +1353,11 @@ Verify #17 is widened to assert all five terms. If the lead disagrees, this is t
 before acceptance — it changes no mechanism, only whether a button is offered.
 
 ## Open / undecided (not escalations — recorded so they are not re-derived)
+
+**Closed 2026-08-10:** the recurring-term disagreement recorded below between §D5.1 and §D7.2 is
+resolved — `IsOpen` now carries offerability and entitlement alongside the recurring term, and §D7.2
+carries the amendment. The three terms were added in `4fa3e63d` after three separate client lanes were
+forced to re-implement them.
 
 - **The 5-minute cadence is reasoned from the 48-minute floor, not measured.** If ceiling-length (12 h)
   windows dominate in practice, 15 minutes would be cheaper and indistinguishable; the flip condition is

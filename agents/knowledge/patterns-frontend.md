@@ -293,6 +293,26 @@ going away — not just by deleting a key.
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
+> **A spec asserting a translated refusal must polyfill `Blob.prototype.text` first, or it proves
+> nothing.** The generated clients read errors with `responseType: 'blob'`, so a real refusal arrives as
+> a Blob and `parseBlobToJson` is what turns it into a key. **jsdom ships no `Blob.prototype.text`**, so
+> under jest that rejects and the interceptor takes its `.catch` — every locale silently renders
+> `api.common.error_occurred`. A locale assertion written without the polyfill therefore passes on the
+> *fallback* rather than on the message, and passes just as well when the key is wrong, missing, or
+> renamed.
+>
+> Measured, not argued: disabling the polyfill in the customer preferred-offer spec turns **all five
+> locale cases red**, and the partner radius spec's locale cases were green-for-the-wrong-reason until
+> one was added. The interceptor's own spec exercises only the **non-blob** branch — the one production
+> does not take. Two lanes hit this independently on 2026-08-09; a sweep of the other six specs touching
+> `HttpErrorInterceptorFn` found none asserting a translated refusal, so nothing else is currently green
+> for this reason.
+>
+> **Enforced by:** `libs/cleansia-customer-features/orders/…/order-preferred-offer.refusal.spec.ts` and
+> `libs/cleansia-partner-features/profile/…/profile-job-radius.refusal.spec.ts` — **T2-spec**. A shared
+> jest-setup polyfill plus a test of the blob branch itself would raise this to T1-CI and retire the
+> per-spec form; that is filed, not done.
+
 The single canonical mechanism for surfacing a backend `BusinessErrorMessage` to the user is the
 shared `HttpErrorInterceptorFn` (`libs/core/services/.../interceptors/http-error.interceptor.ts`). It
 fires for **every** non-404/non-403 error, pulls the first `BusinessErrorMessage` dot-value out of the

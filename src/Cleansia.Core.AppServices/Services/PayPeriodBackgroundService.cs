@@ -18,6 +18,9 @@ namespace Cleansia.Core.AppServices.Services;
 
 public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 {
+    private const string EmptyRenderMessage = "PDF generation returned empty result";
+    private const string NoCompanyInfoMessage = "No active company info is configured to issue this invoice against";
+
     private readonly IPayPeriodRepository _payPeriodRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IEmailService _emailService;
@@ -395,7 +398,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             if (pdfBytes == null || pdfBytes.Length == 0)
             {
-                throw new InvalidOperationException("PDF generation returned empty result");
+                throw new InvalidOperationException(EmptyRenderMessage);
             }
 
             var pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, pdfBytes, cancellationToken);
@@ -409,11 +412,15 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             var fileName = $"{invoice.InvoiceNumber}.pdf";
             return (pdfBytes, fileName);
         }
-        catch (Exception ex)
+        // A cancelled run is not a failed render: nothing was attempted to completion, and the recording
+        // commit would be cancelled with it — leaving the stamp dirty in the tracker to ride the NEXT
+        // employee's commit. It propagates instead.
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Failed to generate PDF for invoice {InvoiceId}", invoice.Id);
 
-            // Mark invoice with error but don't fail entire process
+            // The row is the admin's only durable signal that this invoice needs a re-render (ADR-0046
+            // Erratum E5), so it must carry the CAUSE and not a placeholder standing in for it.
             invoice.SetPdfGenerationError(ex.Message);
 
             // C2 on the failure arm too: the PDF-error state for the employee whose generation just
@@ -434,46 +441,37 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         string languageCode,
         CancellationToken cancellationToken)
     {
-        try
+        var countryId = employee.Address?.CountryId;
+
+        // Try to get company info by employee's country, fallback to any active
+        var companyInfo = countryId != null
+            ? await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+            : null;
+        companyInfo ??= await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+        if (companyInfo == null)
         {
-            var countryId = employee.Address?.CountryId;
-
-            // Try to get company info by employee's country, fallback to any active
-            var companyInfo = countryId != null
-                ? await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                : null;
-            companyInfo ??= await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
-
-            if (companyInfo == null)
-            {
-                _logger.LogError("No active company info found for country {CountryId}", countryId);
-                return null;
-            }
-            var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
-
-            var dateFormat = "dd.MM.yyyy";
-            if (!string.IsNullOrEmpty(countryId))
-            {
-                var countryConfig = await _countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
-                if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
-                    dateFormat = countryConfig.DateFormat;
-            }
-
-            var payoutDetails = await _employeePayoutDetailsRepository
-                .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
-
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
-
-            var countryCode = employee.Address?.Country?.IsoCode;
-            var pdfBytes = _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
-
-            return pdfBytes;
+            throw new InvalidOperationException(NoCompanyInfoMessage);
         }
-        catch (Exception ex)
+
+        var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
+
+        var dateFormat = "dd.MM.yyyy";
+        if (!string.IsNullOrEmpty(countryId))
         {
-            _logger.LogError(ex, "Error generating invoice PDF");
-            return null;
+            var countryConfig = await _countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+            if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
+                dateFormat = countryConfig.DateFormat;
         }
+
+        var payoutDetails = await _employeePayoutDetailsRepository
+            .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
+
+        var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
+
+        var countryCode = employee.Address?.Country?.IsoCode;
+
+        return _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
     }
 
     private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string? countryId, CancellationToken cancellationToken)

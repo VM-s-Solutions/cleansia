@@ -2615,3 +2615,20 @@ anything** — a grep for `preferredOffer` across both trees returns only push a
 registrations. Both have the booking-time picker and the closure push; **the pending state is unbuilt on
 every platform.** So web derived its copy from the ADR plus the one shipped corpus that does exist — the
 five-locale closure push strings — rather than from a shape that was never there.
+
+---
+
+## N27 — one shape question the gate fix raised, for an Architect rather than a lane (2026-08-10)
+
+`PreferredOfferExit` is a **pure predicate type**. Closing the caller-term gap gave it an **async,
+repository-taking helper** — `CallerHasActiveMembershipAsync(session, membershipRepo, ct)` — sitting
+beside that predicate, because the alternative was two implementations of *"is this caller an active
+member"*: one in `ChoosePreferredCleaner.Validator` and one wherever the read path resolved it.
+
+The lane judged one implementation worth more than the type's purity, and said so rather than quietly
+choosing. I agree with the call — it is the exact drift class that ticket existed to close, and the
+disagreement it was closing had already cost three client lanes a workaround each. But it is the kind of
+thing a catalog entry could rule either way, and it is now a precedent whether or not anyone ratifies it.
+
+**Not blocking anything.** Recorded so the next reader of that file finds the reasoning rather than
+re-deriving it, and so a panel can rule on the shape without re-discovering the trade.

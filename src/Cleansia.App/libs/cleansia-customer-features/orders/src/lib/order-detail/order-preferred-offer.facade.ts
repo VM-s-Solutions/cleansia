@@ -24,7 +24,6 @@ import { resolvePreferredOfferView } from './order-preferred-offer.models';
 
 interface PreferredOfferConnection {
   order: Signal<OrderItem | null>;
-  hasMembership: Signal<boolean>;
   onChosen: () => void;
 }
 
@@ -46,7 +45,6 @@ export class OrderPreferredOfferFacade extends UnsubscribeControlDirective {
 
   private deps: PreferredOfferConnection | null = null;
   private readonly order = signal<Signal<OrderItem | null> | null>(null);
-  private readonly hasMembership = signal<Signal<boolean> | null>(null);
 
   readonly picking = signal(false);
   readonly listLoading = signal(false);
@@ -57,14 +55,7 @@ export class OrderPreferredOfferFacade extends UnsubscribeControlDirective {
 
   readonly offer = computed(() => resolvePreferredOfferView(this.order()?.() ?? null));
 
-  /**
-   * `PreferredOfferExit.IsOpen` answers about the order and says nothing about the caller, but the
-   * command's first gate is an active membership — so without this term the button is offered to
-   * every non-member and refused on tap.
-   */
-  readonly canChooseAnother = computed(
-    () => this.offer().canChooseAnother && this.hasMembership()?.() === true
-  );
+  readonly canChooseAnother = computed(() => this.offer().canChooseAnother);
 
   /** Silent for an order this perk never touched and can no longer touch. */
   readonly visible = computed(
@@ -81,7 +72,6 @@ export class OrderPreferredOfferFacade extends UnsubscribeControlDirective {
   connect(deps: PreferredOfferConnection): void {
     this.deps = deps;
     this.order.set(deps.order);
-    this.hasMembership.set(deps.hasMembership);
   }
 
   openPicker(): void {

@@ -87,7 +87,6 @@ export class OrderDetailComponent implements OnInit {
     const orderId = this.route.snapshot.paramMap.get('orderId');
     this.preferredOffer.connect({
       order: this.order,
-      hasMembership: computed(() => this.membership()?.hasMembership === true),
       // The offer state is server-derived, so the only way to render what the choice produced is to
       // read the order again.
       onChosen: () => orderId && this.loadOrder(orderId),

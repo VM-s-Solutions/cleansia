@@ -6,6 +6,8 @@ import {
   GetMyServingCleanersResponse,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
   PreferredOfferState,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
@@ -29,6 +31,8 @@ function cleaner(
 
 function buildOrder(fields: {
   orderStatus?: OrderStatus;
+  paymentType?: PaymentType;
+  paymentStatus?: PaymentStatus;
   state?: PreferredOfferState;
   canChooseAnother?: boolean;
   cleaningDateTime?: string;
@@ -38,6 +42,11 @@ function buildOrder(fields: {
   return OrderItem.fromJS({
     id: ORDER_ID,
     orderStatus: { value: fields.orderStatus ?? OrderStatus.New, name: 'New' },
+    paymentType: { value: fields.paymentType ?? PaymentType.Cash, name: 'Cash' },
+    paymentStatus: {
+      value: fields.paymentStatus ?? PaymentStatus.Paid,
+      name: 'Paid',
+    },
     cleaningDateTime: fields.cleaningDateTime ?? '2026-09-01T08:00:00Z',
     selectedServices: (fields.serviceIds ?? ['svc-1']).map((id) => ({ id })),
     selectedPackages: (fields.packageIds ?? []).map((id) => ({ id })),
@@ -57,7 +66,6 @@ describe('OrderPreferredOfferFacade', () => {
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let order: ReturnType<typeof signal<OrderItem | null>>;
-  let hasMembership: ReturnType<typeof signal<boolean>>;
   let onChosen: jest.Mock;
 
   function build(platform: 'server' | 'browser' = 'browser'): void {
@@ -71,7 +79,6 @@ describe('OrderPreferredOfferFacade', () => {
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
     order = signal<OrderItem | null>(null);
-    hasMembership = signal(true);
     onChosen = jest.fn();
 
     TestBed.resetTestingModule();
@@ -86,7 +93,7 @@ describe('OrderPreferredOfferFacade', () => {
     });
 
     facade = TestBed.inject(OrderPreferredOfferFacade);
-    facade.connect({ order, hasMembership, onChosen });
+    facade.connect({ order, onChosen });
   }
 
   beforeEach(() => build());
@@ -138,33 +145,63 @@ describe('OrderPreferredOfferFacade', () => {
       expect(facade.canChooseAnother()).toBe(false);
     });
 
-    it('is closed on a cancelled order the server would still accept', () => {
-      order.set(buildOrder({ orderStatus: OrderStatus.Cancelled }));
+    it('is closed on a cancelled order because the server closed it', () => {
+      order.set(
+        buildOrder({
+          orderStatus: OrderStatus.Cancelled,
+          canChooseAnother: false,
+        })
+      );
 
       expect(facade.canChooseAnother()).toBe(false);
     });
 
-    // The exit answers about the order and says nothing about the caller; the command's first gate
-    // is an active membership, so without this the button is offered to every non-member.
-    it('is closed for a customer without Plus', () => {
-      hasMembership.set(false);
-      order.set(buildOrder({}));
+    // The money axis: no fulfilment state names this order, so no client-side status set could
+    // have withheld the button. `OrderAvailability.IsOfferable` does, inside the server's flag.
+    it('is closed on an unpaid card order in no closed fulfilment state', () => {
+      order.set(
+        buildOrder({
+          orderStatus: OrderStatus.New,
+          paymentType: PaymentType.Card,
+          paymentStatus: PaymentStatus.Pending,
+          canChooseAnother: false,
+        })
+      );
 
       expect(facade.canChooseAnother()).toBe(false);
       expect(facade.visible()).toBe(true);
     });
 
-    it('renders nothing at all for a non-member whose order never carried a reservation', () => {
-      hasMembership.set(false);
+    // `PreferredOfferExit.IsOpen` opens with the caller's entitlement, so a non-member's order
+    // arrives already closed and this facade asks nothing further.
+    it('is closed for a customer without Plus because the server closed it', () => {
+      order.set(buildOrder({ canChooseAnother: false }));
+
+      expect(facade.canChooseAnother()).toBe(false);
+      expect(facade.visible()).toBe(true);
+    });
+
+    it('renders nothing at all for an order that never carried a reservation and cannot take one', () => {
       order.set(
-        buildOrder({ state: PreferredOfferState.None, canChooseAnother: true })
+        buildOrder({ state: PreferredOfferState.None, canChooseAnother: false })
       );
 
       expect(facade.visible()).toBe(false);
     });
 
+    /**
+     * The mutation guard for the deleted membership conjunct. This facade is connected to the
+     * order alone; a term about the caller re-introduced here reads a signal that no longer
+     * exists and reddens this row.
+     */
+    it('conjoins nothing of its own onto the flag the server sent', () => {
+      order.set(buildOrder({ canChooseAnother: true }));
+
+      expect(facade.canChooseAnother()).toBe(true);
+    });
+
     it('does not open the picker where it is closed', () => {
-      order.set(buildOrder({ orderStatus: OrderStatus.Cancelled }));
+      order.set(buildOrder({ canChooseAnother: false }));
 
       facade.openPicker();
 

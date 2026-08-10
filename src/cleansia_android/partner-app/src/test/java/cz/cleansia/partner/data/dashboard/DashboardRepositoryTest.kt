@@ -2,7 +2,6 @@ package cz.cleansia.partner.data.dashboard
 
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.api.client.DashboardApi
-import cz.cleansia.partner.api.model.DashboardStatsDto
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -36,8 +35,9 @@ class DashboardRepositoryTest {
 
     @Test
     fun clear_wipesTheCachedSnapshot() = runTest {
-        coEvery { dashboardApi.dashboardGetStats(any()) } returns Response.success(mockk<DashboardStatsDto>())
-        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(any()) } returns Response.success(mockk())
+        coEvery { dashboardApi.dashboardGetStats(any()) } returns Response.success(dashboardStatsDto())
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(any()) } returns
+            Response.success(availableJobsPreviewResponse())
         val repo = newRepo()
         repo.refresh(employeeId = null, force = false)
         assertTrue(repo.snapshot.value.loaded)
@@ -54,9 +54,10 @@ class DashboardRepositoryTest {
         var statsCalls = 0
         coEvery { dashboardApi.dashboardGetStats(any()) } answers {
             statsCalls++
-            Response.success(mockk<DashboardStatsDto>())
+            Response.success(dashboardStatsDto())
         }
-        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(any()) } returns Response.success(mockk())
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(any()) } returns
+            Response.success(availableJobsPreviewResponse())
         val repo = newRepo()
 
         repo.refresh(employeeId = null, force = false)

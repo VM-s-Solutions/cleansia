@@ -7,10 +7,10 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
-import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
+import cz.cleansia.partner.data.orders.PendingOffer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,7 +57,7 @@ class OrderDetailViewModel @Inject constructor(
      * Absent means an ordinary job, which is exactly right for the short-lead band, where the push
      * fires but nothing is withheld.
      */
-    val preferredOffer: StateFlow<PendingOfferItem?> = ordersRepository.pendingOffers
+    val preferredOffer: StateFlow<PendingOffer?> = ordersRepository.pendingOffers
         .map { offers -> offers.firstOrNull { it.id == orderId } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

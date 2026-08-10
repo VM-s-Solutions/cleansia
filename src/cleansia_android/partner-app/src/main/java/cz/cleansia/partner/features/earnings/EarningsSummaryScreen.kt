@@ -46,7 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.data.dashboard.DashboardStats
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -134,9 +134,8 @@ fun EarningsSummaryScreen(
  * when the period is still open. The big number on this screen.
  */
 @Composable
-private fun HeadlineEarningsCard(stats: DashboardStatsDto?) {
+private fun HeadlineEarningsCard(stats: DashboardStats?) {
     val symbol = remember(stats?.currencyCode) { currencySymbol(stats?.currencyCode) }
-    val amount = stats?.currentPeriodEarnings?.toDouble() ?: 0.0
     val isEstimate = stats?.latestInvoiceStatus.isNullOrBlank()
 
     Row(
@@ -162,7 +161,7 @@ private fun HeadlineEarningsCard(stats: DashboardStatsDto?) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = formatMoney(amount, symbol),
+                text = formatMoney(stats?.currentPeriodEarnings, symbol),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -179,7 +178,7 @@ private fun HeadlineEarningsCard(stats: DashboardStatsDto?) {
 
 /** Today / Week / Last-month numbers in a single card. */
 @Composable
-private fun BreakdownGrid(stats: DashboardStatsDto?) {
+private fun BreakdownGrid(stats: DashboardStats?) {
     val symbol = remember(stats?.currencyCode) { currencySymbol(stats?.currencyCode) }
     Column(
         modifier = Modifier
@@ -195,7 +194,7 @@ private fun BreakdownGrid(stats: DashboardStatsDto?) {
     ) {
         BreakdownRow(
             label = stringResource(R.string.earnings_today),
-            value = formatMoney(stats?.todayEarnings?.toDouble() ?: 0.0, symbol),
+            value = formatMoney(stats?.todayEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.todayCompletedCount ?: 0,
@@ -204,7 +203,7 @@ private fun BreakdownGrid(stats: DashboardStatsDto?) {
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_this_week),
-            value = formatMoney(stats?.weekEarnings?.toDouble() ?: 0.0, symbol),
+            value = formatMoney(stats?.weekEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.weekCompletedCount ?: 0,
@@ -213,7 +212,7 @@ private fun BreakdownGrid(stats: DashboardStatsDto?) {
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_last_month),
-            value = formatMoney(stats?.lastMonthEarnings?.toDouble() ?: 0.0, symbol),
+            value = formatMoney(stats?.lastMonthEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.lastMonthCompletedOrders ?: 0,
@@ -256,7 +255,7 @@ private fun BreakdownRow(label: String, value: String, secondary: String) {
  * returns null while the cleaner is between periods).
  */
 @Composable
-private fun PayPeriodCard(stats: DashboardStatsDto) {
+private fun PayPeriodCard(stats: DashboardStats) {
     val start = parseIsoDate(stats.currentPayPeriodStart) ?: return
     val end = parseIsoDate(stats.currentPayPeriodEnd) ?: return
     val payout = parseIsoDate(stats.nextPayoutDate)
@@ -417,7 +416,13 @@ private fun currencySymbol(code: String?): String {
         ?: code
 }
 
-private fun formatMoney(amount: Double, symbol: String): String {
+/**
+ * Null is "no stats on this screen at all" — the error state — and renders as an em dash. It can no
+ * longer mean a broken wire field: [DashboardStats] refuses those in the mapper rather than handing
+ * the screen a zero to print.
+ */
+private fun formatMoney(amount: Double?, symbol: String): String {
+    if (amount == null) return "\u2014"
     val formatted = String.format(Locale.getDefault(), "%,.0f", amount)
     return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }

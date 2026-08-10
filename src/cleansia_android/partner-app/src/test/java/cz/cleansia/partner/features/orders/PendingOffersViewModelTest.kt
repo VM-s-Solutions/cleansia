@@ -4,7 +4,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -43,7 +43,7 @@ class PendingOffersViewModelTest {
     private lateinit var ordersRepository: OrdersRepository
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
-    private lateinit var offers: MutableStateFlow<List<PendingOfferItem>>
+    private lateinit var offers: MutableStateFlow<List<PendingOffer>>
 
     private val weeklyCapKey = "order.weekly_limit_reached"
 
@@ -60,7 +60,7 @@ class PendingOffersViewModelTest {
 
     private fun viewModel() = PendingOffersViewModel(ordersRepository, errorTranslator, snackbar)
 
-    private fun offer(id: String) = PendingOfferItem(
+    private fun offer(id: String) = PendingOffer(
         id = id,
         displayOrderNumber = "CL-$id",
         cleaningDateTime = "2026-08-12T09:00:00Z",
@@ -77,9 +77,9 @@ class PendingOffersViewModelTest {
      * A server that keeps its own rows, because the ViewModel re-asks after every action and a stub
      * that always replays the same list would model a server that forgets the write it just accepted.
      */
-    private var serverRows: List<PendingOfferItem> = emptyList()
+    private var serverRows: List<PendingOffer> = emptyList()
 
-    private fun serverHolds(vararg rows: PendingOfferItem) {
+    private fun serverHolds(vararg rows: PendingOffer) {
         serverRows = rows.toList()
         coEvery { ordersRepository.refreshPendingOffers() } answers {
             offers.value = serverRows

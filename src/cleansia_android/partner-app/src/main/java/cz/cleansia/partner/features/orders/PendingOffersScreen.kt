@@ -53,7 +53,7 @@ import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 
 /**
@@ -78,7 +78,7 @@ fun PendingOffersScreen(
     val attempt by viewModel.attempt.collectAsStateWithLifecycle()
     val refusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
 
-    var pendingDecline by remember { mutableStateOf<PendingOfferItem?>(null) }
+    var pendingDecline by remember { mutableStateOf<PendingOffer?>(null) }
 
     LaunchedEffect(viewModel) { viewModel.confirmed.collect { onOpenOrder(it) } }
 
@@ -119,8 +119,8 @@ fun PendingOffersScreenContent(
     inFlight: OfferAttempt?,
     onNavigateBack: () -> Unit,
     onRetry: () -> Unit,
-    onConfirm: (PendingOfferItem) -> Unit,
-    onDeclineRequested: (PendingOfferItem) -> Unit,
+    onConfirm: (PendingOffer) -> Unit,
+    onDeclineRequested: (PendingOffer) -> Unit,
     onDismissRefusal: () -> Unit,
     nowMillis: Long = System.currentTimeMillis(),
 ) {
@@ -234,7 +234,7 @@ private fun OffersErrorState(onRetry: () -> Unit) {
 
 @Composable
 private fun PendingOfferCard(
-    offer: PendingOfferItem,
+    offer: PendingOffer,
     nowMillis: Long,
     inFlightAction: OfferAction?,
     actionsLocked: Boolean,
@@ -253,7 +253,7 @@ private fun PendingOfferCard(
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatOrderDateRange(offer.cleaningDateTime, offer.estimatedTime ?: 0),
+                    text = formatOrderDateRange(offer.cleaningDateTime, offer.estimatedTime),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -266,7 +266,7 @@ private fun PendingOfferCard(
                 }
             }
             Text(
-                text = formatOrderPrice(offer.totalPrice ?: 0.0, offer.currencyCode),
+                text = formatOrderPrice(offer.totalPrice, offer.currencyCode),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -293,8 +293,8 @@ private fun PendingOfferCard(
             }
         }
 
-        val rooms = offer.rooms ?: 0
-        val baths = offer.bathrooms ?: 0
+        val rooms = offer.rooms
+        val baths = offer.bathrooms
         if (rooms > 0 || baths > 0) {
             Text(
                 text = listOfNotNull(
@@ -327,7 +327,7 @@ private fun PendingOfferCard(
  */
 @Composable
 fun reservedUntilLabel(respondByUtc: String?, nowMillis: Long): String {
-    val deadline = respondBy(respondByUtc, nowMillis)
+    val deadline = respondByUtc?.let { respondBy(it, nowMillis) }
     return when (deadline?.day) {
         RespondByDay.Today -> stringResource(R.string.offer_reserved_until_today, deadline.time)
         RespondByDay.Tomorrow -> stringResource(R.string.offer_reserved_until_tomorrow, deadline.time)
@@ -338,7 +338,7 @@ fun reservedUntilLabel(respondByUtc: String?, nowMillis: Long): String {
 
 /** The disclosure that turns a priority into an assignment: this job is held for you, and until when. */
 @Composable
-fun ReservedForYouRow(respondByUtc: String?, nowMillis: Long = System.currentTimeMillis()) {
+fun ReservedForYouRow(respondByUtc: String, nowMillis: Long = System.currentTimeMillis()) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -364,7 +364,7 @@ private fun PendingOffersScreenPreview() {
         PendingOffersScreenContent(
             uiState = PendingOffersUiState.Loaded(
                 listOf(
-                    PendingOfferItem(
+                    PendingOffer(
                         id = "1",
                         displayOrderNumber = "CL-2026-0042",
                         cleaningDateTime = "2026-08-12T09:00:00Z",

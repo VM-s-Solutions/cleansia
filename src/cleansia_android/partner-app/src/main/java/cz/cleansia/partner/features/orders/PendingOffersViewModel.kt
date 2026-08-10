@@ -6,9 +6,9 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
+import cz.cleansia.partner.data.orders.PendingOffer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +25,7 @@ import javax.inject.Inject
 sealed interface PendingOffersUiState {
     data object Loading : PendingOffersUiState
     data object Error : PendingOffersUiState
-    data class Loaded(val offers: List<PendingOfferItem>) : PendingOffersUiState
+    data class Loaded(val offers: List<PendingOffer>) : PendingOffersUiState
 }
 
 enum class OfferAction { Confirm, Decline }
@@ -94,10 +94,10 @@ class PendingOffersViewModel @Inject constructor(
         if (ordersRepository.arePendingOffersStale()) refresh()
     }
 
-    fun confirm(offer: PendingOfferItem) =
+    fun confirm(offer: PendingOffer) =
         runAction(offer, OfferAction.Confirm) { ordersRepository.takeOrder(it) }
 
-    fun decline(offer: PendingOfferItem) =
+    fun decline(offer: PendingOffer) =
         runAction(offer, OfferAction.Decline) { ordersRepository.declinePreferredOffer(it) }
 
     fun dismissRefusal() {
@@ -114,12 +114,12 @@ class PendingOffersViewModel @Inject constructor(
     }
 
     private fun runAction(
-        offer: PendingOfferItem,
+        offer: PendingOffer,
         action: OfferAction,
         block: suspend (String) -> ApiResult<Unit>,
     ) {
-        val orderId = offer.id ?: return
         if (_actionState.value is ActionState.Submitting) return
+        val orderId = offer.id
         _attempt.value = OfferAttempt(orderId, offer.displayOrderNumber, action)
         _actionState.value = ActionState.Submitting
         _offerRefusal.value = null

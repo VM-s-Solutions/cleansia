@@ -75,7 +75,7 @@ class OrdersRepositoryPendingOffersTest {
         val result = repo.refreshPendingOffers()
 
         assertTrue(result is ApiResult.Error)
-        assertEquals(emptyList<PendingOfferItem>(), repo.pendingOffers.value)
+        assertEquals(emptyList<PendingOffer>(), repo.pendingOffers.value)
         assertTrue("a transient failure must not pretend the cache is warm", repo.arePendingOffersStale())
     }
 
@@ -137,7 +137,7 @@ class OrdersRepositoryPendingOffersTest {
 
         (repo as SessionScopedCache).clear()
 
-        assertEquals(emptyList<PendingOfferItem>(), repo.pendingOffers.value)
+        assertEquals(emptyList<PendingOffer>(), repo.pendingOffers.value)
         assertTrue(repo.arePendingOffersStale())
     }
 }

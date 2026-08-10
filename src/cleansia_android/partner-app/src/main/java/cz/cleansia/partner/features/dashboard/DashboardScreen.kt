@@ -68,10 +68,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
-import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
+import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
+import cz.cleansia.partner.data.dashboard.DashboardStats
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.orders.toOrderStatus
 import cz.cleansia.partner.features.orders.PendingOffersCard
@@ -364,15 +364,15 @@ private fun todaysStateLine(count: Int): String = when (count) {
 @Composable
 private fun TodayHeroCard(
     nextJob: OrderListItem?,
-    preview: AvailableJobsPreviewResponse?,
+    preview: AvailableJobsPreview?,
     currencyCode: String?,
     onOpenOrders: () -> Unit,
     onOpenOrderDetail: (String) -> Unit,
 ) {
     when {
         nextJob != null -> NextJobHero(nextJob, onClick = { nextJob.id?.let(onOpenOrderDetail) })
-        (preview?.totalAvailableCount ?: 0) > 0 -> AvailableWorkHero(
-            preview = preview!!,
+        preview != null && preview.totalAvailableCount > 0 -> AvailableWorkHero(
+            preview = preview,
             currencyCode = currencyCode,
             onClick = onOpenOrders,
         )
@@ -514,13 +514,13 @@ private fun nextJobWhereLine(name: String?, address: String?): String? {
  */
 @Composable
 private fun AvailableWorkHero(
-    preview: AvailableJobsPreviewResponse,
+    preview: AvailableJobsPreview,
     currencyCode: String?,
     onClick: () -> Unit,
 ) {
     val currencySymbol = remember(currencyCode) { resolveCurrencySymbol(currencyCode) }
-    val jobsCount = preview.totalAvailableCount ?: 0
-    val potential = preview.totalPotentialEarnings ?: 0.0
+    val jobsCount = preview.totalAvailableCount
+    val potential = preview.totalPotentialEarnings
 
     // Layout exactly matches the customer-app's OrderAgainCard:
     // mascot (avatar) — label/title/subtitle column — trailing
@@ -692,7 +692,7 @@ private fun HeroPillCta(text: String) {
 /* ─── 3. Earnings split (Today / Week) ─── */
 
 @Composable
-private fun EarningsSplitRow(stats: DashboardStatsDto?, onClick: () -> Unit) {
+private fun EarningsSplitRow(stats: DashboardStats?, onClick: () -> Unit) {
     WeeklyEarningsHero(stats = stats, onClick = onClick)
 }
 
@@ -715,12 +715,12 @@ private fun EarningsSplitRow(stats: DashboardStatsDto?, onClick: () -> Unit) {
  * read as one family.
  */
 @Composable
-private fun WeeklyEarningsHero(stats: DashboardStatsDto?, onClick: () -> Unit) {
+private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
     val currencySymbol = remember(stats?.currencyCode) { resolveCurrencySymbol(stats?.currencyCode) }
-    val weekAmount = stats?.weekEarnings?.toDouble() ?: 0.0
+    val weekAmount = stats?.weekEarnings
     val weekJobs = stats?.weekCompletedCount ?: 0
-    val todayAmount = stats?.todayEarnings?.toDouble() ?: 0.0
-    val averagePerJob = if (weekJobs > 0) weekAmount / weekJobs else 0.0
+    val todayAmount = stats?.todayEarnings
+    val averagePerJob = weekAmount?.takeIf { weekJobs > 0 }?.div(weekJobs)
 
     // Customer-app design language: white surface, soft outline-
     // variant border, 16dp corners, no shadow, no gradient. Primary
@@ -790,12 +790,12 @@ private fun WeeklyEarningsHero(stats: DashboardStatsDto?, onClick: () -> Unit) {
             )
             // Single subtitle row mirrors OrderAgainCard's "title /
             // subtitle" rhythm — keeps the card to three text lines.
-            val todayLabel = if (todayAmount > 0)
+            val todayLabel = if (todayAmount != null && todayAmount > 0)
                 stringResource(R.string.dash_earnings_today) + " " +
                     formatMoneyWithSymbol(todayAmount, currencySymbol, fallback = "—")
             else
                 stringResource(R.string.dash_no_jobs_today_short)
-            val avgLabel = if (averagePerJob > 0.0)
+            val avgLabel = if (averagePerJob != null && averagePerJob > 0.0)
                 stringResource(R.string.dash_avg_per_job) + " " +
                     formatMoneyWithSymbol(averagePerJob, currencySymbol, fallback = "—")
             else null
@@ -840,8 +840,8 @@ private fun WeeklyEarningsHero(stats: DashboardStatsDto?, onClick: () -> Unit) {
  * supplied ISO code (e.g. "CZK") and falls back to device locale
  * only when the server hasn't told us the user's currency.
  */
-private fun formatMoneyWithSymbol(amount: Double, symbol: String, fallback: String): String {
-    if (amount <= 0.0) return fallback
+private fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
+    if (amount == null || amount <= 0.0) return fallback
     val rounded = String.format(Locale.getDefault(), "%,.0f", amount).replace(',', ' ')
     return if (symbol.isBlank()) rounded else "$rounded $symbol"
 }
@@ -872,7 +872,7 @@ private fun resolveCurrencySymbol(serverCode: String?): String {
 /* ─── 4. Pay period ─── */
 
 @Composable
-private fun PayPeriodCard(stats: DashboardStatsDto, onClick: () -> Unit) {
+private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
     val start = parseUtcDate(stats.currentPayPeriodStart) ?: return
     val end = parseUtcDate(stats.currentPayPeriodEnd) ?: return
     val today = LocalDate.now()
@@ -913,7 +913,7 @@ private fun PayPeriodCard(stats: DashboardStatsDto, onClick: () -> Unit) {
             }
             Spacer(Modifier.height(Spacing.XS))
             Text(
-                text = formatMoney(stats.currentPeriodEarnings?.toDouble()),
+                text = formatMoney(stats.currentPeriodEarnings),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -943,7 +943,7 @@ private fun PayPeriodCard(stats: DashboardStatsDto, onClick: () -> Unit) {
 /* ─── 5. Last month ─── */
 
 @Composable
-private fun LastMonthCard(stats: DashboardStatsDto?) {
+private fun LastMonthCard(stats: DashboardStats?) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -979,7 +979,7 @@ private fun LastMonthCard(stats: DashboardStatsDto?) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MetricColumn(
-                    value = formatMoney(stats?.lastMonthEarnings?.toDouble()),
+                    value = formatMoney(stats?.lastMonthEarnings),
                     label = stringResource(R.string.dash_last_month_earnings),
                 )
                 MetricColumn(
@@ -1010,7 +1010,7 @@ private fun MetricColumn(value: String, label: String) {
 }
 
 @Composable
-private fun RatingColumn(stats: DashboardStatsDto?) {
+private fun RatingColumn(stats: DashboardStats?) {
     val avg = stats?.averageRating
     val count = stats?.ratingCount ?: 0
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

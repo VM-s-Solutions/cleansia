@@ -2,7 +2,7 @@ package cz.cleansia.partner.features.orders
 
 import androidx.annotation.StringRes
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -19,7 +19,7 @@ data class RespondBy(val day: RespondByDay, val time: String, val date: String)
  * on, and the composable turns that into a sentence.
  */
 fun respondBy(
-    iso: String?,
+    iso: String,
     nowMillis: Long,
     zone: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
@@ -41,13 +41,13 @@ fun respondBy(
 }
 
 /** The offer whose reservation ends first — the one the cleaner has least time to answer. */
-fun soonestOffer(offers: List<PendingOfferItem>): PendingOfferItem? =
+fun soonestOffer(offers: List<PendingOffer>): PendingOffer? =
     offers.mapNotNull { offer -> parseInstant(offer.respondByUtc)?.let { offer to it } }
         .minByOrNull { it.second }
         ?.first
 
-private fun parseInstant(iso: String?): Instant? {
-    if (iso.isNullOrBlank()) return null
+private fun parseInstant(iso: String): Instant? {
+    if (iso.isBlank()) return null
     return runCatching { Instant.parse(iso) }.getOrNull()
 }
 

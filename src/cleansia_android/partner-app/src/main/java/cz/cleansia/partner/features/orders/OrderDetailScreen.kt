@@ -74,7 +74,7 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
@@ -253,7 +253,7 @@ fun OrderDetailScreen(
 private fun OrderDetailBottomSheetLayout(
     order: OrderItem,
     inFlight: OrderAction?,
-    preferredOffer: PendingOfferItem?,
+    preferredOffer: PendingOffer?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -467,7 +467,7 @@ private fun OrderDetailSheetContent(
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
-    preferredOffer: PendingOfferItem?,
+    preferredOffer: PendingOffer?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -699,7 +699,7 @@ private fun StickyActionFooter(
     inFlight: OrderAction?,
     canComplete: Boolean,
     needsCashCollection: Boolean,
-    preferredOffer: PendingOfferItem?,
+    preferredOffer: PendingOffer?,
     onTake: () -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,

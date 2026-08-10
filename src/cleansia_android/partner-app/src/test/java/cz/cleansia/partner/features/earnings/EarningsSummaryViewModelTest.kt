@@ -1,7 +1,7 @@
 package cz.cleansia.partner.features.earnings
 
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.data.dashboard.dashboardStats
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -31,7 +31,7 @@ class EarningsSummaryViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: ApiErrorTranslator
 
-    private val stats = mockk<DashboardStatsDto>()
+    private val stats = dashboardStats()
 
     @Before
     fun setUp() {

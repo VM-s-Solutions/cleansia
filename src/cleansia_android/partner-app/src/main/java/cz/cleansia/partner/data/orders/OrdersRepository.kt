@@ -26,6 +26,8 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
+import cz.cleansia.partner.data.mapWire
+import cz.cleansia.partner.data.required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -111,11 +113,11 @@ interface OrdersRepository {
      * fetched per screen because three surfaces read the same answer — the dashboard card, the offers
      * list, and the order detail's "this one is yours until…" banner.
      */
-    val pendingOffers: StateFlow<List<PendingOfferItem>>
+    val pendingOffers: StateFlow<List<PendingOffer>>
 
     fun arePendingOffersStale(): Boolean
 
-    suspend fun refreshPendingOffers(): ApiResult<List<PendingOfferItem>>
+    suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>>
 
     /**
      * Refuse a reservation. One server-side write — the hold ends now and the order returns to the
@@ -188,8 +190,8 @@ class OrdersRepositoryImpl @Inject constructor(
         OrdersPane.History to Staleness(),
     )
 
-    private val _pendingOffers = MutableStateFlow<List<PendingOfferItem>>(emptyList())
-    override val pendingOffers: StateFlow<List<PendingOfferItem>> = _pendingOffers.asStateFlow()
+    private val _pendingOffers = MutableStateFlow<List<PendingOffer>>(emptyList())
+    override val pendingOffers: StateFlow<List<PendingOffer>> = _pendingOffers.asStateFlow()
 
     private val pendingOffersStaleness = Staleness()
 
@@ -234,8 +236,9 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override fun arePendingOffersStale(): Boolean = pendingOffersStaleness.isStale()
 
-    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOfferItem>> =
+    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>> =
         safeApiCall(json) { orderApi.orderMyPendingOffers() }
+            .mapWire { rows -> rows.mapNotNull { it.toDomainOrNull() } }
             .onSuccess { offers ->
                 _pendingOffers.value = offers
                 pendingOffersStaleness.markFresh()
@@ -393,4 +396,48 @@ class OrdersRepositoryImpl @Inject constructor(
         safeApiCall(json) {
             orderApi.orderDeleteIssue(orderId = orderId, issueId = issueId)
         }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+}
+
+/**
+ * A job the platform reserved for this cleaner by name until a deadline the server owns (ADR-0045).
+ *
+ * `respondByUtc` and `cleaningDateTime` are non-null here even though only the money and scope fields
+ * read as obviously load-bearing: there is no state in which a live reservation has no expiry, and a
+ * nullable one kept a silent drop in [cz.cleansia.partner.features.orders.soonestOffer] where an offer
+ * with no deadline quietly stopped being the one the dashboard names.
+ */
+data class PendingOffer(
+    val id: String,
+    val displayOrderNumber: String?,
+    val cleaningDateTime: String,
+    val estimatedTime: Int,
+    val respondByUtc: String,
+    val customerAddressApproximate: String?,
+    val rooms: Int,
+    val bathrooms: Int,
+    val totalPrice: Double,
+    val currencyCode: String?,
+)
+
+/**
+ * Drops the unidentifiable row rather than failing the page: no surface sums these offers, so a lost
+ * one cannot falsify a figure, while refusing the page would hide every other reservation the server
+ * answered correctly. An id-less offer was inert anyway — both confirm and decline are keyed by it.
+ * Where a collection *is* the addends of a rendered total the ruling inverts; see
+ * [cz.cleansia.partner.data.invoices.toDomain].
+ */
+internal fun PendingOfferItem.toDomainOrNull(): PendingOffer? {
+    val offerId = id ?: return null
+    return PendingOffer(
+        id = offerId,
+        displayOrderNumber = displayOrderNumber,
+        cleaningDateTime = cleaningDateTime.required("cleaningDateTime"),
+        estimatedTime = estimatedTime.required("estimatedTime"),
+        respondByUtc = respondByUtc.required("respondByUtc"),
+        customerAddressApproximate = customerAddressApproximate,
+        rooms = rooms.required("rooms"),
+        bathrooms = bathrooms.required("bathrooms"),
+        totalPrice = totalPrice.required("totalPrice"),
+        currencyCode = currencyCode,
+    )
 }

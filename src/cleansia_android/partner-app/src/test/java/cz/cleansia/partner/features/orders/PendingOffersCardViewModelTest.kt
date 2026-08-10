@@ -2,7 +2,7 @@ package cz.cleansia.partner.features.orders
 
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -30,7 +30,7 @@ class PendingOffersCardViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var ordersRepository: OrdersRepository
-    private lateinit var offers: MutableStateFlow<List<PendingOfferItem>>
+    private lateinit var offers: MutableStateFlow<List<PendingOffer>>
 
     @Before
     fun setUp() {
@@ -43,7 +43,7 @@ class PendingOffersCardViewModelTest {
 
     private fun viewModel() = PendingOffersCardViewModel(ordersRepository)
 
-    private fun offer(id: String, respondByUtc: String) = PendingOfferItem(
+    private fun offer(id: String, respondByUtc: String) = PendingOffer(
         id = id,
         displayOrderNumber = "CL-$id",
         cleaningDateTime = "2026-08-12T09:00:00Z",

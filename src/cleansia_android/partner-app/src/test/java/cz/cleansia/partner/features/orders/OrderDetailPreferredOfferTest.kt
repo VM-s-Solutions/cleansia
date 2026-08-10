@@ -6,7 +6,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -40,7 +40,7 @@ class OrderDetailPreferredOfferTest {
     private lateinit var ordersRepository: OrdersRepository
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
-    private lateinit var offers: MutableStateFlow<List<PendingOfferItem>>
+    private lateinit var offers: MutableStateFlow<List<PendingOffer>>
 
     private val orderId = "order-1"
 
@@ -60,7 +60,7 @@ class OrderDetailPreferredOfferTest {
     private fun viewModel() =
         OrderDetailViewModel(SavedStateHandle(mapOf("orderId" to orderId)), ordersRepository, errorTranslator, snackbar)
 
-    private fun offer(id: String) = PendingOfferItem(
+    private fun offer(id: String) = PendingOffer(
         id = id,
         displayOrderNumber = "CL-$id",
         cleaningDateTime = "2026-08-12T09:00:00Z",

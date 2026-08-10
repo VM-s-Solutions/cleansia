@@ -1,7 +1,7 @@
 package cz.cleansia.partner.features.orders
 
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.PendingOfferItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
@@ -63,9 +63,12 @@ class PendingOfferPresentationTest {
         )
     }
 
+    /**
+     * A deadline can no longer be absent — [PendingOffer] refuses a null `respondByUtc` at the wire —
+     * but it can still be a string this client cannot parse, and a guess there is the same lie.
+     */
     @Test
-    fun `an absent or unparseable deadline resolves to nothing rather than a guess`() {
-        assertNull(respondBy(null, at("2026-08-10T09:00:00Z"), utc, en))
+    fun `an unparseable deadline resolves to nothing rather than a guess`() {
         assertNull(respondBy("", at("2026-08-10T09:00:00Z"), utc, en))
         assertNull(respondBy("not-a-date", at("2026-08-10T09:00:00Z"), utc, en))
     }
@@ -101,7 +104,7 @@ class PendingOfferPresentationTest {
     @Test
     fun `no offers means no soonest`() {
         assertNull(soonestOffer(emptyList()))
-        assertNull(soonestOffer(listOf(offer(id = "broken", respondByUtc = null))))
+        assertNull(soonestOffer(listOf(offer(id = "broken", respondByUtc = "not-a-date"))))
     }
 
     /**
@@ -122,7 +125,7 @@ class PendingOfferPresentationTest {
         assertNotEquals(confirm.bodyRes, decline.bodyRes)
     }
 
-    private fun offer(id: String, respondByUtc: String?) = PendingOfferItem(
+    private fun offer(id: String, respondByUtc: String) = PendingOffer(
         id = id,
         displayOrderNumber = "CL-$id",
         cleaningDateTime = "2026-08-12T09:00:00Z",

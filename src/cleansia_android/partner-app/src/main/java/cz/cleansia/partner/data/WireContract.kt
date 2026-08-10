@@ -4,10 +4,10 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
 /**
- * No partner payroll schema declares a `required` array, so the generator types every property
- * optional-with-null regardless of `nullable: false` and the contract lands in the repository's
- * mapper. A null in a field the spec marks non-nullable is a renamed or broken wire field, never a
- * zero — "0 Kč" to a cleaner who earned 4,800 is worse than an error screen.
+ * No schema in the partner mobile spec declares a `required` array, so the generator types every
+ * property optional-with-null regardless of `nullable: false` and the contract lands in the
+ * repository's mapper. A null in a field the spec marks non-nullable is a renamed or broken wire
+ * field, never a zero — "0 Kč" to a cleaner who earned 4,800 is worse than an error screen.
  */
 internal class WireContractViolation(field: String) :
     IllegalStateException("$field is null but the mobile API contract declares it non-nullable")

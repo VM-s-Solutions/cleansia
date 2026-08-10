@@ -93,26 +93,37 @@ private fun Int.toWirePaymentType(): GenPaymentType? = when (this) {
 // Drop the response entirely (return null → caller sees a 200-with-null body)
 // when a load-bearing required field is missing.
 
+/**
+ * `QuoteOrder_Response` declares no `required` array, so the generator types every property
+ * optional-with-null regardless of `nullable: false` and the whole contract lands here. Nothing on
+ * this response is defaulted: it is the number the customer agrees to before they pay, and a zero
+ * this client invented is a price the server never sent.
+ *
+ * `exchangeRate` is the one that looked harmless — it defaulted to `1.0`, which is not neutral but a
+ * silent claim of parity, off by 24.75× on a CZK order priced in EUR. `appliedDiscountSource`
+ * defaulted to `0` = None, reporting no discount over a total that already had one deducted.
+ *
+ * The three nullable-by-design discounts stay nullable: absent means "no tier discount", which is a
+ * different sentence from "a 0 Kč tier discount applied".
+ */
 private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
-    val currencyId = currencyId ?: return null
-    val currencyCode = currencyCode ?: return null
     return QuoteOrderResponse(
-        totalPrice = totalPrice ?: 0.0,
-        finalPriceAfterDiscount = finalPriceAfterDiscount ?: 0.0,
-        originalSubtotal = originalSubtotal ?: 0.0,
-        appliedDiscountSource = appliedDiscountSource?.value ?: 0,
+        totalPrice = totalPrice ?: return null,
+        finalPriceAfterDiscount = finalPriceAfterDiscount ?: return null,
+        originalSubtotal = originalSubtotal ?: return null,
+        appliedDiscountSource = appliedDiscountSource?.value ?: return null,
         tierDiscountAmount = tierDiscountAmount,
         membershipDiscountAmount = membershipDiscountAmount,
         tierDiscountMinOrderAmount = tierDiscountMinOrderAmount,
-        currencyId = currencyId,
-        currencyCode = currencyCode,
-        servicesSubtotal = servicesSubtotal ?: 0.0,
-        packagesSubtotal = packagesSubtotal ?: 0.0,
-        extrasSubtotal = extrasSubtotal ?: 0.0,
-        expressSurchargeApplied = expressSurchargeApplied ?: false,
-        expressSurchargeAmount = expressSurchargeAmount ?: 0.0,
-        expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: false,
-        exchangeRate = exchangeRate ?: 1.0,
+        currencyId = currencyId ?: return null,
+        currencyCode = currencyCode ?: return null,
+        servicesSubtotal = servicesSubtotal ?: return null,
+        packagesSubtotal = packagesSubtotal ?: return null,
+        extrasSubtotal = extrasSubtotal ?: return null,
+        expressSurchargeApplied = expressSurchargeApplied ?: return null,
+        expressSurchargeAmount = expressSurchargeAmount ?: return null,
+        expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: return null,
+        exchangeRate = exchangeRate ?: return null,
     )
 }
 

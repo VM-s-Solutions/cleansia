@@ -26,7 +26,7 @@ data class OrderListResponseDto(
 /** Mirrors backend `OrderListItem`. */
 @Serializable
 data class OrderListItemDto(
-    val id: String? = null,
+    val id: String,
     val customerName: String? = null,
     val customerEmail: String? = null,
     val customerPhone: String? = null,
@@ -40,10 +40,10 @@ data class OrderListItemDto(
     val cleaningDateTime: String? = null,
     val paymentType: CodeDto? = null,
     val paymentStatus: CodeDto? = null,
-    val totalPrice: Double = 0.0,
-    val originalSubtotal: Double = 0.0,
+    val totalPrice: Double,
+    val originalSubtotal: Double,
     /** 0=None, 1=Tier, 2=Membership, 3=Promo. */
-    val appliedDiscountSource: Int = 0,
+    val appliedDiscountSource: Int,
     val tierDiscountAmount: Double? = null,
     val membershipDiscountAmount: Double? = null,
     val promoDiscountAmount: Double? = null,
@@ -67,7 +67,7 @@ data class OrderListItemDto(
 /** Mirrors backend `OrderItem` (GetById response). */
 @Serializable
 data class OrderDetailDto(
-    val id: String? = null,
+    val id: String,
     val displayOrderNumber: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,
@@ -79,10 +79,10 @@ data class OrderDetailDto(
     val cleaningDateTime: String? = null,
     val paymentType: CodeDto? = null,
     val paymentStatus: CodeDto? = null,
-    val totalPrice: Double = 0.0,
-    val originalSubtotal: Double = 0.0,
+    val totalPrice: Double,
+    val originalSubtotal: Double,
     /** 0=None, 1=Tier, 2=Membership, 3=Promo. */
-    val appliedDiscountSource: Int = 0,
+    val appliedDiscountSource: Int,
     val tierDiscountAmount: Double? = null,
     val membershipDiscountAmount: Double? = null,
     val promoDiscountAmount: Double? = null,
@@ -312,10 +312,10 @@ data class ConfirmRecurringOrderResponse(
 @Serializable
 data class CancelOrderResponse(
     val orderId: String? = null,
-    val feeRate: Double = 0.0,
-    val refundAmount: Double = 0.0,
-    val totalPrice: Double = 0.0,
-    val refundInitiated: Boolean = false,
+    val feeRate: Double,
+    val refundAmount: Double,
+    val totalPrice: Double,
+    val refundInitiated: Boolean,
 )
 
 /**
@@ -333,12 +333,12 @@ data class CancelOrderResponse(
 data class CancellationFeePreviewDto(
     val orderId: String? = null,
     val tier: Int? = null,
-    val feeRate: Double = 0.0,
-    val feeAmount: Double = 0.0,
-    val refundAmount: Double = 0.0,
-    val totalPrice: Double = 0.0,
+    val feeRate: Double,
+    val feeAmount: Double,
+    val refundAmount: Double,
+    val totalPrice: Double,
     val currencyCode: String? = null,
-    val expressWaiverForfeitedOnCancel: Boolean = false,
+    val expressWaiverForfeitedOnCancel: Boolean,
 )
 
 /**

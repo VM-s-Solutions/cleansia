@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import cz.cleansia.customer.api.model.AppliedDiscountSource as GenAppliedDiscountSource
 import cz.cleansia.customer.api.model.CreateOrderCommand as GenCreateOrderCommand
 import cz.cleansia.customer.api.model.CreateOrderResponse as GenCreateOrderResponse
 import cz.cleansia.customer.api.model.QuoteOrderResponse as GenQuoteOrderResponse
@@ -74,10 +75,14 @@ class BookingApiTest {
         coEvery { orderApi.orderQuote(any()) } returns Response.success(
             GenQuoteOrderResponse(
                 totalPrice = 1000.0,
+                finalPriceAfterDiscount = 900.0,
+                originalSubtotal = 1000.0,
+                appliedDiscountSource = GenAppliedDiscountSource._2,
                 currencyId = "c-1",
                 currencyCode = "CZK",
                 servicesSubtotal = 1000.0,
                 packagesSubtotal = 0.0,
+                extrasSubtotal = 0.0,
                 expressSurchargeApplied = false,
                 expressSurchargeAmount = 0.0,
                 expressSurchargeWaivedByMembership = true,

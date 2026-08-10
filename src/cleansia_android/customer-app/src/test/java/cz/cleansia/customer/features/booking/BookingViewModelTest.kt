@@ -148,6 +148,13 @@ class BookingViewModelTest {
     fun submit_givenCompleteUserAndCashFlow_returnsSuccessAndIdleState() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -189,6 +196,13 @@ class BookingViewModelTest {
     fun submit_givenSpecialInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -227,6 +241,13 @@ class BookingViewModelTest {
     fun submit_givenBlankSpecialInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -268,6 +289,13 @@ class BookingViewModelTest {
     fun submit_givenAccessInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -306,6 +334,13 @@ class BookingViewModelTest {
     fun submit_givenBlankAccessInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -370,6 +405,13 @@ class BookingViewModelTest {
         // Pre-cache a quote so the watcher (which fires on state changes during
         // the 400ms debounce window) doesn't compete with submit() for the API.
         val cachedQuote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -478,6 +520,13 @@ class BookingViewModelTest {
     fun submit_givenCardFlow_returnsCardPendingWithPaymentParams() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 50.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -523,6 +572,13 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_givenSuccessfulQuote_emitsQuotedState() = runTest {
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -545,6 +601,13 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_failureWithPriorCachedQuote_fallsBackToPrevious() = runTest {
         val firstQuote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -908,6 +971,10 @@ class BookingViewModelTest {
         surchargeApplied: Boolean = surcharge > 0.0,
         waived: Boolean = false,
     ) = QuoteOrderResponse(
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
         totalPrice = totalPrice,
         tierDiscountAmount = tierDiscount,
         membershipDiscountAmount = membershipDiscount,

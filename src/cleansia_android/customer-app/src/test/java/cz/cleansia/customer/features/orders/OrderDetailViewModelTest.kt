@@ -105,6 +105,9 @@ class OrderDetailViewModelTest {
     /** Wire values: Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */
     private fun order(statusValue: Int, notes: String? = null) = OrderDetailDto(
         id = orderId,
+        totalPrice = 4380.0,
+        originalSubtotal = 3650.0,
+        appliedDiscountSource = 2,
         notes = notes,
         orderStatus = CodeDto(type = "OrderStatus", name = "status-$statusValue", value = statusValue),
     )

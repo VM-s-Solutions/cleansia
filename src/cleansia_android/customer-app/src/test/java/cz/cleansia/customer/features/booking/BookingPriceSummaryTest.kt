@@ -162,6 +162,10 @@ class BookingPriceSummaryTest {
         surcharge: Double = 0.0,
         waived: Boolean = false,
     ) = QuoteOrderResponse(
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
         totalPrice = totalPrice,
         currencyId = "cur-1",
         currencyCode = "CZK",

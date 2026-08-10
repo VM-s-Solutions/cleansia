@@ -13,7 +13,16 @@ import org.junit.Test
 class CancelConfirmGateTest {
 
     private val loaded = CancellationPreviewUiState.Loaded(
-        CancellationFeePreviewDto(orderId = "order-1", tier = 3, feeAmount = 250.0, refundAmount = 750.0),
+        CancellationFeePreviewDto(
+            orderId = "order-1",
+            tier = 3,
+            feeRate = 0.25,
+            feeAmount = 250.0,
+            refundAmount = 750.0,
+            totalPrice = 1000.0,
+            currencyCode = "CZK",
+            expressWaiverForfeitedOnCancel = false,
+        ),
     )
 
     private fun enabled(

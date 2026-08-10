@@ -69,7 +69,12 @@ class OrderRepositoryTest {
 
     private fun newRepo() = OrderRepository(api, appContext)
 
-    private fun listItem(id: String) = OrderListItemDto(id = id)
+    private fun listItem(id: String) = OrderListItemDto(
+        id = id,
+        totalPrice = 4380.0,
+        originalSubtotal = 3650.0,
+        appliedDiscountSource = 2,
+    )
 
     // ── refresh() ──
 
@@ -200,7 +205,7 @@ class OrderRepositoryTest {
 
     @Test
     fun getById_givenSuccess_returnsBody() = runTest {
-        val detail = OrderDetailDto(id = "o-1")
+        val detail = OrderDetailDto(id = "o-1", totalPrice = 4380.0, originalSubtotal = 3650.0, appliedDiscountSource = 2)
         coEvery { api.getById("o-1") } returns Response.success(detail)
 
         val result = newRepo().getById("o-1")
@@ -236,7 +241,13 @@ class OrderRepositoryTest {
 
     @Test
     fun cancel_givenSuccess_returnsResponse() = runTest {
-        val resp = CancelOrderResponse(orderId = "o-1", feeRate = 0.5, refundAmount = 10.0)
+        val resp = CancelOrderResponse(
+            orderId = "o-1",
+            feeRate = 0.5,
+            refundAmount = 10.0,
+            totalPrice = 20.0,
+            refundInitiated = true,
+        )
         coEvery { api.cancel(any()) } returns Response.success(resp)
 
         val result = newRepo().cancel("o-1", reason = "changed mind")
@@ -267,6 +278,7 @@ class OrderRepositoryTest {
             refundAmount = 750.0,
             totalPrice = 1000.0,
             currencyCode = "CZK",
+            expressWaiverForfeitedOnCancel = false,
         )
         coEvery { api.getCancellationPreview("o-1") } returns Response.success(preview)
 

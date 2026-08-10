@@ -64,6 +64,9 @@ class OrderDetailCancelPreviewTest {
         coEvery { repository.getById(orderId) } returns ApiResult.Success(
             OrderDetailDto(
                 id = orderId,
+                totalPrice = 1000.0,
+                originalSubtotal = 1000.0,
+                appliedDiscountSource = 0,
                 orderStatus = CodeDto(type = "OrderStatus", name = "Confirmed", value = 2),
             ),
         )
@@ -182,7 +185,13 @@ class OrderDetailCancelPreviewTest {
         coEvery { repository.getCancellationPreview(orderId) } returns
             ApiResult.Error(ApiError.Network("offline"))
         coEvery { repository.cancel(orderId, any()) } returns ApiResult.Success(
-            CancelOrderResponse(orderId = orderId, feeRate = 0.0, refundAmount = 0.0),
+            CancelOrderResponse(
+                orderId = orderId,
+                feeRate = 0.0,
+                refundAmount = 0.0,
+                totalPrice = 1000.0,
+                refundInitiated = false,
+            ),
         )
 
         val vm = viewModel()

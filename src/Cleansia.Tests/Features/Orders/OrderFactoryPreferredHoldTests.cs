@@ -207,6 +207,7 @@ public class OrderFactoryPreferredHoldTests
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            PayConfigRepositoryDouble.Holding(),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,

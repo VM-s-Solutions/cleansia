@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Features.Services.DTOs;
+﻿using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
@@ -10,7 +12,10 @@ public class GetServiceOverview
 {
     public record Request : IRequest<IEnumerable<ServiceListItem>>;
 
-    public class Handler(IServiceRepository serviceRepository) : IRequestHandler<Request, IEnumerable<ServiceListItem>>
+    public class Handler(
+        IServiceRepository serviceRepository,
+        IEmployeePayConfigRepository payConfigRepository)
+        : IRequestHandler<Request, IEnumerable<ServiceListItem>>
     {
         public async Task<IEnumerable<ServiceListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -22,7 +27,22 @@ public class GetServiceOverview
                 .Include(s => s.Category)
                 .ToListAsync(cancellationToken);
 
-            return services.Select(service => service.MapToDto());
+            // Bookable is IsActive AND quotable. Offering an entry with no platform-wide pay config
+            // books an order that shows no pay on any cleaner's board, so the wizard withholds it —
+            // the same treatment, and the same silence, a deactivated entry already gets.
+            var unquotable = (await PayCoverageLookup.FindGapsAsync(
+                    payConfigRepository,
+                    services
+                        .Select(s => new PayCoverageTarget(PayCoverageTargetKind.Service, s.Id, s.Name))
+                        .ToList(),
+                    employeeId: null,
+                    cancellationToken))
+                .Select(gap => gap.Id)
+                .ToHashSet();
+
+            return services
+                .Where(service => !unquotable.Contains(service.Id))
+                .Select(service => service.MapToDto());
         }
     }
 }

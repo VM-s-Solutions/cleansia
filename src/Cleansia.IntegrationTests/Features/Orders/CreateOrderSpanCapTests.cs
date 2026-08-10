@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
@@ -178,6 +179,14 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
         package.Id = PackageId;
         package.AddService(packagedService);
         context.Add(package);
+
+        // Every catalogue entry an order may carry needs its platform-wide pay config: OrderFactory
+        // refuses a selection that would quote nothing on a cleaner's board.
+        context.EmployeePayConfigs.AddRange(
+            EmployeePayConfig.CreateForService(LongServiceId, 100m, CurrencyId),
+            EmployeePayConfig.CreateForService(OverflowServiceId, 100m, CurrencyId),
+            EmployeePayConfig.CreateForService(PackagedServiceId, 100m, CurrencyId),
+            EmployeePayConfig.CreateForPackage(PackageId, 100m, CurrencyId));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

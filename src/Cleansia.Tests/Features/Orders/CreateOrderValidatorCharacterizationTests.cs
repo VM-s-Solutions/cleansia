@@ -67,7 +67,8 @@ public class CreateOrderValidatorCharacterizationTests
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            PayConfigRepositoryDouble.Holding());
 
     [Fact]
     public async Task AC1_HappyPath_Passes()

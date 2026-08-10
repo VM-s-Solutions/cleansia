@@ -55,7 +55,8 @@ public class CreateOrderExpressWaiverValidatorTests
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            PayConfigRepositoryDouble.Holding());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

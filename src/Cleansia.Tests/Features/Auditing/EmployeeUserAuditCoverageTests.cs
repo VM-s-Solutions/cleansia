@@ -75,7 +75,8 @@ public sealed class EmployeeUserAuditCoverageTests
         employeeRepository.Setup(r => r.GetQueryable()).Returns(new[] { employee }.AsQueryable().BuildMock());
 
         var handler = new ApproveEmployee.Handler(
-            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext);
+            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
         var result = await handler.Handle(
             new ApproveEmployee.Command(SubjectEmployeeId, "country-cz", "fast-track onboarding"),
             CancellationToken.None);
@@ -102,7 +103,8 @@ public sealed class EmployeeUserAuditCoverageTests
         employeeRepository.Setup(r => r.GetQueryable()).Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
 
         var handler = new ApproveEmployee.Handler(
-            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext);
+            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
         var result = await handler.Handle(
             new ApproveEmployee.Command("missing-emp", "country-cz"), CancellationToken.None);
 
@@ -259,6 +261,31 @@ public sealed class EmployeeUserAuditCoverageTests
         var mock = new Mock<IUserRepository>();
         mock.Setup(r => r.GetByEmailAsync(AdminEmail, It.IsAny<CancellationToken>())).ReturnsAsync(adminUser);
         return mock;
+    }
+
+    /// <summary>
+    /// A one-entry catalogue with its platform-wide pay config, so the approval reaches the audit write
+    /// through the real pay gate rather than past it on an empty catalogue.
+    /// </summary>
+    private static (IServiceRepository services, IPackageRepository packages, IEmployeePayConfigRepository payConfigs) CoveredCatalogue()
+    {
+        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d", 500m, 150m);
+        service.Id = "svc-audit";
+
+        var services = new Mock<IServiceRepository>();
+        services.Setup(r => r.GetAll()).Returns(new[] { service }.AsQueryable().BuildMock());
+
+        var packages = new Mock<IPackageRepository>();
+        packages.Setup(r => r.GetAll())
+            .Returns(Array.Empty<Cleansia.Core.Domain.Packages.Package>().AsQueryable().BuildMock());
+
+        var payConfigs = new Mock<IEmployeePayConfigRepository>();
+        payConfigs.Setup(r => r.GetAll()).Returns(new[]
+        {
+            Cleansia.Core.Domain.EmployeePayroll.EmployeePayConfig.CreateForService(service.Id, 250m, "czk")
+        }.AsQueryable().BuildMock());
+
+        return (services.Object, packages.Object, payConfigs.Object);
     }
 
     private static Employee BuildEmployee()

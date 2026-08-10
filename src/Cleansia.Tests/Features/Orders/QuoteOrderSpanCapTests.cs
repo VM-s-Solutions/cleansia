@@ -176,7 +176,8 @@ public class QuoteOrderSpanCapTests
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

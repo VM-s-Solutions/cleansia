@@ -239,6 +239,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             orderRepository,
             services.Object,
             packages.Object,
+            PayConfigRepositoryDouble.Holding(),
             new Mock<ICompanyInfoRepository>().Object,
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,

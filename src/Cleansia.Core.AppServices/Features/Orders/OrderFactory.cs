@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
@@ -23,6 +24,7 @@ public sealed class OrderFactory(
     IOrderRepository orderRepository,
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
+    IEmployeePayConfigRepository payConfigRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
     IVatCalculator vatCalculator,
@@ -55,6 +57,23 @@ public sealed class OrderFactory(
 
     public async Task<Order> CreateAsync(CreateOrderInput input, CancellationToken cancellationToken)
     {
+        // An order whose selection has no platform-wide pay config quotes NOTHING on every cleaner's
+        // board at once and counts as zero in their earnings. The gate sits here rather than only in
+        // CreateOrder.Validator because the recurring materializer reaches this factory without running
+        // that validator — the same reason the booked-span cap is enforced in both places. First,
+        // before any pricing work, so the refusal costs one query.
+        var payCoverageGaps = await PayCoverageLookup.FindSelectionGapsAsync(
+            serviceRepository, packageRepository, payConfigRepository,
+            input.SelectedServiceIds, input.SelectedPackageIds, cancellationToken);
+
+        if (payCoverageGaps.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "No platform-wide EmployeePayConfig covers: "
+                + string.Join(", ", payCoverageGaps.Select(gap => $"{gap.Kind} '{gap.Name}'"))
+                + ". An order carrying it would show no pay to any cleaner.");
+        }
+
         // Resolve the tier discount + membership discount given the user.
         // Anonymous (guest) bookings skip both and only see promo if the
         // caller already validated one. Snapshot stays on the Order so

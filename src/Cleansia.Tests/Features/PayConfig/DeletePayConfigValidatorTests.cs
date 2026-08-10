@@ -33,6 +33,9 @@ public class DeletePayConfigValidatorTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
+    private readonly Mock<IServiceRepository> _serviceRepository = new();
+    private readonly Mock<IPackageRepository> _packageRepository = new();
+    private readonly Mock<IOrderRepository> _orderRepository = new();
 
     public DeletePayConfigValidatorTests()
     {
@@ -42,13 +45,30 @@ public class DeletePayConfigValidatorTests
         _userRepository
             .Setup(r => r.GetByEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
+
+        // This suite pins the ORDER-PAY guard. The sibling coverage conjunct is held off by a
+        // retired, unbooked catalogue so a failure here still means what the test name says.
+        var retiredService = Cleansia.Core.Domain.Services.Service.Create("cat", "Retired", "d", 1m, 0m);
+        retiredService.Id = ServiceId;
+        retiredService.IsActive = false;
+        var retiredPackage = Cleansia.Core.Domain.Packages.Package.Create("Retired", "d", 1m);
+        retiredPackage.Id = PackageId;
+        retiredPackage.IsActive = false;
+        _serviceRepository.Setup(r => r.GetAll()).Returns(new[] { retiredService }.AsQueryable().BuildMock());
+        _packageRepository.Setup(r => r.GetAll()).Returns(new[] { retiredPackage }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetAll()).Returns(Array.Empty<Order>().AsQueryable().BuildMock());
+        _payConfigRepository.Setup(r => r.GetAll())
+            .Returns(Array.Empty<EmployeePayConfig>().AsQueryable().BuildMock());
     }
 
     private DeletePayConfig.Validator CreateValidator() => new(
         _userRepository.Object,
         _session.Object,
         _payConfigRepository.Object,
-        _orderPayRepository.Object);
+        _orderPayRepository.Object,
+        _serviceRepository.Object,
+        _packageRepository.Object,
+        _orderRepository.Object);
 
     private void ArrangeConfig(EmployeePayConfig config)
     {

@@ -37,6 +37,11 @@ public class CountryInvoiceLegalNoticeSeedTests
         Assert.Contains("\"LegalDisclaimerReviewStatus\" = 1", LegalNoticeStatement());
     }
 
+    // The property is "every row starts NotReviewed", and it used to be asserted as "the column is
+    // absent from the INSERT". That form was satisfiable only by a statement that could not run:
+    // LegalDisclaimerReviewStatus is NOT NULL with no database default, so omitting it aborted the
+    // whole seed transaction with 23502 and a fresh database came up with nothing in it at all. The
+    // review status is now written explicitly, and asserted at the value it is written to.
     [Fact]
     public void The_Insert_Leaves_Every_Country_Unreviewed_So_The_Fallback_Is_The_Default()
     {
@@ -44,7 +49,21 @@ public class CountryInvoiceLegalNoticeSeedTests
             Statements(),
             "INSERT INTO public\\.\"CountryInvoiceConfigs\" \\(([^)]*)\\)").Groups[1].Value;
 
-        Assert.DoesNotContain("LegalDisclaimer", insertColumns);
+        Assert.DoesNotContain("LegalDisclaimerTemplate", insertColumns);
+        Assert.DoesNotContain("LegalDisclaimerLanguageCode", insertColumns);
+        Assert.Contains("LegalDisclaimerReviewStatus", insertColumns);
+    }
+
+    [Fact]
+    public void Every_Seeded_Invoice_Config_Row_Is_Written_As_NotReviewed()
+    {
+        var sql = Statements();
+        var start = sql.IndexOf("INSERT INTO public.\"CountryInvoiceConfigs\"", StringComparison.Ordinal);
+        var values = sql[start..sql.IndexOf(';', start)];
+
+        var rows = Regex.Matches(values, @"generate_ulid\(\)::TEXT").Count;
+        Assert.Equal(10, rows);
+        Assert.Equal(rows, Regex.Matches(values, @",\s*0\)[,;]?\s*(\n|$)").Count);
     }
 
     // The reviewed notice and the fallback must never be the same string: if they were, nobody reading

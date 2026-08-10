@@ -200,6 +200,12 @@ public static class BusinessErrorMessage
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
     public const string EmployeeJobRadiusOutOfRange = "employee.job_radius_out_of_range";
+    // Approval asserts the cleaner can be quoted on the whole active catalogue, so an approved cleaner
+    // never opens the app to a board of blank pay. The refusal is emitted once PER uncovered catalogue
+    // entry with that entry's name as the failure's ErrorCode, so the ProblemDetails errors bag names
+    // what an admin has to configure — the remedy is BulkCreateEmployeePayConfigs or a platform-wide
+    // CreatePayConfig, and a bare "cannot approve" would get worked around instead.
+    public const string EmployeePayConfigMissing = "employee.pay_config_missing";
 
     // Employee Documents
     public const string DocumentNotFound = "employee_document.not_found";
@@ -247,6 +253,10 @@ public static class BusinessErrorMessage
     public const string PayConfigAlreadyExists = "pay_config.already_exists";
     public const string PayConfigNotFound = "pay_config.not_found";
     public const string PayConfigHasOrderPays = "pay_config.has_order_pays";
+    // The last platform-wide config for an entry that is still quoted — active, or carried by an
+    // existing order. Removing it blanks the pay on EVERY cleaner's board at once, which is the same
+    // end state as never configuring the entry, reached from the other direction.
+    public const string PayConfigLastForLiveCatalogueEntry = "pay_config.last_for_live_catalogue_entry";
     public const string PayConfigBasePayNegative = "pay_config.base_pay_negative";
     public const string PayConfigExtraPerRoomNegative = "pay_config.extra_per_room_negative";
     public const string PayConfigExtraPerBathroomNegative = "pay_config.extra_per_bathroom_negative";

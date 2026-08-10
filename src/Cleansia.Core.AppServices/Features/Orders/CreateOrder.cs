@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
@@ -21,6 +22,7 @@ public class CreateOrder
         private readonly IOrderRepository _orderRepository;
         private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
+        private readonly IEmployeePayConfigRepository _payConfigRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -29,10 +31,12 @@ public class CreateOrder
             IOrderPricingCalculator pricingCalculator,
             IOrderRepository orderRepository,
             IUserMembershipRepository userMembershipRepository,
-            IUserSessionProvider userSessionProvider)
+            IUserSessionProvider userSessionProvider,
+            IEmployeePayConfigRepository payConfigRepository)
         {
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
+            _payConfigRepository = payConfigRepository;
             _pricingCalculator = pricingCalculator;
             _orderRepository = orderRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -119,12 +123,23 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.OrderAddressExactlyOneRequired)
                 .WithName(nameof(Command.CustomerAddress));
 
+            // The pay-coverage terms mirror OrderFactory's backstop so the customer gets a 400 instead
+            // of a 500. They reuse the existing selection codes deliberately: the booking wizard never
+            // offers an entry without a platform-wide pay config, so a caller that reaches this is
+            // submitting an id it was not shown, and a dedicated customer-visible key would describe an
+            // internal payroll condition to the wrong audience.
             RuleFor(x => x.SelectedServiceIds)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
+                .MustAsync(HavePayCoverageAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(packageRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
+                .MustAsync(HavePackagePayCoverageAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
             // The two price rules are ORDERED and share one calculator run. The waiver rule goes first
@@ -195,6 +210,18 @@ public class CreateOrder
             CancellationToken cancellationToken)
             => await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
                 _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken);
+
+        private async Task<bool> HavePayCoverageAsync(
+            IEnumerable<string> serviceIds, CancellationToken cancellationToken) =>
+            (await PayCoverageLookup.FindSelectionGapsAsync(
+                _serviceRepository, _packageRepository, _payConfigRepository,
+                serviceIds, [], cancellationToken)).Count == 0;
+
+        private async Task<bool> HavePackagePayCoverageAsync(
+            IEnumerable<string> packageIds, CancellationToken cancellationToken) =>
+            (await PayCoverageLookup.FindSelectionGapsAsync(
+                _serviceRepository, _packageRepository, _payConfigRepository,
+                [], packageIds, cancellationToken)).Count == 0;
 
         private static bool OrderMustNotBeEmpty(Command command) => command.SelectedPackageIds.Any() ||
                                                                     command.SelectedServiceIds.Any();

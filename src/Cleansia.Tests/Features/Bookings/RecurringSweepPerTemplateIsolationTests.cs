@@ -282,6 +282,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             orderRepository,
             services.Object,
             packages.Object,
+            PayConfigRepositoryDouble.Holding(),
             new Mock<ICompanyInfoRepository>().Object,
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,

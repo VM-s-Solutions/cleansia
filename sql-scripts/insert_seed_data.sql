@@ -723,6 +723,46 @@ VALUES
    3499.00,
    '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами"}}');
 
+-- 9. EMPLOYEE PAY CONFIGS
+-- Every catalogue entry gets the PLATFORM-WIDE row (EmployeeId NULL). This is not optional data: an
+-- entry with no platform-wide config quotes NOTHING on every cleaner's board at once, so the booking
+-- wizard withholds it, no order may carry it, and no cleaner may be approved while one exists. A
+-- per-employee override is not a substitute — it answers for one cleaner and leaves the rest blank.
+--
+-- Derived from the Services/Packages rows rather than listed by name, so adding a catalogue entry
+-- above cannot leave a hole here. The rate is the JUNIOR template's multiplier (0.5), the same number
+-- BulkCreateEmployeePayConfigs uses for that grade — a starting point the admin tunes per entry or
+-- per cleaner, not a pricing decision made in a seed file.
+INSERT INTO public."EmployeePayConfigs" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "EmployeeId", "ServiceId", "PackageId",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "Description", "CurrencyId", "MinimumPay", "MaximumPay"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL, NULL, s."Id", NULL,
+       ROUND(s."BasePrice" * 0.5, 2), ROUND(s."PerRoomPrice" * 0.5, 2), 0, 0,
+       'Platform-wide default (junior template)',
+       (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+       0, 0
+FROM public."Services" s;
+
+INSERT INTO public."EmployeePayConfigs" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "EmployeeId", "ServiceId", "PackageId",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "Description", "CurrencyId", "MinimumPay", "MaximumPay"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL, NULL, NULL, p."Id",
+       ROUND(p."Price" * 0.5, 2), 0, 0, 0,
+       'Platform-wide default (junior template)',
+       (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+       0, 0
+FROM public."Packages" p;
+
 -- 12. ORDERS AND RELATED DATA
 -- First insert package services relationships
 INSERT INTO public."PackageServices" (
@@ -811,68 +851,70 @@ VALUES
 -- "LegalDisclaimerTemplate" is deliberately absent from this INSERT: every row starts with NO legal
 -- notice and LegalDisclaimerReviewStatus = 0 (NotReviewed), so the invoice prints the platform's
 -- generic English fallback. Only the UPDATE at the bottom of this section fills one in.
+-- The review status is written EXPLICITLY: the column is NOT NULL and carries no database default, so
+-- omitting it aborts the whole seed transaction with 23502 and a fresh database comes up empty.
 INSERT INTO public."CountryInvoiceConfigs" (
   "Id", "IsActive", "CountryId", "VatRequired", "VatRate",
   "DigitalSignatureRequired", "EInvoiceFormat",
-  "AdditionalFieldsJson"
+  "AdditionalFieldsJson", "LegalDisclaimerReviewStatus"
 )
 VALUES
   -- Czech Republic - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-   true, 0.21, false, 'PDF', NULL),
+   true, 0.21, false, 'PDF', NULL, 0),
 
   -- Germany - VAT 19%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
    true, 0.19, false, 'PDF',
-   '{"TaxNumber": "required", "UStIdNr": "optional"}'),
+   '{"TaxNumber": "required", "UStIdNr": "optional"}', 0),
 
   -- Austria - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL),
+   true, 0.20, false, 'PDF', NULL, 0),
 
   -- Poland - VAT 23%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
    true, 0.23, false, 'PDF',
-   '{"NIP": "required"}'),
+   '{"NIP": "required"}', 0),
 
   -- Slovakia - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL),
+   true, 0.20, false, 'PDF', NULL, 0),
 
   -- United States - No VAT
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
    false, 0.00, false, 'PDF',
-   '{"EIN": "optional", "StateTaxId": "optional"}'),
+   '{"EIN": "optional", "StateTaxId": "optional"}', 0),
 
   -- United Kingdom - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"VATNumber": "required"}'),
+   '{"VATNumber": "required"}', 0),
 
   -- France - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"SIRET": "required"}'),
+   '{"SIRET": "required"}', 0),
 
   -- Italy - VAT 22%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
    true, 0.22, false, 'PDF+XML',
-   '{"CodiceFiscale": "required", "PartitaIVA": "required"}'),
+   '{"CodiceFiscale": "required", "PartitaIVA": "required"}', 0),
 
   -- Spain - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
    true, 0.21, false, 'PDF',
-   '{"NIF": "required"}');
+   '{"NIF": "required"}', 0);
 
 -- Konstantní symbol — the PAYER's payment-type code on a Czech bank transfer (0308 = non-cash payment
 -- for goods and services), which is why it is configured here and not on a cleaner's bank record.

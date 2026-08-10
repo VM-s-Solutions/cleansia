@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
@@ -152,6 +153,12 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
             CategoryId, "Long Service", "Pushes the order over one work unit", LongServicePrice, 0m, LongServiceMinutes);
         longService.Id = LongServiceId;
         context.Add(longService);
+
+        // Every catalogue entry an order may carry needs its platform-wide pay config: OrderFactory
+        // refuses a selection that would quote nothing on a cleaner's board.
+        context.EmployeePayConfigs.AddRange(
+            EmployeePayConfig.CreateForService(ShortServiceId, 100m, CurrencyId),
+            EmployeePayConfig.CreateForService(LongServiceId, 100m, CurrencyId));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

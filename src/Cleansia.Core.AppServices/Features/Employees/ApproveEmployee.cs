@@ -1,10 +1,12 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
@@ -16,7 +18,10 @@ public class ApproveEmployee
     {
         public Validator(
             IEmployeeRepository employeeRepository,
-            ICountryRepository countryRepository)
+            ICountryRepository countryRepository,
+            IServiceRepository serviceRepository,
+            IPackageRepository packageRepository,
+            IEmployeePayConfigRepository payConfigRepository)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -66,6 +71,35 @@ public class ApproveEmployee
                 RuleFor(x => x.Notes)
                     .MaximumLength(1000).WithMessage(BusinessErrorMessage.MaxLength);
             });
+
+            // Declared LAST on purpose. Class-level cascade is Continue, so every chain runs and the
+            // clients localize the FIRST entry of the errors bag: an approval that is also blocked by a
+            // missing profile or an unserviced country must report that, not the catalogue condition
+            // behind it. One failure per uncovered entry, carrying the entry's NAME as the ErrorCode,
+            // because CreateProblemDetails keys the bag on the code — so the refusal an admin reads
+            // says which services and packages to configure rather than only that it refused.
+            RuleFor(x => x)
+                .CustomAsync(async (command, context, cancellationToken) =>
+                {
+                    if (string.IsNullOrEmpty(command.EmployeeId))
+                    {
+                        return;
+                    }
+
+                    var gaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
+                        serviceRepository, packageRepository, payConfigRepository,
+                        command.EmployeeId, cancellationToken);
+
+                    foreach (var gap in gaps)
+                    {
+                        context.AddFailure(new ValidationFailure(
+                            nameof(Command.EmployeeId),
+                            BusinessErrorMessage.EmployeePayConfigMissing)
+                        {
+                            ErrorCode = gap.Name
+                        });
+                    }
+                });
         }
     }
 
@@ -83,7 +117,10 @@ public class ApproveEmployee
         IEmployeeRepository employeeRepository,
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
-        IAuditContext auditContext)
+        IAuditContext auditContext,
+        IServiceRepository serviceRepository,
+        IPackageRepository packageRepository,
+        IEmployeePayConfigRepository payConfigRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -116,6 +153,16 @@ public class ApproveEmployee
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(Command.EmployeeId),
                     BusinessErrorMessage.EmployeeProfileIncomplete));
+            }
+
+            var payCoverageGaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
+                serviceRepository, packageRepository, payConfigRepository, employee.Id, cancellationToken);
+
+            if (payCoverageGaps.Count > 0)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(Command.EmployeeId),
+                    BusinessErrorMessage.EmployeePayConfigMissing));
             }
 
             var statusBefore = employee.ContractStatus;

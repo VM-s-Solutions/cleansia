@@ -256,6 +256,7 @@ public class OrderSpanCapTests
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,
@@ -272,7 +273,8 @@ public class OrderSpanCapTests
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

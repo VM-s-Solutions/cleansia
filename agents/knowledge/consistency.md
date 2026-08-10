@@ -550,7 +550,13 @@ temporary implementation shipped ahead of its end state carries, on the changed 
 ## Catalog claims about the tree — the deviating forms (2026-08-09)
 
 > **Enforced by:** `agents/tools/check-catalog-claims.mjs` —
-> **`(gate pending: catalog-claim-liveness checker — ticket owed)`** → **T1-CI** on landing. Rule and
+> **`agents/tools/check-catalog-claims.mjs`** (T-0574, landed `d8f357f1`) — **T2-ADVISORY** on the
+> corpus, **T1-CI** on its own self-test. Advisory rather than blocking because the measured baseline
+> is **15**, not zero, and claiming a blocking tier over a dirty baseline would break the very rule
+> being enforced. Promotion is one edit: drop `--warn` from `.github/workflows/catalog-claims.yml`
+> the day the corpus scan reports `C1 0 · C2 0 · C3 0`. Note the split — `--warn` is advisory about
+> the **catalog** and blocking about the **tool**: a reach failure exits 1 either way, because a
+> checker reporting zero violations while blind is the defect it exists to close. Rule and
 > the rejected alternatives: `conventions.md` §*"A claim about the tree carries its own retirement
 > condition"*. **The baseline is non-zero and unmeasured** — six instances were fixed on 2026-08-09;
 > the remaining role cards and catalog pages were not swept. That sweep is part of the ticket.

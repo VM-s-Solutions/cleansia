@@ -14,7 +14,7 @@
 | 2 | Autoscale | `autoscaleEnabled`, `autoscaleMinInstances`, `autoscaleMaxInstances` | `false`, 1, 3 | `true`, 1, 3 | yes |
 | 3 | Postgres HA + geo-backup | `postgresHighAvailabilityMode`, `postgresGeoRedundantBackup`, `postgresBackupRetentionDays` | `Disabled`, `Disabled`, 7 | `ZoneRedundant`, `Enabled`, 35 | yes (geo-backup only at first provision) |
 | 4 | ACR image retention | `acrImageRetentionEnabled`, `acrImageRetentionDays` | `false`, 30 | `true`, 30 | yes |
-| 5 | ~~App Insights sampling + ingestion cap~~ | **withdrawn — the resources it tuned no longer exist** (see §5) | — | — | — |
+| 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapMb`) | 10%, 500 MB/day | 50%, 5000 MB/day | yes (module params) |
 | 6 | VNet + private endpoints (Q-INFRA-03) | `privateNetworkingEnabled` | `false` | **`false` — the documented flag** | yes, see §6 |
 
 **Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
@@ -55,9 +55,8 @@ Vault references would swap a broken instance into production.
   processes; the 6 slots idle-unload since they are not Always On). On the authored **S1
   (1 vCPU / 1.75 GB)** that is tight at real load (EF + connection pools across 5 .NET APIs), and the
   autoscale rule is CPU-based — it will not relieve MEMORY pressure (scaling out replicates all sites
-  per instance). If prod shows memory-driven recycling (502/503 + worker restarts), step the plan SKU
-  to **S2 or P0v3** rather than tuning processes. Watch for it in the App Service platform metrics and
-  the Http5xx alert — App Insights is no longer deployed (§5), so there is no worker-restart trace.
+  per instance). If prod shows memory-driven recycling (502/503 + worker restarts in App Insights),
+  step the plan SKU to **S2 or P0v3** rather than tuning processes.
 
 **Workflow step (authored):** the six web-host deploy jobs in `.github/workflows/deploy-azure.yml`
 now run the full slot flow whenever `inputs.env == 'prod'`: deploy the artifact to the `staging` slot
@@ -107,30 +106,51 @@ swept. **Dev may flip this on too** (add `param acrImageRetentionEnabled = true`
 `weu.dev.bicepparam`) — the accumulation actually bites the dev registry first; kept default-off only
 to honor the byte-unchanged dev rule.
 
-## 5. ~~App Insights sampling + ingestion cap~~ — WITHDRAWN
+## 5. App Insights sampling + ingestion cap (module-internal env switch)
 
-This knob tuned the ingestion volume of a Log Analytics workspace and an Application Insights
-component that **no longer exist in any environment**. The owner ruled the workspace out of DEV and
-out of PROD-for-now: it was the largest single line on the Azure bill (~€49/month) and the sampling
-and daily-cap knobs below were an attempt to bound a cost the platform has now simply stopped paying.
+`modules/appInsights.bicep`, following its existing pattern of env-keyed internals. **Ingestion is the
+entire bill here** — dev measured 27.29 GB/month, all Analytics-tier, and that is where the ~€49/month
+line came from. Retention is not a lever (see below).
 
-`modules/appInsights.bicep` and `modules/queueAlerts.bicep` are deleted. They went together because
-Application Insights is workspace-based only — classic components are retired, and a component
-declared without `WorkspaceResourceId` gets a workspace auto-provisioned beside it, so a "component
-without a workspace" would have re-created the bill under a name the template does not control.
+- **`samplingPercentage`** — dev **10**, prod **50**. Dev was 100, i.e. no sampling at all; 10 puts dev
+  ingestion inside the 5 GB/month pay-as-you-go free grant. Prod stays 50 deliberately: prod is
+  authored, not deployed, so it is no part of the measured bill, and 50 is the rate at which the one
+  rule that reads this component still resolves (below). Re-derive prod from real traffic, not from
+  dev's number.
+- **`dailyCapMb`** — dev **500**, prod **5000**. The unit is MB because Bicep has no float type and the
+  useful dev value is fractional. `0` = uncapped. **The cap is a runaway-cost breaker, not a budget**:
+  when hit, ingestion stops until the next UTC day and every alert over the workspace goes blind — if
+  it trips in normal operation, raise it rather than live with it. Dev's previous 1 GB cap sat *above*
+  the 0.88 GB/day dev was actually running, which is precisely why a year of drift produced no signal;
+  500 MB is ~4× the new steady state and below the level a reverted sampling knob would restore.
+- **`retentionInDays` is NOT a cost knob** — dev 30, prod 90, both unchanged and both deliberately so.
+  31 days of analytics retention are included in the ingestion price, and Application Insights
+  (`App*`) tables are kept **90 days at no charge** on top of that. Both values sit inside those
+  allowances, so lowering either saves exactly €0 and only shortens the investigable window.
 
-**What a prod go-live now has to accept, stated plainly rather than left to be discovered:**
+**Two couplings a prod go-live must not tune blind:**
 
-- Prod exceptions are recorded in **Sentry only**, and only from the five .NET API hosts.
-  `SENTRY_DSN` is therefore mandatory in prod, not optional.
-- The **Functions host has no error telemetry at all** — it loads no Sentry SDK. Its only alert is
-  the `HealthCheckStatus` metric on `/api/health`, which catches a dead host, not a failing job.
-- **A poisoned queue message raises no alert.** The rule was a scheduled-query `LogAlert` over
-  storage diagnostic logs, and Azure Storage has no per-queue metric to rebuild it as a metric alert
-  (`QueueMessageCount` is account-wide, undimensioned, hourly). The durable `DeadLetter` row remains
-  and is the only trace; something has to go looking. Re-deploying `queueAlerts.bicep` — which means
-  re-deploying a workspace — is the only way back, and it is an owner cost decision.
-- Everything in `modules/alerts.bicep` still works: it is entirely platform metric alerts.
+- `alerts.bicep`'s exceptions spike reads `exceptions/count`, which is a **log-based** metric:
+  `AppExceptions | summarize sum(itemCount)`. Sampling leaves the count unbiased but resolvable only
+  in steps of `1/samplingPercentage` — steps of 2 against prod's threshold of 10, steps of 10 against
+  dev's 25. Lowering prod sampling without lowering what that threshold claims turns a paging rule
+  into a coin flip.
+- `Cleansia.Functions/host.json` excludes `Exception` from the worker's own adaptive sampling, which
+  means those exceptions reach the ingestion endpoint **unsampled** and are therefore sampled *here*.
+  `samplingPercentage` is the only sampler that host's exceptions ever meet.
+
+**The Basic table plan is not the lever it looks like.** All 27.29 GB is Analytics at $2.99/GB against
+Basic's $0.65, but per Microsoft's current table-feature matrix `AppDependencies`, `AppRequests`,
+`AppExceptions`, `AppMetrics` and `AppPerformanceCounters` **do not support the Basic plan at all** —
+only `AppTraces` does (and `StorageQueueLogs`). Moving `AppTraces` would also give up the ability to
+purge personal data from it, which is the wrong trade one week after `e84aed25` found a live reset
+token on a `LogError` path. Revisit only if prod ingestion turns out to be `AppTraces`-dominated.
+
+**One real prod-only retention cost, recorded rather than fixed here:** the workspace's 90-day setting
+also applies to `StorageQueueLogs`, which is a resource-log table and so gets the 31-day allowance,
+not the 90-day one — prod pays retention on days 32-90 of it. The fix, if it ever matters, is a
+per-table retention override (a `Microsoft.OperationalInsights/workspaces/tables` child resource), not
+a change to the workspace default.
 
 ## 6. Q-INFRA-03 — VNet + private endpoints for Postgres + Storage (`privateNetworkingEnabled`)
 
@@ -154,8 +174,7 @@ flag" half of Q-INFRA-03. What flipping it to `true` does, atomically:
    attaches to the existing one.
 4. Storage network ACL default → `Deny` (public endpoint stays on with the `AzureServices` bypass, so
    trusted platform services and ARM control-plane operations — `listKeys` for `derivedSecrets`,
-   metric alerts — keep working). The template deploys no storage diagnostic settings any more: the
-   only one belonged to the deleted poison-queue alert (§5).
+   diagnostic settings, metric alerts — keep working).
 
 **Hard prerequisites before the owner flips it** (why it is not defaulted on):
 

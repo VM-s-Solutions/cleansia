@@ -24,30 +24,47 @@ One subscription, one resource group `rg-cleansia-weu-dev`, containing:
 | 7 | PostgreSQL Flexible | `pg-cleansia-weu-dev` | Burstable B1ms, PG 16, TLS-required |
 | 8 | Storage Account | `stcleansiaweudev` | LRS — blob containers + queues + Functions store |
 | 9 | Key Vault | `kv-cleansia-weu-dev` | RBAC mode, secret values owner-populated |
+| 10 | App Insights | `appi-cleansia-weu-dev` | workspace-backed, 10% ingestion sampling |
+| 11 | Log Analytics | `log-cleansia-weu-dev` | 30-day retention (dev), 500 MB/day cap |
 
-> ### ⓘ There is no Application Insights and no Log Analytics workspace — by owner ruling
+> ### ⓘ The two of them are one decision — and the cost knob is sampling, not the resource list
 >
-> Both were removed (the workspace was the single largest line on the bill, ~€49/month, and neither
-> environment needs it for now). They went **together**, not by choice: Application Insights is
-> workspace-based only — classic components are retired, and a component created with no
-> `WorkspaceResourceId` gets a workspace auto-provisioned beside it — so there is no "keep App
-> Insights, drop the workspace" configuration to keep.
+> Application Insights is **workspace-based only**: classic components are retired, and a component
+> created with no `WorkspaceResourceId` gets a Log Analytics workspace auto-provisioned beside it. So
+> "keep App Insights, drop the workspace" is not a configuration that exists — the two ship together
+> or not at all, and deleting the workspace deletes the component with it.
 >
-> What replaced them, and what did not:
+> The workspace was once the single largest line on the bill (~€49/month) because the module shipped
+> with **no sampling in dev at all**: 27.29 GB/month, every byte Analytics-tier. That is an ingestion
+> problem, and `modules/appInsights.bicep` now solves it where it lives:
 >
-> - **The five API hosts** keep error telemetry through **Sentry** (`UseSentryMonitoring()` on each
->   `Program.cs`, DSN from `Sentry--Dsn`). `SENTRY_DSN` is no longer optional in any meaningful
->   sense — it is the only off-box error signal those hosts have.
-> - **The Functions host and the Node SSR host have no error telemetry at all.** The Functions host
->   receives `Sentry__Dsn` but references no Sentry package and never initialises the SDK; the SSR
->   host is Node and never shipped a telemetry client.
-> - **Alerting survives in full except for two rules.** Every rule in `modules/alerts.bicep` is a
->   platform metric alert needing no workspace — per-site Http5xx and latency, the Functions
->   `HealthCheckStatus` probe, and the Postgres trio. The App Insights exceptions spike is **gone**
->   (its scope no longer exists), and so is the **poison-queue alert**: it was a `LogAlert`, which
->   cannot exist without a workspace, and Azure Storage publishes no per-queue metric to rebuild it
->   from (`QueueMessageCount` is account-wide, undimensioned and hourly). **A poisoned queue message
->   now raises no alert.** It still writes a durable `DeadLetter` row — a pull, not a page.
+> - **`samplingPercentage` = 10 in dev** (prod stays 50). Dev ingestion drops inside the 5 GB/month
+>   pay-as-you-go free grant, so the line is ~€0 rather than merely smaller.
+> - **`dailyCapMb` = 500 in dev** (prod stays 5000). The old 1 GB cap sat *above* the 0.88 GB/day dev
+>   was actually running, so it never fired and the drift was never surfaced. 500 MB is ~4× the new
+>   steady state and — the point — below the ~0.88 GB/day that reverting the sampling knob would
+>   restore, so the breaker can now catch its own removal.
+> - **Retention is NOT a cost knob and is unchanged.** 31 days of analytics retention are included in
+>   the ingestion price, and App Insights (`App*`) tables are kept 90 days at no charge on top. Dev's
+>   30 and prod's 90 both sit inside those allowances, so cutting either saves exactly €0 and only
+>   shortens how far back a bug can be investigated.
+>
+> What this does and does not buy you:
+>
+> - **Errors do not depend on it.** The five API hosts report through **Sentry**
+>   (`UseSentryMonitoring()` on each `Program.cs`, DSN from `Sentry--Dsn`) and so does the Functions
+>   worker (`AddSentryMonitoring` on its logging builder, `ac2243d2`). Sentry is **not sampled** — it
+>   is the first-occurrence, full-stack-trace path, and App Insights sampling never touches it.
+> - **The Node SSR host still ships nothing.** It receives the connection string as dead config (no
+>   telemetry client, no auto-instrumentation agent) — filed, not fixed.
+> - **The poison-queue alert needs the workspace.** `modules/queueAlerts.bicep` is a `LogAlert` over
+>   `StorageQueueLogs`, and Azure Storage publishes no per-queue metric to rebuild it as a metric
+>   alert (`QueueMessageCount` is account-wide, undimensioned, hourly). Every Function sweep in this
+>   system runs on a queue, so this is the alert that pages when durable work gives up.
+> - **Sampling costs alert resolution, and the number is knowable.** `exceptions/count` is a
+>   *log-based* metric — the count is restored via `sum(itemCount)`, unbiased but resolvable only in
+>   steps of `1/sampling`. At dev's 10 that is steps of 10 against a threshold of 25. If you lower
+>   `samplingPercentage` further, lower that threshold's meaning with it.
 
 The deployment also creates: 6 blob containers (`order-photos`, `employee-documents`,
 `generated-receipts`, `generated-invoices`, `user-files`, `dispute-evidence`), 14 queues
@@ -260,7 +277,7 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `SendGrid--PeriodClosedTemplateId` | `d-75a0f9cfdcc44eabb617de12e28d784d` |
   | `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `SendGrid--PeriodEndReminderTemplateId` | `d-d8428c5ffff14355a59d0a35023445da` |
   | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `SendGrid--OrderStatusUpdateTemplateId` | your `d-…` id (from your user-secrets) |
-  | `SENTRY_DSN` | `Sentry--Dsn` | **the ONLY error tracking the five API hosts have.** App Insights is gone (§0), so an empty DSN is now a blind posture, not a supported one: an unhandled 500 leaves a metric-alert count and nothing else — no stack trace, no first-occurrence mail. Sentry's free tier covers dev. Prod: set it. Note it buys nothing on the Functions host, which delivers this setting but loads no Sentry SDK. |
+  | `SENTRY_DSN` | `Sentry--Dsn` | **the only UNSAMPLED, first-occurrence error path** — on the five APIs and, since `ac2243d2`, the Functions worker. App Insights (§0) carries exceptions too, but at 10% in dev and behind threshold alerts, so an empty DSN means an unhandled 500 has a 1-in-10 chance of being recorded and no chance of mailing you about the first one. Sentry's free tier covers dev. Prod: set it. |
   | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
   | `FISCAL_CZECH_EET2_API_KEY` | `Fiscal--CzechEet2--ApiKey` | leave UNSET until fiscal go-live — setting BOTH fiscal secrets flips `fiscalSecretProvisioned` and wires the KV references |
   | `FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD` | `Fiscal--CzechEet2--CertificatePassword` | leave UNSET until fiscal go-live (see above) |
@@ -449,16 +466,29 @@ Paste those into `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` / `_ADMIN` (step 4), 
 - [ ] Both SPAs load + reach their API (CORS correct).
 - [ ] Storage pipeline: a payment → `generate-receipt` queue → Functions → a PDF lands in `generated-receipts`.
 - [ ] Migrations applied (the app starts without a schema error).
-- [ ] **API error telemetry is arriving in Sentry.** App Insights was removed (§0), so this is the
-      replacement check and it covers the five .NET API hosts only. Confirm `Sentry--Dsn` holds a real
-      DSN, hit an endpoint that throws, and confirm the event lands in the Sentry project within a
-      minute. **No event means those five hosts are running blind** — check the secret resolved
-      (Configuration → Application settings) and restart the site; App Service caches settings from
-      process start, and `UseSentryMonitoring()` treats a blank DSN as "disabled" without complaining.
-- [ ] **Know what this check does NOT cover** and accept it before calling dev green: the Functions
-      host (no Sentry SDK loaded) and the Node SSR host (no telemetry client) report nothing. For the
-      Functions host the surviving signals are the `HealthCheckStatus` metric alert and, for a
-      poisoned message, a `DeadLetter` row you have to go look at — nothing pages you.
+- [ ] **API telemetry is arriving** (T-0500 — this is the check that the exporter is actually reached;
+      it was written and unreachable through every deploy since 2026-07-02 and nothing failed). Wait
+      ~3 minutes after the hosts are up, then in App Insights `appi-cleansia-weu-dev` → Logs:
+
+      ```kql
+      union requests, traces, exceptions
+      | where timestamp > ago(30m)
+      | summarize count() by cloud_RoleName, itemType
+      ```
+
+      Expect a row per API host, not the Functions host alone. `cloud_RoleName` is the host's application
+      name. **No rows means the exporter did not register** — check `APPLICATIONINSIGHTS_CONNECTION_STRING`
+      is present on the site (Configuration → Application settings) and restart it; App Service caches
+      settings from process start. Counts are 1-in-10 of reality at dev's sampling — read presence, not
+      volume; `summarize sum(itemCount)` restores the true numbers.
+- [ ] **Error telemetry is arriving in Sentry**, independently of the above. Confirm `Sentry--Dsn` holds
+      a real DSN, hit an endpoint that throws, and confirm the event lands in the Sentry project within a
+      minute. This is the unsampled path and the only first-occurrence one, and it now covers the
+      Functions worker as well as the five APIs (`ac2243d2`). **No event means those hosts have only
+      threshold alerts** — check the secret resolved and restart the site; `UseSentryMonitoring()` and
+      `AddSentryMonitoring()` both treat a blank DSN as "disabled" without complaining.
+- [ ] **Know what neither check covers**: the Node SSR host ships no telemetry to either sink. It
+      receives `APPLICATIONINSIGHTS_CONNECTION_STRING` as dead config — filed, not fixed.
 
 When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the stable base URLs the
 **iOS apps point at** — the whole reason for this wave.
@@ -475,7 +505,7 @@ When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the st
 [ ] 4.  GitHub Environments dev-weu (open) + prod-weu (protected); add the dev-weu secrets
         (ACR_NAME = acrcleansiaweudev ; ADMIN_IP_ADDRESS = your laptop IP)
 [ ] 4b. In Cloud Shell: git clone the repo, cd cleansia  (steps 5 + the manual EF bundle need the files)
-[ ] 5.  First provision: az deployment group create (from inside cleansia/) → all 9 resources + KV empty
+[ ] 5.  First provision: az deployment group create (from inside cleansia/) → all 11 resources + KV empty
 [ ] 6.  Grant self Secrets Officer; set every Key Vault secret value; restart API hosts  (plain az, anywhere)
 [ ] 7.  (Migrations apply automatically on the CI deploy; manual bundle needs the .NET SDK — rarely)
 [ ] 8.  Fill the 2 SWA deploy tokens; first deploy = merge to master (auto) OR Actions → Run workflow.
@@ -551,7 +581,7 @@ work the YAML cannot do. Do it **in this order**:
 | `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `d-…` | KV push |
 | `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `d-…` | KV push |
 | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `d-…` | KV push |
-| `SENTRY_DSN` | the **real** prod DSN — **mandatory**, not a nice-to-have. App Insights is not deployed in prod either (§0), so Sentry is the only place a prod exception is recorded at all, and it is the only source of first-occurrence alerting, issue grouping and regression detection. Covers the five API hosts; the Functions and SSR hosts remain uncovered | KV push → `Sentry--Dsn` |
+| `SENTRY_DSN` | the **real** prod DSN — **mandatory**, not a nice-to-have. Prod App Insights samples at 50%, so it records every other exception; Sentry records all of them and is the only source of first-occurrence alerting, issue grouping and regression detection. Covers the five API hosts and the Functions worker; the SSR host remains uncovered | KV push → `Sentry--Dsn` |
 | `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
 
 > The 2 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`)

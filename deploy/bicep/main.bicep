@@ -285,16 +285,26 @@ var apiSiteNames = [for host in apiHosts: 'api-cleansia-${host.audience}-${regio
 var ssrSiteName = 'web-cleansia-customer-${region}-${env}'
 
 // ---------------------------------------------------------------------------------------------------
-// Foundation: secret store, storage, registry, database.
+// Foundation: observability, secret store, storage, registry, database.
 //
-// There is no Application Insights / Log Analytics module. Application Insights is workspace-based
-// only (classic components are retired: a component created without WorkspaceResourceId gets a Log
-// Analytics workspace auto-provisioned beside it), so "App Insights without a workspace" is not a
-// configuration that exists — dropping the workspace drops the component with it. Error telemetry is
-// Sentry (Sentry__Dsn) on the five API hosts AND on the Functions worker, which was wired in ac2243d2
-// precisely because this removal would otherwise have left it with none. The SSR (Node) host still
-// ships nothing — filed, not fixed.
+// appInsights.bicep ships the component AND its Log Analytics workspace because there is no shape in
+// which it ships one of them: Application Insights is workspace-based only (classic components are
+// retired, and a component declared without WorkspaceResourceId gets a workspace auto-provisioned
+// beside it), so "keep App Insights, drop the workspace" is not a configuration that exists. The cost
+// lever is that module's sampling + daily-cap knobs, not the resource list. Error telemetry does not
+// depend on any of it: Sentry (Sentry__Dsn) covers the five API hosts and, since ac2243d2, the
+// Functions worker, on its own unsampled path. The SSR (Node) host ships to neither — filed, not fixed.
 // ---------------------------------------------------------------------------------------------------
+
+module appInsights 'modules/appInsights.bicep' = {
+  name: 'appInsights'
+  params: {
+    location: location
+    region: region
+    env: env
+    tags: commonTags
+  }
+}
 
 module keyVault 'modules/keyVault.bicep' = {
   name: 'keyVault'
@@ -422,8 +432,8 @@ var customerWebAuthSettings = union(
 )
 
 // App settings shared by every API host: DB + Storage + JWT + SendGrid + Sentry + Mapbox Key Vault
-// references. The `__` -> `:` App Service mapping means the app reads its existing config keys with
-// no code change (ADR-0015 D4).
+// references, plus the (non-secret) App Insights connection string. The `__` -> `:` App Service
+// mapping means the app reads its existing config keys with no code change (ADR-0015 D4).
 // The customer SSR host — the base for customer-facing links in emails/Stripe redirects (reset
 // password, order status, checkout success/cancel). The SSR default hostname until the `ssr` custom
 // domain is configured — then the links move onto it.
@@ -464,6 +474,12 @@ var apiBaseSettings = union({
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: mapboxTokenKvRef
+  // Read by Cleansia.ServiceDefaults `AddTelemetryExporters`, which registers the Azure Monitor OTel
+  // exporter only when this is non-empty. It was inert on every API host until T-0500: the exporter
+  // existed but hung off an AddServiceDefaults overload no host calls, so the value arrived and nothing
+  // read it. Deleting it silently disables the App Insights export — the registration is skipped, not
+  // failed — leaving Sentry as these hosts' sole error path. It is not decoration.
+  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
   // ADR-0003 D3: the app refuses to boot in non-Development unless it's told which proxy network to
   // trust for X-Forwarded-For. Behind App Service the only hop is the App Service front end, which
   // forwards from its internal range — 100.64.0.0/10 (carrier-grade NAT, what App Service uses). The /10
@@ -659,6 +675,14 @@ module ssr 'modules/appService.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
     appSettings: {
+      // DEAD CONFIG on this host, deliberately kept — unlike the five .NET APIs, nothing here reads it.
+      // The SSR app is Node and ships no telemetry client, and the App Service Node auto-instrumentation
+      // agent is off (it needs ApplicationInsightsAgent_EXTENSION_VERSION, which no host sets). So this
+      // site is the one place the setting still means nothing, and it costs no ingestion for the same
+      // reason. Turning it on is an owner decision, not a template one: either add the
+      // `applicationinsights` npm package to apps/cleansia.app/server.ts or set the agent app setting
+      // here (T-0500).
+      APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
       // server.ts fronts Mapbox forward-geocoding at /api/mapbox/geocode so the token never reaches
       // the browser (the Mapbox REST API authenticates ONLY via an `access_token` query parameter,
       // which would otherwise leak into history/referrer/CDN+APM logs). The proxy reads
@@ -724,12 +748,14 @@ module functionApp 'modules/functionApp.bicep' = {
     keyVaultUri: keyVaultUri
     storageAccountName: storage.outputs.storageAccountName
     storageAccountId: storage.outputs.storageAccountId
+    appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
     // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
     // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
-    // and FunctionInvocationErrorMiddleware depend on. A blank DSN disables Sentry silently rather
-    // than throwing, so an unpopulated secret leaves this host with only the HealthCheckStatus metric
-    // alert and the durable DeadLetter rows. Populate it.
+    // and FunctionInvocationErrorMiddleware depend on. It is a SECOND, unsampled path alongside the
+    // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
+    // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
+    // while leaving only threshold alerts. Populate it.
     extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
@@ -782,20 +808,12 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Alerting (ADR-0015 D2/D3) — Action Group + platform metric alerts over the six web hosts, the
-// Functions host's health probe, and Postgres. Deployed only when an alert email is supplied (dev
-// today; prod wires its own address when it goes live). Scopes are passed as deploy-time NAMES — the
-// module rebuilds the resource ids itself, because module outputs cannot feed its per-site for-loop
-// (BCP182) — hence the explicit dependsOn so the alerts never race the resources they watch. The
-// postgres name MIRRORS the owning module's naming (postgres.bicep).
-//
-// Every alert here is a platform METRIC alert, which is the whole reason this module survived the
-// Log Analytics removal. The two signals that were log-based did not: the App Insights exceptions
-// spike (it scoped a component that no longer exists) and the poison-queue scheduled query (a
-// LogAlert cannot exist without a workspace, and Azure Storage publishes no per-queue metric to
-// rebuild it from — QueueMessageCount is account-wide, undimensioned and hourly). A message moving
-// to a *-poison queue therefore raises no alert; it survives only as the durable DeadLetter row the
-// poison consumers write, which is a pull, not a page.
+// Alerting (ADR-0015 D2/D3) — Action Group + metric alerts over the six web hosts, the Functions
+// host's health probe, the App Insights component, and Postgres. Deployed only when an alert email is
+// supplied (dev today; prod wires its own address when it goes live). Scopes are passed as deploy-time
+// NAMES — the module rebuilds the resource ids itself, because module outputs cannot feed its per-site
+// for-loop (BCP182) — hence the explicit dependsOn so the alerts never race the resources they watch.
+// The postgres/appInsights names MIRROR the owning modules' naming (postgres.bicep / appInsights.bicep).
 // ---------------------------------------------------------------------------------------------------
 
 module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
@@ -807,14 +825,35 @@ module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
     siteNames: concat(apiSiteNames, [ssrSiteName])
     functionsSiteName: 'func-cleansia-${region}-${env}'
     postgresServerName: 'pg-cleansia-${region}-${env}'
+    appInsightsName: 'appi-cleansia-${region}-${env}'
     tags: commonTags
   }
   dependsOn: [
     apiAppServices
     ssr
     postgres
+    appInsights
     functionApp
   ]
+}
+
+// Poison-queue alerting (T-0360) — the deferred half of alerts.bicep: queue diagnostic settings into
+// the workspace + the scheduled-query rule over them, attached to the exported Action Group. Same
+// gate as alerts (no alert email = no alerting at all). It is the reason the workspace is not
+// negotiable independently of the component: a *-poison PutMessage has no metric form to alert on
+// (QueueMessageCount is account-wide, undimensioned and hourly), so without this the only trace of a
+// message the runtime gave up on is the durable DeadLetter row — a pull, not a page.
+module queueAlerts 'modules/queueAlerts.bicep' = if (!empty(alertEmail)) {
+  name: 'queueAlerts'
+  params: {
+    env: env
+    region: region
+    location: location
+    storageAccountName: storage.outputs.storageAccountName
+    logAnalyticsWorkspaceId: appInsights.outputs.logAnalyticsId
+    actionGroupId: alerts!.outputs.actionGroupId
+    tags: commonTags
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------

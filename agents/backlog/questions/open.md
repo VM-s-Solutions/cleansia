@@ -2676,3 +2676,30 @@ Two smaller things the referent check produced that a pattern-match would not ha
 
 **For the next copy wave:** a five-locale parity guard proves the keys exist and the placeholders survive.
 It cannot see a dropped actor or a wrong gender, and both shipped past one today.
+
+---
+
+## N29 — the mapper wave, and one product question inside it (2026-08-10)
+
+`51c1311c` + `9993b956` closed two repositories; T-0582 carries the remaining 52 sites.
+
+### Q-PAY-ROLLUP-01 — [blocking: no] Should orders with unknown pay count as zero in a cleaner's total?
+
+Seven `?: 0.0` sites on `estimatedCleanerPay` are **not** the coercion defect — the field genuinely *is*
+`nullable: true` in the spec, so a null is a permitted value rather than a broken one. But two of them
+(`OrdersListScreen.kt:365`, `:923`) **sum it into a rollup**, so an order whose pay is not yet known
+counts as **zero** in the total a cleaner reads.
+
+That is a product question, not a contract violation, and the three answers differ visibly:
+- **(a)** exclude unknown-pay orders from the total and say how many were excluded;
+- **(b)** keep counting them as zero (today's behaviour) — the total is then a floor, not an estimate;
+- **(c)** suppress the total entirely while any order in the list has unknown pay.
+- Default taken: **(b) by inaction**, which is exactly why it is written down.
+
+### Two findings from the same sweep that are not questions
+
+- **A "does it have a mapper?" audit would score the customer app clean.** It has `toDomain()` mappers
+  throughout — **and the mappers coerce**. Any future audit of this class must read what the mapper
+  *does*, not whether one exists.
+- **`${PIPESTATUS[0]}` returns empty under this zsh.** Capturing `EXIT=$?` **before** any pipe is
+  load-bearing rather than stylistic, which makes the existing gradle rule stronger than it reads.

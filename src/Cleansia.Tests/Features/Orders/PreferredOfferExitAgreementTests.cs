@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -16,16 +17,21 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0045 D7.2 + PM ruling — <c>canChooseAnother</c> and the server's own refusal must agree on
-/// <b>all five</b> terms, and the way to guarantee that is for the flag to BE the command's gate rather
+/// <b>every</b> term, and the way to guarantee that is for the flag to BE the command's gate rather
 /// than a copy of its terms.
 ///
 /// <para>A flag reading <see langword="true"/> where the mechanism cannot deliver is this ADR's own
-/// blocking finding (CH-F4). The fifth term — a recurring occurrence — was the same defect in miniature:
-/// the command refuses one and the panel's ruled four-term list did not mention it, so the button would
-/// have been offered to every recurring customer and refused every time.</para>
+/// blocking finding (CH-F4). Three terms arrived that way: a recurring occurrence (the command refuses
+/// one and the panel's ruled four-term list did not mention it), offerability (a cancelled booking with
+/// a future cleaning time and nobody on it satisfied every ruled term, so the exit would have reserved a
+/// seat on work nobody will do and pushed a named cleaner about it), and the caller's own entitlement
+/// (the command's first gate is an active Plus membership, so the button was offered to every
+/// non-member and refused on tap).</para>
 ///
-/// <para>Both verdicts are read from the REAL code paths — the customer's order-detail handler and the
-/// re-offer command — so an agreement that held only inside a shared helper would still fail here.</para>
+/// <para>The server verdict is the WHOLE write path — validator then handler — because the entitlement
+/// refusal lives in the validator and the structural ones in the handler; reading only one half would
+/// let the flag disagree with the half not read. Both sides run the REAL code, so an agreement that
+/// held only inside a shared helper would still fail here.</para>
 /// </summary>
 public class PreferredOfferExitAgreementTests
 {
@@ -44,10 +50,16 @@ public class PreferredOfferExitAgreementTests
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<IPreferredCleanerHoldResolver> _resolver = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
 
     public PreferredOfferExitAgreementTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
+        GiveTheCallerPlus();
+        _orderRepository
+            .Setup(r => r.UserHasCompletedOrderWithEmployeeAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _session
             .Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
             .Returns(new Claim(ClaimTypes.Role, UserProfile.Customer.ToString()));
@@ -73,35 +85,61 @@ public class PreferredOfferExitAgreementTests
                     nowUtc.AddHours(2), new PreferredCleanerRecipient($"user-{employeeId}", null)));
     }
 
-    public static TheoryData<string, bool> Terms => new()
+    /// <summary>
+    /// One row per term, each withholding exactly ONE of them — so a predicate that loses any single
+    /// conjunct turns its own row red and no other. The offerability term gets two rows because it
+    /// spans two axes (ADR-0037): a cancelled booking fails on fulfilment, an unpaid card booking on
+    /// money, and a rule that carried only a status list would still pass the second.
+    /// </summary>
+    public static TheoryData<string, bool, string?> Terms => new()
     {
-        { "open", true },
-        { "round-cap-reached", false },
-        { "already-has-a-cleaner", false },
-        { "live-reservation", false },
-        { "lead-time-too-short", false },
-        { "recurring-occurrence", false },
+        { "open", true, null },
+        { "round-cap-reached", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "already-has-a-cleaner", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "live-reservation", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "lead-time-too-short", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "recurring-occurrence", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "cancelled", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "money-has-not-landed", false, BusinessErrorMessage.PreferredOfferClosed },
+        { "no-plus-membership", false, BusinessErrorMessage.PreferredEmployeeMembershipRequired },
     };
 
     [Theory]
     [MemberData(nameof(Terms))]
-    public async Task The_Flag_And_The_Server_Agree(string scenario, bool expectedOpen)
+    public async Task The_Flag_And_The_Server_Agree(string scenario, bool expectedOpen, string? expectedKey)
     {
         Arrange(scenario);
 
         var detail = await CreateDetailHandler().Handle(new GetOrderDetails.Query(OrderId), default);
-        var attempt = await CreateChooseHandler().Handle(
-            new ChoosePreferredCleaner.Command(OrderId, SecondChoiceId), default);
+        var (serverAccepted, refusal) = await AttemptTheReOfferAsync();
 
         var flag = detail.Value!.PreferredOffer!.CanChooseAnother;
-        var serverAccepted = attempt.IsSuccess;
 
         Assert.Equal(expectedOpen, flag);
         Assert.Equal(flag, serverAccepted);
-        if (!serverAccepted)
+        Assert.Equal(expectedKey, refusal);
+    }
+
+    /// <summary>
+    /// The whole write path, in production order: the validator's ordered chain, then the handler. A
+    /// verdict read off the handler alone would call a non-member accepted, which is exactly the
+    /// disagreement the entitlement term closes.
+    /// </summary>
+    private async Task<(bool Accepted, string? Refusal)> AttemptTheReOfferAsync()
+    {
+        var command = new ChoosePreferredCleaner.Command(OrderId, SecondChoiceId);
+
+        var validation = await new ChoosePreferredCleaner.Validator(
+                _session.Object, _userMembershipRepository.Object, _orderRepository.Object)
+            .ValidateAsync(command);
+
+        if (!validation.IsValid)
         {
-            Assert.Equal(BusinessErrorMessage.PreferredOfferClosed, attempt.Error!.Message);
+            return (false, Assert.Single(validation.Errors).ErrorMessage);
         }
+
+        var attempt = await CreateChooseHandler().Handle(command, default);
+        return (attempt.IsSuccess, attempt.IsSuccess ? null : attempt.Error!.Message);
     }
 
     /// <summary>
@@ -156,17 +194,34 @@ public class PreferredOfferExitAgreementTests
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            _userMembershipRepository.Object);
 
     private ChoosePreferredCleaner.Handler CreateChooseHandler() =>
         new(
             _orderRepository.Object,
             _session.Object,
             _resolver.Object,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(),
+            _userMembershipRepository.Object);
+
+    private void GiveTheCallerPlus() =>
+        _userMembershipRepository
+            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserMembership.Create(
+                CustomerUserId, "plan-plus", "sub_exit", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
 
     private void Arrange(string scenario)
     {
+        if (scenario == "no-plus-membership")
+        {
+            _userMembershipRepository
+                .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                    It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((UserMembership?)null);
+        }
+
         var cleaningInHours = scenario == "lead-time-too-short" ? 5 : 48;
         var order = Order.Create(
             customerName: "Exit Customer",
@@ -180,7 +235,7 @@ public class PreferredOfferExitAgreementTests
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid,
+            paymentStatus: scenario == "money-has-not-landed" ? PaymentStatus.Pending : PaymentStatus.Paid,
             userId: CustomerUserId,
             preferredEmployeeId: FirstChoiceId,
             recurringTemplateId: scenario == "recurring-occurrence" ? "tmpl-weekly" : null);
@@ -189,7 +244,18 @@ public class PreferredOfferExitAgreementTests
         order.SetMaxEmployees(2);
         order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+
+        // The money case stays at New + Card + Pending — the state a card booking sits in until the
+        // Stripe webhook lands, and the one a status list alone cannot refuse.
+        if (scenario != "money-has-not-landed")
+        {
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+        }
+
+        if (scenario == "cancelled")
+        {
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+        }
 
         if (scenario == "live-reservation")
         {

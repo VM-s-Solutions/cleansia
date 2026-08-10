@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -34,10 +35,16 @@ public class ChoosePreferredCleanerHandlerTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IPreferredCleanerHoldResolver> _resolver = new();
     private readonly Mock<INotificationProducer> _notificationProducer = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
 
     public ChoosePreferredCleanerHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
+        _userMembershipRepository
+            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserMembership.Create(
+                CustomerUserId, "plan-plus", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
         GrantOnResolve();
     }
 
@@ -260,7 +267,8 @@ public class ChoosePreferredCleanerHandlerTests
             _orderRepository.Object,
             _session.Object,
             _resolver.Object,
-            _notificationProducer.Object);
+            _notificationProducer.Object,
+            _userMembershipRepository.Object);
 
     private void GrantOnResolve()
     {

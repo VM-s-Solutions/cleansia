@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -26,6 +27,13 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// one this surface must not inherit from <c>CanBrowseOrderAsync</c>: a <c>New</c> + Card order whose
 /// money has not landed is refused by the take gate and may be cancelled within the hour, and under a
 /// DISCLOSED reservation that reads as "you were assigned a job that vanished".</para>
+///
+/// <para>The two multi-seat rows are the pair that separates "nobody is on it" from "I am not on it".
+/// <c>TakeOrder</c>'s implicit-decline sweep deliberately spares the order just taken, and offerability
+/// is a property of the order alone — so on any booking of four hours or more the beneficiary's OWN
+/// confirmed job kept every remaining term and stayed on their list of things to answer. The rival row
+/// is the other direction: a seat someone else took does not end the reservation on the seats left, and
+/// a fix that read <c>Count == 0</c> would drop it.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -47,7 +55,9 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
         bool Listed,
         OrderStatus CurrentStatus = OrderStatus.Confirmed,
         PaymentStatus PaymentStatus = PaymentStatus.Paid,
-        bool Filled = false);
+        bool Filled = false,
+        int Seats = 1,
+        string? AssignedTo = null);
 
     private static readonly OfferCase[] Cases =
     [
@@ -69,6 +79,20 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
             Live,
             Listed: false,
             CurrentStatus: OrderStatus.Cancelled),
+        new(
+            "offer-2seats-mine",
+            CallerEmployeeId,
+            Live,
+            Listed: false,
+            Seats: 2,
+            AssignedTo: CallerEmployeeId),
+        new(
+            "offer-2seats-rival",
+            CallerEmployeeId,
+            Live,
+            Listed: true,
+            Seats: 2,
+            AssignedTo: RivalEmployeeId),
     ];
 
     [Fact]
@@ -110,7 +134,7 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
                 .Send(new GetMyPendingOffers.Query()),
             assert: (CleansiaDbContext _, Cleansia.Infra.Common.Validations.BusinessResult<IReadOnlyList<PendingOfferItem>> result) =>
             {
-                var offer = Assert.Single(result.Value!);
+                var offer = result.Value!.Single(o => o.Id == "offer-mine-live");
 
                 Assert.Equal(Live, offer.RespondByUtc, TimeSpan.FromSeconds(1));
                 Assert.Equal("Brno · 602", offer.CustomerAddressApproximate);
@@ -123,6 +147,47 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
                 Assert.DoesNotContain("Held St", JsonSerializer.Serialize(offer));
 
                 return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>
+    /// The seat arithmetic is asserted from the database before the verdicts are read. Every previous
+    /// attempt at this shape passed vacuously — an unpopulated fixture yields one seat and no assignee,
+    /// which refuses the caller's row for the wrong reason and admits the rival's for the wrong reason
+    /// too.
+    /// </summary>
+    [Fact]
+    public async Task On_A_Two_Seat_Booking_The_Seat_I_Already_Hold_Is_Not_Still_Waiting_For_My_Answer()
+    {
+        await TestMethod(
+            setup: ReplaceWithCallerSession,
+            arrange: SeedTheOfferMatrix,
+            act: async provider => await provider
+                .GetRequiredService<IMediator>()
+                .Send(new GetMyPendingOffers.Query()),
+            assert: async (CleansiaDbContext context, Cleansia.Infra.Common.Validations.BusinessResult<IReadOnlyList<PendingOfferItem>> result) =>
+            {
+                var mine = await context.Orders
+                    .Include(o => o.AssignedEmployees)
+                    .SingleAsync(o => o.Id == "offer-2seats-mine");
+                var rivals = await context.Orders
+                    .Include(o => o.AssignedEmployees)
+                    .SingleAsync(o => o.Id == "offer-2seats-rival");
+
+                foreach (var order in new[] { mine, rivals })
+                {
+                    Assert.Equal(2, order.MaxEmployees);
+                    Assert.Equal(1, order.AssignedEmployees.Count);
+                    Assert.Equal(CallerEmployeeId, order.PreferredEmployeeId);
+                    Assert.True(order.PreferredHoldUntilUtc > DateTime.UtcNow);
+                }
+
+                Assert.Equal(CallerEmployeeId, Assert.Single(mine.AssignedEmployees).EmployeeId);
+                Assert.Equal(RivalEmployeeId, Assert.Single(rivals.AssignedEmployees).EmployeeId);
+
+                var listed = result.Value!.Select(o => o.Id).ToHashSet();
+                Assert.DoesNotContain(mine.Id, listed);
+                Assert.Contains(rivals.Id, listed);
             });
     }
 
@@ -166,6 +231,12 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
                 order.AddAssignedEmployee(OrderEmployee.Create(order, rival));
             }
 
+            if (scenario.AssignedTo is { } assignee)
+            {
+                order.AddAssignedEmployee(OrderEmployee.Create(
+                    order, assignee == CallerEmployeeId ? caller : rival));
+            }
+
             context.Add(order);
             slot++;
         }
@@ -191,7 +262,7 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
             preferredEmployeeId: scenario.Beneficiary);
         order.Id = scenario.OrderId;
         order.UpdateEstimatedTime(120);
-        order.SetMaxEmployees(1);
+        order.SetMaxEmployees(scenario.Seats);
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         if (scenario.CurrentStatus != OrderStatus.New)

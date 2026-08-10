@@ -69,15 +69,10 @@ public class ChoosePreferredCleaner
                 .WithName(nameof(Command.EmployeeId));
         }
 
-        private async Task<bool> CallerHasActiveMembershipAsync(
+        private Task<bool> CallerHasActiveMembershipAsync(
             Command command, CancellationToken cancellationToken)
-        {
-            var userId = _userSessionProvider.GetUserId();
-
-            return !string.IsNullOrEmpty(userId)
-                && await _userMembershipRepository
-                    .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
-        }
+            => PreferredOfferExit.CallerHasActiveMembershipAsync(
+                _userSessionProvider, _userMembershipRepository, cancellationToken);
 
         private async Task<bool> PreferredEmployeeIsEligibleAsync(
             Command command, CancellationToken cancellationToken)
@@ -89,7 +84,8 @@ public class ChoosePreferredCleaner
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
-        INotificationProducer notificationProducer) : ICommandHandler<Command, Response>
+        INotificationProducer notificationProducer,
+        IUserMembershipRepository userMembershipRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -109,8 +105,13 @@ public class ChoosePreferredCleaner
             }
 
             // The read side of this same call is the order detail's canChooseAnother, so a button the
-            // client offers and a request the server accepts cannot disagree.
-            if (!PreferredOfferExit.IsOpen(order, nowUtc)
+            // client offers and a request the server accepts cannot disagree. The entitlement is
+            // re-resolved rather than inferred from the validator having run, so the gate holds if the
+            // chain is ever reordered.
+            var callerHasActiveMembership = await PreferredOfferExit.CallerHasActiveMembershipAsync(
+                userSessionProvider, userMembershipRepository, cancellationToken);
+
+            if (!PreferredOfferExit.IsOpen(order, callerHasActiveMembership, nowUtc)
                 || order.PreferredEmployeeId == command.EmployeeId)
             {
                 return BusinessResult.Failure<Response>(

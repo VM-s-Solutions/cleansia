@@ -321,7 +321,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            Mock.Of<IUserMembershipRepository>());
 
     private void ArrangeCommon(Order order)
     {

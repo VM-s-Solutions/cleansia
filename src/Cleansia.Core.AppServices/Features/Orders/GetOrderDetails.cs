@@ -40,7 +40,8 @@ public class GetOrderDetails
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IOrderPhotoRepository orderPhotoRepository,
         IEmployeeRepository employeeRepository,
-        IExpressWaiverConsumer expressWaiverConsumer) : IQueryHandler<Query, OrderItem>
+        IExpressWaiverConsumer expressWaiverConsumer,
+        IUserMembershipRepository userMembershipRepository) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -159,13 +160,16 @@ public class GetOrderDetails
                     .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
                     .FirstOrDefaultAsync(cancellationToken);
 
+            var callerHasActiveMembership = await PreferredOfferExit.CallerHasActiveMembershipAsync(
+                userSessionProvider, userMembershipRepository, cancellationToken);
+
             return new PreferredOfferDetails(
                 State: state,
                 CleanerName: cleanerName,
                 RespondByUtc: state == PreferredOfferState.AwaitingConfirmation
                     ? order.PreferredHoldUntilUtc
                     : null,
-                CanChooseAnother: PreferredOfferExit.IsOpen(order, nowUtc));
+                CanChooseAnother: PreferredOfferExit.IsOpen(order, callerHasActiveMembership, nowUtc));
         }
     }
 }

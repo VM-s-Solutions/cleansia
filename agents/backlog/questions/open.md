@@ -2703,3 +2703,64 @@ That is a product question, not a contract violation, and the three answers diff
   *does*, not whether one exists.
 - **`${PIPESTATUS[0]}` returns empty under this zsh.** Capturing `EXIT=$?` **before** any pipe is
   load-bearing rather than stylistic, which makes the existing gradle rule stronger than it reads.
+
+---
+
+## ✅ Q-AZURE-01 — CLOSED 2026-08-10. Nothing further owed by the owner; here are the exact steps.
+
+The owner supplied both figures on 2026-08-09 and then ruled: **remove Log Analytics, DEV and PROD.**
+The second query (ingestion by table) is **moot** — it existed to choose a sampling number for a
+workspace that is being deleted. **I should have closed this then; leaving it open asked twice for
+something already given.**
+
+The removal is committed (`9de509ed`) and inert. **Exact steps, in order:**
+
+1. **Populate `SENTRY_DSN` first, if it is not already set** in the GitHub Environment for the target
+   env. This is step one for a reason: `UseSentryMonitoring` treats a blank DSN as *"disabled"* and
+   returns **silently**. If it is empty, the moment step 2 lands the five APIs **and** the Functions
+   worker have no error telemetry at all — App Insights gone, Sentry off, nothing in its place.
+2. **Dispatch `deploy-dev.yml`** with `mode: deploy`. Because the change is under `deploy/bicep/**`,
+   the fingerprint gate runs Bicep. This removes `APPLICATIONINSIGHTS_CONNECTION_STRING` from all seven
+   hosts and stops the alert rules being re-asserted. Repeat with `deploy-pro.yml` when ready.
+3. **Delete the two resources by hand.** ⚠️ **This is the step that actually stops the bill, and the
+   deploy does not do it.** ARM deploys in **Incremental** mode, which leaves resources that are no
+   longer in the template exactly where they are. Removing them from Bicep stops them being *managed*;
+   it does not delete them.
+   ```
+   az monitor app-insights component delete -g <rg> -n appi-cleansia-weu-dev
+   az monitor log-analytics workspace delete -g <rg> -n log-cleansia-weu-dev --force true
+   ```
+   Delete the component **first** — deleting the workspace under a live component leaves it orphaned
+   and still billing through an auto-provisioned default.
+4. **Verify** on the next bill that the Log Analytics line is gone and Azure Monitor stays ≈ €0.63.
+
+**What you lose, so it is not a surprise:** the poison-queue alert, permanently — it was a log alert and
+no metric equivalent exists (`QueueMessageCount` has no per-queue dimension and an hourly grain). A
+poisoning queue will announce itself in nothing. The `DeadLetter` row remains, and has **no admin read
+endpoint** — see T-0583/T-0584.
+
+---
+
+## ✅ Q-PAY-ROLLUP-01 — ANSWERED 2026-08-10: **"IT SHALL NOT BE POSSIBLE."** Ruled a defect, not a rollup policy.
+
+The owner is right, and the answer to *"when can it happen?"* is **not** the axis the question implied.
+
+**It is not an unconfigured employee.** `OrderPayEstimator.Estimate` falls back from a per-employee
+config to the **platform-wide** one — `g.FirstOrDefault(c => c.EmployeeId == employeeId) ?? g.First()`
+— so a cleaner with no personal overrides still gets a quote. The owner's rule ("pay is configured per
+employee before he can take orders") holds and is not the gap.
+
+**It is an unconfigured SERVICE or PACKAGE.** `Estimate` returns null only when **no pay config matches
+the order's services or packages at all**, platform-wide included. And nothing connects the two: the
+`PayConfig` feature is entirely independent of `Services` and `Packages`, and **no create, update or
+activate path on either requires a pay config to exist.**
+
+**So the reachable sequence is:** an admin publishes a new Service or Package → it is bookable
+immediately → a customer books it → the order appears on **every** cleaner's board with **no pay
+quoted**, and counts as **zero** in the earnings total. Not one cleaner — every cleaner, because the
+missing row is platform-wide. `DeletePayConfig` reaches the same state from the other direction.
+
+**Ruling: make it impossible, per the owner.** The three rollup options in the original question are
+withdrawn — none of them is right, because all three presume the state is legitimate. Filed as
+**T-0585**. The `?: 0.0` sites then become provably dead, and the type is tightened rather than the
+default being chosen.

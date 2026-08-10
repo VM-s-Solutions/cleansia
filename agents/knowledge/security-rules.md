@@ -147,6 +147,35 @@ No email, phone, name, address, payment/Stripe detail, JWT, refresh token, or co
 logs at Information level or higher. Log `userId`, not `user.Email`. `LogDebug` is acceptable for
 PII during local investigation only.
 
+> **There is a SECOND sink, it has no middleware, and it ships off-box to a different vendor.** The
+> isolated Functions worker runs no ASP.NET pipeline, so `RequestLoggingMiddleware` is structurally
+> unreachable from it — and since `ac2243d2` its `ILogger` feeds Sentry at `MinimumEventLevel.Error`.
+> A single `LogError("… {Body}", body)` there produces **three** copies: the formatted message, an
+> **indexed searchable tag** holding the raw value org-wide, and a **scope breadcrumb that re-attaches
+> to later, unrelated events** from that worker. `SendDefaultPii = false` does not touch any of them —
+> it governs request and user context, not your own log arguments.
+>
+> **The live instance, found and fixed 2026-08-10 (`e84aed25`).** `PoisonHandlerBase` logged the whole
+> message body, and the `send-email` body carries `Code` — the raw confirmation/reset token. A message
+> reaches its poison queue in about **two minutes** (`visibilityTimeout` 30 s × `maxDequeueCount` 5)
+> and those codes live **fifteen**, so the token was published with roughly **thirteen minutes still
+> valid**, to an audience — Sentry read access — that is strictly broader than production-Postgres
+> access.
+>
+> **Two things this teaches that the middleware rule cannot.** First, *the denylist would not have
+> caught it*: `SensitiveFieldRegex` enumerates `password|token|apiKey|…` and **`code` is absent**, which
+> is this rule's own named residual — a secret under a name with no credential word in it. Second, *the
+> same queue already knew better*: `SendEmailHandler` carries **"Never log the payload — it carries the
+> recipient email and a live confirmation/reset code."** The live consumer refused; the poison consumer
+> printed. **A rule held on the happy path and dropped on the failure path is the shape to look for.**
+>
+> The seam is `PoisonAlert` (`Functions.Core/Handlers/`), which is an **allowlist by field name —
+> fail-closed, opposite polarity to the middleware's denylist** — so a message type that gains a field
+> tomorrow is withheld by default rather than published by default. **Enforced by:**
+> `PoisonAlertRedactionTests` — **T1-CI**. Note its assertions read the **structured state**, not only
+> the formatted string: a formatted-only assertion misses the indexed tag entirely, which is how
+> `SendEmailHandlerTests.cs:265-266` is weaker than the mechanism it guards.
+
 **The dominant sink is not a `logger.Log*` call — it is `RequestLoggingMiddleware.SafeBody`**, which
 slices request and response bodies into Information on all five hosts. It is generic over every route,
 so **an S6 leak is almost never one endpoint**: when T-0457 was filed against `GET /api/User/GetCurrent`

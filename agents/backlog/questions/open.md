@@ -1115,7 +1115,7 @@ _No open Wave-1 *planning* questions remain._
   than a drift.
 - **Answer (owner, 2026-08-07):** **(c) — do not populate Sentry for DEV.** Owner is still using App Insights for DEV. No Sentry DSN is set; this is now a decision rather than a drift.
 
-### Q-AZURE-01 — [blocking: no — but it gates T-0499 AC1 and AC5] The two cost queries only you can run
+### ✅ Q-AZURE-01 — CLOSED 2026-08-10; exact steps in the closing block below. [was: blocking no — but it gates T-0499 AC1 and AC5] The two cost queries only you can run
 - Raised by: pm (T-0499, from the Azure cost investigation)
 - Owner: **owner** (portal/subscription access)
 - Resolve-by: **post-prod** (the fix does not wait; the *measurement* does)
@@ -2683,7 +2683,7 @@ It cannot see a dropped actor or a wrong gender, and both shipped past one today
 
 `51c1311c` + `9993b956` closed two repositories; T-0582 carries the remaining 52 sites.
 
-### Q-PAY-ROLLUP-01 — [blocking: no] Should orders with unknown pay count as zero in a cleaner's total?
+### ✅ Q-PAY-ROLLUP-01 — ANSWERED 2026-08-10 (owner: "IT SHALL NOT BE POSSIBLE"); built in `29cbd184`. [was: blocking no] Should orders with unknown pay count as zero in a cleaner's total?
 
 Seven `?: 0.0` sites on `estimatedCleanerPay` are **not** the coercion defect — the field genuinely *is*
 `nullable: true` in the spec, so a null is a permitted value rather than a broken one. But two of them

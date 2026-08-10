@@ -1314,7 +1314,7 @@
     <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
     <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
     <string name="offer_release_failed_title">Не вдалося звільнити це замовлення</string>
-    <string name="offer_release_failed_body">%1$s\n\nНічого не змінилося \u2014 пропозиція залишилася такою, як була. Спробуйте ще раз трохи згодом.</string>
+    <string name="offer_release_failed_body">%1$s\n\nНічого не звільнено \u2014 замовлення точно таке, як було, і за мить ви можете спробувати ще раз.</string>
     <string name="offers_card_title">Клієнт попросив саме вас</string>
     <string name="offers_card_more">+%1$d ще</string>
     <string name="offers_card_cta">Подивитися, що чекає</string>

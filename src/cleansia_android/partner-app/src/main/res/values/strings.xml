@@ -1342,7 +1342,7 @@
     <string name="offer_blocked_title">We couldn\'t hand this job over</string>
     <string name="offer_blocked_body">%1$s\n\nThat one is on us \u2014 we put your name on this job without checking, so nothing here counts against you.</string>
     <string name="offer_release_failed_title">We couldn\'t release this job</string>
-    <string name="offer_release_failed_body">%1$s\n\nNothing was changed \u2014 the offer stands as it was. Try again in a moment.</string>
+    <string name="offer_release_failed_body">%1$s\n\nNothing was released \u2014 the job is exactly as it was, and you can try again in a moment.</string>
     <string name="offers_card_title">A customer asked for you</string>
     <string name="offers_card_more">+%1$d more</string>
     <string name="offers_card_cta">See what\'s waiting</string>

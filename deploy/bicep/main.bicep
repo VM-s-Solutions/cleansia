@@ -290,8 +290,10 @@ var ssrSiteName = 'web-cleansia-customer-${region}-${env}'
 // There is no Application Insights / Log Analytics module. Application Insights is workspace-based
 // only (classic components are retired: a component created without WorkspaceResourceId gets a Log
 // Analytics workspace auto-provisioned beside it), so "App Insights without a workspace" is not a
-// configuration that exists — dropping the workspace drops the component with it. Error telemetry on
-// the five API hosts is Sentry (Sentry__Dsn); the Functions host and the SSR host ship none.
+// configuration that exists — dropping the workspace drops the component with it. Error telemetry is
+// Sentry (Sentry__Dsn) on the five API hosts AND on the Functions worker, which was wired in ac2243d2
+// precisely because this removal would otherwise have left it with none. The SSR (Node) host still
+// ships nothing — filed, not fixed.
 // ---------------------------------------------------------------------------------------------------
 
 module keyVault 'modules/keyVault.bicep' = {
@@ -723,11 +725,11 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     storageAccountId: storage.outputs.storageAccountId
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
-    // Sentry__Dsn is delivered but NOT read: Cleansia.Functions references no Sentry package and
-    // Program.cs never initialises the SDK (only the five API hosts call UseSentryMonitoring). Since
-    // App Insights was removed this host emits no error telemetry off-box at all — its remaining
-    // signals are the HealthCheckStatus metric alert and the durable DeadLetter rows. Do not read this
-    // setting as coverage.
+    // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
+    // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
+    // and FunctionInvocationErrorMiddleware depend on. A blank DSN disables Sentry silently rather
+    // than throwing, so an unpopulated secret leaves this host with only the HealthCheckStatus metric
+    // alert and the durable DeadLetter rows. Populate it.
     extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })

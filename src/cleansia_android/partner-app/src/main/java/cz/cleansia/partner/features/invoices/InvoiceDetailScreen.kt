@@ -58,7 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
+import cz.cleansia.partner.data.invoices.InvoiceDetail
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -190,7 +190,7 @@ fun InvoiceDetailScreen(
 // --- cards ---
 
 @Composable
-private fun HeroCard(invoice: EmployeeInvoiceDetailDto) {
+private fun HeroCard(invoice: InvoiceDetail) {
     val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
     Row(
         modifier = Modifier
@@ -215,7 +215,7 @@ private fun HeroCard(invoice: EmployeeInvoiceDetailDto) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = formatMoney(invoice.totalAmount ?: 0.0, symbol),
+                text = formatMoney(invoice.totalAmount, symbol),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -233,7 +233,7 @@ private fun HeroCard(invoice: EmployeeInvoiceDetailDto) {
 }
 
 @Composable
-private fun BreakdownCard(invoice: EmployeeInvoiceDetailDto) {
+private fun BreakdownCard(invoice: InvoiceDetail) {
     val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
     Column(
         modifier = Modifier
@@ -255,10 +255,10 @@ private fun BreakdownCard(invoice: EmployeeInvoiceDetailDto) {
         Spacer(Modifier.height(Spacing.S))
 
         MoneyRow(stringResource(R.string.subtotal), invoice.subTotal, symbol)
-        invoice.bonusAmount?.takeIf { it != 0.0 }?.let {
+        invoice.bonusAmount.takeIf { it != 0.0 }?.let {
             MoneyRow(stringResource(R.string.bonus), it, symbol)
         }
-        invoice.deductionAmount?.takeIf { it != 0.0 }?.let {
+        invoice.deductionAmount.takeIf { it != 0.0 }?.let {
             MoneyRow(stringResource(R.string.deductions), -it, symbol)
         }
 
@@ -277,11 +277,11 @@ private fun BreakdownCard(invoice: EmployeeInvoiceDetailDto) {
 
 @Composable
 private fun PeriodCard(
-    invoice: EmployeeInvoiceDetailDto,
+    invoice: InvoiceDetail,
     onOpenPeriodPay: (() -> Unit)? = null,
 ) {
     val period = invoice.payPeriodLabel?.takeIf { it.isNotBlank() } ?: "—"
-    val orders = invoice.totalOrders ?: 0
+    val orders = invoice.totalOrders
     val generated = formatDate(invoice.generatedAt)
     val approved = formatDate(invoice.approvedAt)
     val paid = formatDate(invoice.paidAt)
@@ -366,7 +366,7 @@ private fun PeriodCard(
 
 @Composable
 private fun ReferencesCard(
-    invoice: EmployeeInvoiceDetailDto,
+    invoice: InvoiceDetail,
     onCopy: (label: String, value: String) -> Unit,
 ) {
     val invoiceNumber = invoice.invoiceNumber?.takeIf { it.isNotBlank() }
@@ -437,7 +437,7 @@ private fun ReferencesCard(
 }
 
 @Composable
-private fun NotesCard(invoice: EmployeeInvoiceDetailDto) {
+private fun NotesCard(invoice: InvoiceDetail) {
     val adminNotes = invoice.adminNotes?.takeIf { it.isNotBlank() }
     val bankNote = invoice.bankTransferNote?.takeIf { it.isNotBlank() }
     if (adminNotes == null && bankNote == null) return
@@ -502,8 +502,7 @@ private fun NotesCard(invoice: EmployeeInvoiceDetailDto) {
 // --- shared row helpers ---
 
 @Composable
-private fun MoneyRow(label: String, amount: Double?, symbol: String, bold: Boolean = false) {
-    if (amount == null) return
+private fun MoneyRow(label: String, amount: Double, symbol: String, bold: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

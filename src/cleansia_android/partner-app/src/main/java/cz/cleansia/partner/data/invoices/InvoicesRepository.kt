@@ -5,18 +5,23 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
+import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
 import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
+import cz.cleansia.partner.data.mapWire
+import cz.cleansia.partner.data.payroll.OrderPayLine
+import cz.cleansia.partner.data.payroll.toDomainOrNull
+import cz.cleansia.partner.data.required
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface InvoicesRepository {
-    suspend fun getMyInvoices(employeeId: String): ApiResult<List<EmployeeInvoiceDto>>
-    suspend fun getById(invoiceId: String): ApiResult<EmployeeInvoiceDetailDto>
+    suspend fun getMyInvoices(employeeId: String): ApiResult<List<Invoice>>
+    suspend fun getById(invoiceId: String): ApiResult<InvoiceDetail>
     suspend fun downloadPdf(invoiceId: String): ApiResult<ResponseBody>
 
     /**
@@ -43,6 +48,68 @@ interface InvoicesRepository {
     fun invalidateMyInvoices()
 }
 
+/**
+ * The list and detail schemas are modelled separately rather than as a shared core plus extras:
+ * `specificSymbol` and `orderPays` exist only on the detail, and one merged type would have to make
+ * them nullable, leaving a reader unable to tell "this endpoint never sends it" from "this invoice
+ * doesn't have one".
+ */
+data class Invoice(
+    val id: String,
+    val employeeId: String?,
+    val employeeName: String?,
+    val payPeriodId: String?,
+    val payPeriodLabel: String?,
+    val invoiceNumber: String?,
+    val variableSymbol: String?,
+    val paymentReference: String?,
+    val totalOrders: Int,
+    val subTotal: Double,
+    val bonusAmount: Double,
+    val deductionAmount: Double,
+    val totalAmount: Double,
+    val currencyCode: String?,
+    val status: EmployeeInvoiceStatus,
+    val pdfBlobName: String?,
+    val pdfGenerationFailed: Boolean,
+    val pdfGenerationError: String?,
+    val generatedAt: String?,
+    val approvedAt: String?,
+    val approvedBy: String?,
+    val paidAt: String?,
+    val adminNotes: String?,
+    val bankTransferNote: String?,
+)
+
+data class InvoiceDetail(
+    val id: String,
+    val employeeId: String?,
+    val employeeName: String?,
+    val payPeriodId: String?,
+    val payPeriodLabel: String?,
+    val invoiceNumber: String?,
+    val variableSymbol: String?,
+    val specificSymbol: String?,
+    val paymentReference: String?,
+    val totalOrders: Int,
+    val subTotal: Double,
+    val bonusAmount: Double,
+    val deductionAmount: Double,
+    val totalAmount: Double,
+    val currencyCode: String?,
+    val status: EmployeeInvoiceStatus,
+    val pdfBlobName: String?,
+    val pdfGenerationFailed: Boolean,
+    val pdfGenerationError: String?,
+    val generatedAt: String?,
+    val approvedAt: String?,
+    val approvedBy: String?,
+    val paidAt: String?,
+    val adminNotes: String?,
+    val bankTransferNote: String?,
+    val orderPays: List<OrderPayLine>,
+)
+
 @Singleton
 class InvoicesRepositoryImpl @Inject constructor(
     private val payrollApi: EmployeePayrollApi,
@@ -58,7 +125,7 @@ class InvoicesRepositoryImpl @Inject constructor(
      */
     private val myInvoicesStaleness = Staleness()
 
-    override suspend fun getMyInvoices(employeeId: String): ApiResult<List<EmployeeInvoiceDto>> =
+    override suspend fun getMyInvoices(employeeId: String): ApiResult<List<Invoice>> =
         safeApiCall(json) {
             payrollApi.employeePayrollGetPagedInvoices(
                 filterEmployeeId = employeeId,
@@ -66,7 +133,7 @@ class InvoicesRepositoryImpl @Inject constructor(
                 offset = 0,
                 limit = 50,
             )
-        }.map { it.data.orEmpty() }
+        }.mapWire { page -> page.data.orEmpty().map { it.toDomain() } }
             .also { result ->
                 // Only stamp the watermark on success — a failed fetch
                 // should NOT advance the stale gate, otherwise the next
@@ -75,8 +142,9 @@ class InvoicesRepositoryImpl @Inject constructor(
                 if (result is ApiResult.Success) myInvoicesStaleness.markFresh()
             }
 
-    override suspend fun getById(invoiceId: String): ApiResult<EmployeeInvoiceDetailDto> =
+    override suspend fun getById(invoiceId: String): ApiResult<InvoiceDetail> =
         safeApiCall(json) { payrollApi.employeePayrollGetInvoiceById(invoiceId) }
+            .mapWire { it.toDomain() }
 
     override suspend fun downloadPdf(invoiceId: String): ApiResult<ResponseBody> =
         safeApiCall(json) { payrollApi.employeePayrollDownloadInvoice(invoiceId) }
@@ -91,3 +159,80 @@ class InvoicesRepositoryImpl @Inject constructor(
         myInvoicesStaleness.reset()
     }
 }
+
+/**
+ * Strict where the period-pay line mapper drops. `id` is nullable by spec here too, but an invoice is
+ * an addend of the list screen's hero rollup, so dropping an unmappable row would silently subtract
+ * its total from the figure a cleaner reads as what they are owed — a smaller, plausible, unmarked
+ * number. Refusing the page is the only outcome that cannot show a wrong total; the alternative,
+ * marking the row, still leaves the sum undefined.
+ *
+ * `pdfGenerationFailed` is refused rather than defaulted because it is the only durable signal that
+ * a render failed (ADR-0046 E5) — `false` reports a healthy document that may not exist. `status` is
+ * refused on the same ground: it is the invoice's paid-or-not assertion, and a placeholder badge
+ * across a whole list is silent degradation, not an honest gap.
+ *
+ * `generatedAt` is `nullable: false` yet stays nullable: the card already renders its absence, so
+ * leaving it null fabricates nothing. The rule is that coercion must not invent a fact the cleaner
+ * reads, not that every spec-required field must be refused.
+ */
+internal fun EmployeeInvoiceDto.toDomain() = Invoice(
+    id = id.required("id"),
+    employeeId = employeeId,
+    employeeName = employeeName,
+    payPeriodId = payPeriodId,
+    payPeriodLabel = payPeriodLabel,
+    invoiceNumber = invoiceNumber,
+    variableSymbol = variableSymbol,
+    paymentReference = paymentReference,
+    totalOrders = totalOrders.required("totalOrders"),
+    subTotal = subTotal.required("subTotal"),
+    bonusAmount = bonusAmount.required("bonusAmount"),
+    deductionAmount = deductionAmount.required("deductionAmount"),
+    totalAmount = totalAmount.required("totalAmount"),
+    currencyCode = currencyCode,
+    status = status.required("status"),
+    pdfBlobName = pdfBlobName,
+    pdfGenerationFailed = pdfGenerationFailed.required("pdfGenerationFailed"),
+    pdfGenerationError = pdfGenerationError,
+    generatedAt = generatedAt,
+    approvedAt = approvedAt,
+    approvedBy = approvedBy,
+    paidAt = paidAt,
+    adminNotes = adminNotes,
+    bankTransferNote = bankTransferNote,
+)
+
+/**
+ * `orderPays` keeps the period-pay ruling — drop the unidentifiable line — because the detail screen
+ * renders money from this invoice's own `subTotal`/`bonusAmount`/`deductionAmount`/`totalAmount` and
+ * never from a sum over the lines, so a lost line cannot move a figure.
+ */
+internal fun EmployeeInvoiceDetailDto.toDomain() = InvoiceDetail(
+    id = id.required("id"),
+    employeeId = employeeId,
+    employeeName = employeeName,
+    payPeriodId = payPeriodId,
+    payPeriodLabel = payPeriodLabel,
+    invoiceNumber = invoiceNumber,
+    variableSymbol = variableSymbol,
+    specificSymbol = specificSymbol,
+    paymentReference = paymentReference,
+    totalOrders = totalOrders.required("totalOrders"),
+    subTotal = subTotal.required("subTotal"),
+    bonusAmount = bonusAmount.required("bonusAmount"),
+    deductionAmount = deductionAmount.required("deductionAmount"),
+    totalAmount = totalAmount.required("totalAmount"),
+    currencyCode = currencyCode,
+    status = status.required("status"),
+    pdfBlobName = pdfBlobName,
+    pdfGenerationFailed = pdfGenerationFailed.required("pdfGenerationFailed"),
+    pdfGenerationError = pdfGenerationError,
+    generatedAt = generatedAt,
+    approvedAt = approvedAt,
+    approvedBy = approvedBy,
+    paidAt = paidAt,
+    adminNotes = adminNotes,
+    bankTransferNote = bankTransferNote,
+    orderPays = orderPays.orEmpty().mapNotNull { it.toDomainOrNull() },
+)

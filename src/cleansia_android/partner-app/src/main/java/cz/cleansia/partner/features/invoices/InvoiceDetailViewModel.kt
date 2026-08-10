@@ -8,9 +8,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.core.content.FileProvider
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,7 +26,7 @@ import javax.inject.Inject
 sealed interface InvoiceDetailUiState {
     data object Loading : InvoiceDetailUiState
     data object Error : InvoiceDetailUiState
-    data class Loaded(val invoice: EmployeeInvoiceDetailDto) : InvoiceDetailUiState
+    data class Loaded(val invoice: InvoiceDetail) : InvoiceDetailUiState
 }
 
 sealed interface DownloadState {

@@ -1,11 +1,12 @@
 package cz.cleansia.partner.data.payroll
 
-import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.OrderEmployeePayDto
 import cz.cleansia.partner.api.model.PeriodPaySummaryDto
+import cz.cleansia.partner.data.mapWire
+import cz.cleansia.partner.data.required
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,25 +58,16 @@ class PeriodPayRepositoryImpl @Inject constructor(
 ) : PeriodPayRepository {
 
     override suspend fun getPeriodPays(employeeId: String, payPeriodId: String): ApiResult<PeriodPaySummary> =
-        when (val result = safeApiCall(json) { payrollApi.employeePayrollGetPeriodPays(employeeId, payPeriodId) }) {
-            is ApiResult.Error -> result
-            is ApiResult.Success -> runCatching { result.data.toDomain() }.fold(
-                onSuccess = { ApiResult.Success(it) },
-                // A 200 whose body breaks the contract is a server fault, and Server renders as the
-                // generic line — the offending field name is for triage, not for the cleaner.
-                onFailure = { ApiResult.Error(ApiError.Server(HTTP_OK, it.message.orEmpty())) },
-            )
-        }
+        safeApiCall(json) { payrollApi.employeePayrollGetPeriodPays(employeeId, payPeriodId) }
+            .mapWire { it.toDomain() }
 }
 
 /**
- * Neither payroll schema declares a `required` array, so the generator types every property
- * optional-with-null and the whole contract lands here. A null in a field the spec marks
- * `nullable: false` is a renamed or broken wire field, never a zero: "0 Kc this period" to a cleaner
- * who earned 4,800 is worse than an error screen. Only [OrderEmployeePayDto.id] is nullable by spec,
- * and an unidentifiable line is dropped rather than given a synthesized id — the summary's own totals
- * are what the screen renders money from, so one lost row cannot falsify a figure, while failing the
- * whole mapping would blank a period the server answered correctly.
+ * Only [OrderEmployeePayDto.id] is nullable by spec, and an unidentifiable line is dropped rather
+ * than given a synthesized id — the summary's own totals are what the screen renders money from, so
+ * one lost row cannot falsify a figure, while failing the whole mapping would blank a period the
+ * server answered correctly. Where a collection *is* the addends of a rendered total the ruling
+ * inverts; see [cz.cleansia.partner.data.invoices.toDomain].
  */
 internal fun PeriodPaySummaryDto.toDomain() = PeriodPaySummary(
     payPeriodId = payPeriodId,
@@ -110,10 +102,3 @@ internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
         createdOn = createdOn,
     )
 }
-
-internal class WireContractViolation(field: String) :
-    IllegalStateException("$field is null but the mobile API contract declares it non-nullable")
-
-private fun <T : Any> T?.required(field: String): T = this ?: throw WireContractViolation(field)
-
-private const val HTTP_OK = 200

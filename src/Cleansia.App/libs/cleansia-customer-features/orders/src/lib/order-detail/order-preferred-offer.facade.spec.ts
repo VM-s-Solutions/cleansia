@@ -57,6 +57,7 @@ describe('OrderPreferredOfferFacade', () => {
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let order: ReturnType<typeof signal<OrderItem | null>>;
+  let hasMembership: ReturnType<typeof signal<boolean>>;
   let onChosen: jest.Mock;
 
   function build(platform: 'server' | 'browser' = 'browser'): void {
@@ -70,6 +71,7 @@ describe('OrderPreferredOfferFacade', () => {
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
     order = signal<OrderItem | null>(null);
+    hasMembership = signal(true);
     onChosen = jest.fn();
 
     TestBed.resetTestingModule();
@@ -84,7 +86,7 @@ describe('OrderPreferredOfferFacade', () => {
     });
 
     facade = TestBed.inject(OrderPreferredOfferFacade);
-    facade.connect({ order, onChosen });
+    facade.connect({ order, hasMembership, onChosen });
   }
 
   beforeEach(() => build());
@@ -140,6 +142,25 @@ describe('OrderPreferredOfferFacade', () => {
       order.set(buildOrder({ orderStatus: OrderStatus.Cancelled }));
 
       expect(facade.canChooseAnother()).toBe(false);
+    });
+
+    // The exit answers about the order and says nothing about the caller; the command's first gate
+    // is an active membership, so without this the button is offered to every non-member.
+    it('is closed for a customer without Plus', () => {
+      hasMembership.set(false);
+      order.set(buildOrder({}));
+
+      expect(facade.canChooseAnother()).toBe(false);
+      expect(facade.visible()).toBe(true);
+    });
+
+    it('renders nothing at all for a non-member whose order never carried a reservation', () => {
+      hasMembership.set(false);
+      order.set(
+        buildOrder({ state: PreferredOfferState.None, canChooseAnother: true })
+      );
+
+      expect(facade.visible()).toBe(false);
     });
 
     it('does not open the picker where it is closed', () => {

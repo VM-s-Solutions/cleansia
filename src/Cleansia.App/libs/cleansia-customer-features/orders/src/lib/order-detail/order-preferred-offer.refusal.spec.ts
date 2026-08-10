@@ -118,6 +118,7 @@ describe('preferred-cleaner re-choose refusal', () => {
       facade = TestBed.inject(OrderPreferredOfferFacade);
       facade.connect({
         order: signal<OrderItem | null>(buildOrder()),
+        hasMembership: signal(true),
         onChosen: jest.fn(),
       });
     });

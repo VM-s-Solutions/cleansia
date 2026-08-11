@@ -89,10 +89,18 @@ already uses for every non-customer caller
    `IsOpen`'s term for a different question and silences a **true** sentence on multi-seat bookings
    (`Order.cs:697-707`).
 5. **No shared `OrderStatus` grouping was extracted.** The live-order sets in the tree are kept apart on
-   purpose — `OrderRepository.cs:264-271` (EF inlines it into SQL), `GdprDeletionService.cs:104-111`
-   (in-memory; same membership as the first since T-0595, pinned to it by
-   `ErasureBlockingOrderStatusTests` rather than merged), `AdminOverrideOrderStatus.cs:86-97` (two
-   refusals, different error keys).
+   purpose — `OrderRepository.cs:264-271` (does a live commitment occupy this cleaner's slot),
+   `GdprDeletionService.cs:112-114` (does a live order refuse this subject's erasure; **identical
+   membership** to the first since T-0595, pinned to it by `ErasureBlockingOrderStatusTests` rather
+   than merged), `AdminOverrideOrderStatus.cs:86-97` (two refusals, different error keys).
+   ⚠️ **This invariant has now lost TWO supporting arguments and kept its conclusion both times, which
+   is worth knowing before anyone offers it a third.** The two-form *"EF inlines it into SQL"* clause
+   was struck by ADR-0049 amendment C1(ii) — a flat status set is data, not a compound expression, so
+   the identical array works in both places. The *"one is in-memory"* clause was struck by `0a552981`,
+   which made the erasure read `AnyAsync` over the indexed `CurrentStatus` and deleted an unbounded
+   `.Include` that loaded a graph nothing looked at. The conclusion stands on the only ground that was
+   ever load-bearing: **two questions with one answer today are not one question.** A shared constant
+   makes a future divergence silent, because the second caller inherits it.
 6. **Every NEW consumer of `StateOf` conjoins `IsDisclosable`.** A second surface rendering the state
    without it reintroduces the defect one screen over.
 

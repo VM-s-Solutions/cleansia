@@ -437,7 +437,7 @@ this rule does not reach it.*
    second pure function beside it. **Do not extract a shared `OrderStatus` grouping for it** — the
    "is this order live" sets in the tree answer **different questions** that happen to share an answer:
    `OrderRepository.cs:264-271` (does a live commitment occupy this cleaner's slot),
-   `GdprDeletionService.cs:104-111` (does a live order refuse this subject's erasure), and
+   `GdprDeletionService.cs:112-114` (does a live order refuse this subject's erasure), and
    `AdminOverrideOrderStatus.cs:86-97` — which is not a live-order set at all, but a *target*-status
    refusal keeping `Completed` and `Cancelled` apart to preserve **two customer-facing error keys**.
    **The first two now carry the identical membership and are pinned equal by

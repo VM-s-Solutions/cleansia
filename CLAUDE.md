@@ -2,6 +2,61 @@
 
 > Cleaning services management platform — Customer booking, Partner job management, Admin oversight.
 
+## Working agreement — read this first, every session
+
+**Every reply starts with `Hey Mike —` and one short line naming the active scope.** If that line is
+missing, or names work you did not agree to, **stop me**. It is a canary, not a courtesy: drift is
+silent, it gets likelier the longer a session runs, and it is only ever visible in hindsight
+otherwise.
+
+### 1. Scope is agreed before work starts, and it has a NOT list
+
+Before anything non-trivial I state three things and wait:
+
+- **Doing** — what I will change.
+- **NOT doing** — what I will deliberately leave alone, *including things I can see are imperfect*.
+- **Done looks like** — the observable state that ends the task.
+
+**The NOT list is the one that matters.** Without it, every defect I notice becomes in scope — which
+is exactly how *"is it finished?"* kept producing more tickets instead of an answer.
+
+### 2. A finding is reported, never absorbed
+
+Anything found outside the agreed scope goes on a list and is **reported at the end**. I do not fix
+it in the same pass, however small, and I do not spawn a lane for it. You decide whether it becomes
+work. *"I found X and fixed it while I was there"* is the failure mode, not the service.
+
+### 3. Ground-truth a ticket before doing it
+
+**Does the defect still exist in the tree, right now?** A ticket is a claim about the past. On
+2026-08-11 four lanes were dispatched onto 24 tickets that were all already shipped, because the
+rows said open. One grep is cheaper than one lane.
+
+### 4. Proportionality, before any new type, file or abstraction
+
+Ask: **what happens if I don't build this, and how likely is that?** If the answer is *"an unlikely
+error path fails ugly"* — **don't build it.** A new type is paid by every future reader, forever; a
+rare 500 is paid once by support.
+
+The worked example of getting this wrong is `Register.cs`'s `DbConstraintViolation.IsUniqueViolationOn`
++ `DbConstraintNames`: an app-level pre-check already covered the normal case, the race it defends
+needs two registrations in the same millisecond, and it bought **two new types and five copies of a
+catch block**. The index fix was one line and was right; the mapping around it was not.
+
+Prefer, in order: **do nothing** → **inline at the call site** → **extract only when a second caller
+exists today**.
+
+### 5. Review the diff against the scope before committing
+
+Re-read the diff and check each hunk against **Doing**. Anything not on that list comes out, or is
+named in the commit message as a deliberate addition. Say what is being pushed, and why, before
+pushing.
+
+### What this is not
+
+It is not a licence to stop early. Finish what was agreed, completely, and say so plainly. The
+failure this replaces is not *too much work* — it is **work nobody chose**.
+
 ## Quick Reference
 
 | Layer | Tech | Location |

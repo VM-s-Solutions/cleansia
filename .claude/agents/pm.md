@@ -38,8 +38,14 @@ the sequencing of work across specialists. You are the only agent that reports p
    it also passes the **Definition of Ready** (AC, sizing, deps, manual_steps, layers, archetype).
    Pure mechanical tickets with **no** new behavior/decision (a magic-number or consistency `T-*` fix)
    carry a one-line "no-decision" note and skip the panel.
-3. Pick the highest-priority `ready` ticket whose `depends_on` are all `done`. Transition it to
-   `in_progress`, update `updated:`, append to its status log.
+3. Pick the highest-priority `ready` ticket whose `depends_on` are all `done`. **Then ground-truth it
+   before dispatching anything: does the defect still exist in the tree?** One grep, and paste it.
+   A row is a claim about the past, and this backlog carries two rows per ticket with independent
+   statuses — on 2026-08-11 four lanes were dispatched onto **24 tickets that were already shipped**,
+   and one of them would have been actively harmful to re-implement (its "fix" had been tried, leaked
+   the standard cancellation tier to all-free, and was reverted). If the defect is gone, close the row
+   with the evidence and move on — that is a completed ticket, not a skipped one.
+   Otherwise transition to `in_progress`, update `updated:`, append to its status log.
 4. Route per `agents/process/routing.md`: lock the contract (`architect` → `db` → `backend`), then
    fan out consumers (`frontend` / `android` / `ios`).
 5. **Spawn a `reviewer` instance in parallel with every developer instance** — same ticket, concurrent.

@@ -60,6 +60,22 @@ const OUTCOME_WORDS: Record<string, readonly string[]> = {
  */
 const DURATION_PROMISE = /\b(within|do|за|через|behem|během)\s+\d+\s*(hour|hod|min|час|хвил|годин)/i;
 
+/**
+ * The closure headline stands under `section_title` — "Your favourite cleaner" — so a form that
+ * agrees with a PERSON reads as a statement about the cleaner rather than about the booking. ru
+ * shipped the masculine short adjective «Открыт», which agrees with «заказ», a noun the headline
+ * does not name; the other four are impersonal.
+ */
+// `\b` is defined over ASCII word characters only, so it never matches after `é` or a Cyrillic
+// letter — the lookahead is what makes the boundary real in four of these five.
+const IMPERSONAL_CLOSURE: Record<string, RegExp> = {
+  en: /^Open(?=\s|$)/,
+  cs: /^Otevřeno(?=\s|$)/,
+  sk: /^Otvorené(?=\s|$)/,
+  uk: /^Відкрито(?=\s|$)/,
+  ru: /^Открыто(?=\s|$)/,
+};
+
 function copyFor(locale: string): Record<string, string> {
   const bundle = JSON.parse(
     readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')
@@ -113,6 +129,10 @@ describe('preferred-cleaner copy', () => {
     it('names nobody in the closure', () => {
       expect(copy['closed_title']).not.toContain('{{');
       expect(copy['closed_body']).not.toContain('{{');
+    });
+
+    it('opens the closure headline impersonally, so it reads about the booking', () => {
+      expect(copy['closed_title']).toMatch(IMPERSONAL_CLOSURE[locale]);
     });
   });
 });

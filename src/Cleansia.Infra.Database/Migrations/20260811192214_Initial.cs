@@ -3590,7 +3590,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Users_TenantId_Email",
                 table: "Users",
                 columns: new[] { "TenantId", "Email" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
         }
 
         /// <inheritdoc />

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260809183249_Initial")]
+    [Migration("20260811192214_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -5282,6 +5282,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId", "Email")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Email"), false);
 
                     b.ToTable("Users");
                 });

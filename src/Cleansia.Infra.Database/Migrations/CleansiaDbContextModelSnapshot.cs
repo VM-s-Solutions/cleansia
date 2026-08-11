@@ -5280,6 +5280,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId", "Email")
                         .IsUnique();
 
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Email"), false);
+
                     b.ToTable("Users");
                 });
 

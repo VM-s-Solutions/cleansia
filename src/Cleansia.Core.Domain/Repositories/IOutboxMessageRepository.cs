@@ -30,4 +30,34 @@ public interface IOutboxMessageRepository : IRepository<OutboxMessage, string>
         string queueName,
         string messageKey,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// GDPR erasure. Deletes the subject's <c>send-email</c> rows — the one queue whose
+    /// <see cref="OutboxMessage.Body"/> carries an address and a real name in the clear, stored verbatim as
+    /// the wire payload. Id-keyed and set-based because an <see cref="OutboxMessage"/> has no navigation to a
+    /// user at all, so there is nothing an erasure could reach through (the shape
+    /// <see cref="IEmployeePayoutDetailsRepository.RemoveForEmployeeAsync"/> already uses).
+    ///
+    /// <para><b>Every status, deliberately.</b> No retention path bounds the rows that matter: the prune
+    /// deletes only <c>Dispatched</c> rows past its window, and refuses <c>Pending</c>/<c>Failed</c> outright
+    /// because they are still re-drivable. Whether a retry-exhausted row ever earns an ageing clock is
+    /// ADR-0002 §A8's question, not this call's — erasure of an identified subject is unconditional either
+    /// way, and re-driving a send-email for an account that has just been erased and deactivated would
+    /// re-issue the confirmation/reset mail to the address the platform said it had deleted.</para>
+    ///
+    /// <para>The subject is read STRUCTURALLY out of the <see cref="OutboxMessage.MessageKey"/> COLUMN — the
+    /// frozen <c>email:{purpose}:{userId}:{codeHash}</c> formula — never as a substring of the body. The
+    /// push, receipt, pay and invoice rows carry no address or name, and a push key repeats the same user id
+    /// in its own first segment, so they are exactly the rows a looser match would wrongly take: they
+    /// stay.</para>
+    ///
+    /// <para><b>The boundary this cannot cross.</b> The key column is the only handle here; the body is never
+    /// read. A <c>send-email</c> row whose key was not built by the frozen formula therefore stays, address
+    /// and all. Nothing writes one today — <c>EmailDispatch</c> is the only producer of a send-email
+    /// envelope — so this is a limit of the handle, not a live hole, and it is the sentence to re-check the
+    /// day a second producer appears. Out of reach here by construction, and not by widening this match: the
+    /// same body already on the queue once the drainer has sent it (bounded by the queue's own lifetime) and
+    /// its poisoned copy in <c>DeadLetter</c> (taken by that table's own erasure).</para>
+    /// </summary>
+    Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
 }

@@ -29,6 +29,7 @@ public class GdprDeletionService(
     IRecurringBookingTemplateRepository recurringBookingTemplateRepository,
     IUserNotificationRepository userNotificationRepository,
     IDeadLetterRepository deadLetterRepository,
+    IOutboxMessageRepository outboxMessageRepository,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<GdprDeletionService> logger)
@@ -204,6 +205,10 @@ public class GdprDeletionService(
         // Id-keyed for the same reason the payout row below is: a poisoned send-email body holds the
         // subject's address and real name verbatim, and its row has no navigation to a user at all.
         await deadLetterRepository.RemoveForSubjectAsync(user.Id, ct);
+
+        // The same wire body one table over, before it poisons anything: an undrained or retry-exhausted
+        // send-email outbox row holds the address and real name just as verbatim, and no prune reaches it.
+        await outboxMessageRepository.RemoveForSubjectAsync(user.Id, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);

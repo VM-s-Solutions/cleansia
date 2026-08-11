@@ -214,6 +214,7 @@ public sealed class DeadLetterErasureTests : IDisposable
             new RecurringBookingTemplateRepository(ctx),
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
+            new OutboxMessageRepository(ctx),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
             NullLogger<GdprDeletionService>.Instance);

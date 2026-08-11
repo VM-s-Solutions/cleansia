@@ -190,6 +190,87 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > by deleting a mapper line: if nothing goes red, the test is one hop short. iOS mirrors this — its
 > generated models have the same all-optional shape.
 
+> **And the RESPONSE side: a repository REFUSES a generated DTO, it never defaults one — and the
+> refusal names the field (ADR-0048).** Neither mobile spec declares a `required` array, so the
+> generator types every property optional-with-null **regardless of `nullable: false`**, and the
+> contract survives only in the spec. The one place a client can re-assert it is the mapper. `?: 0.0`
+> on such a field is not a default, it is a fabrication — `0 Kč` to a cleaner who earned 4 800, with
+> nothing going red.
+>
+> **Five rules, each because the naive default breaks it.** (1) **Money and quantities are never
+> coerced** — a null in a `nullable: false` field is a renamed or broken wire field, not a zero.
+> (2) **Booleans follow the money rule** — `false` is a real state (an unpaid order, a period with no
+> invoice), so defaulting to it is a claim. (3) **Identity is refused or dropped, never synthesized** —
+> which of the two is the *per-surface* ruling below. (4) **Collections DO default** (`orEmpty()`) — an
+> absent list and an empty one render identically and falsify no arithmetic. (5) **Nullable-by-design
+> stays nullable** — the server drew that distinction on purpose. Reference: partner
+> `PeriodPayRepository.kt:77-84`, `DashboardRepository.kt:243-252`.
+>
+> **The rollup ruling is PER SURFACE and is never inherited: refuse the page where the list IS the
+> addends; drop the row where a total is supplied independently.** Backwards, it produces *a smaller,
+> plausible, unmarked number* — the failure with no symptom. Drop when the total comes from the server
+> (customer `OrderApi.kt:141-152` states it: the paged `total` is the server's own count, so a lost row
+> falsifies no figure, while refusing would hide every order answered correctly). Refuse when the
+> client sums the rows — the catalog case is sharpest, because a dropped services row keeps its **id
+> selected** in booking state, is still priced by the server on `Create`, and vanishes only from the
+> pre-quote subtotal: the customer pays a price they were never shown. Refuse also when the rows are
+> **alternatives to each other** (membership plans) — a missing one is a different purchase. The two
+> compose inside one mapper (`OrderApi.kt:133-137`). Write the ruling, for this surface, in the
+> mapper's doc comment.
+>
+> **Three facts that decide this and are all counter-intuitive.**
+> 1. **A bare `$ref` cannot carry `nullable` in OpenAPI 3.0, so its absence carries no information** —
+>    sibling keywords beside `$ref` are ignored. In `GdprExportOrderDto`,
+>    `"status": { "$ref": … }` (`src/cleansia_android/openapi/customer-mobile-api.json:8100-8102`) sits
+>    beside a genuinely non-nullable `totalPrice` (`:8103-8106`) and is indistinguishable from it. **A
+>    `$ref` field can look required and be genuinely optional** — read the C# property, never the
+>    schema's silence.
+> 2. **A `toDomain()` that coerces scores clean on a "does it have a mapper?" audit.** The customer app
+>    has mappers throughout *and the mappers coerce*. Any audit of this class reads what the mapper
+>    **does**; sweeping on the return type finds the wrong files (`ReferralApi.kt:20-23` returns a
+>    hand-written DTO through a coercing mapper).
+> 3. **`.orEmpty()` on the response BODY is not rule 4 — it is the worst outcome of the set.**
+>    `CatalogRepository` called it there, so a refused price list surfaced as an **empty catalog
+>    reported as Success** — "nothing is bookable today". Rule 4 defaults a collection *member*; it
+>    never defaults the payload.
+>
+> **The refusal transport is decided ONCE, in `:core`, not per call site (ADR-0048 §D5, answering
+> T-0589).** The canonical idiom is partner `WireContract.kt` — `required("field")` throws a
+> purpose-built `WireContractViolation` carrying the field name (`:12-15`), and `mapWire` turns it into
+> `ApiResult.Error(ApiError.Server(200, …))` (`:22-28`). It wins on four grounds, in order of weight:
+> it **cannot degrade to Success** (one function decides the outcome, not N callers — customer
+> `OrderRepository.kt:84` and `:110` return `ApiResult.Success(Unit)` for a refused page today); it is
+> the only form that **carries the field name**; it **attributes correctly** — `ApiError.Server(200,…)`
+> says the server answered and the answer was wrong, where `ApiError.Network` says the opposite of what
+> happened; and `required()` **composes** on one expression where `?: return null` obliges every
+> enclosing signature. **`ApiError.Network` is never an available channel for a contract violation** —
+> that reasoning is adopted verbatim from the form it replaces (`RecurringBookingRepository.kt:110-115`:
+> *"that channel is the silent one … reusing it here turns a failed write into a no-op the user never
+> sees"*).
+>
+> **⚠️ Do not repeat `WireContract.kt:19-20`'s claim that the name *"reaches triage"* — nothing records
+> it today.** `partner-app` contains zero `SentryAndroid`/`SENTRY_DSN` occurrences and `:core`'s build
+> file says so (`core/build.gradle.kts:129-131`); `ApiError.Server` renders as the generic line, so the
+> cleaner does not see it either. The name is **preserved in a value that reaches no sink** — which is
+> still strictly better than losing it, and is why the idiom wins anyway. Closing it is owed by the
+> migration ticket and governed by `Q-OBS-01`.
+>
+> **Pin (per repository):** decode a captured payload with every member non-default; assert that
+> removing a `nullable: false` money key **fails** the mapping; and assert the mapper's `@SerialName`
+> set **equals the spec's property set** — the field-name contract the mapper owns implicitly and would
+> otherwise lose on a rename. `PeriodPayWireTest.kt` is the model.
+>
+> **Enforced by:** the per-repository `*WireTest` suites, run by `:partner-app:testDebugUnitTest` /
+> `:customer-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) —
+> **`(gate pending: T-0588)`** → **`T1-CI`** when the roster is complete and the baseline is zero.
+> **Scope, stated because it is narrower than the paragraph:** the wire tests are a **closed roster** —
+> they gate the repositories that have one, and a new repository with a coercing mapper is caught by
+> nothing. The general form is not expressible by the line-based `check-consistency.mjs` (it needs the
+> spec's nullability for the schema the mapper targets), so widening the roster means adding a wire test
+> per repository. **ADR-0048 is `proposed`**
+> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
 member and must `clear()` on sign-out; leaving one out leaks the prior user's data to the next account
@@ -224,8 +305,10 @@ flags a `@Singleton` with a `StateFlow`/`DataStore` cache field that isn't a mem
 (non-blocking — a Room-backed cache it can't see slips past it, so it prompts, it does not gate); the
 **hard** guard is a roster-equality assertion test (`SessionScopedModuleTest` / iOS
 `SessionScopedCacheRegistryTest`) that is **specified but not yet built** (today's `AuthRepositoryTest`/
-`PushLogoutClearsTests` only exercise `clearAll()` with an injected set). A full static "is this per-user"
-check is infeasible for the line-based checker (Kotlin/Swift type-graph resolution) — see `enforcement.md`.
+`PushLogoutClearsTests` only exercise `clearAll()` with an injected set).
+**Retires when:** `SessionScopedModuleTest.kt` and `SessionScopedCacheRegistryTest.swift` exist.
+A full static "is this per-user" check is infeasible for the line-based checker (Kotlin/Swift type-graph
+resolution) — see `enforcement.md`.
 
 The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
 (the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the stored
@@ -452,6 +535,60 @@ raw components one-off; never duplicate a `:core` component.
 > platform to land reads the first's `values*/strings.xml` (or `Localizable.xcstrings`) and takes the keys
 > and the translations verbatim; a five-locale test that every tier resolves to a **distinct, non-key**
 > string is the cheap net under it.
+>
+> ### The redaction narrowing of rule (1) — the discriminator is the field's own ARRIVAL (ADR-0047)
+>
+> Rule (1) above — *render the discriminator, never re-derive it* — governs a second case, and both
+> mobile lanes reached it independently. **When the server redacts a field for a caller class, the
+> client's gate is that field's own arrival; never a flag that re-derives entitlement client-side.**
+>
+> The pair (precise field, coarse substitute) is modelled as **one sealed value** with a case per
+> disclosure level — `precise` / `approximate` / `none` — and every surface reads it. Reference on both
+> platforms: `OrderLocationPresentation.kt:17-32` (built at `:34-40`) and
+> `OrderLocationPresentation.swift:13-45` (built at `:47-57`), each carrying the reasoning in its doc
+> comment.
+>
+> **Why the flag is wrong, in one sentence you cannot recover from the code:** the server redacts on
+> `CanAccessOrderAsync` (`GetOrderDetails.cs:58`, applied at `:137-139`) and computes
+> `isAssignedToCurrentUser` from the assignment list (`:81-82`). Those disagree for the employee who
+> books a cleaning **for their own home** — entitled, not assigned — and gating on the flag hides that
+> person's own data from them. It is a second authorization implementation living beside the server's,
+> and it will drift the next time the server's predicate widens.
+>
+> Four obligations travel with it:
+> - **Scope: fields, not actions.** An **action** gate (a Take/Start/Complete arm) and a **request**
+>   gate (whether to fetch at all) legitimately read the flag and fail **closed**. Withdrawing them
+>   would offer "Slide to start" on a stranger's order (`OrderPrimaryAction.kt:97`) and would fetch
+>   photographs of a home the caller is not entitled to (`OrderDetail.swift:119-124`). *The rule is
+>   about what is **rendered**, never about what is **offered**.*
+> - **Where there is no coarse substitute** — phone, access instructions, notes — the sealed value
+>   collapses to two cases and the gate is simply *did the field arrive*; but it stays a **named
+>   property on the presentation model** (`OrderDetail.swift:125-127` is the shape), never an inline
+>   `if` in a view body, or the pin below cannot be written without a UI harness.
+> - **Blank counts as absent.** The server redacts to `string.Empty` and `[]`, not to `null`
+>   (`OrderPiiRedaction.cs:25-31`, `:37-53`), so the arrival test is `isNullOrBlank`/`isEmpty`, never
+>   `!= null`. Both shipped resolvers already say why (`OrderLocationPresentation.kt:37-38`,
+  `OrderLocationPresentation.swift:51-52`).
+> - **A LIFECYCLE term survives; only the ENTITLEMENT term is withdrawn.** `showAccessCard` is
+>   `isMine && <populated> && (OnTheWay || InProgress)`; the status conjunct answers *when is this
+>   useful* and stays. Deleting the wrong conjunct turns a door code into permanently-visible content on
+>   a completed job.
+>
+> **The pin is behavioural, at the divergent shape** — the field populated **and**
+> `isAssignedToCurrentUser` false — not a source scan asserting the flag is absent. An absence
+> assertion is the shape the tripwire rule below already refuses: it asserts nothing about the claim's
+> content and goes green when the view is renamed away. The call-site binding suite
+> (`OrderDetailLocationCallSiteTests.swift:12-21`) stays for *"the view renders through the resolver"*;
+> it is the wrong instrument for *"the view does not consult a flag"*.
+>
+> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape, run by
+> `:partner-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) and the `CleansiaPartner`
+> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`(gate pending: the ADR-0047 canonicalization
+> ticket)`** → **`T1-CI`**. The baseline is not zero: the deviating form and its live roster are in
+> `consistency.md` §*"Rendering a server-redacted field off an entitlement flag"*.
+> **ADR-0047 is `proposed`**
+> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
 
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
@@ -807,8 +944,8 @@ audience state modeled as a pushed `NavigationPath`; a seed of `.dashboard` (the
 `.splash`); a verified login routing straight to `.dashboard` (bypassing the gate). The customer app copies
 the *pattern* (its own root view + audience states), not the partner enum.
 
-**iOS shell navigation — the ONE way (ADR-0022, 2026-07-02, as owner-superseded 2026-07-08; partner
-finalized T-0429; stale pill mandate swept T-0379):** no `NavigationStack` is ever nested inside another
+**iOS shell navigation — the ONE way (ADR-0022, 2026-07-02, as amended by owner direction 2026-07-08;
+partner finalized T-0429; stale pill mandate swept T-0379):** no `NavigationStack` is ever nested inside another
 (the audience root is a bare flat-enum `switch` — the `CustomerRootView.swift:17`/`PartnerRootView.swift:17`
 crash class), and every path is a **type-erased `NavigationPath`** (never `@Published var path: [SomeRoute]`
 — homogeneous typed sibling paths, multi-element sets, and `navigationDestination(isPresented:)` mixing are
@@ -1227,10 +1364,12 @@ ADR.**
   `InvoicesListUiState` flag-bag. **The read-scoping / PII gate (own-id-only + the post-preview PDF cache-cleanup) is
   SECURITY's** (`security/ios-earnings.md`) — not this rule.
 - **Parity catch-ups (Android is thin → iOS does it right, file the Android follow-up):** Android renders Open-PDF
-  unconditionally (no `pdfGenerationFailed` gate) and hand-wrote a `PeriodPayApi` Retrofit interface (the spec didn't
-  carry `GetPeriodPays` at the time — `PeriodPayApi.kt:8-18`); iOS gates the affordance off the flag and uses the
-  **generated** `employeePayrollGetPeriodPays` (the regen'd spec now carries it). Both Android catch-ups are PM-filed
-  follow-ups, independent of the iOS wave.
+  unconditionally (no `pdfGenerationFailed` gate); iOS gates the affordance off the flag. That one is still a PM-filed
+  follow-up, independent of the iOS wave. **The second catch-up is CLOSED:** Android had hand-written a `PeriodPayApi`
+  Retrofit interface because the checked-in spec did not carry `GetPeriodPays` at the time — T-0576 (`51c1311c`) deleted
+  it and collapsed the call onto the **generated** `EmployeePayrollApi`, behind a `toDomain()` mapper that refuses to
+  coerce money or identity, so both platforms now call the same generated `employeePayrollGetPeriodPays`
+  (`PeriodPayRepository.kt:55-62`).
 
 **iOS push — the ONE way (sprint-12 §7.13, T-0311; ADR-0013 D8 + ADR-0014 D6′ + ADR-0018 D2 + ADR-0019 + the
 `SessionScopedCacheRegistry`; reviewer #34):** APNs push **registration + token plumbing + device lifecycle + a
@@ -1512,8 +1651,13 @@ Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with ca
   `orderDownloadReceipt` **returns a local file `URL`** → the VM surfaces it via the effect → the screen presents the **Core
   `QuickLookPreview`** with `deleteOnDismiss` (the §7.10 D1 seam, reused — SECURITY E4). A **5-min active-order poller** (Confirmed/
   OnTheWay/InProgress only; self-cancels on terminal) + refresh-on-`.task` + an **`OrderEventBus`** seam cover refresh.
-  **Customer push registration is NOT built (that was partner T-0311); the poller + on-appear + the bus seam cover refresh until
-  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` rendering the **server's** quote
+  **Customer push was out of this slice's scope (T-0311 was partner-only), and the poller + on-appear + the bus seam are the
+  read cluster's refresh contract on their own.** Customer push registration has SHIPPED since — the T-0398 wiring folded into
+  **T-0403**: `CustomerAppDelegate.swift:24` registers with APNs directly in `didFinishLaunching` (deferring it behind
+  `requestAuthorization` is silently dropped by iOS — the comment above that line records the device proof), the container builds the
+  `PushTokenRegistrar` + `PushSessionObserver` (`CustomerAppContainer.swift:147-152`), and the tap plan is `CustomerPushTapRouting.swift`;
+  the display/tap row of the Android→iOS table above is the ONE way. It **replaced none of the three refresh seams** — they still carry
+  refresh here, so an arriving push is a bonus, never a precondition. Cancel is a modal `.sheet` rendering the **server's** quote
   (`GET /api/Order/CancellationPreview`) — the client-side tier ladder both platforms shipped is deleted, see the fee-preview rule
   above (T-0527). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
   is partner-only (§7.10).

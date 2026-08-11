@@ -280,8 +280,11 @@ a machine can evaluate from in-repo text alone, with no type graph and no build.
 3. **A `file:line` citation must resolve** — the file exists, and it has at least that many lines. A
    checker asserts both. It cannot assert that the cited lines *say* what the entry claims; that stays
    a reader's job, and an entry may not pretend otherwise. *(Would have caught
-   `PromoCodeRedemptionRepository.cs:99-109` cited from a **65-line** file — the worst variety, because
-   the invariant was still true and a reader who checks the citation concludes it is dead.)*
+   "`PromoCodeRedemptionRepository.cs:99-109`" cited from a **65-line** file — the worst variety,
+   because the invariant was still true and a reader who checks the citation concludes it is dead.
+   That range is **quoted, not asserted**: an exhibit of a dead citation rides inside the `*"…"*`
+   convention, which the checker's quoted-span mask skips — write it bare and the example becomes an
+   instance of the rule it illustrates.)*
 
 **And one shape rule: never enumerate a COUNT of tree instances — write a roster with a membership
 test.** *"There are exactly two documented exceptions"* was wrong twice, and a wrong number is invisible:
@@ -292,13 +295,20 @@ grep, and the **test** (which is normative) keeps deciding the next case even wh
 example. Deviating form: **any sentence of the shape "there are exactly N …" about code**.
 
 **Enforced by:** `agents/tools/check-catalog-claims.mjs` + `.github/workflows/catalog-claims.yml`
-(T-0574) — **`T2-ADVISORY`** today, **`(gate pending: T-0574)`** for the blocking tier. The checker,
-its acceptance test and the workflow have landed; the **self-test half blocks** (its baseline is zero
-by construction), and the **corpus scan runs `--warn`** because the measured baseline is not zero:
-**16** violations before T-0574 changed anything, **15** after it retired `enforcement.md`'s own
-*"Specified, NOT yet built"* banner about this checker. It promotes to **`T1-CI`** — drop `--warn` — when a
-full run reports `FAILED: C1 0 · C2 0 · C3 0`. **The sweep that gets it there is owed and unfiled; PM
-to cut it**, and this sentence is what makes that debt visible rather than implied.
+(T-0574) — **`T1-CI`**, blocking, both halves. It shipped `T2-ADVISORY` and was promoted on
+`docs/sprint-15-decisions` the moment its own stated condition was met: a full-corpus run reporting
+`FAILED: C1 0 · C2 0 · C3 0`. The arc is the lesson — **16** violations before T-0574 changed
+anything, **15** once it retired `enforcement.md`'s own *"Specified, NOT yet built"* banner about this
+checker, then a sweep that closed the C2 banners and the non-`roles/` citations, and finally the six
+that needed a ruling rather than an edit: five `roles/*` citations (a regenerated migration filename,
+an extracted `ResolveTimeZone`, two exhibits that *quote* their dead citation on purpose) and the C1
+disagreement over ADR-0022, resolved by amending the **ADR's** status line, because the card matched
+the tree and the header did not.
+
+What did **not** get promoted with it, deliberately: **C3B**, the advisory heuristic asking whether
+the cited *subject* still appears on the cited lines. It reports ~150 misses and fails nothing. It
+cannot decide that the lines *say* what the entry claims — that stays the reader's — and putting a
+heuristic in the blocking path is how a gate teaches everyone to route around it.
 
 The gate is not aspirational, and all three forms above are decidable from in-repo text with no
 compiler: parse `agents/knowledge/**/*.md` +
@@ -313,10 +323,12 @@ is empty or an anchor matches nothing; a green run must mean it *read* the pages
 
 **Why the blocking tier is still `(gate pending:)` and not `T1-CI`:** `enforcement.md`'s zero-baseline
 rule. Six instances were fixed on 2026-08-09; the remaining role cards and catalog pages were not
-swept. T-0574 **measured** that baseline instead of guessing at it, and the shape is worth knowing
-before the sweep is planned: **7 are C2-FORM** (a bold "not yet built" banner with no `Retires when:`
-condition — a one-line mechanical fix per site), **8 are C3** (rotted citations, including two into a
-migration filename that no longer exists and one into a file that is gone), and **1 is C1**. Two of
+swept then. T-0574 **measured** that baseline instead of guessing at it, and the shape was worth knowing
+before the sweep was planned: **7 were C2-FORM** (a bold "not yet built" banner with no `Retires when:`
+condition — a one-line mechanical fix per site), **8 were C3** (rotted citations, including two into a
+migration filename that no longer exists and one into a file that is gone), and **1 was C1**. The
+C2-FORM class is now empty and the C3 class survives only inside `agents/knowledge/roles/`; the C1 is
+untouched by design. Two of
 T-0574's four owed items remain: the **sweep**, and **one line extending
 reviewer-check 5 "Catalog-edit routing"** (`.claude/agents/reviewer.md`) to re-read the banners and
 citations of the *whole file* a hunk touches — not just the hunk — because the sixth instance was a
@@ -324,10 +336,12 @@ sentence that survived a pass over its own page.
 
 **What enforces this today, exactly:** the workflow runs on every change to `agents/**`, `src/**` and
 `docs/**` — the cited trees, not just the citing ones, because a citation rots when the *cited* file
-moves. Its self-test is a hard gate; its corpus scan reports. A reach failure (an empty corpus, a
-broken parser, a floor breached) exits 1 **even under `--warn`**: advisory about the catalog's debt,
-never about whether the instrument ran. What it cannot decide — whether the cited lines *say* what the
-entry claims — stays the reader's, and the entry does not pretend otherwise.
+moves. Both halves are hard gates now. `--warn` still exists and still means *advisory about the
+catalog's debt, never about whether the instrument ran* — a reach failure (an empty corpus, a broken
+parser, a floor breached) exits 1 under it too — but the workflow no longer passes it, and reaching
+for it to turn a red build green would reinstate exactly the debt this tool retired. What it cannot
+decide — whether the cited lines *say* what the entry claims — stays the reader's, and the entry does
+not pretend otherwise.
 
 **Three alternatives were weighed and rejected** — do not re-derive them:
 - **"A role card may not be written before the thing exists."** Rejected. The payout card was *useful*

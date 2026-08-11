@@ -294,6 +294,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
     set nor lands on the allowlist fails a real test (the existing `AuthRepositoryTest`/`PushLogoutClearsTests`
     only exercise `clearAll()` with an *injected* set — they do not check the real multibinding's membership).
     Filed as a small follow-up ticket (§`enforcement.md`).
+    **Retires when:** `SessionScopedModuleTest.kt` and `SessionScopedCacheRegistryTest.swift` exist.
 - **E10.** **Every `HttpLoggingInterceptor` redacts the Authorization header.** A provider that builds
   `HttpLoggingInterceptor()` MUST call `redactHeader("Authorization")` in the same `.apply` block —
   a DEBUG build at `Level.HEADERS` otherwise prints live bearer tokens to logcat, where any
@@ -550,16 +551,24 @@ temporary implementation shipped ahead of its end state carries, on the changed 
 ## Catalog claims about the tree — the deviating forms (2026-08-09)
 
 > **Enforced by:** `agents/tools/check-catalog-claims.mjs` —
-> **`agents/tools/check-catalog-claims.mjs`** (T-0574, landed `d8f357f1`) — **T2-ADVISORY** on the
-> corpus, **T1-CI** on its own self-test. Advisory rather than blocking because the measured baseline
-> is **15**, not zero, and claiming a blocking tier over a dirty baseline would break the very rule
-> being enforced. Promotion is one edit: drop `--warn` from `.github/workflows/catalog-claims.yml`
-> the day the corpus scan reports `C1 0 · C2 0 · C3 0`. Note the split — `--warn` is advisory about
-> the **catalog** and blocking about the **tool**: a reach failure exits 1 either way, because a
-> checker reporting zero violations while blind is the defect it exists to close. Rule and
-> the rejected alternatives: `conventions.md` §*"A claim about the tree carries its own retirement
-> condition"*. **The baseline is non-zero and unmeasured** — six instances were fixed on 2026-08-09;
-> the remaining role cards and catalog pages were not swept. That sweep is part of the ticket.
+> **`agents/tools/check-catalog-claims.mjs`** (T-0574, landed `d8f357f1`) — **T1-CI**, blocking, on
+> the corpus and on its own self-test. It shipped `T2-ADVISORY` because the baseline it measured
+> (**16**, then **15** at `d8f357f1`) was not zero, and claiming a blocking tier over a dirty baseline
+> would break the very rule being enforced. The `docs/sprint-15-decisions` sweep drove it to
+> `C1 0 · C2 0 · C3 0`, so `--warn` came off `.github/workflows/catalog-claims.yml` in the same
+> change. The split it encoded still holds and is worth keeping in view — `--warn` was advisory about
+> the **catalog** and blocking about the **tool**, because a checker reporting zero violations while
+> blind is the defect it exists to close. Rule and the rejected alternatives: `conventions.md`
+> §*"A claim about the tree carries its own retirement condition"*.
+>
+> **What the last six taught, since it is the reusable part:** every one of them needed a *ruling*,
+> not an edit. Two are exhibits that cite a dead line **on purpose** — the entry's whole subject is
+> that the citation rotted — and "fixing" them by inventing live line numbers destroys the exhibit;
+> they are quoted instead, which is how this corpus tells a claim from a display. One was a
+> regenerated migration filename (the pre-prod `Initial` is rebuilt, not stacked, so its id moves).
+> One was a member that no longer exists anywhere, extracted to a shared helper by ADR-0035 AM-10 —
+> the only repair that had to be re-reported rather than re-pointed. And the C1 was resolved on the
+> **ADR** side: `patterns-mobile.md`'s card matched the tree, ADR-0022's header did not.
 
 Four forms are deviations from the day this entry lands. Each is a **form**, not a judgement about the
 claim's truth — three of the four instances below were *true when written*, which is the whole point.
@@ -574,10 +583,13 @@ claim's truth — three of the four instances below were *true when written*, wh
    *Live instance fixed:* `roles/payout-reference-allocator.md` — true for **2 h 11 m**, then falsified
    by `d410f002`. Writing the card early is **not** the deviation; writing it without the trigger is.
 3. **A `file:line` citation that does not resolve** — file missing, or fewer lines than cited. *Live
-   instance fixed:* `roles/membership-benefit-usage.md` invariants 5 and 6, citing
-   `PromoCodeRedemptionRepository.cs:85-93` and `:99-109` in a **65-line** file, rotted by an unrelated
-   refactor (`da88b695`). The invariants were still **true**; only the evidence was dead — which is the
-   worst variety, because a reader who checks the citation concludes the invariant is dead too.
+   instance fixed:* `roles/membership-benefit-usage.md` invariants 5 and 6, which cited
+   *"`PromoCodeRedemptionRepository.cs:85-93` and `:99-109`"* in a **65-line** file, rotted by an
+   unrelated refactor (`da88b695`). The invariants were still **true**; only the evidence was dead —
+   which is the worst variety, because a reader who checks the citation concludes the invariant is dead
+   too. **The two dead ranges above are quoted, not asserted**: an exhibit of a rotted citation must
+   ride inside the `*"…"*` convention, which the checker's quoted-span mask skips, or this sentence
+   becomes an instance of the very form it names. Write the exhibit bare and you re-earn the finding.
 4. **Any sentence of the form "there are exactly *N* …" about the tree.** Write a **roster + membership
    test** instead: the test is normative and keeps deciding the next case, the roster is descriptive and
    is falsifiable one file at a time. *Live instance fixed:* the self-commit exceptions list in
@@ -623,3 +635,100 @@ deliberate and were **right when written**, which is the whole point.
    `IDeadLetterRepository` gains a reader, which ADR-0002 §A3 makes a superseding-ADR event). Before
    writing a retention rule over a store, *grep its repository for a reader* — the answer changes the
    **shape** of the rule, not just its numbers.
+
+## Rendering a server-redacted field off an entitlement flag — the deviating form (2026-08-11)
+
+> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape, run by
+> `:partner-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) and the `CleansiaPartner`
+> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`(gate pending: the ADR-0047 canonicalization
+> ticket)`** → **`T1-CI`**. Rule, scope and rejected alternatives: `patterns-mobile.md`
+> §*"The redaction narrowing of rule (1)"*; decision: **ADR-0047**, which is `proposed`
+> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+>
+> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
+> test 1), so the superseded form is recorded here and the canonicalization is ticketed rather than
+> assumed. **The baseline is non-zero and read from the tree, not counted.**
+
+The server redacts a cleaner's view of an order on `CanAccessOrderAsync` (`GetOrderDetails.cs:58`,
+applied at `:137-139`) and separately reports `isAssignedToCurrentUser` off the assignment list
+(`:81-82`). The two disagree for the **employee who books a cleaning for their own home** — entitled,
+not assigned — so a client gating a *rendered field* on the flag hides that person's own data from them
+and is a second authorization implementation beside the server's.
+
+**The deviating form (normative — it decides the next case):** *a conditional whose body renders a
+field that `OrderPiiRedaction.RedactForBrowsingCleaner` blanks (`OrderPiiRedaction.cs:25-31`,
+`:37-53`), and whose condition names `isAssignedToCurrentUser` or a local aliasing it.*
+
+**Roster (descriptive — read 2026-08-11; it decides nothing on its own).** A call site that passes the
+test and is not here means the **roster** is stale; one that is here and passes the test is the defect.
+
+| # | Field | Android | iOS |
+|---|---|---|---|
+| 1 | `CustomerPhone` — call + SMS chips | `CustomerCard.kt:86-87` | `OrderDetailCards.swift:96-97` |
+| 2 | `AccessInstructions` — access card | `OrderDetailScreen.kt:481-483` | `OrderDetailContent.swift:19-23` |
+| 3 | `OrderNotes`/`OrderIssues` — notes & issues section | `OrderDetailScreen.kt:630` | `OrderDetailContent.swift:124` |
+
+**Explicitly NOT deviations, and this is a ruling rather than an omission** — each gates an **action**
+or a **request**, fails closed, and stays exactly as written: `showWorkSections`/`showsWorkSections`
+(`OrderDetailScreen.kt:607-608`, `OrderDetail.swift:119-127`) and every arm of the primary action
+(`OrderPrimaryAction.kt:59`, `:97`, `:113`). *The rule is about what is rendered, never about what is
+offered.* A canonicalization that deletes these is worse than the defect.
+
+**Two things this class teaches that a "does it check entitlement?" audit would miss.**
+
+1. **The fix is a no-op for every caller class but one.** For a browsing cleaner the server already
+   blanked the field, so both terms agree; for an assignee both terms agree. They differ only for the
+   entitled non-assignee. So the migration cannot widen disclosure to anyone the server withheld from —
+   it is reading what the server sent.
+2. **The flag is not defence-in-depth, because it is also a server field.** Keeping it "just in case"
+   asks the same server a different question and calls the answer independent.
+
+## A generated DTO coerced, or refused at the call site — the deviating form (2026-08-11)
+
+> **Enforced by:** the per-repository `*WireTest` suites, run by `:partner-app:testDebugUnitTest` /
+> `:customer-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) —
+> **`(gate pending: T-0588)`** → **`T1-CI`**. **Scope, narrower than the rule:** the wire tests are a
+> **closed roster**; a new repository with a coercing mapper is caught by nothing, and widening means
+> adding a wire test per repository. Not expressible by `check-consistency.mjs` — deciding it needs the
+> spec's nullability for the schema the mapper targets, which is not line-local. Rule and rejected
+> alternatives: `patterns-mobile.md` §*"And the RESPONSE side"*; decision: **ADR-0048**, which is
+> `proposed`
+> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+>
+> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
+> test 1). **The baseline is non-zero and read from the tree, not counted.**
+
+**The deviating form (normative), two limbs:**
+
+- **(a) Coercion.** A mapper from a generated model that *supplies* a value for a field the spec marks
+  `nullable: false` — `?: 0.0`, `?: 0`, `?: false`, `?: ""`, `?: <n>` — or calls `.orEmpty()` on the
+  **response body** rather than on a collection member.
+- **(b) Call-site transport.** A refusal whose outcome is decided by the caller rather than by one
+  shared wrapper — so that a 2xx body can resolve to `ApiResult.Success` or to `ApiError.Network`.
+
+**Roster (descriptive — read 2026-08-11).** Limb (a), customer app under `core/`: `referral/ReferralApi.kt`,
+`disputes/DisputeApi.kt`, `recurring/RecurringBookingApi.kt`, `user/SavedAddressApi.kt`,
+`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt`. Limb (b), independent of
+those: `orders/OrderRepository.kt:84` and `:110` (a refused page reported as `ApiResult.Success(Unit)`),
+`:125` and `:138` (a 2xx contract violation reported as `ApiError.Network`).
+
+> ⚠️ **T-0588's row states the tell is *"the return type, still a generated `*Dto`"*. That is false at
+> HEAD and a lane sweeping on it will read the wrong files.** `ReferralApi.getMy()` returns a
+> **hand-written** `ReferralAccountDto` (`ReferralApi.kt:20-23`) through a mapper that coerces
+> (`:44-50`, `:59-68`); `DisputeApi` likewise returns hand-written DTOs (`DisputeApi.kt:30-38`).
+> **Sweep on the mapper's null-handling, never on the return type** — which is the same fact one level
+> up: *a `toDomain()` that coerces scores clean on a "does it have a mapper?" audit.*
+
+**Two things this class teaches that a per-field audit would miss.**
+
+1. **The refusal can be worse than the coercion it replaced.** Customer `OrderApi.kt:122-126` refuses a
+   null `total` because *"a defaulted zero silently ends pagination, so the customer's older orders
+   stop existing rather than fail to load"* — and one layer up, `OrderRepository.kt:84` turns that
+   refusal into `ApiResult.Success(Unit)`, which is the same silent outcome. **Rule the transport in the
+   same change as the rule, or the rule is implemented N ways.**
+2. **`ApiError.Network` is never an available channel for a contract violation.** The reasoning is
+   already in the tree and is adopted rather than discarded — `RecurringBookingRepository.kt:110-115`:
+   *"that channel is the silent one … reusing it here turns a failed write into a no-op the user never
+   sees."* The network did not fail; the payload did.

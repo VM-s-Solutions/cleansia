@@ -79,7 +79,7 @@ exhausted.
   takes `ITenantProvider` and reads it at `:19`. The reference namespace is **global** because the
   shipped unique index on `EmployeeInvoices.VariableSymbol` is global — bare column, `unique: true`,
   filtered `"VariableSymbol" IS NOT NULL`, no `TenantId`
-  (`Migrations/20260723182623_Initial.cs:2672-2677`) — so it has no NULLS-DISTINCT hole, and a
+  (`Migrations/20260809183249_Initial.cs:2672-2677`) — so it has no NULLS-DISTINCT hole, and a
   tenant-keyed counter under a globally-unique index means two tenants both allocate ordinal 1 and the
   second insert becomes **a 500 on the payroll path**.
   ⚠️ **It must not acquire one without the ADR-0046 §D3.2 flip**, which changes the counter key **and**
@@ -198,4 +198,4 @@ exhausted.
 - **The year rollover is the only remedy for exhaustion**, by design. If 999 999 payout invoices in a
   year ever becomes plausible, the column width is the constraint to revisit — and it is
   `character varying(10)` on the wire to three generated clients
-  (`Migrations/20260723182623_Initial.cs:1540`), so that is an epic, not a tweak.
+  (`Migrations/20260809183249_Initial.cs:1540`), so that is an epic, not a tweak.

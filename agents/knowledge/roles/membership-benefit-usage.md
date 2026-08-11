@@ -100,7 +100,7 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
    value PostgreSQL deduces two types for one parameter and refuses the whole statement with `42P08`
    — **in single-tenant mode only**, which is why the promo path shipped that bug past a tenanted test
    run. `FiscalCounterRepository.cs:49-54` pins the same parameter pre-emptively and says why.
-   ⚠️ **[CITATION WAS DEAD]** *This invariant cited `PromoCodeRedemptionRepository.cs:85-93`.* That file
+   ⚠️ **[CITATION WAS DEAD]** *This invariant cited "`PromoCodeRedemptionRepository.cs:85-93`".* That file
    is **65 lines** and has held no raw SQL since `da88b695`. The invariant is true; only its evidence
    had rotted — the worst combination, because a reader who checks a dead citation concludes the
    invariant is dead too.
@@ -112,7 +112,7 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
    (`ExpressWaiverConsumer.cs:57-70` loads tracked, then `AttachOrder`).
    It is **family A entry 3** on `consistency.md`'s roster of sanctioned self-committing writes; if the
    interface doc-comment is deleted the write becomes a deviation.
-   ⚠️ **[CITATION WAS DEAD]** *This invariant cited `PromoCodeRedemptionRepository.cs:99-109` and
+   ⚠️ **[CITATION WAS DEAD]** *This invariant cited "`PromoCodeRedemptionRepository.cs:99-109`" and
    `IPromoCodeRedemptionRepository:34-39`.* Neither survives: the impl has no such lines, and the
    interface member at `:33-39` now documents the **change-tracked interim**, i.e. the opposite
    property.

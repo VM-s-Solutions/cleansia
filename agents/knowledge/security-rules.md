@@ -392,6 +392,7 @@ gate is a **roster-equality assertion test** (`SessionScopedModuleTest` / `Sessi
 that is **specified but not yet built** — see `enforcement.md` and §E9 (the existing `AuthRepositoryTest`/
 `PushLogoutClearsTests` only exercise `clearAll()` behaviorally with an injected set; they do not assert
 the production multibinding equals the expected roster, so they would not catch a forgotten new repo).
+**Retires when:** `SessionScopedModuleTest.kt` and `SessionScopedCacheRegistryTest.swift` exist.
 
 ## S12 — What is inside a stored artifact is disclosed to everyone who can fetch it
 

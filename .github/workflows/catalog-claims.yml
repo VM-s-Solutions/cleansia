@@ -64,21 +64,18 @@ jobs:
       - name: Catalog-claim guard self-test
         run: node agents/tools/check-catalog-claims.test.mjs
 
-      # ADVISORY — `T2-ADVISORY`, and deliberately so. enforcement.md's zero-baseline rule ("add
-      # enforcement behind the cleanup, never in front of it") forbids a blocking tier over a dirty
-      # baseline, and the baseline is NOT zero: 16 claim violations across the corpus at the commit
-      # that introduced this tool (C1 1 · C2 7 · C3 8). Claiming T1-CI here would break the rule this
-      # tool exists to enforce.
+      # BLOCKING — `T1-CI` since the sweep that closed the baseline. It shipped ADVISORY on purpose:
+      # enforcement.md's zero-baseline rule ("add enforcement behind the cleanup, never in front of
+      # it") forbids a blocking tier over a dirty baseline, and the baseline was 16 (C1 1 · C2 7 ·
+      # C3 8) at the commit that introduced this tool. The tool's own stated promotion condition —
+      # a whole-corpus run reporting `FAILED: C1 0 · C2 0 · C3 0` — was met, so `--warn` came off in
+      # the same change that closed the last violation. Do NOT re-add it to get a red build green:
+      # that reinstates the exact debt this tool was built to retire, and the flag's absence is the
+      # only record that the corpus was ever clean.
       #
-      # PROMOTION CONDITION — drop `--warn` when, and only when, a run of
-      # `node agents/tools/check-catalog-claims.mjs` over the whole corpus reports
-      # `FAILED: C1 0 · C2 0 · C3 0`, and update the tier token in conventions.md §"A claim about the
-      # tree carries its own retirement condition", consistency.md §"Catalog claims about the tree"
-      # and enforcement.md's tier table in the same change.
-      #
-      # `--warn` is advisory about the CATALOG and still blocking about the TOOL: a P0 REACH finding
-      # (fewer corpus files / ADRs / citations than the floors, or citation-shaped text the parser
-      # could not consume) exits 1 even here, because a checker reporting "0 violations" while blind
-      # is the exact defect it was built to close.
+      # WHAT STAYS ADVISORY, and must not be promoted with it: C3B — "is the cited SUBJECT still on
+      # the cited lines" — reports 147 misses and fails nothing. It cannot decide that the lines say
+      # what the entry claims; that stays the reader's. Wiring C3B into the exit code would put a
+      # heuristic in the blocking path and teach everyone to route around the gate.
       - name: Catalog claim liveness (ADR status · retirement banners · citations)
-        run: node agents/tools/check-catalog-claims.mjs --warn
+        run: node agents/tools/check-catalog-claims.mjs

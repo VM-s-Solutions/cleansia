@@ -44,7 +44,12 @@ express surcharge on this booking, and how many waivers are left in this period?
   **Read from the CURRENT plan at the moment of the call**, so a mid-month plan swap changes the quota
   without touching the count (ADR-0035 AM-19).
 - `ICountryConfigurationRepository` → `CountryConfiguration.TimeZoneId` — the zone the calendar month
-  is evaluated in (UTC fallback, mirroring `GetDashboardStats.ResolveTimeZone:252-266`).
+  is evaluated in. The UTC fallback is no longer a mirror of anything: `GetDashboardStats` no longer
+  has a `ResolveTimeZone` member at all — ADR-0035 AM-10 extracted it to the shared
+  `TimeZoneResolution.Resolve` (`TimeZoneResolution.cs:18-37`, which never throws — null, blank,
+  unknown and malformed all land on UTC), and this resolver reaches it through
+  `BenefitPeriodKeyFactory.cs:27-39`, which carries a **second** UTC fallback at `:31-33` for the case
+  the extraction cannot cover: no active company info, so there is no country to look a zone up by.
 - `IMembershipBenefitUsageRepository` — **read only**: the live slot count for the current `PeriodKey`.
 - `BookingPolicy.RequiresExpressSurcharge(cleaningUtc, nowUtc, waiverApplies)` — the caller passes this
   resolver's answer as the `bool`.

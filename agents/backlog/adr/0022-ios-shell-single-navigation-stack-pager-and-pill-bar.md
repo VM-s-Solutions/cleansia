@@ -1,6 +1,11 @@
 # ADR-0022 — iOS shell navigation: ONE shell-level `NavigationStack` + a page-style tab pager + the custom pill-bar/FAB composite (no outer root stack)
 
-- **Status:** accepted (2026-07-02)
+- **Status:** accepted (2026-07-02) — amended in place by owner direction 2026-07-08, NOT superseded:
+  D2's `.page` pager and D3's pill/FAB composite are retired, D1/D2 topology stands and is still the
+  governing rule. Nothing replaced this ADR, so the token stays `accepted`; the amendment section below
+  carries what died. Two catalog pages restate this token verbatim (`patterns-mobile.md` §*"iOS shell
+  navigation — the ONE way"* and `enforcement.md` §*"Baseline and promotion"*) — change it and both
+  become catalog-claims findings on the same commit.
 - **Author:** architect (phase/ios-fix1 ruling — the owner-device iOS 16 defect sweep)
 - **Supersedes:** the sprint-12 §7.15 Decision 6 shell mapping ("Android floating pill `CustomBottomBar` + `BookFab` →
   native `TabView` + FAB overlay is the sanctioned ADR-0018 D3 swap") — REVERSED for the shells. The ADR-0018

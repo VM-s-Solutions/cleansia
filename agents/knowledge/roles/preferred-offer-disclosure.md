@@ -1,13 +1,17 @@
 # Role — `PreferredOffer` (`StateOf` + `IsDisclosable`) and the customer's offer block (CRC card)
 
-> **Both halves are SHIPPED; the decision behind one of them is not yet ratified.** `StateOf` is
+> **Both halves are SHIPPED and the decision behind them is now ratified.** `StateOf` is
 > ADR-0045 §D7.1 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`), unchanged. `IsDisclosable`
 > landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:56-83`, enforcer
-> `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), but its **ADR-0049** is still
-> `proposed`
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`)
-> — a lead rules and the PM stamps.
-> **Retires when:** that status line stops reading `proposed`.
+> `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), and its **ADR-0049** is
+> `accepted` **with amendments C1–C6** (lead, 2026-08-11)
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> **Retires when:** that status line stops reading `accepted`.
+>
+> ⚠️ **Read amendment C1 before citing §D7.** Its evidence — *"three live-order sets and all three are
+> different"* — was destroyed by `746a5064` in the same sprint; two are now identical and pinned equal.
+> The **conclusion** stands, on a different ground. §D7's borrowed *"a C# predicate cannot replace it"*
+> argument is **struck** and must not be reused for a flat status set.
 
 This card covers **two** responsibilities that must not be collapsed, plus the mapper that joins them.
 They were one responsibility until 2026-08-11, and the defect T-0595 records is exactly what that

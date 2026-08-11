@@ -544,12 +544,40 @@ duplication with a written retirement condition; **Android needs nothing**, and 
 not map the block at all.
 
 **Two things ruled deliberately, so they are not re-derived.** (1) **No platform-wide order-status
-grouping** — the three "is this order live" sets in the tree today all differ, each for a stated reason
-(`OrderRepository.cs:259-271` is a `static readonly` array because EF inlines it into SQL;
-`GdprDeletionService.cs:94-101` has a different membership; `AdminOverrideOrderStatus.cs:86-97` is two
-refusals with different error keys). (2) **`upcoming` is not a status-predicate name** — it already
-means a clock rule on web (`orders.component.ts:124-126`) and a status rule on iOS, and a web lane
-reached for the wrong one.
+grouping.** (2) **`upcoming` is not a status-predicate name** — it already means a clock rule on web
+(`orders.component.ts:124-126`) and a status rule on iOS, and a web lane reached for the wrong one.
+
+> #### 🔴 CORRECTION 2026-08-11 (lead, ADR-0049 amendment C1) — the argument for (1) changed inside one sprint
+> This page used to justify (1) as *"the three sets all differ, each for a stated reason"*, with the
+> first row reading *"a `static readonly` array **because EF inlines it into SQL**"*. **Both halves are
+> now wrong and neither may be reused.**
+>
+> - **The memberships no longer differ.** `746a5064` restored the missing `OnTheWay` to
+>   `GdprDeletionService.ErasureBlockingStatuses` (`GdprDeletionService.cs:104-111`), which was this
+>   ADR's own §Found-en-route report. It is now **identical** to `OrderRepository.SlotBlockingStatuses`
+>   (`OrderRepository.cs:264-271`) and the two are **pinned equal by**
+>   `src/Cleansia.Tests/Features/Gdpr/ErasureBlockingOrderStatusTests.cs:98-122`. The third,
+>   `AdminOverrideOrderStatus.cs:86-97`, was never a live-order set — it is a *target*-status refusal
+>   that keeps two error keys apart.
+> - **The "EF inlines it into SQL" argument does not support the conclusion.** It explains why the field
+>   is `static readonly`; it says nothing about whether *two* sites may share *one* array. A flat status
+>   set is **data**: the same array translates through `.Contains` in an EF `Where`
+>   (`OrderRepository.cs:344`) and runs in memory unchanged (`GdprDeletionService.cs:119`).
+>   `OrderAvailability` needs two forms because it is a compound **expression**; that precedent does not
+>   transfer to a set.
+>
+> **The ruling survives on the ground that replaced it:** *two questions with one answer today are not
+> one question.* "Does a live commitment occupy this cleaner's slot", "does a live order refuse this
+> subject's erasure" and "is this reservation sentence still worth saying" can diverge, and a shared
+> constant makes that divergence **silent** because the second caller inherits it. **Two named sets
+> pinned equal make agreement a decision re-made on every change** — which is the shape the tree landed
+> on, and it is better than either merging or leaving them unpinned.
+>
+> **Extract on a condition, never a count.** `IsDisclosable`'s limb (a) is already the **third**
+> expression of this membership and is pinned to neither of the others. Extract when a site needs the
+> membership and cannot state its own reason inline, or when a divergence is proposed that no pin would
+> catch. *Residual, named:* a new `OrderStatus` member reddens the GDPR pin but **not** limb (a) nor
+> `PreferredOfferDisclosureTests`' `[InlineData]` table — so it would arrive silently disclosable.
 
 ### The Plus gate
 
@@ -661,7 +689,7 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **Lapse × recurring schedule** | **keep generating, full price, notify** — owner ruling 2026-08-03 | stop materializing on lapse; keep the member price | **settled; do not reopen.** *Never drop a customer's cleaning* is the governing rule |
 | **Who decides the offer block is still worth saying** *(ADR-0049 — new)* | **the server withholds the whole block** (`IsDisclosable`) | a shared client-side `OrderStatus` grouping on three stacks (T-0595's proposal); a fifth `StateOf` input; a fifth enum member; a `shouldRender` flag beside the block | a *second* server consumer of `StateOf` — then the two functions merge behind one entry point returning `PreferredOfferState?` |
 | **The "search is over" term** *(ADR-0049 — new)* | **`AvailableSpots <= 0`** | `AssignedEmployees.Count > 0` (what `IsOpen` uses) | the `Closed` copy splitting its two jobs — *"your request ended"* survives a filled booking, *"open to our whole team"* does not |
-| **iOS's redundant `isUpcoming` conjunct** *(ADR-0049 — new)* | **kept**, with a written retirement condition | deleted in the same wave | the file being opened for any other reason — then it goes, and its two tests repoint at the absent-block case |
+| **iOS's redundant `isUpcoming` conjunct** *(ADR-0049 — new)* | **kept**, with a written retirement condition | deleted in the same wave | ⚠️ **the backend change being DEPLOYED — not merged, not "the file being opened for any other reason"** (amendment C4). Then it goes and its two tests repoint at the absent-block case. A shipped iOS binary cannot be redeployed, so deleting early reopens the defect for an App Store review window plus the update tail. **Two carriers required first:** the doc comment beside `PreferredOfferPresentation.swift:24` (which today argues the **opposite**, `:16-19`) and a `blocked-by: backend DEPLOYED` row on the ticket |
 
 ## Open / undecided
 
@@ -745,7 +773,9 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **T-0595** *(ADR-0049)* | `PreferredOffer.IsDisclosable` + the `null` return in `ResolvePreferredOfferAsync` + `PreferredOfferDisclosureTests` (including the `¬IsDisclosable ⇒ ¬IsOpen` row) + **two web test rows and no web production code**. No migration, no `nswag-regen`, no i18n |
 | ***new, PM to file** (ADR-0049 §D8)* | rename iOS's `OrderStatusGroup.isUpcoming` — it reads *"not concluded"* and collides with web's date-based `isUpcoming`. One file, no behaviour change. **Not ridden into T-0595** |
 | ***new, PM to file** (ADR-0049 §D6)* | Android customer has **no** favourite-cleaner disclosure at all — its hand-written `OrderDtos.kt` does not map `preferredOffer`. Same gap T-0580 closed for web; it inherits a correct server and needs no grouping |
-| ***new, PM to file** (ADR-0049 §Found en route)* | `GdprDeletionService.HasBlockingOrderAsync` (`GdprDeletionService.cs:94-101`) omits `OrderStatus.OnTheWay` while its sibling live-order set includes it (`OrderRepository.cs:259-271`). **Intent unverified** — two files that disagree, routed as a candidate, not asserted as a defect |
+| ~~***new, PM to file** (ADR-0049 §Found en route)*~~ | ✅ **DONE — `746a5064`. Do not re-file.** `OnTheWay` restored to `GdprDeletionService.ErasureBlockingStatuses` (`:104-111`), both directions pinned plus set-equality with `OrderRepository.SlotBlockingStatuses` by `ErasureBlockingOrderStatusTests`. **That fix is what falsified ADR-0049 §D7's evidence** — see the CORRECTION block above and amendment C1 |
+| ***new, PM to file** (ADR-0049 amendment C4)* ⛔ | **the two carriers for the iOS `isUpcoming` retirement**: a doc comment beside `PreferredOfferPresentation.swift:24` stating the narrowing is now the server's and the conjunct is deleted **only once the backend change is live on the target environment**, plus a `blocked-by: backend DEPLOYED` row on the deletion ticket. **Until both exist, deleting the conjunct is a review finding** |
+| ***new, PM to file** (ADR-0049 amendment C1(v))* | exhaustiveness over `Enum.GetValues<OrderStatus>()` in `PreferredOfferDisclosureTests`, so a new status member cannot arrive silently disclosable. **Gate it on the probe first:** add a temporary member and see whether the suite already reddens |
 | **ADR-0039 — new, PM to file (A1)** — **S**, was M | extract `LiveCommitmentsInWindow` from the shipped private predicate + add `GetBusyEmployeeIdsInWindowAsync` as a third wrapper. **No ignoring sibling.** ⚠️ **+ AC: `EXPLAIN (ANALYZE, BUFFERS)` in `Cleansia.IntegrationTests`; + AC: overlap cases re-run against real PostgreSQL** (the shipped pins run on SQLite). Both pin classes stay green |
 | **ADR-0039 — new, PM to file (A2)** | `OrderDuration.EstimateMinutes` extraction + `OrderFactory` rewire + `TC-AVAIL-WINDOW-0` + **the picker's SQL `Sum` projection held to the same test** (the draft cited `ExistWithIdsAsync` as precedent — that is a `CountAsync` that materializes nothing) |
 | **ADR-0039 — new, PM to file (A3)** | `GetMyServingCleaners` gains the slot + the tri-state answer. ⚠️ **`nswag-regen`, owner-only**. Depends on A1 + A2 **and on P1 + P2 + P3** |

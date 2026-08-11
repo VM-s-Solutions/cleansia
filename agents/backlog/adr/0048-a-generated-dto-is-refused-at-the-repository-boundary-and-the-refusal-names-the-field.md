@@ -1,10 +1,13 @@
 # ADR-0048 — A generated DTO is **refused** at the repository boundary, never defaulted; and the refusal **names the field**
 
-- **Status:** `proposed` — architect, 2026-08-11. **The author does not accept their own ADR**
-  (`adr/README.md`); a lead rules and the PM stamps.
+- **Status:** `accepted` — lead, 2026-08-11, **with amendments B1–B6** (`## Verdict (lead)`). Authored
+  `proposed` 2026-08-11; an independent challenger+lead pass ran 2026-08-11 **after** the implementation
+  landed (T-0588 / T-0589), and the amendments are what that pass found. **B1 is the one that had to
+  land before the token flipped** — §D4 fact 4 as authored puts correct, deliberate code in violation.
 - **Date:** 2026-08-11
-- **Mode:** **author**, with an author-run self-challenge (`## Challenge`). No independent challenger
-  has run. The sweeps this ADR rules on were done by the T-0576 / T-0582 lanes and recorded on
+- **Mode:** **author**, with an author-run self-challenge (`## Challenge`), **then an independent
+  challenger/lead pass** (`## Challenge (independent — post-implementation)` / `## Verdict (lead)`).
+  The sweeps this ADR rules on were done by the T-0576 / T-0582 lanes and recorded on
   `backlog/INDEX.md` (T-0582, T-0588, T-0589) and `questions/open.md` **N29**. **No code-state claim
   is inherited from those rows** — every one below was re-opened at HEAD and is cited at `file:line`,
   and §D7 records where a ticket's own stated membership test is **falsified** by the tree.
@@ -118,6 +121,33 @@ Named instances at HEAD: `PeriodPayWireTest.kt`, `InvoicesWireTest.kt`, `Dashboa
    `CatalogRepository` called it on the body, so a **refused price list surfaced as an empty catalog
    reported as Success** — "nothing is bookable today", strictly worse than the coercion it looked
    like. Rule 4 defaults a **collection member**; it never defaults the payload.
+
+   > ##### AMENDMENT B1 (lead, 2026-08-11) — the categorical form is contradicted by the ticket's own output
+   > *"It never defaults the payload"* is absolute, and **the migration that implements this ADR ships
+   > three deliberate exceptions to it**, two of them in the files T-0588 rewrote:
+   >
+   > | Site | What it does | Why it is not the defect |
+   > |---|---|---|
+   > | `customer-app/…/core/orders/OrderApi.kt:109` | `raw.mapWire { list -> list.orEmpty().mapNotNull { … } }` | `getMyServingCleaners` feeds the favourite-cleaner **picker**; the repository says so at `OrderRepository.kt:240-246` — *"silent on failure … the picker just shows an empty state so the booking proceeds without a preference"* |
+   > | `customer-app/…/core/orders/OrderRepository.kt:250` | `ApiResult.Success(resp.body().orEmpty())` | same surface, same ruling |
+   > | `customer-app/…/core/catalog/CatalogRepository.kt:87,92` | extras body defaulted, **beside** services/packages which refuse at `:82-83` | *"Extras stay best-effort by existing design: a refusal here degrades to no add-on section … and never a wrong add-on price"* |
+   >
+   > **The discriminator already exists — it is §D2, applied to the payload rather than to a row.** A
+   > collection **payload** may default to empty only when **all** of these hold, and the mapper's doc
+   > comment says which:
+   > 1. absence and empty are **the same product decision** on that surface;
+   > 2. **nothing sums, counts or paginates it** — no total, no badge, no "load more" term;
+   > 3. **no affordance is derived from its emptiness** that a customer would read as a fact (an empty
+   >    picker means *"no favourites yet"*, which is true either way; an empty **catalog** means
+   >    *"nothing is bookable"*, which is not).
+   >
+   > `CatalogRepository.refresh` is the worked example **because it does both in one method**: services
+   > and packages refuse (`:82-83`), extras degrade (`:87`), and the two sentences beside them say why.
+   > That is the shape a lane copies.
+   >
+   > **Without this amendment the ADR's own §How-a-reviewer-verifies step 1 turns three correct sites
+   > into findings**, and the "fix" would refuse the booking flow's preference picker whenever that
+   > endpoint degraded — a strictly worse outcome than the one the rule was written to prevent.
 5. **`nullable: true` on a plain `string` carries no information either — measured, not inferred.**
    **Every one of the 359 plain-`string` properties in `customer-mobile-api.json` is `nullable: true`.
    359 of 359, zero exceptions**, despite the backend building with `<Nullable>enable</Nullable>`
@@ -136,6 +166,33 @@ Named instances at HEAD: `PeriodPayWireTest.kt`, `InvoicesWireTest.kt`, `Dashboa
    by asking the spec gets "nullable — the coercion is correct" for **every string on the wire**,
    including `ReferralAccountDto.code`, `ReferralListItemDto.id`, and the Stripe client secret. That is
    not a hypothetical: it is how these sites survived a sweep that was looking for exactly them.
+
+   > ##### AMENDMENT B2 (lead, 2026-08-11) — this fact is a DATED MEASUREMENT, not a standing truth,
+   > ##### and as authored it broke this ADR's own method declaration twice
+   > Two self-contradictions, both fixed here rather than left in an immutable artifact:
+   > 1. The **⚠️ Method declaration** says *"Nothing was compiled, executed or **measured**"* — and
+   >    fact 5 says *"re-measured 2026-08-11 by walking `components.schemas` and counting"*.
+   > 2. The same declaration says *"**No count of tree instances appears in the normative text**"* — and
+   >    fact 5, which sits under `## Decision`, carries **five** counts (359/359, 39/25, 62/3, 75/11,
+   >    43/25).
+   >
+   > **What is normative is the invariant, and it carries no number:** *a string's declared nullability
+   > in either mobile spec discriminates nothing, so for a `string` you read the C# property — always.*
+   > That sentence is what a lane applies, and it is unchanged by a regen.
+   >
+   > **What is evidence is the measurement, and it is dated and perishable.** Independently
+   > corroborated by the lead on **2026-08-11** against
+   > `src/cleansia_android/openapi/customer-mobile-api.json` at HEAD of `docs/sprint-15-decisions`: 359
+   > matches for a `"type": "string"` immediately followed by `"nullable": true`, and 359 is also the
+   > count fact 5 states, so the two agree. *(The file's other `"type": "string"` occurrences are 80
+   > carrying a `format`/`enum` sibling and the remainder query/path parameters and response-content
+   > schemas — i.e. not `components.schemas` properties, which is the population fact 5 scopes itself
+   > to.)*
+   >
+   > **Retires when:** any `mobile-spec-regen` lands. A regen is owner-only and can re-emit the whole
+   > `components.schemas` block, so **the number must be re-measured, not inherited**, and the day a
+   > single plain-`string` property comes back non-nullable the *invariant* is what fails, not the
+   > count. **Do not cite fact 5's numbers from this page after a regen; re-derive them.**
 
 ### D5 — T-0589: the `WireContract` idiom wins
 
@@ -185,6 +242,25 @@ occurrences of `SentryAndroid` or `SENTRY_DSN` (swept 2026-08-11), and `:core`'s
 in as many words: *"Customer wires both up; partner doesn't run Sentry yet"*
 (`core/build.gradle.kts:129-131`). `ApiError.Server` renders as the generic line, so the cleaner does
 not see it either.
+
+> #### AMENDMENT B3 (lead, 2026-08-11) — the conclusion is right; the sweep that produced it is a false negative
+> *"`partner-app` contains zero occurrences of `SentryAndroid` or `SENTRY_DSN`"* is a **negative claim
+> from a grep on the wrong terms.** Partner does not lack Sentry — it **actively disables** it:
+> `src/cleansia_android/partner-app/src/main/AndroidManifest.xml:89-92` carries
+> `io.sentry.android.core.SentryInitProvider` with `tools:node="remove"`, and
+> `partner-app/…/CleansiaPartnerApp.kt:24-25` records why — *"stays until partner gets a Sentry DSN
+> provisioned."*
+>
+> Same conclusion — **no sink exists today, the field name is carried and not delivered** — but a
+> materially different price for whatever ticket `Q-OBS-01` produces: turning it on is *removing a
+> manifest node and provisioning a DSN*, not adopting a dependency. A lane repeating the authored sweep
+> would price it as the latter.
+>
+> **D6's obligation is DISCHARGED, by the second of its two closures.** The migration corrected the doc
+> comment rather than building the sink:
+> `src/cleansia_android/core/src/main/java/cz/cleansia/core/network/WireContract.kt:21-25` now states
+> the name is *"carried, not delivered"*, names the manifest removal, and names `Q-OBS-01` as the
+> decider. That is the honest half and it is done.
 
 So the field name is **preserved in a value that reaches no sink**. The idiom is still right — it is
 the only one that keeps the name at all, and a name preserved can be routed later while a name lost
@@ -273,6 +349,55 @@ widening the roster means adding a wire test per repository, and the canonicaliz
 **Who owes it:** the Android lane, as the T-0588 canonicalization (steps 1–4); the iOS lane inherits
 step 5 with no decision left to make. §D6's closure is owed by whichever lane lands step 1.
 
+> #### AMENDMENT B4 (lead, 2026-08-11) — the pricing above is wrong in three places, and step 5 must not inherit it
+> **A ruling without its cost is a preference — and a ruling with the *wrong* cost is worse, because
+> the next lane quotes it.** The ruling (idiom 1, moved to `:core`) survives every correction below;
+> only the price changes. Read at HEAD after T-0588 / T-0589 landed:
+>
+> **(a) Step 2 misses a fourth partner import, and §D3 already implied it existed.** The three named
+> are real (`DashboardRepository.kt:16-17`, `OrdersRepository.kt:29-30`, `PeriodPayRepository.kt:8-9`).
+> The fourth is **`partner-app/…/data/invoices/InvoicesRepository.kt:13,16`** — and §D3 lists
+> `InvoicesWireTest.kt` among the wire tests shipped at HEAD, so the ADR names the repository's
+> *enforcer* while omitting the repository from its own repoint list. That is an internal
+> contradiction, not a stale reading. *(A fifth site,
+> `partner-app/…/data/auth/AuthRepository.kt:20,22`, consumes `wireResult` — new adoption, correctly
+> absent from a repoint list.)*
+>
+> **(b) Step 3 under-prices `:core` roughly fourfold, and one of the pieces is a behavioural change to
+> a SHARED primitive the ADR never mentions.** Priced: *"a `Response<T>` counterpart to `mapWire`."*
+> Shipped, in `core/src/main/java/cz/cleansia/core/network/`:
+> 1. `Response<T>.mapWire` (`WireContract.kt:48-50`) — the counterpart that was priced;
+> 2. `wireResult` (`:59-63`) — the wrapper that turns a propagated violation into `ApiError.Server`;
+> 3. `Response<R>.requiredBody()` (`:71`) — the refusal for a bodiless 2xx;
+> 4. **`networkCall` changed to rethrow `WireContractViolation`** (`NetworkCall.kt:61-62`).
+>
+> **(4) is load-bearing and its blast radius is both apps.** `networkCall`'s contract was *"any
+> `Throwable` → `null`"*, and the repository reads `null` as a network failure. An adapter that maps
+> **inside** its Retrofit `Response` raises the refusal at the call, so without the rethrow every
+> customer-side contract violation would have been reported as `ApiError.Network` — *the exact
+> attribution defect §D5 exists to close*, reintroduced by the migration that closes it. The ADR priced
+> that at zero.
+>
+> **The reason three pieces were needed rather than one is structural and belongs in the record:** the
+> customer's adapters map inside the Retrofit `Response` (`OrderApi.kt:54-110`) and build `ApiResult`
+> one layer up in the repository, so **a refusal can only cross that boundary as a throw** — hence
+> raise (`required`) → survive the shared catch (`networkCall` rethrow) → be attributed once
+> (`wireResult`). A single `Response<T>` counterpart cannot span it. Converging the customer adapters
+> onto `safeApiCall`/`ApiResult` remains the ADR-0011 direction and remains not this ticket's job.
+>
+> **(c) Step 4's "the sites go" is wrong; the implementation was right to deviate.** The
+> `?: networkError()` sites did not go — they **re-pointed**, from guarding a 2xx *body* (wrong) to
+> guarding a `null` from `networkCall` (right): `OrderRepository.kt:93`, `:123`, `:138`, `:248`. The
+> body is now `resp.requiredBody()`. **Corrected rule, which is what §D5 ground 3 already implies:**
+> `ApiError.Network` **stays** the channel for a null `networkCall` result and is **never** the channel
+> for a 2xx body that breaks the contract. *(The surviving `return ApiResult.Success(Unit)` at
+> `OrderRepository.kt:89` and `:118-119` are already-loading / exhausted guards, not refusals; step 4's
+> line-number list swept them in.)*
+>
+> **(d) Step 5 (iOS) therefore inherits FOUR pieces and a shared-primitive contract change, not one
+> file.** T-0589 was filed before the port precisely so the port would not re-decide this; it must not
+> now be scheduled against the authored price.
+
 ## Challenge (author-run — no independent challenger has run)
 
 - **CH-1 — "one ADR, two decisions: the mapper contract and the refusal transport. Split it."**
@@ -308,6 +433,89 @@ step 5 with no decision left to make. §D6's closure is owed by whichever lane l
 **D1–D7 stand.** T-0589 is **answered**: idiom 1 (`WireContract`) is canonical, it moves to `:core`,
 and the "reaches triage" half is owed and named. T-0588's stated membership test is **corrected** in
 §D7 and the ticket needs re-wording before a lane picks it up.
+
+## Challenge (independent — post-implementation, 2026-08-11)
+
+A challenger instance distinct from the author, running **after** T-0588 / T-0589 shipped
+(`d0da4dc3`, `34831ceb`, `b34d641d`, `a54775f4`). Method: `Read` / `Glob` / `Grep` only — **no shell,
+nothing compiled or executed; no test outcome or build result is claimed.** One count is asserted and
+it is a `Grep` count over one JSON file, stated with its date and its retirement condition (B2).
+
+- **IC-1 — "§D4 fact 4 is categorical and the ticket's own diff breaks it."** **Sustained, and it is
+  the most consequential finding in this pass.** Three deliberate body-level `.orEmpty()` sites
+  survive, two of them inside the migrated files. Under the ADR as authored, §How-a-reviewer-verifies
+  step 1 makes them findings and the "fix" refuses the booking flow's preference picker. → **B1**.
+- **IC-2 — "fact 5 is a measurement dressed as a law, in an ADR that declares it measured nothing."**
+  **Sustained on both limbs.** The number is right (independently corroborated) and the framing is
+  not. → **B2**.
+- **IC-3 — "§D6's sweep is a false negative."** **Sustained.** Sentry is present and disabled by
+  manifest node removal, not absent. Conclusion unchanged, cost of the follow-up materially
+  different. → **B3**.
+- **IC-4 — "the migration price is wrong, and §D3 contradicts §migration step 2."** **Sustained on
+  three counts** — a missed fourth partner import that §D3 itself implies, a `:core` cost roughly four
+  times what was priced including an unmentioned contract change to the shared `networkCall`, and a
+  step-4 prescription the implementation correctly disobeyed. → **B4**.
+- **IC-5 — "§D5's ruling is wrong now that the true cost is known."** **NOT sustained — the ruling
+  holds, and the lead re-derived it rather than deferring.** The corrected cost is four `:core` pieces
+  plus one shared-primitive change, paid once. The rejected alternative — duplicating `WireContract`
+  into `customer-app` — pays the `Response`-boundary problem **twice** (the customer adapters still map
+  inside `Response`, so a duplicate still needs `wireResult` + the `networkCall` rethrow, and the
+  rethrow lives in `:core` either way and would be edited from a second app's copy). It is not "half
+  the migration cost"; it is nearly all of it, plus a permanent second copy. **The magnitude claim in
+  the ADR's rejection row is wrong; its conclusion is right**, and `deliberation.md` step 5 requires
+  the Verdict to say which. → **B5**.
+- **IC-6 — "the §D7 roster is stale."** **Sustained in a way the roster's own shape does not
+  express.** The six named repositories are still coercing (`SavedAddressApi.kt:23`,
+  `RecurringBookingApi.kt:27`, `CatalogApi.kt:33/38/43` all still `mapBody`/`map` over
+  `list.orEmpty()`), so the deviation entry stays live — but **`MembershipApi` is now *partly*
+  migrated**: it imports `required` from `:core` (`MembershipApi.kt:12`) while `:68` still runs the old
+  `mapBody { list.orEmpty()… }`. A per-repository on/off roster cannot say that, and a lane reading
+  "Membership: migrated" would skip `:68`. → **B6**.
+
+## Verdict (lead) — `accepted with amendments`, 2026-08-11
+
+**D1, D2, D3, D5, D7 stand. §D4 fact 4, §D4 fact 5, §D6 and the priced migration are amended — B1–B6 —
+and the amendments are part of the accepted text.** No challenge blocks. Consensus declared; nothing
+escalated to the owner. **`Q-OBS-01` remains open and this ADR still does not pre-empt it.**
+
+**B5 (recorded here because it has no home section).** The *"Duplicate `WireContract` into
+`customer-app`"* rejection row says the duplicate costs *"half the migration cost and all of the future
+cost."* The half is wrong — see IC-5. The row's **disposition is unchanged**; its arithmetic is struck.
+
+**B6 (recorded here for the same reason).** §D7's roster is per-repository and the tree now holds a
+**partly**-migrated one. A roster row means *"this repository's mappers have not all been converted"*,
+never *"this repository has not been touched"*, and the canonicalization ticket must sweep on the
+membership test per **mapper**, not per file.
+
+**Why it is accepted rather than returned.** Every finding corrects evidence, scope or price. **No
+decision is reversed:** rules 1–5 stand, the per-surface rollup ruling stands, idiom 1 is still
+canonical and still belongs in `:core`, and the tree implements all of it. B1 is a *scope clause the
+ADR's own §D2 already supplies* — it was omitted, not decided against.
+
+**Provenance check (`deliberation.md` step 5).** Re-opened by the lead at HEAD: `WireContract.kt`,
+`NetworkCall.kt`, `OrderApi.kt`, `OrderRepository.kt`, `CatalogRepository.kt`,
+`partner-app/src/main/AndroidManifest.xml`, `CleansiaPartnerApp.kt`, every
+`import cz.cleansia.core.network.*` site, and `customer-mobile-api.json`. Divergences recorded:
+**§D6's sweep (false negative — B3)**, **migration steps 2/3/4 (three errors — B4)**, **§D4 fact 4
+(contradicted by the tree — B1)**, and the **rejection row's magnitude claim (wrong, conclusion right —
+B5)**.
+
+**Deliberately NOT ruled, because it needs a command.** The tier token stays
+`(gate pending: T-0588)`. `T1-CI` asserts a complete roster **and** a zero baseline; six repositories
+are unmigrated and one is half-migrated, so condition (b) is plainly unmet — this is not a
+shell-blocked judgement, it is simply not true yet. **What I would want run** before the *next* pass
+re-examines it: `./gradlew :core:testDebugUnitTest :partner-app:testDebugUnitTest
+:customer-app:testDebugUnitTest`, and specifically the B4(b) mutation — revert
+`NetworkCall.kt:61-62`'s rethrow and confirm a customer wire test goes red. If nothing reddens, the
+`networkCall` rethrow is unpinned and that is a missing test, not a passing build.
+
+**Follow-ups filed by this verdict (PM to allocate ids):**
+1. **B1 into the catalog.** `patterns-mobile.md` §*"And the RESPONSE side"* currently restates the
+   categorical form (*"it never defaults the payload"*, `:234-235`). It must carry B1's three
+   conditions, or the catalog keeps putting `OrderApi.kt:109`, `OrderRepository.kt:250` and
+   `CatalogRepository.kt:87` in violation.
+2. **A pin for the `networkCall` rethrow** if B4(b)'s mutation shows none exists.
+3. **Re-word T-0588's roster obligation** to sweep per mapper, per B6.
 
 ## How a reviewer verifies compliance
 

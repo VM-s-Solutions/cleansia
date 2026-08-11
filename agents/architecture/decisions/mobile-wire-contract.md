@@ -5,8 +5,32 @@
 > An accepted ADR is immutable; this page is the *evolving* design notes, trade-off space and current
 > shape. Update this when the design evolves; supersede the ADR for a real decision change.
 >
-> 🟠 **ADR-0048 is `proposed`** (that file, `:3`). **Retires when:** its status line stops reading
-> `proposed`.
+> 🟢 **ADR-0048 is `accepted`** (that file, `:3`), ruled by a lead 2026-08-11 **with amendments B1–B6**.
+> **Retires when:** its status line stops reading `accepted`.
+>
+> ### The three amendments that change what a lane does — read these before the ADR body
+>
+> **B1 — `.orEmpty()` on the response body is not absolutely forbidden.** The ADR said *"it never
+> defaults the payload"*, and T-0588's own diff ships three deliberate exceptions
+> (`OrderApi.kt:109`, `OrderRepository.kt:250`, `CatalogRepository.kt:87`). The discriminator is §D2's,
+> applied to the payload: a collection **payload** may default to empty only when absence and empty are
+> **the same product decision**, **nothing sums / counts / paginates it**, and **no affordance is derived
+> from its emptiness that a user would read as a fact** — *and the mapper's doc comment says which*.
+> `CatalogRepository.refresh` is the worked example because it **refuses** services and packages
+> (`:82-83`) and **degrades** extras (`:87`) in one method.
+>
+> **B2 — the "359 of 359 strings are `nullable: true`" figure is a DATED MEASUREMENT, not a law.**
+> Corroborated 2026-08-11 and **perishable**: any owner-run `mobile-spec-regen` can move it.
+> What is normative carries no number — *a string's declared nullability in either mobile spec
+> discriminates nothing, so for a `string` you read the C# property, always.* **Re-measure after a
+> regen; never inherit the count from a page.**
+>
+> **B4 — `:core` carries FOUR pieces, not the one the ADR priced**, and the fourth is a contract change
+> to a **shared** primitive: `networkCall` now rethrows `WireContractViolation`
+> (`core/network/NetworkCall.kt:61-62`) instead of folding it to `null`. Without it every customer-side
+> violation is reported as `ApiError.Network` — the attribution defect §D5 exists to close. **The iOS
+> port inherits all four**, plus the reason: the customer's adapters map *inside* the Retrofit
+> `Response`, so a refusal can only cross that boundary as a throw.
 >
 > **Deliberately a separate page from `generated-client-contract.md`.** That page is scoped to the
 > **web** NSwag clients and says so — *"The Android/iOS generated clients come from the separate
@@ -136,8 +160,11 @@ comment.
   specs, so the generator types the fields correctly. It is an owner-only `mobile-spec-regen` change
   that re-types every generated model on two apps at once, and every mapper would still need writing to
   survive the interim — so it is rejected *here*, not foreclosed. **If the generated models ever become
-  non-nullable, §D1's rules 1–3 collapse into the type system and ADR-0048 is superseded rather than
-  amended.**
+  non-nullable, §D1's rules 1–3 collapse into the type system, and the right response is a superseding
+  ADR rather than an amendment to ADR-0048.** *(Phrased this way deliberately: `ADR-0048 is superseded`
+  would read to `check-catalog-claims.mjs` C1 as a status claim — id, connector `is`, status token —
+  and disagree with the `accepted` on that ADR's own line 3. A conditional about a future event must
+  not be written in the shape of a claim about today.)*
 - **A hand-written `@Serializable` DTO with non-nullable members** (customer `OrderDtos.kt:43`) moves
   the refusal into `kotlinx.serialization`. It is kept where it already exists but is not the general
   answer: the thrown message is a serialization diagnostic rather than a domain one, and it cannot

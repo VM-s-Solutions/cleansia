@@ -1,10 +1,14 @@
 # ADR-0049 — A **disclosure block** is withheld by the **server** when its sentence stops being true; the client renders it off the block's own arrival
 
-- **Status:** `proposed` — architect, 2026-08-11. **The author does not accept their own ADR**
-  (`adr/README.md`); a lead rules and the PM stamps.
+- **Status:** `accepted` — lead, 2026-08-11, **with amendments C1–C6** (`## Verdict (lead)`). Authored
+  `proposed` 2026-08-11; an independent challenger+lead pass ran 2026-08-11 **after** the implementation
+  landed (T-0595, `5b85d80f`). **C1 had to land before the token flipped: §D7's stated evidence was
+  destroyed by a same-sprint commit (`746a5064`), and shipped production code already cites §D7 by
+  name.**
 - **Date:** 2026-08-11
-- **Mode:** **author**, with an author-run self-challenge (`## Challenge` below). No independent
-  challenger has run. Written to unblock **T-0595**, whose premise this ADR partially **refutes** —
+- **Mode:** **author**, with an author-run self-challenge (`## Challenge` below), **then an independent
+  challenger/lead pass** (`## Challenge (independent — post-implementation)` / `## Verdict (lead)`).
+  Written to unblock **T-0595**, whose premise this ADR partially **refutes** —
   see §Context, "What T-0595 gets right, and the half it cannot fix".
 - **Number:** **0049**, allocated 2026-08-11. The highest on disk was 0048.
 - **Supersedes:** nothing. **Amends** ADR-0045 §D7.2 by adding a *presence* rule to a block whose
@@ -221,6 +225,24 @@ IsOpen  =  callerHasActiveMembership ∧ RecurringTemplateId is null
 
 > **`¬IsDisclosable ⇒ ¬IsOpen`.** This is the enforcer's core assertion (D9), not a comment.
 
+> #### AMENDMENT C2 (lead, 2026-08-11) — the two functions are in DIFFERENT ASSEMBLIES, and that is
+> #### why the theorem can only ever be a test
+> D3's sketch comment is right — `IsDisclosable` ships beside `StateOf` in
+> `src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:78-83`. But D5 reads `PreferredOfferExit.IsOpen`
+> as though it sat nearby, and it does not: it is
+> `src/Cleansia.Core.AppServices/Features/Orders/PreferredOfferExit.cs:40-49` — **`Cleansia.Core.AppServices`, not
+> `Cleansia.Core.Domain`**, and the reference is one-way (AppServices → Domain).
+>
+> **Consequence worth writing down rather than rediscovering:** Domain cannot see `PreferredOfferExit`,
+> so the D5 theorem **cannot be asserted in production code at all** — not as a guard clause, not as an
+> assertion, not as a `Debug.Assert`. The only assembly that sees both is `Cleansia.Tests`. That is not
+> a limitation of the design; **it is the argument for why the enforcer in D9 has to be a test**, and
+> the ADR should have said so instead of leaving a reader to infer it from a compile error.
+>
+> It is also the reason the shipped `PreferredOfferDisclosureTests.BuildStateSpace`
+> (`src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs:211-249`) has to construct real
+> `Order` aggregates and call both functions — there is no cheaper seam.
+
 ### D6 — What each stack owes, concretely
 
 **Backend (T-0595, the whole fix).**
@@ -228,6 +250,23 @@ IsOpen  =  callerHasActiveMembership ∧ RecurringTemplateId is null
 2. `ResolvePreferredOfferAsync` returns `PreferredOfferDetails?`; `null` when `IsDisclosable` is false.
    `MapToDetail`'s parameter is already nullable (`OrderMappers.cs:223`).
 3. `PreferredOfferDisclosureTests` (D9). No migration, no regen, no i18n.
+
+> #### AMENDMENT C3 (lead, 2026-08-11) — a 4th item is owed: the EXISTING enforcer this decision breaks
+> *"No migration, no regen, no i18n"* is true and it is not the whole list. **Withholding the block
+> breaks a live test that D6 did not predict.** `PreferredOfferExitAgreementTests` drove its cancelled
+> row through `detail.Value!.PreferredOffer!.CanChooseAnother` — a force-unwrap on exactly the block
+> this ADR now nulls, so the row throws rather than fails informatively.
+>
+> The lane repaired it correctly: `PreferredOfferExitAgreementTests.cs:120` now reads
+> `detail.Value!.PreferredOffer?.CanChooseAnother ?? false`, with a comment recording *why* reading the
+> block's absence as "no exit offered" is legitimate — **it is the D5 theorem, which
+> `PreferredOfferDisclosureTests` proves rather than assumes** (`:116-119`). That is the right repair:
+> the agreement test keeps asserting what the customer can actually see, and the proof lives in the
+> class that owns it.
+>
+> **The general obligation, stated because this will recur:** *a decision that changes what a read model
+> emits owes the repair of every existing enforcer that reads it, named in the same §D6-style list.* A
+> panel that lists only new artifacts will keep discovering the old ones at implementation time.
 
 **Web (T-0595, the live defect — and the obligation is a PIN, not a narrowing).**
 - **Add no status term** to `order-preferred-offer.facade.ts` or `order-preferred-offer.models.ts`.
@@ -254,6 +293,44 @@ IsOpen  =  callerHasActiveMembership ∧ RecurringTemplateId is null
   merely merged) reopens harm (2) for the App Store review window. That ordering is the ticket's, not
   a code concern.
 
+> #### AMENDMENT C4 (lead, 2026-08-11) — the ordering constraint is RIGHT and its CARRIER is wrong
+> This is the point the T-0595 lane left open, and it is ruled here rather than left as prose.
+>
+> **The constraint, stated plainly.** iOS's `isUpcoming` conjunct
+> (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/PreferredOfferPresentation.swift:24`) is
+> **redundant but not yet safe to delete.** Its precondition is **`deployed`, not `merged`**: an
+> iOS build is pinned in the App Store for a review window plus however long users take to update, so a
+> build that ships without the conjunct, pointed at an environment whose server still sends the block
+> on concluded bookings, reopens harm (2) for weeks with no server-side remedy. Backend fixes deploy;
+> shipped iOS binaries do not.
+>
+> **Two sentences in D6 are in tension and the tension is the defect.** The retirement condition says
+> *"when the iOS lane next opens `PreferredOfferPresentation.swift` for any reason"* — a trigger that
+> fires on any unrelated edit. The safety condition says *after the server is deployed*. Nothing joins
+> them, so the trigger can fire first. **Restated: the conjunct is deleted the first time that file is
+> opened AFTER the ADR-0049 server change is live on the environment the build points at — and not
+> before.**
+>
+> **Ruling on the carrier, which is what actually keeps this from being deleted early.** An ADR is the
+> wrong artifact to hold it: *a lane deleting a conjunct reads the file, not the ADR*, and that file
+> today argues the **opposite** — `PreferredOfferPresentation.swift:16-19` still says *"the reservation
+> state itself carries no order status, so the narrowing is made here"*, with no mention of ADR-0049,
+> no retirement condition and no deploy precondition. A reader of that comment concludes the conjunct
+> is load-bearing; a reader of this ADR concludes it is deletable; nobody reads both. **The constraint
+> must be carried by BOTH of:**
+> 1. **The Swift file's own doc comment, beside the conjunct** — that the narrowing is now the
+>    *server's* (ADR-0049 §D4), that this term is knowing duplication kept only as deploy cover, and
+>    that it is deleted **only once the ADR-0049 server change is live on the target environment**.
+>    This is the only artifact the deleting lane is guaranteed to read.
+> 2. **A `blocked-by` row on the follow-up ticket** naming the deploy — not the merge — as the blocker,
+>    so the PM cannot schedule it into the same release train.
+>
+> The catalog entry (`patterns-mobile.md` §*"The block-level case"*) is a third, weaker carrier and
+> stays; it is not sufficient alone for the same reason the ADR is not.
+>
+> **Until both carriers exist, deleting the conjunct is a finding**, regardless of what this ADR's D6
+> or the catalog says about redundancy.
+
 **Android — nothing, and the "nothing" is the point.** The customer app does not map `preferredOffer`
 (`OrderDtos.kt` carries no such field; the only Kotlin hits for it are in `partner-app`, which is the
 cleaner's side of the same feature). When it builds the card it inherits a correct server and needs no
@@ -276,6 +353,68 @@ Canonicalizing across these means reconciling three genuinely different question
 `OrderAvailability`'s two-form + equivalence-test price for a question every site currently answers
 correctly. **`IsDisclosable`'s limb (a) is therefore written inline and is private to the preferred-offer
 question.** If a fourth site ever wants it, that is the moment to extract — with a caller in hand.
+
+> #### AMENDMENT C1 (lead, 2026-08-11) — **the conclusion STANDS; the evidence and the argument above
+> #### are both struck.** This is the ruling the T-0595 lane routed here rather than acting on.
+>
+> The lane was right to route it and right not to touch the normative sentence. My ruling, in three
+> parts:
+>
+> **(i) The evidence is dead. `746a5064` destroyed it, in the same sprint.** The table's premise —
+> *"three 'is this order live' sets exist and all three are different"* — is **false at HEAD**. The GDPR
+> row's distinguishing fact was the missing `OnTheWay`; that omission was the ADR's own §Found-en-route
+> report, it was fixed, and the two sets are now **identical in membership and pinned equal by a
+> reflection test**: `GdprDeletionService.ErasureBlockingStatuses`
+> (`src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs:104-111`) ≡
+> `OrderRepository.SlotBlockingStatuses`
+> (`src/Cleansia.Infra.Database/Repositories/OrderRepository.cs:264-271`), asserted by
+> `src/Cleansia.Tests/Features/Gdpr/ErasureBlockingOrderStatusTests.cs:98-122`. **Two of three are now
+> the same set**, and the third (`AdminOverrideOrderStatus`) was never an "is this order live" set at
+> all — it is a *target*-status refusal that keeps `Completed` and `Cancelled` apart to preserve two
+> customer-facing error keys. So the table proves nothing it was cited for.
+>
+> **(ii) The SQL-vs-C# argument does not transfer, and it must not be reused.** The table's first row
+> says a shared artifact is impossible because `SlotBlockingStatuses` is a `static readonly
+> OrderStatus[]` *"because EF inlines it into SQL. A C# predicate cannot replace it — that is why
+> `OrderAvailability` needs two forms."* **That reasoning is imported from a structurally different
+> case.** `OrderAvailability` needs two forms because it is a compound **expression** over four columns,
+> and an `Expression<Func<…>>` and a method body are genuinely two artifacts. A flat status set is
+> **data**: the identical array translates to SQL through `.Contains` inside an EF `Where`
+> (`OrderRepository.cs:344`) *and* runs in memory over materialized rows unchanged
+> (`GdprDeletionService.cs:119`). One array would serve both sites, and `Cleansia.Core.Domain` is an
+> assembly both can already see. **Nothing structural forbids sharing.** Struck.
+>
+> **(iii) The conclusion survives on a different, honest ground — and the ground is what the tree
+> already chose.** *Two questions that happen to have one answer today are not one question.* "Does a
+> live commitment occupy this cleaner's slot", "does a live order refuse this subject's erasure" and
+> "is this reservation sentence still worth saying" can diverge — a future fulfilment state might block
+> an erasure and not a slot — and a shared constant makes that divergence **silent**, because the
+> second caller inherits it. The shape the codebase landed on is strictly better than either
+> alternative: **two named sets, kept apart, pinned equal by a test whose failure message says a rename
+> must redden it** (`ErasureBlockingOrderStatusTests.cs:126-130`), so agreement is a *decision that is
+> re-made on every change* rather than an accident or an inheritance. That is the argument D7 should
+> have made and now makes. **Limb (a) stays inline and private to the preferred-offer question.**
+>
+> **(iv) The "fourth site" trigger is mis-calibrated and is replaced by a condition.** Limb (a)'s
+> membership — `not (Completed or Cancelled)` — is **already the third expression of the same set**, and
+> unlike the other two it is pinned to neither. Counting to four therefore no longer means anything.
+> **Extract when a site needs the membership and cannot state its own reason for it inline** — or when
+> a divergence is proposed and no pin would catch it. Not on a count.
+>
+> **(v) Residual risk, named rather than closed.** `ErasureBlockingOrderStatusTests` reddens when a new
+> `OrderStatus` member is added, forcing a decision at both live-order sites. **Neither limb (a) nor
+> `PreferredOfferDisclosureTests`' hand-written `[InlineData]` table
+> (`PreferredOfferDisclosureTests.cs:78-107`) reddens**, so a new status would be silently *disclosable*
+> — the non-conservative direction for a sentence. Cheap fix, filed as a follow-up rather than ridden
+> into this acceptance: assert limb (a) over `Enum.GetValues<OrderStatus>()` so a new member fails the
+> disclosure suite too.
+>
+> ⚠️ **Why this amendment was blocking.** `GdprDeletionService.cs:94-95` and
+> `ErasureBlockingOrderStatusTests.cs:94-96` **cite "ADR-0049 §D7" by name** as the reason the two sets
+> stay two artifacts. Accepting §D7 as authored would make shipped production code permanently cite an
+> immutable artifact whose stated evidence a same-sprint commit had already falsified — the exact decay
+> `conventions.md` §*"A claim about the tree cites the tree"* exists to prevent. Those two citations are
+> **correct as of this amendment**: §D7 now argues (iii), which is what those comments actually say.
 
 ### D8 — The name: `upcoming` is not a status predicate on any stack
 
@@ -389,6 +528,112 @@ and the proposed grouping would have fixed one of the two named harms on one of 
 here is buildable until a lead rules and the PM stamps `accepted`; the catalog entries landed alongside
 carry the `proposed` token and their retirement conditions, so a reader cannot mistake their standing.
 
+## Challenge (independent — post-implementation, 2026-08-11)
+
+A challenger instance distinct from the author, running **after** T-0595 shipped (`5b85d80f`). Method:
+`Read` / `Glob` / `Grep` only — **no shell, nothing compiled, executed or measured; no test outcome or
+build result is claimed.** The author's two named non-assertions (exhaustiveness of `StateOf`
+consumers; test behaviour) are **not** resolved by this pass either — see the Verdict's
+"what I would want run".
+
+- **IC-1 — "§D7's evidence was destroyed by a commit in this same sprint, and shipped code cites §D7."**
+  **Sustained; blocking until amended.** → **C1**, ruled in full at §D7.
+- **IC-2 — "§D7 borrows `OrderAvailability`'s two-form argument for a case it does not fit."**
+  **Sustained.** A status *array* is data and needs one artifact, not two; only a compound *expression*
+  needs two forms. → **C1(ii)**.
+- **IC-3 — "D5 reads `PreferredOfferExit` as adjacent; it is in another assembly."** **Sustained.**
+  Domain cannot see AppServices, so the theorem is a test by necessity, not by preference. → **C2**.
+- **IC-4 — "D6's 'what each stack owes' omits the enforcer this decision breaks."** **Sustained.**
+  `PreferredOfferExitAgreementTests` force-unwrapped `PreferredOffer!` on the row the ADR now nulls.
+  → **C3**.
+- **IC-5 — "the iOS ordering constraint is stated in the one artifact the deleting lane will not
+  read."** **Sustained, and it is the finding with the longest fuse.**
+  `PreferredOfferPresentation.swift:16-19` still argues *for* the client narrowing. → **C4**.
+- **IC-6 — "D4's consequence 2 is a prescription written as a description."** **Sustained as a wording
+  defect.** *"`StateOf` stays a pure four-input function, unchanged, with its tests unchanged"* reads
+  as an observation; §How-a-reviewer-verifies step 1 treats it as an obligation (*"A fifth of either is
+  a D4 violation"*). A reader cannot tell which from D4 alone. → **C5**.
+- **IC-7 — "does the shipped implementation contradict the decision anywhere?"** **No — and I looked
+  for it specifically, since the code landed before the ruling.**
+  `PreferredOffer.IsDisclosable` (`PreferredOffer.cs:78-83`) is D3 verbatim, limb (b) reads
+  `availableSpots <= 0` and **not** an assignment count (the CH-2 defect), the resolver returns `null`
+  at `GetOrderDetails.cs:159-162`, `StateOf` still takes four parameters and `PreferredOfferState`
+  still has four members (D4/reviewer-step-1), and the D5 theorem is **asserted with anti-vacuity rows
+  and per-limb reachability rows** (`PreferredOfferDisclosureTests.cs:143-156`) — which is stronger than
+  D9 asked for. The web half's obligation is a pin, not a narrowing, and the facade was not to be
+  touched.
+- **IC-8 — "D7's refusal is now itself a live-order set; is limb (a) drifting?"** **Sustained as a
+  residual, not as a defect.** → **C1(v)**.
+
+## Verdict (lead) — `accepted with amendments`, 2026-08-11
+
+**D1, D2, D3, D5, D8, D9 stand. §D4, §D6 and §D7 are amended — C1–C6 — and the amendments are part of
+the accepted text.** No challenge blocks. Consensus declared; nothing escalated to the owner.
+
+**On the question the T-0595 lane routed to me — does §D7 still stand on the SQL-vs-C# two-form
+argument alone?** **No. It does not stand on that argument at all, and it never could have.** That
+argument is about expressions and this is a set; the same array serves SQL and memory, and the tree
+proves it by using one array each way. §D7's **conclusion** stands, on the ground stated in C1(iii):
+*two questions with one answer today are not one question, and pinning them equal makes a future
+divergence a decision instead of an inheritance* — which is exactly what `746a5064` built. The lane was
+right to correct the evidence inline, right to keep the normative sentence, and right not to rule on
+the argument itself.
+
+**C5 (recorded here because §D4 has no room for it).** D4's consequence 2 is hereby **an obligation,
+not an observation**: `StateOf` **must remain** a pure four-input function and `PreferredOfferState`
+**must remain** four members; a fifth of either supersedes this ADR rather than amending it. Read the
+sentence that way.
+
+**C6 — `GdprDeletionService.HasBlockingOrderAsync` materializes to answer a set question.** Found while
+re-opening the file for C1: it loads **every** order for the subject with `.Include(o =>
+o.OrderStatusHistory)` and filters in memory (`GdprDeletionService.cs:113-119`), where the sibling site
+answers the same shape in SQL. Not this ADR's subject and **not a correctness finding** — erasure is
+rare and the set is one user's — but it is the kind of thing that is invisible until a subject with a
+long history arrives. **Routed to the PM as a candidate ticket, not asserted as a defect; no
+measurement was taken and I would not accept one from this pass.**
+
+**Provenance check (`deliberation.md` step 5).** Every load-bearing code-state claim was re-opened by
+the lead rather than trusted. Divergences recorded: **§D7's three-sets table (falsified — C1)**, **the
+two-form argument (does not apply — C1(ii))**, **`PreferredOfferExit.cs`'s assembly (AppServices, not
+Domain — C2)**, and **D6's omission of the broken enforcer (C3)**. Files opened at HEAD:
+`PreferredOffer.cs`, `PreferredOfferExit.cs`, `GetOrderDetails.cs`, `GdprDeletionService.cs`,
+`OrderRepository.cs`, `PreferredOfferDisclosureTests.cs`, `PreferredOfferExitAgreementTests.cs`,
+`ErasureBlockingOrderStatusTests.cs`, `PreferredOfferPresentation.swift`.
+
+**Magnitude re-derivation (`deliberation.md` step 5, second limb).** CH-2's revision from
+`AssignedEmployees.Count > 0` to `AvailableSpots <= 0` was justified by *"most bookings carry more than
+one seat"*, which the author correctly declined to quantify. **I decline to quantify it too** — it is a
+reading of `RequiredEmployees = ceil(EstimatedTime / 120)` with `SpareSeatsPerOrder = 0`, i.e. every
+booking over two hours — and the revision does not depend on the share being large. It depends only on
+the set being **non-empty**, which the formula guarantees. The pin that makes it real is
+`A_Partly_Staffed_Booking_Still_Says_The_Board_Is_Open` (`PreferredOfferDisclosureTests.cs:114-116`),
+and that is a single row, not a distribution.
+
+**What I would want run, and did not (no shell in this pass).**
+1. `dotnet test Cleansia.Tests/Cleansia.Tests.csproj --filter
+   "FullyQualifiedName~PreferredOfferDisclosureTests|FullyQualifiedName~PreferredOfferExitAgreementTests|FullyQualifiedName~ErasureBlockingOrderStatusTests"`
+   from `src/` — the three suites this verdict reasons over.
+2. **The C1(v) probe:** add a temporary `OrderStatus` member and confirm
+   `ErasureBlockingOrderStatusTests` reddens while `PreferredOfferDisclosureTests` does **not**. If both
+   redden, C1(v)'s follow-up is unnecessary; if only the first does, file it.
+3. **The D5 theorem's mutation:** rewrite limb (b) as `AssignedEmployees.Count > 0` and confirm
+   `A_Partly_Staffed_Booking_Still_Says_The_Board_Is_Open` goes red — the CH-2 defect must be pinned,
+   not merely commented.
+4. **CH-7's open non-assertion:** `grep -rn "PreferredOffer.StateOf" src/` to establish whether
+   `GetOrderDetails.cs:156` is the only production consumer. The author declined to claim it and so do
+   I; reviewer-check 6 depends on it.
+
+**Follow-ups filed by this verdict (PM to allocate ids):**
+1. **C4's two carriers** — the Swift doc comment beside
+   `PreferredOfferPresentation.swift:24`, and a `blocked-by: ADR-0049 backend DEPLOYED` row on the
+   conjunct-deletion ticket. **Until both exist, deleting the conjunct is a review finding.**
+2. **C1(v)** — exhaustiveness over `OrderStatus` in `PreferredOfferDisclosureTests`, if probe 2 shows
+   the gap.
+3. **C6** — the GDPR materialize-then-filter observation, as a candidate ticket only.
+4. **Catalog correction (must land with this acceptance):** `patterns-frontend.md:552-554` restates the
+   dead §D7 evidence — *"the backend's three 'is this order live' sets already disagree with each
+   other"*. Corrected in the same change as the status tokens.
+
 ## How a reviewer verifies compliance
 
 1. **The block is withheld, not the state coerced.** `PreferredOffer.StateOf` still takes four
@@ -408,6 +653,19 @@ carry the `proposed` token and their retirement conditions, so a reader cannot m
 7. **No time word on a status predicate** (D8) — `upcoming`, `current`, `recent`.
 
 ## Found en route — not part of this decision, reported for a ticket
+
+> ### ✅ DISCHARGED 2026-08-11 by `746a5064` — and it is what falsified §D7's evidence (see C1)
+> The omission below was real and was fixed. `GdprDeletionService.ErasureBlockingStatuses`
+> (`src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs:104-111`) now carries `OnTheWay`, its
+> doc comment records that the omission had *"no ticket, ADR or comment recording an intent to exclude
+> it — while the DEAD `Pending` was present, which is the tell"*, and
+> `src/Cleansia.Tests/Features/Gdpr/ErasureBlockingOrderStatusTests.cs` pins it both directions plus
+> equality with `OrderRepository.SlotBlockingStatuses`.
+>
+> **The report below is therefore historical.** Do not re-file it — and do not read its "two files that
+> disagree" framing as current, because they now agree. **That agreement is precisely what struck §D7's
+> evidence**, which is the one place in this ADR where a finding reported *en route* came back and
+> changed a decision's grounds. Amendment C1 carries the consequence.
 
 **`GdprDeletionService.HasBlockingOrderAsync` omits `OrderStatus.OnTheWay`**
 (`src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs:94-101`): the blocking set is `New,

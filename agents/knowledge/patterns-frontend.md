@@ -557,9 +557,20 @@ reach it.*
 predicates, which is why each of the three above grew locally. **Reaching for one of them because the
 name sounds right is the trap** — a web lane reached for the first one and stopped. A predicate over
 `OrderStatus` is not named `upcoming`, `current` or `recent`; time words belong to predicates over
-`cleaningDateTime`. And before promoting any of them to `@cleansia/models`, read ADR-0049 §D7: the
-backend's three "is this order live" sets already disagree with each other, so a shared grouping owes a
-reconciliation, not a name.
+`cleaningDateTime`. And before promoting any of them to `@cleansia/models`, read ADR-0049 §D7 —
+**including amendment C1, because the sentence that used to sit here is dead.** It said *"the backend's
+three 'is this order live' sets already disagree with each other"*. **They no longer do:** `746a5064`
+restored the missing `OnTheWay` to `GdprDeletionService.ErasureBlockingStatuses`
+(`src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs:104-111`), so it is now **identical** to
+`OrderRepository.SlotBlockingStatuses`
+(`src/Cleansia.Infra.Database/Repositories/OrderRepository.cs:264-271`) and the two are pinned equal by
+`src/Cleansia.Tests/Features/Gdpr/ErasureBlockingOrderStatusTests.cs:98-122`.
+
+**The refusal survives on the ground that replaced the evidence, and it is the ground that matters to a
+frontend lane:** *two questions with one answer today are not one question.* A shared grouping is owed a
+**reconciliation of the questions**, not a demonstration that the memberships differ — and it must say
+what happens when they diverge. Two named sets pinned equal make that divergence a decision; one shared
+constant makes it an inheritance nobody notices.
 
 ## What to mirror, not invent
 

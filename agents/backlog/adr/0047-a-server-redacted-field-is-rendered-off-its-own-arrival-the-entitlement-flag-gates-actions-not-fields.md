@@ -1,13 +1,15 @@
 # ADR-0047 — A server-redacted field is rendered off its **own arrival**; the entitlement flag gates **actions**, never fields
 
-- **Status:** `proposed` — architect, 2026-08-11. **The author does not accept their own ADR**
-  (`adr/README.md`); a lead rules and the PM stamps.
+- **Status:** `accepted` — lead, 2026-08-11, **with amendments A1–A4** (`## Verdict (lead)`). Authored
+  `proposed` 2026-08-11; an independent challenger+lead pass ran 2026-08-11 **after** the implementation
+  landed (T-0590), and the amendments are what that pass found.
 - **Date:** 2026-08-11
-- **Mode:** **author**, with an author-run self-challenge (`## Challenge` below). No independent
-  challenger has run. Two lanes did the sweeps that this ADR rules on — recorded at
-  `backlog/questions/open.md` **N24** — and this ADR does not re-derive their conclusions from that
-  page: every code-state claim below was re-opened at HEAD and is cited at `file:line`
-  (`conventions.md` §*"A claim about the tree cites the tree"*).
+- **Mode:** **author**, with an author-run self-challenge (`## Challenge`), **then an independent
+  challenger/lead pass** (`## Challenge (independent — post-implementation)` / `## Verdict (lead)`).
+  Two lanes did the sweeps that this ADR rules on — recorded at `backlog/questions/open.md` **N24** —
+  and this ADR does not re-derive their conclusions from that page: every code-state claim below was
+  re-opened at HEAD and is cited at `file:line` (`conventions.md` §*"A claim about the tree cites the
+  tree"*).
 - **Number:** **0047**, allocated 2026-08-11. The highest on disk was 0046.
 - **Supersedes:** nothing. **Narrows:** `patterns-mobile.md` §*"A number the server computes has no
   client-side twin, and the REASON travels with it (T-0527)"*, rule (1) — *"render the discriminator,
@@ -88,13 +90,58 @@ that exists only as a `if` condition in a `body`/`@Composable` cannot be driven 
 entitled-but-not-assigned shape without a UI harness, which is why the defect survived on both
 platforms.
 
+> #### AMENDMENT A1 (lead, 2026-08-11) — *"named" is not the obligation; WHOLE is*
+> **A named property that is only partly named is not pinnable.** The sentence above is satisfied by
+> two forms that both leave the defect live, and the Android lane hit the second one in its first pass:
+>
+> 1. a `val` **inside** the composable — it has a name, the test still cannot construct it;
+> 2. a **partial** gate — the model exposes the arrival term (`showsAccessInstructions`) and the *view*
+>    conjoins `&& isMine`. The behavioural test on the model stays **green while the entitlement term
+>    is reinstated**, which is exactly the mutation this ADR exists to catch. The Android lane observed
+>    that green and only moving the *whole* gate onto the model turned it red.
+>
+> **The obligation is therefore: every conjunct of the gate lives on the presentation model, and the
+> view's expression is a single reference to it with no `&&`.** A lifecycle term (D5) does not escape
+> this — it becomes a parameter or a property, not a conjunct at the call site:
+> `OrderDisclosure.showsAccessCard(status)` (`OrderDisclosurePresentation.kt:45-46`) and
+> `OrderDetail.showsAccessCard` (`OrderDetail.swift:140-142`) are the two shipped shapes.
+>
+> **And the enforcer must be shown to fail, not merely to exist:** reintroducing the entitlement term
+> *anywhere in the gate* must redden a named test. A test that only asserts the current behaviour
+> passes over form (2).
+
 ### D4 — Blank counts as absent
 
-The server redacts to `string.Empty` and `[]`, **not** to `null` (`OrderPiiRedaction.cs:25-31`,
-`:37-41`, `:49-50`). So the arrival test is `isNullOrBlank` / `isEmpty` / a whitespace-trimmed check —
-never `!= null`. Both shipped `OrderLocation`s already encode this for the substitute and say why
-(`.kt:37-38`, `.swift:51-52`: *"`BuildApproximateAddress` sends `""` — not null — for an order with no
-city"*).
+> #### AMENDMENT A2 (lead, 2026-08-11) — the original premise is FALSE at HEAD; the rule survives on a
+> #### stronger one
+> The paragraph below said *"the server redacts to `string.Empty` and `[]`, **not** to `null`"*. **That
+> is wrong, and it is wrong inside the very line ranges it cites.** `OrderPiiRedaction`'s detail shape
+> sets `Address = null`, `Notes = null`, `SpecialInstructions = null`, **`AccessInstructions = null`**,
+> `CompletionNotes = null`, `Review = null`, `PreferredOffer = null`
+> (`src/Cleansia.Core.AppServices/Features/Orders/OrderPiiRedaction.cs:40-53`), and the list shape nulls
+> the coordinates (`:30-31`). Only the string scalars — `CustomerName`, `CustomerEmail`,
+> `CustomerPhone`, `ConfirmationCode` — go to `string.Empty` (`:25-29`, `:37-41`), and only
+> `OrderNotes` / `OrderIssues` go to `[]` (`:49-50`).
+>
+> **The redaction is MIXED, and that makes the rule stronger, not weaker.** Roster row 1 is blanked to
+> `""` and roster row 2 to `null`, so *neither* `!= null` *nor* `!= ""` alone covers the roster. The
+> arrival test must tolerate **null, empty and whitespace on the same field**. It also means `null` is
+> **ambiguous** — "redacted" and "the customer never typed one" arrive identically — which is
+> acceptable precisely because both render the same; a design that needed to tell them apart could not
+> be built on this seam.
+>
+> ⚠️ **The false premise has already propagated verbatim into three shipped artifacts** and each needs
+> a doc-comment correction (behaviour is correct in all three; only the stated reason is wrong):
+> `src/cleansia_ios/CleansiaPartner/Sources/Features/Orders/OrderDetail.swift:133`,
+> `src/cleansia_android/partner-app/src/main/java/cz/cleansia/partner/features/orders/OrderDisclosurePresentation.kt:21`,
+> `src/cleansia_ios/CleansiaPartner/Tests/OrderDetailRedactionGateTests.swift:17`.
+
+*(Original D4 text, retained so the amendment above has something to amend and the trail is legible —
+**do not read the first sentence as current**.)* The server redacts to `string.Empty` and `[]`, **not**
+to `null` (`OrderPiiRedaction.cs:25-31`, `:37-41`, `:49-50`). So the arrival test is `isNullOrBlank` /
+`isEmpty` / a whitespace-trimmed check — never `!= null`. Both shipped `OrderLocation`s already encode
+this for the substitute and say why (`.kt:37-38`, `.swift:51-52`: *"`BuildApproximateAddress` sends
+`""` — not null — for an order with no city"*).
 
 ### D5 — A LIFECYCLE term survives; only the ENTITLEMENT term is withdrawn
 
@@ -145,13 +192,38 @@ action or a request, per D1, and each stays exactly as written:
 in both suites (`OrderDetailViewModelTests.swift:42` sets the flag; `OrderDetailMappingTests.swift:144`
 asserts it false), and D3's named property is what makes the assertion possible without a UI harness.
 
-**Deliberately not a source-scan.** A test asserting the string `isAssignedToCurrentUser` is *absent*
-from a view file is an absence assertion, which `patterns-mobile.md` §*"When the condition a tripwire
-guards gets fixed, REPOINT the tripwire"* already rules against — it asserts nothing about the claim's
-content and goes green if the view is renamed away. The call-site binding suite
-(`OrderDetailLocationCallSiteTests.swift:12-21`, reading source off disk via the `#filePath` walk-out
-at `:56-62`) is the right instrument for *"the view renders through the resolver"* and stays; it is not
-the right instrument for *"the view does not consult a flag"*.
+**The behavioural test is the instrument; a source-scan is not a substitute for it.** A test asserting
+the string `isAssignedToCurrentUser` is *absent* from a view file is an absence assertion, which
+`patterns-mobile.md` §*"When the condition a tripwire guards gets fixed, REPOINT the tripwire"* already
+rules against — it asserts nothing about the claim's content and goes green if the view is renamed
+away. The call-site binding suite (`OrderDetailLocationCallSiteTests.swift:12-21`, reading source off
+disk via the `#filePath` walk-out at `:56-62`) is the right instrument for *"the view renders through
+the resolver"* and stays; it is not the right instrument for *"the view does not consult a flag"*.
+
+> #### AMENDMENT A3 (lead, 2026-08-11) — what "not a source-scan" does and does not forbid
+> The header sentence originally read *"Deliberately not a source-scan"*, which is broader than the
+> ruling that follows it and broader than what shipped. Restated:
+> - **Forbidden:** an absence assertion whose subject is *the entitlement flag* (*"the view does not
+>   mention `isAssignedToCurrentUser`"*). It is the claim's content that matters and that form asserts
+>   none of it.
+> - **Permitted, and the established precedent:** an absence assertion whose subject is *reaching
+>   around the resolver* — `OrderDetailCallSiteTest.kt:104-110` asserts no line reads
+>   `order.accessInstructions` / `order.customerPhone`, which is the same shape
+>   `OrderDetailLocationCallSiteTests.swift` already ships for `order.address`.
+> - **Recorded cost, not a finding:** `OrderDetailCallSiteTest.kt:121` pins an exact source string
+>   (`"val showWorkSections = isMine &&"`). It is a positive claim and legitimate, but it reddens on a
+>   whitespace or extraction change to correct code. If it becomes noise, replace it with a behavioural
+>   assertion on the action gate rather than deleting it.
+>
+> #### AMENDMENT A4 (lead, 2026-08-11) — the roster's citations are superseded by T-0590
+> The roster table is descriptive and was read pre-implementation. **T-0590 (`7fdce902` Android,
+> `327013db` iOS) moved all six cells**, so the line numbers no longer point at the gates. Current
+> shape, for a reader arriving after the fact: Android
+> `partner-app/…/features/orders/OrderDisclosurePresentation.kt` (`OrderDisclosure` +
+> `showsAccessCard(status)` + `showsWorkRecordSection(canAddNotesOrIssues)`), iOS
+> `CleansiaPartner/Sources/Features/Orders/OrderDetail.swift:134-154`
+> (`showsCustomerContact` / `showsAccessCard` / `showsNotesAndIssues` / `canAddNotes`). The membership
+> test in the paragraph above is what decides the next case; the table decides nothing.
 
 **Tier:** `(gate pending: <canonicalization ticket>)` → **`T1-CI`** on landing. Both suites are already
 CI gates — Android `android-ci.yml:79`, iOS `ios-ci.yml:185-187`. The baseline is **not** zero (three
@@ -198,6 +270,78 @@ roster rows × two platforms), which is why the token is `(gate pending:)` and n
 Decisions **D1–D7** stand as written. Nothing here is buildable until a lead rules and the PM stamps
 `accepted`; the catalog entry landed alongside this ADR carries the `proposed` status token and its
 retirement condition, so a reader cannot mistake its standing.
+
+## Challenge (independent — post-implementation, 2026-08-11)
+
+A challenger instance distinct from the author, running **after** T-0590 shipped, with the
+implementation as evidence the pre-implementation panel could not have had. Method: `Read` / `Glob` /
+`Grep` only — **no shell, nothing compiled, executed or measured; no test outcome or build result is
+claimed anywhere in this section.**
+
+- **IC-1 — "D4's premise is false, and it is false inside its own citations."** **Sustained.**
+  `OrderPiiRedaction.cs:40-53` nulls `AccessInstructions` and every free-text field; `:30-31` nulls the
+  coordinates. Roster row 2 is null-redacted and roster row 1 is `""`-redacted, so **the roster spans
+  both forms** and no single-form test covers it. Author's conclusion (never `!= null`) is right; the
+  stated reason is wrong. → **A2**.
+- **IC-2 — "D3 does not say enough, and the implementation proved it."** **Sustained.** The Android
+  lane's first pass satisfied D3 literally — a named gate — and the mutation that reinstates the
+  entitlement flag **passed green**; only moving the whole gate onto the presentation model made it
+  red. D3 as written admits a `val` in a composable and admits a model term the view conjoins
+  `&& isMine` onto. → **A1**.
+- **IC-3 — "D7's 'not a source-scan' is broader than what shipped."** **Sustained in part.**
+  `OrderDetailCallSiteTest.kt` ships both permitted and forbidden-looking forms; the ADR's own next
+  sentence already draws the line, the header sentence does not. → **A3**.
+- **IC-4 — "the roster is stale."** **Sustained as expected, not as a defect** — the author labelled it
+  descriptive and led with a membership test, which is exactly why staleness is survivable. Dated
+  pointer added so nobody chases the old line numbers. → **A4**.
+- **IC-5 — "D6 claims the change cannot widen disclosure; check it against what actually shipped."**
+  **Not sustained — D6 holds.** Every shipped gate reads a field the server already decided:
+  `showsCustomerContact` off the phone (`OrderDetail.swift:134-136`, `OrderDisclosure.kt:28`),
+  `showsAccessCard` off the instructions **plus the retained lifecycle conjunct**
+  (`OrderDetail.swift:140-142`, `OrderDisclosurePresentation.kt:45-46`), `showsNotesAndIssues` off the
+  record **or** `canAddNotes` (`OrderDetail.swift:146-148`,
+  `OrderDisclosurePresentation.kt:52-53`). For a browsing cleaner the server sent `""` / `null` / `[]`,
+  so all three stay hidden. **No D5 violation:** the lifecycle conjunct survives on both platforms and
+  is pinned (`OrderDetailRedactionGateTests.swift:30-43`).
+- **IC-6 — "the action gates were withdrawn along with the entitlement term."** **Not sustained.**
+  `canAddNotes` keeps `isAssignedToCurrentUser` (`OrderDetail.swift:152-154`), the Android composable
+  keeps `isMine && (…)` for `canAddNotesOrIssues` (`OrderDetailScreen.kt:622-623`) and for
+  `showWorkSections`, and `OrderPrimaryAction` still reads the flag (`OrderDetailScreen.kt:740`). D1's
+  scope line did its job.
+
+## Verdict (lead) — `accepted with amendments`, 2026-08-11
+
+**D1, D2, D5, D6 stand unchanged. D3, D4 and D7 are amended — A1, A2, A3, A4 above — and the amendments
+are part of the accepted text.** No challenge blocks. Consensus declared; nothing escalated to the
+owner.
+
+**Why it is accepted rather than returned, given the implementation shipped first.** Every finding is a
+correction of *evidence or of scope*, not a reversal of a decision: the rule the ADR states is the rule
+the tree implements on both platforms, and A1/A2 make the ADR say what the implementation already does.
+Returning it would leave the shipped code governed by nothing while the ADR was rewritten.
+
+**Provenance check (`deliberation.md` step 5).** Every load-bearing code-state claim was re-opened by
+the lead rather than trusted. Divergences recorded: **D4's redaction-form claim (false — A2)** and the
+**D7 roster's line numbers (superseded — A4)**. `OrderPiiRedaction.cs`, `OrderDetail.swift`,
+`OrderDisclosurePresentation.kt`, `OrderDetailCallSiteTest.kt`, `OrderDetailRedactionGateTests.swift`,
+`OrderDetailScreen.kt` were each opened at HEAD.
+
+**Deliberately NOT ruled here, because it needs a command the panel does not have.** The tier token
+stays `(gate pending: the ADR-0047 canonicalization ticket)` in both catalog entries. Flipping it to
+`T1-CI` asserts a **zero baseline**, and a zero baseline is a claim about a green build — not
+something a `Read`-only pass may assert. **What I would want run before that token moves:**
+`./gradlew :partner-app:testDebugUnitTest --rerun-tasks --no-build-cache` (the call-site test reads
+source off disk and Gradle does not track it as an input — `OrderDetailCallSiteTest.kt:16-17`) and the
+`CleansiaPartner` scheme's test action; then the A1 mutation, twice — reinstate `&& isMine` inside
+`OrderDisclosure.showsAccessCard` and inside `OrderDetail.showsAccessCard`, and confirm **both** go
+red.
+
+**Follow-ups filed by this verdict (PM to allocate ids):**
+1. **Doc-comment correction** for the three artifacts named in A2 — the behaviour is right, the stated
+   reason is false, and it is the reason that a future field will be reasoned from.
+2. **A1 as a catalog sentence** — `patterns-mobile.md` §*"The redaction narrowing of rule (1)"* states
+   the named-property obligation; it must carry the *whole-gate* form, or the catalog reproduces the
+   hole the Android lane fell into.
 
 ## How a reviewer verifies compliance
 

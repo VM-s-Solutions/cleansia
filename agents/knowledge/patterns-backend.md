@@ -397,9 +397,9 @@ and the entity path emit identical DTO values.
 > landed the enforcer and the one violation's fix in the same change: `ResolvePreferredOfferAsync`
 > (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:150-182`) now returns `null` rather
 > than shipping the block on a concluded or fully-staffed booking.
-> Decision: **ADR-0049**, which is `proposed`
+> Decision: **ADR-0049**, which is `accepted` **with amendments C1–C6**
 > (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 
 **A disclosure block is a group of fields the server populates in order to make a STATEMENT about the
 state of the world** — a sentence, not a datum. `PreferredOfferDetails`
@@ -435,15 +435,32 @@ this rule does not reach it.*
 2. **The derivation stays a pure domain function, and the status test is written INLINE, not promoted.**
    `PreferredOffer.StateOf` keeps its four inputs (`PreferredOffer.cs:36-53`); disclosability is a
    second pure function beside it. **Do not extract a shared `OrderStatus` grouping for it** — the
-   "is this order live" sets in the tree answer different questions and are kept apart for stated
-   reasons: `OrderRepository.cs:264-271` (a `static readonly` array *because EF inlines it into SQL* —
-   a C# predicate cannot replace it), `GdprDeletionService.cs:104-111` (an in-memory read over
-   materialized rows), and `AdminOverrideOrderStatus.cs:86-97` (two refusals with **different error
-   keys**). **Two of those three now carry the same membership, and that is still not a reason to share
-   one artifact** — a SQL form and a C# form are kept as two texts pinned by an equivalence test
-   (§*"a duplicated predicate"*, `patterns-backend.md:1074`), and here the pin is
-   `ErasureBlockingOrderStatusTests`. Extract when a second caller of *the same question* exists, not
-   before.
+   "is this order live" sets in the tree answer **different questions** that happen to share an answer:
+   `OrderRepository.cs:264-271` (does a live commitment occupy this cleaner's slot),
+   `GdprDeletionService.cs:104-111` (does a live order refuse this subject's erasure), and
+   `AdminOverrideOrderStatus.cs:86-97` — which is not a live-order set at all, but a *target*-status
+   refusal keeping `Completed` and `Cancelled` apart to preserve **two customer-facing error keys**.
+   **The first two now carry the identical membership and are pinned equal by
+   `ErasureBlockingOrderStatusTests`, and that is still not a reason to share one artifact:** *two
+   questions with one answer today are not one question*, and a shared constant makes a future
+   divergence **silent**, because the second caller inherits it. Two named sets pinned equal make
+   agreement a decision re-made on every change.
+   > ⚠️ **Do NOT reuse the two-form argument here — it was struck (ADR-0049 amendment C1(ii)).** This
+   > entry used to say the array cannot be shared *"because EF inlines it into SQL — a C# predicate
+   > cannot replace it"*. That is imported from `OrderAvailability`, which needs two forms because it is
+   > a compound **expression** over four columns. A flat status set is **data**: the identical array
+   > translates through `.Contains` inside an EF `Where` (`OrderRepository.cs:344`) *and* runs in memory
+   > unchanged (`GdprDeletionService.cs:119`). **Nothing structural forbids sharing it** — the reason not
+   > to is the one above. Reach for §*"a duplicated predicate"* (`patterns-backend.md:1074`) only when
+   > the thing duplicated really is a predicate.
+
+   **Extract on a condition, never on a count (C1(iv)):** when a site needs the membership and cannot
+   state its own reason for it inline, or when a divergence is proposed and no pin would catch it.
+   `IsDisclosable`'s limb (a) is **already the third** expression of this membership and is pinned to
+   neither of the others — deliberately, because its question is about a *sentence*, not about liveness.
+   *Residual, named not closed:* a new `OrderStatus` member reddens `ErasureBlockingOrderStatusTests`
+   but **not** limb (a) nor `PreferredOfferDisclosureTests`' `[InlineData]` table, so it would arrive
+   silently disclosable.
 3. **Prove the withholding cannot remove an AFFORDANCE.** Where the block also carries a "you may still
    act" flag, withholding it must be shown — not assumed — to be impossible while that flag is true.
    For the preferred offer it is provable: `PreferredOfferExit.IsOpen` conjoins

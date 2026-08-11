@@ -638,13 +638,17 @@ deliberate and were **right when written**, which is the whole point.
 
 ## Rendering a server-redacted field off an entitlement flag — the deviating form (2026-08-11)
 
-> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape, run by
+> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape —
+> `OrderDisclosurePresentationTest` (Android) and `OrderDetailRedactionGateTests` (iOS) — run by
 > `:partner-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) and the `CleansiaPartner`
-> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`(gate pending: the ADR-0047 canonicalization
-> ticket)`** → **`T1-CI`**. Rule, scope and rejected alternatives: `patterns-mobile.md`
-> §*"The redaction narrowing of rule (1)"*; decision: **ADR-0047**, which is `proposed`
+> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`T1-CI`**. *(Was
+> `(gate pending: the ADR-0047 canonicalization ticket)`; **T-0590 closed the roster and the baseline**,
+> which is the claim made below by the lane that ran the build. The 2026-08-11 ADR panel had no shell
+> and does not restate it as its own measurement.)* Rule, scope and rejected alternatives:
+> `patterns-mobile.md` §*"The redaction narrowing of rule (1)"*;
+> decision: **ADR-0047**, which is `accepted` **with amendments A1–A4**
 > (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
 > test 1), so the superseded form is recorded here and the canonicalization is ticketed rather than
@@ -681,11 +685,17 @@ the mutation reinstating the entitlement flag on it **passed green**. Only movin
 the presentation model made it red. So the obligation is not "give it a name"; it is *the gate is
 computed where a test can reach it without a UI harness*, and the way you find out is by mutating it.
 
-**Blank is not one shape.** The rule says the server redacts to `string.Empty` and `[]`, and both
+**Blank is not one shape.** The rule *said* the server redacts to `string.Empty` and `[]`, and both
 lanes checked rather than inheriting that: `OrderPiiRedaction.cs` sends `CustomerPhone = string.Empty`
 and `OrderNotes = []` — but `AccessInstructions = null`. A `!= null` test covers neither the phone nor
 a whitespace-only value; the test is `isNullOrBlank`/`isEmpty` in every case, which is what the rule
 already said and what checking confirmed for a different reason than the one given.
+**ADR-0047 §D4 has since been corrected to match (amendment A2, 2026-08-11):** the redaction is
+**mixed** — string scalars to `""` (`OrderPiiRedaction.cs:25-29`, `:37-41`), collections to `[]`
+(`:49-50`), and every free-text field plus `Address` to `null` (`:40-53`) — so **the roster spans both
+forms and no single-form test covers it.** Three shipped doc comments still assert the old premise and
+are ticketed for correction: `OrderDetail.swift:133`, `OrderDisclosurePresentation.kt:21`,
+`OrderDetailRedactionGateTests.swift:17`.
 
 **One conjunct GAINED rather than lost.** `canAddNotes` on both platforms had been riding the render
 gate that was withdrawn, so withdrawing it alone would have offered "Add note" on a stranger's job.
@@ -715,9 +725,9 @@ offered.* A canonicalization that deletes these is worse than the defect.
 > adding a wire test per repository. Not expressible by `check-consistency.mjs` — deciding it needs the
 > spec's nullability for the schema the mapper targets, which is not line-local. Rule and rejected
 > alternatives: `patterns-mobile.md` §*"And the RESPONSE side"*; decision: **ADR-0048**, which is
-> `proposed`
+> `accepted` **with amendments B1–B6**
 > (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
 > test 1). **The baseline is non-zero and read from the tree, not counted.**
@@ -726,15 +736,33 @@ offered.* A canonicalization that deletes these is worse than the defect.
 
 - **(a) Coercion.** A mapper from a generated model that *supplies* a value for a field the spec marks
   `nullable: false` — `?: 0.0`, `?: 0`, `?: false`, `?: ""`, `?: <n>` — or calls `.orEmpty()` on the
-  **response body** rather than on a collection member.
+  **response body** rather than on a collection member, **except** where the payload-level default
+  clears all three of ADR-0048 §D4 fact 4's conditions (amendment B1) *and the mapper's doc comment
+  says which*: absence and empty are the same product decision on that surface, nothing sums / counts /
+  paginates it, and no affordance is derived from its emptiness that a user would read as a fact.
 - **(b) Call-site transport.** A refusal whose outcome is decided by the caller rather than by one
   shared wrapper — so that a 2xx body can resolve to `ApiResult.Success` or to `ApiError.Network`.
+  **`ApiError.Network` stays correct for a `null` from `networkCall` (the transport really did fail);
+  it is never correct for a 2xx body that breaks the contract.**
+
+> ⚠️ **Limb (a)'s exception is not a loophole — it is §D2's own discriminator applied to the payload,
+> and three live sites depend on it.** `orders/OrderApi.kt:109` and `orders/OrderRepository.kt:250`
+> (the favourite-cleaner picker: *"the picker just shows an empty state so the booking proceeds without
+> a preference"*, `OrderRepository.kt:240-246`) and `catalog/CatalogRepository.kt:87,92` (extras:
+> *"best-effort by existing design … never a wrong add-on price"*). The same method refuses services and
+> packages at `:82-83`, which is what makes `CatalogRepository.refresh` the worked example of the line.
+> **Without the exception the rule puts these in violation and the "fix" degrades the booking flow.**
 
 **Roster (descriptive — read 2026-08-11).** Limb (a), customer app under `core/`: `referral/ReferralApi.kt`,
 `disputes/DisputeApi.kt`, `recurring/RecurringBookingApi.kt`, `user/SavedAddressApi.kt`,
-`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt`. Limb (b), independent of
-those: `orders/OrderRepository.kt:84` and `:110` (a refused page reported as `ApiResult.Success(Unit)`),
-`:125` and `:138` (a 2xx contract violation reported as `ApiError.Network`).
+`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt` — **plus `memberships/MembershipApi.kt:68`,
+which is a PARTLY migrated file** (it imports `required` from `:core` at `:12` while `:68` still runs
+the old `mapBody { list.orEmpty() … }`). **A roster row means "not every mapper in this file is
+converted", never "this file is untouched"** — sweep per mapper (ADR-0048 amendment B6).
+Limb (b) is **closed**: T-0588 migrated `orders/OrderRepository.kt`, whose `?: return
+ApiResult.Success(Unit)` and 2xx-body `?: networkError()` sites became `wireResult { … requiredBody() }`
+(`:88-143`). The surviving `?: networkError()` calls now guard a `null` from `networkCall`, which is
+the correct use.
 
 > ⚠️ **T-0588's row states the tell is *"the return type, still a generated `*Dto`"*. That is false at
 > HEAD and a lane sweeping on it will read the wrong files.** `ReferralApi.getMy()` returns a
@@ -760,9 +788,10 @@ those: `orders/OrderRepository.kt:84` and `:110` (a refused page reported as `Ap
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`
 > (`.github/workflows/backend-ci.yml:69-71`) — **`T1-CI`**.
 > Rule, scope and rejected alternatives: `patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the
-> server when its sentence stops being true"*; decision: **ADR-0049**, which is `proposed`
+> server when its sentence stops being true"*; decision: **ADR-0049**, which is `accepted`
+> **with amendments C1–C6**
 > (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule put code that existed at the time in violation** (ADR-0033
 > routing test 1). **The baseline is read from the tree, not counted** — and unusually it was a
@@ -793,6 +822,20 @@ booking, on a finished one, **and on a live booking a different cleaner already 
 - **iOS's `isUpcoming` conjunct** (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/PreferredOfferPresentation.swift:23-24`)
   is recorded as **knowing duplication with a retirement condition** (ADR-0049 §D6), not as a violation
   — it agrees with the server on every input.
+
+  > ⚠️ **Deleting it early is itself a finding, and the ordering is DEPLOY, not merge (ADR-0049
+  > amendment C4).** A shipped iOS binary cannot be redeployed; a build without the conjunct, pointed at
+  > an environment whose server still sends the block on concluded bookings, reopens the defect for an
+  > App Store review window plus the update tail. **The conjunct is deleted the first time
+  > `PreferredOfferPresentation.swift` is opened AFTER the ADR-0049 server change is live on the target
+  > environment — not on the next edit for any reason, and not on merge.**
+  >
+  > **Carriers (both required before deletion is permitted).** (1) The Swift file's own doc comment
+  > beside the conjunct — today `PreferredOfferPresentation.swift:16-19` says the **opposite** (*"the
+  > narrowing is made here"*), with no ADR reference and no precondition, so a lane reading only the
+  > file concludes the term is load-bearing while a lane reading only the ADR concludes it is
+  > deletable. (2) A `blocked-by: ADR-0049 backend DEPLOYED` row on the deletion ticket. *A rule that
+  > lives only where the deleting lane will not look is not a rule.*
 
 **What this class teaches that a "does the client check the status?" audit would miss:** *the grouping
 the ticket asks for cannot express the defect.* Every candidate status membership contains `Confirmed`,

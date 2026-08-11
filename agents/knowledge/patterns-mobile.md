@@ -232,28 +232,54 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > 3. **`.orEmpty()` on the response BODY is not rule 4 — it is the worst outcome of the set.**
 >    `CatalogRepository` called it there, so a refused price list surfaced as an **empty catalog
 >    reported as Success** — "nothing is bookable today". Rule 4 defaults a collection *member*; it
->    never defaults the payload.
+>    never defaults the payload — **with one exception, which is §D2's own discriminator applied to the
+>    payload (ADR-0048 amendment B1).** A collection *payload* may default to empty only when **all
+>    three** hold and the mapper's doc comment says which: absence and empty are the same product
+>    decision on that surface; nothing sums, counts or paginates it; and no affordance is derived from
+>    its emptiness that a user would read as a fact. `CatalogRepository.refresh` is the worked example
+>    **because it does both in one method** — services and packages **refuse** (`:82-83`), extras
+>    **degrade** (`:87`, *"best-effort by existing design … never a wrong add-on price"*). The
+>    favourite-cleaner picker is the other side (`OrderApi.kt:109`, `OrderRepository.kt:250`, reasoning
+>    at `OrderRepository.kt:240-246`). *Without the exception the rule puts three correct sites in
+>    violation and the "fix" degrades the booking flow.*
 >
 > **The refusal transport is decided ONCE, in `:core`, not per call site (ADR-0048 §D5, answering
 > T-0589).** The canonical idiom is partner `WireContract.kt` — `required("field")` throws a
 > purpose-built `WireContractViolation` carrying the field name (`:12-15`), and `mapWire` turns it into
 > `ApiResult.Error(ApiError.Server(200, …))` (`:22-28`). It wins on four grounds, in order of weight:
 > it **cannot degrade to Success** (one function decides the outcome, not N callers — customer
-> `OrderRepository.kt:84` and `:110` return `ApiResult.Success(Unit)` for a refused page today); it is
-> the only form that **carries the field name**; it **attributes correctly** — `ApiError.Server(200,…)`
-> says the server answered and the answer was wrong, where `ApiError.Network` says the opposite of what
-> happened; and `required()` **composes** on one expression where `?: return null` obliges every
-> enclosing signature. **`ApiError.Network` is never an available channel for a contract violation** —
-> that reasoning is adopted verbatim from the form it replaces (`RecurringBookingRepository.kt:110-115`:
-> *"that channel is the silent one … reusing it here turns a failed write into a no-op the user never
-> sees"*).
+> `OrderRepository.kt:84` and `:110` returned `ApiResult.Success(Unit)` for a refused page before
+> T-0588); it is the only form that **carries the field name**; it **attributes correctly** —
+> `ApiError.Server(200,…)` says the server answered and the answer was wrong, where `ApiError.Network`
+> says the opposite of what happened; and `required()` **composes** on one expression where
+> `?: return null` obliges every enclosing signature. **`ApiError.Network` is never an available channel
+> for a contract violation** — that reasoning is adopted verbatim from the form it replaces
+> (`RecurringBookingRepository.kt:110-115`: *"that channel is the silent one … reusing it here turns a
+> failed write into a no-op the user never sees"*). **It remains correct for a `null` from
+> `networkCall`**, where the transport really did fail; the two must not be confused.
 >
-> **⚠️ Do not repeat `WireContract.kt:19-20`'s claim that the name *"reaches triage"* — nothing records
-> it today.** `partner-app` contains zero `SentryAndroid`/`SENTRY_DSN` occurrences and `:core`'s build
-> file says so (`core/build.gradle.kts:129-131`); `ApiError.Server` renders as the generic line, so the
-> cleaner does not see it either. The name is **preserved in a value that reaches no sink** — which is
-> still strictly better than losing it, and is why the idiom wins anyway. Closing it is owed by the
-> migration ticket and governed by `Q-OBS-01`.
+> **`:core` carries FOUR pieces, not one, and the fourth is a contract change to a shared primitive
+> (ADR-0048 amendment B4).** `Response<T>.mapWire`, `wireResult`, `Response<R>.requiredBody()`
+> (`core/network/WireContract.kt:48`, `:59`, `:71`) **and `networkCall` rethrowing
+> `WireContractViolation`** (`core/network/NetworkCall.kt:61-62`). The fourth is load-bearing: the
+> customer's adapters map **inside** the Retrofit `Response` (`OrderApi.kt:54-110`), so a refusal can
+> only cross that boundary as a **throw** — raise (`required`) → survive the shared catch (`networkCall`)
+> → attribute once (`wireResult`). Without the rethrow, `networkCall`'s `catch (t: Throwable) → null`
+> swallows every customer-side violation and the repository reports `ApiError.Network`, which is the
+> exact defect this rule closes. **A port to another stack inherits all four**, not the one the ADR
+> originally priced.
+>
+> **⚠️ Do not repeat `WireContract.kt`'s original claim that the name *"reaches triage"* — nothing
+> records it today.** Partner does not *lack* Sentry, it **actively disables** it:
+> `partner-app/src/main/AndroidManifest.xml:89-92` carries `io.sentry.android.core.SentryInitProvider`
+> with `tools:node="remove"`, and `CleansiaPartnerApp.kt:24-25` says it stays *"until partner gets a
+> Sentry DSN provisioned"*. `ApiError.Server` renders as the generic line, so the cleaner does not see it
+> either. The name is **preserved in a value that reaches no sink** — still strictly better than losing
+> it, and why the idiom wins anyway. **The doc-comment closure has landed**
+> (`WireContract.kt:21-25`); which sink, and when, is `Q-OBS-01`. *(A grep for
+> `SentryAndroid`/`SENTRY_DSN` under `partner-app` returns nothing and is a **false negative** — the
+> ADR's original evidence, corrected by amendment B3. Turning it on is a manifest node plus a DSN, not
+> a dependency adoption.)*
 >
 > **Pin (per repository):** decode a captured payload with every member non-default; assert that
 > removing a `nullable: false` money key **fails** the mapping; and assert the mapper's `@SerialName`
@@ -267,9 +293,9 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > they gate the repositories that have one, and a new repository with a coercing mapper is caught by
 > nothing. The general form is not expressible by the line-based `check-consistency.mjs` (it needs the
 > spec's nullability for the schema the mapper targets), so widening the roster means adding a wire test
-> per repository. **ADR-0048 is `proposed`**
+> per repository. **ADR-0048 is `accepted`** (with amendments B1–B6)
 > (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
@@ -562,13 +588,32 @@ raw components one-off; never duplicate a `:core` component.
 >   photographs of a home the caller is not entitled to (`OrderDetail.swift:119-124`). *The rule is
 >   about what is **rendered**, never about what is **offered**.*
 > - **Where there is no coarse substitute** — phone, access instructions, notes — the sealed value
->   collapses to two cases and the gate is simply *did the field arrive*; but it stays a **named
->   property on the presentation model** (`OrderDetail.swift:125-127` is the shape), never an inline
->   `if` in a view body, or the pin below cannot be written without a UI harness.
-> - **Blank counts as absent.** The server redacts to `string.Empty` and `[]`, not to `null`
->   (`OrderPiiRedaction.cs:25-31`, `:37-53`), so the arrival test is `isNullOrBlank`/`isEmpty`, never
->   `!= null`. Both shipped resolvers already say why (`OrderLocationPresentation.kt:37-38`,
-  `OrderLocationPresentation.swift:51-52`).
+>   collapses to two cases and the gate is simply *did the field arrive*; but **every conjunct of that
+>   gate lives on the presentation model, and the view's expression is a single reference to it with no
+>   `&&`** (ADR-0047 amendment A1). A lifecycle term does not escape this: it becomes a parameter or a
+>   property — `OrderDisclosure.showsAccessCard(status)`
+>   (`OrderDisclosurePresentation.kt:45-46`) and `OrderDetail.showsAccessCard`
+>   (`OrderDetail.swift:140-142`) are the two shipped shapes.
+>   ⚠️ **"Named" is not the obligation; WHOLE is.** Two forms satisfy "named" and leave the defect live:
+>   a `val` inside the composable, and a *partial* gate where the model exposes the arrival term and the
+>   **view** conjoins `&& isMine`. The Android lane shipped the second by accident and **the mutation
+>   reinstating the entitlement flag passed green**; only moving the whole gate onto the model made it
+>   red. So the check is not "does it have a name" but **"does reinstating the flag anywhere in the gate
+>   redden a named test"** — and the way you find out is by mutating it.
+> - **Blank counts as absent — and blank is NOT ONE SHAPE.** The redaction is **mixed**: string scalars
+>   go to `string.Empty` (`OrderPiiRedaction.cs:25-29`, `:37-41`), collections to `[]` (`:49-50`), and
+>   **every free-text field plus `Address` to `null`** — `AccessInstructions = null` at `:44`. So the
+>   roster spans both forms and **neither `!= null` nor `!= ""` alone covers it**; the arrival test is
+>   `isNullOrBlank`/`isEmpty` (whitespace included) in every case. `null` is *ambiguous* here —
+>   "redacted" and "never entered" arrive identically — which is acceptable only because both render the
+>   same. *(ADR-0047 amendment A2 corrects §D4's original "not to `null`", which was false; three shipped
+>   doc comments still assert it — `OrderDetail.swift:133`, `OrderDisclosurePresentation.kt:21`,
+>   `OrderDetailRedactionGateTests.swift:17` — and are ticketed.)* Both shipped location resolvers say
+>   why for the substitute (`OrderLocationPresentation.kt:37-38`,
+>   `OrderLocationPresentation.swift:51-52`).
+> - **Withdrawing a render gate obliges you to check what was silently depending on it.** `canAddNotes`
+>   on both platforms had been riding the render gate that was withdrawn, so withdrawing it alone would
+>   have offered "Add note" on a stranger's job. One conjunct is **gained**, not lost.
 > - **A LIFECYCLE term survives; only the ENTITLEMENT term is withdrawn.** `showAccessCard` is
 >   `isMine && <populated> && (OnTheWay || InProgress)`; the status conjunct answers *when is this
 >   useful* and stays. Deleting the wrong conjunct turns a door code into permanently-visible content on
@@ -581,14 +626,15 @@ raw components one-off; never duplicate a `:core` component.
 > (`OrderDetailLocationCallSiteTests.swift:12-21`) stays for *"the view renders through the resolver"*;
 > it is the wrong instrument for *"the view does not consult a flag"*.
 >
-> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape, run by
+> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape —
+> `OrderDisclosurePresentationTest` (Android), `OrderDetailRedactionGateTests` (iOS) — run by
 > `:partner-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) and the `CleansiaPartner`
-> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`(gate pending: the ADR-0047 canonicalization
-> ticket)`** → **`T1-CI`**. The baseline is not zero: the deviating form and its live roster are in
+> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`T1-CI`**. The baseline was closed by **T-0590**
+> (`7fdce902` Android, `327013db` iOS); the deviating form and the converted roster are in
 > `consistency.md` §*"Rendering a server-redacted field off an entitlement flag"*.
-> **ADR-0047 is `proposed`**
+> **ADR-0047 is `accepted`** (with amendments A1–A4)
 > (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> **Retires when:** that status line stops reading `accepted`.
 >
 > ### The block-level case — a DISCLOSURE BLOCK's arrival is the SERVER's decision (ADR-0049)
 >

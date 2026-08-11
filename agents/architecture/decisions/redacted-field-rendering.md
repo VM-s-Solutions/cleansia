@@ -5,11 +5,31 @@
 > An accepted ADR is immutable; this page is the *evolving* design notes, trade-off space and current
 > shape. Update this when the design evolves; supersede the ADR for a real decision change.
 >
-> 🟠 **ADR-0047 is `proposed`** (that file, `:3`). **Retires when:** its status line stops reading
-> `proposed`. Until a lead rules and the PM stamps, the catalog entry
+> 🟢 **ADR-0047 is `accepted`** (that file, `:3`), ruled by a lead 2026-08-11 **with amendments A1–A4**.
+> **Retires when:** its status line stops reading `accepted`. The catalog entry
 > (`agents/knowledge/patterns-mobile.md` §*"The redaction narrowing of rule (1)"*) and the deviation
 > entry (`agents/knowledge/consistency.md` §*"Rendering a server-redacted field off an entitlement
-> flag"*) both carry the same banner and nothing is buildable against them.
+> flag"*) carry the rule; the deviation entry's roster is **closed** by T-0590.
+>
+> ### The two amendments that change what a lane does — read these before the ADR body
+>
+> **A1 — "named" was never the obligation; WHOLE is.** The gate is not compliant because it has a name.
+> It is compliant when **every conjunct lives on the presentation model and the view's expression is a
+> single reference with no `&&`**. Two forms satisfy "named" and leave the defect live: a `val` inside
+> the composable, and a *partial* gate the view conjoins `&& isMine` onto. The Android lane shipped the
+> second by accident and **the mutation reinstating the entitlement flag passed green**; only moving the
+> whole gate onto the model made it red. **The acceptance test for this rule is a mutation, not a
+> reading.**
+>
+> **A2 — the ADR's original premise about the redaction's shape was false.** It said the server blanks
+> to `string.Empty` and `[]` and never `null`. `OrderPiiRedaction.cs:40-53` nulls `AccessInstructions`
+> and every free-text field; `:30-31` nulls the coordinates; only the string scalars go to `""` and only
+> the two collections go to `[]`. **The redaction is mixed, so the roster spans both forms and no
+> single-form arrival test covers it** — which makes `isNullOrBlank`/`isEmpty` mandatory for a stronger
+> reason than the one originally given. Three shipped doc comments still assert the false premise
+> (`OrderDetail.swift:133`, `OrderDisclosurePresentation.kt:21`,
+> `OrderDetailRedactionGateTests.swift:17`) and are ticketed for correction; the *code* in all three is
+> correct.
 
 ## Scope
 

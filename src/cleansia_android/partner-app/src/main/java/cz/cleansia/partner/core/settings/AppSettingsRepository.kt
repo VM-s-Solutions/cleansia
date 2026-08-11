@@ -93,6 +93,16 @@ class AppSettingsRepository(
      * already reflects it. Reading both would be two sources of truth that
      * disagree right after a locale change.
      */
+    /**
+     * The tag the cleaner actually picked, or null when they never did.
+     *
+     * Deliberately not [emailLanguageTag]: that one falls through to the handset's locale, which is a
+     * fact about the device rather than a decision by the person holding it. Anything that writes to
+     * the server without a tap behind it reads this instead, so a phone set to Czech cannot overwrite
+     * a `PreferredLanguageCode` the cleaner chose on another surface.
+     */
+    suspend fun chosenLanguageTag(): String? = settings.first().language.tag
+
     suspend fun emailLanguageTag(): String = SupportedLanguages.resolve(
         persistedTag = settings.first().language.tag,
         devicePreferred = ConfigurationCompat.getLocales(context.resources.configuration)

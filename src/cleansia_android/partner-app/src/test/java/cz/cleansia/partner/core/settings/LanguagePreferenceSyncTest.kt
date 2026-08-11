@@ -33,12 +33,15 @@ class LanguagePreferenceSyncTest {
 
     private lateinit var userRepository: UserRepository
     private lateinit var tokenStore: TokenStore
+    private lateinit var appSettingsRepository: AppSettingsRepository
 
     @Before
     fun setUp() {
         userRepository = mockk(relaxed = true)
         tokenStore = mockk(relaxed = true)
+        appSettingsRepository = mockk(relaxed = true)
         every { tokenStore.current() } returns tokens()
+        coEvery { appSettingsRepository.chosenLanguageTag() } returns "uk"
         coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(profile())
         coEvery { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
@@ -194,6 +197,85 @@ class LanguagePreferenceSyncTest {
 
     // endregion
 
+    // region reconcile
+
+    @Test
+    fun `reconcile re-states the chosen language the pickers failed to deliver`() = runTest {
+        coEvery { appSettingsRepository.chosenLanguageTag() } returns "uk"
+        coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(profile(language = "en"))
+
+        sync().reconcile()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser(
+                firstName = "Ondrej",
+                lastName = "Novak",
+                phoneNumber = "+420777111222",
+                birthDate = "1982-09-04",
+                languageCode = "uk",
+            )
+        }
+    }
+
+    /**
+     * The common case by a wide margin: the push worked the first time. It must cost a read and no
+     * write, or every sign-in would rewrite a row that already says the right thing.
+     */
+    @Test
+    fun `reconcile writes nothing when the server already agrees`() = runTest {
+        coEvery { appSettingsRepository.chosenLanguageTag() } returns "uk"
+        coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(profile(language = "uk"))
+
+        sync().reconcile()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) }
+    }
+
+    /**
+     * A cleaner who has never opened a picker has expressed nothing, and the handset's locale is a
+     * fact about the phone rather than a decision by the person holding it. Pushing it would let a
+     * Czech phone overwrite the Slovak the cleaner chose on the web partner app.
+     */
+    @Test
+    fun `reconcile stays off the wire for a cleaner who never chose a language`() = runTest {
+        coEvery { appSettingsRepository.chosenLanguageTag() } returns null
+
+        sync().reconcile()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { userRepository.getCurrentUser() }
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `reconcile sends nothing when there is no session`() = runTest {
+        every { tokenStore.current() } returns null
+
+        sync().reconcile()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { userRepository.getCurrentUser() }
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) }
+    }
+
+    /** Same silence as the pickers: nobody is waiting on it, and there is no queue to grow. */
+    @Test
+    fun `reconcile swallows a failed push and queues no retry`() = runTest {
+        coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(profile(language = "en"))
+        coEvery { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(ApiError.BadRequest("nope"))
+
+        sync().reconcile()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) }
+        assertEquals(emptyList<Throwable>(), pushFailures)
+    }
+
+    // endregion
+
     private val pushFailures = mutableListOf<Throwable>()
 
     /**
@@ -201,7 +283,7 @@ class LanguagePreferenceSyncTest {
      * drives it, and records anything the seam lets escape.
      */
     private fun TestScope.sync(scope: CoroutineScope = syncScope()) =
-        LiveLanguagePreferenceSync(tokenStore, userRepository, scope)
+        LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, scope)
 
     private fun TestScope.syncScope() = CoroutineScope(
         StandardTestDispatcher(testScheduler) + SupervisorJob() +

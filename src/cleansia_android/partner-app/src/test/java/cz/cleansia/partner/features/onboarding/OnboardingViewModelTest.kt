@@ -59,7 +59,7 @@ class OnboardingViewModelTest {
 
     private fun TestScope.viewModel() = OnboardingViewModel(
         appSettingsRepository = appSettingsRepository,
-        languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()),
+        languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()),
     )
 
     /** Stands in for the injected `@ApplicationScope`, on the scheduler `advanceUntilIdle` drives. */
@@ -81,7 +81,7 @@ class OnboardingViewModelTest {
 
         // Called again directly: the detached push is what has to reach "no session" without a
         // request, and the ViewModel's own launch would hide anything thrown inside it.
-        LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()).send("cs")
+        LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()).send("cs")
         advanceUntilIdle()
 
         coVerify(exactly = 0) { userRepository.getCurrentUser() }

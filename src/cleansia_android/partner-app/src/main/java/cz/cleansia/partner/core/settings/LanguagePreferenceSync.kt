@@ -23,6 +23,19 @@ interface LanguagePreferenceSync {
      * ViewModel would be cancelled somewhere between the two requests.
      */
     fun send(languageCode: String)
+
+    /**
+     * Re-states the cleaner's chosen language once a session exists, so a [send] that failed stops
+     * healing only on the next visit to a language picker.
+     *
+     * Not a retry: nothing is queued, nothing is remembered across the failure, and this compares
+     * against the server's current answer like any other push. It is the same call the pickers make,
+     * on a different trigger.
+     *
+     * Reads the *chosen* tag, never the resolved one — a cleaner who has never opened a picker has
+     * expressed no preference, and their handset's locale is not a stand-in for one.
+     */
+    fun reconcile()
 }
 
 data class LanguagePush(
@@ -61,11 +74,19 @@ object LanguagePreferencePush {
 class LiveLanguagePreferenceSync @Inject constructor(
     private val tokenStore: TokenStore,
     private val userRepository: UserRepository,
+    private val appSettingsRepository: AppSettingsRepository,
     @ApplicationScope private val scope: CoroutineScope,
 ) : LanguagePreferenceSync {
 
     override fun send(languageCode: String) {
         scope.launch { push(languageCode) }
+    }
+
+    override fun reconcile() {
+        scope.launch {
+            val chosen = appSettingsRepository.chosenLanguageTag() ?: return@launch
+            push(chosen)
+        }
     }
 
     /**

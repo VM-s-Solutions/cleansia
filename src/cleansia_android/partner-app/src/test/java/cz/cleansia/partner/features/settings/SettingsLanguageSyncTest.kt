@@ -61,7 +61,7 @@ class SettingsLanguageSyncTest {
     private fun TestScope.viewModel() = SettingsViewModel(
         appSettingsRepository = appSettingsRepository,
         authRepository = authRepository,
-        languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()),
+        languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()),
     )
 
     @Test

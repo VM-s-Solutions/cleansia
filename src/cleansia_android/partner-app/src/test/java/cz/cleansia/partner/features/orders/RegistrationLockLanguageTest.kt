@@ -77,7 +77,7 @@ class RegistrationLockLanguageTest {
             authRepository = authRepository,
             errorTranslator = errorTranslator,
             appSettingsRepository = appSettingsRepository,
-            languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, syncScope()),
+            languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()),
         )
     }
 

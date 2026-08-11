@@ -478,9 +478,7 @@ private fun OrderDetailSheetContent(
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
 ) {
-    val showAccessCard = isMine &&
-        !order.accessInstructions.isNullOrBlank() &&
-        (status == OrderStatus._3 || status == OrderStatus._4)
+    val disclosure = order.orderDisclosure()
 
     // From-customer card shows ONLY the general notes + special
     // instructions now — access has been promoted to its own card.
@@ -577,15 +575,14 @@ private fun OrderDetailSheetContent(
             // strip below the active-state block above.
             OrderMetadataRow(order = order)
 
-            if (showAccessCard) {
-                AccessCard(accessInstructions = order.accessInstructions!!)
+            if (disclosure.showsAccessCard(status)) {
+                AccessCard(accessInstructions = disclosure.accessInstructions!!)
             }
 
             CustomerCard(
                 customerName = order.customerName,
-                customerPhone = order.customerPhone,
+                disclosure = disclosure,
                 location = location,
-                isAssignedToCurrentUser = isMine,
             )
 
             ScopeCard(order = order)
@@ -617,21 +614,18 @@ private fun OrderDetailSheetContent(
                 )
             }
 
-            // Notes/Issues differ: even on a Completed order the
-            // cleaner (and the customer / admin via their own apps)
-            // need to see the historical record of what was reported
-            // during the job. The section renders whenever the order
-            // is mine (active OR terminal) — read-only on terminal,
-            // self-hides if there's nothing to show. Add buttons are
-            // gated separately to OnTheWay/InProgress only (no adds
-            // while merely Confirmed — work hasn't started yet).
+            // Even on a Completed order the record of what was reported during the job is worth
+            // reading, so the section renders off the record's own arrival — the server sends `[]`
+            // to a caller it withheld it from. Writing is a different question: adds are the
+            // assignee's, at OnTheWay/InProgress only (no adds while merely Confirmed — work hasn't
+            // started), and everyone else reads.
             val canAddNotesOrIssues =
-                status == OrderStatus._3 || status == OrderStatus._4
-            if (isMine) {
+                isMine && (status == OrderStatus._3 || status == OrderStatus._4)
+            if (disclosure.showsWorkRecordSection(canAddNotesOrIssues)) {
                 NotesAndIssuesSection(
                     notes = order.orderNotes.orEmpty(),
                     issues = order.orderIssues.orEmpty(),
-                    isReadOnly = isTerminal,
+                    isReadOnly = isTerminal || !isMine,
                     canAddNotes = canAddNotesOrIssues,
                     onMutated = onPhotosChanged, // same refresh path; renames not worth a turn
                 )

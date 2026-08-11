@@ -79,6 +79,57 @@ class OrderDetailCallSiteTest {
         )
     }
 
+    /**
+     * Positive claims only. "The view does not consult a flag" is an absence assertion that goes
+     * green when the view is renamed away and says nothing about the claim's content; that the view
+     * renders *through* the resolver is the checkable half, and it is what
+     * [OrderDisclosurePresentationTest] then drives at the divergent shape.
+     */
+    @Test
+    fun `the redacted fields are rendered through the disclosure resolver`() {
+        assertTrue(
+            "CustomerCard must take the phone from OrderDisclosure — the server already withheld " +
+                "it from anyone it meant to",
+            customerCard.contains("disclosure.customerPhone") &&
+                customerCard.contains("disclosure.showsCustomerContact"),
+        )
+        assertTrue(
+            "the access card must gate on the door code's own arrival",
+            detailScreen.contains("disclosure.showsAccessCard(status)"),
+        )
+        assertTrue(
+            "the notes & issues section must gate on the record's own arrival",
+            detailScreen.contains("disclosure.showsWorkRecordSection(canAddNotesOrIssues)"),
+        )
+        val rawReads = detailScreen.lines()
+            .filter { it.contains("order.accessInstructions") || it.contains("order.customerPhone") }
+        assertTrue(
+            "OrderDetailScreen must not reach around orderDisclosure() into the raw fields: " +
+                rawReads.joinToString(" | ") { it.trim() },
+            rawReads.isEmpty(),
+        )
+    }
+
+    /**
+     * The scope line of the rule. Withdrawing these would offer "Slide to start" and the checklist
+     * on a stranger's order, which is the failure the entitlement flag is the right input to.
+     */
+    @Test
+    fun `the action gates still read the assignment flag`() {
+        assertTrue(
+            "the checklist and photo rails are the assignee's work tools",
+            detailScreen.contains("val showWorkSections = isMine &&"),
+        )
+        assertTrue(
+            "adding a note is a write, and a write is the assignee's",
+            detailScreen.contains("isMine && (status == OrderStatus._3 || status == OrderStatus._4)"),
+        )
+        assertTrue(
+            "the primary action decides what is OFFERED, which is not this rule's subject",
+            source("OrderPrimaryAction.kt").contains("isAssignedToCurrentUser"),
+        )
+    }
+
     private fun source(name: String): String =
         File(featureDir, name)
             .also { assertTrue("$name not found at ${it.absolutePath}", it.isFile) }

@@ -41,8 +41,8 @@ import cz.cleansia.partner.R
 /**
  * Customer card. Shows the name and whichever location the server released
  * to this caller — a street address, or the coarse zone a browsing cleaner
- * gets. Phone + SMS chips appear once the order is mine (server flags this
- * via [isAssignedToCurrentUser]).
+ * gets. Phone + SMS chips appear when the server released a phone number,
+ * which is [OrderDisclosure.showsCustomerContact] and never the assignment flag.
  *
  * Navigate is offered only against a street address: a maps app opened on a
  * city name is worse than no button. With coordinates the intent uses them;
@@ -51,9 +51,8 @@ import cz.cleansia.partner.R
 @Composable
 fun CustomerCard(
     customerName: String?,
-    customerPhone: String?,
+    disclosure: OrderDisclosure,
     location: OrderLocation,
-    isAssignedToCurrentUser: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -82,12 +81,11 @@ fun CustomerCard(
                 )
             }
 
-            val phoneNumber = customerPhone?.takeIf { it.isNotBlank() }
-            val showCall = isAssignedToCurrentUser && phoneNumber != null
-            val showSms = isAssignedToCurrentUser && phoneNumber != null
+            val phoneNumber = disclosure.customerPhone
+            val showContact = disclosure.showsCustomerContact
             val navigateTo = location.navigationTarget()
 
-            if (showCall || showSms || navigateTo != null) {
+            if (showContact || navigateTo != null) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(Modifier.height(12.dp))
@@ -95,7 +93,7 @@ fun CustomerCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (showCall) {
+                    if (showContact) {
                         ActionChip(
                             icon = Icons.Outlined.Phone,
                             label = stringResource(R.string.action_call),
@@ -103,7 +101,7 @@ fun CustomerCard(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    if (showSms) {
+                    if (showContact) {
                         ActionChip(
                             icon = Icons.AutoMirrored.Outlined.Message,
                             label = stringResource(R.string.action_sms),

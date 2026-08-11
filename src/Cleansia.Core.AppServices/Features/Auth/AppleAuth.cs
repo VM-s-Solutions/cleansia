@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
@@ -189,6 +190,21 @@ public class AppleAuth
 
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
+
+            // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
+            // lock, so (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous
+            // provisionings of the same verified address (ADR-0050). FLUSH here and own the loser's
+            // 23505 — and do it BEFORE minting a JWT, so no token is issued for a row that was rejected.
+            try
+            {
+                await userRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.IdentityToken), BusinessErrorMessage.ExistingUserWithEmail));
+            }
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(userEntity, rememberMe: true, hostAudience.Audience, cancellationToken));
         }

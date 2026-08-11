@@ -55,6 +55,7 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     [InlineData(typeof(PromoCodeRedemption), new[] { "TenantId", "PromoCodeId", "UserId", "SlotOrdinal" })]
     [InlineData(typeof(MembershipBenefitUsage),
         new[] { "TenantId", "UserId", "BenefitKind", "PeriodKey", "SlotOrdinal" })]
+    [InlineData(typeof(User), new[] { "TenantId", "Email" })]
     public void A_Sole_Arbiter_Unique_Index_Is_Declared_Nulls_Not_Distinct(Type entityClrType, string[] columns)
     {
         using var ctx = NewContext();

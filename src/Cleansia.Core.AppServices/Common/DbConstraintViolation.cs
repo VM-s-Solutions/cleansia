@@ -30,6 +30,18 @@ public static class DbConstraintViolation
         HasSqlState(exception, UniqueViolationStates);
 
     /// <summary>
+    /// True when the exception was caused by a unique violation raised by the NAMED index or constraint.
+    /// A commit that stages more than one row can raise 23505 from any unique index in it, so a writer
+    /// that answers "that email is already taken" to a bare SQLSTATE reports the wrong cause for an
+    /// unrelated collision; the name is what makes the mapping specific. Read from Npgsql's
+    /// <c>PostgresException.ConstraintName</c> by the same duck-typing the SQLSTATE read uses, and NEVER
+    /// from the driver's message text, which is not a contract. An absent or mismatched name answers
+    /// false so the exception keeps propagating.
+    /// </summary>
+    public static bool IsUniqueViolationOn(DbUpdateException exception, string constraintName) =>
+        HasSqlState(exception, UniqueViolationStates, constraintName);
+
+    /// <summary>
     /// True when the exception was caused by a foreign-key/restrict constraint violation — here, an
     /// ON DELETE RESTRICT catalog reference rejecting the delete because a row references the row being
     /// deleted.
@@ -37,12 +49,18 @@ public static class DbConstraintViolation
     public static bool IsForeignKeyViolation(DbUpdateException exception) =>
         HasSqlState(exception, ForeignKeyViolationStates);
 
-    private static bool HasSqlState(DbUpdateException exception, string[] sqlStates)
+    private static bool HasSqlState(DbUpdateException exception, string[] sqlStates, string? constraintName = null)
     {
         for (Exception? inner = exception.InnerException; inner is not null; inner = inner.InnerException)
         {
-            var state = inner.GetType().GetProperty("SqlState")?.GetValue(inner) as string;
-            if (state is not null && Array.IndexOf(sqlStates, state) >= 0)
+            var state = ReadStringProperty(inner, "SqlState");
+            if (state is null || Array.IndexOf(sqlStates, state) < 0)
+            {
+                continue;
+            }
+
+            if (constraintName is null
+                || string.Equals(ReadStringProperty(inner, "ConstraintName"), constraintName, StringComparison.Ordinal))
             {
                 return true;
             }
@@ -50,4 +68,7 @@ public static class DbConstraintViolation
 
         return false;
     }
+
+    private static string? ReadStringProperty(Exception exception, string propertyName) =>
+        exception.GetType().GetProperty(propertyName)?.GetValue(exception) as string;
 }

@@ -81,7 +81,7 @@ public class CreateAdminUser
     internal class Handler(IUserRepository userRepository)
         : ICommandHandler<Command, Response>
     {
-        public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Pass the RAW password — the EF PasswordConverter hashes exactly once on
             // persist (matching Register.cs / RegisterEmployee.cs). Pre-hashing here caused
@@ -104,7 +104,22 @@ public class CreateAdminUser
 
             userRepository.Add(user);
 
-            return Task.FromResult(BusinessResult.Success(new Response(user.Id)));
+            // The validator's existence check and this insert cross a snapshot boundary with no lock, so
+            // (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous creations
+            // (ADR-0050). FLUSH here and own the loser's 23505: the pipeline commit runs after this
+            // handler returns, where the same violation can only surface as a 500 (S7b).
+            try
+            {
+                await userRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.AdminUserEmailExists));
+            }
+
+            return BusinessResult.Success(new Response(user.Id));
         }
     }
 }

@@ -459,7 +459,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   - **Sole arbiter of a concurrent claim ⇒ `.AreNullsDistinct(false)` is mandatory.** No read can
     arbitrate a race, so the index is the only thing between two simultaneous claims and it has to
     actually fire. Live instances: `FiscalCounters`, `MembershipBenefitUsages`,
-    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`.
+    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `Users` (the account email —
+    see the arming note below, whose DDL half is still owed).
   - **Backstop behind an authoritative app-level assert ⇒ nulls-distinct is fine.** The invariant is a
     state you can read and assert on before writing. Live instances: `UserMemberships` (at most one
     active row per user), `LoyaltyTransactions` (the serial-replay fast-path read).
@@ -478,27 +479,40 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
   comment is worse than none because it stops the next reviewer checking.
 
-  **Live deviation — `Users (TenantId, Email)` is a declared sole arbiter that does not fire.**
-  `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:96-97` states that
-  DB-level uniqueness, *not* the app pre-check, is what closes the register/update TOCTOU race; the index
-  at `:106-107` is `.IsUnique()` with no `.AreNullsDistinct(false)`. All four `User`-creating writers
-  (`Register`, `RegisterEmployee`, `CreateAdminUser`, social provisioning) are read-then-insert with no
-  lock, so by the test above the index is the arbiter — and while every `TenantId` is `NULL` it admits
-  unlimited duplicate `(NULL, email)` rows. The second worst part is the comment: it is the exact
-  "confidently-wrong comment" form named above. **ADR-0050 is `proposed`**
-  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`)
-  and decides to arm the index rather than withdraw the claim, gated on a duplicate census.
+  **Arming a sole arbiter is TWO artifacts, and the model is not the DDL — `Users (TenantId, Email)`
+  is the worked example.** `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:95-97`
+  states that DB-level uniqueness, *not* the app pre-check, is what closes the register/update TOCTOU
+  race, and all four `User`-creating writers (`Register`, `RegisterEmployee`, `CreateAdminUser`, social
+  provisioning) are read-then-insert with no lock — so by the test above the index is the arbiter. It
+  shipped for months as `.IsUnique()` alone, admitting unlimited duplicate `(NULL, email)` rows, which is
+  the exact "confidently-wrong comment" form named above. `:112-114` now carries
+  `.AreNullsDistinct(false)` (ADR-0050 D1), **but the emitted DDL does not yet**: the option only reaches
+  Postgres through the owner-run `Initial` regen, which is gated on a duplicate census (ADR-0050 §D3 —
+  the index cannot be created over pre-existing duplicates). **So a model assertion goes green the moment
+  the builder call lands and says nothing about the database** — do not read one as evidence of the
+  other. **ADR-0050 is `proposed`**
+  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`).
   **Retires when:** that status line stops reading `proposed`.
+
+  **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
+  losing racer stops silently inserting a duplicate and starts raising `23505` at commit — a 500 where
+  there was quiet success, which is worse for the user than the bug. Every writer therefore maps that
+  violation to the business error its own pre-check would have produced, **keyed on the constraint name**
+  (`DbConstraintViolation.IsUniqueViolationOn`), never on the driver's message text, and a violation of
+  any other index in the same commit still propagates. Because the pipeline commits *after* the handler
+  returns, the map has to be a **flush inside the handler** (`GenerateInvoice` is the precedent shape).
+  Deviating form: a diff that lands the option without the mapping.
 
   **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
   negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
-  **`T1-CI`** over the **four indexes currently on its `[InlineData]` roster** (`FiscalCounter`,
-  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`), **baseline 0**: all four
-  green today. The roster is **hand-maintained** and is therefore a closed roster — a new sole-arbiter
-  index is not caught until someone adds a row, and `LiveActivityTokens` is named in the first bullet
-  above without being on it. The `Users` row is **`(gate pending: T-0604)`**, **baseline 1** (`Users`
-  itself): adding the `[InlineData]` goes red until the owner-run migration lands, so the tier promotes
-  to `T1-CI` in the same change that arms the index — not before.
+  **`T1-CI`** over the **five indexes on its `[InlineData]` roster** (`FiscalCounter`,
+  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `User`), **baseline 0**: all
+  five green today. It asserts the **EF model only** — SQLite cannot express the option, so the DDL half
+  is the reviewer's, per the emitted-DDL rule above. The roster is **hand-maintained** and is therefore a
+  closed roster — a new sole-arbiter index is not caught until someone adds a row, and
+  `LiveActivityTokens` is named in the first bullet above without being on it. The mapping half is
+  **`T1-CI`**, **baseline 0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs`
+  (both directions, all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

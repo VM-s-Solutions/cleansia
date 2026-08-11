@@ -79,18 +79,22 @@ is single-tenant** — two otherwise-identical rows both insert and `ON CONFLICT
   (Cleansia.Tests)"* step, which has no `continue-on-error`, so dropping the option goes red in CI.
   Its roster is **hand-maintained** — a new sole-arbiter index is not caught until someone adds a row.
 - **The instance the roster was missing, and it is the biggest one: `Users (TenantId, Email)`.**
-  `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:106-107` is
-  `.IsUnique()` with no `.AreNullsDistinct(false)`, while `:96-97` **declares that index to be the
-  guarantee that closes the register/update TOCTOU race**. All four `User`-creating writers are
-  read-then-insert with no lock, so the declaration is right about the *role* and the index cannot
-  play it: duplicate `(NULL, email)` rows are insertable **today**, and the downstream cost is silent
-  account loss (login's `FirstOrDefaultAsync` picks arbitrarily;
-  `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:157-172` charges every matching row). This is the case
-  that shows the section's own warning is not hypothetical — the reverse direction bites *now*, in the
-  mode the platform actually runs in. Decided by **ADR-0050 is `proposed`**
+  `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:95-97` **declares that
+  index to be the guarantee that closes the register/update TOCTOU race**, and all four
+  `User`-creating writers are read-then-insert with no lock, so the declaration is right about the
+  *role*. It shipped as `.IsUnique()` alone, which cannot play that role: duplicate `(NULL, email)` rows
+  were insertable, and the downstream cost is silent account loss (login's `FirstOrDefaultAsync` picks
+  arbitrarily; `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:157-172` charges every
+  matching row). This is the case that shows the section's own warning is not hypothetical — the reverse
+  direction bites *now*, in the mode the platform actually runs in. Decided by **ADR-0050 is `proposed`**
   (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`):
   arm the index, map the resulting `23505` to the business error, gate the migration on a duplicate
   census. **Retires when:** that status line stops reading `proposed`.
+  **State today: half-landed, and the halves are visible in different places.** `:112-114` carries
+  `.AreNullsDistinct(false)` and every writer maps the violation; the **emitted DDL still does not**,
+  because that arrives only with the owner-run `Initial` regen behind the census. The model guard is
+  green either way — it reads `ctx.Model`, so it cannot see the database. Read the migration, not the
+  test, to know whether the index fires.
 - **The arbiter test, so the two bullets above stop being a judgment call** (ADR-0050 §D1): *is there a
   lock, an `ON CONFLICT`, or a serializable boundary between the read and the write?* If not, the
   pre-check is a courtesy and the index is the sole arbiter, however carefully the pre-check reads.

@@ -103,8 +103,15 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         // existence oracle) and barred the same person from being a customer in two tenants. The composite
         // index still closes the same-tenant TOCTOU race the app pre-check can't. citext keeps the Email
         // component case-insensitive.
+        //
+        // NULLS NOT DISTINCT is what ARMS all of the above. TenantId is nullable and holds NULL on every
+        // row in single-tenant mode, and PostgreSQL's default treats NULLs in a unique index as DISTINCT
+        // — so without this option the index admits unlimited duplicate (NULL, email) rows and the
+        // guarantee claimed above is not one (ADR-0050 D1). The per-tenant scoping is untouched:
+        // (NULL, 'a@b') and ('T1', 'a@b') still coexist; only (NULL, 'a@b') twice now collides.
         builder.HasIndex(u => new { u.TenantId, u.Email })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
 
         // Non-unique indexes on the remaining nullable lookup columns. Each is FILTERED/PARTIAL
         // (WHERE "Col" IS NOT NULL, using the real PascalCase Postgres column names) so the (typically

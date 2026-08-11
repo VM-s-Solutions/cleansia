@@ -987,6 +987,34 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   the equivalence test actually catches is a term edited on ONE side** — which is the failure that
   happens, because the two forms are two pieces of text. Keep the in-memory null guard regardless: it
   costs nothing and it is the brace to the null-beneficiary term's belt.
+- **A shared predicate stays PURE; the resolver for one of its inputs may sit BESIDE it, never inside
+  it.** When closing a read-side/write-side gap adds a term the predicate cannot compute — *"is this
+  caller an active member"* — the shape is: the predicate keeps taking the **resolved value** as an
+  explicit parameter, and an `async` resolver for that value becomes a **sibling member of the same
+  type**. `PreferredOfferExit` is the worked case: `IsOpen(order, callerHasActiveMembership, nowUtc)`
+  is a pure expression (`PreferredOfferExit.cs:40-49`) and `CallerHasActiveMembershipAsync(session,
+  membershipRepo, ct)` is a separate static beside it (`:55-65`). What would be wrong is
+  `IsOpen(order, session, repo, ct)` — a predicate that does IO cannot be driven by the equivalence /
+  agreement test that is the *only* reason the read side and the write side are known to agree, and
+  it takes the read side's query cost with it into every in-memory evaluation. **Make the parameter
+  explicit and required**, so a call site that has not answered the question cannot compile; the type's
+  own doc comment says exactly this and is the right place for it.
+  **Two bounds worth knowing before reaching for the shape.** (i) It is available in
+  `Core.AppServices` and **not** in `Core.Domain`: `IUserSessionProvider` is an AppServices type, which
+  is why `OrderAvailability` (`OrderAvailability.cs:55`) and `OrderVisibility`
+  (`OrderVisibility.cs:36`, `:50`) are pure with no siblings and must stay that way. (ii) **Co-locating
+  the resolver is not the same as collapsing the platform to one implementation, and it is NOT a
+  finding that it did not** — `CreateOrder.Validator.CallerHasActiveMembershipAsync`
+  (`CreateOrder.cs:197-206`) and `UpdateRecurringBooking.Validator.CallerHasActiveMembershipAsync`
+  (`UpdateRecurringBooking.cs:113-119`) still carry their own four-line adapters, each with a doc
+  comment recording a **different policy question**. What must be single-sourced — the *definition* of
+  an active membership — already is: all three route through `UserMembershipRepository`'s private
+  `ActiveForUserQuery` (`:20-28`). Merging the three adapters would be the premature unification
+  `conventions.md` §*"Duplication"* warns about, on methods that must be free to diverge.
+  **Enforced by:** `quality-gates.md` **Gate 4 (Architecture)** — **T3-HUMAN**. *(Not mechanizable: no
+  line-local rule can tell a predicate's input parameter from a dependency, and the agreement tests
+  mock their repositories, so they would stay green over an impure predicate. Baseline is zero — the
+  two Domain predicates above are pure and `PreferredOfferExit` is the only instance of the shape.)*
 - **Enumerating grep hits is not coverage — check CALL SITES.** A specification factory with all-optional
   parameters accepts a new one **without breaking a single caller**, which means every caller that
   forgets it leaks silently and builds green.

@@ -10,6 +10,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
@@ -84,6 +85,21 @@ public class Register
                 rawConfirmationToken = userEntity.RawConfirmationToken!;
                 userRepository.Add(userEntity);
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
+
+                // The validator's pre-check and this insert cross a snapshot boundary with no lock, so
+                // (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous registrations
+                // (ADR-0050). FLUSH here and own the loser's 23505: the pipeline commit runs after this
+                // handler returns, where the same violation can only surface as a 500 (S7b).
+                try
+                {
+                    await userRepository.CommitAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex)
+                    when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+                {
+                    return BusinessResult.Failure<bool>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.ExistingUserWithEmail));
+                }
             }
             else
             {

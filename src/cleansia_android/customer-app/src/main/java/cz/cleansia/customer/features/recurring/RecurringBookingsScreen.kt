@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,9 +63,10 @@ import java.util.Locale
 
 /**
  * List of the user's recurring booking templates with pause/resume + delete
- * actions. Plus-only — entry point on the Profile tab is hidden for
- * non-Plus users; the screen itself doesn't double-gate. Templates here
- * spawn concrete Order rows via the backend's daily materializer.
+ * actions. Templates here spawn concrete Order rows via the backend's daily
+ * materializer, and a lapsed membership does not stop that — so the list and
+ * its stop buttons are reachable whatever the membership answer is, and only
+ * the create and edit affordances follow the server's Plus gate.
  *
  * Create + edit both ship via [CreateRecurringScreen] — entry points are the
  * empty-state CTA, the FAB on the populated list, "Make this recurring" on a
@@ -76,12 +78,16 @@ fun RecurringBookingsScreen(
     onBack: () -> Unit,
     onCreateNew: () -> Unit = {},
     onEdit: (templateId: String) -> Unit = {},
+    onSubscribePlus: () -> Unit = {},
     viewModel: RecurringBookingsViewModel = hiltViewModel(),
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val mutating by viewModel.mutating.collectAsStateWithLifecycle()
+    val authoring by viewModel.authoring.collectAsStateWithLifecycle()
+
+    val affordances = RecurringListAffordances.of(authoring, templates.isNotEmpty())
 
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
 
@@ -100,7 +106,7 @@ fun RecurringBookingsScreen(
         // primary CTA (avoid stacking two "Create" affordances on the empty
         // screen, which is competing with the empty-state copy).
         floatingActionButton = {
-            if (templates.isNotEmpty()) {
+            if (affordances.showCreateAction) {
                 androidx.compose.material3.ExtendedFloatingActionButton(
                     onClick = onCreateNew,
                     icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
@@ -115,34 +121,29 @@ fun RecurringBookingsScreen(
                 .padding(padding),
         ) {
             when {
-                loading && !loaded -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(40.dp),
-                    )
-                }
+                loading && !loaded -> CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(40.dp),
+                )
+                affordances.showPlusUpsell -> PlusUpsellState(
+                    modifier = Modifier.align(Alignment.Center),
+                    onSubscribe = onSubscribePlus,
+                )
                 templates.isEmpty() -> EmptyState(
                     modifier = Modifier.align(Alignment.Center),
                     onCreateNew = onCreateNew,
                 )
-                else -> LazyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(templates, key = { it.id }) { template ->
-                        TemplateCard(
-                            template = template,
-                            isMutating = mutating == template.id,
-                            onToggleActive = { viewModel.toggleActive(template.id, template.isActive) },
-                            onEdit = { onEdit(template.id) },
-                            onDelete = { pendingDeleteId = template.id },
-                        )
-                    }
-                }
+                else -> TemplateList(
+                    templates = templates,
+                    mutating = mutating,
+                    showLapsedNotice = affordances.showLapsedNotice,
+                    showEdit = affordances.showEdit,
+                    onToggleActive = { viewModel.toggleActive(it.id, it.isActive) },
+                    onEdit = onEdit,
+                    onDelete = { pendingDeleteId = it },
+                    onSubscribe = onSubscribePlus,
+                )
             }
         }
     }
@@ -159,6 +160,38 @@ fun RecurringBookingsScreen(
             },
             onDismiss = { pendingDeleteId = null },
         )
+    }
+}
+
+@Composable
+private fun TemplateList(
+    templates: List<RecurringBookingTemplateDto>,
+    mutating: String?,
+    showLapsedNotice: Boolean,
+    showEdit: Boolean,
+    onToggleActive: (RecurringBookingTemplateDto) -> Unit,
+    onEdit: (templateId: String) -> Unit,
+    onDelete: (templateId: String) -> Unit,
+    onSubscribe: () -> Unit,
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        if (showLapsedNotice) {
+            item(key = "lapsed-notice") { LapsedPlusNotice(onSubscribe = onSubscribe) }
+        }
+        items(templates, key = { it.id }) { template ->
+            TemplateCard(
+                template = template,
+                isMutating = mutating == template.id,
+                showEdit = showEdit,
+                onToggleActive = { onToggleActive(template) },
+                onEdit = { onEdit(template.id) },
+                onDelete = { onDelete(template.id) },
+            )
+        }
     }
 }
 
@@ -197,6 +230,79 @@ private fun EmptyState(modifier: Modifier = Modifier, onCreateNew: () -> Unit) {
 }
 
 /**
+ * What a customer without Plus gets *instead of* the create affordance. It
+ * replaces the empty state only — a customer who already has schedules gets
+ * [LapsedPlusNotice] above the live list, never in place of it.
+ */
+@Composable
+private fun PlusUpsellState(modifier: Modifier = Modifier, onSubscribe: () -> Unit) {
+    Column(
+        modifier = modifier.padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Outlined.Repeat,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(56.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.recurring_plus_gate_title),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.recurring_plus_gate_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        androidx.compose.material3.Button(onClick = onSubscribe) {
+            Text(stringResource(R.string.recurring_plus_gate_cta))
+        }
+    }
+}
+
+/**
+ * The disclosure a lapsed subscriber is owed: the schedules below keep running
+ * and keep being booked at the full non-member price, and the pause/delete
+ * buttons on every card below still work.
+ */
+@Composable
+private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.recurring_lapsed_notice_title),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.recurring_lapsed_notice_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.material3.TextButton(
+            onClick = onSubscribe,
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Text(stringResource(R.string.recurring_plus_gate_cta))
+        }
+    }
+}
+
+/**
  * Recurring schedule card — restructured per user feedback. Layout:
  *
  *   ┌ tinted header strip (frequency icon + cadence label, paused badge) ┐
@@ -214,6 +320,7 @@ private fun EmptyState(modifier: Modifier = Modifier, onCreateNew: () -> Unit) {
 private fun TemplateCard(
     template: RecurringBookingTemplateDto,
     isMutating: Boolean,
+    showEdit: Boolean,
     onToggleActive: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -338,14 +445,16 @@ private fun TemplateCard(
                 onClick = onToggleActive,
                 modifier = Modifier.weight(1f),
             )
-            CardAction(
-                icon = Icons.Outlined.Edit,
-                label = stringResource(R.string.recurring_bookings_edit),
-                tint = MaterialTheme.colorScheme.onSurface,
-                enabled = !isMutating,
-                onClick = onEdit,
-                modifier = Modifier.weight(1f),
-            )
+            if (showEdit) {
+                CardAction(
+                    icon = Icons.Outlined.Edit,
+                    label = stringResource(R.string.recurring_bookings_edit),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    enabled = !isMutating,
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             CardAction(
                 icon = Icons.Outlined.DeleteOutline,
                 label = stringResource(R.string.recurring_bookings_delete),

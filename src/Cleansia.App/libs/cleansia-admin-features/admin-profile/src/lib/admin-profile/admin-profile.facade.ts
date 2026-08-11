@@ -22,13 +22,12 @@ export class AdminProfileFacade extends UnsubscribeControlDirective {
     if (this.saving()) return;
 
     this.saving.set(true);
-    const command = new ChangeOwnPasswordCommand({
-      currentPassword: data.currentPassword,
-      newPassword: data.newPassword,
-      // Server-enriched from the HttpOnly refresh cookie so the change spares the caller's own
-      // session; the value sent here is ignored. Empty satisfies the generated required field.
-      currentRefreshToken: '',
-    });
+    const command = new ChangeOwnPasswordCommand();
+    command.currentPassword = data.currentPassword;
+    command.newPassword = data.newPassword;
+    // Server-enriched from the HttpOnly refresh cookie so the change spares the caller's own
+    // session; the value sent here is ignored. Empty satisfies the generated required field.
+    command.currentRefreshToken = '';
 
     this.adminClient.adminAuthClient
       .changePassword(command)

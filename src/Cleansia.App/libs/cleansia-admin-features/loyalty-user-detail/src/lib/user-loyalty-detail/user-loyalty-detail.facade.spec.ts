@@ -4,7 +4,9 @@ import {
   AdminClient,
   AdminReferralListItem,
   GetReferralsByUserResponse,
+  GrantPointsManuallyCommand,
   ReferralStatus,
+  RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -14,6 +16,12 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 describe('UserLoyaltyDetailFacade — referrals panel', () => {
   let facade: UserLoyaltyDetailFacade;
   let referralClient: { byUser: jest.Mock };
+  let loyaltyClient: {
+    userAccount: jest.Mock;
+    userActivity: jest.Mock;
+    grantPoints: jest.Mock;
+    revokePoints: jest.Mock;
+  };
 
   const byUserResponse = GetReferralsByUserResponse.fromJS({
     asReferrer: [
@@ -34,6 +42,12 @@ describe('UserLoyaltyDetailFacade — referrals panel', () => {
 
   beforeEach(() => {
     referralClient = { byUser: jest.fn() };
+    loyaltyClient = {
+      userAccount: jest.fn().mockReturnValue(of(null)),
+      userActivity: jest.fn().mockReturnValue(of(null)),
+      grantPoints: jest.fn().mockReturnValue(of({})),
+      revokePoints: jest.fn().mockReturnValue(of({})),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -41,7 +55,7 @@ describe('UserLoyaltyDetailFacade — referrals panel', () => {
         {
           provide: AdminClient,
           useValue: {
-            adminLoyaltyClient: {},
+            adminLoyaltyClient: loyaltyClient,
             adminReferralClient: referralClient,
           },
         },
@@ -89,5 +103,70 @@ describe('UserLoyaltyDetailFacade — referrals panel', () => {
 
     expect(facade.referralsError()).toBe(true);
     expect(facade.referralsLoading()).toBe(false);
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    // jsdom's crypto carries no randomUUID; the counter also lets the per-attempt
+    // property be asserted rather than assumed.
+    let issued: number;
+    let originalRandomUUID: Crypto['randomUUID'] | undefined;
+
+    beforeEach(() => {
+      issued = 0;
+      originalRandomUUID = crypto.randomUUID;
+      Object.defineProperty(crypto, 'randomUUID', {
+        configurable: true,
+        value: () => `request-${++issued}`,
+      });
+      facade.loadAccount('user-1');
+    });
+
+    afterEach(() => {
+      Object.defineProperty(crypto, 'randomUUID', {
+        configurable: true,
+        value: originalRandomUUID,
+      });
+    });
+
+    it('serializes a grant with the user, the points, the reason and an idempotency key', () => {
+      facade.grantPoints({ points: 250, reason: 'Goodwill after a late crew' });
+
+      const command: GrantPointsManuallyCommand =
+        loyaltyClient.grantPoints.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GrantPointsManuallyCommand);
+      expect(command.toJSON()).toEqual({
+        userId: 'user-1',
+        points: 250,
+        reason: 'Goodwill after a late crew',
+        // Losing this collapses retry protection: the server can no longer
+        // recognise a repeated grant as the same one.
+        requestId: 'request-1',
+      });
+    });
+
+    it('serializes a revoke with the user, the points, the reason and an idempotency key', () => {
+      facade.revokePoints({ points: 100, reason: 'Duplicate grant' });
+
+      const command: RevokePointsManuallyCommand =
+        loyaltyClient.revokePoints.mock.calls[0][0];
+      expect(command).toBeInstanceOf(RevokePointsManuallyCommand);
+      expect(command.toJSON()).toEqual({
+        userId: 'user-1',
+        points: 100,
+        reason: 'Duplicate grant',
+        requestId: 'request-1',
+      });
+    });
+
+    it('mints a fresh idempotency key per submission, so two clicks are two grants', () => {
+      facade.grantPoints({ points: 10, reason: 'first' });
+      facade.grantPoints({ points: 10, reason: 'second' });
+
+      const [first] = loyaltyClient.grantPoints.mock.calls[0];
+      const [second] = loyaltyClient.grantPoints.mock.calls[1];
+      expect(first.requestId).not.toBe(second.requestId);
+    });
   });
 });

@@ -52,16 +52,6 @@ export const userReducer = createReducer(
     setFlag(state, 'detail', false, error.message),
   ),
 
-  on(UserActions.updateUserCurrent, (state) =>
-    setFlag(state, 'updateCurrent', true),
-  ),
-  on(UserActions.updateUserCurrentSuccess, (state) =>
-    setFlag(state, 'updateCurrent', false),
-  ),
-  on(UserActions.updateUserCurrentFailure, (state, { error }) =>
-    setFlag(state, 'updateCurrent', false, error.message),
-  ),
-
   on(UserActions.logout, (state) => setFlag(state, 'logout', true)),
   on(UserActions.logoutSuccess, () => userInitialState),
   on(UserActions.logoutFailure, (state, { error }) =>

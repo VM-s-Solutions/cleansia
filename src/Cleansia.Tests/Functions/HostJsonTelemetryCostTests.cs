@@ -20,10 +20,27 @@ public class HostJsonTelemetryCostTests
     [Fact]
     public void QueuePollingIntervalIsThirtySeconds()
     {
-        // The empty-queue backoff ceiling. Each poll is a billed dependency row across 14 listeners, so
-        // 5s (the previous value) is ~6x the telemetry of 30s for no throughput gain — a message still
-        // wakes the listener immediately once the queue is non-empty; the ceiling only bounds how long
-        // an IDLE listener sleeps before the next look.
+        // The empty-queue backoff ceiling. Each poll is a billed dependency row across 14 listeners
+        // (QueueListenerInventoryTests derives that count), so 5s (the previous value) is ~6x the
+        // telemetry of 30s for no throughput gain — a message still wakes the listener immediately once
+        // the queue is non-empty; the ceiling only bounds how long an IDLE listener sleeps before the
+        // next look.
+        //
+        // The latency this buys, stated per consumer rather than assumed uniform. Seven of the fourteen
+        // listeners are poison companions: they exist to dead-letter and alert, and the alert fires off
+        // the storage PutMessage log rather than off the consumer, so their pickup latency is not on any
+        // alerting path. Of the seven live ones, the two a user can perceive are notifications-dispatch
+        // and live-activity-dispatch — and BOTH are fed through the outbox, so the ceiling here is only
+        // the second of three legs: drainer tick <=10s, this backoff <=30s, then the handler. Worst case
+        // ~40s to a lock screen; typical much less, since the ceiling is only reached by a queue that has
+        // been idle. That is the budget. Nothing here is sub-minute-critical, and nothing is time-of-day
+        // critical (the schedule-driven work is on timer triggers, not queues).
+        //
+        // It is ONE value for every queue and every environment, and neither is expressible today:
+        // extensions.queues is host-global with no per-queue override, and per-environment expression
+        // would need an AzureFunctionsJobHost__extensions__queues__maxPollingInterval app setting, which
+        // nothing sets. Dev is the only environment ever deployed, so the single value is dev's; a prod
+        // that wants faster pickup buys it with that app setting, not by editing this file.
         var polling = HostJson()
             .GetProperty("extensions").GetProperty("queues")
             .GetProperty("maxPollingInterval").GetString();

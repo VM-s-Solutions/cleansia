@@ -7,7 +7,8 @@ import { inject } from '@angular/core';
 import { getObjectValues, parseBlobToJson } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
-import { SnackbarService } from '../services';
+import { ABSENT_RESOURCE_ERROR_CODES, SnackbarService } from '../services';
+import { SUPPRESS_ERROR_TOAST } from './error-toast-suppression';
 
 const GENERIC_ERROR_KEY = 'api.common.error_occurred';
 
@@ -19,12 +20,17 @@ function resolveApiError(translate: TranslateService, errorKey: unknown): string
   return message === candidateKey ? translate.instant(GENERIC_ERROR_KEY) : message;
 }
 
+function isAbsentResourceRead(method: string, errorKey: unknown): boolean {
+  return method === 'GET' && ABSENT_RESOURCE_ERROR_CODES.has(String(errorKey));
+}
+
 export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
   const snackbarService = inject(SnackbarService);
   const translate = inject(TranslateService);
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (!error.ok && error.status !== HttpStatusCode.NotFound) {
+      const suppressed = req.context.get(SUPPRESS_ERROR_TOAST);
+      if (!suppressed && !error.ok && error.status !== HttpStatusCode.NotFound) {
         if (error.status === HttpStatusCode.Forbidden) {
           snackbarService.showError(
             translate.instant('api.common.unauthorized')
@@ -36,6 +42,9 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
                 const errorKey = parserErrorResponse.errors
                   ? getObjectValues(parserErrorResponse.errors)[0]
                   : 'common.error_occurred';
+                if (isAbsentResourceRead(req.method, errorKey)) {
+                  return;
+                }
                 snackbarService.showError(resolveApiError(translate, errorKey));
               })
               .catch(() => {
@@ -45,7 +54,9 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
             const errorKey = error.error?.errors
               ? getObjectValues(error.error.errors)[0]
               : 'common.error_occurred';
-            snackbarService.showError(resolveApiError(translate, errorKey));
+            if (!isAbsentResourceRead(req.method, errorKey)) {
+              snackbarService.showError(resolveApiError(translate, errorKey));
+            }
           }
         }
       }

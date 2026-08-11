@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.HostTests.Infrastructure;
@@ -87,6 +88,20 @@ public static class DomainSeed
         return employee;
     }
 
+    /// <summary>
+    /// An APPROVED cleaner exactly as a row looks on the morning of the ADR-0034 release: the legacy
+    /// <c>Employee.IBAN</c> is set, <c>HasPayoutDetails</c> is false and no <c>EmployeePayoutDetails</c>
+    /// row exists, because there is no backfill. If the profile gate ever reads the flag alone, every one
+    /// of these cleaners 403s off the whole partner surface.
+    /// </summary>
+    public static Employee LegacyPayoutApprovedEmployee(User user, string? tenantId = null)
+    {
+        var employee = BuildCompleteEmployee(user, tenantId);
+        employee.ClearPayoutDetails();
+        employee.Approve(approvedByUserId: "admin-seed");
+        return employee;
+    }
+
     private static Employee BuildCompleteEmployee(User user, string? tenantId)
     {
         var address = Address.Create("Test St 1", "Prague", "11000", CountryId);
@@ -98,11 +113,14 @@ public static class DomainSeed
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "P1234567",
-            iban: "CZ6508000000192000145399",
             address: address,
             availability: new Dictionary<string, List<Cleansia.Core.Domain.Users.TimeRange>>(),
             emergencyContactName: "ICE",
             emergencyContactPhone: "+420777000000");
+        // The profile gate's payout term is a scalar on this row (ADR-0034 D1.1) — the legacy IBAN
+        // column keeps the pre-payout-record cleaners complete, and the flag is what the write path sets.
+        employee.UpdateBankDetails("CZ6508000000192000145399");
+        employee.MarkPayoutDetailsProvided();
         if (tenantId is not null)
         {
             employee.TenantId = tenantId;
@@ -145,7 +163,8 @@ public static class DomainSeed
             payPeriodId: payPeriodId,
             totalOrders: 1,
             subTotal: 1000m,
-            currencyId: CurrencyId);
+            currencyId: CurrencyId,
+            variableSymbol: PayrollMockFactory.NextTestVariableSymbol());
         if (tenantId is not null) invoice.TenantId = tenantId;
         return invoice;
     }
@@ -207,6 +226,26 @@ public static class DomainSeed
         confirmed.Created("seed", now);
         confirmed.TenantId = order.TenantId;
         order.AddOrderStatus(confirmed);
+    }
+
+    /// <summary>An <see cref="OrderPhoto"/> on <paramref name="orderId"/>. The blob URL carries the
+    /// Azurite path shape (<c>/account/container/blob</c>) so <c>GetOrderPhotos</c>' SAS minting
+    /// recovers the blob name the same way it does against the emulator.</summary>
+    public static OrderPhoto OrderPhoto(
+        string orderId, string capturedByEmployeeId, PhotoType photoType, string fileName,
+        string? tenantId = null)
+    {
+        var photo = Cleansia.Core.Domain.Orders.OrderPhoto.Create(
+            orderId: orderId,
+            photoType: photoType,
+            blobUrl: $"http://127.0.0.1:10000/devstoreaccount1/order-photos/host-tests/{fileName}",
+            fileName: fileName,
+            originalFileName: fileName,
+            fileSizeBytes: 2048,
+            contentType: "image/jpeg",
+            capturedByEmployeeId: capturedByEmployeeId);
+        if (tenantId is not null) photo.TenantId = tenantId;
+        return photo;
     }
 
     public static Dispute Dispute(string orderId, string ownerUserId, string? tenantId = null)

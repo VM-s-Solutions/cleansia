@@ -5,8 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -35,7 +35,7 @@ class InvoiceDetailViewModelTest {
     private lateinit var appContext: Context
 
     private val invoiceId = "invoice-1"
-    private val invoice = mockk<EmployeeInvoiceDetailDto>()
+    private val invoice = mockk<InvoiceDetail>()
 
     @Before
     fun setUp() {

@@ -51,18 +51,27 @@ android {
     }
 }
 
-// ConsentCatalogTest reads BOTH apps' strings.xml off disk — the consent-markup
-// invariant belongs to :core's shared component, not to either app. Gradle has
-// no way to know that: :core does not depend on the apps, so a translator
-// editing only customer-app/values-uk/strings.xml would leave this task
-// UP-TO-DATE and the guard would silently not run on the exact change it
-// guards. Declare the catalogs as inputs so it does.
+// Some guards here read source files off disk that Gradle does not otherwise
+// see as inputs to this task, so without these declarations the guard silently
+// does not run on the exact change it guards — the task stays UP-TO-DATE or
+// comes back FROM-CACHE and reports the previous verdict.
+//
+//  - ConsentCatalogTest reads BOTH apps' strings.xml: the consent-markup
+//    invariant belongs to :core's shared component, not to either app, and
+//    :core does not depend on the apps.
+//  - BundledFontCoverageTest reads the res/font binaries: a unit test has no
+//    Resources, and the compiled resources are not on its runtime classpath,
+//    so swapping a TTF changes nothing this task hashes.
 tasks.withType<Test>().configureEach {
     inputs.files(
         fileTree("$rootDir/customer-app/src/main/res") { include("values*/strings.xml") },
         fileTree("$rootDir/partner-app/src/main/res") { include("values*/strings.xml") },
     )
         .withPropertyName("consentCatalogs")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    inputs.files(fileTree("src/main/res/font"))
+        .withPropertyName("bundledFonts")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 

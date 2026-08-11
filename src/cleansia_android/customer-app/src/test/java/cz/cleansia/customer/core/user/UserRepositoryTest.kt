@@ -127,6 +127,9 @@ class UserRepositoryTest {
         firstName = "Ann",
         lastName = "Brown",
         phoneNumber = "+420123456789",
+        totalBookings = 7,
+        totalSavings = 4820.50,
+        savingsCurrencyCode = "CZK",
     )
 
     private fun errorBody() = "{}".toResponseBody("application/json".toMediaType())
@@ -168,18 +171,35 @@ class UserRepositoryTest {
         assertEquals("CZK", user?.savingsCurrencyCode)
     }
 
+    /**
+     * This used to assert the defect: a profile with no stats cached as "0 bookings, 0 saved". Both
+     * are `nullable: false`, so an absent one is a broken wire field and telling a customer they have
+     * saved nothing is a claim about their money. `savingsCurrencyCode` is nullable by design and
+     * still survives as null.
+     */
     @Test
-    fun refreshCurrentUser_givenNoStats_defaultsToZeroBookingsAndNoSavingsCurrency() = runTest {
-        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+    fun refreshCurrentUser_givenNoStats_refusesTheProfileRatherThanCachingZeroSavings() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns
+            Response.success(profile().copy(totalBookings = null, totalSavings = null))
+
+        val repo = newRepo()
+        val result = repo.refreshCurrentUser()
+
+        assertTrue((result as ApiResult.Error).error is ApiError.Network)
+        assertNull(repo.currentUser.value)
+    }
+
+    @Test
+    fun refreshCurrentUser_keepsANullSavingsCurrencyWithoutRefusingTheProfile() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns
+            Response.success(profile().copy(savingsCurrencyCode = null))
 
         val repo = newRepo()
         repo.refreshCurrentUser()
 
         val user = repo.currentUser.value
-        assertNull(user?.memberSince)
-        assertEquals(0, user?.totalBookings)
-        assertEquals(0.0, user?.totalSavings)
         assertNull(user?.savingsCurrencyCode)
+        assertEquals(4820.50, user?.totalSavings)
     }
 
     @Test

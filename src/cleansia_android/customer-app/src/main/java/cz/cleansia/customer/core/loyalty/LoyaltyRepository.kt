@@ -9,6 +9,8 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -65,7 +67,7 @@ class LoyaltyRepository @Inject constructor(
      * Fetch the account + tier ladder in a single screen-load pass. Shown by
      * MainShell on first composition (lazy-prefetch alongside catalog/orders).
      */
-    suspend fun refresh(): ApiResult<Unit> {
+    suspend fun refresh(): ApiResult<Unit> = wireResult {
         if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
@@ -73,11 +75,13 @@ class LoyaltyRepository @Inject constructor(
             if (!accountResp.isSuccessful) {
                 return httpError(accountResp.errorBody(), accountResp.code())
             }
-            _account.value = accountResp.body()
+            _account.value = accountResp.requiredBody()
 
-            // Tiers are essentially static configuration — fetch once per
-            // session is fine. Errors here don't fail the whole refresh; a
-            // null tier ladder just means the ladder UI shows a fallback.
+            // Tiers are static configuration and this one DOES default: an absent ladder and an
+            // empty ladder are the same product decision (the ladder UI shows its fallback),
+            // nothing sums or paginates it, and no claim about this customer's points is derived
+            // from its emptiness — the balance comes from `account` above. All three of ADR-0048
+            // amendment B1's conditions, unlike the account itself.
             val tiersResp = networkCall { api.getTiers() }
             if (tiersResp?.isSuccessful == true) {
                 _tiers.value = tiersResp.body()?.tiers ?: emptyList()
@@ -95,12 +99,15 @@ class LoyaltyRepository @Inject constructor(
      * Fetch one page of activity. Returns the full response so the caller can
      * paginate (offset/limit).
      */
-    suspend fun loadActivity(offset: Int, limit: Int = 20): ApiResult<LoyaltyActivityResponseDto> {
+    suspend fun loadActivity(offset: Int, limit: Int = 20): ApiResult<LoyaltyActivityResponseDto> = wireResult {
         val resp = networkCall { api.getActivity(offset = offset, limit = limit) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        // Not `networkError()`: the transport is the one thing that did not fail here, and that
+        // channel is the silent one — the interceptor already toasted, so a refused page became a
+        // list that simply stopped growing.
+        return ApiResult.Success(resp.requiredBody())
     }
 
     private fun networkError(): ApiResult<Nothing> =

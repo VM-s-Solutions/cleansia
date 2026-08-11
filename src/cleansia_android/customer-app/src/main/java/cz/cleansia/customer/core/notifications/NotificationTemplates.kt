@@ -25,6 +25,23 @@ object NotificationTemplates {
             R.string.notification_order_confirmed_body,
             NotificationCategoryDto.OrderUpdates,
         )
+        "order.cleaner_assigned" -> Template(
+            R.string.notification_cleaner_assigned_title,
+            R.string.notification_cleaner_assigned_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
+        "order.starting_soon" -> Template(
+            R.string.notification_order_starting_soon_title,
+            R.string.notification_order_starting_soon_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
+        // One template for both ways a preferred-cleaner reservation can end (ADR-0045 D7.3): the
+        // copy must not let the customer tell a decline from a silent lapse.
+        "order.preferred_offer_closed" -> Template(
+            R.string.notification_order_preferred_offer_closed_title,
+            R.string.notification_order_preferred_offer_closed_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         "order.on_the_way" -> Template(
             R.string.notification_order_on_the_way_title,
             R.string.notification_order_on_the_way_body,
@@ -95,6 +112,9 @@ object NotificationTemplates {
     fun formatBody(context: Context, eventKey: String, bodyRes: Int, args: Map<String, String>): String =
         when (eventKey) {
             "order.confirmed",
+            "order.cleaner_assigned",
+            "order.starting_soon",
+            "order.preferred_offer_closed",
             "order.on_the_way",
             "order.in_progress",
             "order.completed",

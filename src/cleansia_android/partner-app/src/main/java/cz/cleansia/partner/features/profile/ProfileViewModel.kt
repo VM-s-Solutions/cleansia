@@ -36,6 +36,7 @@ sealed interface ProfileUiState {
     data class Loaded(
         val employee: EmployeeItem,
         val contractStatus: ContractStatus? = null,
+        val payoutSummary: String? = null,
     ) : ProfileUiState
 }
 
@@ -69,12 +70,17 @@ class ProfileViewModel @Inject constructor(
                     if (_uiState.value !is ProfileUiState.Loaded) _uiState.value = ProfileUiState.Error
                 }
             }
-            // Status is fire-and-forget — failing to load it shouldn't
-            // block the rest of the profile, so we don't surface its
-            // error to the snackbar. The chip just stays hidden.
+            // Status and payout destination are fire-and-forget — failing
+            // to load them shouldn't block the rest of the profile, so we
+            // don't surface their errors to the snackbar. The chip just
+            // stays hidden and the bank row keeps whatever it had.
             val status = (profileRepository.getRegistrationStatus() as? ApiResult.Success)?.data
+            val payout = (profileRepository.getPayoutDetails() as? ApiResult.Success)?.data
             (_uiState.value as? ProfileUiState.Loaded)?.let { loaded ->
-                _uiState.value = loaded.copy(contractStatus = status?.contractStatus ?: loaded.contractStatus)
+                _uiState.value = loaded.copy(
+                    contractStatus = status?.contractStatus ?: loaded.contractStatus,
+                    payoutSummary = payoutAccountSummary(payout) ?: loaded.payoutSummary,
+                )
             }
         }
     }

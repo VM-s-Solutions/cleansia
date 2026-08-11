@@ -2,7 +2,10 @@ package cz.cleansia.customer.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
@@ -21,6 +24,7 @@ import kotlinx.coroutines.launch
 class DeleteAccountViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private val _deleteState = MutableStateFlow<ActionState>(ActionState.Idle)
@@ -40,8 +44,8 @@ class DeleteAccountViewModel @Inject constructor(
                     _accountDeleted.emit(Unit)
                 }
                 .onError { error ->
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
-                    _deleteState.value = ActionState.Error(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error)
+                    _deleteState.value = ActionState.Error(error.userMessage(appContext))
                 }
         }
     }

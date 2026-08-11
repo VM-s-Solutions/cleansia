@@ -33,8 +33,8 @@ struct CleanOrderLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if model.card.showsFinishTime {
-                        LiveActivityFinishTime(finish: model.finish, compact: false)
+                    if let caption = model.card.timeCaption {
+                        LiveActivityClock(caption: caption, at: model.legEnd, compact: false)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {

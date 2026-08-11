@@ -4,6 +4,10 @@ import { DialogService, SnackbarService } from '@cleansia/services';
 import { Subject, of, throwError } from 'rxjs';
 import { SendSitewidePromoResponse } from '@cleansia/admin-services';
 import { SitewidePushFormFacade } from './sitewide-push-form.facade';
+import {
+  SitewidePushFormData,
+  buildSendSitewidePromoCommand,
+} from './sitewide-push-form.models';
 
 describe('SitewidePushFormFacade', () => {
   let facade: SitewidePushFormFacade;
@@ -14,7 +18,7 @@ describe('SitewidePushFormFacade', () => {
     showErrorTranslated: jest.Mock;
   };
 
-  const command = new SendSitewidePromoCommand({
+  const formData: SitewidePushFormData = {
     titleEn: 'Hi',
     titleCs: 'Ahoj',
     titleSk: 'Ahoj',
@@ -25,7 +29,9 @@ describe('SitewidePushFormFacade', () => {
     bodySk: 'Telo',
     bodyUk: 'Tilo',
     bodyRu: 'Telo',
-  });
+  };
+
+  const command = buildSendSitewidePromoCommand(formData);
 
   beforeEach(() => {
     sendMock = jest.fn();
@@ -109,5 +115,24 @@ describe('SitewidePushFormFacade', () => {
     inFlight.next(new SendSitewidePromoResponse({ enqueued: true }));
     inFlight.complete();
     expect(facade.submitting()).toBe(false);
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // This pins the serialized body instead (ADR-0031) — and a locale silently missing from
+  // the push is the whole defect this guards.
+  it('serializes a title and a body for all five locales', () => {
+    expect(command).toBeInstanceOf(SendSitewidePromoCommand);
+    expect(command.toJSON()).toEqual({
+      titleEn: 'Hi',
+      titleCs: 'Ahoj',
+      titleSk: 'Ahoj',
+      titleUk: 'Pryvit',
+      titleRu: 'Privet',
+      bodyEn: 'Body',
+      bodyCs: 'Telo',
+      bodySk: 'Telo',
+      bodyUk: 'Tilo',
+      bodyRu: 'Telo',
+    });
   });
 });

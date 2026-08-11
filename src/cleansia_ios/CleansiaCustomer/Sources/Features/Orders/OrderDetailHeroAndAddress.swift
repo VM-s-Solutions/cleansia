@@ -4,7 +4,7 @@ import SwiftUI
 
 struct OrderHeroCard: View {
     @Environment(\.locale) private var locale
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     private var facts: OrderHeroFacts {
         OrderHeroFacts.resolve(order)
@@ -25,15 +25,15 @@ struct OrderHeroCard: View {
             }
             Text(OrdersFormat.dateRange(
                 order.cleaningDateTime,
-                estimatedMinutes: order.estimatedTime ?? 0,
+                estimatedMinutes: order.estimatedMinutes,
                 locale: locale
             ))
-            .font(CleansiaTypography.headlineSmall)
+            .cleansiaFont(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
 
             HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
                 Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.primary)
                 if let struck = facts.struckSubtotal {
                     Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))

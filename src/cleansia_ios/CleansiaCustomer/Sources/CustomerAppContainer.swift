@@ -69,6 +69,10 @@ final class CustomerAppContainer: AppContainer {
         base.apiClient
     }
 
+    var signupConsent: SignupConsentRepository {
+        authStack.signupConsent
+    }
+
     lazy var socialSignInProvider: SocialSignInProviding = CustomerSocialSignInProvider(
         googleClientID: AppConfig.googleClientID,
         googleServerClientID: AppConfig.googleServerClientID
@@ -93,6 +97,13 @@ final class CustomerAppContainer: AppContainer {
     let savedAddressRepository: SavedAddressRepository
 
     let userProfileRepository: UserProfileRepository
+    lazy var languageSync: LanguagePreferenceSync = LiveLanguagePreferenceSync(
+        repository: userProfileRepository
+    )
+    lazy var languageReconciler = LanguageReconciler(settings: appSettings) { [weak self] tag in
+        Task { @MainActor in await self?.languageSync.reconcile(languageCode: tag) }
+    }
+
     let avatarCache = RemoteImageCache()
     let devicesClient: CustomerDevicesClient
     let notificationFeedClient: NotificationFeedClient
@@ -186,6 +197,13 @@ final class CustomerAppContainer: AppContainer {
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
         if hasSession { beginLiveActivityPushToStart() }
+    }
+
+    /// Rides the same session signal the device registration does, for the same reason: it is derived
+    /// from the token state, so it fires on a restored session as well as a fresh sign-in and no auth
+    /// path can forget to call it. Nothing here belongs to a screen — the task is the container's.
+    func startLanguageReconcile() {
+        languageReconciler.attach(hasSession: hasSessionSubject.eraseToAnyPublisher())
     }
 
     /// Register the push-to-start token once a session is ready so the backend can start Live Activities

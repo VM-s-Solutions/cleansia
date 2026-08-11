@@ -88,7 +88,9 @@ public class GetPagedOrders
                 request.Filter?.HasAvailableSpots,
                 request.Filter?.IsUnassigned,
                 request.Filter?.ExcludeEmployeeId,
-                restrictToEmployeeId: isAdmin ? null : callerEmployeeId);
+                restrictToEmployeeId: isAdmin ? null : callerEmployeeId,
+                notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
+                nowUtc: isAdmin ? null : DateTime.UtcNow);
 
             var filter = specification.SatisfiedBy();
 
@@ -175,21 +177,10 @@ public class GetPagedOrders
                     continue;
                 }
 
-                // Non-assigned (= a still-takeable row the caller is browsing).
-                // Full PII, the exact geocoded coordinates, and the
-                // confirmation code stay hidden until the caller takes the job;
-                // only the coarse CustomerAddressApproximate + pay estimate (the
-                // documented pre-accept signals) remain.
-                items.Add(dto with
-                {
-                    CustomerName = string.Empty,
-                    CustomerEmail = string.Empty,
-                    CustomerPhone = string.Empty,
-                    CustomerAddress = string.Empty,
-                    ConfirmationCode = string.Empty,
-                    CustomerAddressLatitude = null,
-                    CustomerAddressLongitude = null,
-                });
+                // Non-assigned (= a still-takeable row the caller is browsing). Same seam the detail
+                // of this very order uses; only the coarse CustomerAddressApproximate + pay estimate
+                // (the documented pre-accept signals) remain.
+                items.Add(dto.RedactForBrowsingCleaner());
             }
 
             // Lazy backfill — fire-and-forget. Anything on this page with a

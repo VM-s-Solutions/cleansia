@@ -56,11 +56,17 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
   toggleConsent(consentType: ConsentType, granted: boolean): void {
     // IP + user-agent are captured server-side from the request, so the
     // client sends only the consent type.
-    const request$ = granted
-      ? this.gdprClient.consentsPost(new GrantConsentCommand({ consentType }))
-      : this.consentsClient.withdraw(
-          new WithdrawConsentCommand({ consentType })
-        );
+    let request$;
+
+    if (granted) {
+      const command = new GrantConsentCommand();
+      command.consentType = consentType;
+      request$ = this.gdprClient.consentsPost(command);
+    } else {
+      const command = new WithdrawConsentCommand();
+      command.consentType = consentType;
+      request$ = this.consentsClient.withdraw(command);
+    }
 
     request$
       .pipe(

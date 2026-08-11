@@ -28,11 +28,14 @@ enum CustomerNotificationDeepLink {
     ) -> CustomerNotificationDestination? {
         switch eventKey {
         case "order.confirmed",
+             "order.cleaner_assigned",
              "order.on_the_way",
              "order.in_progress",
              "order.completed",
              "order.cancelled",
              "order.refunded",
+             "order.starting_soon",
+             "order.preferred_offer_closed",
              "recurring.scheduled":
             guard let orderId else { return nil }
             return .order(orderId: orderId)

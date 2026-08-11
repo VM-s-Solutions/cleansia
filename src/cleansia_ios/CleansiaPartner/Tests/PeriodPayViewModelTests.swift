@@ -35,7 +35,7 @@ final class PeriodPayViewModelTests: XCTestCase {
 
     func testLoadResolvesOwnEmployeeIdAndMapsToLoaded() async {
         client.employeeIdResult = .success("emp-1")
-        client.periodPaysResult = .success(PeriodPaySummaryDto(payPeriodId: "pp-1", grandTotal: 4200))
+        client.periodPaysResult = .success(.stub(grandTotal: 4200))
 
         let vm = makeViewModel()
         await vm.load()
@@ -47,14 +47,45 @@ final class PeriodPayViewModelTests: XCTestCase {
         XCTAssertEqual(client.periodPaysPayPeriodId, "pp-1")
     }
 
-    func testMissingEmployeeIdGoesToErrorWithoutNetworkCall() async {
-        client.employeeIdResult = .failure(ApiError(code: "payroll.employee_id_missing"))
+    func testAnUnresolvableEmployeeIdStopsBeforeTheNetworkCall() async {
+        client.employeeIdResult = .failure(ApiError(code: ApiError.wireContractCode, httpStatus: 200))
 
         let vm = makeViewModel()
         await vm.load()
 
         guard case .error = vm.state else { return XCTFail("expected error") }
         XCTAssertEqual(client.periodPaysCallCount, 0)
+    }
+
+    /// The two failures reach this screen through the same guard and used to leave it as the same
+    /// invented code, so an expired session was reported as a payroll fault and neither reached the
+    /// cleaner or an investigator correctly.
+    func testASessionFailureAndAWireFailureStayDistinguishable() async {
+        client.employeeIdResult = .failure(ApiError(code: "auth.invalid_refresh_token", httpStatus: 401))
+        let expired = makeViewModel()
+        await expired.load()
+
+        client.employeeIdResult = .failure(ApiError(code: ApiError.wireContractCode, httpStatus: 200))
+        let broken = makeViewModel()
+        await broken.load()
+
+        guard case let .error(sessionError) = expired.state,
+              case let .error(wireError) = broken.state
+        else { return XCTFail("expected both to be errors") }
+
+        XCTAssertEqual(sessionError.httpStatus, 401)
+        XCTAssertEqual(sessionError.code, "auth.invalid_refresh_token")
+        XCTAssertEqual(wireError.code, ApiError.wireContractCode)
+        XCTAssertNotEqual(sessionError, wireError)
+    }
+
+    func testAFailureToResolveTheCallerIsSurfacedNotSwallowed() async {
+        client.employeeIdResult = .failure(ApiError(httpStatus: 500))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertNotNil(snackbar.current)
     }
 
     func testApiErrorGoesToErrorAndShowsSnackbar() async {

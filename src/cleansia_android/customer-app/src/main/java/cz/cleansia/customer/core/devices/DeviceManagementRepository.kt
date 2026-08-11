@@ -22,12 +22,13 @@ class DeviceManagementRepository @Inject constructor(
     private val json: Json,
 ) {
 
+    /**
+     * A bodiless 200 is refused by [safeApiCall] rather than rendered as "no devices": this screen
+     * is where a user kills a session they don't recognise, and an empty list there says the stolen
+     * session does not exist.
+     */
     suspend fun getMyDevices(): ApiResult<List<UserDeviceDto>> =
-        when (val result = safeApiCall(json) { api.mine(deviceIdProvider.deviceId) }) {
-            is ApiResult.Success ->
-                ApiResult.Success((result.data as? List<UserDeviceDto>).orEmpty())
-            is ApiResult.Error -> result
-        }
+        safeApiCall(json) { api.mine(deviceIdProvider.deviceId) }
 
     /**
      * Revoke by the server-side row id - kills push + that device's session.
@@ -38,8 +39,7 @@ class DeviceManagementRepository @Inject constructor(
     suspend fun revoke(deviceRowId: String): ApiResult<Unit> =
         when (val result = safeApiCall(json) { api.revoke(deviceRowId) }) {
             is ApiResult.Success ->
-                if (result.data is RevokeDeviceResponse && !result.data.success) ApiResult.Error(ApiError.Network(""))
-                else ApiResult.Success(Unit)
+                if (result.data.success) ApiResult.Success(Unit) else ApiResult.Error(ApiError.Network(""))
             is ApiResult.Error -> result
         }
 }

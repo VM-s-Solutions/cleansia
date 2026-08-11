@@ -21,7 +21,13 @@ protocol PartnerOrderClient: AnyObject {
     func currentEmployeeId() async -> ApiResult<String>
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
-    func getById(orderId: String) async -> ApiResult<OrderItem>
+    func getById(orderId: String) async -> ApiResult<OrderDetail>
+
+    /// The orders reserved for this cleaner alone until their deadline (ADR-0045).
+    func myPendingOffers() async -> ApiResult<[PendingOfferItem]>
+    /// Refuse a reservation — one server-side write: the hold ends now and the order returns to the
+    /// whole board.
+    func declinePreferredOffer(orderId: String) async -> ApiResult<Void>
 
     func takeOrder(orderId: String) async -> ApiResult<Void>
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void>
@@ -50,6 +56,10 @@ protocol PartnerOrderClient: AnyObject {
 
 /// Domain photo mapped from `GetOrderPhotosOrderPhotoDto` — the rail list reads
 /// these; `blobUrl` is rendered via `AsyncImage`.
+///
+/// **Drop the row.** A photo with no id cannot be deleted or previewed, and the rail counts what it
+/// shows rather than reporting a server figure, so a dropped frame falsifies nothing — while
+/// refusing the response would blank a rail the server answered correctly for every other photo.
 struct OrderPhoto: Equatable, Identifiable {
     let id: String
     let photoType: PhotoType?
@@ -72,11 +82,7 @@ struct OrderPhoto: Equatable, Identifiable {
 final class LivePartnerOrderClient: PartnerOrderClient {
     func currentEmployeeId() async -> ApiResult<String> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            let employee = try await PartnerEmployeeAPI.employeeGetCurrentEmployee()
-            guard let id = employee.id, !id.isEmpty else {
-                throw ApiError(code: "orders.employee_id_missing")
-            }
-            return id
+            try await PartnerEmployeeAPI.employeeGetCurrentEmployee().id.requireNonBlank("id")
         }
     }
 
@@ -100,9 +106,23 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    func getById(orderId: String) async -> ApiResult<OrderItem> {
+    func getById(orderId: String) async -> ApiResult<OrderDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerOrderAPI.orderGetById(orderId: orderId)
+            try await OrderDetail(PartnerOrderAPI.orderGetById(orderId: orderId))
+        }
+    }
+
+    func myPendingOffers() async -> ApiResult<[PendingOfferItem]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerOrderAPI.orderMyPendingOffers()
+        }
+    }
+
+    func declinePreferredOffer(orderId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderDeclinePreferredOffer(
+                declinePreferredOfferCommand: DeclinePreferredOfferCommand(orderId: orderId)
+            )
         }
     }
 

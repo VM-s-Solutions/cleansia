@@ -47,7 +47,6 @@ struct PreferredCleanerPicker: View {
                 pickerRow
             }
         }
-        .task { await viewModel.load() }
     }
 
     private var pickerRow: some View {

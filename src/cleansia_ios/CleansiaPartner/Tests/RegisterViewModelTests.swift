@@ -24,6 +24,15 @@ final class RegisterViewModelTests: XCTestCase {
     }
 
     private final class FakeSettings: AppSettingsStore {
+        private(set) var answeredPrompts: Set<String> = []
+        func hasAnsweredPrompt(_ prompt: String, userId: String) -> Bool {
+            answeredPrompts.contains("\(prompt)/\(userId)")
+        }
+
+        func markPromptAnswered(_ prompt: String, userId: String) {
+            answeredPrompts.insert("\(prompt)/\(userId)")
+        }
+
         var hasSeenOnboarding = false
         func markOnboardingSeen() {
             hasSeenOnboarding = true
@@ -51,6 +60,7 @@ final class RegisterViewModelTests: XCTestCase {
     private var client: FakeRegisterClient!
     private var settings: FakeSettings!
     private var snackbar: SnackbarController!
+    private var signupConsent: RecordingSignupConsent!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -58,11 +68,13 @@ final class RegisterViewModelTests: XCTestCase {
         client = FakeRegisterClient()
         settings = FakeSettings()
         snackbar = SnackbarController()
+        signupConsent = RecordingSignupConsent()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
+        signupConsent = nil
         snackbar = nil
         settings = nil
         client = nil
@@ -70,7 +82,7 @@ final class RegisterViewModelTests: XCTestCase {
     }
 
     private func makeViewModel() -> RegisterViewModel {
-        RegisterViewModel(client: client, settings: settings, snackbar: snackbar)
+        RegisterViewModel(client: client, settings: settings, snackbar: snackbar, signupConsent: signupConsent)
     }
 
     private func fillValid(_ vm: RegisterViewModel) {
@@ -143,6 +155,9 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertEqual(client.callCount, 0)
     }
 
+    /// The terms box is a hard blocker, not a hint. It is the reason the "unticked box parks
+    /// nothing" rule in `SignupConsentRepository` can never fire from this screen — and the
+    /// reason that rule cannot be the only thing pinning it.
     func testUnacceptedTermsSetsErrorAndDoesNotSubmit() async {
         let vm = makeViewModel()
         fillValid(vm)
@@ -151,6 +166,28 @@ final class RegisterViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.form.termsError)
         XCTAssertEqual(client.callCount, 0)
+        XCTAssertEqual(signupConsent.parked.count, 0)
+    }
+
+    func testASuccessfulRegistrationParksTheTickAgainstTheSubmittedAddress() async {
+        client.result = .success(true)
+        let vm = makeViewModel()
+        fillValid(vm)
+
+        await vm.register()
+
+        XCTAssertEqual(signupConsent.parked.map(\.email), ["jana@b.cz"])
+        XCTAssertEqual(signupConsent.parked.map(\.accepted), [true])
+    }
+
+    func testARejectedRegistrationParksNothing() async {
+        client.result = .failure(ApiError(code: "user.existing_email", httpStatus: 400))
+        let vm = makeViewModel()
+        fillValid(vm)
+
+        await vm.register()
+
+        XCTAssertEqual(signupConsent.parked.count, 0)
     }
 
     func testValidFormSubmitsAndEmitsRegisterSuccess() async {
@@ -188,12 +225,12 @@ final class RegisterViewModelTests: XCTestCase {
         // A German handset: nothing supported in the device list, so the intro
         // would otherwise register "en".
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["de-DE"] })
-        let preferences = PreferencesModel(settings: store)
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         XCTAssertEqual(preferences.languageTag, "en")
 
         preferences.selectLanguage(id: "uk")
 
-        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar)
+        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar, signupConsent: signupConsent)
         fillValid(vm)
         await vm.register()
 
@@ -209,10 +246,10 @@ final class RegisterViewModelTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["cs-CZ"] })
-        let preferences = PreferencesModel(settings: store)
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         preferences.selectLanguage(id: "de-DE")
 
-        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar)
+        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar, signupConsent: signupConsent)
         fillValid(vm)
         await vm.register()
 
@@ -277,5 +314,18 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertFalse(vm.form.isValid)
         fillValid(vm)
         XCTAssertTrue(vm.form.isValid)
+    }
+}
+
+final class RecordingSignupConsent: SignupConsentRecording, @unchecked Sendable {
+    private let lock = NSLock()
+    private var records: [(email: String, accepted: Bool)] = []
+
+    var parked: [(email: String, accepted: Bool)] {
+        lock.withLock { records }
+    }
+
+    func recordSignupTick(email: String, accepted: Bool) async {
+        lock.withLock { records.append((email, accepted)) }
     }
 }

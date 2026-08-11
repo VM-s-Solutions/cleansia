@@ -93,6 +93,17 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
         return HandleResult<UpdateBankDetails.Response>(result);
     }
 
+    [HttpGet("GetMyPayoutDetails")]
+    [Permission(Policy.CanViewEmployeePayoutDetails)]
+    [ProducesResponseType(typeof(MyPayoutDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyPayoutDetails([FromQuery] GetMyPayoutDetails.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<MyPayoutDetails>(result);
+    }
+
     [HttpPut("UpdateEmergencyContact")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
     [EnableRateLimiting("auth")]
@@ -113,6 +124,17 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
     {
         var result = await Mediator.Send(command);
         return HandleResult<UpdateAvailability.Response>(result);
+    }
+
+    [HttpPut("UpdateJobRadius")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateJobRadius.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateJobRadius([FromBody] UpdateJobRadius.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<UpdateJobRadius.Response>(result);
     }
 
     [HttpPost("SaveMyDocuments")]

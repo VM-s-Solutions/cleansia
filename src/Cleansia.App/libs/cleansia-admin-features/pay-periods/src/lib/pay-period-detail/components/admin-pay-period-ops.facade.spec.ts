@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
+  ReopenPayPeriodCommand,
   ReopenPayPeriodResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -58,9 +60,10 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.markPaid('period-1', jest.fn());
 
-    const command = payPeriodClient.markPaid.mock.calls[0][0];
-    expect(command.payPeriodId).toBe('period-1');
-    expect(Object.keys(command.toJSON())).toEqual(['payPeriodId']);
+    const command: MarkPayPeriodPaidCommand =
+      payPeriodClient.markPaid.mock.calls[0][0];
+    expect(command).toBeInstanceOf(MarkPayPeriodPaidCommand);
+    expect(command.toJSON()).toEqual({ payPeriodId: 'period-1' });
   });
 
   it('builds a typed reopen command with trimmed optional notes', () => {
@@ -69,9 +72,13 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.reopen('period-1', jest.fn());
 
-    const command = payPeriodClient.reopen.mock.calls[0][0];
-    expect(command.payPeriodId).toBe('period-1');
-    expect(command.notes).toBe('correction needed');
+    const command: ReopenPayPeriodCommand =
+      payPeriodClient.reopen.mock.calls[0][0];
+    expect(command).toBeInstanceOf(ReopenPayPeriodCommand);
+    expect(command.toJSON()).toEqual({
+      payPeriodId: 'period-1',
+      notes: 'correction needed',
+    });
   });
 
   it('omits empty reopen notes from the command', () => {
@@ -79,8 +86,12 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.reopen('period-1', jest.fn());
 
-    const command = payPeriodClient.reopen.mock.calls[0][0];
-    expect(command.notes).toBeUndefined();
+    const command: ReopenPayPeriodCommand =
+      payPeriodClient.reopen.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      payPeriodId: 'period-1',
+      notes: undefined,
+    });
   });
 
   it('shows a success toast, closes the panel and re-loads on success', () => {

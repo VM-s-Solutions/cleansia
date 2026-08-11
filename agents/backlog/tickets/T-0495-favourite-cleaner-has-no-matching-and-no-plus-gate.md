@@ -1,112 +1,164 @@
 ---
 id: T-0495
-title: "Favourite cleaner" is sold as a Plus perk, has no matching algorithm, and is not Plus-gated
-status: draft
+title: ADR — how a pull-model job board honours a customer's preferred cleaner (and falls back)
+status: done
 size: M
-owner: analyst
+owner: architect
 created: 2026-08-02
-updated: 2026-08-02
-depends_on: [T-0491]
-blocks: []
+updated: 2026-08-04
+depends_on: []
+blocks: [T-0515, T-0516]
 stories: []
-adrs: []
-layers: [analyst, backend]
+adrs: [0036, 0039]
+layers: [analyst, architect]
 security_touching: false
 manual_steps: []
 sprint: 15
 ---
 
+> **REWRITTEN 2026-08-02 after the owner's answer.** The original ticket's AC2 offered three priced
+> options including **(c) withdraw the claim**. **The owner: *"It exists, you can select in the app but
+> I think it doesn't work fully. And I'd like to have it working fully."*** **Option (c) is
+> eliminated.** The ticket is now the **architect panel** that decides the dispatch mechanism.
+> `depends_on: [T-0491]` **removed** — the question T-0491 was to settle for this perk (*should we sell
+> it at all*) is answered; T-0491 still owns the copy table and is a coordination point, not a blocker.
+
+> **ARCHITECT PANEL REQUIRED (author + 2–3 challengers + lead) — `agents/process/deliberation.md`.**
+> Deliverable is an ADR + the living decision doc. `git diff --stat -- src/` must be empty.
+
 ## Context
 
-**Source: the Cleansia Plus audit (2026-08-02).** *"Favourite cleaner has no matching algorithm and
-isn't Plus-gated."*
+**Every claim below is PM-verified first-hand at `master`, 2026-08-02 — this is no longer relayed.**
 
-**Status: RELAYED from the investigation, traced by it to file:line, NOT re-verified by the PM.**
+| Claim | Verification |
+|---|---|
+| The customer CAN select a preferred cleaner | **CONFIRMED on all three clients.** iOS `ConfirmStep.swift:77`, `:198`; Android `ConfirmStep.kt:362-363` + `PreferredCleanerPicker.kt`; web `order-wizard.facade.ts:580` sends it (as `undefined` — **the web wizard has no picker**) |
+| It is validated and persisted | **CONFIRMED.** `CreateOrder.cs:140-154` → `OrderFactory.cs:124` → `Order.cs:349` |
+| It is read by **nothing** | **CONFIRMED.** The only other references are `Order.cs:621` (`AnonymizeCustomerData` nulls it) and `IOrderRepository.cs:85` (a comment). **No query, no ordering, no notification, no assignment reads it.** |
+| Dispatch is first-come-first-served | **CONFIRMED.** `TakeOrder.cs` gates on available spots, caller-is-employee, completed profile, approval, weekly limit and time conflict. **`PreferredEmployeeId` appears nowhere in it.** |
+| The entity doc describes an algorithm that does not exist | **CONFIRMED.** `Order.cs:217-224`: *"The matching algorithm boosts this employee's score…"* — **and the same comment ends *"today the field exists but no UI sets it"*, which is now false too.** Three clients set it. The comment is stale in both directions |
 
-### Why this is the odd one out of the three unenforced perks
+### The two things to decide, and they are genuinely different
 
-The other two (express, recurring) are **features that exist and are not gated**. This one is
-different in kind: **there is nothing to gate.** If there is no matching algorithm, then "favourite
-cleaner" is not a perk that leaks to non-subscribers — it is a perk that **nobody receives, including
-the people paying for it.** Those are different problems with different urgency:
+**1. Prioritisation.** This is a **pull** model: cleaners take orders off a board, plus a 30-minute
+digest push (`NotificationEventCatalog.NewJobsAvailable = "order.new_available"`,
+`Employee.LastNewJobsNotifiedAt`). **A pull model has no assignment step to bias.** The plausible
+mechanisms are materially different in cost and in risk:
 
-- an ungated perk costs the platform margin;
-- an unbuilt perk that is **advertised on a paid subscription** is a misrepresentation.
+| Mechanism | What it means | Cost | The risk it carries |
+|---|---|---|---|
+| **Notify-first** | the preferred cleaner's digest includes it; others' does not, for N minutes | small — the digest sweep already exists | the order sits **unseen** for N minutes if they are asleep |
+| **Exclusive hold** | `TakeOrder` refuses everyone else for N minutes | one validator rule + a timestamp | same latency risk, now enforced server-side |
+| **Board ordering** | the preferred cleaner sees it at the top; anyone can still take it | cosmetic | **honours nothing** — first-come still wins |
+| **Assignment model** | the platform assigns instead of offering | **an epic** | changes how the whole product works |
 
-**The second is worse, and it is why this ticket is `analyst`-owned rather than `backend`-owned.**
-The first question is not "how do we build matching" — it is "do we build it, or do we stop selling
-it until we do."
+**2. The fallback is the hard half, not an afterthought.** What happens when the preferred cleaner does
+not take it? How long do we wait? Does the customer know? **A booking that sits unclaimed because we
+were waiting for one person is a worse outcome than not honouring the preference at all** — and the
+customer paid for the perk that caused it.
 
-### What must be established before any build
+### What the copy currently promises — three different things again
 
-1. **Does a favourite/preferred-cleaner relationship exist in the data model at all?** If a customer
-   cannot even *mark* a cleaner as a favourite, then matching has no input and the perk is a
-   marketing string with no backing anywhere.
-2. **Is there an assignment path to influence?** Cleaners take orders from an available pool
-   (the partner order-detail flow is take/start/complete, and there is an
-   `order.new_available` 30-minute digest per `Q-FEED-02`). **A pull model has no assignment step to
-   bias.** Preferring a specific cleaner in a pull model means either notifying them first and
-   holding the order, or moving to an assignment model — a substantial change to how the platform
-   works, not a filter.
-3. **What does the customer-facing copy actually promise?** "Your favourite cleaner when available"
-   and "the same cleaner every time" are different products. T-0491 AC1 quotes it.
+- iOS `booking_preferred_cleaner_subtitle`: *"**Plus benefit** · choose someone who's cleaned for you before"*
+- Android/iOS `membership_perk_favorite_cleaner_desc`: *"Request the same cleaner you trust on every booking."*
+- Web `en.json:1097`: *"Pick a cleaner you've worked with before — **they'll be prioritized when matching**."*
+
+Only the web string promises prioritisation. **The ADR's chosen mechanism must be describable in one
+sentence a customer can check** — and if it cannot honour "the same cleaner every time", the copy
+changes, which the ADR names as a consequence (it does not make the change).
 
 ## Acceptance criteria
 
-- [ ] **AC1 — RE-ESTABLISH the finding, with the three questions above answered at file:line.** Does
-      a favourite relationship exist in the domain? Is there an assignment step? What does the copy
-      promise? Evidence: three answers, each cited. **If matching turns out to exist, close this
-      ticket and say so.**
-- [ ] **AC2 — the RECOMMENDATION comes before the design, and it is allowed to be "stop selling
-      it".** Three options, each priced: **(a)** build matching, **(b)** re-scope the perk to what is
-      buildable on the current pull model (e.g. "your favourite cleaner is notified first"),
-      **(c)** withdraw the perk from the copy until it exists. **Option (c) is a legitimate outcome
-      and the story must not treat it as failure** — for a live paid subscription, removing an
-      untrue claim is faster and safer than building a feature to make it true. Evidence: the three
-      priced options plus the recommendation.
-- [ ] **AC3 — if (a) or (b), the perk is SPECIFIED to the standard T-0491 AC2 requires:** one
-      sentence a test could check. Including the failure case — what does the customer see when the
-      favourite is unavailable? Evidence: the specification.
-- [ ] **AC4 — the assignment-model consequence is stated plainly.** If the recommendation requires
-      moving from pull to assignment (even partially, even for one order), **say so in one sentence
-      at the top of the recommendation.** That is an architecture change and the owner must see it as
-      one, not discover it in a ticket estimate. Evidence: the sentence, or an explicit "no
-      assignment-model change required".
-- [ ] **AC5 — the Plus gate is specified alongside**, and it lands **server-side** for the same
-      reason T-0494 exists. Evidence: the specification.
-- [ ] **AC6 — the output is a SPECIFICATION plus at most three sized implementation candidates.**
-      **This ticket builds nothing.** `git diff --stat -- src/` is empty. Evidence: the candidates.
-- [ ] **AC7 (Gate 0.5 leg 3)** — state what was not investigated, and every claim that is a read
-      rather than a run.
+- [ ] **AC1 — the mechanism is chosen from the table above (or a fifth, argued) and stated in one
+      sentence a test could check.** Evidence: the sentence plus the rejected alternatives with
+      why-not.
+- [ ] **AC2 — the FALLBACK is specified as precisely as the happy path.** The wait duration, what
+      releases the order, who is notified, and **what the customer sees while waiting**. An ADR with a
+      vague fallback does not pass this AC. Evidence: the fallback state machine (Mermaid, per
+      `process/documentation.md`).
+- [ ] **AC3 — the assignment-model consequence is stated plainly in ONE SENTENCE AT THE TOP.** If the
+      recommendation requires moving from pull to assignment — even partially, even for one order —
+      the owner must see it as an architecture change, not discover it in an estimate. Evidence: the
+      sentence, or an explicit *"no assignment-model change required"*.
+- [ ] **AC4 — the cleaner-side privacy rule is decided.** `Order.cs:221-222` says the preference is
+      *"Not exposed to the cleaner side (avoids 'they didn't pick me' awkwardness)"*. **Every mechanism
+      except board-ordering leaks it by construction** — a cleaner who alone can see an order for 10
+      minutes knows why. Decide: keep the rule and pick a mechanism that respects it, or drop the rule
+      deliberately. Evidence: the ruling against that comment.
+- [ ] **AC5 — the existing eligibility rule is examined, not inherited.** `CreateOrder.cs:150-154`
+      requires the customer to have **completed** an order with that cleaner. Is that the right rule
+      once the perk is real? (It makes the perk unusable for a new subscriber's first booking — which
+      may be correct, or may be the reason nobody uses it.) Evidence: the ruling.
+- [ ] **AC6 — the interaction with `TakeOrder`'s existing gates is worked out.** Weekly order limit,
+      time conflict, approval status: **the preferred cleaner may be ineligible for reasons that have
+      nothing to do with preference.** Does the hold still apply? Evidence: the interaction table
+      against `TakeOrder.cs:38-60`.
+- [ ] **AC7 — the recurring-booking path is covered or explicitly excluded.**
+      `MaterializeRecurringBookings.cs:138` hardcodes `PreferredEmployeeId: null`. **A recurring
+      customer is exactly the customer who wants the same cleaner every time** — this is the strongest
+      case for the perk and it is currently wired to null. Evidence: the ruling plus the file citation.
+- [ ] **AC8 — the Plus gate is specified (not built) and is server-side**, ready for **T-0516** once
+      `Q-PLUS-03` is answered. Both outcomes (universal / Plus-only) are designed for. Evidence: the
+      specification.
+- [ ] **AC9 — at most three sized implementation candidates.** **This ticket builds nothing.**
+      `git diff --stat -- src/` empty. Evidence: the candidates with S/M sizes; **any `L` is split in
+      the ADR, not left for the PM to discover.**
+- [ ] **AC10 — the ADR is written to `agents/backlog/adr/00NN-*.md` and the living decision doc under
+      `agents/architecture/decisions/` is updated in the same step.** Evidence: both files.
+- [ ] **AC11 — the deliberation trail (`## Challenge` / `## Defense` / `## Verdict`) stays in the
+      artifact.** Evidence: the sections.
+- [ ] **AC12 — `Order.cs:217-224`'s stale comment is named for correction** (it describes a scoring
+      algorithm that does not exist **and** claims no UI sets the field, which three clients now do).
+      The correction lands in **T-0515**, not here. Evidence: the note.
+- [ ] **AC13 (Gate 0.5 leg 3)** — state what the panel did not examine.
 
 ## Out of scope
 
-- **Building matching.** AC6. If the recommendation is (a), the build is a new ticket sized from the
-  specification — and given AC4, quite possibly an epic.
+- **Building the dispatch rule** — **T-0515**.
+- **The Plus gate's implementation** — **T-0516**, blocked on `Q-PLUS-03`.
+- **Changing the assignment model.** AC3 *names* it; nothing here changes it.
+- **The web wizard's missing picker.** `order-wizard.facade.ts:580` sends `undefined`; **web customers
+  cannot select a preferred cleaner at all.** Named here, filed by the PM out of the ADR's output —
+  not built in this ticket.
 - **The other perks** — T-0492, T-0493, T-0494.
-- **Changing the assignment model.** AC4 *names* it as a consequence; nothing here changes it.
-- **Removing the marketing copy.** If (c) is recommended, the copy change is a client ticket across
-  iOS + Android + web × 5 locales, filed after the owner accepts the recommendation.
 
 ## Implementation notes
 
-**Analyst-led, with a `backend` instance for AC1's code archaeology.** The panel is **T-0491**; this
-ticket is one of its outputs and does not convene a second one — but its recommendation (AC2) is
-adversarial by nature and should be challenged by at least one of T-0491's challengers before it
-reaches the owner.
+**`architect`-led with one `analyst` challenger** for the customer-promise half (AC1/AC2/AC4), because
+the mechanism choice is only half a design question — the other half is what we are allowed to say we
+sell. Author, challengers and lead are **different instances** per `deliberation.md`.
 
-**Read first:** the order assignment/availability path, `Core.Domain/Memberships/*`, and T-0491 AC1's
-copy table.
-
-**The honest framing for the owner, and the story should carry it:** of the five perks, this is the
-one where "we will build it" may be the wrong answer. A subscription with four honest perks is a
-better product than one with five, of which one is a promise nobody can keep.
+**Read first:** `TakeOrder.cs` in full, `CreateOrder.cs:140-155`, `Order.cs:217-226` + `:621`,
+`OrderFactory.cs:110-130`, `MaterializeRecurringBookings.cs:120-145`,
+`NotificationEventCatalog.cs:30`, `Employee.LastNewJobsNotifiedAt` and the 30-minute digest sweep,
+`GetMyServingCleaners.cs` (what feeds the picker), and `agents/analysts/notifications.md`.
 
 ## Status log
-- 2026-08-02 — **draft (created by pm from the Cleansia Plus audit).** **Finding marked RELAYED, not
-  PM-verified.** Filed `analyst`-owned rather than `backend`-owned because the defect is a perk that
-  *nobody* receives — including paying subscribers — which makes the first question "should this be
-  sold at all", not "how do we gate it". **AC2 explicitly permits "withdraw the claim" as the
-  recommended outcome**, so the story is not structurally forced toward a build it cannot justify.
+- 2026-08-02 — **draft (created by pm from the Cleansia Plus audit).** Finding marked RELAYED;
+  `analyst`-owned; AC2 permitted *"withdraw the claim"*.
+- 2026-08-02 — **REWRITTEN → `ready` by pm after the owner's answer *"I'd like to have it working
+  fully."*** Option (c) eliminated, so the ticket stops being a recommendation and becomes an
+  **architect panel** on the dispatch mechanism. **All five findings re-grounded first-hand and now
+  marked VERIFIED**, including two the audit did not have: `TakeOrder.cs` contains no reference to the
+  field at all, and `MaterializeRecurringBookings.cs:138` hardcodes it to `null` for the exact cohort
+  most likely to want it. **`depends_on: [T-0491]` removed** — the owner answered the question that
+  dependency existed for; T-0491 remains the owner of the copy table and AC1's sentence should be
+  handed to it rather than decided twice. `ready`: passes DoR, no unmet dependency, panel is step 1.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0036**
+  (`0036-preferred-cleaner-first-refusal-hold.md`), drafted `2caa5f82`, challenged in `eee24957`,
+  **accepted `cfcadce5`** ("panel complete, consensus reached 2026-08-02"). The owner's later availability
+  instruction produced **ADR-0039** (`be7fece8`, **accepted `182a5660`**), which supersedes ADR-0036
+  §D5.1's time-conflict half. **Verified at HEAD:** both ADR headers read `accepted`. The panel killed the
+  ADR's own headline safety claim (CH-V1: *"an order stuck held is not expressible"* was false — a null
+  beneficiary with a live deadline made an order invisible and un-takeable to everyone for up to 12h), and
+  the fix is delivered by construction (`GrantPreferredHold`/`ClearPreferredHold` with no independent
+  setter), not by a review checklist.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read both ADR headers at HEAD. Confirmed in code that
+the construction-level guarantee the panel demanded actually exists: `PreferredHoldUntilUtc` appears in
+`Order.cs` with the paired grant/clear mutators as its only writers, and the property's doc comment
+(`Order.cs:236-251`) records that there is **no matching algorithm and no score** — which also discharges
+T-0515 AC8. **No `manual_steps` on this ticket.**
+

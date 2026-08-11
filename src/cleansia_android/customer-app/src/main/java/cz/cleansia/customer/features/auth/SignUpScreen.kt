@@ -72,9 +72,16 @@ import cz.cleansia.customer.ui.theme.SuccessText
  */
 @Composable
 fun SignUpScreen(
-    onRegisterClick: (firstName: String, lastName: String, email: String, password: String, referralCode: String?) -> Unit = { _, _, _, _, _ -> },
+    onRegisterClick: (
+        firstName: String,
+        lastName: String,
+        email: String,
+        password: String,
+        referralCode: String?,
+        acceptedTerms: Boolean,
+    ) -> Unit = { _, _, _, _, _, _ -> },
     onLoginClick: () -> Unit = {},
-    onGoogleSignIn: () -> Unit = {},
+    onGoogleSignIn: (acceptedTerms: Boolean) -> Unit = {},
     loading: Boolean = false,
     viewModel: SignUpViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
@@ -99,12 +106,14 @@ fun SignUpScreen(
     val hasPasswordInput = password.isNotEmpty()
     val hasConfirmInput = confirmPassword.isNotEmpty()
 
-    val formValid = firstName.isNotBlank() &&
-        lastName.isNotBlank() &&
-        email.isNotBlank() &&
-        hasMinLength && hasLetter && hasNumber &&
-        passwordsMatch &&
-        acceptedTerms
+    val formValid = SignUpForm.isSubmittable(
+        firstName = firstName,
+        lastName = lastName,
+        email = email,
+        password = password,
+        confirmPassword = confirmPassword,
+        acceptedTerms = acceptedTerms,
+    )
 
     // Loyalty Phase C — referral repo via the holder VM. The validate call is
     // safe without a token; AuthInterceptor skips Authorization when the
@@ -239,6 +248,7 @@ fun SignUpScreen(
                     email,
                     password,
                     referralCode.trim().ifBlank { null },
+                    acceptedTerms,
                 )
             },
             loading = loading,
@@ -253,7 +263,7 @@ fun SignUpScreen(
 
         CleansiaOutlinedButton(
             text = stringResource(R.string.login_continue_with_google),
-            onClick = onGoogleSignIn,
+            onClick = { onGoogleSignIn(acceptedTerms) },
             leadingIcon = Icons.Outlined.Mail,
             enabled = !loading,
         )

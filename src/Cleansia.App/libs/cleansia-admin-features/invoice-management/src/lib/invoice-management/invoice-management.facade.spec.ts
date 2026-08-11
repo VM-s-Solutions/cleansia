@@ -3,6 +3,7 @@ import {
   AdminClient,
   EmployeeInvoiceDto,
   PagedDataOfEmployeeInvoiceDto,
+  RegenerateInvoicePdfCommand,
   RegenerateInvoicePdfResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -87,9 +88,13 @@ describe('InvoiceManagementFacade', () => {
     facade.retryPdf(invoice);
 
     expect(invoiceClient.regeneratePdf).toHaveBeenCalledTimes(1);
-    const command = invoiceClient.regeneratePdf.mock.calls[0][0];
-    expect(command.invoiceId).toBe('invoice-1');
-    expect(command.languageCode).toBe('cs');
+    const command: RegenerateInvoicePdfCommand =
+      invoiceClient.regeneratePdf.mock.calls[0][0];
+    expect(command).toBeInstanceOf(RegenerateInvoicePdfCommand);
+    expect(command.toJSON()).toEqual({
+      invoiceId: 'invoice-1',
+      languageCode: 'cs',
+    });
   });
 
   it('does not call regenerate without an invoice id', () => {

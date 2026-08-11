@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.orders
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -70,7 +72,9 @@ import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
@@ -93,6 +97,8 @@ fun OrderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val inFlightAction by viewModel.inFlightAction.collectAsStateWithLifecycle()
+    val offerRefusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
+    val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
     // No local SnackbarHostState — all VMs push directly to the
@@ -129,11 +135,13 @@ fun OrderDetailScreen(
             // input pipeline. iOS hosts it at its ZStack root for the same
             // reason (OrderDetailContent.swift).
             var confirmingCash by remember { mutableStateOf(false) }
+            var decliningOffer by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 OrderDetailBottomSheetLayout(
                     order = s.order,
                     inFlight = inFlightAction,
+                    preferredOffer = preferredOffer,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = checklistViewModel::setChecked,
                     onTake = viewModel::take,
@@ -145,6 +153,7 @@ fun OrderDetailScreen(
                     // slide gesture and the order flips to Completed.
                     onCompleteClick = { viewModel.complete(null, null) },
                     onCashConfirmRequested = { confirmingCash = true },
+                    onDeclineOffer = { decliningOffer = true },
                     // onContentMutated routes through the staleness-gated
                     // refresh path, so photo upload / note add re-fetches
                     // silently (no full-page spinner flash). Repository
@@ -153,6 +162,25 @@ fun OrderDetailScreen(
                     onPhotosChanged = viewModel::onContentMutated,
                     onNavigateBack = onNavigateBack,
                 )
+
+                if (decliningOffer) {
+                    CleansiaDialog(
+                        onDismiss = { decliningOffer = false },
+                        title = stringResource(R.string.offer_decline_title),
+                        message = stringResource(R.string.offer_decline_body),
+                        confirmLabel = stringResource(R.string.offer_decline_cta),
+                        dismissLabel = stringResource(R.string.cancel),
+                        destructive = true,
+                        onConfirm = {
+                            decliningOffer = false
+                            viewModel.declinePreferredOffer()
+                        },
+                    )
+                }
+
+                offerRefusal?.let { refusal ->
+                    OfferRefusalDialog(refusal = refusal, onDismiss = viewModel::dismissOfferRefusal)
+                }
 
                 if (confirmingCash) {
                     CleansiaDialog(
@@ -225,6 +253,7 @@ fun OrderDetailScreen(
 private fun OrderDetailBottomSheetLayout(
     order: OrderItem,
     inFlight: OrderAction?,
+    preferredOffer: PendingOffer?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -232,6 +261,7 @@ private fun OrderDetailBottomSheetLayout(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
@@ -240,12 +270,8 @@ private fun OrderDetailBottomSheetLayout(
     val isInProgress = status == OrderStatus._4
     val darkTheme = isSystemInDarkTheme()
 
-    val hasCoords = order.address?.latitude != null && order.address?.longitude != null
-    // Keep the map visible on Completed too — the location is still
-    // meaningful context (cleaner may want to revisit, customer may
-    // want to confirm where the job happened). Only Cancelled hides
-    // the map, since the visit never happened.
-    val canShowMap = hasCoords && status != OrderStatus._6
+    val location = order.orderLocation()
+    val mapPoint = location.mapPoint(status)
 
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     // Sheet peek = 75% of screen so the map shrinks to ~25% — just
@@ -280,9 +306,11 @@ private fun OrderDetailBottomSheetLayout(
                 OrderDetailSheetContent(
                     order = order,
                     status = status,
+                    location = location,
                     isMine = isMine,
                     isInProgress = isInProgress,
                     inFlight = inFlight,
+                    preferredOffer = preferredOffer,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = onToggleChecklistItem,
                     onTake = onTake,
@@ -290,15 +318,16 @@ private fun OrderDetailBottomSheetLayout(
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
                     onCashConfirmRequested = onCashConfirmRequested,
+                    onDeclineOffer = onDeclineOffer,
                     onPhotosChanged = onPhotosChanged,
                 )
             },
         ) { _ ->
             Box(modifier = Modifier.fillMaxSize()) {
-                if (canShowMap) {
+                if (mapPoint != null) {
                     MapBackdrop(
-                        latitude = order.address!!.latitude!!,
-                        longitude = order.address!!.longitude!!,
+                        latitude = mapPoint.first,
+                        longitude = mapPoint.second,
                         darkTheme = darkTheme,
                         sheetCoverHeight = sheetPeekHeight,
                     )
@@ -434,9 +463,11 @@ private fun FloatingBackButton(
 private fun OrderDetailSheetContent(
     order: OrderItem,
     status: OrderStatus?,
+    location: OrderLocation,
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
+    preferredOffer: PendingOffer?,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -444,11 +475,10 @@ private fun OrderDetailSheetContent(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
 ) {
-    val showAccessCard = isMine &&
-        !order.accessInstructions.isNullOrBlank() &&
-        (status == OrderStatus._3 || status == OrderStatus._4)
+    val disclosure = order.orderDisclosure()
 
     // From-customer card shows ONLY the general notes + special
     // instructions now — access has been promoted to its own card.
@@ -545,15 +575,14 @@ private fun OrderDetailSheetContent(
             // strip below the active-state block above.
             OrderMetadataRow(order = order)
 
-            if (showAccessCard) {
-                AccessCard(accessInstructions = order.accessInstructions!!)
+            if (disclosure.showsAccessCard(status)) {
+                AccessCard(accessInstructions = disclosure.accessInstructions!!)
             }
 
             CustomerCard(
                 customerName = order.customerName,
-                customerPhone = order.customerPhone,
-                address = order.address,
-                isAssignedToCurrentUser = isMine,
+                disclosure = disclosure,
+                location = location,
             )
 
             ScopeCard(order = order)
@@ -585,21 +614,18 @@ private fun OrderDetailSheetContent(
                 )
             }
 
-            // Notes/Issues differ: even on a Completed order the
-            // cleaner (and the customer / admin via their own apps)
-            // need to see the historical record of what was reported
-            // during the job. The section renders whenever the order
-            // is mine (active OR terminal) — read-only on terminal,
-            // self-hides if there's nothing to show. Add buttons are
-            // gated separately to OnTheWay/InProgress only (no adds
-            // while merely Confirmed — work hasn't started yet).
+            // Even on a Completed order the record of what was reported during the job is worth
+            // reading, so the section renders off the record's own arrival — the server sends `[]`
+            // to a caller it withheld it from. Writing is a different question: adds are the
+            // assignee's, at OnTheWay/InProgress only (no adds while merely Confirmed — work hasn't
+            // started), and everyone else reads.
             val canAddNotesOrIssues =
-                status == OrderStatus._3 || status == OrderStatus._4
-            if (isMine) {
+                isMine && (status == OrderStatus._3 || status == OrderStatus._4)
+            if (disclosure.showsWorkRecordSection(canAddNotesOrIssues)) {
                 NotesAndIssuesSection(
                     notes = order.orderNotes.orEmpty(),
                     issues = order.orderIssues.orEmpty(),
-                    isReadOnly = isTerminal,
+                    isReadOnly = isTerminal || !isMine,
                     canAddNotes = canAddNotesOrIssues,
                     onMutated = onPhotosChanged, // same refresh path; renames not worth a turn
                 )
@@ -649,11 +675,13 @@ private fun OrderDetailSheetContent(
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = needsCashCollection,
+            preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
             onCashConfirmRequested = onCashConfirmRequested,
+            onDeclineOffer = onDeclineOffer,
         )
     }
 }
@@ -665,11 +693,13 @@ private fun StickyActionFooter(
     inFlight: OrderAction?,
     canComplete: Boolean,
     needsCashCollection: Boolean,
+    preferredOffer: PendingOffer?,
     onTake: () -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onDeclineOffer: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -701,6 +731,10 @@ private fun StickyActionFooter(
                     bottom = Spacing.M,
                 ),
         ) {
+            if (preferredOffer != null && !isMine) {
+                ReservedForYouRow(respondByUtc = preferredOffer.respondByUtc)
+                Spacer(Modifier.height(Spacing.S))
+            }
             OrderPrimaryAction(
                 status = status,
                 isAssignedToCurrentUser = isMine,
@@ -712,7 +746,15 @@ private fun StickyActionFooter(
                 onCashConfirmRequested = onCashConfirmRequested,
                 canComplete = canComplete,
                 needsCashCollection = needsCashCollection,
+                isPreferredOffer = preferredOffer != null,
             )
+            if (preferredOffer != null && !isMine) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    TextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
+                        Text(stringResource(R.string.offer_decline))
+                    }
+                }
+            }
         }
     }
 }

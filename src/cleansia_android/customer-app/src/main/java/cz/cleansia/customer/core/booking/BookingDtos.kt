@@ -37,10 +37,10 @@ data class QuoteOrderResponse(
      */
     val totalPrice: Double,
     /** Display price after best-of (tier, membership) discount. Promo isn't included here. */
-    val finalPriceAfterDiscount: Double = 0.0,
-    val originalSubtotal: Double = 0.0,
+    val finalPriceAfterDiscount: Double,
+    val originalSubtotal: Double,
     /** 0=None, 1=Tier, 2=Membership, 3=Promo. Mirrors backend AppliedDiscountSource. */
-    val appliedDiscountSource: Int = 0,
+    val appliedDiscountSource: Int,
     val tierDiscountAmount: Double? = null,
     val membershipDiscountAmount: Double? = null,
     /** Set when the user qualifies for a tier discount but the order falls below the floor. */
@@ -50,11 +50,17 @@ data class QuoteOrderResponse(
     val servicesSubtotal: Double,
     val packagesSubtotal: Double,
     /** Sum of selected extras' prices (pre-surcharge, pre-discount). */
-    val extrasSubtotal: Double = 0.0,
+    val extrasSubtotal: Double,
     /** True when the picked slot triggered the express surcharge. */
-    val expressSurchargeApplied: Boolean = false,
+    val expressSurchargeApplied: Boolean,
     /** Surcharge amount folded into [totalPrice]. Surface as its own row in the breakdown. */
-    val expressSurchargeAmount: Double = 0.0,
+    val expressSurchargeAmount: Double,
+    /**
+     * True when the slot is in the express window AND the member's monthly quota covered it, in which
+     * case [expressSurchargeApplied] is false and [totalPrice] carries no surcharge. The summary must
+     * follow this verdict rather than re-deriving one from the clock.
+     */
+    val expressSurchargeWaivedByMembership: Boolean,
     val exchangeRate: Double,
 )
 

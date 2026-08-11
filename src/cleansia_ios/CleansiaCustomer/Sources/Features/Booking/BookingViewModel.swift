@@ -11,11 +11,14 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var referralState: ReferralCodeState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
+    @Published private(set) var membership: MembershipSnapshot?
+    @Published private(set) var expressWaiverStatus: ExpressWaiverStatus = .none
 
     @Published private(set) var currentStep = 1
 
     private let catalogClient: CatalogClient
     let quoteClient: QuoteClient
+    private let membershipClient: MembershipClient
     private let extraClient: ExtraClient
     private let promoClient: PromoCodeClient
     private let referralClient: ReferralClient
@@ -31,11 +34,13 @@ final class BookingViewModel: ViewModel {
     var lastQuoteRequest: QuoteRequest?
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
+    private var membershipLoad: Task<MembershipSnapshot?, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     init(
         catalogClient: CatalogClient = LiveCatalogClient(),
         quoteClient: QuoteClient = LiveQuoteClient(),
+        membershipClient: MembershipClient = LiveMembershipClient(),
         extraClient: ExtraClient = LiveExtraClient(),
         promoClient: PromoCodeClient = LivePromoCodeClient(),
         referralClient: ReferralClient = LiveReferralClient(),
@@ -50,6 +55,7 @@ final class BookingViewModel: ViewModel {
     ) {
         self.catalogClient = catalogClient
         self.quoteClient = quoteClient
+        self.membershipClient = membershipClient
         self.extraClient = extraClient
         self.promoClient = promoClient
         self.referralClient = referralClient
@@ -76,6 +82,20 @@ final class BookingViewModel: ViewModel {
     var isQuoting: Bool {
         if case .quoting = quoteState { return true }
         return false
+    }
+
+    /// Waivers left this calendar month, as the server counted them. Never adjusted for the booking
+    /// being composed — a client that decrements it disagrees with the server the first time a
+    /// cancellation releases a slot.
+    var expressUpgradesRemaining: Int {
+        membership?.expressUpgradesRemaining ?? 0
+    }
+
+    /// Best of the server's own discounts and the promo code, the single input both the summary card
+    /// and the sticky price bar subtract so they cannot show two different totals.
+    var effectiveDiscount: Double {
+        guard let quote = quoteState.quote else { return 0 }
+        return max(quote.tierDiscountAmount + quote.membershipDiscountAmount, promoState.discount)
     }
 
     func update(_ transform: (BookingState) -> BookingState) {
@@ -115,6 +135,8 @@ final class BookingViewModel: ViewModel {
     func reset() {
         state = BookingState()
         submitState = .idle
+        membership = nil
+        expressWaiverStatus = .none
         quoteState = .idle
         promoState = .idle
         referralState = .idle
@@ -151,6 +173,29 @@ final class BookingViewModel: ViewModel {
         case let .failure(error):
             catalogState = .error(error)
         }
+    }
+
+    /// The wizard's ONE read of the signed-in customer's membership — the slot grid's express-waiver
+    /// note and the confirm step's cancellation policy share it rather than asking twice for the same
+    /// answer. A guest is skipped and a failed read degrades to the same silence as "no membership":
+    /// this enriches the most valuable screen in the product, so saying nothing beats a red toast.
+    @discardableResult
+    func loadMembership() async -> MembershipSnapshot? {
+        if let membership { return membership }
+        guard tokenStore.current() != nil else { return nil }
+        if let inFlight = membershipLoad { return await inFlight.value }
+
+        let load = Task { [membershipClient] () -> MembershipSnapshot? in
+            guard case let .success(snapshot) = await membershipClient.currentMembership() else { return nil }
+            return snapshot
+        }
+        membershipLoad = load
+        let snapshot = await load.value
+        membershipLoad = nil
+        guard let snapshot else { return nil }
+        membership = snapshot
+        expressWaiverStatus = ExpressWaiverStatus.resolve(snapshot, now: Date())
+        return snapshot
     }
 
     func loadExtras() async {
@@ -230,11 +275,12 @@ final class BookingViewModel: ViewModel {
             return .idle
         }
         promoState = .validating
-        let subtotal = quoteState.quote?.totalPrice ?? 0
+        let quote = quoteState.quote
+        let subtotal = quote?.preSurchargeSubtotal ?? 0
         let resolved: PromoCodeState = switch await promoClient.validate(code: normalized, orderSubtotal: subtotal) {
         case let .success(validation):
             if validation.isValid, let discount = validation.discountAmount {
-                .valid(discountAmount: discount)
+                .valid(discountAmount: quote?.discountAsCharged(discount) ?? discount)
             } else {
                 .invalid(PromoCodeError.from(validation.errorCode))
             }

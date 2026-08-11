@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { CustomerClient } from '@cleansia/customer-services';
+import {
+  ChangePasswordCommand,
+  CustomerClient,
+  RequestPasswordChangeCommand,
+} from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -108,5 +112,45 @@ describe('ForgotPasswordFacade (customer)', () => {
     });
 
     expect(facade.passwordFormGroup.get('password')?.valid).toBe(true);
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes the code request with the email and the active language', () => {
+      userClient.requestPasswordChange.mockReturnValue(of(undefined));
+      facade.emailFormGroup.setValue({ email: 'jan@example.com' });
+
+      facade.sendCode();
+
+      const command: RequestPasswordChangeCommand =
+        userClient.requestPasswordChange.mock.calls[0][0];
+      expect(command).toBeInstanceOf(RequestPasswordChangeCommand);
+      expect(command.toJSON()).toEqual({
+        email: 'jan@example.com',
+        language: 'en',
+      });
+    });
+
+    it('serializes the password change with the email, the code and the new password', () => {
+      userClient.changePassword.mockReturnValue(of(undefined));
+      facade.emailFormGroup.setValue({ email: 'jan@example.com' });
+      facade.passwordFormGroup.setValue({
+        code: '123456',
+        password: 'Heslo1234',
+        confirmPassword: 'Heslo1234',
+      });
+
+      facade.changePassword();
+
+      const command: ChangePasswordCommand =
+        userClient.changePassword.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ChangePasswordCommand);
+      expect(command.toJSON()).toEqual({
+        email: 'jan@example.com',
+        code: '123456',
+        newPassword: 'Heslo1234',
+      });
+    });
   });
 });

@@ -1,0 +1,61 @@
+<cleansia-section [title]="'pages.profile.job_radius' | translate">
+  <p class="cleansia-profile__description">
+    {{ 'pages.profile.job_radius_explainer' | translate }}
+  </p>
+
+  @if (facade.loadFailed()) {
+    <div class="cleansia-profile__load-error">
+      <p class="cleansia-profile__load-error-message">
+        {{ 'global.messages.profile.job_radius_load_error' | translate }}
+      </p>
+      <cleansia-button
+        [buttonType]="'button'"
+        [title]="'global.actions.retry' | translate"
+        [icon]="'pi pi-refresh'"
+        (clickFn)="retry.emit()"
+      />
+    </div>
+  } @else if (!facade.loaded()) {
+    <cleansia-form-skeleton />
+  } @else {
+    <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
+      <div class="cleansia-profile__field">
+        <cleansia-checkbox
+          [label]="'pages.profile.job_radius_limit' | translate"
+          formControlName="limitEnabled"
+          [showErrors]="false"
+        />
+      </div>
+      @if (facade.limitEnabled()) {
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.job_radius_distance' | translate"
+            [floatVariant]="'on'"
+            formControlName="radiusKm"
+            dataType="number"
+          />
+          <small class="cleansia-profile__field-hint">
+            {{
+              'pages.profile.job_radius_distance_hint'
+                | translate: { min: minKm, max: maxKm }
+            }}
+          </small>
+        </div>
+      } @else {
+        <p class="cleansia-profile__field-hint">
+          {{ 'pages.profile.job_radius_off_hint' | translate }}
+        </p>
+      }
+    </div>
+    <div class="cleansia-profile__actions">
+      <cleansia-button
+        [buttonType]="'button'"
+        [style]="'raised-button'"
+        [title]="'global.actions.save' | translate"
+        [disabled]="!facade.canSubmit()"
+        [loading]="facade.saving()"
+        (clickFn)="facade.onSubmit()"
+      />
+    </div>
+  }
+</cleansia-section>

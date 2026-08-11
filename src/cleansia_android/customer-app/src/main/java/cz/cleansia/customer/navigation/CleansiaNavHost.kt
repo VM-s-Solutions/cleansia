@@ -214,11 +214,11 @@ fun CleansiaNavHost(
             }
 
             SignUpScreen(
-                onRegisterClick = { firstName, lastName, email, password, referralCode ->
-                    vm.register(email, password, firstName, lastName, referralCode)
+                onRegisterClick = { firstName, lastName, email, password, referralCode, acceptedTerms ->
+                    vm.register(email, password, firstName, lastName, referralCode, acceptedTerms)
                 },
                 onLoginClick = { navController.popBackStack() },
-                onGoogleSignIn = { vm.signInWithGoogle(context) },
+                onGoogleSignIn = { acceptedTerms -> vm.signUpWithGoogle(context, acceptedTerms) },
                 loading = state.loading,
             )
         }
@@ -613,6 +613,7 @@ fun CleansiaNavHost(
                 onEdit = { templateId ->
                     navController.navigate(Routes.CreateRecurringBooking(templateId = templateId))
                 },
+                onSubscribePlus = { navController.navigate(Routes.SubscribePlus) },
             )
         }
         composable<Routes.CreateRecurringBooking>(

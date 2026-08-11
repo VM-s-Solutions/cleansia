@@ -19,7 +19,7 @@ final class RegistrationLockLanguageAccessTests: XCTestCase {
 
     func testTheLanguageRouteIsNotAmongTheUnbuiltOnes() throws {
         let source = try read(Self.lockView)
-        let unbuilt = try XCTUnwrap(source.range(of: "case .emergency, .theme, .devices:"))
+        let unbuilt = try XCTUnwrap(source.range(of: "case .emergency, .jobRadius, .theme, .devices:"))
         XCTAssertFalse(source[unbuilt].contains(".language"), "the language route fell back to EmptyView")
     }
 

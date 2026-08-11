@@ -16,9 +16,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// occupies the cleaner's time only while it is a live commitment — terminal orders (Completed,
 /// Cancelled) free the slot. These tests run the real predicate against a
 /// <see cref="CleansiaDbContext"/> over SQLite with rows seeded through the
-/// <see cref="Order.AddOrderStatus"/> seam, pinning the per-status decision, the window/assignee
-/// semantics, and the pre-backfill NULL-column fallback to the latest-history rule
-/// (CreatedOn desc, Sequence desc).
+/// <see cref="Order.AddOrderStatus"/> seam, pinning the per-status decision and the
+/// window/assignee semantics.
 /// </summary>
 public sealed class HasOverlappingOrderStatusTests : IDisposable
 {
@@ -104,42 +103,6 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
         Assert.False(await ProbeSlotAsync());
     }
 
-    // ── Pre-backfill NULL column: fall back to the authoritative latest-history rule.
-    //    Excluding NULL rows here would fail OPEN (an active legacy order stops blocking
-    //    and the cleaner gets double-booked), so this filter must fall back, not exclude. ──
-
-    [Fact]
-    public async Task Null_CurrentStatus_Falls_Back_To_Latest_History_A_Legacy_Confirmed_Order_Still_Conflicts()
-    {
-        await SeedAssignedOrderInSlotAsync("ovl-legacy-active", [OrderStatus.New, OrderStatus.Confirmed]);
-        await NullOutCurrentStatusColumnAsync("ovl-legacy-active");
-
-        Assert.True(await ProbeSlotAsync());
-    }
-
-    [Fact]
-    public async Task Null_CurrentStatus_Fallback_Honors_The_Sequence_Tiebreak_A_Same_Tick_Cancellation_Frees_The_Slot()
-    {
-        await EnsureSchemaAsync();
-        var stamp = DateTimeOffset.UtcNow.AddHours(-3);
-        await using (var seed = NewContext())
-        {
-            var cleaner = NewEmployee(CleanerId);
-            seed.Add(cleaner);
-
-            var order = NewOrder("ovl-legacy-tiebreak", SlotStart, estimatedMinutes: 120);
-            order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
-            AppendTrack(order, OrderStatus.Confirmed, stamp);
-            AppendTrack(order, OrderStatus.Cancelled, stamp);
-            seed.Add(order);
-
-            await seed.CommitAsync(CancellationToken.None);
-        }
-        await NullOutCurrentStatusColumnAsync("ovl-legacy-tiebreak");
-
-        Assert.False(await ProbeSlotAsync());
-    }
-
     // ── Window + assignee semantics stay exactly as before. ──
 
     [Fact]
@@ -206,13 +169,6 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
         await using var ctx = NewContext();
         return await new OrderRepository(ctx).HasOverlappingOrderAsync(
             CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
-    }
-
-    private async Task NullOutCurrentStatusColumnAsync(string orderId)
-    {
-        await using var ctx = NewContext();
-        await ctx.Database.ExecuteSqlRawAsync(
-            "UPDATE \"Orders\" SET \"CurrentStatus\" = NULL WHERE \"Id\" = {0}", orderId);
     }
 
     private static Order NewOrder(string orderId, DateTime cleaningDateTime, int estimatedMinutes)

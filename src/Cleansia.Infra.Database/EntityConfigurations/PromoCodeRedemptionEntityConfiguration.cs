@@ -55,16 +55,20 @@ public class PromoCodeRedemptionEntityConfiguration : AuditableEntityConfigurati
             .HasForeignKey(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // S8 — tenant-scoped UNIQUE per-user redemption slot. This is the
-        // defense-in-depth BACKSTOP for the atomic slot reservation in
+        // S8 — tenant-scoped UNIQUE per-user redemption slot backing the reservation in
         // PromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync: it hard-caps the per-user
         // redemptions at MaxRedemptionsPerUser distinct ordinals while keeping M>1 codes valid
         // (slots 0..M-1). Tenant-scoped per S8 — a code is unique per tenant, so two tenants share
-        // independent ordinal spaces. Replaces the old non-unique (PromoCodeId, UserId) index; this
-        // unique index still serves CountForUserAndCodeAsync's (PromoCodeId, UserId) lookup as a
-        // left-prefix.
+        // independent ordinal spaces. Also serves CountForUserAndCodeAsync's (PromoCodeId, UserId)
+        // lookup as a left-prefix.
+        //
+        // NULLS NOT DISTINCT (ADR-0038 D5.2) because this index is the SOLE ARBITER of a concurrent
+        // claim, not a backstop behind an authoritative read: single-tenant mode IS TenantId = null,
+        // and a nulls-distinct index lets two racing redemptions take the same ordinal in the
+        // platform's default deployment, which is the per-user cap failing open.
         builder.HasIndex(r => new { r.TenantId, r.PromoCodeId, r.UserId, r.SlotOrdinal })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
 
         // Idempotency: GetByOrderIdAsync(orderId). Unique because we enforce
         // one redemption per order in the service layer too. Collapses

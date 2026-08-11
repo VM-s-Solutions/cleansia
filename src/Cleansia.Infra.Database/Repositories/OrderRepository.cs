@@ -84,9 +84,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
         // Realized savings come only from orders the customer actually stands to
         // benefit from: not Cancelled, and not (fully or partially) Refunded —
-        // a refund gives the money back, so nothing was saved. `CurrentStatus !=
-        // Cancelled` keeps EF's C# null semantics (an IS NULL arm), so a fresh
-        // null-status order still counts.
+        // a refund gives the money back, so nothing was saved.
         var realizedOrders = userOrders.Where(o =>
             o.CurrentStatus != OrderStatus.Cancelled
             && o.PaymentStatus != PaymentStatus.Refunded
@@ -259,7 +257,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     }
 
     // An assigned order occupies the cleaner's time only while it is a live commitment;
-    // terminal orders (Completed, Cancelled) free the slot.
+    // terminal orders (Completed, Cancelled) free the slot. Being static readonly, EF inlines these
+    // as `IN (0, 1, 2, 3, 4)` where OrderSpecification's runtime set emits `= ANY (@p)`; PostgreSQL
+    // folds both to one ScalarArrayOpExpr, so the difference is textual and both seek on
+    // IX_Orders_CurrentStatus_CleaningDateTime. OrderStatusSetPredicatePlanTests EXPLAINs both.
     private static readonly OrderStatus[] SlotBlockingStatuses =
     [
         OrderStatus.New,
@@ -269,26 +270,78 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         OrderStatus.InProgress,
     ];
 
-    public async Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
-    {
-        var newStart = cleaningDateTime;
-        var newEnd = cleaningDateTime.AddMinutes(estimatedTimeMinutes);
+    public Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+        => HasOverlappingOrderAsync(GetDbSet(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
 
-        // Unlike the availability filters, a pre-backfill NULL CurrentStatus row cannot be
-        // excluded here — that would fail OPEN (an active legacy order stops blocking and the
-        // cleaner gets double-booked), so NULL falls back to the authoritative latest-history
-        // rule (CreatedOn desc, Sequence desc); non-null rows stay on the indexed column.
-        return await GetDbSet()
-            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
-                       o.CleaningDateTime < newEnd &&
-                       o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart &&
-                       ((o.CurrentStatus != null && SlotBlockingStatuses.Contains(o.CurrentStatus.Value)) ||
-                        (o.CurrentStatus == null && o.OrderStatusHistory
-                            .OrderByDescending(s => s.CreatedOn)
-                            .ThenByDescending(s => s.Sequence)
-                            .Take(1)
-                            .Any(s => SlotBlockingStatuses.Contains(s.Status)))))
+    public Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+        => HasOverlappingOrderAsync(GetQueryableIgnoringTenant(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
+
+    private static Task<bool> HasOverlappingOrderAsync(
+        IQueryable<Order> orders, string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+    {
+        return LiveCommitmentsInWindow(orders, cleaningDateTime, cleaningDateTime.AddMinutes(estimatedTimeMinutes))
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
             .AnyAsync(ct);
+    }
+
+    public async Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
+        IReadOnlyCollection<string> employeeIds,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        // Driven from Orders rather than from OrderEmployees: the two selective terms (status band +
+        // date band) then sit together on IX_Orders_CurrentStatus_CleaningDateTime and the semi-join
+        // runs on IX_OrderEmployees_OrderId. Driving from the employee index would prune the date band
+        // only AFTER the join, walking each candidate's whole assignment history.
+        var busy = await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+            .SelectMany(o => o.AssignedEmployees)
+            .Where(ae => employeeIds.Contains(ae.EmployeeId))
+            .Select(ae => ae.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return busy.ToHashSet(StringComparer.Ordinal);
+    }
+
+    public async Task<IReadOnlyList<Order>> GetLiveReservationsForBeneficiaryInWindowAsync(
+        string employeeId,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        return await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+            .Where(o => o.PreferredEmployeeId == employeeId && o.PreferredHoldUntilUtc > nowUtc)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The ONE definition of "occupied in this window" — the scan floor, the interval overlap and the
+    /// live-commitment status set. Returns a queryable and terminates nothing, so the boolean form keeps
+    /// its early exit and the set form gets its fan-out over the same predicate. Two overlap predicates
+    /// in one repository is the defect class this shape exists to prevent.
+    /// </summary>
+    private static IQueryable<Order> LiveCommitmentsInWindow(
+        IQueryable<Order> orders, DateTime windowStartUtc, DateTime windowEndUtc)
+    {
+        // The interval term below is computed per row, so `CleaningDateTime < windowEnd` is the only
+        // sargable bound and the scan would run back through the cleaner's whole assignment history.
+        // The floor turns it into a range scan over (CurrentStatus, CleaningDateTime); it is safe
+        // exactly while no order spans longer than Order.MaxOrderSpanHours, which that constant
+        // documents.
+        var scanFloor = windowStartUtc.AddHours(-Order.MaxOrderSpanHours);
+
+        return orders.Where(o =>
+            o.CleaningDateTime >= scanFloor &&
+            o.CleaningDateTime < windowEndUtc &&
+            o.CleaningDateTime.AddMinutes(o.EstimatedTime) > windowStartUtc &&
+            SlotBlockingStatuses.Contains(o.CurrentStatus));
     }
 
     public async Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct)

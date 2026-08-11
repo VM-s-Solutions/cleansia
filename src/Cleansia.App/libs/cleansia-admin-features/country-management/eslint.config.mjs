@@ -1,8 +1,10 @@
 import nx from '@nx/eslint-plugin';
+import { generatedDtoLiteralRules } from '../../../eslint.generated-dto.config.mjs';
 import baseConfig from '../../../eslint.base.config.mjs';
 
 export default [
   ...baseConfig,
+  ...generatedDtoLiteralRules(),
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
   {

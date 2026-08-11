@@ -12,10 +12,9 @@ protocol SavedAddressClient: Sendable {
 
 struct LiveSavedAddressClient: SavedAddressClient {
     func getMine() async -> ApiResult<[SavedAddress]> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerSavedAddressAPI.savedAddressGetMine()
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerSavedAddressAPI.savedAddressGetMine().map { try $0.toDomain() }
         }
-        return result.map { $0.compactMap { $0.toDomain() } }
     }
 
     func add(_ draft: SavedAddressDraft) async -> ApiResult<SavedAddress> {
@@ -29,12 +28,8 @@ struct LiveSavedAddressClient: SavedAddressClient {
             latitude: draft.latitude,
             longitude: draft.longitude
         )
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerSavedAddressAPI.savedAddressAdd(addSavedAddressCommand: command)
-        }
-        return result.flatMap { dto in
-            guard let address = dto.toDomain() else { return .failure(ApiError(code: "address.malformed")) }
-            return .success(address)
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerSavedAddressAPI.savedAddressAdd(addSavedAddressCommand: command).toDomain()
         }
     }
 
@@ -49,12 +44,8 @@ struct LiveSavedAddressClient: SavedAddressClient {
             latitude: draft.latitude,
             longitude: draft.longitude
         )
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerSavedAddressAPI.savedAddressUpdate(updateSavedAddressCommand: command)
-        }
-        return result.flatMap { dto in
-            guard let address = dto.toDomain() else { return .failure(ApiError(code: "address.malformed")) }
-            return .success(address)
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerSavedAddressAPI.savedAddressUpdate(updateSavedAddressCommand: command).toDomain()
         }
     }
 
@@ -73,19 +64,25 @@ struct LiveSavedAddressClient: SavedAddressClient {
     }
 }
 
-private extension SavedAddressDto {
-    func toDomain() -> SavedAddress? {
-        guard let id, let label, let street, let city, let zipCode else { return nil }
-        return SavedAddress(
-            id: id,
-            label: label,
-            street: street,
-            city: city,
-            zipCode: zipCode,
+/// **Refuse the page.** The saved addresses are alternatives to each other — the list IS the picker,
+/// so a dropped row is a home the customer can no longer book to rather than a shorter list — and
+/// `isDefault` decides which one the booking flow pre-selects, so a coerced `false` can send a
+/// cleaner to the wrong address of theirs.
+///
+/// `country` is `string?` on the server and stays coerced: null and empty both render as no country
+/// line, and the address is keyed by id rather than by its text.
+extension SavedAddressDto {
+    func toDomain() throws -> SavedAddress {
+        try SavedAddress(
+            id: id.requireNonBlank("id"),
+            label: label.requireNonBlank("label"),
+            street: street.requireNonBlank("street"),
+            city: city.requireNonBlank("city"),
+            zipCode: zipCode.requireNonBlank("zipCode"),
             country: country ?? "",
             latitude: latitude,
             longitude: longitude,
-            isDefault: isDefault ?? false
+            isDefault: isDefault.require("isDefault")
         )
     }
 }

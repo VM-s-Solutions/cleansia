@@ -2,9 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
   AdminReferralListItem,
+  ForceQualifyReferralCommand,
   ForceQualifyReferralResponse,
   PagedDataOfAdminReferralListItem,
   ReferralStatus,
+  ReverseReferralCommand,
   ReverseReferralResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -93,10 +95,15 @@ describe('ReferralsListFacade', () => {
     facade.reverseReferral('ref-1', '  fraud ring  ', onSuccess);
 
     expect(referralClient.reverse).toHaveBeenCalledTimes(1);
+    // Every member of a generated command is optional, so a dropped assignment
+    // type-checks — pin the serialized body instead (ADR-0031).
     const [id, command] = referralClient.reverse.mock.calls[0];
     expect(id).toBe('ref-1');
-    expect(command.referralId).toBe('ref-1');
-    expect(command.reason).toBe('fraud ring');
+    expect(command).toBeInstanceOf(ReverseReferralCommand);
+    expect(command.toJSON()).toEqual({
+      referralId: 'ref-1',
+      reason: 'fraud ring',
+    });
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_reverse'
     );
@@ -140,7 +147,11 @@ describe('ReferralsListFacade', () => {
 
     const [id, command] = referralClient.forceQualify.mock.calls[0];
     expect(id).toBe('ref-2');
-    expect(command.reason).toBe('legit order confirmed');
+    expect(command).toBeInstanceOf(ForceQualifyReferralCommand);
+    expect(command.toJSON()).toEqual({
+      referralId: 'ref-2',
+      reason: 'legit order confirmed',
+    });
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_force_qualify'
     );

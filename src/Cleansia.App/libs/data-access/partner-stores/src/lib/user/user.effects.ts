@@ -1,31 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import {
-  BlobFileDto,
-  PartnerClient,
-  UpdateCurrentUserCommand,
-} from '@cleansia/partner-services';
-import { SnackbarService } from '@cleansia/services';
+import { PartnerClient } from '@cleansia/partner-services';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, map, mergeMap, of } from 'rxjs';
 import * as UserActions from './user.actions';
-
-const createEmptyPhoto = (): BlobFileDto => {
-  const photo = new BlobFileDto();
-  photo.fileName = '';
-  photo.contentType = '';
-  photo.base64Content = '';
-  return photo;
-};
 
 @Injectable()
 export class UserEffects {
   private readonly partnerClient = inject(PartnerClient);
   private readonly actions$ = inject(Actions);
-  private readonly store = inject(Store);
-  private readonly translate = inject(TranslateService);
-  private readonly snackbarService = inject(SnackbarService);
 
   loadPaged$ = createEffect(() =>
     this.actions$.pipe(
@@ -79,49 +61,6 @@ export class UserEffects {
             of(UserActions.loadUserDetailFailure({ error }))
           )
         )
-      )
-    )
-  );
-
-  updateCurrent$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(UserActions.updateUserCurrent),
-      mergeMap(
-        ({
-          id,
-          firstName,
-          lastName,
-          phoneNumber,
-          birthDate,
-          photo = createEmptyPhoto(),
-        }) =>
-          this.partnerClient.userClient
-            .updateCurrentUser(
-              new UpdateCurrentUserCommand({
-                id,
-                firstName,
-                lastName,
-                phoneNumber,
-                birthDate,
-                photo,
-                languageCode:
-                  this.translate.currentLang || this.translate.getDefaultLang(),
-                removePhoto: false,
-              })
-            )
-            .pipe(
-              map(({ id }) => {
-                this.snackbarService.showSuccess(
-                  this.translate.instant(
-                    'pages.user_profile.user_updated_message.success'
-                  )
-                );
-                return UserActions.updateUserCurrentSuccess({ id: id! });
-              }),
-              catchError((error) =>
-                of(UserActions.updateUserCurrentFailure({ error }))
-              )
-            )
       )
     )
   );

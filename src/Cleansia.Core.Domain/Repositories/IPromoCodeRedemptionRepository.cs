@@ -17,25 +17,17 @@ public interface IPromoCodeRedemptionRepository : IRepository<PromoCodeRedemptio
     Task<PromoCodeRedemption?> GetByOrderIdAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Atomically reserve the next free per-user redemption slot for
-    /// <paramref name="userId"/> on <paramref name="promoCodeId"/> AND insert the redemption row in
-    /// one statement (S7). The next 0-based <c>SlotOrdinal</c> is computed in SQL
-    /// (<c>COALESCE(MAX(SlotOrdinal) + 1, 0)</c>) under a <c>WHERE … &lt; maxRedemptionsPerUser</c>
-    /// guard, so the ordinal is DERIVED from the reservation (never a pre-read count). The insert is
-    /// guarded by the <c>(TenantId, PromoCodeId, UserId, SlotOrdinal)</c> unique index as a
-    /// defense-in-depth backstop with <c>ON CONFLICT DO NOTHING</c> — so a concurrent writer that
-    /// computed the same ordinal is rejected silently (no exception), not at a later commit.
+    /// Reserve the next free 0-based per-user redemption slot for <paramref name="userId"/> on
+    /// <paramref name="promoCodeId"/> and stage the redemption row for the caller's unit of work.
+    /// Returns the row (carrying its reserved <c>SlotOrdinal</c> and applied discount) on success,
+    /// or <c>null</c> when no slot is available (per-user cap reached) — a RESULT, never an
+    /// exception. The caller maps <c>null</c> to <c>PerUserLimitReached</c>.
     /// <para>
-    /// Returns the freshly inserted <see cref="PromoCodeRedemption"/> (carrying its reserved
-    /// <c>SlotOrdinal</c> and applied discount) on success, or <c>null</c> when no slot is available
-    /// (per-user cap reached, or a race loser) — a RESULT, never an exception. The caller maps
-    /// <c>null</c> to <c>PerUserLimitReached</c>.
-    /// </para>
-    /// <para>
-    /// DELIBERATE EXCEPTION to the "never commit outside the UnitOfWork pipeline" rule: like the
-    /// global counter, this issues SQL immediately and auto-commits; it is the only direct DB write
-    /// in the redeem path and is REQUIRED for atomicity. It does not roll back the order — a
-    /// <c>null</c> result just logs (the existing fail-soft contract in CreateOrder).
+    /// INTERIM (ADR-0038 §D3 → T-0532): the row is CHANGE-TRACKED and lands on the caller's commit,
+    /// because the <c>Orders</c> row it references is itself only tracked at this point. That trades
+    /// the previous single-statement atomic cap for an app-level pre-read of the highest ordinal —
+    /// see the implementation for the two concurrency residuals. The end state moves the reservation
+    /// strictly after the commit and restores the atomic statement unchanged.
     /// </para>
     /// </summary>
     Task<PromoCodeRedemption?> TryReserveRedemptionSlotAsync(

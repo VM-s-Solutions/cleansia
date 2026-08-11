@@ -44,21 +44,43 @@ public protocol PasswordResetClient: AnyObject {
     func forgotPassword(email: String, language: String) async -> ApiResult<Void>
 }
 
+/// `termsAccepted` is what tells a signup apart from a sign-in: both screens call one endpoint, and
+/// the server provisions an identity it has never seen only for a call that asserts the signup
+/// screen's tick — everything else is refused with `auth.social_account_not_found`. It carries no
+/// default for the same reason `SignupConsentRecording.recordSignupTick` does not: a consent flag
+/// that can be omitted at a call site is a consent nobody gave.
 public protocol SocialAuthClient: AnyObject {
+    func googleAuth(_ request: GoogleAuthRequest) async -> ApiResult<LoginOutcome>
+    func appleAuth(_ request: AppleAuthRequest) async -> ApiResult<LoginOutcome>
+}
+
+public extension SocialAuthClient {
     func googleAuth(
-        token: String,
-        googleId: String,
-        email: String,
-        firstName: String,
-        lastName: String
-    ) async -> ApiResult<LoginOutcome>
+        _ credential: SocialSignInResult.GoogleCredential,
+        termsAccepted: Bool
+    ) async -> ApiResult<LoginOutcome> {
+        await googleAuth(GoogleAuthRequest(
+            token: credential.idToken,
+            googleId: credential.googleId,
+            email: credential.email,
+            firstName: credential.firstName,
+            lastName: credential.lastName,
+            termsAccepted: termsAccepted
+        ))
+    }
 
     func appleAuth(
-        identityToken: String,
-        rawNonce: String,
-        firstName: String?,
-        lastName: String?
-    ) async -> ApiResult<LoginOutcome>
+        _ credential: SocialSignInResult.AppleCredential,
+        termsAccepted: Bool
+    ) async -> ApiResult<LoginOutcome> {
+        await appleAuth(AppleAuthRequest(
+            identityToken: credential.identityToken,
+            rawNonce: credential.rawNonce,
+            firstName: credential.firstName,
+            lastName: credential.lastName,
+            termsAccepted: termsAccepted
+        ))
+    }
 }
 
 public protocol RefreshClient: AnyObject, AuthRefreshing {}

@@ -37,30 +37,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.OrderAddress
 
 /**
- * Customer card. Shows name and address always; phone + SMS action
- * chips appear once the order is mine (server flags this via
- * [isAssignedToCurrentUser]). Navigate also shows on unassigned offers
- * because knowing where the address is helps the cleaner decide whether
- * to take the job — but contact info stays hidden until ownership is
- * established, matching the Wolt-style PII gating server-side.
+ * Customer card. Shows the name and whichever location the server released
+ * to this caller — a street address, or the coarse zone a browsing cleaner
+ * gets. Phone + SMS chips appear when the server released a phone number,
+ * which is [OrderDisclosure.showsCustomerContact] and never the assignment flag.
  *
- * When the order carries [OrderAddress.latitude]/[OrderAddress.longitude]
- * the navigate intent uses precise coordinates; otherwise it falls back
- * to a free-text address query.
+ * Navigate is offered only against a street address: a maps app opened on a
+ * city name is worse than no button. With coordinates the intent uses them;
+ * without, it falls back to a free-text query of that street address.
  */
 @Composable
 fun CustomerCard(
     customerName: String?,
-    customerPhone: String?,
-    address: OrderAddress?,
-    isAssignedToCurrentUser: Boolean,
+    disclosure: OrderDisclosure,
+    location: OrderLocation,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val addressLine = address.formatSingleLine()
+    val addressLine = location.line
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -85,12 +81,11 @@ fun CustomerCard(
                 )
             }
 
-            val phoneNumber = customerPhone?.takeIf { it.isNotBlank() }
-            val showCall = isAssignedToCurrentUser && phoneNumber != null
-            val showSms = isAssignedToCurrentUser && phoneNumber != null
-            val showNavigate = addressLine != null
+            val phoneNumber = disclosure.customerPhone
+            val showContact = disclosure.showsCustomerContact
+            val navigateTo = location.navigationTarget()
 
-            if (showCall || showSms || showNavigate) {
+            if (showContact || navigateTo != null) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(Modifier.height(12.dp))
@@ -98,7 +93,7 @@ fun CustomerCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (showCall) {
+                    if (showContact) {
                         ActionChip(
                             icon = Icons.Outlined.Phone,
                             label = stringResource(R.string.action_call),
@@ -106,7 +101,7 @@ fun CustomerCard(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    if (showSms) {
+                    if (showContact) {
                         ActionChip(
                             icon = Icons.AutoMirrored.Outlined.Message,
                             label = stringResource(R.string.action_sms),
@@ -114,16 +109,16 @@ fun CustomerCard(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    if (showNavigate) {
+                    if (navigateTo != null) {
                         ActionChip(
                             icon = Icons.Outlined.Map,
                             label = stringResource(R.string.action_navigate),
                             onClick = {
                                 launchNavigation(
                                     context = context,
-                                    latitude = address?.latitude,
-                                    longitude = address?.longitude,
-                                    addressFallback = addressLine!!,
+                                    latitude = navigateTo.latitude,
+                                    longitude = navigateTo.longitude,
+                                    addressFallback = navigateTo.line,
                                 )
                             },
                             modifier = Modifier.weight(1f),

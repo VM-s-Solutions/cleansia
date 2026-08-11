@@ -1,9 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AdminCancelOrderCommand,
   AdminCancelOrderResponse,
   AdminClient,
+  AdminOverrideOrderStatusCommand,
   AdminOverrideOrderStatusResponse,
+  AdminReassignOrderCommand,
   AdminReassignOrderResponse,
+  AdminRefundOrderCommand,
   AdminRefundOrderResponse,
   OrderStatus,
   PaymentStatus,
@@ -87,9 +91,12 @@ describe('AdminOrderOpsFacade', () => {
     facade.cancelOrder('order-1', jest.fn());
 
     expect(orderClient.cancel).toHaveBeenCalledTimes(1);
-    const command = orderClient.cancel.mock.calls[0][0];
-    expect(command.orderId).toBe('order-1');
-    expect(command.reason).toBe('duplicate booking');
+    const command: AdminCancelOrderCommand = orderClient.cancel.mock.calls[0][0];
+    expect(command).toBeInstanceOf(AdminCancelOrderCommand);
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: 'duplicate booking',
+    });
   });
 
   it('omits an empty cancel reason from the command', () => {
@@ -97,8 +104,11 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.cancelOrder('order-1', jest.fn());
 
-    const command = orderClient.cancel.mock.calls[0][0];
-    expect(command.reason).toBeUndefined();
+    const command: AdminCancelOrderCommand = orderClient.cancel.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: undefined,
+    });
   });
 
   it('builds a typed override-status command and gates submit on a chosen status', () => {
@@ -110,9 +120,13 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.overrideStatus('order-1', jest.fn());
 
-    const command = orderClient.overrideStatus.mock.calls[0][0];
-    expect(command.orderId).toBe('order-1');
-    expect(command.targetStatus).toBe(OrderStatus.OnTheWay);
+    const command: AdminOverrideOrderStatusCommand =
+      orderClient.overrideStatus.mock.calls[0][0];
+    expect(command).toBeInstanceOf(AdminOverrideOrderStatusCommand);
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      targetStatus: OrderStatus.OnTheWay,
+    });
   });
 
   it('does not call override-status when no status is chosen', () => {
@@ -130,10 +144,14 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.reassignOrder('order-1', jest.fn());
 
-    const command = orderClient.reassign.mock.calls[0][0];
-    expect(command.orderId).toBe('order-1');
-    expect(command.fromEmployeeId).toBe('employee-1');
-    expect(command.toEmployeeId).toBe('employee-2');
+    const command: AdminReassignOrderCommand =
+      orderClient.reassign.mock.calls[0][0];
+    expect(command).toBeInstanceOf(AdminReassignOrderCommand);
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      fromEmployeeId: 'employee-1',
+      toEmployeeId: 'employee-2',
+    });
   });
 
   it('does not call reassign when an employee id is missing', () => {
@@ -147,9 +165,9 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.refundOrder('order-1', jest.fn());
 
-    const command = orderClient.refund.mock.calls[0][0];
-    expect(command.orderId).toBe('order-1');
-    expect(Object.keys(command.toJSON())).toEqual(['orderId']);
+    const command: AdminRefundOrderCommand = orderClient.refund.mock.calls[0][0];
+    expect(command).toBeInstanceOf(AdminRefundOrderCommand);
+    expect(command.toJSON()).toEqual({ orderId: 'order-1' });
   });
 
   it('shows a success toast, closes the panel and re-loads on success', () => {

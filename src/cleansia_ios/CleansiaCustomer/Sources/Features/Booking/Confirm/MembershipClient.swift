@@ -5,6 +5,23 @@ import Foundation
 struct MembershipSnapshot: Equatable {
     let hasMembership: Bool
     let freeCancellationWindowHours: Int?
+    let expressUpgradesPerMonth: Int?
+    let expressUpgradesRemaining: Int?
+    let trialEndsAtUtc: Date?
+
+    init(
+        hasMembership: Bool,
+        freeCancellationWindowHours: Int?,
+        expressUpgradesPerMonth: Int? = nil,
+        expressUpgradesRemaining: Int? = nil,
+        trialEndsAtUtc: Date? = nil
+    ) {
+        self.hasMembership = hasMembership
+        self.freeCancellationWindowHours = freeCancellationWindowHours
+        self.expressUpgradesPerMonth = expressUpgradesPerMonth
+        self.expressUpgradesRemaining = expressUpgradesRemaining
+        self.trialEndsAtUtc = trialEndsAtUtc
+    }
 }
 
 protocol MembershipClient {
@@ -19,7 +36,10 @@ struct LiveMembershipClient: MembershipClient {
         return result.map { response in
             MembershipSnapshot(
                 hasMembership: response.hasMembership ?? false,
-                freeCancellationWindowHours: response.freeCancellationWindowHours
+                freeCancellationWindowHours: response.freeCancellationWindowHours,
+                expressUpgradesPerMonth: response.expressUpgradesPerMonth,
+                expressUpgradesRemaining: response.expressUpgradesRemaining,
+                trialEndsAtUtc: response.trialEndsAtUtc
             )
         }
     }

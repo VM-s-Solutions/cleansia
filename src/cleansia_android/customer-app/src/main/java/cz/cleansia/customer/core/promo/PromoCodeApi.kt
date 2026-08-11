@@ -3,6 +3,8 @@ package cz.cleansia.customer.core.promo
 import cz.cleansia.customer.api.client.PromoCodeApi as GenPromoCodeApi
 import cz.cleansia.customer.api.model.ValidatePromoCodeCommand as GenValidatePromoCodeCommand
 import cz.cleansia.customer.api.model.ValidatePromoCodeResponse as GenValidatePromoCodeResponse
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -20,16 +22,21 @@ class PromoCodeApi(
                 orderSubtotal = body.orderSubtotal,
             ),
         )
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
 
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
-
-private fun GenValidatePromoCodeResponse?.toAppDto(): ValidatePromoCodeResponse = ValidatePromoCodeResponse(
-    isValid = this?.isValid ?: false,
-    discountAmount = this?.discountAmount,
-    errorCode = this?.errorCode,
-)
+/**
+ * `isValid = false` is the verdict that rejects the code, so defaulting to it charges the customer
+ * full price for a discount the server just granted, and the sheet states a reason the server never
+ * sent. `discountAmount` stays nullable — `nullable: true` in the spec, since an invalid code has no
+ * discount — and `BookingViewModel` already requires it to be non-null before applying one.
+ */
+private fun GenValidatePromoCodeResponse?.toAppDto(): ValidatePromoCodeResponse {
+    val verdict = required("ValidatePromoCodeResponse")
+    return ValidatePromoCodeResponse(
+        isValid = verdict.isValid.required("isValid"),
+        discountAmount = verdict.discountAmount,
+        errorCode = verdict.errorCode,
+    )
+}

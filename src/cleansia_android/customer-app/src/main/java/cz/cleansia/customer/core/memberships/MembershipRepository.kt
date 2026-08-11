@@ -8,6 +8,7 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,7 +51,7 @@ class MembershipRepository @Inject constructor(
      */
     val staleness = Staleness()
 
-    suspend fun refresh(): ApiResult<GetMyMembershipResponse> = mutex.withLock {
+    suspend fun refresh(): ApiResult<GetMyMembershipResponse> = wireResult { mutex.withLock {
         _loading.value = true
         try {
             val response = networkCall(TAG) { api.getMine() } ?: return@withLock networkError()
@@ -64,7 +65,7 @@ class MembershipRepository @Inject constructor(
         } finally {
             _loading.value = false
         }
-    }
+    } }
 
     suspend fun subscribePhase1(planCode: String): ApiResult<CreateMembershipSubscriptionResponse> =
         call("subscribePhase1") {
@@ -141,7 +142,7 @@ class MembershipRepository @Inject constructor(
     private suspend inline fun <T> call(
         label: String,
         block: () -> retrofit2.Response<T>,
-    ): ApiResult<T> {
+    ): ApiResult<T> = wireResult {
         val response = networkCall(label) { block() } ?: return networkError()
         return if (response.isSuccessful) {
             val body = response.body() ?: return httpError(null, response.code())

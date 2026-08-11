@@ -22,7 +22,7 @@ public class LayoutBuilderFactory(
         if (!string.IsNullOrWhiteSpace(countryCode))
         {
             var match = invoiceBuilders.FirstOrDefault(b =>
-                string.Equals(b.CountryCode, countryCode, StringComparison.OrdinalIgnoreCase));
+                b.CountryCodes.Contains(countryCode, StringComparer.OrdinalIgnoreCase));
             if (match != null) return match;
         }
 

@@ -12,8 +12,7 @@ public class PostgresContainerFixture : IAsyncDisposable
         // GetConnectionString() reports the mapped port the consumers actually use. Pinning
         // host 5432 caused "address already in use" on CI (and locally) whenever 5432 was
         // taken — by another test assembly's container, a local Postgres, or the runner's own.
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:latest")
+        _container = new PostgreSqlBuilder("postgres:latest")
             .WithDatabase("testdb")
             .WithUsername("testuser")
             .WithPassword("testpass")

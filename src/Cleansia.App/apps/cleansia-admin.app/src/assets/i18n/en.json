@@ -486,7 +486,42 @@
       "grade_quick_fill": "Quick fill",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Payout Details",
+        "none": "No payout details on file for this employee.",
+        "load_error": "Could not load payout details.",
+        "retry": "Try again",
+        "masked_account": "Account",
+        "bank_name": "Bank",
+        "bank_country": "Bank Country",
+        "scheme": "Payout Scheme",
+        "status": "Status",
+        "confirmed_at": "Last Verified",
+        "last_revealed_at": "Last Revealed",
+        "never_revealed": "Never revealed",
+        "reveal_count": "Times Revealed",
+        "reveal": "Reveal full details",
+        "hide": "Hide full details",
+        "reveal_recorded_notice": "Revealing the full account details is recorded against your admin account, together with the time. Reveal only when you need them to make a payment.",
+        "account_prefix": "Account Prefix",
+        "account_number": "Account Number",
+        "bank_code": "Bank Code",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Account Holder",
+        "schemes": {
+          "czsk_domestic_with_iban": "Czech/Slovak domestic account",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Payment provider account",
+          "unknown": "Unknown scheme"
+        },
+        "statuses": {
+          "provided": "Provided",
+          "needs_reconfirmation": "Needs reconfirmation",
+          "unknown": "Unknown"
+        }
+      }
     },
     "order_management": {
       "title": "Order Management",
@@ -1465,6 +1500,7 @@
       "actions": {
         "approve": "Approve Invoice",
         "mark_paid": "Mark as Paid",
+        "assign_variable_symbol": "Assign Payment Reference",
         "cancel": "Cancel Invoice",
         "download": "Download PDF",
         "regenerate_pdf": "Regenerate PDF"
@@ -1493,12 +1529,19 @@
         "reason_label": "Cancellation Reason",
         "reason_placeholder": "Enter the reason for cancellation..."
       },
+      "assign_variable_symbol_confirm": {
+        "title": "Assign payment reference?",
+        "message": "This claims a payment reference for this invoice and regenerates its PDF. The number can never be changed, reused or given to another invoice.",
+        "yes": "Assign"
+      },
       "messages": {
         "load_error": "Failed to load invoice details",
         "approve_success": "Invoice approved successfully",
         "approve_error": "Failed to approve invoice",
         "mark_paid_success": "Invoice marked as paid successfully",
         "mark_paid_error": "Failed to mark invoice as paid",
+        "assign_variable_symbol_success": "Payment reference {{variableSymbol}} assigned and the invoice PDF regenerated.",
+        "assign_variable_symbol_pdf_stale": "Payment reference {{variableSymbol}} assigned, but the invoice PDF was not regenerated. Use Regenerate PDF.",
         "cancel_success": "Invoice cancelled successfully",
         "cancel_error": "Failed to cancel invoice",
         "download_error": "Failed to download invoice",
@@ -1958,7 +2001,9 @@
           "discount": "Discount (%)",
           "trial_days": "Trial period (days)",
           "free_cancel_window": "Free-cancellation window (hours)",
-          "express_upgrade": "Allows express upgrade"
+          "express_upgrade": "Allows express upgrade",
+          "express_upgrades_per_month": "Included express upgrades per month",
+          "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
         },
         "validation": {
           "code_invalid": "2–50 characters: letters, numbers or underscores.",
@@ -1966,7 +2011,8 @@
           "stripe_price_id_required": "Stripe Price id is required.",
           "discount_range": "Discount must be between 0 and 100.",
           "trial_negative": "Trial days must be zero or more.",
-          "window_negative": "Window must be zero or more."
+          "window_negative": "Window must be zero or more.",
+          "express_upgrades_negative": "Included express upgrades must be zero or more."
         },
         "submit_create": "Create plan",
         "submit_update": "Save changes",
@@ -2546,7 +2592,8 @@
       "profile_incomplete": "Employee profile is incomplete",
       "documents_missing": "Required documents are missing",
       "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected"
+      "already_rejected": "Employee has already been rejected",
+      "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them."
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -2565,7 +2612,13 @@
         "pdf_generation_failed": "Failed to generate PDF",
         "template_not_found": "Invoice template not found",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
-        "already_cancelled": "Invoice has already been cancelled"
+        "already_cancelled": "Invoice has already been cancelled",
+        "already_paid": "Invoice has already been marked paid",
+        "not_approved": "Invoice must be approved before it can be marked paid",
+        "reference_unavailable": "That payment reference is already in use. Please try again.",
+        "reference_missing": "Assign a payment reference before recording the transfer.",
+        "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
+        "reference_already_assigned": "This invoice already has a payment reference."
       },
       "unpaid_invoices_exist": "Unpaid invoices exist",
       "pay": {
@@ -2585,7 +2638,8 @@
       "invalid_duration": "Invalid pay period duration",
       "overlapping_period": "Pay period overlaps with an existing period",
       "has_order_pays": "Cannot delete pay period that has associated order pays",
-      "not_closed": "Pay period is not closed"
+      "not_closed": "Pay period is not closed",
+      "already_paid": "Pay period has already been paid"
     },
     "pay_config": {
       "service_or_package_required": "Either service or package is required",
@@ -2599,7 +2653,11 @@
       "distance_rate_negative": "Distance rate cannot be negative",
       "minimum_pay_negative": "Minimum pay cannot be negative",
       "maximum_pay_negative": "Maximum pay cannot be negative",
-      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
+      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
+      "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay."
+    },
+    "payout": {
+      "not_found": "This employee has no payout details on file"
     },
     "file": {
       "content_type_doesnt_match": "File content type doesn't match",
@@ -2624,7 +2682,9 @@
       "not_existing_id": "Country not found",
       "not_found": "Country not found",
       "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use"
+      "in_use": "Cannot delete country because it is currently in use",
+      "not_serviced": "This country is not serviced.",
+      "required": "A country is required."
     },
     "company": {
       "not_found": "Company information not found",
@@ -2635,7 +2695,10 @@
       "not_found": "Dispute not found",
       "already_exists": "Dispute already exists for this order",
       "invalid_refund_amount": "Invalid refund amount",
-      "max_length_exceeded": "Maximum length exceeded"
+      "max_length_exceeded": "Maximum length exceeded",
+      "not_owned_by_user": "This dispute belongs to a different user.",
+      "already_resolved": "This dispute has already been resolved and cannot be changed.",
+      "invalid_status_transition": "This status change is not allowed for the current dispute state."
     },
     "admin_user": {
       "not_found": "Admin user not found",
@@ -2660,13 +2723,28 @@
       "page_must_be_positive": "Page must be greater than 0",
       "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "invalid_contract_status": "Invalid contract status value"
+      "invalid_contract_status": "Invalid contract status value",
+      "payout": {
+        "account_number_required": "Enter the account number",
+        "country_not_supported": "Payouts to a bank in this country are not supported yet",
+        "iban_country_mismatch": "The IBAN is from a different country than the bank. Check the IBAN, or change the bank country so the two match.",
+        "iban_mismatch": "The IBAN does not match the account number and bank code. Check all three, or clear the IBAN and it will be derived from them.",
+        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the employee's bank details.",
+        "invalid_account_prefix": "The account prefix could not be verified — it is the part before the dash in the account number. Check the digits, or clear the field if the account has none.",
+        "invalid_bank_code": "Enter a 4-digit bank code",
+        "invalid_iban": "This is not a valid IBAN",
+        "invalid_swift": "The SWIFT/BIC does not belong to the bank's country",
+        "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
+        "scheme_not_supported": "Payouts to this kind of account are not supported yet",
+        "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
+      }
     },
     "service": {
       "not_found": "Service not found",
       "in_use": "Cannot delete service because it is currently in use",
       "translations_required": "Translations are required for all supported languages",
-      "missing_translation_for_language": "Missing translation for required language"
+      "missing_translation_for_language": "Missing translation for required language",
+      "category_not_found": "Service category not found."
     },
     "package": {
       "not_found": "Package not found",
@@ -2707,6 +2785,51 @@
       "country_not_serviced": "We don't currently operate in this country.",
       "country_required": "Please select a country.",
       "city_not_serviced": "We don't currently serve this city."
+    },
+    "audit": {
+      "not_found": "Audit entry not found."
+    },
+    "feature_flag": {
+      "already_exists": "A feature flag with this name and scope already exists.",
+      "not_found": "Feature flag not found."
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
+      "reason_required": "A reason is required for a manual points adjustment.",
+      "tier_config_not_found": "Loyalty tier configuration not found.",
+      "tier_perks_json_invalid": "The tier perks must be valid JSON."
+    },
+    "promo": {
+      "amount_must_be_positive": "The discount amount must be greater than zero.",
+      "code_already_exists": "A promo code with this code already exists.",
+      "code_invalid_format": "The promo code format is not valid.",
+      "not_found": "Promo code not found.",
+      "percent_out_of_range": "The discount percentage is outside the allowed range.",
+      "validity_range_invalid": "The valid-from date must not be after the valid-until date."
+    },
+    "service_city": {
+      "already_exists": "This city is already on the serviced list.",
+      "not_found": "Serviced city not found."
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "A plan with this code already exists.",
+        "discount_out_of_range": "Discount must be between 0 and 100.",
+        "not_found": "Membership plan not found."
+      }
+    },
+    "referral": {
+      "not_accepted": "The referral is not in the accepted state.",
+      "not_found": "Referral not found.",
+      "not_qualified": "The referral is not in the qualified state.",
+      "reason_required": "A reason is required."
+    },
+    "refund": {
+      "line_invalid": "One of the selected lines is not part of this order.",
+      "lines_required": "Select at least one service or package to refund.",
+      "nothing_refundable": "There is nothing left to refund on this order.",
+      "order_not_refundable": "This order is not eligible for a refund.",
+      "override_reason_required": "A justification is required to refund outside the allowed window."
     }
   },
   "cookies": {

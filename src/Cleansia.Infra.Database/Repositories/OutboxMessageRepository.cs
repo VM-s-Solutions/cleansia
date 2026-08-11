@@ -1,5 +1,7 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -14,6 +16,35 @@ public class OutboxMessageRepository(CleansiaDbContext context)
     : BaseRepository<OutboxMessage>(context), IOutboxMessageRepository
 {
     private const string PostgresProvider = "Npgsql.EntityFrameworkCore.PostgreSQL";
+
+    private static readonly EmailType[] EmailTypes = Enum.GetValues<EmailType>();
+
+    public async Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken)
+    {
+        // IgnoreQueryFilters + the explicit subject predicate: a send-email row is enqueued on the
+        // ANONYMOUS paths (registration, forgot-password) and stamped from the envelope's own tenantId, so
+        // it routinely carries a tenant the erasing request does not. A tenant-scoped read would silently
+        // leave behind every row it cannot see, and an erasure gets no second pass. A user id belongs to one
+        // person in any tenant, so the predicate scopes rather than widens.
+        //
+        // Contains() is the index-assisted NARROWING only; NamesSubject is the decision — a bystander whose
+        // id merely contains this one's satisfies the first and fails the second.
+        var candidates = await GetQueryableIgnoringTenant()
+            .Where(m => m.QueueName == QueueNames.SendEmail && m.MessageKey.Contains(userId))
+            .ToListAsync(cancellationToken);
+
+        // Loaded-and-removed rather than ExecuteDelete: the erasure runs inside the caller's unit of work,
+        // and an ExecuteDelete would commit on its own connection.
+        GetDbSet().RemoveRange(candidates.Where(m => NamesSubject(m.MessageKey, userId)));
+    }
+
+    /// <summary>
+    /// Derived from the frozen <see cref="MessageKeys.Email"/> formula rather than restating it: the key with
+    /// an empty code segment IS the per-subject prefix, so a change to the formula moves this with it.
+    /// </summary>
+    private static bool NamesSubject(string messageKey, string userId) =>
+        EmailTypes.Any(type =>
+            messageKey.StartsWith(MessageKeys.Email(type, userId, string.Empty), StringComparison.Ordinal));
 
     public Task<OutboxMessage?> GetByQueueAndKeyAsync(
         string queueName,

@@ -4,6 +4,7 @@ public struct BirthDateField: View {
     @Binding private var birthDate: Date?
     private let label: String
     private let placeholder: String
+    private let helper: String?
     private let errorText: String?
 
     @Environment(\.locale) private var locale
@@ -13,11 +14,13 @@ public struct BirthDateField: View {
         birthDate: Binding<Date?>,
         label: String,
         placeholder: String,
+        helper: String? = nil,
         errorText: String? = nil
     ) {
         _birthDate = birthDate
         self.label = label
         self.placeholder = placeholder
+        self.helper = helper
         self.errorText = errorText
     }
 
@@ -27,10 +30,7 @@ public struct BirthDateField: View {
 
     private var displayText: String {
         guard let birthDate else { return placeholder }
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.locale = locale
-        return formatter.string(from: birthDate)
+        return CalendarDay.text(birthDate, locale: locale)
     }
 
     public var body: some View {
@@ -59,21 +59,26 @@ public struct BirthDateField: View {
             }
             .buttonStyle(.plain)
 
-            if let errorText {
-                Text(errorText)
+            if let supporting = errorText ?? helper {
+                Text(supporting)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.error)
+                    .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
                     .padding(.horizontal, Spacing.m)
             }
         }
         .sheet(isPresented: $showPicker) {
+            // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
+            // with, so a day chosen in the handset's calendar and a day decoded off the wire are
+            // otherwise different instants that encode as different days.
             DatePicker(
                 label,
-                selection: Binding(get: { birthDate ?? Date() }, set: { birthDate = $0 }),
+                selection: CalendarDay.pickerBinding($birthDate),
                 in: ...Date(),
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
+            .environment(\.calendar, CalendarDay.calendar)
+            .environment(\.timeZone, CalendarDay.calendar.timeZone)
             .padding()
             .presentationDetents([.medium])
         }
@@ -88,7 +93,8 @@ public struct BirthDateField: View {
                     BirthDateField(
                         birthDate: binding,
                         label: "Date of birth",
-                        placeholder: "Pick a date"
+                        placeholder: "Pick a date",
+                        helper: "Optional — helps us tailor your offers"
                     )
                     BirthDateField(
                         birthDate: .constant(nil),

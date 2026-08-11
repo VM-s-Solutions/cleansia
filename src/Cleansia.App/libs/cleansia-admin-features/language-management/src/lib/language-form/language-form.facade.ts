@@ -50,10 +50,9 @@ export class LanguageFormFacade extends UnsubscribeControlDirective {
   createLanguage(data: LanguageFormData): void {
     this.saving.set(true);
 
-    const command = new CreateLanguageCommand({
-      code: data.code,
-      name: data.name,
-    });
+    const command = new CreateLanguageCommand();
+    command.code = data.code;
+    command.name = data.name;
 
     this.adminClient.adminLanguageClient
       .create(command)
@@ -75,10 +74,9 @@ export class LanguageFormFacade extends UnsubscribeControlDirective {
   updateLanguage(languageId: string, data: LanguageFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateLanguageCommand({
-      languageId: languageId,
-      name: data.name,
-    });
+    const command = new UpdateLanguageCommand();
+    command.languageId = languageId;
+    command.name = data.name;
 
     this.adminClient.adminLanguageClient
       .update(languageId, command)

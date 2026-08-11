@@ -1,5 +1,7 @@
 // Order Wizard Page — BEM structured
 // Design tokens matching services catalog & home page
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-dark: #0369a1;
 $primary-lighter: #f0f9ff;
@@ -15,7 +17,6 @@ $border: #e2e8f0;
 $bg-alt: #f8fafc;
 $white: #ffffff;
 $max-width: 1200px;
-$font-heading: 'Poppins', sans-serif;
 
 .order-wizard {
   max-width: $max-width;
@@ -971,8 +972,40 @@ $font-heading: 'Poppins', sans-serif;
       color: #ea580c;
     }
 
+    // Express slot whose surcharge a Plus waiver covers — green, because for this
+    // customer the tag is a saving rather than a warning.
+    &--waived {
+      color: $green;
+    }
+
     &--unavailable {
       color: var(--cl-text-secondary);
+    }
+  }
+
+  // Express-waiver disclosure, sitting directly under the slot grid so an exhausted
+  // member reads it before picking rather than at the payment step.
+  &__express-waiver {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--cl-text-secondary);
+
+    i {
+      margin-top: 0.1rem;
+      font-size: 0.9rem;
+    }
+
+    &--available {
+      border-color: rgba($green, 0.4);
+      color: $green;
     }
   }
 
@@ -1417,6 +1450,42 @@ $font-heading: 'Poppins', sans-serif;
         background: rgba(220, 38, 38, 0.1);
         color: #dc2626;
       }
+    }
+  }
+
+  // ─── PREFERRED CLEANER (Plus) ───
+  &__preferred {
+    border: 1px solid $border;
+    border-radius: 0.75rem;
+    background: $white;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+
+    &--loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--cl-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $primary;
+      margin-bottom: 0.25rem;
+    }
+
+    &-title {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    &-explainer {
+      font-size: 0.85rem;
+      color: var(--cl-text-secondary);
+      margin: 0 0 0.75rem;
     }
   }
 

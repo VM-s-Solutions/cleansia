@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -8,6 +9,7 @@ using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
+using Cleansia.Tests.Common;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -30,6 +32,8 @@ public class GetOrderDetailsPartnerTranslationsTests
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderEmployeePayRepository = new();
     private readonly Mock<IOrderPhotoRepository> _orderPhotoRepository = new();
+    private readonly Mock<IEmployeeRepository> _employeeRepository = new();
+    private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
 
     private GetOrderDetails.Handler CreateHandler() =>
         new(
@@ -38,7 +42,10 @@ public class GetOrderDetailsPartnerTranslationsTests
             _userSessionProvider.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
-            _orderPhotoRepository.Object);
+            _orderPhotoRepository.Object,
+            _employeeRepository.Object,
+            _expressWaiverConsumer.Object,
+            Mock.Of<IUserMembershipRepository>());
 
     private void ArrangeEmployeeCaller(Order order)
     {

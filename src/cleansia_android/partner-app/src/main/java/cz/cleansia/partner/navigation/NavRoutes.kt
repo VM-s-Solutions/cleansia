@@ -41,6 +41,13 @@ sealed interface NavRoute {
     @Serializable data object Orders : NavRoute
     @Serializable data class OrderDetail(val orderId: String) : NavRoute
 
+    /**
+     * Jobs a customer asked for this cleaner by name, held for them until a deadline. Pushed rather
+     * than a bottom-nav tab: a reservation is rare and time-limited, and a permanent tab would show
+     * an empty state to every cleaner every day for it.
+     */
+    @Serializable data object PendingOffers : NavRoute
+
     @Serializable data object Invoices : NavRoute
     @Serializable data class InvoiceDetail(val invoiceId: String) : NavRoute
 
@@ -98,6 +105,12 @@ sealed interface NavRoute {
      */
     @Serializable data object PreferenceLanguage : NavRoute
     @Serializable data object PreferenceTheme : NavRoute
+
+    /**
+     * How far from home this cleaner wants to be told about new work. A preference, not a filter —
+     * it narrows the job-alert digest only, never the board or the take.
+     */
+    @Serializable data object PreferenceJobRadius : NavRoute
 
     /** Device self-service — list registered devices, revoke a lost one. */
     @Serializable data object Devices : NavRoute

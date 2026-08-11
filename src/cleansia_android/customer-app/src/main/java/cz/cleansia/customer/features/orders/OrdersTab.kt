@@ -128,7 +128,7 @@ fun OrdersTab(
     val refresh: () -> Unit = {
         scope.launch {
             orderRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
     }
@@ -142,7 +142,7 @@ fun OrdersTab(
     LaunchedEffect(Unit) {
         if (!orderRepo.loading.value) {
             orderRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
     }

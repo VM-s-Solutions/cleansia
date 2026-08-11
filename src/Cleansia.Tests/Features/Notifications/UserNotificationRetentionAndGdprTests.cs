@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Configuration;
@@ -178,9 +179,11 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new OrderRepository(ctx),
                 new EmployeeDocumentRepository(ctx),
                 new EmployeeInvoiceRepository(ctx),
+                new EmployeePayoutDetailsRepository(ctx),
                 new UserMembershipRepository(ctx),
                 new OrderPhotoRepository(ctx),
                 new DeviceRepository(ctx, session),
+                new LiveActivityTokenRepository(ctx),
                 new CartRepository(ctx),
                 new UserConsentRepository(ctx),
                 new GdprRequestRepository(ctx),
@@ -189,6 +192,9 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new OrderEmployeePayRepository(ctx),
                 new RecurringBookingTemplateRepository(ctx),
                 new UserNotificationRepository(ctx),
+                new DeadLetterRepository(ctx),
+                new OutboxMessageRepository(ctx),
+                Mock.Of<IRefreshTokenService>(),
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,
                 NullLogger<GdprDeletionService>.Instance);

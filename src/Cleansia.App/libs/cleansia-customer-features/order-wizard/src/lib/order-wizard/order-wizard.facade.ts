@@ -29,6 +29,8 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -54,6 +56,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly promo = inject(OrderPromoFacade);
   private readonly serviceArea = inject(OrderServiceAreaFacade);
   private readonly savedAddress = inject(OrderSavedAddressFacade);
+  private readonly membership = inject(OrderMembershipFacade);
+  private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
@@ -145,8 +149,30 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly totalPrice = this.pricing.totalPrice;
   readonly preSurchargeSubtotal = this.pricing.preSurchargeSubtotal;
   readonly expressSurchargeApplied = this.pricing.expressSurchargeApplied;
+  readonly expressSurchargeWaived = this.pricing.expressSurchargeWaived;
   readonly expressSurcharge = this.pricing.expressSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
+  readonly tierDiscount = this.pricing.tierDiscount;
+  readonly membershipDiscount = this.pricing.membershipDiscount;
+  readonly effectiveDiscount = this.pricing.effectiveDiscount;
+
+  // ─── Membership (free-cancellation window + express waiver) ─────
+  //
+  // One /Membership/Mine read for the whole wizard, owned by OrderMembershipFacade and
+  // re-exposed here so the slot grid and the summary step both read the wizard facade.
+  readonly plusFreeCancellationHours = this.membership.freeCancellationWindowHours;
+  readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
+  readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
+  readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
+  readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
+
+  // ─── Preferred cleaner (Plus) ───────────────────────────────────
+  //
+  // The roster and its slot answer live in OrderPreferredCleanerFacade, provided alongside this
+  // facade on the component. Re-exposed so the summary step keeps reading the wizard facade.
+  readonly preferredCleanerVisible = this.preferredCleaner.visible;
+  readonly preferredCleanerLoading = this.preferredCleaner.loading;
+  readonly preferredCleanerOptions = this.preferredCleaner.options;
 
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
@@ -159,10 +185,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     super();
     this.pricing.connect({
       formData: this.formData,
-      effectiveDiscount: this.effectiveDiscount,
+      promoDiscount: this.promo.effectivePromoDiscount,
     });
     this.promo.connect({
-      displayedTotalPrice: this.displayedTotalPrice,
+      preSurchargeSubtotal: this.preSurchargeSubtotal,
       persistPromoCode: (value) => this.updateFormData({ promoCode: value }),
     });
     this.serviceArea.connect({
@@ -172,6 +198,20 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
+    this.preferredCleaner.connect({
+      isAuthenticated: () => this.isAuthenticated(),
+      hasMembership: () => this.membership.membership()?.hasMembership === true,
+      currentFormData: () => this.formData(),
+      patchFormData: (partial) => this.updateFormData(partial),
+    });
+  }
+
+  selectPreferredCleaner(employeeId: string | null): void {
+    this.preferredCleaner.select(employeeId);
+  }
+
+  selectedPreferredCleanerId(): string | null {
+    return this.preferredCleaner.selectedEmployeeId();
   }
 
   /** Delegates to the pricing engine — see OrderPricingFacade.refreshQuoteNow. */
@@ -189,16 +229,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly promoCodeState = this.promo.promoCodeState;
 
   /**
-   * Server-resolved tier discount preview from the live quote (anonymous quotes return 0).
-   */
-  tierDiscount = computed(() => this.quote()?.tierDiscountAmount ?? 0);
-
-  /**
-   * Server-resolved Cleansia Plus membership discount preview from the live quote.
-   */
-  membershipDiscount = computed(() => this.quote()?.membershipDiscountAmount ?? 0);
-
-  /**
    * Floor at which the tier discount kicks in (e.g. Silver = 1000 CZK). Used to
    * render a "needs orders above X" hint when the customer's tier discount didn't
    * apply because the subtotal is below it.
@@ -209,17 +239,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   /** Promo discount the user just applied via the dialog — see OrderPromoFacade. */
   readonly effectivePromoDiscount = this.promo.effectivePromoDiscount;
-
-  /**
-   * LOY-003 — effective discount displayed to the user. Plus + tier are
-   * additive (server already returns both amounts on the same quote,
-   * capped at 12% combined). Promo replaces the combined pair when larger.
-   * Mirrors backend `OrderFactory.ResolveLoy003Discount`.
-   */
-  effectiveDiscount = computed(() => {
-    const combined = this.membershipDiscount() + this.tierDiscount();
-    return Math.max(combined, this.effectivePromoDiscount());
-  });
 
   /**
    * Which discount source(s) apply right now. `'combined'` appears when
@@ -270,12 +289,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         // the same silent-default bug if we auto-picked here, just with a
         // different country.
         if (countries.length === 1 && !this.formData().address.countryId) {
-          this.updateFormData({
-            address: new AddressDto({
-              ...this.formData().address,
-              countryId: countries[0].id ?? '',
-            }),
-          });
+          const address = new AddressDto(this.formData().address);
+          address.countryId = countries[0].id ?? '';
+          this.updateFormData({ address });
         }
       },
     });
@@ -287,6 +303,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
+    this.membership.load(loggedIn);
 
     if (loggedIn) {
       if (!this.savedAddressStore.loaded()) {
@@ -406,6 +423,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   nextStep(): void {
     if (this.activeStep() < this.steps.length - 1) {
       this.activeStep.update((s) => s + 1);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -413,6 +431,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   prevStep(): void {
     if (this.activeStep() > 0) {
       this.activeStep.update((s) => s - 1);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -420,7 +439,19 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
+      this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  /**
+   * The roster is re-read on every entry to the summary step rather than once, because its
+   * availability answer is about the slot — and the slot is two steps behind, editable, and
+   * routinely changed after a first look at the summary.
+   */
+  private onStepEntered(): void {
+    if (this.activeStep() === this.steps.length - 1) {
+      this.preferredCleaner.refresh();
     }
   }
 
@@ -547,47 +578,43 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       promoState.kind === 'valid' && trimmedPromo
         ? trimmedPromo.toUpperCase()
         : undefined;
+    const command = new CreateOrderCommand();
+    command.customerName =
+      `${data.customerFirstName} ${data.customerLastName}`.trim();
+    command.customerEmail = data.customerEmail;
+    command.customerPhone = data.customerPhone;
     // Backend validator is XOR: send savedAddressId OR customerAddress, never both.
-    const command = new CreateOrderCommand({
-      customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
-      customerEmail: data.customerEmail,
-      customerPhone: data.customerPhone,
-      customerAddress: savedId ? undefined : new CustomerAddress(data.address),
-      savedAddressId: savedId ?? undefined,
-      selectedServiceIds: data.selectedServiceIds,
-      selectedPackageIds: data.selectedPackageIds,
-      rooms: data.rooms,
-      bathrooms: data.bathrooms,
-      extras: data.extras,
-      cleaningDate: cleaningDate,
-      paymentType: data.paymentType,
-      currencyId: quoted.currencyId,
-      // Send the server-quoted total unchanged — it already includes any
-      // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
-      // validates against the same calculator result (`result.TotalPrice ==
-      // command.TotalPrice`), exact decimal match, so any client-side price
-      // math here would be rejected.
-      totalPrice: quoted.totalPrice,
-      language: this.translate.currentLang || this.translate.getDefaultLang(),
-      promoCode: promoCodeToSend,
-      // Referral is a signup-only benefit now — the checkout wizard never
-      // populates it. Backend still accepts the field for other callers.
-      referralCode: undefined,
-      // Future Cleansia Plus perk — customer-requested cleaner. Web wizard
-      // doesn't surface this picker yet (waiting on the Plus rollout); send
-      // undefined so the backend skips the matching boost. The field is
-      // `required` in the NSwag-generated interface but accepts undefined.
-      preferredEmployeeId: undefined,
-      // The wizard has collected this since the field shipped and the summary
-      // step renders it back to the customer, but it was never put on the
-      // command — so every note typed on web was discarded at submit while the
-      // customer watched it in the review panel. Empty becomes undefined rather
-      // than '': the backend treats null and empty alike, and undefined keeps
-      // the property out of the JSON entirely, matching every other optional
-      // here. Trimmed because a whitespace-only note is not a note.
-      specialInstructions: data.specialInstructions.trim() || undefined,
-      accessInstructions: data.entryInstructions.trim() || undefined,
-    });
+    command.customerAddress = savedId
+      ? undefined
+      : new CustomerAddress(data.address);
+    command.savedAddressId = savedId ?? undefined;
+    command.selectedServiceIds = data.selectedServiceIds;
+    command.selectedPackageIds = data.selectedPackageIds;
+    command.rooms = data.rooms;
+    command.bathrooms = data.bathrooms;
+    command.extras = data.extras;
+    command.cleaningDate = cleaningDate;
+    command.paymentType = data.paymentType;
+    command.currencyId = quoted.currencyId;
+    // Send the server-quoted total unchanged — it already includes any
+    // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
+    // validates against the same calculator result (`result.TotalPrice ==
+    // command.TotalPrice`), exact decimal match, so any client-side price
+    // math here would be rejected.
+    command.totalPrice = quoted.totalPrice;
+    command.language =
+      this.translate.currentLang || this.translate.getDefaultLang();
+    command.promoCode = promoCodeToSend;
+    // Empty becomes undefined rather than '': the backend treats null and empty
+    // alike, and undefined keeps the property out of the JSON entirely. Trimmed
+    // because a whitespace-only note is not a note.
+    command.specialInstructions = data.specialInstructions.trim() || undefined;
+    command.accessInstructions = data.entryInstructions.trim() || undefined;
+    // The picker only ever offers cleaners the roster returned, but the entitlement, the eligibility
+    // and the seat are all re-decided server-side; an id here asks, it does not reserve.
+    command.preferredEmployeeId = data.preferredEmployeeId ?? undefined;
+    // Deliberately unset: `referralCode` is a signup-only benefit the checkout wizard never
+    // populates. It stays off the JSON.
 
     if (data.paymentType === PaymentType.Card) {
       this.customerClient.paymentClient

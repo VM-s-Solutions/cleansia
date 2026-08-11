@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
   AdminEmployeeDetail,
+  AdminUpdateEmployeeCommand,
   CreatePayConfigCommand,
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
@@ -76,12 +77,21 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
       description: 'note',
     });
 
-    const command = createMock.mock.calls[0][0];
+    const command: CreatePayConfigCommand = createMock.mock.calls[0][0];
     expect(command).toBeInstanceOf(CreatePayConfigCommand);
-    expect(command.serviceId).toBe('svc-1');
-    expect(command.packageId).toBeUndefined();
-    expect(command.currencyId).toBe('cur-1');
-    expect(command.basePay).toBe(500);
+    expect(command.toJSON()).toEqual({
+      employeeId: 'emp-1',
+      serviceId: 'svc-1',
+      packageId: undefined,
+      basePay: 500,
+      extraPerRoom: 50,
+      extraPerBathroom: 30,
+      distanceRatePerKm: 10,
+      minimumPay: 300,
+      maximumPay: 2000,
+      currencyId: 'cur-1',
+      description: 'note',
+    });
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
@@ -111,10 +121,18 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     facade.updateSinglePayConfig('pc-1', rateData);
 
     expect(updateMock.mock.calls[0][0]).toBe('pc-1');
-    const command = updateMock.mock.calls[0][1];
+    const command: UpdatePayConfigCommand = updateMock.mock.calls[0][1];
     expect(command).toBeInstanceOf(UpdatePayConfigCommand);
-    expect(command.payConfigId).toBe('pc-1');
-    expect(command.basePay).toBe(500);
+    expect(command.toJSON()).toEqual({
+      payConfigId: 'pc-1',
+      basePay: 500,
+      extraPerRoom: 50,
+      extraPerBathroom: 30,
+      distanceRatePerKm: 10,
+      minimumPay: 300,
+      maximumPay: 2000,
+      description: undefined,
+    });
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
@@ -150,5 +168,82 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     expect(snackbar.showError).toHaveBeenCalled();
     expect(employeeSummaryMock).not.toHaveBeenCalled();
     expect(snackbar.showSuccess).not.toHaveBeenCalled();
+  });
+});
+
+describe('EmployeeDetailFacade — employee update', () => {
+  let facade: EmployeeDetailFacade;
+  let updateMock: jest.Mock;
+  let detailsMock: jest.Mock;
+  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+
+  beforeEach(() => {
+    updateMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
+    detailsMock = jest.fn().mockReturnValue(of(null));
+    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+
+    TestBed.configureTestingModule({
+      providers: [
+        EmployeeDetailFacade,
+        {
+          provide: AdminClient,
+          useValue: {
+            adminEmployeeClient: { update: updateMock, details: detailsMock },
+            adminCountryClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+          },
+        },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: DialogService, useValue: { open: jest.fn() } },
+        {
+          provide: EmployeeDocumentsFacade,
+          useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
+        },
+      ],
+    });
+
+    facade = TestBed.inject(EmployeeDetailFacade);
+    facade.employee.set(
+      AdminEmployeeDetail.fromJS({
+        id: 'emp-1',
+        firstName: 'Jana',
+        lastName: 'Nova',
+        phoneNumber: '+420111222333',
+        city: 'Praha',
+      })
+    );
+  });
+
+  it('falls back to the loaded employee for fields the edited section omits', () => {
+    facade.updateEmployee({ firstName: 'Jitka' });
+
+    const [id, command] = updateMock.mock.calls[0];
+    expect(id).toBe('emp-1');
+    expect(command).toBeInstanceOf(AdminUpdateEmployeeCommand);
+    expect(command.firstName).toBe('Jitka');
+    expect(command.lastName).toBe('Nova');
+    expect(command.city).toBe('Praha');
+    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(facade.savingEmployee()).toBe(false);
+  });
+
+  it('never sends a raw payout identifier — payout details live behind their own contract', () => {
+    facade.updateEmployee({ firstName: 'Jitka', iban: 'CZ3155000000005885638003' });
+
+    const [, command] = updateMock.mock.calls[0];
+    expect('iban' in command.toJSON()).toBe(false);
+    expect(command.toJSON()).not.toHaveProperty('iban');
+  });
+
+  it('reports the error and keeps the section open when the update fails', () => {
+    updateMock.mockReturnValue(throwError(() => new Error('boom')));
+    facade.startEditingSection('employment');
+
+    facade.updateEmployee({ firstName: 'Jitka' });
+
+    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(facade.editingSection()).toBe('employment');
+    expect(facade.savingEmployee()).toBe(false);
   });
 });

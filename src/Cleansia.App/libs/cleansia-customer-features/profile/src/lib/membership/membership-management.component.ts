@@ -42,6 +42,10 @@ export class MembershipManagementComponent implements OnInit {
   readonly switching = this.facade.switching;
   readonly membership = this.facade.membership;
   readonly plans = this.facade.plans;
+  readonly expressUpgradesRemaining = this.facade.expressUpgradesRemaining;
+  readonly expressWaiverAvailable = this.facade.expressWaiverAvailable;
+  readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
+  readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
 
   /** Yearly plan (if any) — drives the "Switch to annual" CTA visibility. */
   readonly yearlyPlan = computed(() =>

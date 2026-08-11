@@ -1,5 +1,7 @@
 package cz.cleansia.customer.core.user
 
+import cz.cleansia.customer.api.model.Code as GenCode
+import cz.cleansia.core.network.required
 import cz.cleansia.customer.api.model.MyProfileDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,6 +25,22 @@ data class CodeDto(
     val name: String,
     val value: Int,
 )
+
+/**
+ * `value` is the ordinal every status decision is made from, and `0` is a real status (`New`) rather
+ * than an absence — a defaulted code tells the screen the order has not started yet. `type` and
+ * `name` are display labels the app never branches on, so they blank rather than refuse.
+ *
+ * Shared because `Code` is one wire type reached from several surfaces: a second copy of this mapper
+ * is a second ruling on the same field, and the order and dispute copies had already diverged.
+ */
+internal fun GenCode.toAppDto(): CodeDto? {
+    return CodeDto(
+        type = type.orEmpty(),
+        name = name.orEmpty(),
+        value = `value` ?: return null,
+    )
+}
 
 @Serializable
 data class BlobFileDto(
@@ -78,23 +96,28 @@ data class CurrentUser(
 }
 
 /**
- * Map a generated [MyProfileDto] (nullable everywhere) into the UI's
- * [CurrentUser] (non-null strings, blanks where the backend gave null).
- * Takes the user id separately because the backend's `MyProfileDto` doesn't
- * carry it — caller pulls it from the JWT.
+ * Map a generated [MyProfileDto] into the UI's [CurrentUser]. Takes the user id separately because
+ * the backend's `MyProfileDto` doesn't carry it — caller pulls it from the JWT.
+ *
+ * `email`, `firstName` and `lastName` are non-nullable on the C# record, so blanking them renders a
+ * signed-in account with no name and no address to recover it from. The spec calls them
+ * `nullable: true` — it calls every string on this wire that, which is why the C# is the contract.
  */
-internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser = CurrentUser(
-    id = userId,
-    email = email.orEmpty(),
-    firstName = firstName.orEmpty(),
-    lastName = lastName.orEmpty(),
-    phoneNumber = phoneNumber,
-    birthDate = birthDate?.toString(),
-    preferredLanguageCode = preferredLanguageCode,
-    memberSince = memberSince,
-    totalBookings = totalBookings ?: 0,
-    totalSavings = totalSavings ?: 0.0,
-    savingsCurrencyCode = savingsCurrencyCode,
-    avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
-    avatarUrl = profilePhoto?.blobUrl?.takeIf { it.isNotBlank() },
-)
+internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser? {
+    return CurrentUser(
+        id = userId,
+        email = email.required("email"),
+        firstName = firstName.required("firstName"),
+        lastName = lastName.required("lastName"),
+        phoneNumber = phoneNumber,
+        birthDate = birthDate?.toString(),
+        preferredLanguageCode = preferredLanguageCode,
+        memberSince = memberSince,
+        // "You have saved 0 Kc" is a claim about this customer's money, not a blank field.
+        totalBookings = totalBookings ?: return null,
+        totalSavings = totalSavings ?: return null,
+        savingsCurrencyCode = savingsCurrencyCode,
+        avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
+        avatarUrl = profilePhoto?.blobUrl?.takeIf { it.isNotBlank() },
+    )
+}

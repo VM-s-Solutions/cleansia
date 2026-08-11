@@ -26,9 +26,10 @@ import cz.cleansia.partner.api.model.OrderItem
 /**
  * Property + selected services + selected packages + extras card. This is
  * the cleaner's "what am I doing here?" reference: rooms / baths on top
- * for a one-glance scope read, then the named services they're paid to
- * deliver, package adds with their listed prices, and finally the
- * emoji-tagged extras the customer ticked.
+ * for a one-glance scope read, then the crew the job needs and whether a
+ * seat is still open, then the named services they're paid to deliver,
+ * package adds with their listed prices, and finally the emoji-tagged
+ * extras the customer ticked.
  *
  * Services from the partner DTO don't currently carry a per-service
  * price (only estimated time + currency code), so we render just the
@@ -72,6 +73,23 @@ fun ScopeCard(
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
         )
+
+        val crew = order.orderCrew()
+        if (crew != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = listOf(
+                    pluralStringResource(R.plurals.crew_size, crew.crewSize, crew.crewSize),
+                    when (crew) {
+                        is OrderCrew.SpotsOpen ->
+                            pluralStringResource(R.plurals.crew_spots_open, crew.openSpots, crew.openSpots)
+                        is OrderCrew.Full -> stringResource(R.string.crew_no_spots)
+                    },
+                ).joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         if (services.isNotEmpty() || packages.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))

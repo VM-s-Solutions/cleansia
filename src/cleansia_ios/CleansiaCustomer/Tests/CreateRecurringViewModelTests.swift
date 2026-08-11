@@ -97,14 +97,13 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     func testPathBPrefillsFromCompletedOrder() async {
         let orderClient = FakeOrderClient()
-        let order = OrderItem(
+        let order = OrderFixtures.detail(
             id: "ord-7",
+            statusCode: Code(type: "OrderStatus", name: nil, value: 5),
             rooms: 3,
             bathrooms: 2,
-            paymentType: Code(type: "PaymentType", name: nil, value: 2),
-            orderStatus: Code(type: "OrderStatus", name: nil, value: 5),
-            selectedPackages: [],
-            selectedServices: [ServiceDetails(id: "svc-prefill")]
+            services: [OrderFixtures.service(id: "svc-prefill")],
+            paymentType: Code(type: "PaymentType", name: nil, value: 2)
         )
         orderClient.detailResults = [.success(order)]
         let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
@@ -192,6 +191,56 @@ final class CreateRecurringViewModelTests: XCTestCase {
         vm.setDayOfWeek(0)
 
         XCTAssertEqual(vm.formState.dayOfWeek, 0)
+    }
+
+    /// An update is a full replace, so an edit that also prefilled from an order would submit that
+    /// order's rooms, services and time over the live schedule. `sourceOrderId` is dropped when a
+    /// template is being edited — with a non-blank id, so both ternary branches are reachable.
+    func testEditingIgnoresASourceOrderInsteadOfPrefillingOverTheTemplate() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(id: "ord-7", rooms: 9, bathrooms: 9))]
+        let (vm, client) = makeVM(
+            sourceOrderId: "ord-7",
+            editing: RecurringFixtures.template(),
+            orderClient: orderClient
+        )
+
+        await vm.load()
+        _ = await vm.submit()
+
+        XCTAssertEqual(orderClient.detailCallCount, 0, "an edit prefilled from an unrelated order")
+        XCTAssertEqual(client.updateInputs.first?.rooms, 2)
+        XCTAssertEqual(client.updateInputs.first?.bathrooms, 1)
+    }
+
+    // MARK: - What an edit does and does not touch
+
+    func testTheAppliesNoticeIsShownOnlyWhenEditing() {
+        let (create, _) = makeVM()
+        let (edit, _) = makeVM(editing: RecurringFixtures.template())
+
+        XCTAssertNil(create.appliesNotice)
+        XCTAssertNotNil(edit.appliesNotice)
+    }
+
+    func testTheAppliesNoticeIsLocalizedInEveryLocale() throws {
+        let (vm, _) = makeVM(editing: RecurringFixtures.template())
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        for language in ["en", "cs", "sk", "uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            let notice = try XCTUnwrap(vm.appliesNotice)
+            XCTAssertNotEqual(notice, "recurring_edit_applies_notice", "unlocalized in \(language)")
+            XCTAssertFalse(notice.isBlank, "empty in \(language)")
+        }
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 
     // MARK: - Property size

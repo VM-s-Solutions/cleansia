@@ -12,6 +12,9 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.memberships.ExpressWaiver
+import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.resolveExpressWaiver
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
@@ -25,12 +28,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -83,6 +89,7 @@ data class PaymentSheetParams(
 sealed interface PromoCodeUiState {
     data object Idle : PromoCodeUiState
     data object Validating : PromoCodeUiState
+    /** [discountAmount] is stated against the charged price, like every other discount on this screen. */
     data class Valid(val discountAmount: Double) : PromoCodeUiState
     /** [error] is null when the failure is generic (network/HTTP/unknown enum value). */
     data class Invalid(val error: PromoCodeError?) : PromoCodeUiState
@@ -150,11 +157,27 @@ class BookingViewModel @Inject constructor(
     // single-serviced-country fallback), but the moment we flag SK as
     // serviced too the fallback fails and the user would see "country.required".
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
+    private val membershipRepository: MembershipRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BookingState())
     val state: StateFlow<BookingState> = _state.asStateFlow()
+
+    /**
+     * The wizard's one read of the express waiver, shared by the slot grid's disclosure and its chip.
+     * A failed or absent membership read degrades to [ExpressWaiver.None] — the same silence a
+     * non-member gets — because a claim rendered from nothing is worse on this screen than no claim.
+     */
+    val expressWaiver: StateFlow<ExpressWaiver> = membershipRepository.current
+        .map { resolveExpressWaiver(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ExpressWaiver.None)
+
+    init {
+        if (tokenStore.current() != null) {
+            viewModelScope.launch { membershipRepository.refresh() }
+        }
+    }
 
     /**
      * Wave 4 — formerly `_submitting: Boolean`. No Error variant today (the
@@ -185,6 +208,19 @@ class BookingViewModel @Inject constructor(
     private val _promoCodeState = MutableStateFlow<PromoCodeUiState>(PromoCodeUiState.Idle)
     val promoCodeState: StateFlow<PromoCodeUiState> = _promoCodeState.asStateFlow()
 
+    /**
+     * The one discount the summary card and the sticky price bar both spend. They used to derive it
+     * separately and the bar left the server discounts out, so a Plus member read two different totals
+     * on one screen. Tier and membership are additive and already capped server-side; a promo replaces
+     * the pair when it is larger and never stacks (`AppliedDiscountResolver`).
+     */
+    val effectiveDiscount: StateFlow<Double> = combine(_quoteState, _promoCodeState) { quote, promo ->
+        val quoted = (quote as? QuoteState.Quoted)?.response
+        val serverDiscount = (quoted?.tierDiscountAmount ?: 0.0) + (quoted?.membershipDiscountAmount ?: 0.0)
+        val promoDiscount = (promo as? PromoCodeUiState.Valid)?.discountAmount ?: 0.0
+        maxOf(serverDiscount, promoDiscount)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
+
     private val _referralCodeState = MutableStateFlow<ReferralCodeUiState>(ReferralCodeUiState.Idle)
     val referralCodeState: StateFlow<ReferralCodeUiState> = _referralCodeState.asStateFlow()
 
@@ -206,7 +242,8 @@ class BookingViewModel @Inject constructor(
             return PromoCodeUiState.Idle
         }
         _promoCodeState.value = PromoCodeUiState.Validating
-        val subtotal = (_quoteState.value as? QuoteState.Quoted)?.response?.totalPrice ?: 0.0
+        val quote = (_quoteState.value as? QuoteState.Quoted)?.response
+        val subtotal = quote?.preSurchargeSubtotal ?: 0.0
         val newState = try {
             val resp = promoCodeApi.validate(ValidatePromoCodeRequest(normalized, subtotal))
             if (!resp.isSuccessful) {
@@ -215,7 +252,8 @@ class BookingViewModel @Inject constructor(
                 val body = resp.body()
                 when {
                     body == null -> PromoCodeUiState.Invalid(null)
-                    body.isValid && body.discountAmount != null -> PromoCodeUiState.Valid(body.discountAmount)
+                    body.isValid && body.discountAmount != null ->
+                        PromoCodeUiState.Valid(quote?.discountAsCharged(body.discountAmount) ?: body.discountAmount)
                     else -> PromoCodeUiState.Invalid(PromoCodeError.fromString(body.errorCode))
                 }
             }

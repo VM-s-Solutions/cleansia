@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Infra.Services.Pdf.Components;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Infra.Services.Pdf.Theme;
@@ -7,9 +8,20 @@ using QuestPDF.Infrastructure;
 
 namespace Cleansia.Infra.Services.Pdf.Layouts;
 
+/// <summary>
+/// The payout invoice: the cleaner supplies the work and is paid for it, so the cleaner is the
+/// SUPPLIER and Cleansia is the CUSTOMER. Every block below is oriented that way — the masthead, the
+/// two party blocks and, most consequentially, the bank details in the payment block.
+/// </summary>
 public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
 {
     public virtual string CountryCode => "default";
+
+    public virtual IReadOnlyCollection<string> CountryCodes => [CountryCode];
+
+    protected virtual InvoiceLabels Labels { get; } = new();
+
+    protected virtual CultureInfo NumberCulture => CultureInfo.InvariantCulture;
 
     public virtual void Build(IDocumentContainer container, InvoicePdfData data, CountryInvoiceContext? context)
     {
@@ -18,138 +30,286 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
             page.Size(PageSizes.A4);
             page.DefaultTextStyle(x => x.FontFamily("Helvetica").FontSize(CleansiaPdfTheme.FontSizeBody));
 
-            page.Header().Element(h => BuildHeader(h, data));
-            page.Content().PaddingHorizontal(30).PaddingVertical(10).Element(c => BuildContent(c, data, context));
-            page.Footer().PaddingHorizontal(30).PaddingBottom(20).Element(f => BuildFooter(f, data));
+            // The letterhead is part of the flow, not a running header: repeating a 25%-tall masthead
+            // on every continuation page is what pushed a three-line invoice onto two pages.
+            page.Content().Column(col =>
+            {
+                col.Item().Element(c => BuildHeader(c, data));
+                col.Item().PaddingHorizontal(30).PaddingVertical(6).Element(c => BuildContent(c, data, context));
+            });
+
+            page.Footer().PaddingHorizontal(30).PaddingBottom(12).Element(f => BuildFooter(f, data));
         });
     }
 
     protected virtual void BuildHeader(IContainer container, InvoicePdfData data)
     {
         container.GradientHeader(
-            data.Company?.TradingName ?? "CLEANSIA",
-            data.Company?.Tagline,
+            data.Supplier.Name,
+            null,
             meta =>
             {
                 meta.Column(col =>
                 {
-                    col.Item().Element(c => c.MetaField("Invoice #", data.InvoiceNumber));
+                    col.Item().Element(c => c.MetaField(Labels.InvoiceNumber, data.InvoiceNumber));
+                    col.Item().Element(c => c.MetaField(Labels.IssueDate, FormatDate(data.GeneratedAt)));
 
-                    if (!string.IsNullOrWhiteSpace(data.VariableSymbol))
-                        col.Item().Element(c => c.MetaField("Variable Symbol", data.VariableSymbol));
-
-                    col.Item().Element(c => c.MetaField("Date", data.GeneratedAt.ToString("dd.MM.yyyy")));
+                    if (data.DueDate.HasValue)
+                        col.Item().Element(c => c.MetaField(Labels.DueDate, FormatDate(data.DueDate.Value)));
                 });
-            });
+            },
+            padding: 18,
+            nameFontSize: 20);
     }
 
     protected virtual void BuildContent(IContainer container, InvoicePdfData data, CountryInvoiceContext? context)
     {
         container.Column(col =>
         {
-            col.Item().Element(c => c.DocumentTitle("Invoice"));
+            col.Item().PaddingVertical(8).Text(Labels.DocumentTitle)
+                .FontSize(16).Bold().FontColor(CleansiaPdfTheme.TextPrimary);
 
-            col.Item().Element(c => BuildInfoSection(c, data));
+            col.Item().Element(c => BuildPartySection(c, data));
 
-            col.Item().Element(c => c.SectionTitle($"Order Details ({data.Orders.Count} orders)"));
-            col.Item().Element(c => BuildOrderTable(c, data));
+            col.Item().Element(c => c.SectionTitle(Labels.PaymentDetails));
+            col.Item().Element(c => BuildPaymentSection(c, data));
 
-            col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing).Element(c => BuildSummary(c, data));
+            col.Item().Element(c => c.SectionTitle(Labels.LineItems));
+            col.Item().Element(c => BuildLineItemsTable(c, data));
 
-            if (!string.IsNullOrWhiteSpace(data.LegalDisclaimer))
+            // A total split across a page break is the one block that must never break.
+            col.Item().PaddingTop(CleansiaPdfTheme.SmallPadding).ShowEntire().Row(row =>
             {
-                col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing)
-                    .Element(c => c.LegalNoticeBox(data.LegalDisclaimer));
-            }
+                row.RelativeItem().PaddingRight(20).Element(c =>
+                {
+                    var notice = LegalNoticeText(data);
+                    if (!string.IsNullOrWhiteSpace(notice))
+                        c.AlignBottom().LegalNoticeBox(notice, Labels.LegalNotice);
+                });
+
+                row.ConstantItem(280).Element(c => BuildSummary(c, data));
+            });
         });
     }
 
-    protected virtual void BuildInfoSection(IContainer container, InvoicePdfData data)
+    protected virtual void BuildPartySection(IContainer container, InvoicePdfData data)
     {
         container.TwoColumnInfoSection(
             left =>
             {
                 left.Column(col =>
                 {
-                    col.Item().Text("Billed To")
-                        .FontSize(CleansiaPdfTheme.FontSizeSectionTitle)
-                        .Bold()
-                        .FontColor(CleansiaPdfTheme.TextPrimary);
-                    col.Item().PaddingTop(6);
-                    col.Item().Element(c => c.LabeledField("Name", data.EmployeeName));
-                    col.Item().Element(c => c.LabeledField("Email", data.EmployeeEmail));
-                    col.Item().Element(c => c.LabeledField("Address", data.EmployeeAddress));
+                    col.Item().Element(c => c.BlockTitle(Labels.Supplier));
+                    foreach (var field in SupplierFields(data))
+                        col.Item().Element(c => c.InlineField(field.Label, field.Value));
+
+                    col.Item().PaddingTop(8).Element(c => c.BlockTitle(Labels.ContactDetails, CleansiaPdfTheme.FontSizeMetaValue));
+                    foreach (var field in ContactFields(data))
+                        col.Item().Element(c => c.InlineField(field.Label, field.Value));
                 });
             },
             right =>
             {
                 right.Column(col =>
                 {
-                    col.Item().Text("Payment Period")
-                        .FontSize(CleansiaPdfTheme.FontSizeSectionTitle)
-                        .Bold()
-                        .FontColor(CleansiaPdfTheme.TextPrimary);
-                    col.Item().PaddingTop(6);
-                    col.Item().Element(c => c.LabeledField("From", data.PayPeriodStart));
-                    col.Item().Element(c => c.LabeledField("To", data.PayPeriodEnd));
-                    col.Item().Element(c => c.LabeledField("Total Orders", data.Orders.Count.ToString()));
+                    col.Item().Element(c => c.BlockTitle(Labels.Customer));
+                    foreach (var field in CustomerFields(data))
+                        col.Item().Element(c => c.InlineField(field.Label, field.Value));
 
-                    if (!string.IsNullOrWhiteSpace(data.PaymentReference))
-                        col.Item().Element(c => c.LabeledField("Payment Ref", data.PaymentReference));
+                    col.Item().PaddingTop(8).Element(c => c.BlockTitle(Labels.PayPeriod, CleansiaPdfTheme.FontSizeMetaValue));
+                    col.Item().Element(c => c.InlineField(Labels.PayPeriodFrom, data.PayPeriodStart));
+                    col.Item().Element(c => c.InlineField(Labels.PayPeriodTo, data.PayPeriodEnd));
                 });
             });
     }
 
-    protected virtual void BuildOrderTable(IContainer container, InvoicePdfData data)
+    protected virtual IReadOnlyList<InvoiceField> SupplierFields(InvoicePdfData data)
+    {
+        var supplier = data.Supplier;
+        var fields = new List<InvoiceField>
+        {
+            new(Labels.Name, supplier.Name),
+            new(Labels.Address, FormatAddress(supplier)),
+            new(Labels.Country, supplier.Country),
+            new(Labels.RegistrationNumber, supplier.RegistrationNumber)
+        };
+
+        if (supplier.IsVatPayer)
+        {
+            fields.Add(new InvoiceField(Labels.VatNumber, supplier.VatNumber));
+        }
+        else
+        {
+            fields.Add(new InvoiceField(Labels.VatStatus, Labels.NotVatRegistered));
+        }
+
+        return fields;
+    }
+
+    protected virtual IReadOnlyList<InvoiceField> ContactFields(InvoicePdfData data) =>
+    [
+        new(Labels.Email, data.Supplier.Email),
+        new(Labels.Phone, data.Supplier.Phone)
+    ];
+
+    protected virtual IReadOnlyList<InvoiceField> CustomerFields(InvoicePdfData data)
+    {
+        var company = data.Company;
+        if (company == null) return [];
+
+        return
+        [
+            new InvoiceField(Labels.Name, company.LegalName),
+            new InvoiceField(Labels.Address, company.Address),
+            new InvoiceField(Labels.RegistrationNumber, company.RegistrationNumber),
+            new InvoiceField(Labels.VatNumber, company.VatNumber)
+        ];
+    }
+
+    protected virtual IReadOnlyList<InvoiceField> PaymentFields(InvoicePdfData data)
+    {
+        var supplier = data.Supplier;
+        var fields = new List<InvoiceField>();
+
+        if (!string.IsNullOrWhiteSpace(supplier.BankName))
+            fields.Add(new InvoiceField(Labels.BankName, supplier.BankName));
+
+        fields.Add(new InvoiceField(Labels.BankAccount, supplier.BankAccountNumber));
+        fields.Add(new InvoiceField(Labels.Iban, supplier.Iban));
+        fields.Add(new InvoiceField(Labels.Swift, supplier.Swift));
+
+        // Unconditional, unlike the constant symbol below, and the asymmetry is deliberate: a
+        // konstantní symbol is legitimately absent outside CZ, while a variabilní symbol never is. On a
+        // document whose whole purpose is to be paid, a missing payment reference must render as "—"
+        // rather than vanish — a conditional is what made "no reference" indistinguishable from "this
+        // document has no reference field" for as long as it did.
+        fields.Add(new InvoiceField(Labels.VariableSymbol, data.VariableSymbol));
+
+        if (!string.IsNullOrWhiteSpace(data.ConstantSymbol))
+            fields.Add(new InvoiceField(Labels.ConstantSymbol, data.ConstantSymbol));
+
+        fields.Add(new InvoiceField(Labels.PaymentMethod, Labels.BankTransfer));
+        fields.Add(new InvoiceField(Labels.AmountDue, FormatMoney(data.TotalAmount, data)));
+
+        return fields;
+    }
+
+    protected virtual void BuildPaymentSection(IContainer container, InvoicePdfData data)
+    {
+        container.FieldGrid(PaymentFields(data), columns: 3);
+    }
+
+    protected virtual void BuildLineItemsTable(IContainer container, InvoicePdfData data)
     {
         container.OrderDetailsTable(
-            ["Order #", "Date", "Base Pay", "Extras", "Expenses", "Total"],
-            [3, 2, 2, 2, 2, 2],
+            [Labels.Description, Labels.Quantity, Labels.Unit, Labels.UnitPrice, Labels.LineTotal],
+            [6, 2, 2, 3, 3],
             table =>
             {
-                for (var i = 0; i < data.Orders.Count; i++)
+                for (var i = 0; i < data.LineItems.Count; i++)
                 {
-                    var order = data.Orders[i];
-                    table.TableCell(order.OrderNumber, i);
-                    table.TableCell(order.CompletedAt.ToString("dd.MM.yyyy"), i);
-                    table.TableCell($"{data.CurrencySymbol}{order.BasePay:N2}", i, alignRight: true);
-                    table.TableCell($"{data.CurrencySymbol}{order.ExtrasPay:N2}", i, alignRight: true);
-                    table.TableCell($"{data.CurrencySymbol}{order.ExpensesPay:N2}", i, alignRight: true);
-                    table.TableCell($"{data.CurrencySymbol}{order.TotalPay:N2}", i, alignRight: true);
+                    var line = data.LineItems[i];
+                    table.TableCell(DescribeLine(line), i);
+                    table.TableCell(line.Quantity.ToString("0.##", NumberCulture), i, alignRight: true);
+                    table.TableCell(Labels.UnitOfMeasure, i);
+                    table.TableCell(FormatMoney(line.UnitPrice, data), i, alignRight: true);
+                    table.TableCell(FormatMoney(line.LineTotal, data), i, alignRight: true);
                 }
             });
     }
 
-    protected virtual void BuildSummary(IContainer container, InvoicePdfData data)
+    protected virtual string DescribeLine(InvoiceLineItem line) =>
+        $"{Labels.LineDescription} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+
+    /// <summary>
+    /// The document's one legal notice: the jurisdiction's own reviewed text where it has one, otherwise
+    /// <see cref="InvoiceLabels.UnreviewedJurisdictionNotice"/> — which stays English on every layout,
+    /// because a fallback in the reader's language reads exactly like a notice written for their country.
+    /// <para>The fallback names the invoice's own due date, so an invoice that states none drops it
+    /// rather than leaving a threat nothing can be measured against. A jurisdiction's own notice is
+    /// printed as supplied and is not second-guessed that way.</para>
+    /// </summary>
+    protected virtual string? LegalNoticeText(InvoicePdfData data) =>
+        data.LegalDisclaimer ?? (data.DueDate.HasValue ? InvoiceLabels.UnreviewedJurisdictionNotice : null);
+
+    protected virtual IReadOnlyList<(string Label, string Value, bool IsBold)> SummaryLines(InvoicePdfData data)
     {
         var lines = new List<(string Label, string Value, bool IsBold)>
         {
-            ("Subtotal", $"{data.CurrencySymbol}{data.SubTotal:N2}", false)
+            (Labels.SubTotal, FormatMoney(data.SubTotal, data), false)
         };
 
         if (data.BonusAmount != 0)
-            lines.Add(("Bonus", $"+{data.CurrencySymbol}{data.BonusAmount:N2}", false));
+            lines.Add((Labels.Bonus, $"+{FormatMoney(data.BonusAmount, data)}", false));
 
         if (data.DeductionAmount != 0)
-            lines.Add(("Deduction", $"-{data.CurrencySymbol}{data.DeductionAmount:N2}", false));
+            lines.Add((Labels.Deduction, $"-{FormatMoney(data.DeductionAmount, data)}", false));
 
+        // The pay is gross, so VAT is carved OUT of the amount due rather than added on top: the two
+        // lines below decompose the bold total that follows them, they do not accumulate towards it.
         if (data.VatAmount != 0)
-            lines.Add(("VAT", $"{data.CurrencySymbol}{data.VatAmount:N2}", false));
+        {
+            lines.Add((Labels.VatBase, FormatMoney(data.TotalAmount - data.VatAmount, data), false));
+            lines.Add((Labels.Vat, FormatMoney(data.VatAmount, data), false));
+        }
 
-        lines.Add(("Total", $"{data.CurrencySymbol}{data.TotalAmount:N2}", true));
+        lines.Add((Labels.AmountDue, FormatMoney(data.TotalAmount, data), true));
 
-        container.SummaryBox(lines);
+        return lines;
+    }
+
+    protected virtual void BuildSummary(IContainer container, InvoicePdfData data)
+    {
+        container.Column(col =>
+        {
+            col.Item().SummaryBox(SummaryLines(data));
+
+            if (!data.Supplier.IsVatPayer)
+            {
+                col.Item().PaddingTop(6).AlignRight()
+                    .Text(Labels.NotVatRegistered)
+                    .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                    .FontColor(CleansiaPdfTheme.TextSecondary)
+                    .Italic();
+            }
+        });
     }
 
     protected virtual void BuildFooter(IContainer container, InvoicePdfData data)
     {
-        var contactInfo = data.Company != null
-            ? $"Contact: {data.Company.Email} | {data.Company.Phone}"
-            : null;
+        container.BorderTop(1).BorderColor(CleansiaPdfTheme.BorderLight)
+            .PaddingTop(CleansiaPdfTheme.InnerPadding)
+            .AlignCenter()
+            .Column(col =>
+            {
+                if (data.Company != null)
+                {
+                    col.Item().AlignCenter().Text($"{data.Company.LegalName} · {data.Company.ContactInfo}")
+                        .FontSize(CleansiaPdfTheme.FontSizeSmall)
+                        .FontColor(CleansiaPdfTheme.TextSecondary);
+                }
 
-        container.StandardFooter(
-            data.Company?.TradingName ?? "CLEANSIA",
-            contactInfo,
-            data.GeneratedAt);
+                col.Item().PaddingTop(4).AlignCenter()
+                    .Text($"{Labels.GeneratedOn}: {data.GeneratedAt:dd.MM.yyyy HH:mm} UTC")
+                    .FontSize(CleansiaPdfTheme.FontSizeSmall)
+                    .FontColor(CleansiaPdfTheme.TextSecondary);
+            });
+    }
+
+    protected virtual string FormatMoney(decimal amount, InvoicePdfData data) =>
+        $"{data.CurrencySymbol}{amount.ToString("N2", NumberCulture)}";
+
+    protected virtual string FormatDate(DateTime value) => value.ToString("dd.MM.yyyy", NumberCulture);
+
+    private static string? FormatAddress(InvoiceSupplierData supplier)
+    {
+        var cityLine = string.Join(" ", new[] { supplier.ZipCode, supplier.City }
+            .Where(part => !string.IsNullOrWhiteSpace(part)));
+
+        var lines = new[] { supplier.Street, cityLine }
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToArray();
+
+        return lines.Length > 0 ? string.Join('\n', lines) : null;
     }
 }

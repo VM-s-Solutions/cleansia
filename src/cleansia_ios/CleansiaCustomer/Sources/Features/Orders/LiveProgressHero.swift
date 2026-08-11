@@ -3,16 +3,14 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct LiveProgressHero: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     private var status: OrderStatus? {
         order.status
     }
 
     private var cleanerName: String? {
-        order.assignedEmployees?.first?.fullName?.isBlank == false
-            ? order.assignedEmployees?.first?.fullName
-            : nil
+        order.assignedEmployees.first?.fullName.flatMap { $0.isBlank ? nil : $0 }
     }
 
     var body: some View {
@@ -55,7 +53,7 @@ struct LiveProgressHero: View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
             if let fraction = LiveProgress.inProgressFraction(
                 history: order.statusHistory,
-                estimatedMinutes: order.estimatedTime ?? 0,
+                estimatedMinutes: order.estimatedMinutes,
                 now: context.date
             ) {
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
@@ -87,8 +85,8 @@ struct LiveProgressHero: View {
         case ._2: L10n.OrderDetail.subheadConfirmed
         case ._3: L10n.OrderDetail.subheadOnTheWay
         case ._4:
-            (order.estimatedTime ?? 0) > 0
-                ? L10n.OrderDetail.subheadInProgressEta(order.estimatedTime ?? 0)
+            order.estimatedMinutes > 0
+                ? L10n.OrderDetail.subheadInProgressEta(order.estimatedMinutes)
                 : L10n.OrderDetail.subheadInProgress
         default: nil
         }

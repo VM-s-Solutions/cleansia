@@ -31,6 +31,46 @@ final class EmergencySectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.phone, "+420999")
     }
 
+    func testLoadFailureSetsErrorAndSnackbars() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        guard case .error = vm.state else { return XCTFail("a failed read must not open an empty form") }
+        XCTAssertNotNil(snackbar.current)
+    }
+
+    /// The employee id survives a failed reload, so nothing else stops the command from going out
+    /// carrying whatever the form happens to hold — over a profile we could not read.
+    func testAFailedReloadRefusesToSaveTheStaleForm() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            emergencyContactName: "Petr",
+            emergencyContactPhone: "+420999"
+        ))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        await vm.load()
+        await vm.save()
+
+        XCTAssertNil(client.emergencyCommand)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    func testRetryingAFailedLoadRecoversTheForm() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", emergencyContactName: "Petr"))
+        await vm.load()
+
+        guard case .loaded = vm.state else { return XCTFail("retry left the section in the error state") }
+        XCTAssertEqual(vm.name, "Petr")
+    }
+
     func testSaveValidationFailureSkipsNetwork() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         let vm = makeVM()

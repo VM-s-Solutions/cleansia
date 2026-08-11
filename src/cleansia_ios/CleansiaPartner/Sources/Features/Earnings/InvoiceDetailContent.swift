@@ -6,7 +6,7 @@ import SwiftUI
 #endif
 
 struct InvoiceDetailContent: View {
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
     let canOpenPdf: Bool
     let isDownloading: Bool
     let onOpenPeriodPay: ((String, String?) -> Void)?
@@ -39,7 +39,7 @@ struct InvoiceDetailContent: View {
 }
 
 private struct HeroCard: View {
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
 
     var body: some View {
         HStack(spacing: Spacing.m) {
@@ -48,8 +48,8 @@ private struct HeroCard: View {
                 Text(L10n.Invoices.heroTotal)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
-                Text(EarningsFormat.decimalMoney(invoice.totalAmount ?? 0, currencyCode: invoice.currencyCode))
-                    .font(CleansiaTypography.headlineMedium)
+                Text(EarningsFormat.decimalMoney(invoice.totalAmount, currencyCode: invoice.currencyCode))
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if let number = invoice.invoiceNumber, !number.isEmpty {
                     Text(number)
@@ -65,7 +65,7 @@ private struct HeroCard: View {
 }
 
 private struct BreakdownCard: View {
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -73,19 +73,19 @@ private struct BreakdownCard: View {
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.primary)
 
-            MoneyRow(label: L10n.Invoices.subtotal, amount: invoice.subTotal ?? 0, code: invoice.currencyCode)
-            if let bonus = invoice.bonusAmount, bonus != 0 {
-                MoneyRow(label: L10n.Invoices.bonus, amount: bonus, code: invoice.currencyCode)
+            MoneyRow(label: L10n.Invoices.subtotal, amount: invoice.subTotal, code: invoice.currencyCode)
+            if invoice.bonusAmount != 0 {
+                MoneyRow(label: L10n.Invoices.bonus, amount: invoice.bonusAmount, code: invoice.currencyCode)
             }
-            if let deduction = invoice.deductionAmount, deduction != 0 {
-                MoneyRow(label: L10n.Invoices.deductions, amount: -deduction, code: invoice.currencyCode)
+            if invoice.deductionAmount != 0 {
+                MoneyRow(label: L10n.Invoices.deductions, amount: -invoice.deductionAmount, code: invoice.currencyCode)
             }
 
             EarningsDivider().padding(.vertical, Spacing.xs)
 
             MoneyRow(
                 label: L10n.Invoices.total,
-                amount: invoice.totalAmount ?? 0,
+                amount: invoice.totalAmount,
                 code: invoice.currencyCode,
                 bold: true
             )
@@ -96,7 +96,7 @@ private struct BreakdownCard: View {
 
 private struct PeriodCard: View {
     @Environment(\.locale) private var locale
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
     let onOpenPeriodPay: ((String, String?) -> Void)?
 
     private var drill: (() -> Void)? {
@@ -116,8 +116,8 @@ private struct PeriodCard: View {
                     Text(invoice.payPeriodLabel?.nilIfEmpty ?? "—")
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
-                    if let orders = invoice.totalOrders, orders > 0 {
-                        Text(L10n.Invoices.periodJobs(orders))
+                    if invoice.totalOrders > 0 {
+                        Text(L10n.Invoices.periodJobs(invoice.totalOrders))
                             .font(CleansiaTypography.labelSmall)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
                     }
@@ -171,7 +171,7 @@ private struct PeriodCard: View {
 }
 
 private struct ReferencesCard: View {
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
     let onCopy: (String) -> Void
 
     private var fields: [(label: String, value: String)] {
@@ -208,7 +208,7 @@ private struct ReferencesCard: View {
 }
 
 private struct NotesCard: View {
-    let invoice: EmployeeInvoiceDetailDto
+    let invoice: InvoiceDetail
 
     var body: some View {
         let admin = invoice.adminNotes?.nilIfEmpty

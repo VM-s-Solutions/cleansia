@@ -221,8 +221,13 @@ public static class ServiceExtensions
         services.AddScoped<IOutboxDrainerService, OutboxDrainerService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
+        services.AddScoped<IPayoutDetailsValidator, PayoutDetailsValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
+        // ADR-0046 — claims a payout invoice's variabilní symbol from the durable per-year counter.
+        // Registered here rather than in the Functions host because both creation paths need it: the
+        // admin GenerateInvoice command and the pay-period batch.
+        services.AddScoped<IPayoutReferenceAllocator, PayoutReferenceAllocator>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
@@ -240,6 +245,15 @@ public static class ServiceExtensions
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
+        services.AddScoped<IPreferredCleanerHoldResolver, PreferredCleanerHoldResolver>();
+        // ADR-0035 — the express-waiver seam. The period-key factory is SCOPED because it caches the
+        // resolved platform zone for the request, and CreateOrder builds the key twice (validator and
+        // handler): two different keys inside one request would count one month and write the other.
+        services.AddScoped<IBenefitPeriodKeyFactory, BenefitPeriodKeyFactory>();
+        services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
+        // The one place the once-per-customer trial rule is decided, for both subscribe surfaces.
+        services.AddScoped<IMembershipTrialResolver, MembershipTrialResolver>();
+        services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();

@@ -27,7 +27,9 @@ import {
   tap,
 } from 'rxjs';
 import { ProfileFormData, ProfileFormFactory } from './profile.models';
+import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
+import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
 
 @Injectable()
 export class ProfileFacade extends UnsubscribeControlDirective {
@@ -40,6 +42,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
 
   readonly documentsFacade = inject(ProfileDocumentsFacade);
+  readonly bankFacade = inject(ProfileBankFacade);
+  readonly jobRadiusFacade = inject(ProfileJobRadiusFacade);
 
   readonly formGroup: FormGroup =
     ProfileFormFactory.createEmployeeProfileForm();
@@ -71,6 +75,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         const formData = ProfileFormFactory.mapEmployeeToFormData(employee);
         FormUtils.safePatchValue(this.formGroup, formData);
         this.email.set(employee.email ?? '');
+        this.jobRadiusFacade.seed(employee);
 
         const countryOptions: ICleansiaSelectOption[] = countries.map(
           (country) => {
@@ -91,6 +96,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       catchError(() => {
         this.profileLoading.set(false);
         this.profileData$ = null;
+        this.jobRadiusFacade.markUnavailable();
         return of(null);
       }),
       shareReplay(1),

@@ -16,12 +16,16 @@ enum OrdersMutation {
     case startOrder
     case markCashCollected
     case completeOrder
+    case declinePreferredOffer
 
     var affectedPanes: [OrdersPane] {
         switch self {
         case .takeOrder, .notifyOnTheWay: [.available, .active]
         case .startOrder, .markCashCollected: [.active]
         case .completeOrder: [.active, .history]
+        // The order is back with the whole board the instant the hold ends, and the cleaner's own
+        // jobs did not change.
+        case .declinePreferredOffer: [.available]
         }
     }
 }

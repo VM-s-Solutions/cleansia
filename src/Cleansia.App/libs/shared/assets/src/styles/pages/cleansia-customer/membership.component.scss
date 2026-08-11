@@ -2,11 +2,12 @@
 // SubscribePlusScreen redesign — dark hero, trial-first price hierarchy,
 // social-proof tile, perks as cards, sticky CTA.
 
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-light: #38bdf8;
 $primary-dark: #082f49;
 $slate-900: #0f172a;
-$font-heading: 'Poppins', sans-serif;
 
 .membership-subscribe {
   max-width: 720px;
@@ -274,7 +275,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     h1 {
-      font-family: 'Poppins', sans-serif;
+      font-family: $font-heading;
       font-size: clamp(1.5rem, 5vw, 2rem);
       font-weight: 800;
       color: #0f172a;

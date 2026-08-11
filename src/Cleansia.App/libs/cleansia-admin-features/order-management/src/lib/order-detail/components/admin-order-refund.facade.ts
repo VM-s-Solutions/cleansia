@@ -63,17 +63,15 @@ export class AdminOrderRefundFacade extends UnsubscribeControlDirective {
     this.errorKey.set(null);
     this.submitting.set(true);
 
-    const command = new IssuePartialRefundCommand({
-      orderId,
-      reason,
-      overrideReason: this.overrideReason().trim() || undefined,
-      lines: this.selectedLines().map(
-        (line) =>
-          new IssuePartialRefundRefundLineSelection({
-            serviceId: line.id,
-            packageId: line.kind === 'bundled' ? line.packageId : undefined,
-          })
-      ),
+    const command = new IssuePartialRefundCommand();
+    command.orderId = orderId;
+    command.reason = reason;
+    command.overrideReason = this.overrideReason().trim() || undefined;
+    command.lines = this.selectedLines().map((line) => {
+      const selection = new IssuePartialRefundRefundLineSelection();
+      selection.serviceId = line.id;
+      selection.packageId = line.kind === 'bundled' ? line.packageId : undefined;
+      return selection;
     });
 
     this.refundClient

@@ -2311,6 +2311,111 @@
         }
       }
     },
+    "booking_express_waiver_available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus pokrývá 20% expresní příplatek — %1$d zbývá tento kalendářní měsíc."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus covers the 20% express surcharge — %1$d left this calendar month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus покрывает 20 % экспресс-доплаты — %1$d осталось в этом календарном месяце."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus pokrýva 20% expresný príplatok — %1$d zostáva tento kalendárny mesiac."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus покриває 20 % експрес-доплати — %1$d залишилось цього календарного місяця."
+          }
+        }
+      }
+    },
+    "booking_express_waiver_trial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Během zkušební doby se expresní termíny účtují s +20 % — odpuštění začíná prvním placeným měsícem."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express slots are charged at +20% during your trial — the waiver starts with your first paid month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Во время пробного периода экспресс-слоты оплачиваются с +20 % — отмена доплаты начинается с первого оплаченного месяца."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під час пробного періоду експрес-слоти оплачуються з +20 % — скасування доплати починається з першого оплаченого місяця."
+          }
+        }
+      }
+    },
+    "booking_express_waiver_used" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento měsíc už nezbývá žádné odpuštění expresního příplatku — expresní termíny se účtují s +20 % až do příštího měsíce."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No express waivers left this month — express slots are charged at +20% until next month."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цього місяця скасування експрес-доплати більше не діє — експрес-слоти оплачуються з +20 % до наступного місяця."
+          }
+        }
+      }
+    },
     "booking_extras_header" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4306,6 +4411,41 @@
         }
       }
     },
+    "booking_slot_express_waived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres · bez příplatku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express · no surcharge"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс · без доплаты"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres · bez príplatku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес · без доплати"
+          }
+        }
+      }
+    },
     "booking_slot_select" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4802,31 +4942,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Do 1 hodiny"
+            "value" : "Dáme vám vědět, jakmile ho najdeme"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Within 1 hour"
+            "value" : "We'll let you know as soon as we find one"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В течение 1 часа"
+            "value" : "Сообщим, как только его найдём"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Do 1 hodiny"
+            "value" : "Dáme vám vedieť, hneď ako ju nájdeme"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Протягом 1 години"
+            "value" : "Повідомимо вас, щойно його знайдемо"
           }
         }
       }
@@ -5247,6 +5387,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Експрес-надбавка (+20%)"
+          }
+        }
+      }
+    },
+    "booking_summary_express_surcharge_waived" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresní termín — odpuštěno s Plus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express slot — waived with Plus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс-слот — отменено с Plus"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresný termín — odpustené s Plus"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес-слот — скасовано з Plus"
           }
         }
       }
@@ -14107,71 +14282,71 @@
       }
     },
     "membership_perk_express_desc" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jedna bezplatná objednávka v den objednání měsíčně, bez příplatku."
+            "value" : "Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One free same-day booking per month, no surcharge."
+            "value" : "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Одно бесплатное бронирование в тот же день в месяц, без надбавки."
+            "value" : "Мы не берём 20 % доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. Определённое количество на каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jedna bezplatná objednávka v deň objednania mesačne, bez príplatku."
+            "value" : "Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Одне безкоштовне бронювання у той самий день щомісяця, без надбавки."
+            "value" : "Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться."
           }
         }
       }
     },
     "membership_perk_express_title" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Expresní upgrade zdarma"
+            "value" : "Expresní termíny bez příplatku"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Free express upgrade"
+            "value" : "Express bookings without the surcharge"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Бесплатный экспресс-апгрейд"
+            "value" : "Экспресс-заказы без доплаты"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Expresný upgrade zdarma"
+            "value" : "Expresné termíny bez príplatku"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Безкоштовне експрес-оновлення"
+            "value" : "Експрес-замовлення без доплати"
           }
         }
       }
@@ -14312,6 +14487,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "знижка %1$d%%"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · zbývá %1$d"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · %1$d left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · осталось %1$d"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · zostáva %1$d"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · %1$d залишилось"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express_trial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · po zkušební době"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · after trial"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · после пробного"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · po skúšobnej dobe"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · після пробного"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_express_used" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpuštěn · nic nezbývá"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express waived · none left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс без доплаты · не осталось"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expres odpustený · nič nezostáva"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес без доплати · не залишилось"
           }
         }
       }
@@ -14872,6 +15152,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Налаштувати регулярне прибирання"
+          }
+        }
+      }
+    },
+    "membership_success_perk_express" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresní termíny bez příplatku — od prvního placeného měsíce"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Express bookings with the surcharge waived — from your first paid month"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспресс-заказы без доплаты — с первого оплаченного месяца"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expresné termíny bez príplatku — od prvého plateného mesiaca"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Експрес-замовлення без доплати — з першого оплаченого місяця"
           }
         }
       }
@@ -17081,142 +17396,107 @@
         }
       }
     },
-    "order_cancel_fee_50" : {
-      "extractionState" : "stale",
+    "order_cancel_express_waiver_forfeit" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatek za zrušení 50 %%. Odhadovaná náhrada: %@."
+            "value" : "Zrušením také vyčerpáte jednu z expresních objednávek zahrnutých ve vašem členství pro tento měsíc."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "50%% cancellation fee. Estimated refund: %@."
+            "value" : "Cancelling also uses up one of your included express bookings for this month."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комиссия за отмену 50 %%. Ориентировочный возврат: %@."
+            "value" : "Отмена также израсходует один из экспресс-заказов, включённых в ваше членство в этом месяце."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatok za zrušenie 50 %%. Odhadovaná náhrada: %@."
+            "value" : "Zrušením tiež vyčerpáte jednu z expresných objednávok zahrnutých vo vašom členstve na tento mesiac."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комісія за скасування 50 %%. Орієнтовне повернення: %@."
+            "value" : "Скасування також витратить одне з експрес-замовлень, включених у ваше членство цього місяця."
           }
         }
       }
     },
-    "order_cancel_fee_100" : {
-      "extractionState" : "stale",
+    "order_cancel_fee_checking" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatek za zrušení 100 %%. Tak blízko k úklidu již není náhrada možná."
+            "value" : "Zjišťujeme, kolik zrušení této rezervace stojí…"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "100%% cancellation fee. No refund is available this close to the cleaning."
+            "value" : "Checking what cancelling this booking costs…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комиссия за отмену 100 %%. Возврат невозможен так близко к уборке."
+            "value" : "Проверяем, сколько стоит отмена этого бронирования…"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatok za zrušenie 100 %%. Tak blízko k upratovaniu už náhrada nie je možná."
+            "value" : "Zisťujeme, koľko stojí zrušenie tejto rezervácie…"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комісія за скасування 100 %%. Так близько до прибирання повернення неможливе."
+            "value" : "Перевіряємо, скільки коштує скасування цього бронювання…"
           }
         }
       }
     },
-    "order_cancel_fee_estimate_note" : {
-      "extractionState" : "stale",
+    "order_cancel_fee_last_minute" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odhad — konečná částka se potvrdí po odeslání."
+            "value" : "Toto je zrušení na poslední chvíli, poplatek je proto vyšší."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estimated — final amount confirmed after you submit."
+            "value" : "This is a last-minute cancellation, so the fee is higher."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ориентировочно — окончательная сумма подтвердится после отправки."
+            "value" : "Это отмена в последнюю минуту, поэтому комиссия выше."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odhad — konečná suma sa potvrdí po odoslaní."
+            "value" : "Toto je zrušenie na poslednú chvíľu, poplatok je preto vyšší."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Орієнтовно — точна сума підтвердиться після відправки."
-          }
-        }
-      }
-    },
-    "order_cancel_fee_free" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zrušení zdarma — získáte plnou náhradu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free cancellation — you'll get a full refund."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Бесплатная отмена — вы получите полный возврат."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zrušenie zdarma — získate plnú náhradu."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Безкоштовне скасування — ви отримаєте повне повернення."
+            "value" : "Це скасування в останню хвилину, тому комісія вища."
           }
         }
       }
@@ -17256,37 +17536,317 @@
         }
       }
     },
+    "order_cancel_fee_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádný poplatek za zrušení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cancellation fee."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комиссии за отмену нет."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiadny poplatok za zrušenie."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комісії за скасування немає."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_not_accepted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušení zdarma — tuto rezervaci zatím nepřevzal žádný uklízeč."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free cancellation — no cleaner has taken this booking yet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная отмена — это бронирование ещё никто из клинеров не взял."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušenie zdarma — túto rezerváciu zatiaľ neprevzal žiadny upratovač."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безкоштовне скасування — це бронювання ще ніхто з клінерів не взяв."
+          }
+        }
+      }
+    },
     "order_cancel_fee_oops" : {
       "extractionState" : "stale",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zrušení zdarma — objednávku jste vytvořili před méně než 15 minutami."
+            "value" : "Zrušení zdarma — objednali jste před malou chvílí."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Free cancellation — you booked less than 15 minutes ago."
+            "value" : "Free cancellation — you booked this only moments ago."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Бесплатная отмена — вы забронировали менее 15 минут назад."
+            "value" : "Бесплатная отмена — вы забронировали только что."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zrušenie zdarma — objednávku ste vytvorili pred menej než 15 minútami."
+            "value" : "Zrušenie zdarma — objednali ste pred malou chvíľou."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Безкоштовне скасування — ви забронювали менше 15 хвилин тому."
+            "value" : "Безкоштовне скасування — ви забронювали щойно."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_outside_window" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušení zdarma — rušíte s dostatečným předstihem."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free cancellation — you're cancelling far enough ahead."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная отмена — вы отменяете заранее."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušenie zdarma — rušíte s dostatočným predstihom."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безкоштовне скасування — ви скасовуєте завчасно."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_partial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na této zakázce už pracuje uklízeč, takže je zrušení zpoplatněné."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A cleaner is already on this job, so cancelling now has a fee."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клинер уже работает над этим заказом, поэтому за отмену будет комиссия."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tejto zákazke už pracuje upratovač, takže je zrušenie spoplatnené."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клінер уже працює над цим замовленням, тож за скасування буде комісія."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_recheck_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto je cena v tuto chvíli — při potvrzení ji ověříme znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is the cost right now — we check again the moment you confirm."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это стоимость на данный момент — мы проверим её ещё раз при подтверждении."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto je cena v tejto chvíli — pri potvrdení ju overíme znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це вартість на цю мить — ми перевіримо її ще раз, щойно ви підтвердите."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zkusit znovu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать снова"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skúsiť znova"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спробувати ще раз"
+          }
+        }
+      }
+    },
+    "order_cancel_fee_split" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatek za zrušení %1$@ — vrátíme vám %2$@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellation fee %1$@ — you'll be refunded %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комиссия за отмену %1$@ — вам вернём %2$@."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatok za zrušenie %1$@ — vrátime vám %2$@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комісія за скасування %1$@ — вам повернемо %2$@."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatek za zrušení se teď nepodařilo zjistit. Zrušit můžete i tak — částku potvrdíme při zrušení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't check the cancellation fee just now. You can still cancel — the amount is confirmed when you do."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас не удалось проверить комиссию за отмену. Отменить всё равно можно — сумму подтвердим при отмене."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatok za zrušenie sa teraz nepodarilo zistiť. Zrušiť môžete aj tak — sumu potvrdíme pri zrušení."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування."
           }
         }
       }
@@ -21491,6 +22051,216 @@
         }
       }
     },
+    "preferred_offer_accepted_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzeno: %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmed by %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтверждено: %1$@"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrdené: %1$@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підтверджено: %1$@"
+          }
+        }
+      }
+    },
+    "preferred_offer_asked_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervaci pro ně držíme do %1$@. Pokud ji nemohou převzít, otevře se celému našemu týmu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We're holding this booking for them until %1$@. If they can't take it, it opens to our whole team."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы держим этот заказ для них до %1$@. Если они не смогут его взять, он откроется для всей нашей команды."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezerváciu pre nich držíme do %1$@. Ak ju nemôžu prevziať, otvorí sa celému nášmu tímu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми тримаємо це замовлення для них до %1$@. Якщо вони не зможуть його взяти, воно відкриється для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "preferred_offer_asked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Požádali jsme %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We've asked %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы попросили %1$@"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Požiadali sme %1$@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми попросили %1$@"
+          }
+        }
+      }
+    },
+    "preferred_offer_closed_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádost o uklízeče, kterého jste si vyžádali, skončila. Tato rezervace je nyní otevřená celému našemu týmu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The request for the cleaner you asked for has ended. This booking is now open to our whole team."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрос на клинера, которого вы выбрали, завершён. Этот заказ теперь открыт для всей нашей команды."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiadosť o upratovača, ktorého ste si vyžiadali, sa skončila. Táto rezervácia je teraz otvorená celému nášmu tímu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запит на клінера, якого ви обрали, завершено. Це замовлення тепер відкрите для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "preferred_offer_closed_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevřeno všem uklízečům"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open to all cleaners"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыто для всех клинеров"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otvorené všetkým upratovačom"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відкрито для всіх клінерів"
+          }
+        }
+      }
+    },
+    "preferred_offer_section_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš oblíbený uklízeč"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your favourite cleaner"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш любимый клинер"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš obľúbený upratovač"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш улюблений клінер"
+          }
+        }
+      }
+    },
     "profile_delete_account" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -22197,31 +22967,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tuto fotku nelze použít. Vyberte prosím jinou."
+            "value" : "Tento obrázek se nepodařilo použít. Zkuste jinou fotku."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "That photo could not be used. Please pick another one."
+            "value" : "Couldn't use that image. Try another photo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это фото не удалось использовать. Выберите другое."
+            "value" : "Не удалось использовать это изображение. Попробуйте другое фото."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Túto fotku sa nepodarilo použiť. Vyberte prosím inú."
+            "value" : "Tento obrázok sa nepodarilo použiť. Skúste inú fotku."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Це фото не вдалося використати. Виберіть інше."
+            "value" : "Не вдалося використати це зображення. Спробуйте інше фото."
           }
         }
       }
@@ -22250,7 +23020,7 @@
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profilová fotografia"
+            "value" : "Profilová fotka"
           }
         },
         "uk" : {
@@ -22331,6 +23101,41 @@
         }
       }
     },
+    "profile_photo_remove_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka byla odstraněna"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile photo removed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профиля удалено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka bola odstránená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профілю видалено"
+          }
+        }
+      }
+    },
     "profile_photo_take" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22362,6 +23167,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Зробити фото"
+          }
+        }
+      }
+    },
+    "profile_photo_upload_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka byla aktualizována"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile photo updated"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профиля обновлено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka bola aktualizovaná"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профілю оновлено"
           }
         }
       }
@@ -22821,6 +23661,41 @@
         }
       }
     },
+    "profile_save_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil úspěšně uložen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile saved successfully"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль успешно сохранён"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil úspešne uložený"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профіль успішно збережено"
+          }
+        }
+      }
+    },
     "profile_stat_bookings" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23276,6 +24151,76 @@
         }
       }
     },
+    "push.order.assigned.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Byla vám přiřazena zakázka č. %1$@. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've been assigned job #%1$@. Tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вам назначен заказ №%1$@. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bola vám priradená zákazka č. %1$@. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вам призначено замовлення №%1$@. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.assigned.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nová zakázka v rozvrhu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New job on your schedule"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый заказ в вашем графике"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nová zákazka v rozvrhu"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нове замовлення у вашому графіку"
+          }
+        }
+      }
+    },
     "push.order.assignment_cancelled.body" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23346,6 +24291,76 @@
         }
       }
     },
+    "push.order.assignment_revoked.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Job #%1$@ has been reassigned and is no longer on your schedule. Tap for details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ №%1$@ переназначен, его больше нет в вашем графике. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.assignment_revoked.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakázka přeřazena"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Job reassigned"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ переназначен"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazka preradená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення перепризначено"
+          }
+        }
+      }
+    },
     "push.order.cancelled.body" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23412,6 +24427,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Замовлення скасовано"
+          }
+        }
+      }
+    },
+    "push.order.cleaner_assigned.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K vaší rezervaci #%1$@ je přiřazen uklízeč. Klepněte pro zobrazení detailů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A cleaner is assigned to your booking #%1$@. Tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "К вашему заказу #%1$@ назначен клинер. Нажмите, чтобы посмотреть подробности."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K vašej rezervácii #%1$@ je priradený upratovač. Ťuknutím zobrazíte detaily."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "До вашого замовлення #%1$@ призначено клінера. Натисніть, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.cleaner_assigned.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uklízeč nalezen! 🎉"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaner found! 🎉"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клинер найден! 🎉"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upratovač nájdený! 🎉"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клінера знайдено! 🎉"
           }
         }
       }
@@ -23527,31 +24612,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uklízeč nalezen! 🎉"
+            "value" : "Rezervace potvrzena ✅"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cleaner found! 🎉"
+            "value" : "Booking confirmed ✅"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Клинер найден! 🎉"
+            "value" : "Заказ подтверждён ✅"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upratovač nájdený! 🎉"
+            "value" : "Rezervácia potvrdená ✅"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Клінера знайдено! 🎉"
+            "value" : "Замовлення підтверджено ✅"
           }
         }
       }
@@ -23832,6 +24917,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Повернення коштів"
+          }
+        }
+      }
+    },
+    "push.order.starting_soon.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše rezervace #%1$@ začíná přibližně za hodinu. Klepněte pro zobrazení detailů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your booking #%1$@ starts in about an hour. Tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваше бронирование #%1$@ начнётся примерно через час. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša rezervácia #%1$@ začína približne o hodinu. Ťuknite pre zobrazenie podrobností."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваше замовлення #%1$@ почнеться приблизно за годину. Натисніть, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.starting_soon.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Úklid brzy začíná"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning starts soon"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уборка скоро начнётся"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upratovanie čoskoro začína"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прибирання скоро почнеться"
           }
         }
       }
@@ -25411,6 +26566,41 @@
         }
       }
     },
+    "recurring_edit_applies_notice" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Změny platí od této chvíle. Úklidy už zařazené v kalendáři si ponechají původní datum a čas — pokud je nechcete, zrušte je jednotlivě v Objednávkách."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changes apply from now on. Cleanings already on your calendar keep their original date and time — cancel them individually from Orders if you no longer want them."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменения действуют с этого момента. Уборки, уже стоящие в календаре, сохраняют исходную дату и время — отмените их по одной в Заказах, если они больше не нужны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmeny platia od tejto chvíle. Upratovania už zaradené v kalendári si ponechajú pôvodný dátum a čas — ak ich nechcete, zrušte ich jednotlivo v Objednávkach."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зміни діють від цього моменту. Прибирання, які вже у календарі, зберігають початкову дату й час — скасуйте їх по одному в Замовленнях, якщо більше не потрібні."
+          }
+        }
+      }
+    },
     "recurring_edit_failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -25652,6 +26842,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Щотижня"
+          }
+        }
+      }
+    },
+    "recurring_lapsed_notice_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эти расписания продолжают работать, и уборки бронируются по полной цене без членства. Любое из них можно здесь в любой момент приостановить или удалить. Чтобы добавить или изменить расписание, возобновите подписку."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieto rozvrhy bežia ďalej a upratovania sa objednávajú za plnú cenu bez členstva. Ktorýkoľvek z nich tu môžete kedykoľvek pozastaviť alebo vymazať. Na pridanie alebo úpravu rozvrhu členstvo obnovte."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку."
+          }
+        }
+      }
+    },
+    "recurring_lapsed_notice_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus už není aktivní"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus is no longer active"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus больше не активна"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus už nie je aktívne"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleansia Plus більше не активна"
           }
         }
       }
@@ -26773,6 +28033,40 @@
         }
       }
     },
+    "register_social_terms_required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept the Terms of Service and Privacy Policy to continue with Google or Apple."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro pokračování přes Google nebo Apple potvrďte souhlas s Podmínkami služby a Zásadami ochrany soukromí."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pre pokračovanie cez Google alebo Apple potvrďte súhlas s Podmienkami služby a Zásadami ochrany súkromia."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб продовжити через Google або Apple, прийміть Умови використання та Політику конфіденційності."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы продолжить через Google или Apple, примите Условия использования и Политику конфиденциальности."
+          }
+        }
+      }
+    },
     "register_terms_toggle" : {
       "localizations" : {
         "en" : {
@@ -26803,6 +28097,144 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Принять условия и политику конфиденциальности"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer.title" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazník si vás vyžádal"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A customer asked for you"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клиент попросил именно вас"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazník si vás vyžiadal"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клієнт попросив саме вас"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer.body" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakázka %1$@ — vyžádal si vás někdo, komu jste už uklízeli. Otevřete ji a vezměte si ji."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Order %1$@ — someone you've cleaned for before requested you. Open it to take the job."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ %1$@ — вас попросил кто-то, у кого вы уже убирали. Откройте, чтобы взять заказ."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazka %1$@ — vyžiadal si vás niekto, komu ste už upratovali. Otvorte ju a prevezmite ju."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення %1$@ — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення."
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer_closed.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše rezervace je otevřená všem uklízečům"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your booking is open to all cleaners"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш заказ открыт для всех клинеров"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša rezervácia je otvorená všetkým upratovačom"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваше замовлення відкрите для всіх клінерів"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer_closed.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu — klepněte pro zobrazení detailů."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team — tap to see the details."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды — нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu — ťuknite pre zobrazenie detailov."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди — натисніть, щоб переглянути деталі."
           }
         }
       }

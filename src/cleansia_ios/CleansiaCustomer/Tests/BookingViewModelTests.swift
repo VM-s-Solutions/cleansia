@@ -416,6 +416,115 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isQuoting)
     }
 
+    func testAGuestNeverAsksTheServerAboutAMembership() async {
+        let membership = FakeMembershipClient(result: .success(
+            MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
+        ))
+        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.guest)
+
+        let snapshot = await vm.loadMembership()
+
+        XCTAssertNil(snapshot)
+        XCTAssertEqual(membership.callCount, 0)
+        XCTAssertEqual(vm.expressWaiverStatus, .none)
+        XCTAssertEqual(vm.expressUpgradesRemaining, 0)
+    }
+
+    /// The slot grid and the confirm step both need the answer; two reads of `/Membership/Mine` for one
+    /// wizard session is the duplication this seam exists to prevent.
+    func testConcurrentMembershipReadsShareOneCall() async {
+        let membership = FakeMembershipClient(result: .success(
+            MembershipSnapshot(
+                hasMembership: true,
+                freeCancellationWindowHours: 48,
+                expressUpgradesPerMonth: 2,
+                expressUpgradesRemaining: 1
+            )
+        ))
+        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+
+        async let first = vm.loadMembership()
+        async let second = vm.loadMembership()
+        _ = await (first, second)
+        await vm.loadMembership()
+
+        XCTAssertEqual(membership.callCount, 1)
+        XCTAssertEqual(vm.expressWaiverStatus, .available)
+        XCTAssertEqual(vm.expressUpgradesRemaining, 1)
+    }
+
+    func testAFailedMembershipReadDegradesToSilence() async {
+        let membership = FakeMembershipClient(result: .failure(ApiError(httpStatus: 500)))
+        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+
+        await vm.loadMembership()
+
+        XCTAssertNil(vm.membership)
+        XCTAssertEqual(vm.expressWaiverStatus, .none)
+    }
+
+    /// The remaining count is the server's, rendered verbatim — never decremented for the booking being
+    /// composed, or it disagrees the first time a cancellation releases a slot.
+    func testTheRemainingCountIsReportedExactlyAsTheServerSentIt() async {
+        let membership = FakeMembershipClient(result: .success(
+            MembershipSnapshot(
+                hasMembership: true,
+                freeCancellationWindowHours: 48,
+                expressUpgradesPerMonth: 3,
+                expressUpgradesRemaining: 3
+            )
+        ))
+        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+
+        await vm.loadMembership()
+
+        XCTAssertEqual(vm.expressUpgradesRemaining, 3)
+    }
+
+    func testResetForcesTheNextBookingToRereadTheQuota() async {
+        let membership = FakeMembershipClient(result: .success(
+            MembershipSnapshot(
+                hasMembership: true,
+                freeCancellationWindowHours: 48,
+                expressUpgradesPerMonth: 2,
+                expressUpgradesRemaining: 1
+            )
+        ))
+        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+
+        await vm.loadMembership()
+        vm.reset()
+        XCTAssertEqual(vm.expressWaiverStatus, .none)
+        await vm.loadMembership()
+
+        XCTAssertEqual(membership.callCount, 2)
+    }
+
+    func testEffectiveDiscountPrefersTheLargerOfTheServerPairAndThePromo() async {
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(
+            quote: FakeQuoteClient(result: .success(BookingQuote(
+                totalPrice: 1000,
+                currencyCode: "CZK",
+                tierDiscountAmount: 100,
+                membershipDiscountAmount: 50
+            ))),
+            scheduler: scheduler
+        )
+        vm.update { var s = $0
+            s.selectedServiceIds.insert("s-1")
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+
+        XCTAssertEqual(vm.effectiveDiscount, 150, accuracy: 0.0001)
+    }
+
+    func testEffectiveDiscountIsZeroWithoutAQuote() {
+        XCTAssertEqual(BookingViewModel().effectiveDiscount, 0, accuracy: 0.0001)
+    }
+
     func testSelectionMutationsUpdateState() {
         let vm = BookingViewModel()
         vm.update { var s = $0

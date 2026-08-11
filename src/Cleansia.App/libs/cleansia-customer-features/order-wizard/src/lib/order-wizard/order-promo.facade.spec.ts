@@ -7,14 +7,14 @@ import { OrderPromoFacade } from './order-promo.facade';
 describe('OrderPromoFacade', () => {
   let facade: OrderPromoFacade;
   let promoCodeClient: { validate: jest.Mock };
-  let displayedTotalPrice: ReturnType<typeof signal<number | null | undefined>>;
+  let preSurchargeSubtotal: ReturnType<typeof signal<number>>;
   let persistPromoCode: jest.Mock;
 
   function build(): void {
     promoCodeClient = {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
-    displayedTotalPrice = signal<number | null | undefined>(1200);
+    preSurchargeSubtotal = signal(1000);
     persistPromoCode = jest.fn();
 
     TestBed.configureTestingModule({
@@ -25,7 +25,7 @@ describe('OrderPromoFacade', () => {
     });
 
     facade = TestBed.inject(OrderPromoFacade);
-    facade.connect({ displayedTotalPrice, persistPromoCode });
+    facade.connect({ preSurchargeSubtotal, persistPromoCode });
   }
 
   beforeEach(build);
@@ -57,20 +57,29 @@ describe('OrderPromoFacade', () => {
       expect(persistPromoCode).toHaveBeenLastCalledWith('SAVE10');
     });
 
-    it('validates against the displayed (post-surcharge) total', async () => {
+    // CreateOrder.Handler previews the promo against `calc.TotalPrice - calc.ExpressSurchargeAmount`.
+    // A surcharge-inclusive base would preview a percentage discount 20% larger than the one the
+    // submit applies, and clear a minimum-order floor the submit would fail.
+    it('validates against the pre-surcharge subtotal, the base the submit will use', async () => {
       await facade.validatePromoCodeNow('save10');
 
-      const command = promoCodeClient.validate.mock.calls[0][0];
-      expect(command.orderSubtotal).toBe(1200);
+      expect(promoCodeClient.validate.mock.calls[0][0].orderSubtotal).toBe(1000);
     });
 
-    it('falls back to 0 subtotal when the displayed total is null', async () => {
-      displayedTotalPrice.set(null);
+    it('does not compound — a second code is validated against the same untouched base', async () => {
+      await facade.validatePromoCodeNow('save10');
+
+      await facade.validatePromoCodeNow('save20');
+
+      expect(promoCodeClient.validate.mock.calls[1][0].orderSubtotal).toBe(1000);
+    });
+
+    it('falls back to 0 subtotal before any quote has arrived', async () => {
+      preSurchargeSubtotal.set(0);
 
       await facade.validatePromoCodeNow('save10');
 
-      const command = promoCodeClient.validate.mock.calls[0][0];
-      expect(command.orderSubtotal).toBe(0);
+      expect(promoCodeClient.validate.mock.calls[0][0].orderSubtotal).toBe(0);
     });
 
     it('resolves to invalid when the backend rejects the code', async () => {

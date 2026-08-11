@@ -4,7 +4,7 @@
   "sourceRoot": "libs/cleansia-admin-features/audit-log/src",
   "prefix": "cleansia",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:admin", "type:feature"],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",

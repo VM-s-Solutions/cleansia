@@ -102,6 +102,10 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       Validators.min(0),
     ]),
     allowsExpressUpgrade: this.fb.nonNullable.control<boolean>(false),
+    expressUpgradesPerMonth: this.fb.nonNullable.control<number>(0, [
+      Validators.required,
+      Validators.min(0),
+    ]),
   });
 
   readonly intervalOptions = computed(() =>
@@ -161,6 +165,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         freeCancellationWindowHours: v.freeCancellationWindowHours,
         trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
+        expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
     } else {
       this.facade.create({
@@ -173,6 +178,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         freeCancellationWindowHours: v.freeCancellationWindowHours,
         trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
+        expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
     }
   }
@@ -197,6 +203,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       trialPeriodDays: detail.trialPeriodDays ?? 0,
       freeCancellationWindowHours: detail.freeCancellationWindowHours ?? 0,
       allowsExpressUpgrade: detail.allowsExpressUpgrade ?? false,
+      expressUpgradesPerMonth: detail.expressUpgradesPerMonth ?? 0,
     });
   }
 }

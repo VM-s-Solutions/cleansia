@@ -10,6 +10,7 @@ public class GdprExportService(
     IOrderRepository orderRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
+    IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserConsentRepository userConsentRepository) : IGdprExportService
 {
     public async Task<GdprExportDto> BuildAsync(
@@ -39,13 +40,23 @@ public class GdprExportService(
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
                 emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
 
+        GdprExportPayoutDetailsDto? payoutDetails = null;
+        if (user.Employee is not null)
+        {
+            var payout = await employeePayoutDetailsRepository.GetByEmployeeIdAsync(user.Employee.Id, cancellationToken);
+            if (payout is not null)
+                payoutDetails = new GdprExportPayoutDetailsDto(
+                    payout.Scheme, payout.Status, payout.BankCountryId,
+                    payout.AccountPrefix, payout.AccountNumber, payout.BankCode, payout.Iban,
+                    payout.Swift, payout.BankName, payout.HolderName,
+                    payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);
+        }
+
         var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
             .AsNoTracking()
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
-                // Projection, not a filter: a pre-backfill NULL column must still export the
-                // order's true status, so it falls back to the authoritative history subquery.
-                o.CurrentStatus ?? o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status,
+                o.CurrentStatus,
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
             .ToListAsync(cancellationToken);
 
@@ -75,7 +86,7 @@ public class GdprExportService(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
-            profile, address, employee, orders,
+            profile, address, employee, payoutDetails, orders,
             documents, invoices, consentDtos, metadata);
     }
 }

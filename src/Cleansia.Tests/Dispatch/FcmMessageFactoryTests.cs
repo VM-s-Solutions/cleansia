@@ -304,22 +304,32 @@ public class FcmMessageFactoryTests
     }
 
     [Fact]
-    public void Display_Map_Contains_Exactly_The_Fourteen_Ratified_Events()
+    public void Display_Map_Contains_Exactly_The_Ratified_Events()
     {
+        // The count deliberately does not appear in this test's name: registering an event is a
+        // declaration that BOTH iOS bundles already carry push.<key>.title|body in all five
+        // languages, and the thing that must be re-checked on every addition is that list, not a
+        // number a later author can leave stale.
         string[] expected =
         [
             "dispute.reply",
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",
             "membership.expiring_soon",
+            "order.assigned",
             "order.assignment_cancelled",
+            "order.assignment_revoked",
             "order.cancelled",
+            "order.cleaner_assigned",
             "order.completed",
             "order.confirmed",
             "order.in_progress",
             "order.new_available",
             "order.on_the_way",
+            "order.preferred_offer",
+            "order.preferred_offer_closed",
             "order.refunded",
+            "order.starting_soon",
             "payroll.invoice_paid",
             "recurring.scheduled",
         ];

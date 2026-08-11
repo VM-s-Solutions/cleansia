@@ -6,7 +6,7 @@ import SwiftUI
 /// Completed order keeps its map (the cleaning happened there), a Cancelled one
 /// loses it because the visit never happened.
 enum OrderDetailMap {
-    static func coordinate(for order: OrderItem) -> Coordinate? {
+    static func coordinate(for order: CustomerOrderDetail) -> Coordinate? {
         guard order.status != ._6,
               let latitude = order.address?.latitude,
               let longitude = order.address?.longitude
@@ -16,7 +16,7 @@ enum OrderDetailMap {
 }
 
 struct OrderDetailMapBackdrop: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
     let mapProvider: MapProvider
 
     var body: some View {

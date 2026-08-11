@@ -275,6 +275,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<SavedAddress> SavedAddresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }
     public virtual DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
+    public virtual DbSet<EmployeePayoutDetails> EmployeePayoutDetails { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Cart> Carts { get; set; }
@@ -324,6 +325,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Referral> Referrals { get; set; }
     public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
     public virtual DbSet<UserMembership> UserMemberships { get; set; }
+    public virtual DbSet<MembershipBenefitUsage> MembershipBenefitUsages { get; set; }
     public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
     public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }

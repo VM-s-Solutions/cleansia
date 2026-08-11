@@ -72,7 +72,7 @@ private struct SignInContent: View {
                 Spacer().frame(height: Spacing.l)
 
                 Text(L10n.Auth.signInTitle)
-                    .font(CleansiaTypography.displayMedium)
+                    .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                     .multilineTextAlignment(.center)
 
@@ -124,7 +124,12 @@ private struct SignInContent: View {
 
                 Spacer().frame(height: Spacing.m)
 
-                SocialSignInSection(isLoading: isSocialLoading, onApple: onApple, onGoogle: onGoogle)
+                SocialSignInSection(
+                    isLoading: isSocialLoading,
+                    lockNote: nil,
+                    onApple: onApple,
+                    onGoogle: onGoogle
+                )
 
                 Spacer().frame(height: Spacing.l)
 

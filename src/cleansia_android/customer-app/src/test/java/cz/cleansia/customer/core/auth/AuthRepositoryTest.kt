@@ -5,6 +5,7 @@ import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
@@ -19,10 +20,12 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -42,6 +45,7 @@ class AuthRepositoryTest {
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionManager: SessionManager
     private lateinit var pushTokenRepository: PushTokenRepository
+    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var appContext: Context
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -56,6 +60,7 @@ class AuthRepositoryTest {
         tokenStore = mockk(relaxed = true)
         sessionManager = mockk(relaxed = true)
         pushTokenRepository = mockk(relaxed = true)
+        signupConsent = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
 
         every { appContext.getString(R.string.error_generic_network) } returns networkMessage
@@ -79,6 +84,7 @@ class AuthRepositoryTest {
             sessionManager = sessionManager,
             sessionScopedCaches = caches,
             pushTokenRepository = pushTokenRepository,
+            signupConsent = javax.inject.Provider { signupConsent },
             json = json,
         )
 
@@ -244,6 +250,205 @@ class AuthRepositoryTest {
         )
 
         assertTrue(result is ApiResult.Error)
+    }
+
+    // ── googleAuth() — the terms tick reaching the wire body ──
+
+    private fun stubGoogleAuth(captured: io.mockk.CapturingSlot<GoogleAuthRequest>) {
+        coEvery { api.googleAuth(capture(captured)) } returns Response.success(
+            JwtTokenResponseDto(
+                token = "h.p.s",
+                isEmailConfirmed = true,
+                email = "user@example.com",
+                refreshToken = "r-1",
+                refreshTokenExpiresAt = "2099-01-01T00:00:00Z",
+            ),
+        )
+    }
+
+    private suspend fun googleAuth(termsAccepted: Boolean): GoogleAuthRequest {
+        val captured = io.mockk.slot<GoogleAuthRequest>()
+        stubGoogleAuth(captured)
+        newRepository().googleAuth(
+            googleIdToken = "google-id-token",
+            googleId = "google-subject",
+            email = "user@example.com",
+            firstName = "Ada",
+            lastName = "Lovelace",
+            termsAccepted = termsAccepted,
+        )
+        return captured.captured
+    }
+
+    @Test
+    fun googleAuth_putsAnAssertedTermsTickOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        assertTrue(googleAuth(termsAccepted = true).termsAccepted)
+    }
+
+    @Test
+    fun googleAuth_leavesTheTickOffWhenTheCallerAssertedNothing() = kotlinx.coroutines.test.runTest {
+        assertEquals(false, googleAuth(termsAccepted = false).termsAccepted)
+    }
+
+    /**
+     * The command binds by ASP.NET's camel-case default, so the serialized NAME is what decides
+     * whether the backend sees the tick at all. A renamed or omitted property binds to
+     * `TermsAccepted = false` — a signup refused with `auth.social_account_not_found`, and
+     * nothing on this side to show for it.
+     */
+    @Test
+    fun googleAuthRequest_serializesTheTickUnderTheNameTheBackendBinds() {
+        val body = json.encodeToString(
+            GoogleAuthRequest(
+                token = "google-id-token",
+                googleId = "google-subject",
+                email = "user@example.com",
+                firstName = "Ada",
+                lastName = "Lovelace",
+                termsAccepted = true,
+            ),
+        )
+
+        assertTrue(body, body.contains("\"termsAccepted\":true"))
+    }
+
+    // ── login() — the trusted-device marker ──
+
+    private fun storedTokens(refreshToken: String = "stored-refresh") = TokenStore.Tokens(
+        accessToken = "stored-access",
+        accessTokenExpiresAt = 1L,
+        refreshToken = refreshToken,
+        refreshTokenExpiresAt = 2L,
+    )
+
+    private suspend fun capturedLogin(): LoginRequest {
+        val captured = io.mockk.slot<LoginRequest>()
+        coEvery { api.login(capture(captured)) } returns Response.success(
+            JwtTokenResponseDto(
+                token = "h.p.s",
+                isEmailConfirmed = true,
+                email = "user@example.com",
+                refreshToken = "fresh-r",
+                refreshTokenExpiresAt = "2099-01-01T00:00:00Z",
+            ),
+        )
+        newRepository().login("user@example.com", "submitted-password", rememberMe = true)
+        return captured.captured
+    }
+
+    @Test
+    fun login_sendsTheStoredRefreshTokenAsTheTrustedDeviceMarker() = kotlinx.coroutines.test.runTest {
+        every { tokenStore.current() } returns storedTokens()
+
+        assertEquals("stored-refresh", capturedLogin().trustedDeviceToken)
+    }
+
+    @Test
+    fun login_omitsTheMarkerWhenNoSessionIsStored() = kotlinx.coroutines.test.runTest {
+        every { tokenStore.current() } returns null
+
+        assertNull(capturedLogin().trustedDeviceToken)
+    }
+
+    /**
+     * The partner app persists `refreshToken.orEmpty()`, so a blank value is reachable in the shared
+     * store. Blank must read as "no previous session", not as a marker that matches nothing.
+     */
+    @Test
+    fun login_omitsTheMarkerWhenTheStoredRefreshTokenIsBlank() = kotlinx.coroutines.test.runTest {
+        every { tokenStore.current() } returns storedTokens(refreshToken = "")
+
+        assertNull(capturedLogin().trustedDeviceToken)
+    }
+
+    @Test
+    fun login_doesNotSourceTheMarkerFromTheAccessTokenOrTheSubmittedCredentials() =
+        kotlinx.coroutines.test.runTest {
+            every { tokenStore.current() } returns storedTokens()
+
+            val body = capturedLogin()
+
+            assertEquals("stored-refresh", body.trustedDeviceToken)
+            assertTrue(body.trustedDeviceToken != body.password)
+            assertTrue(body.trustedDeviceToken != body.email)
+            assertTrue(body.trustedDeviceToken != "stored-access")
+        }
+
+    /**
+     * Serialized through the production converter config, because whether the key reaches the wire at
+     * all is a property of that config and not of the data class alone.
+     */
+    @Test
+    fun loginRequest_serializesTheMarkerUnderTheNameTheBackendBinds() {
+        val body = AuthModule.provideJson().encodeToString(
+            LoginRequest("user@example.com", "pw", rememberMe = true, trustedDeviceToken = "stored-refresh"),
+        )
+
+        assertTrue(body, body.contains("\"trustedDeviceToken\":\"stored-refresh\""))
+    }
+
+    @Test
+    fun login_withNoStoredSession_leavesTheMarkerOffTheWireEntirely() = kotlinx.coroutines.test.runTest {
+        every { tokenStore.current() } returns null
+
+        val body = AuthModule.provideJson().encodeToString(capturedLogin())
+
+        assertTrue(body, !body.contains("trustedDeviceToken"))
+    }
+
+    @Test
+    fun theMarkerRidesTheLoginBodyAndNoOtherAuthRequest() = kotlinx.coroutines.test.runTest {
+        every { tokenStore.current() } returns storedTokens()
+        val wireJson = AuthModule.provideJson()
+
+        val jwt = JwtTokenResponseDto(
+            token = "h.p.s",
+            isEmailConfirmed = true,
+            email = "user@example.com",
+            refreshToken = "fresh-r",
+            refreshTokenExpiresAt = "2099-01-01T00:00:00Z",
+        )
+        val register = io.mockk.slot<RegisterRequest>()
+        val google = io.mockk.slot<GoogleAuthRequest>()
+        val confirm = io.mockk.slot<ConfirmUserEmailRequest>()
+        val resend = io.mockk.slot<ResendConfirmationEmailRequest>()
+        val requestChange = io.mockk.slot<RequestPasswordChangeRequest>()
+        val changePassword = io.mockk.slot<ChangePasswordRequest>()
+        val refresh = io.mockk.slot<RefreshTokenRequest>()
+        val logout = io.mockk.slot<LogoutRequest>()
+
+        coEvery { api.register(capture(register)) } returns Response.success(true)
+        coEvery { api.googleAuth(capture(google)) } returns Response.success(jwt)
+        coEvery { api.confirmUserEmail(capture(confirm)) } returns Response.success(jwt)
+        coEvery { api.resendConfirmationEmail(capture(resend)) } returns Response.success(true)
+        coEvery { api.requestPasswordChange(capture(requestChange)) } returns Response.success(Unit)
+        coEvery { api.changePassword(capture(changePassword)) } returns
+            Response.success(ChangePasswordResponseDto("user@example.com"))
+        coEvery { api.refreshToken(capture(refresh)) } returns Response.success(jwt)
+        coEvery { authenticatedApi.logout(capture(logout)) } returns Response.success(true)
+
+        val repo = newRepository()
+        repo.register("user@example.com", "pw", "Ada", "Lovelace", "en")
+        repo.googleAuth("id-token", "subject", "user@example.com", "Ada", "Lovelace", termsAccepted = true)
+        repo.confirmEmail("user@example.com", "123456")
+        repo.resendConfirmationEmail("user@example.com", "en")
+        repo.requestPasswordChange("user@example.com", "en")
+        repo.changePassword("user@example.com", "123456", "pw2")
+        repo.refresh("stored-refresh")
+        repo.logout()
+
+        val bodies = listOf(
+            wireJson.encodeToString(register.captured),
+            wireJson.encodeToString(google.captured),
+            wireJson.encodeToString(confirm.captured),
+            wireJson.encodeToString(resend.captured),
+            wireJson.encodeToString(requestChange.captured),
+            wireJson.encodeToString(changePassword.captured),
+            wireJson.encodeToString(refresh.captured),
+            wireJson.encodeToString(logout.captured),
+        )
+
+        bodies.forEach { assertTrue(it, !it.contains("trustedDeviceToken")) }
     }
 
     // ── logout() ──

@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminRefundClient,
+  IssuePartialRefundCommand,
+  IssuePartialRefundRefundLineSelection,
   IssuePartialRefundResponse,
   PaymentStatus,
   RefundReason,
@@ -79,14 +81,21 @@ describe('AdminOrderRefundFacade', () => {
     facade.submit('order-1', onSuccess);
 
     expect(refundClient.partial).toHaveBeenCalledTimes(1);
-    const command = refundClient.partial.mock.calls[0][0];
-    expect(command.orderId).toBe('order-1');
-    expect(command.reason).toBe(RefundReason.ServiceNotRendered);
-    expect(command.overrideReason).toBe('forced after window');
-    expect(command.lines).toEqual([
-      expect.objectContaining({ serviceId: 'service-1', packageId: undefined }),
-      expect.objectContaining({ serviceId: 'service-2', packageId: 'package-1' }),
-    ]);
+    const command: IssuePartialRefundCommand =
+      refundClient.partial.mock.calls[0][0];
+    expect(command).toBeInstanceOf(IssuePartialRefundCommand);
+    expect(command.lines?.[0]).toBeInstanceOf(
+      IssuePartialRefundRefundLineSelection
+    );
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: RefundReason.ServiceNotRendered,
+      overrideReason: 'forced after window',
+      lines: [
+        { serviceId: 'service-1', packageId: undefined },
+        { serviceId: 'service-2', packageId: 'package-1' },
+      ],
+    });
   });
 
   it('emits a standalone service line with a serviceId and no packageId', () => {
@@ -96,10 +105,14 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    const command = refundClient.partial.mock.calls[0][0];
-    expect(command.lines).toEqual([
-      expect.objectContaining({ serviceId: 'service-1', packageId: undefined }),
-    ]);
+    const command: IssuePartialRefundCommand =
+      refundClient.partial.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: RefundReason.CustomerCancellation,
+      overrideReason: undefined,
+      lines: [{ serviceId: 'service-1', packageId: undefined }],
+    });
   });
 
   it('emits a bundled service line with both a serviceId and a packageId', () => {
@@ -109,10 +122,14 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    const command = refundClient.partial.mock.calls[0][0];
-    expect(command.lines).toEqual([
-      expect.objectContaining({ serviceId: 'service-2', packageId: 'package-1' }),
-    ]);
+    const command: IssuePartialRefundCommand =
+      refundClient.partial.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: RefundReason.DisputeResolution,
+      overrideReason: undefined,
+      lines: [{ serviceId: 'service-2', packageId: 'package-1' }],
+    });
   });
 
   it('never emits a line with an empty serviceId', () => {
@@ -123,8 +140,9 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    const command = refundClient.partial.mock.calls[0][0];
-    for (const line of command.lines) {
+    const command: IssuePartialRefundCommand =
+      refundClient.partial.mock.calls[0][0];
+    for (const line of command.lines ?? []) {
       expect(line.serviceId).toBeTruthy();
     }
   });
@@ -136,8 +154,14 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    const command = refundClient.partial.mock.calls[0][0];
-    expect(command.overrideReason).toBeUndefined();
+    const command: IssuePartialRefundCommand =
+      refundClient.partial.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      reason: RefundReason.AdminDiscretion,
+      overrideReason: undefined,
+      lines: [{ serviceId: 'service-1', packageId: undefined }],
+    });
   });
 
   it('toggles loading while the request is in flight and clears it on success', () => {

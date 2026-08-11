@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Media;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Enums;
@@ -31,6 +33,9 @@ public class UploadOrderPhoto
     public class Validator : AbstractValidator<Command>
     {
         private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+
+        // A client-affordance filter, not a control: it bounds what a caller may CLAIM, and arbitrary
+        // bytes under a permitted claim pass it unchanged. The FileData rule below is the control.
         private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/jpg", "image/png", "image/webp" };
 
         public Validator(IOrderRepository orderRepository)
@@ -55,10 +60,13 @@ public class UploadOrderPhoto
                 .WithMessage(BusinessErrorMessage.InvalidFileType);
 
             RuleFor(x => x.FileData)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.FileRequired)
                 .Must(data => data.Length <= MaxFileSizeBytes)
-                .WithMessage(BusinessErrorMessage.FileSizeExceeded);
+                .WithMessage(BusinessErrorMessage.FileSizeExceeded)
+                .Must(data => SniffedContentType.FromContent(data, UploadIntake.OrderPhoto) is not null)
+                .WithMessage(BusinessErrorMessage.InvalidFileType);
         }
     }
 
@@ -92,16 +100,15 @@ public class UploadOrderPhoto
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
             }
 
-            var fileExtension = Path.GetExtension(command.FileName);
-            var uniqueFileName = $"{command.OrderId}_{command.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
+            var contentType = SniffedContentType.FromContent(command.FileData, UploadIntake.OrderPhoto)!;
+            var uniqueFileName = $"{command.OrderId}_{command.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{SniffedContentType.ExtensionFor(contentType)}";
             var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
+            var storedBytes = ImageMetadata.Scrub(command.FileData).Bytes;
+
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
-            using var stream = new MemoryStream(command.FileData);
-            var metadata = Metadata.CreateBuilder()
-                .WithMetadata(MetadataName.ContentType, command.ContentType)
-                .Build();
-            await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
+            using var stream = new MemoryStream(storedBytes);
+            await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
             var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 
@@ -111,8 +118,8 @@ public class UploadOrderPhoto
                 blobUrl: blobUrl,
                 fileName: uniqueFileName,
                 originalFileName: command.FileName,
-                fileSizeBytes: command.FileData.Length,
-                contentType: command.ContentType,
+                fileSizeBytes: storedBytes.Length,
+                contentType: contentType,
                 capturedByEmployeeId: employeeId,
                 notes: command.Notes);
 

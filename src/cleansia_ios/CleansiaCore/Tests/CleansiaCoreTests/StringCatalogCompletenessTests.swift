@@ -18,29 +18,45 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Catalog(name: "Partner", path: "CleansiaPartner/Resources/Localizable.xcstrings")
     ]
 
-    /// Keys whose non-English value is IDENTICAL to English on purpose. Everything else that matches
-    /// English is an untranslated string. Entries are asserted, not skipped: one that no longer matches is
-    /// a stale exception and fails `testTheAllowListCarriesNoStaleExceptions`.
+    /// Keys whose non-English value is IDENTICAL to English on purpose, **per locale**. Everything else
+    /// that matches English is an untranslated string. Entries are asserted, not skipped: one whose key is
+    /// gone, or whose named locale no longer echoes English, is a stale exception and fails
+    /// `testTheAllowListCarriesNoStaleExceptions`.
+    ///
+    /// The locale list is the load-bearing half, and it used to be missing. Four of these reasons name
+    /// **cs/sk specifically** — "min", "h"/"m", "Bonus" — and are simply false for uk/ru, which are
+    /// Cyrillic. A whole-key exception suppressed every locale, so leaving `bonus` as the Latin "Bonus"
+    /// in Ukrainian would have been swallowed by the very entry that says it is a Czech word, and the
+    /// stale check would still have passed because cs and sk kept echoing. Naming the locales is what
+    /// makes the reason and the enforcement the same statement.
     private static let sameAsEnglishByDesign: [Exception] = [
-        Exception("Customer", "devices_platform_ios", "Apple product name"),
-        Exception("Customer", "dispute_create_char_count", "format specifiers and a literal count only"),
-        Exception("Customer", "home_upsell_plus_top", "Cleansia Plus is the product name"),
-        Exception("Customer", "membership_inactive_badge", "Cleansia Plus is the product name"),
-        Exception("Customer", "membership_inactive_title", "Cleansia Plus is the product name"),
-        Exception("Customer", "membership_plus_title", "Cleansia Plus is the product name"),
-        Exception("Customer", "order_detail_duration_minutes", "\"min\" is the same abbreviation in cs/sk"),
-        Exception("Customer", "orders_filter_count", "format specifiers only"),
-        Exception("Customer", "profile_tier_plus", "Cleansia Plus is the product name"),
-        Exception("Partner", "action_sms", "SMS is the same initialism everywhere"),
-        Exception("Partner", "bonus", "\"Bonus\" is the Czech and Slovak word"),
-        Exception("Partner", "devices_platform_android", "platform name"),
-        Exception("Partner", "devices_platform_ios", "platform name"),
-        Exception("Partner", "devices_platform_web", "platform name"),
-        Exception("Partner", "duration_hours_minutes", "\"h\"/\"m\" are the same abbreviations in cs/sk"),
-        Exception("Partner", "duration_minutes_only", "\"m\" is the same abbreviation in cs/sk"),
-        Exception("Partner", "profile_fields_iban", "IBAN is an international standard"),
-        Exception("Partner", "profile_iban", "IBAN is an international standard")
+        Exception("Customer", "devices_platform_ios", allLocalized, "Apple product name"),
+        Exception("Customer", "dispute_create_char_count", allLocalized, "format specifiers and a literal count only"),
+        Exception("Customer", "home_upsell_plus_top", allLocalized, "Cleansia Plus is the product name"),
+        Exception("Customer", "membership_inactive_badge", allLocalized, "Cleansia Plus is the product name"),
+        Exception("Customer", "membership_inactive_title", allLocalized, "Cleansia Plus is the product name"),
+        Exception("Customer", "membership_plus_title", allLocalized, "Cleansia Plus is the product name"),
+        Exception(
+            "Customer",
+            "order_detail_duration_minutes",
+            ["cs", "sk"],
+            "\"min\" is the same abbreviation in cs/sk"
+        ),
+        Exception("Customer", "orders_filter_count", allLocalized, "format specifiers only"),
+        Exception("Customer", "profile_tier_plus", allLocalized, "Cleansia Plus is the product name"),
+        Exception("Partner", "action_sms", allLocalized, "SMS is the same initialism everywhere"),
+        Exception("Partner", "bonus", ["cs", "sk"], "\"Bonus\" is the Czech and Slovak word"),
+        Exception("Partner", "devices_platform_android", allLocalized, "platform name"),
+        Exception("Partner", "devices_platform_ios", allLocalized, "platform name"),
+        Exception("Partner", "devices_platform_web", allLocalized, "platform name"),
+        Exception("Partner", "duration_hours_minutes", ["cs", "sk"], "\"h\"/\"m\" are the same abbreviations in cs/sk"),
+        Exception("Partner", "duration_minutes_only", ["cs", "sk"], "\"m\" is the same abbreviation in cs/sk"),
+        Exception("Partner", "job_radius_value", ["cs", "sk"], "a specifier and the \"km\" symbol, Latin in cs/sk"),
+        Exception("Partner", "profile_iban", allLocalized, "IBAN is an international standard")
     ]
+
+    /// Every locale other than the English source — for entries that genuinely are locale-invariant.
+    private static let allLocalized = ["cs", "sk", "uk", "ru"]
 
     func testEveryKeyCarriesAValueInAllFiveLocales() throws {
         var gaps: [String] = []
@@ -69,13 +85,14 @@ final class StringCatalogCompletenessTests: XCTestCase {
     }
 
     func testOnlyAllowListedKeysMayReadIdenticalToEnglish() throws {
-        let allowed = Set(Self.sameAsEnglishByDesign.map(\.identity))
+        let allowed = Set(Self.sameAsEnglishByDesign.flatMap(\.localeIdentities))
         var untranslated: [String] = []
         for (catalog, entries) in try loadAll() {
-            for (key, byLocale) in entries where !allowed.contains("\(catalog)/\(key)") {
+            for (key, byLocale) in entries {
                 let echoed = Self.locales
                     .dropFirst()
                     .filter { byLocale[$0]?.isEmpty == false && byLocale[$0] == byLocale["en"] }
+                    .filter { !allowed.contains("\(catalog)/\(key)/\($0)") }
                 if !echoed.isEmpty {
                     untranslated.append("\(catalog) · \(key) · still English in \(echoed.joined(separator: ", "))")
                 }
@@ -92,11 +109,22 @@ final class StringCatalogCompletenessTests: XCTestCase {
                 stale.append("\(exception.identity) · no such key — drop the exception")
                 continue
             }
-            let stillEchoed = Self.locales.dropFirst().contains {
-                byLocale[$0]?.isEmpty == false && byLocale[$0] == byLocale["en"]
+            // Per LOCALE, not per key: an exception that names four locales while only two still echo
+            // is two-thirds a fiction, and the untranslated half of it is exactly what the whole-key
+            // form used to hide.
+            let noLongerEchoing = exception.locales.filter {
+                byLocale[$0]?.isEmpty != false || byLocale[$0] != byLocale["en"]
             }
-            if !stillEchoed {
-                stale.append("\(exception.identity) · now translated — drop the exception (\(exception.why))")
+            if !noLongerEchoing.isEmpty {
+                stale.append(
+                    "\(exception.identity) · now translated in \(noLongerEchoing.joined(separator: ", "))"
+                        + " — narrow or drop the exception (\(exception.why))"
+                )
+            }
+
+            let unknown = exception.locales.filter { !Self.locales.contains($0) }
+            if !unknown.isEmpty {
+                stale.append("\(exception.identity) · names locales we do not ship: \(unknown.joined(separator: ", "))")
             }
         }
         assertNoViolations(stale, "exceptions that no longer describe the catalog")
@@ -184,15 +212,22 @@ private struct Catalog {
 private struct Exception {
     let catalog: String
     let key: String
+    let locales: [String]
     let why: String
 
     var identity: String {
         "\(catalog)/\(key)"
     }
 
-    init(_ catalog: String, _ key: String, _ why: String) {
+    /// One entry per locale this exception actually covers — the unit both rules are checked in.
+    var localeIdentities: [String] {
+        locales.map { "\(catalog)/\(key)/\($0)" }
+    }
+
+    init(_ catalog: String, _ key: String, _ locales: [String], _ why: String) {
         self.catalog = catalog
         self.key = key
+        self.locales = locales
         self.why = why
     }
 }

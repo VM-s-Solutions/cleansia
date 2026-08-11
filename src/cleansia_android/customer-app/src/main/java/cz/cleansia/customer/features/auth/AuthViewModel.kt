@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
@@ -38,6 +39,7 @@ class AuthViewModel @Inject constructor(
     private val settings: AppSettingsRepository,
     private val snackbar: SnackbarController,
     private val googleSignInController: GoogleSignInController,
+    private val signupConsent: SignupConsentRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -83,6 +85,13 @@ class AuthViewModel @Inject constructor(
          * the wire. Bad codes don't block submit (backend is fail-soft).
          */
         referralCode: String? = null,
+        /**
+         * The terms box on [SignUpScreen], whose sentence names both documents by title.
+         * Carried explicitly rather than read off a form the ViewModel cannot see, and
+         * deliberately without a default — a consent flag that can be omitted at a call
+         * site is a consent record nobody agreed to.
+         */
+        acceptedTerms: Boolean,
     ) {
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
@@ -95,7 +104,10 @@ class AuthViewModel @Inject constructor(
                 language = language,
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
             )
-                .onSuccess { _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email)) }
+                .onSuccess {
+                    signupConsent.recordSignupTick(email, acceptedTerms)
+                    _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email))
+                }
                 .onError { error ->
                     // Signup is the one auth flow with nothing to hide: the form has to
                     // tell you an email is taken or it can't work. So show the server's
@@ -171,22 +183,49 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
+     * The sign-in screen's Google button. It carries no terms checkbox, so the request asserts
+     * nothing and an identity matching no account is refused rather than provisioned — which is
+     * the whole reason the flag is consent semantics rather than a screen name.
+     */
+    fun signInWithGoogle(activityContext: Context) {
+        startGoogleFlow(activityContext, termsAccepted = CONSENT_NOT_ASSERTED)
+    }
+
+    /**
+     * The signup screen's Google button, gated on the same tick the email path uses. The button
+     * stays live and refuses out loud: a dead control explains nothing, and the checkbox sits far
+     * enough up a scrolling form to be off screen when the tap happens.
+     */
+    fun signUpWithGoogle(activityContext: Context, acceptedTerms: Boolean) {
+        if (!acceptedTerms) {
+            snackbar.showErrorKey(R.string.register_social_terms_required)
+            return
+        }
+        startGoogleFlow(activityContext, termsAccepted = acceptedTerms)
+    }
+
+    /**
      * Launches the Google Account picker via Credential Manager, then sends the
      * resulting ID token to the backend's GoogleAuth handler. Caller passes an
      * Activity-scoped Context (typically from `LocalContext.current` in a Composable)
      * so the bottom-sheet attaches correctly.
      */
-    fun signInWithGoogle(activityContext: Context) {
+    private fun startGoogleFlow(activityContext: Context, termsAccepted: Boolean) {
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
             when (val pick = googleSignInController.signIn(activityContext)) {
                 is GoogleSignInResult.Success -> {
+                    // Parked BEFORE the call, not after: a social signup comes back with a live
+                    // session, and the repository flushes any parked tick from inside that same
+                    // call. A tick parked afterwards misses the only delivery this flow performs.
+                    signupConsent.recordSignupTick(pick.email, termsAccepted)
                     _uiState.value = authRepository.googleAuth(
                         googleIdToken = pick.idToken,
                         googleId = pick.googleId,
                         email = pick.email,
                         firstName = pick.firstName,
                         lastName = pick.lastName,
+                        termsAccepted = termsAccepted,
                     ).toAuthUiState(fallbackEmail = pick.email)
                 }
                 GoogleSignInResult.Cancelled -> {
@@ -270,6 +309,13 @@ class AuthViewModel @Inject constructor(
          * claiming something the server ignores.
          */
         const val LONG_LIVED_SESSION = true
+
+        /**
+         * What the sign-in screen sends on every social request. Sign-in of an existing account
+         * ignores the flag; an identity the server does not recognise is refused with
+         * `auth.social_account_not_found` instead of being provisioned without a consent record.
+         */
+        const val CONSENT_NOT_ASSERTED = false
     }
 }
 

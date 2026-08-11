@@ -166,6 +166,24 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<ReportOrderIssue.Response>(result);
     }
 
+    /// <summary>
+    /// What cancelling this order right now would cost, from the same policy the cancel charges — so
+    /// the cancel sheet quotes a number instead of guessing one. A pure read: calling it changes
+    /// nothing and consumes nothing.
+    /// </summary>
+    [HttpGet("CancellationPreview")]
+    [Permission(Policy.CanCancelOrder)]
+    [ProducesResponseType(typeof(GetCancellationFeePreview.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancellationPreview(
+        [FromQuery] GetCancellationFeePreview.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<GetCancellationFeePreview.Response>(result);
+    }
+
     [HttpPost("Cancel")]
     [Permission(Policy.CanCancelOrder)]
     [EnableRateLimiting("auth")]
@@ -179,14 +197,37 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<CancelOrder.Response>(result);
     }
 
+    // ADR-0039 D12.1 — a read, but a per-subject one whose repetition reconstructs twenty named
+    // cleaners' work calendars. The shared "auth" window (30/min per sub) is the account's budget,
+    // so sweeping this spends the caller's ability to do anything else.
     [HttpGet("MyServingCleaners")]
     [Permission(Policy.CanViewPagedUserOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(IReadOnlyList<GetMyServingCleaners.Response>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> MyServingCleaners(CancellationToken cancellationToken)
+    public async Task<IActionResult> MyServingCleaners(
+        [FromQuery] GetMyServingCleaners.Query query, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new GetMyServingCleaners.Query(), cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<IReadOnlyList<GetMyServingCleaners.Response>>(result);
+    }
+
+    // ADR-0045 D5.1 — the customer's second and final choice, offered at the lapse and never before it.
+    // The same resolver the booking ran, against the order's own persisted slot; no client input
+    // decides a server answer. Rate-limited on the "auth" window for the same reason MyServingCleaners
+    // is: it is a per-subject question about a named cleaner's availability.
+    [HttpPost("ChoosePreferredCleaner")]
+    [Permission(Policy.CanCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ChoosePreferredCleaner.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ChoosePreferredCleaner(
+        [FromBody] ChoosePreferredCleaner.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ChoosePreferredCleaner.Response>(result);
     }
 }

@@ -44,6 +44,19 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
 
     public PaymentType PaymentType { get; private set; }
 
+    /// <summary>
+    /// ADR-0036 D8 — the customer's preferred cleaner for every occurrence this template spawns. A
+    /// recurring customer is precisely the customer who wants the same cleaner, and until this existed
+    /// the materializer had no field to pass. Plain id, no FK, mirroring <c>Order.PreferredEmployeeId</c>.
+    /// <para>The column does not guard itself: "this customer has been served by this cleaner" is checked
+    /// once, by <c>CreateRecurringBooking</c>'s validator, because it is the one gate that needs the
+    /// caller's identity. The materializer re-resolves everything that can LAPSE per occurrence and
+    /// DEGRADES on failure — it spawns the order with no hold rather than dropping a customer's cleaning.
+    /// Reject where someone can react; degrade where nobody can.</para>
+    /// </summary>
+    [MaxLength(26)]
+    public string? PreferredEmployeeId { get; private set; }
+
     /// <summary>First date the template starts spawning orders (UTC).</summary>
     public DateTime StartsOn { get; private set; }
 
@@ -59,9 +72,10 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
     public bool IsActive { get; private set; } = true;
 
     /// <summary>
-    /// The cleaning date of the most recently materialized occurrence. The
-    /// materializer reads this to know what to skip and where to resume.
-    /// Null on a brand-new template — first run materializes from StartsOn.
+    /// The cleaning date of the last occurrence the materializer evaluated — a
+    /// resume pointer, not a duplicate guard (see <see cref="UpdateSchedule"/>,
+    /// which clears it). Null on a brand-new template and after every edit;
+    /// the materializer then derives from StartsOn.
     /// </summary>
     public DateTime? LastMaterializedFor { get; private set; }
 
@@ -79,7 +93,8 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
         IEnumerable<string> selectedPackageIds,
         PaymentType paymentType,
         DateTime startsOn,
-        DateTime? endsOn = null)
+        DateTime? endsOn = null,
+        string? preferredEmployeeId = null)
         => new()
         {
             UserId = userId,
@@ -94,6 +109,7 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
             PaymentType = paymentType,
             StartsOn = startsOn,
             EndsOn = endsOn,
+            PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
         };
 
     /// <summary>
@@ -103,7 +119,10 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
     ///
     /// <see cref="LastMaterializedFor"/> is intentionally cleared because the
     /// new schedule may put the next occurrence earlier than the previously
-    /// materialized one — the materializer must re-evaluate from scratch.
+    /// materialized one — the materializer must re-evaluate from scratch. Do
+    /// not stop clearing it to prevent duplicates: the marker is a resume
+    /// pointer, and the duplicate guard is the materializer's check for an
+    /// order already spawned at the candidate instant.
     /// </summary>
     public RecurringBookingTemplate UpdateSchedule(
         RecurrenceFrequency frequency,

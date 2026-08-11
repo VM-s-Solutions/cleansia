@@ -7,6 +7,8 @@ import cz.cleansia.customer.api.model.RecurringBookingTemplateDto as GenRecurrin
 import cz.cleansia.customer.api.model.SetRecurringBookingActiveCommand as GenSetRecurringBookingActiveCommand
 import cz.cleansia.customer.api.model.UpdateRecurringBookingCommand as GenUpdateRecurringBookingCommand
 import kotlinx.datetime.Instant
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -16,15 +18,23 @@ import retrofit2.Response
  *
  * The hand-written [RecurringBookingTemplateDto] keeps id / frequency /
  * dayOfWeek / timeOfDay / savedAddressId / paymentType / startsOn / isActive
- * non-null because the schedule list and edit screens read them directly. We
- * drop wire items missing any of those.
+ * non-null because the schedule list and edit screens read them directly. A
+ * wire item missing any of those refuses the list.
  */
 class RecurringBookingApi(
     private val recurringBookingApi: GenRecurringBookingApi,
 ) {
+    /**
+     * The body is refused rather than defaulted to empty, and it fails ADR-0048 amendment B1's first
+     * and third conditions for the same reason a dropped row does: an empty list is this screen
+     * stating, as a fact, that the customer has no standing instruction to charge — while the server
+     * keeps materialising orders from the one it did not manage to send. The only screen that can
+     * pause or delete it would be showing its empty state. B1 needs all three conditions; the second
+     * one holding (nothing sums these) does not carry it.
+     */
     suspend fun getMine(): Response<List<RecurringBookingTemplateDto>> {
         val raw = recurringBookingApi.recurringBookingGetMine()
-        return raw.mapBody { list -> list?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.mapWire { list -> list.required("RecurringBookingTemplateDto[]").map { it.toAppDto() } }
     }
 
     suspend fun create(body: CreateRecurringBookingRequest): Response<RecurringBookingTemplateDto> {
@@ -43,7 +53,7 @@ class RecurringBookingApi(
                 endsOn = body.endsOn?.let { Instant.parse(it) },
             ),
         )
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }
     }
 
     suspend fun update(body: UpdateRecurringBookingRequest): Response<RecurringBookingTemplateDto> {
@@ -63,7 +73,7 @@ class RecurringBookingApi(
                 endsOn = body.endsOn?.let { Instant.parse(it) },
             ),
         )
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }
     }
 
     suspend fun setActive(body: SetRecurringBookingActiveRequest): Response<Unit> =
@@ -80,34 +90,32 @@ class RecurringBookingApi(
         )
 }
 
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
-
-private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateDto? {
-    val id = id ?: return null
-    val frequency = frequency ?: return null
-    val dayOfWeek = dayOfWeek ?: return null
-    val timeOfDay = timeOfDay ?: return null
-    val savedAddressId = savedAddressId ?: return null
-    val paymentType = paymentType ?: return null
-    val startsOn = startsOn?.toString() ?: return null
-    val isActive = isActive ?: return null
-    return RecurringBookingTemplateDto(
-        id = id,
-        frequency = frequency,
-        dayOfWeek = dayOfWeek,
-        timeOfDay = timeOfDay,
-        rooms = rooms ?: 0,
-        bathrooms = bathrooms ?: 0,
-        savedAddressId = savedAddressId,
+/**
+ * Refuses the list rather than dropping the row, and the reason is not arithmetic: a template is a
+ * standing instruction to charge. A silently absent one is a schedule that keeps materialising orders
+ * while the only screen that can pause or delete it says it does not exist — the customer is billed
+ * for a booking whose off-switch has been hidden. That is a different failure from a shorter history,
+ * and it is why this list refuses where the orders list drops.
+ *
+ * `rooms` and `bathrooms` are refused with the rest because `CreateRecurringViewModel` copies them
+ * straight into the edit form, so a coerced zero is not merely displayed — the next Update writes it
+ * back and the client's invention becomes the server's record.
+ */
+private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateDto =
+    RecurringBookingTemplateDto(
+        id = id.required("id"),
+        frequency = frequency.required("frequency"),
+        dayOfWeek = dayOfWeek.required("dayOfWeek"),
+        timeOfDay = timeOfDay.required("timeOfDay"),
+        rooms = rooms.required("rooms"),
+        bathrooms = bathrooms.required("bathrooms"),
+        savedAddressId = savedAddressId.required("savedAddressId"),
         addressLine = addressLine,
         selectedServiceIds = selectedServiceIds.orEmpty(),
         selectedPackageIds = selectedPackageIds.orEmpty(),
-        paymentType = paymentType,
-        startsOn = startsOn,
+        paymentType = paymentType.required("paymentType"),
+        startsOn = startsOn.required("startsOn").toString(),
         endsOn = endsOn?.toString(),
         lastMaterializedFor = lastMaterializedFor?.toString(),
-        isActive = isActive,
+        isActive = isActive.required("isActive"),
     )
-}

@@ -67,6 +67,8 @@ public class Policy
     public const string CanApproveEmployee = nameof(CanApproveEmployee); // Admin
     public const string CanRejectEmployee = nameof(CanRejectEmployee); // Admin
     public const string CanAdminUpdateEmployee = nameof(CanAdminUpdateEmployee); // Admin
+    public const string CanViewEmployeePayoutDetails = nameof(CanViewEmployeePayoutDetails); // Admin (masked) + Employee (own)
+    public const string CanRevealEmployeePayoutDetails = nameof(CanRevealEmployeePayoutDetails); // Admin
 
     // Employee Documents
     public const string CanViewEmployeeDocuments = nameof(CanViewEmployeeDocuments); // Admin + Employee (own documents)

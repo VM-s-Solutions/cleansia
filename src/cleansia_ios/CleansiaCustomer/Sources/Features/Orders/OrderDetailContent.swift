@@ -3,7 +3,7 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderDetailContent: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
     let photos: PhotosUiState
     let isDownloadingReceipt: Bool
     let onLeaveReview: () -> Void
@@ -26,34 +26,38 @@ struct OrderDetailContent: View {
                         OrderHeroCard(order: order)
                     }
 
+                    if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
+                        PreferredOfferCard(disclosure: disclosure)
+                    }
+
                     if let address = order.address {
                         OrderAddressCard(address: address)
                     }
 
                     CleaningDetailsCard(order: order)
 
-                    if let services = order.selectedServices, !services.isEmpty {
-                        OrderServicesCard(services: services)
+                    if !order.services.isEmpty {
+                        OrderServicesCard(services: order.services)
                     }
 
-                    if let packages = order.selectedPackages, !packages.isEmpty {
-                        OrderPackagesCard(packages: packages)
+                    if !order.packages.isEmpty {
+                        OrderPackagesCard(packages: order.packages)
                     }
 
                     OrderInstructionsCard(order: order)
 
-                    if let response = photos.loadedResponse, !(response.photos ?? []).isEmpty {
-                        OrderPhotosSection(response: response, onViewPhotos: onViewPhotos)
+                    if let gallery = photos.loadedResponse, !gallery.photos.isEmpty {
+                        OrderPhotosSection(gallery: gallery, onViewPhotos: onViewPhotos)
                     }
 
-                    if let employees = order.assignedEmployees, !employees.isEmpty {
-                        AssignedCleanersCard(employees: employees)
+                    if !order.assignedEmployees.isEmpty {
+                        AssignedCleanersCard(employees: order.assignedEmployees)
                     }
 
                     OrderPriceBreakdownCard(order: order)
 
-                    if let history = order.statusHistory, !history.isEmpty {
-                        OrderTimelineCard(history: history)
+                    if !order.statusHistory.isEmpty {
+                        OrderTimelineCard(history: order.statusHistory)
                     }
 
                     if OrderStatusGroup.isCompleted(status) {
@@ -86,7 +90,7 @@ struct OrderDetailContent: View {
 /// customer looking at which order this is (the partner screen's compact header).
 struct OrderDetailCompactHeader: View {
     @Environment(\.locale) private var locale
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
@@ -96,8 +100,8 @@ struct OrderDetailCompactHeader: View {
                     .foregroundColor(CleansiaColors.onSurface)
             }
             OrderStatusPill(
-                label: OrderStatusPresentation.label(order.orderStatus),
-                color: OrderStatusPresentation.color(order.orderStatus)
+                label: OrderStatusPresentation.label(order.statusCode),
+                color: OrderStatusPresentation.color(order.statusCode)
             )
             Spacer(minLength: Spacing.xs)
             Text(OrdersFormat.dateTime(order.cleaningDateTime, locale: locale))

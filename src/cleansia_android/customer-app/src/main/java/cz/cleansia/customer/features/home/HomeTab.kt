@@ -161,18 +161,19 @@ fun HomeTab(
             .take(3)
     }
 
-    // Recurring schedules — Plus perk; observed only so we can decide between
-    // the "active schedules" section vs. the "set up recurring" carousel slide.
-    // Refresh once per home composition for Plus users.
+    // Recurring schedules — observed so we can decide between the "active
+    // schedules" section vs. the "set up recurring" carousel slide. Fetched for
+    // everyone: a lapsed membership does not stop a schedule, and gating the
+    // fetch on Plus hid a running schedule from the customer paying for it.
     val recurringRepo = viewModel.recurringBookingRepository
     val recurringTemplates by recurringRepo.templates.collectAsState(initial = emptyList())
-    androidx.compose.runtime.LaunchedEffect(isPlus) {
-        if (isPlus) recurringRepo.refresh()
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        recurringRepo.refresh()
     }
     val activeRecurring = androidx.compose.runtime.remember(recurringTemplates) {
         recurringTemplates.filter { it.isActive }.take(3)
     }
-    val showRecurringSection = isPlus && activeRecurring.isNotEmpty()
+    val showRecurringSection = activeRecurring.isNotEmpty()
     val showSetupRecurringSlide = isPlus && recurringTemplates.isEmpty()
 
     // Most recent Completed order — drives the "Order again" quick-action card.
@@ -811,9 +812,9 @@ private fun OrderAgainCard(order: OrderListItemDto, onClick: () -> Unit) {
 }
 
 /**
- * Active recurring schedules — Plus-only mini list with a "Manage" link.
- * Surfaces what's already booked-on-repeat so users don't have to dig
- * through the Profile tab to remember they have a schedule going.
+ * Active recurring schedules — mini list with a "Manage" link. Surfaces what's
+ * already booked-on-repeat so users don't have to dig through the Profile tab
+ * to remember they have a schedule going.
  */
 @Composable
 private fun RecurringSchedulesSection(

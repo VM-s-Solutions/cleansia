@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Functions.Core.Handlers;
 using Cleansia.Infra.Common.Validations;
@@ -21,6 +22,12 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
         _mediator
             .Setup(m => m.Send(It.IsAny<CleanupStalePendingOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new CleanupStalePendingOrders.Response(CancelledCount: 0)));
+        // The same timer carries a SECOND command: membership benefit orphans live in
+        // MembershipBenefitUsages and are invisible to the order sweep above (ADR-0035 AM-7).
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new ReleaseOrphanedBenefitReservations.Response(0)));
 
         var handler = CreateHandler();
 
@@ -28,6 +35,10 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
 
         _mediator.Verify(
             m => m.Send(It.IsAny<CleanupStalePendingOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(
+                It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

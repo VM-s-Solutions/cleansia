@@ -24,10 +24,10 @@ public record EmployeeItem(
     string? RegistrationNumber,
     string? VatNumber,
     string? LegalEntityName,
-    string? Iban,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
     BlobFileDto? ProfilePhoto,
     Code Profile,
     Code AuthenticationType,
-    Dictionary<string, List<TimeRange>>? Availability);
+    Dictionary<string, List<TimeRange>>? Availability,
+    int? JobRadiusKm);

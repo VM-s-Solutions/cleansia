@@ -5,10 +5,12 @@ import CleansiaPartnerApi
 @MainActor
 final class FakePartnerProfileClient: PartnerProfileClient {
     var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
+    var jobRadiusResult: ApiResult<Int?> = .success(nil)
     var statusResult: ApiResult<RegistrationCompletionStatus> = .success(RegistrationCompletionStatus())
     var servicedCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var allCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var documentsResult: ApiResult<[GetMyDocumentsMyDocumentDto]> = .success([])
+    var payoutResult: ApiResult<MyPayoutDetails?> = .success(nil)
 
     var personalUpdateResult: ApiResult<Void> = .success(())
     var addressUpdateResult: ApiResult<Void> = .success(())
@@ -27,9 +29,15 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     private(set) var deletedDocumentId: String?
     private(set) var checkCount = 0
     private(set) var servicedCountriesCallCount = 0
+    private(set) var jobRadiusCommand: UpdateJobRadiusCommand?
 
     func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
         employeeResult
+    }
+
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?> {
+        jobRadiusCommand = command
+        return jobRadiusResult
     }
 
     func checkCurrentEmployee() async -> ApiResult<RegistrationCompletionStatus> {
@@ -50,6 +58,10 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     func updateIdentificationInfo(_ command: UpdateIdentificationInfoCommand) async -> ApiResult<Void> {
         identificationCommand = command
         return identificationUpdateResult
+    }
+
+    func getMyPayoutDetails() async -> ApiResult<MyPayoutDetails?> {
+        payoutResult
     }
 
     func updateBankDetails(_ command: UpdateBankDetailsCommand) async -> ApiResult<Void> {

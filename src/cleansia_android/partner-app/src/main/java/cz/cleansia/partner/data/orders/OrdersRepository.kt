@@ -4,12 +4,14 @@ import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.AddOrderNoteCommand
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.CompleteOrderCommand
+import cz.cleansia.partner.api.model.DeclinePreferredOfferCommand
 import cz.cleansia.partner.api.model.GetOrderPhotosResponse
 import cz.cleansia.partner.api.model.MarkCashCollectedCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
+import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.api.model.PhotoType
 import cz.cleansia.partner.api.model.ReportOrderIssueCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosCommand
@@ -24,6 +26,12 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -101,6 +109,23 @@ interface OrdersRepository {
     suspend fun deleteIssue(orderId: String, issueId: String): ApiResult<Unit>
 
     /**
+     * The orders reserved for this cleaner alone until their deadline (ADR-0045). Cached rather than
+     * fetched per screen because three surfaces read the same answer — the dashboard card, the offers
+     * list, and the order detail's "this one is yours until…" banner.
+     */
+    val pendingOffers: StateFlow<List<PendingOffer>>
+
+    fun arePendingOffersStale(): Boolean
+
+    suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>>
+
+    /**
+     * Refuse a reservation. One server-side write — the hold ends now and the order returns to the
+     * whole board — so on success the row leaves [pendingOffers] and every surface reading it agrees.
+     */
+    suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit>
+
+    /**
      * `true` if the cached single-order payload for [orderId] is stale and a
      * fresh fetch should be issued. ViewModels use this on screen entry /
      * resume to gate background refreshes: skip the network when the cache
@@ -165,6 +190,11 @@ class OrdersRepositoryImpl @Inject constructor(
         OrdersPane.History to Staleness(),
     )
 
+    private val _pendingOffers = MutableStateFlow<List<PendingOffer>>(emptyList())
+    override val pendingOffers: StateFlow<List<PendingOffer>> = _pendingOffers.asStateFlow()
+
+    private val pendingOffersStaleness = Staleness()
+
     private fun stalenessFor(orderId: String): Staleness =
         orderStaleness.getOrPut(orderId) { Staleness() }
 
@@ -200,6 +230,28 @@ class OrdersRepositoryImpl @Inject constructor(
         // "fresh". Pane watermarks are fixed instances, so reset in place.
         orderStaleness.clear()
         paneStaleness.values.forEach { it.reset() }
+        _pendingOffers.value = emptyList()
+        pendingOffersStaleness.reset()
+    }
+
+    override fun arePendingOffersStale(): Boolean = pendingOffersStaleness.isStale()
+
+    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>> =
+        safeApiCall(json) { orderApi.orderMyPendingOffers() }
+            .mapWire { rows -> rows.mapNotNull { it.toDomainOrNull() } }
+            .onSuccess { offers ->
+                _pendingOffers.value = offers
+                pendingOffersStaleness.markFresh()
+            }
+
+    override suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit> = safeApiCall(json) {
+        orderApi.orderDeclinePreferredOffer(DeclinePreferredOfferCommand(orderId = orderId))
+    }.map { }.onSuccess {
+        _pendingOffers.update { offers -> offers.filterNot { it.id == orderId } }
+        invalidateOrder(orderId)
+        // The order is back with the whole board the instant the hold ends, so the Available pane
+        // is wrong until it refetches.
+        stalenessFor(OrdersPane.Available).reset()
     }
 
     override suspend fun getPaged(
@@ -344,4 +396,48 @@ class OrdersRepositoryImpl @Inject constructor(
         safeApiCall(json) {
             orderApi.orderDeleteIssue(orderId = orderId, issueId = issueId)
         }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+}
+
+/**
+ * A job the platform reserved for this cleaner by name until a deadline the server owns (ADR-0045).
+ *
+ * `respondByUtc` and `cleaningDateTime` are non-null here even though only the money and scope fields
+ * read as obviously load-bearing: there is no state in which a live reservation has no expiry, and a
+ * nullable one kept a silent drop in [cz.cleansia.partner.features.orders.soonestOffer] where an offer
+ * with no deadline quietly stopped being the one the dashboard names.
+ */
+data class PendingOffer(
+    val id: String,
+    val displayOrderNumber: String?,
+    val cleaningDateTime: String,
+    val estimatedTime: Int,
+    val respondByUtc: String,
+    val customerAddressApproximate: String?,
+    val rooms: Int,
+    val bathrooms: Int,
+    val totalPrice: Double,
+    val currencyCode: String?,
+)
+
+/**
+ * Drops the unidentifiable row rather than failing the page: no surface sums these offers, so a lost
+ * one cannot falsify a figure, while refusing the page would hide every other reservation the server
+ * answered correctly. An id-less offer was inert anyway — both confirm and decline are keyed by it.
+ * Where a collection *is* the addends of a rendered total the ruling inverts; see
+ * [cz.cleansia.partner.data.invoices.toDomain].
+ */
+internal fun PendingOfferItem.toDomainOrNull(): PendingOffer? {
+    val offerId = id ?: return null
+    return PendingOffer(
+        id = offerId,
+        displayOrderNumber = displayOrderNumber,
+        cleaningDateTime = cleaningDateTime.required("cleaningDateTime"),
+        estimatedTime = estimatedTime.required("estimatedTime"),
+        respondByUtc = respondByUtc.required("respondByUtc"),
+        customerAddressApproximate = customerAddressApproximate,
+        rooms = rooms.required("rooms"),
+        bathrooms = bathrooms.required("bathrooms"),
+        totalPrice = totalPrice.required("totalPrice"),
+        currencyCode = currencyCode,
+    )
 }

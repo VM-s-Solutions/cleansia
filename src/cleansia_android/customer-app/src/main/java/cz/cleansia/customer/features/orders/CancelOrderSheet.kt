@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,10 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.customer.ui.theme.WarningStar
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 private const val MAX_REASON_LENGTH = 2000
 
@@ -72,15 +71,18 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
 }
 
 /**
- * Modal bottom sheet for cancelling an order. Previews the cancellation fee
- * based on BookingPolicy tiers (oops window / free ≥24h / 50% 4–24h / 100% <4h)
- * computed from the client clock — the backend recomputes on submit and its
- * numbers are authoritative. The sheet captions the preview with an estimate
- * note so users know the final figure is confirmed on submit.
+ * Modal bottom sheet for cancelling an order. The cancellation fee comes from
+ * `GET /api/Order/CancellationPreview` and is rendered as the server sent it —
+ * the sheet has no tier ladder of its own, because the two facts that decide the
+ * fee (the caller's own free-cancellation window and whether a cleaner has been
+ * pulled onto the job) live only on the server.
  *
- * UX rules (driven by the task spec):
+ * UX rules:
  *  - No secondary confirmation dialog on top of the sheet — the sheet IS the
  *    confirmation.
+ *  - Confirm is held back only while the quote is in flight. A quote that
+ *    FAILS never blocks a cancellation — the card says so and the button stays
+ *    live.
  *  - Clicking the primary button never closes the sheet directly; the VM
  *    observes the result and emits on a SharedFlow that the screen uses to
  *    drive the dismissal.
@@ -92,9 +94,10 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CancelOrderSheet(
-    order: OrderDetailDto,
+    previewState: CancellationPreviewUiState,
     onDismiss: () -> Unit,
     onConfirm: (reason: String?) -> Unit,
+    onRetryPreview: () -> Unit,
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
@@ -103,9 +106,13 @@ fun CancelOrderSheet(
     var selectedReason by remember { mutableStateOf<CancelReasonOption?>(null) }
     var notes by remember { mutableStateOf("") }
 
-    val canSubmit = selectedReason != null &&
-        // "Other" requires a description so support has something to work with.
-        (selectedReason != CancelReasonOption.Other || notes.trim().length >= 3)
+    val canSubmit = cancelConfirmEnabled(
+        previewState = previewState,
+        hasReason = selectedReason != null,
+        isOtherReason = selectedReason == CancelReasonOption.Other,
+        notes = notes,
+        isSubmitting = isSubmitting,
+    )
 
     ModalBottomSheet(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
@@ -127,8 +134,7 @@ fun CancelOrderSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            // Fee preview
-            FeePreviewBlock(order = order)
+            FeePreviewBlock(state = previewState, onRetry = onRetryPreview)
             Spacer(Modifier.height(16.dp))
 
             // Reason picker — tap a chip; tapping again deselects. "Other"
@@ -228,7 +234,7 @@ fun CancelOrderSheet(
             Button(
                 onClick = {
                     val reason = selectedReason
-                    if (canSubmit && !isSubmitting && reason != null) {
+                    if (canSubmit && reason != null) {
                         // Submitted payload format: "code: notes" so support can
                         // sort by reason without parsing the localized label.
                         // Pure-code form when notes are blank.
@@ -240,7 +246,7 @@ fun CancelOrderSheet(
                         onConfirm(payload)
                     }
                 },
-                enabled = canSubmit && !isSubmitting,
+                enabled = canSubmit,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -337,78 +343,124 @@ private fun ReasonChip(
 /* ── Fee preview ── */
 
 /**
- * Computes and renders the fee-tier card. Kept in this file (per the task spec —
- * no separate CancellationPolicy helper module) but factored out of the main
- * composable for readability.
+ * Renders the server's answer, or says it does not have one. There is no
+ * client-side arm: the fee depends on the caller's own free-cancellation window
+ * and on whether a cleaner has been pulled onto the job, neither of which this
+ * app can see.
  */
 @Composable
-private fun FeePreviewBlock(order: OrderDetailDto) {
-    val now = Clock.System.now()
-    val cleaningAt = parseInstantOrNull(order.cleaningDateTime)
-    val createdAt = parseInstantOrNull(order.createdOn)
-
-    if (cleaningAt == null || createdAt == null) {
-        // Fall back to a neutral message when timestamps don't parse — don't
-        // show a numeric preview we can't substantiate.
-        FeeCard(
+private fun FeePreviewBlock(
+    state: CancellationPreviewUiState,
+    onRetry: () -> Unit,
+) {
+    when (state) {
+        CancellationPreviewUiState.Loading -> FeeCard(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            icon = null,
+            title = stringResource(R.string.order_cancel_fee_checking),
+            subtitle = null,
+            leading = {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    strokeWidth = 2.dp,
+                )
+            },
+        )
+        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry)
+        is CancellationPreviewUiState.Loaded -> {
+            val callout = cancellationFeeCallout(state.preview)
+            if (callout == null) {
+                UnavailableFeeCard(onRetry)
+            } else {
+                LoadedFeeCard(callout, state.preview.currencyCode)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadedFeeCard(callout: CancellationFeeCallout, currencyCode: String?) {
+    val tint = when (callout.severity) {
+        CancellationFeeSeverity.Free -> MaterialTheme.colorScheme.primary
+        CancellationFeeSeverity.Fee -> WarningStar
+        CancellationFeeSeverity.LastMinute -> MaterialTheme.colorScheme.error
+    }
+    val icon = when (callout.severity) {
+        CancellationFeeSeverity.Free -> Icons.Outlined.CheckCircle
+        else -> Icons.Outlined.Warning
+    }
+    val amounts = callout.amounts
+        .map { formatOrderPrice(it, currencyCode) }
+        .toTypedArray()
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FeeCard(
+            tint = tint,
+            icon = icon,
+            title = stringResource(callout.titleRes),
+            subtitle = stringResource(callout.amountRes, *amounts),
+        )
+        if (callout.warnsExpressWaiverForfeited) {
+            ExpressWaiverWarning()
+        }
+        Text(
+            text = stringResource(R.string.order_cancel_fee_recheck_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun UnavailableFeeCard(onRetry: () -> Unit) {
+    val tint = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FeeCard(
+            tint = tint,
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.order_cancel_fee_neutral),
-            subtitle = stringResource(R.string.order_cancel_fee_estimate_note),
+            subtitle = stringResource(R.string.order_cancel_fee_unavailable),
         )
-        return
+        CleansiaTextLink(
+            text = stringResource(R.string.order_cancel_fee_retry),
+            onClick = onRetry,
+        )
     }
+}
 
-    val hoursUntilStart = (cleaningAt - now).inWholeMinutes / 60.0
-    val minutesSinceBooking = (now - createdAt).inWholeMinutes
-
-    val (tint, icon, title) = when {
-        // Oops window — free regardless of how close the start is.
-        minutesSinceBooking <= 15L ->
-            Triple(
-                MaterialTheme.colorScheme.primary,
-                Icons.Outlined.CheckCircle,
-                stringResource(R.string.order_cancel_fee_oops),
-            )
-        hoursUntilStart >= 24.0 ->
-            Triple(
-                MaterialTheme.colorScheme.primary,
-                Icons.Outlined.CheckCircle,
-                stringResource(R.string.order_cancel_fee_free),
-            )
-        hoursUntilStart >= 4.0 -> {
-            val refund = order.totalPrice * 0.5
-            Triple(
-                WarningStar,
-                Icons.Outlined.Warning,
-                stringResource(
-                    R.string.order_cancel_fee_50,
-                    formatOrderPrice(refund, order.currency?.code),
-                ),
-            )
-        }
-        else ->
-            Triple(
-                MaterialTheme.colorScheme.error,
-                Icons.Outlined.Warning,
-                stringResource(R.string.order_cancel_fee_100),
-            )
+/**
+ * ADR-0035 AM-13 — the forfeiture is invisible exactly where the fee is zero, so
+ * it is disclosed before the customer confirms rather than after.
+ */
+@Composable
+private fun ExpressWaiverWarning() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = null,
+            tint = WarningStar,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.order_cancel_express_waiver_forfeit),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
-
-    FeeCard(
-        tint = tint,
-        icon = icon,
-        title = title,
-        subtitle = stringResource(R.string.order_cancel_fee_estimate_note),
-    )
 }
 
 @Composable
 private fun FeeCard(
     tint: Color,
-    icon: ImageVector,
+    icon: ImageVector?,
     title: String,
-    subtitle: String,
+    subtitle: String?,
+    leading: @Composable (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -423,12 +475,15 @@ private fun FeeCard(
             modifier = Modifier.size(24.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(22.dp),
-            )
+            when {
+                leading != null -> leading()
+                icon != null -> Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
         Spacer(Modifier.width(12.dp))
         Column(
@@ -440,20 +495,13 @@ private fun FeeCard(
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
-    }
-}
-
-private fun parseInstantOrNull(iso: String?): Instant? {
-    if (iso.isNullOrBlank()) return null
-    return try {
-        Instant.parse(iso)
-    } catch (_: Throwable) {
-        null
     }
 }

@@ -25,7 +25,7 @@ public static class ExportUserData
             var user = await userRepository.GetByIdAsync(userId, cancellationToken);
             if (user is null)
                 return BusinessResult.Failure<GdprExportDto>(new Error(
-                    BusinessErrorMessage.UserNotFound, "User not found"));
+                    nameof(userId), BusinessErrorMessage.UserNotFound));
 
             // Audit-row-first pattern. The row is added in Pending state and
             // transitions to Completed on success or Failed on exception.

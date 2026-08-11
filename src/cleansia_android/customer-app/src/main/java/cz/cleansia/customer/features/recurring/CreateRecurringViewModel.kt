@@ -3,7 +3,10 @@ package cz.cleansia.customer.features.recurring
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -62,6 +65,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val catalogRepo: CatalogRepository,
     private val addressRepo: AddressRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     /** Optional source order id for Path B pre-fill. Null → Path A blank slate. */
@@ -87,7 +91,7 @@ class CreateRecurringViewModel @Inject constructor(
         // entry; safe no-op if already loaded.
         viewModelScope.launch {
             catalogRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
         if (editingTemplateId != null) {
@@ -158,6 +162,12 @@ class CreateRecurringViewModel @Inject constructor(
         startsOn = startsOnIso,
     )
 
+    /**
+     * The backend's `UpdateSchedule` rewrites every schedule column from the
+     * command, so a field the form does not echo back is not "left alone" —
+     * it is erased. `endsOn` has no editor in this wizard, which is exactly
+     * why the stored value has to ride along.
+     */
     private fun CreateRecurringFormState.toUpdateRequest(templateId: String) =
         UpdateRecurringBookingRequest(
             templateId = templateId,
@@ -171,6 +181,7 @@ class CreateRecurringViewModel @Inject constructor(
             selectedPackageIds = selectedPackageIds.toList(),
             paymentType = paymentType,
             startsOn = startsOnIso,
+            endsOn = endsOnIso,
         )
 
     /** True when the form has the minimum data needed to submit. */
@@ -198,10 +209,10 @@ class CreateRecurringViewModel @Inject constructor(
                     _submitted.emit(Unit)
                 }
                 is ApiResult.Error -> {
-                    snackbar.showErrorKey(
-                        if (isEditing) R.string.recurring_edit_failed else R.string.recurring_create_failed,
-                    )
-                    _submitState.value = ActionState.Error(result.error.getUserMessage())
+                    if (result.error !is ApiError.Network) {
+                        snackbar.showError(result.error)
+                    }
+                    _submitState.value = ActionState.Error(result.error.userMessage(appContext))
                 }
             }
         }
@@ -231,6 +242,7 @@ class CreateRecurringViewModel @Inject constructor(
                 selectedPackageIds = template.selectedPackageIds.toSet(),
                 paymentType = template.paymentType,
                 startsOnIso = template.startsOn,
+                endsOnIso = template.endsOn,
             )
         }
     }
@@ -240,7 +252,7 @@ class CreateRecurringViewModel @Inject constructor(
     private fun prefillFromOrder(orderId: String) {
         viewModelScope.launch {
             val order = orderRepo.getById(orderId)
-                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error.getUserMessage()) }
+                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error) }
                 .getOrNull()
                 ?: return@launch
             val timeOfDay = order.cleaningDateTime?.let { iso ->
@@ -293,4 +305,6 @@ data class CreateRecurringFormState(
     val paymentType: Int = 1,
     /** ISO-8601 instant. Default empty — UI must set before submit. */
     val startsOnIso: String = "",
+    /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
+    val endsOnIso: String? = null,
 )

@@ -57,7 +57,7 @@ class OrderPhotosViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = UiState.Loading
             val resp = orderRepository.getPhotos(id)
-                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error.getUserMessage()) }
+                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error) }
                 .getOrNull()
             _state.value = if (resp != null) UiState.Loaded(resp) else UiState.Error
         }

@@ -95,6 +95,11 @@
         </div>
       </div>
 
+      <cleansia-customer-order-preferred-offer
+        [facade]="preferredOffer"
+        [locale]="getLocale()"
+      />
+
       <!-- Service Details -->
       <div class="order-detail__section">
         <h3>{{ 'pages.order_detail.service_details' | translate }}</h3>

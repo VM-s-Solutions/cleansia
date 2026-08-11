@@ -141,7 +141,7 @@ fun MembershipSuccessScreen(
                 )
                 PerkRow(
                     icon = Icons.Outlined.Bolt,
-                    title = stringResource(R.string.membership_perk_express_title),
+                    title = stringResource(R.string.membership_success_perk_express),
                 )
             }
 

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Functions.Functions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
@@ -15,12 +16,14 @@ public class TimerScheduleConfigTests
     private const string MembershipToken = "%SendMembershipLifecycleNotificationsCron%";
     private const string DigestToken = "%SendNewJobsDigestCron%";
     private const string ExpireReferralsToken = "%ExpireStaleReferralsCron%";
+    private const string PreCleaningToken = "%SendPreCleaningRemindersCron%";
 
     private const string MaterializeCron = "0 0 2 * * *";
     private const string RemindersCron = "0 30 2 * * *";
     private const string MembershipCron = "0 0 3 * * *";
-    private const string DigestCron = "0 0,30 * * * *";
+    private const string DigestCron = "0 0 * * * *";
     private const string ExpireReferralsCron = "0 30 3 * * *";
+    private const string PreCleaningCron = "0 */5 * * * *";
 
     private static readonly IConfiguration ProductionDefaults = BuildProductionDefaults();
 
@@ -30,6 +33,7 @@ public class TimerScheduleConfigTests
     [InlineData(typeof(SendMembershipLifecycleNotificationsFunction), MembershipToken)]
     [InlineData(typeof(SendNewJobsDigestTimerFunction), DigestToken)]
     [InlineData(typeof(ExpireStaleReferralsFunction), ExpireReferralsToken)]
+    [InlineData(typeof(SendPreCleaningRemindersFunction), PreCleaningToken)]
     public void Trigger_reads_cron_from_app_setting_token(Type functionType, string expectedToken)
     {
         var schedule = ReadSchedule(functionType);
@@ -43,6 +47,7 @@ public class TimerScheduleConfigTests
     [InlineData(typeof(SendMembershipLifecycleNotificationsFunction), MembershipCron)]
     [InlineData(typeof(SendNewJobsDigestTimerFunction), DigestCron)]
     [InlineData(typeof(ExpireStaleReferralsFunction), ExpireReferralsCron)]
+    [InlineData(typeof(SendPreCleaningRemindersFunction), PreCleaningCron)]
     public void Effective_schedule_equals_documented_production_cadence(Type functionType, string expectedCron)
     {
         var token = ReadSchedule(functionType);
@@ -50,6 +55,88 @@ public class TimerScheduleConfigTests
         var effective = ResolveToken(token);
 
         Assert.Equal(expectedCron, effective);
+    }
+
+    /// <summary>
+    /// The cadence as a PROPERTY of the schedule rather than a string comparison: the digest opens at
+    /// most one notification window per clock hour. String equality above pins the committed default;
+    /// this pins what the owner actually asked for, so any expression that reintroduces a sub-hourly
+    /// window — <c>0 0,30</c>, <c>0 *&#47;20</c>, a second minute field entry — fails here whatever it
+    /// is spelled like. The digest watermark advances to the sweep start, so the sweep interval IS the
+    /// per-cleaner rate limit.
+    /// </summary>
+    [Fact]
+    public void Digest_opens_at_most_one_window_per_clock_hour()
+    {
+        var digest = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendNewJobsDigestTimerFunction))));
+
+        var dayStart = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+
+        var fires = new List<DateTime>();
+        var cursor = dayStart.AddSeconds(-1);
+        while (true)
+        {
+            cursor = digest.NextOccurrence(cursor);
+            if (cursor >= dayEnd)
+            {
+                break;
+            }
+
+            fires.Add(cursor);
+        }
+
+        Assert.Equal(
+            fires.Select(f => f.Hour).Distinct().Count(),
+            fires.Count);
+        Assert.Equal(24, fires.Select(f => f.Hour).Distinct().Count());
+    }
+
+    /// <summary>
+    /// The one relationship that makes the pre-cleaning promise keepable, as a property rather than a
+    /// pair of strings that happen to agree today. The sweep only reminds orders whose cleaning falls
+    /// inside a window <c>LeadMinutesHigh - LeadMinutesLow</c> wide; if two consecutive fires are
+    /// further apart than that, an order can pass through the window between them and be reminded
+    /// never. Widening the cron or narrowing the window fails here, whichever moves.
+    /// </summary>
+    [Fact]
+    public void Pre_cleaning_sweep_fires_at_least_once_per_reminder_window()
+    {
+        var window = new SendPreCleaningReminders.Command();
+        var windowMinutes = window.LeadMinutesHigh - window.LeadMinutesLow;
+        var schedule = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendPreCleaningRemindersFunction))));
+
+        var dayStart = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+
+        var previous = dayStart;
+        var widestGap = TimeSpan.Zero;
+        for (var fire = schedule.NextOccurrence(dayStart); fire < dayEnd; fire = schedule.NextOccurrence(fire))
+        {
+            widestGap = fire - previous > widestGap ? fire - previous : widestGap;
+            previous = fire;
+        }
+
+        Assert.True(
+            widestGap.TotalMinutes <= windowMinutes,
+            $"the sweep's widest gap is {widestGap.TotalMinutes} minutes but its window is only " +
+            $"{windowMinutes} minutes wide — an order can cross the window between two fires and never " +
+            "be reminded.");
+    }
+
+    /// <summary>
+    /// The window straddles the hour the customer was promised, and is tight enough that "about an
+    /// hour" is true at both ends. A window that had drifted off 60 would still satisfy the cadence
+    /// property above while making the copy false.
+    /// </summary>
+    [Fact]
+    public void The_pre_cleaning_window_brackets_the_promised_hour()
+    {
+        const int PromisedLeadMinutes = 60;
+        var window = new SendPreCleaningReminders.Command();
+
+        Assert.InRange(PromisedLeadMinutes, window.LeadMinutesLow, window.LeadMinutesHigh);
+        Assert.InRange(window.LeadMinutesHigh - window.LeadMinutesLow, 1, 20);
     }
 
     [Fact]

@@ -9,10 +9,14 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
 import cz.cleansia.customer.core.payments.PaymentRepository
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
+import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.promo.ValidatePromoCodeResponse
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ValidateReferralResponse
@@ -67,9 +71,11 @@ class BookingViewModelTest {
     private lateinit var tokenStore: cz.cleansia.core.auth.TokenStore
     private lateinit var snackbar: SnackbarController
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
+    private lateinit var membershipRepository: MembershipRepository
     private lateinit var appContext: Context
 
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
+    private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
 
     private val networkMessage = "Check your internet connection and try again."
     private val pickTimeMessage = "Please select a cleaning date and time."
@@ -87,6 +93,8 @@ class BookingViewModelTest {
         snackbar = mockk(relaxed = true)
         serviceAreaProvider = mockk()
         coEvery { serviceAreaProvider.loadCountries() } returns emptyList()
+        membershipRepository = mockk(relaxed = true)
+        every { membershipRepository.current } returns membershipFlow
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -117,6 +125,7 @@ class BookingViewModelTest {
         tokenStore = tokenStore,
         snackbar = snackbar,
         serviceAreaProvider = serviceAreaProvider,
+        membershipRepository = membershipRepository,
         appContext = appContext,
     )
 
@@ -139,6 +148,13 @@ class BookingViewModelTest {
     fun submit_givenCompleteUserAndCashFlow_returnsSuccessAndIdleState() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -180,6 +196,13 @@ class BookingViewModelTest {
     fun submit_givenSpecialInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -218,6 +241,13 @@ class BookingViewModelTest {
     fun submit_givenBlankSpecialInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -259,6 +289,13 @@ class BookingViewModelTest {
     fun submit_givenAccessInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -297,6 +334,13 @@ class BookingViewModelTest {
     fun submit_givenBlankAccessInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "cur-1",
             currencyCode = "CZK",
@@ -361,6 +405,13 @@ class BookingViewModelTest {
         // Pre-cache a quote so the watcher (which fires on state changes during
         // the 400ms debounce window) doesn't compete with submit() for the API.
         val cachedQuote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -469,6 +520,13 @@ class BookingViewModelTest {
     fun submit_givenCardFlow_returnsCardPendingWithPaymentParams() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 50.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -514,6 +572,13 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_givenSuccessfulQuote_emitsQuotedState() = runTest {
         val quote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -536,6 +601,13 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_failureWithPriorCachedQuote_fallsBackToPrevious() = runTest {
         val firstQuote = QuoteOrderResponse(
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
             totalPrice = 100.0,
             currencyId = "c",
             currencyCode = "CZK",
@@ -621,6 +693,95 @@ class BookingViewModelTest {
         assertNull((state as PromoCodeUiState.Invalid).error)
     }
 
+    /**
+     * `CreateOrder.Handler` previews the promo against `calc.TotalPrice - calc.ExpressSurchargeAmount`
+     * and applies the surcharge afterwards, so the gross is a base the submit never reproduces: a
+     * percentage previews a fifth too much and a minimum-order floor clears that the submit refuses.
+     */
+    @Test
+    fun validatePromoCodeNow_onAnExpressQuote_validatesAgainstThePreSurchargeSubtotal() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(totalPrice = 1200.0, surcharge = 200.0),
+        )
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        vm.validatePromoCodeNow("CODE")
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+    }
+
+    /**
+     * The validator answers on the pre-surcharge base while the price it comes off carries the
+     * surcharge. Left as it arrives, the summary reads 1100 against a charged 1080.
+     */
+    @Test
+    fun validatePromoCodeNow_onAnExpressQuote_restatesTheDiscountAgainstThePriceItComesOff() = runTest {
+        val quote = quoteWith(totalPrice = 1200.0, surcharge = 200.0)
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(120.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+        assertEquals(1080.0, BookingPriceSummary.resolve(quote, vm.effectiveDiscount.value).total, 0.001)
+    }
+
+    /**
+     * No surcharge, no delta — the base is the whole quote and the answer is already stated against the
+     * price it comes off. A fix that moves either number here has over-corrected.
+     */
+    @Test
+    fun validatePromoCodeNow_withoutAnExpressSurcharge_sendsTheQuoteWholeAndLeavesTheAnswerAlone() = runTest {
+        val quote = quoteWith(totalPrice = 1000.0, surcharge = 0.0, surchargeApplied = false)
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+        assertEquals(100.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+        assertEquals(900.0, BookingPriceSummary.resolve(quote, vm.effectiveDiscount.value).total, 0.001)
+    }
+
+    /** A membership waiver leaves an express hour charging no surcharge, so it is the plain case. */
+    @Test
+    fun validatePromoCodeNow_onAWaivedExpressQuote_sendsTheQuoteWholeAndLeavesTheAnswerAlone() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(totalPrice = 1000.0, surcharge = 0.0, surchargeApplied = true, waived = true),
+        )
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+        assertEquals(100.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+    }
+
     @Test
     fun clearPromoCode_resetsStateAndBookingPayload() = runTest {
         coEvery { promoCodeApi.validate(any()) } returns Response.success(
@@ -694,4 +855,136 @@ class BookingViewModelTest {
         assertEquals(ActionState.Idle, vm.submitState.value)
         assertEquals(PromoCodeUiState.Idle, vm.promoCodeState.value)
     }
+
+    // ── express waiver ──
+
+    @Test
+    fun expressWaiver_givenSignedInUser_warmsTheMembershipRead() = runTest {
+        newViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { membershipRepository.refresh() }
+    }
+
+    @Test
+    fun expressWaiver_givenGuest_neverCallsTheMembershipEndpoint() = runTest {
+        every { tokenStore.current() } returns null
+
+        newViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { membershipRepository.refresh() }
+    }
+
+    @Test
+    fun expressWaiver_givenQuotaLeft_reportsTheServerCount() = runTest {
+        membershipFlow.value = GetMyMembershipResponse(
+            hasMembership = true,
+            expressUpgradesPerMonth = 2,
+            expressUpgradesRemaining = 2,
+        )
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(ExpressWaiverStatus.Available, vm.expressWaiver.value.status)
+        assertEquals(2, vm.expressWaiver.value.remaining)
+    }
+
+    /**
+     * A membership read that never lands must leave the wizard silent, not render a claim from
+     * nothing on the most valuable screen in the product.
+     */
+    @Test
+    fun expressWaiver_givenNoMembershipYet_staysSilent() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(ExpressWaiverStatus.None, vm.expressWaiver.value.status)
+    }
+
+    // ── effectiveDiscount ──
+    //
+    // The sticky price bar used to redo this with the server discounts left out, so a Plus member on
+    // the confirm step read one total on the receipt and a different one on the button.
+
+    @Test
+    fun effectiveDiscount_addsTierAndMembership() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        assertEquals(50.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_givenLargerPromo_replacesTheServerPairRatherThanStacking() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 120.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(120.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_givenSmallerPromo_keepsTheServerPair() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(tierDiscount = 30.0, membershipDiscount = 20.0),
+        )
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 10.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(50.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    @Test
+    fun effectiveDiscount_withoutAQuote_isZero() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(0.0, vm.effectiveDiscount.value, 0.001)
+    }
+
+    private fun quoteWith(
+        tierDiscount: Double = 0.0,
+        membershipDiscount: Double = 0.0,
+        totalPrice: Double = 1000.0,
+        surcharge: Double = 0.0,
+        surchargeApplied: Boolean = surcharge > 0.0,
+        waived: Boolean = false,
+    ) = QuoteOrderResponse(
+        finalPriceAfterDiscount = 0.0,
+        originalSubtotal = 0.0,
+        appliedDiscountSource = 0,
+        extrasSubtotal = 0.0,
+        totalPrice = totalPrice,
+        tierDiscountAmount = tierDiscount,
+        membershipDiscountAmount = membershipDiscount,
+        currencyId = "cur-1",
+        currencyCode = "CZK",
+        servicesSubtotal = totalPrice,
+        packagesSubtotal = 0.0,
+        expressSurchargeApplied = surchargeApplied,
+        expressSurchargeAmount = surcharge,
+        expressSurchargeWaivedByMembership = waived,
+        exchangeRate = 1.0,
+    )
 }

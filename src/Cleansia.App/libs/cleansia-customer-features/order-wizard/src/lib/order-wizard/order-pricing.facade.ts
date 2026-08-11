@@ -19,7 +19,10 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { OrderWizardFormData } from './order-wizard.models';
+import {
+  composeFinalPriceForUnquotedDiscount,
+  OrderWizardFormData,
+} from './order-wizard.models';
 
 /**
  * Snapshot of the wizard inputs that affect pricing. Sorted arrays so
@@ -38,18 +41,29 @@ interface QuoteInputs {
 /** Dependencies the pricing engine reads from the orchestrating wizard facade. */
 interface PricingConnection {
   formData: Signal<OrderWizardFormData>;
-  effectiveDiscount: Signal<number>;
+  /**
+   * Promo amount the customer applied at checkout. The only discount the quote cannot fold in
+   * itself — `QuoteOrderCommand` carries no promo code, by design (the code is entered after the
+   * quote step and `CreateOrder` resolves it at submit).
+   */
+  promoDiscount: Signal<number>;
 }
 
 /**
  * Live server-quote engine for the booking wizard.
  *
- * The server is the single source of truth for the total — clients never
- * compute prices themselves. This collaborator debounces the wizard's pricing
- * inputs into `/api/Order/Quote` calls (mirroring the mobile pattern) and
- * renders the server's totals verbatim (the quote already folds any express
- * surcharge into `totalPrice`). The orchestrating facade owns the discount
- * inputs and connects them in via [connect].
+ * The server is the single source of truth for the total — clients never compute prices themselves.
+ * This collaborator debounces the wizard's pricing inputs into `/api/Order/Quote` calls (mirroring
+ * the mobile pattern) and renders the server's own figures. The orchestrating facade connects the
+ * promo amount in via [connect].
+ *
+ * Two totals arrive on every quote and they answer different questions. `totalPrice` is the
+ * UNDISCOUNTED gross including any express surcharge — the number `CreateOrder.PriceMatchesAsync`
+ * demands back unchanged, and the only number that may be submitted.
+ * `finalPriceAfterDiscount` is what the customer is charged, composed the way `OrderFactory` persists
+ * it: the discount comes off the pre-surcharge subtotal and the surcharge goes on top of the
+ * remainder. Those two orderings differ by a fifth of the discount on every express booking, so the
+ * displayed price is taken from the quote and never recomposed from `totalPrice` and a discount.
  */
 @Injectable()
 export class OrderPricingFacade extends UnsubscribeControlDirective {
@@ -65,9 +79,8 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
 
   /**
-   * Server-quoted total. Already includes the express surcharge whenever the
-   * quoted slot falls in the express window — never re-apply a percentage on
-   * top of this client-side.
+   * Undiscounted gross, surcharge included — the value `submitOrder` resubmits verbatim. This is
+   * NOT the price the customer pays; that is [displayedTotalPrice].
    */
   readonly totalPrice = computed(() => this.quote()?.totalPrice ?? 0);
 
@@ -76,8 +89,8 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     return this.deps.formData();
   }
 
-  private effectiveDiscount(): number {
-    return this.deps?.effectiveDiscount() ?? 0;
+  private promoDiscount(): number {
+    return this.deps?.promoDiscount() ?? 0;
   }
 
   /** Server verdict — true when the quoted slot carried the express surcharge. */
@@ -85,20 +98,64 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     () => this.quote()?.expressSurchargeApplied ?? false,
   );
 
-  /** Express surcharge line item, rendered verbatim from the server quote. */
-  readonly expressSurcharge = computed(() => this.quote()?.expressSurchargeAmount ?? 0);
+  /**
+   * The slot IS express and the surcharge was nevertheless not charged, because a membership
+   * waiver covered it. `expressSurchargeApplied === false` alone cannot say this — it is equally
+   * true for a slot that is not express at all.
+   */
+  readonly expressSurchargeWaived = computed(
+    () => this.quote()?.expressSurchargeWaivedByMembership ?? false,
+  );
 
-  /** Pre-surcharge subtotal for the breakdown rows — server numbers only. */
-  readonly preSurchargeSubtotal = computed(() => this.totalPrice() - this.expressSurcharge());
+  readonly tierDiscount = computed(() => this.quote()?.tierDiscountAmount ?? 0);
+  readonly membershipDiscount = computed(() => this.quote()?.membershipDiscountAmount ?? 0);
+
+  /** Tier + membership: the discount the quote already folded into `finalPriceAfterDiscount`. */
+  readonly quotedDiscount = computed(() => this.tierDiscount() + this.membershipDiscount());
 
   /**
-   * Final price the user pays — the server total (surcharge already included)
-   * minus the best-of-three discount. Sidebar + summary both render this so
-   * they always agree.
+   * The discount the server will actually apply. Mirrors `OrderFactory.ResolveLoy003Discount`: a
+   * winning promo replaces the tier/membership pair outright, it never stacks on it.
    */
-  readonly displayedTotalPrice = computed(() =>
-    Math.max(0, this.totalPrice() - this.effectiveDiscount()),
+  readonly effectiveDiscount = computed(() =>
+    Math.max(this.quotedDiscount(), this.promoDiscount()),
   );
+
+  /**
+   * Pre-surcharge subtotal — the base the server resolves every discount and every minimum-order
+   * floor against (`rawSubtotal = TotalPrice - ExpressSurchargeAmount`).
+   */
+  readonly preSurchargeSubtotal = computed(
+    () => this.totalPrice() - (this.quote()?.expressSurchargeAmount ?? 0),
+  );
+
+  /**
+   * Price the customer is charged, taken from the quote. `quote.expressSurchargeAmount` is the
+   * surcharge on the UNDISCOUNTED subtotal, so `totalPrice - discount` is not this number and no
+   * amount of client arithmetic over those two produces it.
+   */
+  readonly displayedTotalPrice = computed(() => {
+    const quote = this.quote();
+    if (!quote) return 0;
+    return this.promoDiscount() > this.quotedDiscount()
+      ? composeFinalPriceForUnquotedDiscount(
+          this.preSurchargeSubtotal(),
+          quote.totalPrice,
+          this.promoDiscount(),
+        )
+      : quote.finalPriceAfterDiscount;
+  });
+
+  /**
+   * Express surcharge line item — the surcharge actually billed, which the server takes on the
+   * DISCOUNTED subtotal. Derived as the gap the charged price leaves above that subtotal so the
+   * breakdown rows sum to the total; `quote.expressSurchargeAmount` answers a different question
+   * and would leave the card short by a fifth of the discount.
+   */
+  readonly expressSurcharge = computed(() => {
+    if (!this.quote()) return 0;
+    return this.displayedTotalPrice() - (this.preSurchargeSubtotal() - this.effectiveDiscount());
+  });
 
   /** Inputs that affect the server quote. Sorted ids so the snapshot is stable. */
   private readonly quoteInputs = computed<QuoteInputs>(() => {
@@ -150,15 +207,17 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   }
 
   private toQuoteCommand(inputs: QuoteInputs): QuoteOrderCommand {
-    return new QuoteOrderCommand({
-      selectedServiceIds: inputs.selectedServiceIds,
-      selectedPackageIds: inputs.selectedPackageIds,
-      rooms: inputs.rooms,
-      bathrooms: inputs.bathrooms,
-      currencyId: inputs.currencyId ?? undefined,
-      selectedExtraSlugs: inputs.selectedExtraSlugs,
-      cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
-    });
+    const command = new QuoteOrderCommand();
+    command.selectedServiceIds = inputs.selectedServiceIds;
+    command.selectedPackageIds = inputs.selectedPackageIds;
+    command.rooms = inputs.rooms;
+    command.bathrooms = inputs.bathrooms;
+    command.currencyId = inputs.currencyId ?? undefined;
+    command.selectedExtraSlugs = inputs.selectedExtraSlugs;
+    command.cleaningDate = inputs.cleaningDate
+      ? new Date(inputs.cleaningDate)
+      : undefined;
+    return command;
   }
 
   /**

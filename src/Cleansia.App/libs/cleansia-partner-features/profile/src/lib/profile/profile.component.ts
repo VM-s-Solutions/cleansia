@@ -12,13 +12,16 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ToastModule } from 'primeng/toast';
 import {
   ProfilePersonalInfoComponent,
-  ProfileBankDetailsComponent,
   ProfileEmergencyContactComponent,
   ProfileAvailabilityComponent,
+  ProfileBankComponent,
   ProfileDocumentsComponent,
+  ProfileJobRadiusComponent,
 } from '../components';
 import { ProfileFacade } from './profile.facade';
+import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
+import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
 
 @Component({
   selector: 'cleansia-partner-profile',
@@ -32,13 +35,19 @@ import { ProfileDocumentsFacade } from './profile-documents.facade';
     CleansiaFormSkeletonComponent,
     CleansiaCheckboxComponent,
     ProfilePersonalInfoComponent,
-    ProfileBankDetailsComponent,
     ProfileEmergencyContactComponent,
     ProfileAvailabilityComponent,
+    ProfileBankComponent,
     ProfileDocumentsComponent,
+    ProfileJobRadiusComponent,
   ],
   templateUrl: './profile.component.html',
-  providers: [ProfileDocumentsFacade, ProfileFacade],
+  providers: [
+    ProfileBankFacade,
+    ProfileDocumentsFacade,
+    ProfileJobRadiusFacade,
+    ProfileFacade,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {

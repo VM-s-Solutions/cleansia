@@ -14,7 +14,15 @@ export default defineConfig({
       { text: 'Customer App', link: '/customer-app/overview' },
       { text: 'Partner App', link: '/partner-app/overview' },
       { text: 'Admin App', link: '/admin-app/overview' },
+      { text: 'Mobile App', link: '/mobile-app/overview' },
       { text: 'API', link: '/api/authentication' },
+      { text: 'Deployment', link: '/deployment/ci-cd' },
+      // The changelog is a repo-root artifact, not a page in this site, so this is an external link
+      // rather than a route. Keeping one copy is the point: a published duplicate would rot.
+      {
+        text: 'Changelog',
+        link: 'https://github.com/VM-s-Solutions/cleansia/blob/master/CHANGELOG.md',
+      },
     ],
     sidebar: {
       '/architecture/': [
@@ -26,6 +34,7 @@ export default defineConfig({
             { text: 'Frontend (Angular)', link: '/architecture/frontend' },
             { text: 'Database', link: '/architecture/database' },
             { text: 'Infrastructure', link: '/architecture/infrastructure' },
+            { text: 'Push Notifications', link: '/architecture/push-notifications' },
             { text: 'Fiscal Compliance', link: '/architecture/fiscal-compliance' },
           ],
         },

@@ -78,14 +78,15 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         //
         // SINGLE-TENANT / back-compat caveat (TenantId == NULL): Postgres treats NULLs in a
         // UNIQUE index as DISTINCT by default, so two NULL-tenant rows with the SAME key are
-        // NOT rejected — the DB concurrency backstop is relaxed when TenantId is NULL. This is
-        // the SAME tradeoff every other tenant-scoped unique index in this repo already makes
-        // (PromoCode/ReferralCode (TenantId, Code), PromoCodeRedemption (TenantId, ...)); we
-        // stay consistent rather than introduce a one-off NULLS NOT DISTINCT. The SERIAL-replay
-        // fast-path read (GetByIdempotencyKeyAsync) still collapses double-submits in single-
-        // tenant mode; only the true-concurrent NULL-tenant race degrades to the order-driven
-        // guard's level. See the schema-delta MANUAL_STEP for the NULLS-NOT-DISTINCT upgrade
-        // option if single-tenant concurrency hardening is ever required.
+        // NOT rejected — the DB concurrency backstop is relaxed when TenantId is NULL.
+        //
+        // Left NULLS DISTINCT because this index is a BACKSTOP behind an authoritative app-level
+        // read: the SERIAL-replay fast path (GetByIdempotencyKeyAsync) collapses double-submits in
+        // single-tenant mode, and only the true-concurrent NULL-tenant race degrades to the
+        // order-driven guard's level. An index that is the SOLE ARBITER of a concurrent claim
+        // (FiscalCounters, MembershipBenefitUsages, PromoCodeRedemptions) must be NULLS NOT
+        // DISTINCT instead; AreNullsDistinct(false) is a shipped construct on this database, so
+        // adopting it here is a hardening decision, not a consistency break.
         //
         // Owner-only ef-migration emits this as a partial unique index.
         builder.HasIndex(t => new { t.TenantId, t.IdempotencyKey })

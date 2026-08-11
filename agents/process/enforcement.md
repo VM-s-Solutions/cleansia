@@ -5,6 +5,27 @@ plan and the current state for turning the team's conventions into **machine-che
 consistency survives even when an agent (or human) doesn't read carefully. The principle:
 **deterministic beats diligent.** Anything a tool can check, a tool should check.
 
+> ## ⚠️ FOUR CI GATES WERE REMOVED — 2026-08-11, owner instruction. Any `T1-CI` token naming one of them is now FALSE.
+>
+> Deleted: `catalog-claims.yml`, `module-boundaries.yml`, `offerability-parity.yml`,
+> `nx-project-registration.yml`. **The checker scripts survive** under `agents/tools/` and still run on
+> demand — what is gone is the thing that made them able to fail a build.
+>
+> `conventions.md` §*"The price of a law"* is explicit that **a tier naming a mechanism that cannot fail
+> a build is `T2-ADVISORY`**, not `T1-CI`. So every entry below that cites one of those four workflows
+> now overstates its enforcement, and a reader must treat those rules as **conventions a human upholds**,
+> rather than as gates. The tokens are not individually rewritten here — that would be a large edit
+> asserting a tier nobody has re-decided — so this banner is the correction, and it applies to all of
+> them at once.
+>
+> **What is actually lost, so the trade is visible rather than implied:** citation and ADR-status rot in
+> `agents/**` (the catalog gate caught a live instance the same day it was promoted), customer→partner
+> module-boundary regressions, offerability-status drift between the C# source of truth and eight client
+> literals across three languages, and libraries becoming invisible to Nx. Each was a real defect class
+> with a measured baseline before its gate existed.
+>
+> **Retires when:** a workflow under `.github/workflows/` runs any of the four checkers again.
+
 ## What's mechanical today
 
 | Layer | Tool | Covers | Status |
@@ -14,7 +35,9 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Formatting/style (C#) | `/.editorconfig` (root) | file-scoped namespaces, braces, unused usings, nullability warnings | **added — surfaces as warnings** |
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
 | Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
-| iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI** (lint + tests); **no project-specific rules yet** — `.swiftlint.yml` has no `custom_rules:`, and its `included:` omits `CleansiaCustomer/LiveActivity/` + both apps' `Tests/` |
+| Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; baseline now empty — all 8 surfaces gated strictly) |
+| Catalog-claim liveness (T-0574) | `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`) | the three writer obligations of `conventions.md` §"A claim about the tree carries its own retirement condition" — ADR status agreement, `Retires when:` conditions, `file:line` resolution — over `agents/knowledge/**` + `agents/process/**`, triggered on the **cited** trees (`src/**`, `docs/**`) as well as the citing one | **`T1-CI`** on both halves — corpus scan promoted off `--warn` when the sweep drove the baseline 16 → 0; self-test blocking from day one (zero-baseline by construction). A **reach failure exits 1 even under `--warn`**, so no invocation of this tool can report clean while blind. C3B stays advisory and is not in the exit code. |
+| iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI — T1-CI** (lint + tests). **Project-specific rules exist**, declared under `custom_rules:` in `src/cleansia_ios/.swiftlint.yml` — each `severity: error` and therefore CI-blocking under `--strict`. **Read the file for the roster; it is not enumerated here.** This sentence said "two" for one afternoon: it was corrected from "none" at 17:05 and a third rule landed at 18:32, which is the decay class `conventions.md` §"A claim about the tree carries its own retirement condition" exists to stop — and its own shape rule, *never enumerate a count of tree instances*, is what this sentence now obeys. ⚠️ **A `custom_rule` only reaches what `included:` lints** (`:1-5`): `CleansiaCore/Sources`, `CleansiaCore/Tests`, `CleansiaPartner/Sources`, `CleansiaCustomer/Sources` — so `CleansiaCustomer/LiveActivity/` and **both apps' `Tests/`** are outside every one of them |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
 
@@ -69,6 +92,44 @@ layers**:
   *injected* set — they do not check the real multibinding's membership. **Follow-up ticket to file:**
   *"Add SessionScopedCache roster-equality tests (Android per-app + iOS) — the S11/E9 hard gate"*
   (`layers: [mobile]`, small; architect-signed rule already in place).
+  **Retires when:** `SessionScopedModuleTest.kt` and `SessionScopedCacheRegistryTest.swift` exist.
+
+### S12 — user-artifact content (upload intake) — mechanically checkable **in parts**, and only in parts
+
+`security-rules.md` **S12** (ADR-0043) is the answer to T-0460 AC5, recorded here so nobody has to
+infer it: **the rule is partly mechanical and partly not, and it must never be labelled `T1-CI`
+wholesale.** The authoritative per-clause table is in S12 itself; the summary is:
+
+- **Enforced today (`T1-CI`, `Cleansia.Tests`, a named step of `backend-ci.yml:69-71`)** — the served
+  type is a closed set on the read path (`ServedContentTypeTests`, `SasResponseHeaderOverrideTests`,
+  `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`); the intake
+  roster **enumerates** every upload route (`UploadIntakeRosterTests`, count-asserted first); the scrub
+  removes metadata from the bytes actually handed to the blob client (three per-pipeline suites); the
+  scrub dispatches on bytes and reports honestly (`ImageMetadataDispatchTests`); orientation degrades
+  without guessing (`JpegMetadataScrubTests`); the avatar exemption is honoured
+  (`UpdateCurrentUserAvatarScrubExemptionTests`).
+- **Specified, not built — `(gate pending: T-0458)`** — accepted-set ⊆ servable-set; the roster's
+  `audience` / `scrub` columns; the decoder **package** denylist; the decoder **call-site** scan.
+  **Retires when:** `ServableSetClosureTests.cs`, `UploadIntakeAnnotationContractTests.cs`, `DecoderPackageDenylistTests.cs` and `DecoderCallSiteScanTests.cs` all exist — one per clause above.
+  T-0458 owns those four names and lands them in `Cleansia.Tests/Common/Validators/`, next to the roster
+  test; a gate landed under a different name leaves this banner **stale, not retired**, and the reviewer
+  renames it here in the same change. (Note the shape rule this obeys: the condition names paths that do
+  **not** exist yet. A retirement condition naming a path that already exists is itself a finding —
+  C2-RETIRED — so do not reach for a nearby real filename to make the sentence read better.)
+  ⚠️ **The roster's annotation is enforced by nothing today.** `UploadIntakeRosterTests.cs:66-68`
+  splits each row on `" — "` and compares index `[0]`, so everything after the dash is asserted
+  nowhere. Adding two columns without changing that assertion adds a string no test reads — the
+  `T1-CI` claim would be false the day it is written.
+  ⚠️ **And the replacement gate must not pass vacuously.** `Assert.False(result.IsValid)` is green on
+  any un-stubbed constructor dependency, so a per-intake refusal theory owes (a) an assertion on the
+  **identity** of the failure (that route's error code / the file property) and (b) a **positive
+  control** per case — the same command with an accepted payload validating clean.
+- **No mechanism at all — `(guidance — no gate)`** — the avatar exemption's *expiry* (an avatar URL
+  appearing on a cross-user DTO). A wire-surface assertion in the `PayoutDtoSurfaceTests` shape would
+  close it; **that ticket is owed** and is named in S12 rather than left implicit.
+
+**If T-0458 cannot build the call-site scan, that clause is re-declared `T2-ADVISORY` with a named
+reviewer check** — per ADR-0043 §B.6, it is not left carrying a `(gate pending: …)` token forever.
 
 ### Baseline (run on 2026-06-01): ~187 pre-existing violations
 
@@ -77,6 +138,148 @@ commands with `nameof(Command)` error codes, ~50 ViewModel `collectAsState()` ca
 tracked in [`../backlog/audits/consistency-violations.md`](../backlog/audits/consistency-violations.md)
 and the canonicalization tickets (T-0001…T-0016). **Existing violations do not block unrelated work**
 — the gate (below) is **on new/changed code**, not the whole repo, until the baseline is cleared.
+
+## The offerability parity check — `agents/tools/check-available-status-parity.mjs`
+
+ADR-0037 D7 layer 2. It parses the canonical C# rule (`OrderAvailability.OfferableStatuses`, plus the
+`DEAD` annotation on `OrderStatus.Pending`) and asserts the **eight** partner-client literals agree —
+four on web, two on Android, two on iOS, and **half of them are BUTTON gates, not query literals**
+(a query-only check goes green while the detail page hides Take for the whole `New`+Cash pipeline —
+that is a live defect, ADR-0037 D0 row 10).
+
+```bash
+node agents/tools/check-available-status-parity.mjs             # strict — any divergence exits 1
+node agents/tools/check-available-status-parity.mjs --baseline  # what CI runs (see below)
+node agents/tools/check-available-status-parity.test.mjs        # the guard's own acceptance test
+```
+
+Three properties make it a real T1-CI gate rather than the "test with no trigger" the panel rejected:
+
+- **It is outside the Nx workspace and has its own repo-root workflow** (`offerability-parity.yml`,
+  triggered on `Cleansia.Core.Domain` + `Cleansia.App` + both mobile trees). `frontend-ci`'s
+  `nx affected -t test` selects **zero** projects on a Kotlin/Swift/C#-only diff, and even when
+  selected Nx would serve a **cached green** because those trees are not declarable inputs;
+  `backend-ci` excludes both mobile trees. Being uncacheable is structural here, not configured.
+- **A moved or renamed surface is a hard `P0` failure, never a silent pass.** Every surface is
+  anchored, and an anchor that matches nothing — or matches but yields zero status tokens — fails.
+  A green run means the tool *read* all ten files.
+- **Its acceptance test runs in CI.** `check-available-status-parity.test.mjs` copies the ten files to
+  a throwaway root, mutates one literal, and asserts red — including one scenario that widens the
+  **canonical C#** floor and asserts the mobile clients go red, which is what proves the check parses
+  the domain rule instead of carrying its own copy of the answer.
+
+**The baseline is empty, and that is what "it self-invalidates" bought.** It held four entries —
+ADR-0037 D4 rows 5/9/10/11, the partner-web half of T-0530 — each pinning a surface by its **exact**
+divergent set. An entry matches only that exact set, so a baselined surface that drifts further **or
+that gets fixed** both turn CI red; the four were therefore deleted in the same change that fixed the
+four surfaces, which is the only exit an entry has. All eight surfaces are now gated strictly. The
+summary line always prints the count; the tool never prints a bare `OK`.
+
+## The catalog-claim liveness check — `agents/tools/check-catalog-claims.mjs`
+
+**Built, running and BLOCKING (T-0574).** Rule: `conventions.md` §*"A claim about the tree carries its
+own retirement condition"*; deviating forms: `consistency.md` §*"Catalog claims about the tree"*. Tier:
+**`T1-CI`** for both the corpus scan and its self-test, since the sweep drove the baseline to zero —
+see *Baseline, sweep, promotion* below for how it got there and what stayed advisory.
+
+**The failure it closes is decay, not mis-citation.** Every one of the six measured instances cited the
+tree correctly at the moment of writing; each became false when the tree moved and **nothing anywhere
+went red**. Two were falsified the same day they were written. So no writing-time human gate can close
+this — the artifact is correct when the gate would run.
+
+**Three checks, all decidable from in-repo text, no compiler and no type graph:**
+
+1. **ADR status agreement.** For each ADR id appearing in `agents/knowledge/**/*.md` +
+   `agents/process/**/*.md` adjacent to a quoted status token, read that ADR's `- **Status:**` line and
+   fail on disagreement. *(The two banner instances; `agents/backlog/adr/*.md` filenames are not stable
+   — resolve by the `NNNN-` prefix, not by full name.)*
+2. **`Retires when: <path> exists` markers.** `fs.existsSync` the path; fail if it exists, because the
+   banner it guards is then false. *(The payout-allocator card.)*
+3. **Citation resolution.** Every `` `Path.ext:N` `` / `:N-M` citation in those trees: the file exists
+   **and** has ≥ `M` lines. It cannot check that the lines *say* what is claimed — that residue is the
+   reader's, permanently, and the entry must not pretend otherwise. *(The 65-line file cited at `:99-109`.)*
+
+**What check 3 does and does not decide, as built.** It resolves five citation dialects the catalog
+actually uses — a repo-relative path, a bare basename, an ellipsis abbreviation (`…Foo.cs`,
+`customer-app/…/Bar.kt`), an abbreviated path whose segments are substrings of the real ones
+(`Web.Customer/ServiceCityController.cs`), and a ticket stem (`T-0123.md`) — and it never guesses: an
+ambiguous basename fails only if it fails under **every** candidate. It goes one step past existence
+with **C3B**, which asks whether the backticked subject named immediately before a citation still
+appears inside the cited range. C3B is **advisory and stays advisory**: its hit rate on the corpus is
+52/98, because the catalog also backticks prose and often names a *type* whose declaration is nowhere
+near the cited member. It is a reading prompt, not evidence. A bare `:N-M` **continuation**'s file is
+*inferred*, not read, so its verdict is `C3-SOFT` — printed, never counted, never blocking; binding it
+loosely mis-attributed line numbers across table rows, and a mis-bound finding is a lie in the shape
+of a finding. Deviating form 4 (*"there are exactly N …"*) is **not** mechanized: separating a count of
+tree instances from a count of domain facts (*"two independent axes"*) needs a reader.
+
+**Shape — cross-stack, its own repo-root workflow.** No stack's CI watches `agents/`, so no existing
+workflow can host this: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all trigger on `src/`
+subtrees, and `nx affected` selects zero projects for a markdown-only diff. Same structural argument
+ADR-0037 D7 recorded for `check-available-status-parity.mjs`, and the same answer — a dependency-free
+Node script **outside the Nx workspace** with its own workflow, triggered on `agents/**` **and** on the
+`src/` trees the citations point into (a citation rots when the *cited* file changes, not when the
+catalog does — that trigger is the whole check, not a nicety).
+
+**Anti-vacuity (ADR-0032 D3), as built.** Every run prints what it FOUND, not only what failed — the
+corpus, ADR and indexed-file counts, and the claims found per obligation — and five things make an
+empty scan illegal: **floors** on each of those counts; a **dumb second scan** for anything shaped
+like `.<known-ext>:N` cross-checked against the character spans the parser consumed, so a regressed
+regex reports itself instead of going green; a self-test that asserts the summary **states its
+corpus** on the happy path; a self-test that runs against an under-populated root **without**
+`--floors=off` and asserts red; and the rule that `--warn` **never** suppresses a reach failure —
+advisory about the catalog's debt, never about whether the instrument ran.
+
+**Baseline, sweep, promotion — all three happened, in that order, and the order is the point.**
+Measured over the whole corpus before T-0574 changed anything: **16** violations — **C1 1** (a catalog
+card's status banner disagreeing with an ADR's own status line), **C2 7** (bold "not yet built"
+banners with no `Retires when:` condition), **C3 8** (rotted citations, including two into a migration
+filename that no longer exists and one into a deleted `.kt` file). It stood at **15** once this
+section's own *"Specified, NOT yet built"* banner — which was about this checker — retired on the same
+commit. Corpus reach at that commit: 34 pages, 46 ADRs, 6470 indexed files, 20 ADR status claims, 501
+citations. The corpus scan shipped `--warn` because this document's own rule of thumb forbids blocking
+over a dirty baseline.
+
+**It is now `FAILED: C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml`.** Corpus reach at
+promotion: 34 pages, 48 ADRs, 6494 indexed files, 22 status claims, 574 citations. Both halves of the
+workflow block. The tier token moved in `conventions.md`, `consistency.md` and this file in the same
+change, as the promotion contract required.
+
+**How the last 15 closed, because the shape recurs.** Every C2-FORM banner: five were given a
+`Retires when:` marker
+naming a path that does not exist yet — this section's two, `consistency.md` E9,
+`patterns-mobile.md` E9-mirror and `security-rules.md` S11, all five naming the same two
+roster-equality test files — and the sixth was **deleted rather than conditioned** because the claim
+itself was dead — `patterns-mobile.md`'s customer-push scoping note, overtaken when T-0398/T-0403
+shipped customer push registration. Then eight citations, in three kinds:
+
+| Kind | Sites | Repair |
+|---|---|---|
+| **Exhibit** — the entry's subject IS that the citation rotted | `consistency.md` + `conventions.md` deviating-form-3; `roles/membership-benefit-usage.md` invariants 5 and 6 (already annotated `[CITATION WAS DEAD]`) | Wrapped in the `*"…"*` quotation convention the checker skips. Inventing live line numbers would have **destroyed the exhibit** — this is the repair that looks wrong and is right. |
+| **Moved** — same subject, new address | `roles/payout-reference-allocator.md` ×2 (`Migrations/…_Initial.cs`) | Filename swap only. The pre-prod `Initial` migration is **regenerated, not stacked**, so its id moves on every schema change; both ranges landed on identical line numbers in the new file. |
+| **Gone** — the subject no longer exists anywhere | `roles/express-waiver-resolver.md` (`GetDashboardStats.ResolveTimeZone`); `patterns-mobile.md` (the Android `PeriodPayApi` parity catch-up) | Re-**written**, not re-pointed. ADR-0035 AM-10 extracted the first to `Common/TimeZoneResolution.cs` (reached via `BenefitPeriodKeyFactory.cs`); T-0576 closed the second. A dead citation whose claim also died is the one case where repairing the address would preserve a false sentence. |
+
+The C1 was resolved on the **ADR** side: `patterns-mobile.md`'s iOS-shell card matched the tree — the
+apps are on the stock `TabView` the 2026-07-08 owner direction ordered — and ADR-0022's header was the
+stale half. It is now `accepted (2026-07-02) — amended in place …, NOT superseded`, because nothing
+replaced it and its D1/D2 topology is still the governing rule. Two pages restate that token verbatim
+(the `**C1 1**` sentence above and `patterns-mobile.md`'s card); the ADR's status line now says so, so
+the next person to move it is told what else moves.
+
+**Three of the ticket's four items are done; one remains owed:**
+1. ✅ the checker + its acceptance test (`check-catalog-claims.mjs` / `.test.mjs`, 22 scenarios);
+2. ✅ the **sweep** — deliberately NOT done inside T-0574, because fixing the corpus in the same change
+   would have hidden whether the checker works;
+3. ✅ the repo-root workflow (`.github/workflows/catalog-claims.yml`), now blocking;
+4. ✅ **reviewer-check 5 "Catalog-edit routing"** now carries a fifth test: re-read the banners and
+   citations of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false
+   sentence that survived a pass over its own page — and paste the checker's summary line into the
+   verdict. It names the two shapes the tool cannot fail on: a `Retires when:` condition that is now
+   satisfied, and a citation that still resolves under a sentence that has gone stale.
+
+`consistency.md` §*"Catalog claims about the tree"* still carries the pre-landing
+`(gate pending: catalog-claim-liveness checker — ticket owed)` token; it belongs to a different
+file lane and is substituted there, not here.
 
 ## How the gate works (Reviewer + PM)
 
@@ -115,11 +318,42 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
 
 - **T1-CI** — fails a CI job on the offending change. Backend/frontend/Android: a test in a CI job.
   iOS: a SwiftLint `custom_rules` entry, or an XCTest guard in one of the three schemes CI runs.
+  **Cross-stack** (a rule no single stack's CI can see): a plain Node script outside the Nx workspace
+  with **its own repo-root workflow** triggered on every tree it reads — the
+  `check-available-status-parity.mjs` / `offerability-parity.yml` shape. Do not reach for a Jest spec:
+  ADR-0037 D7 records why one cannot work here (`nx affected` selects nothing, and Nx caches a green).
 - **T2-ADVISORY** — reports, never sets the exit code. `check-consistency.mjs` sits here today on
   **every** stack (it is in no `.github/` workflow), including its warn-only rules (E9).
 - **T3-HUMAN** — a **named** item in a standing checklist the Reviewer runs (Gate-DP §G of
   `ios-app-review-checklist.md`, Gate-AR, a numbered reviewer-check). An **unnamed** human enforcer
   ("someone will notice") is not T3 — it is `(guidance — no gate)`.
+  - **The named T3-HUMAN enforcers, by id.** A T3-HUMAN enforcer lives in exactly one file and nothing
+    goes red when it is deleted, so removing one has to be legible *here* as a regression against an
+    accepted ADR rather than as tidying. This list records existing enforcers; it declares no new rule.
+    - **Gate-DP §G** of `agents/backlog/ios-app-review-checklist.md` (+ reviewer-check #22) — ADR-0018's
+      design-parity gate, on every iOS screen/feature ticket.
+    - ⚠️ **There is no named T3-HUMAN enforcer for catalog-claim *decay*, and one cannot be invented.**
+      Measured 2026-08-09: six `agents/knowledge/` + `agents/process/` artifacts asserted the opposite
+      of the tree, and **all six cited the tree correctly when written** — a card true for 2 h 11 m, two
+      banners outlived by same-day ADR acceptances, a citation rotted by an unrelated refactor, a count
+      wrong twice, and this table's own row 18. None arose in a deliberation, so
+      `conventions.md:239-243`'s enforcer (the panel lead, `deliberation.md` step 5) structurally cannot
+      see them, and widening it to *"the lead also re-reads the catalog"* would be an enforcer named
+      **be careful** — which is what the six already had. The answer is mechanical and specified as a
+      new `T1-CI` gate: `conventions.md` §*"A claim about the tree carries its own retirement
+      condition"* + `consistency.md` §*"Catalog claims about the tree"*, enforced by
+      `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`, T-0574) — **`T1-CI`**,
+      blocking, on both the corpus scan and the self-test. See §*"The catalog-claim liveness check"*
+      below for the baseline it was promoted over and the three kinds of rot the sweep had to tell
+      apart to get there.
+    - **reviewer-check 5 "Catalog-edit routing"** — `.claude/agents/reviewer.md`, step 5. Governs **any
+      diff touching `agents/knowledge/*.md`**: it runs ADR-0033's three ordered routing tests (does the
+      edit put shipped code in violation / does it narrow a governing sentence, with the floor's
+      recorded-catalog-sweep rule / is it prescriptive about a stack the ticket never ran) plus
+      ADR-0032's enforcer + tier check on the hunk. **ADR-0033 named this check as its own condition of
+      acceptance: delete it and ADR-0033's routing test is `(guidance — no gate)`** by the line directly
+      above — the rule stops binding the day the check disappears, and no build notices. Specified at
+      ADR-0033 §Block D; this entry is its §Follow-ups **FT-12**.
 - **`(gate pending: <ticket>)`** — the gate is specified and ticketed, but its baseline is non-zero, so
   the "rule of thumb" below forbids blocking on it yet. It promotes to T1-CI when the ticket lands.
 - **`(guidance — no gate)`** — nobody enforces it.

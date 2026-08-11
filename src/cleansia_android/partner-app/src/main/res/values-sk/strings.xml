@@ -485,6 +485,17 @@
     <string name="account_number">Číslo účtu</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT kód</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Krajina banky</string>
+    <string name="bank_account_prefix">Predčíslie</string>
+    <string name="bank_account_prefix_helper">Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má.</string>
+    <string name="bank_account_number_helper">Časť pred lomkou, napríklad 5885638003.</string>
+    <string name="bank_code">Kód banky</string>
+    <string name="bank_code_helper">Štyri číslice za lomkou, napríklad 5500.</string>
+    <string name="iban_helper">Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie.</string>
+    <string name="swift_code_helper">Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete.</string>
+    <string name="bank_account_holder">Majiteľ účtu</string>
+    <string name="bank_account_holder_helper">Nepovinné — meno, ktoré má banka pri účte, ak sa líši od vášho.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Núdzový kontakt</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Profil sa ešte nenačítal</string>
-    <string name="error_iban_required">IBAN je povinný</string>
     <string name="error_name_required">Meno kontaktu je povinné</string>
     <string name="error_phone_required">Telefón kontaktu je povinný</string>
     <string name="error_pick_nationality">Vyberte svoju národnosť</string>
@@ -888,6 +898,17 @@
         <item quantity="few">+%1$d extra</item>
         <item quantity="other">+%1$d extra</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">Potrebný %1$d upratovač</item>
+        <item quantity="few">Potrební %1$d upratovači</item>
+        <item quantity="other">Potrebných %1$d upratovačov</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d voľné miesto</item>
+        <item quantity="few">%1$d voľné miesta</item>
+        <item quantity="other">%1$d voľných miest</item>
+    </plurals>
+    <string name="crew_no_spots">Voľné miesta už nie sú</string>
     <string name="history">História</string>
     <string name="you_earn">zarobíte</string>
     <string name="distance_unknown">Lokalita neznáma</string>
@@ -1017,7 +1038,7 @@
     <string name="profile_fields_country">Krajina</string>
     <string name="profile_fields_registrationNumber">IČO</string>
     <string name="profile_fields_legalEntityName">Názov právnickej osoby</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Bankové údaje</string>
     <string name="profile_fields_passportId">Občiansky preukaz / pas</string>
     <string name="profile_fields_nationality">Štátna príslušnosť</string>
 
@@ -1064,13 +1085,14 @@
     <string name="error_employee_document_not_owned">Tento dokument vám nepatrí.</string>
 
     <string name="error_order_not_found">Zákazka sa nenašla.</string>
-    <string name="error_order_already_cancelled">Táto zákazka je už zrušená.</string>
-    <string name="error_order_already_completed">Táto zákazka je už dokončená.</string>
+    <string name="error_order_take_already_cancelled">Táto zákazka je už zrušená.</string>
+    <string name="error_order_take_already_completed">Táto zákazka je už dokončená.</string>
     <string name="error_order_in_progress_cannot_cancel">Táto zákazka prebieha a nedá sa zrušiť.</string>
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie vypršala.</string>
     <string name="error_order_empty">Zákazka je prázdna.</string>
     <string name="error_order_already_assigned">Túto zákazku práve prevzal iný upratovač.</string>
-    <string name="error_order_no_available_spots">Na tejto zákazke nie sú voľné miesta.</string>
+    <string name="error_order_no_available_spots">Túto zákazku už prevzal iný upratovač.</string>
+    <string name="error_order_not_takeable">Táto zákazka už nie je k dispozícii.</string>
     <string name="error_order_weekly_limit_reached">Dosiahli ste týždenný limit zákaziek.</string>
     <string name="error_order_time_conflict">Táto zákazka sa prekrýva s inou, ktorú ste už prijali.</string>
     <string name="error_order_employee_already_assigned">Na túto zákazku ste už priradení.</string>
@@ -1131,8 +1153,25 @@
     <string name="error_validation_invalid_tax_id">Zadajte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadajte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadajte prosím platné PSČ.</string>
+    <string name="error_validation_registration_number_invalid_format">Zadajte prosím platné IČO pre vybranú krajinu.</string>
+    <string name="error_validation_vat_number_invalid_format">Zadajte prosím platné IČ DPH pre vybranú krajinu.</string>
     <string name="error_validation_must_be_positive">Musí byť kladné číslo.</string>
     <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
+
+    <!-- Payout / bank details -->
+    <string name="error_payout_not_found">Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu.</string>
+    <string name="error_validation_payout_country_not_supported">Do banky v tejto krajine zatiaľ výplaty posielať nevieme. Skontrolujte zvolenú krajinu banky, alebo sa ozvite podpore a pomôžeme vám.</string>
+    <string name="error_validation_payout_scheme_not_supported">Na tento typ účtu zatiaľ výplaty posielať nevieme. Ozvite sa podpore a pomôžeme vám to vyriešiť.</string>
+    <string name="error_validation_payout_looks_like_card">Toto vyzerá ako číslo platobnej karty. Zadajte namiesto neho číslo bankového účtu — nájdete ho na výpise alebo v bankovej aplikácii.</string>
+    <string name="error_validation_payout_account_number_required">Zadajte číslo účtu — do tejto banky posielame peniaze podľa čísla účtu a kódu banky, samotný IBAN nestačí.</string>
+    <string name="error_validation_payout_invalid_account_number">Toto číslo účtu sa nám nepodarilo overiť — takmer vždy ide o preklep. Skontrolujte číslice podľa výpisu z účtu.</string>
+    <string name="error_validation_payout_invalid_account_prefix">Predčíslie sa nám nepodarilo overiť — je to krátke číslo pred pomlčkou v čísle účtu. Skontrolujte číslice, alebo ho nechajte prázdne, ak váš účet predčíslie nemá.</string>
+    <string name="error_validation_payout_invalid_bank_code">Zadajte štvormiestny kód banky — je to číslo za lomkou v čísle účtu.</string>
+    <string name="error_validation_payout_invalid_iban">Tento IBAN nie je platný. Porovnajte ho s výpisom z účtu — obvykle ide o jeden nesprávny znak.</string>
+    <string name="error_validation_payout_iban_country_mismatch">Tento IBAN patrí do inej krajiny, než akú ste pri banke zvolili. Upravte jedno z toho, aby sa zhodovali.</string>
+    <string name="error_validation_payout_iban_mismatch">Tento IBAN nezodpovedá zadanému číslu účtu a kódu banky. Opravte to, čo je nesprávne, alebo IBAN nechajte prázdny a doplníme ho za vás.</string>
+    <string name="error_validation_payout_swift_required">Vaša banka je v inej krajine, než v ktorej pracujete, takže potrebujeme aj SWIFT/BIC. Nájdete ho na výpise z účtu.</string>
+    <string name="error_validation_payout_invalid_swift">Tento SWIFT/BIC patrí do inej krajiny než vaša banka. Skontrolujte ho podľa výpisu z účtu.</string>
 
     <string name="error_email_sending_failed">E-mail sa nepodarilo odoslať. Skúste to neskôr.</string>
     <string name="error_email_invalid_format">Zadajte prosím platný e-mail.</string>
@@ -1176,8 +1215,14 @@
 
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
+    <string name="notification_order_assigned_title">Nová zákazka v rozvrhu</string>
+    <string name="notification_order_assigned_body">Bola vám priradená zákazka č. %1$s. Ťuknutím zobrazíte podrobnosti.</string>
+    <string name="notification_order_assignment_revoked_title">Zákazka preradená</string>
+    <string name="notification_order_assignment_revoked_body">Zákazka č. %1$s bola preradená a už nie je vo vašom rozvrhu. Ťuknutím zobrazíte podrobnosti.</string>
     <string name="notification_payroll_invoice_paid_title">Boli ste vyplatení</string>
     <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte.</string>
+    <string name="notification_preferred_offer_title">Zákazník si vás vyžiadal</string>
+    <string name="notification_preferred_offer_body">Zákazka %1$s — vyžiadal si vás niekto, komu ste už upratovali. Otvorte ju a prevezmite ju.</string>
     <!-- ── Vaše zariadenia ── -->
     <string name="devices_title">Vaše zariadenia</string>
     <string name="profile_devices_summary">Správa prihlásených zariadení</string>
@@ -1232,4 +1277,40 @@
     <string name="invoice_view_period_pay">Zobraziť výplatu za obdobie</string>
     <string name="photo_encode_failed">Túto fotku sa nepodarilo spracovať. Skúste prosím inú.</string>
     <string name="document_read_failed">Tento súbor sa nepodarilo načítať. Skúste prosím iný.</string>
+
+    <string name="job_radius_title">Vzdialenosť pre upozornenia</string>
+    <string name="job_radius_summary_all_jobs">Zákazky kdekoľvek vo vašej krajine</string>
+    <string name="job_radius_summary_within">Zákazky do %1$d km od domova</string>
+    <string name="job_radius_explainer">Mení sa len to, na ktoré nové zákazky vás upozorníme. Ponuka naďalej zobrazuje všetky zákazky vo vašej krajine a ktorúkoľvek si môžete vziať.</string>
+    <string name="job_radius_limit_label">Upozorňovať len na zákazky v okolí</string>
+    <string name="job_radius_limit_off_hint">Budeme vás upozorňovať na každú novú zákazku vo vašej krajine.</string>
+    <string name="job_radius_value">%1$d km</string>
+    <string name="job_radius_prompt_title">Na ktoré nové zákazky vás máme upozorňovať?</string>
+    <string name="job_radius_prompt_body">Teraz vás upozorňujeme na každú novú zákazku vo vašej krajine. Vyberte vzdialenosť od domova a budete počuť len o tých blízkych — v ponuke uvidíte naďalej všetky.</string>
+    <string name="job_radius_prompt_choose">Vybrať vzdialenosť</string>
+    <string name="job_radius_prompt_keep_all">Ponechať všetky zákazky</string>
+    <string name="error_employee_job_radius_out_of_range">Zvoľte vzdialenosť medzi 1 a 500 km.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Rezervované pre vás</string>
+    <string name="offers_subtitle">Zákazky, o ktoré si vás zákazník vyžiadal. Keď potvrdíte, sú vaše; keď odmietnete, vrátia sa všetkým.</string>
+    <string name="offer_reserved_until_today">Vaša do %1$s dnes</string>
+    <string name="offer_reserved_until_tomorrow">Vaša do %1$s zajtra</string>
+    <string name="offer_reserved_until_date">Vaša do %1$s, %2$s</string>
+    <string name="offer_reserved_ended">Táto rezervácia sa skončila</string>
+    <string name="offer_confirm">Potvrdiť</string>
+    <string name="offer_slide_to_confirm">Potvrdiť potiahnutím</string>
+    <string name="offer_confirming">Potvrdzujem\u2026</string>
+    <string name="offer_decline">Odmietnuť</string>
+    <string name="offer_decline_title">Uvoľniť túto zákazku?</string>
+    <string name="offer_decline_body">Ihneď sa vráti všetkým upratovačom. Nijako sa vám to nezapočítava a kým je voľná, môžete si ju z ponuky vziať aj vy.</string>
+    <string name="offer_decline_cta">Uvoľniť</string>
+    <string name="offer_declined_toast">Uvoľnené \u2014 zákazka je teraz otvorená všetkým.</string>
+    <string name="offer_empty">Práve teraz na vašu odpoveď nič nečaká.</string>
+    <string name="offer_blocked_title">Zákazku sa nám nepodarilo odovzdať</string>
+    <string name="offer_blocked_body">%1$s\n\nToto je na nás \u2014 rezervovali sme zákazku na vaše meno bez overenia, takže sa vám to nijako nezapočítava.</string>
+    <string name="offer_release_failed_title">Zákazku sa nepodarilo uvoľniť</string>
+    <string name="offer_release_failed_body">%1$s\n\nNič sa neuvoľnilo \u2014 zákazka je presne taká, aká bola, a o chvíľu to môžete skúsiť znova.</string>
+    <string name="offers_card_title">Zákazník si vyžiadal vás</string>
+    <string name="offers_card_more">+%1$d ďalšie</string>
+    <string name="offers_card_cta">Zobraziť, čo čaká</string>
 </resources>

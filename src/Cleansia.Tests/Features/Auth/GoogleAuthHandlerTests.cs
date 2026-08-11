@@ -63,8 +63,11 @@ public class GoogleAuthHandlerTests
             _userRepository.Object,
             _hostAudience)!;
 
-    private static GoogleAuth.Command CommandWith(string email, string googleId) =>
-        new(Token: "any-token", GoogleId: googleId, Email: email, FirstName: "First", LastName: "Last");
+    // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
+    // screen sends no tick and its tests pass termsAccepted: false explicitly.
+    private static GoogleAuth.Command CommandWith(string email, string googleId, bool termsAccepted = true) =>
+        new(Token: "any-token", GoogleId: googleId, Email: email, FirstName: "First", LastName: "Last",
+            TermsAccepted: termsAccepted);
 
     // The email that resolves the account comes from the VERIFIED token, not the request.
     [Fact]
@@ -408,5 +411,80 @@ public class GoogleAuthHandlerTests
         _userRepository.Verify(
             r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+    }
+
+    // The sign-in screen carries no terms tick, so it sends none — and a returning user must not be asked
+    // to re-accept the terms they accepted when the account was created.
+    [Fact]
+    public async Task Existing_Account_Signs_In_Without_The_Signup_Tick()
+    {
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Google
+        });
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-returning", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync("subject-returning", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(
+            CommandWith(existing.Email, "subject-returning", termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // The hole this closes: a brand-new visitor tapping the sign-in screen's Google button used to get an
+    // account provisioned around them with no consent record at all.
+    [Fact]
+    public async Task Unknown_Identity_Without_The_Signup_Tick_Is_Refused_And_Creates_Nothing()
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-brand-new", "brand-new@example.com", EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(
+            CommandWith("brand-new@example.com", "subject-brand-new", termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.SocialAccountNotFound, result.Error!.Message);
+        Assert.Equal(nameof(GoogleAuth.Command.TermsAccepted), result.Error!.Code);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // The other half: the signup screen gates its Google button on the tick and sends it, so that path
+    // still brings an account into existence.
+    [Fact]
+    public async Task Unknown_Identity_With_The_Signup_Tick_Still_Provisions()
+    {
+        const string verifiedEmail = "signing-up@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-signup", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(
+            CommandWith(verifiedEmail, "subject-signup", termsAccepted: true), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == verifiedEmail)), Times.Once);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 }

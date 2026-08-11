@@ -81,7 +81,7 @@ class CreateDisputeViewModelTest {
         vm.submit(3, validDescription)
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError("server boom") }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertTrue(vm.submitState.value is ActionState.Error)
         assertEquals("retry hint", (vm.submitState.value as ActionState.Error).message)
     }

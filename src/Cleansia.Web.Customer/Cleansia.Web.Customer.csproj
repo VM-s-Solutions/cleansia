@@ -6,7 +6,38 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>c4d8f2a1-7e3b-4c9f-a1d5-2f6e4b8c0a3d</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!--
+      Do NOT re-enable. See the long-form explanation in Cleansia.Web.Partner.csproj.
+
+      Short version: `dotnet ef` on macOS creates a directory whose NAME literally contains a
+      backslash — `bin\Debug`. MSBuild's glob walker enumerates that entry, normalizes the '\'
+      to '/', and then reads the REAL bin/Debug. The SDK's `bin/**` default exclude never fires
+      because the entry is not NAMED `bin`. Microsoft.NET.Sdk.Web's default
+      `<Content Include="**\*.json" CopyToOutputDirectory="PreserveNewest">` therefore ingests
+      this project's OWN output and re-copies it one level deeper on every build, and the copies
+      flow on to Cleansia.Tests / Cleansia.HostTests via ProjectReference until MSB3021
+      (path too long). No exclude pattern can fix it — MSBuild normalizes '\' to '/' in patterns
+      on Unix, so no pattern can name the aliased entry. Dropping the recursive content glob is
+      the only structural fix.
+
+      This host is only exposed when it is the EF startup project, but the blast radius is the
+      whole build, so all five Web hosts carry the same guard.
+
+      Measured on Cleansia.Web.Mobile.Partner with `dotnet msbuild -getItem:Content`:
+      3 items clean -> 9 with an empty `bin\Debug` present -> 21 after two more builds.
+      The items below are the exact set the default glob produced here (verified the same way):
+      appsettings.json + appsettings.Development.json + appsettings.Production.json.
+      launchSettings.json was already excluded by the SDK's DefaultWebContentItemExcludes;
+      this project has no wwwroot and no .config, so nothing else is lost.
+    -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.*.json" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" />

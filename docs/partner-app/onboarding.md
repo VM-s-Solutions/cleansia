@@ -63,21 +63,31 @@ After email confirmation, the partner logs in with email and password. The authe
 
 ## Step 4: Profile Completion
 
-Once logged in, partners need to complete their profile via the `/profile` page. Required profile information includes:
+Once logged in, partners need to complete their profile via the `/profile` page.
+`Employee.IsProfileComplete()` is the authoritative list:
 
-- Personal details (name, phone, date of birth)
-- Address information
-- Bank account details (for invoice payments)
+- Personal details — first name, last name, email, phone, date of birth
+- Address — street, city, ZIP, country
+- **A payout destination** (see below), passport ID, nationality, registration number
 - Business identity:
   - Entity type (Natural Person or Legal Entity)
   - Registration Number (IČO) -- mandatory
   - VAT Number (DIČ) -- optional
   - Legal Entity Name -- required only when Entity type is Legal Entity
-- Preferred languages
-- Availability schedule (days/times they can work)
 
-::: info
-Emergency contacts are optional and are **not** required for profile completion.
+::: info Not part of the completeness check
+**Emergency contacts** are optional. **Documents** are handled separately by the registration lock,
+and **the availability schedule is not read by matching or dispatch** — dispatch is a first-come
+pull board, so a filled-in schedule does not gate anything today.
+:::
+
+::: tip Bank details live in their own record (ADR-0034)
+The payout destination is an `EmployeePayoutDetails` row, not a column on the employee. The
+completeness gate reads a scalar — `HasPayoutDetails || IBAN` — where `IBAN` is a **legacy** column
+kept because there is no backfill for cleaners onboarded before the new record existed; dropping it
+would mark them incomplete and lock them out of the partner surface overnight.
+
+Admins see a **masked** view by default; the plaintext is behind a separate, audited reveal action.
 :::
 
 ::: tip Country Configuration

@@ -9,7 +9,8 @@ public sealed class OrderPricingCalculator(
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
     IExtraRepository extraRepository,
-    ICurrencyRepository currencyRepository) : IOrderPricingCalculator
+    ICurrencyRepository currencyRepository,
+    IExpressWaiverResolver expressWaiverResolver) : IOrderPricingCalculator
 {
     public async Task<OrderPricingResult> CalculateAsync(
         IEnumerable<string> selectedServiceIds,
@@ -19,6 +20,8 @@ public sealed class OrderPricingCalculator(
         int bathrooms,
         string? currencyId,
         DateTime? cleaningDateUtc,
+        string? userId,
+        DateTime nowUtc,
         CancellationToken cancellationToken)
     {
         var packages = await packageRepository.GetByIds(selectedPackageIds)
@@ -55,14 +58,25 @@ public sealed class OrderPricingCalculator(
         // subtotal — applied here so the wizard summary line item matches
         // what gets persisted in Order.TotalPrice.
         //
-        // Quoted in the CHARGE currency, like TotalPrice: CreateOrder.Handler derives its discount
-        // base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be subtracted
-        // from a scaled total and inflate every discounted price at any exchange rate but 1.
+        // EVERY money figure this method returns is in the CHARGE currency — the catalog is priced in
+        // the base one, so the scaling happens here and exactly once. CreateOrder.Handler derives its
+        // discount base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be
+        // subtracted from a scaled total and inflate every discounted price at any exchange rate but 1;
+        // the broken-out line items render under this quote's own CurrencyCode, so an unscaled one
+        // prints a base-currency number under the charge currency's symbol.
         var chargeSubtotal = baseSubtotal * exchangeRate;
+
+        // PURE READ — the resolver never writes, which is what lets the quote path and the create
+        // validator both call it without burning a credit. The reservation happens once, in
+        // CreateOrder.Handler, before this price is ever frozen onto an order.
+        var waiver = await expressWaiverResolver.ResolveForUserAsync(
+            userId, cleaningDateUtc, nowUtc, cancellationToken);
+
         bool expressSurchargeApplied = false;
         decimal expressSurchargeAmount = 0m;
         if (cleaningDateUtc.HasValue
-            && BookingPolicy.RequiresExpressSurcharge(cleaningDateUtc.Value, DateTime.UtcNow))
+            && BookingPolicy.RequiresExpressSurcharge(
+                cleaningDateUtc.Value, nowUtc, waiverApplies: waiver.Waived))
         {
             expressSurchargeApplied = true;
             expressSurchargeAmount = chargeSubtotal * BookingPolicy.ExpressSurchargeRate;
@@ -74,11 +88,13 @@ public sealed class OrderPricingCalculator(
             TotalPrice: totalPrice,
             CurrencyId: currency?.Id ?? string.Empty,
             CurrencyCode: currency?.Code ?? string.Empty,
-            ServicesSubtotal: servicesSubtotal,
-            PackagesSubtotal: packagesSubtotal,
-            ExtrasSubtotal: extrasSubtotal,
+            ServicesSubtotal: servicesSubtotal * exchangeRate,
+            PackagesSubtotal: packagesSubtotal * exchangeRate,
+            ExtrasSubtotal: extrasSubtotal * exchangeRate,
             ExpressSurchargeApplied: expressSurchargeApplied,
             ExpressSurchargeAmount: expressSurchargeAmount,
-            ExchangeRate: exchangeRate);
+            ExchangeRate: exchangeRate,
+            ExpressSurchargeWaivedByMembership: waiver.Waived,
+            ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null);
     }
 }

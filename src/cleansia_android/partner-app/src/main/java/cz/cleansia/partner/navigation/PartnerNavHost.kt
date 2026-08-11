@@ -41,6 +41,7 @@ import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.main.MainScaffold
 import cz.cleansia.partner.features.notifications.NotificationsScreen
 import cz.cleansia.partner.features.orders.OrderDetailScreen
+import cz.cleansia.partner.features.orders.PendingOffersScreen
 import cz.cleansia.partner.features.orders.RegistrationLockScreen
 import cz.cleansia.partner.features.orders.OnboardingChainViewModel
 import cz.cleansia.partner.features.orders.isRegistrationComplete
@@ -49,6 +50,7 @@ import cz.cleansia.partner.features.profile.BankSectionScreen
 import cz.cleansia.partner.features.profile.DocumentsSectionScreen
 import cz.cleansia.partner.features.profile.EmergencySectionScreen
 import cz.cleansia.partner.features.profile.IdentificationSectionScreen
+import cz.cleansia.partner.features.profile.JobRadiusScreen
 import cz.cleansia.partner.features.onboarding.OnboardingScreen
 import cz.cleansia.partner.features.profile.PersonalSectionScreen
 import cz.cleansia.partner.features.profile.ProfileScreen
@@ -190,6 +192,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onOpenProfileSection = { route -> navController.navigate(route) },
                 onOpenEarnings = { navController.navigate(NavRoute.Earnings) },
                 onOpenNotifications = { navController.navigate(NavRoute.Notifications) },
+                onOpenPendingOffers = { navController.navigate(NavRoute.PendingOffers) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
                         popUpTo(navController.graph.id) { inclusive = true }
@@ -206,6 +209,19 @@ fun PartnerNavHost(navController: NavHostController) {
             NotificationsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onOpenRoute = { route -> navController.navigate(route) },
+            )
+        }
+
+        composable<NavRoute.PendingOffers> {
+            PendingOffersScreen(
+                onNavigateBack = { navController.popBackStack() },
+                // A confirmed offer is an ordinary job from that instant on, so it lands on the
+                // detail every other taken job lands on.
+                onOpenOrder = { id ->
+                    navController.navigate(NavRoute.OrderDetail(orderId = id)) {
+                        popUpTo(NavRoute.PendingOffers) { inclusive = true }
+                    }
+                },
             )
         }
 
@@ -325,6 +341,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onNavigateToDocuments = { navController.navigate(NavRoute.ProfileDocuments) },
                 onNavigateToLanguage = { navController.navigate(NavRoute.PreferenceLanguage) },
                 onNavigateToTheme = { navController.navigate(NavRoute.PreferenceTheme) },
+                onNavigateToJobRadius = { navController.navigate(NavRoute.PreferenceJobRadius) },
                 onNavigateToDevices = { navController.navigate(NavRoute.Devices) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
@@ -437,6 +454,13 @@ fun PartnerNavHost(navController: NavHostController) {
 
         composable<NavRoute.PreferenceTheme> {
             ThemePickerScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable<NavRoute.PreferenceJobRadius> {
+            JobRadiusScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
         }
 
         composable<NavRoute.Devices> {

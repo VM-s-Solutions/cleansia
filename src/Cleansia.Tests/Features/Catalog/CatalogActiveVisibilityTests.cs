@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -59,6 +61,17 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         ctx.Services.AddRange(activeService, retiredService);
         ctx.Packages.AddRange(activePackage, retiredPackage);
 
+        // Bookable is IsActive AND quotable, so the entries this suite expects to SEE need a
+        // platform-wide pay config; without one they would be withheld for the other reason and the
+        // deactivation assertions would pass vacuously.
+        var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+        ctx.Currencies.Add(currency);
+        ctx.EmployeePayConfigs.AddRange(
+            EmployeePayConfig.CreateForService(activeService.Id, 500m, currency.Id),
+            EmployeePayConfig.CreateForService(retiredService.Id, 500m, currency.Id),
+            EmployeePayConfig.CreateForPackage(activePackage.Id, 250m, currency.Id),
+            EmployeePayConfig.CreateForPackage(retiredPackage.Id, 250m, currency.Id));
+
         await ctx.CommitAsync(CancellationToken.None);
 
         return (activeService.Id, retiredService.Id, activePackage.Id, retiredPackage.Id);
@@ -70,7 +83,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var (activeServiceId, retiredServiceId, _, _) = await SeedAsync();
 
         await using var ctx = NewContext();
-        var overview = (await new GetServiceOverview.Handler(new ServiceRepository(ctx))
+        var overview = (await new GetServiceOverview.Handler(new ServiceRepository(ctx), new EmployeePayConfigRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, s => s.Id == activeServiceId);
@@ -84,7 +97,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var (_, _, activePackageId, retiredPackageId) = await SeedAsync();
 
         await using var ctx = NewContext();
-        var overview = (await new GetPackageOverview.Handler(new PackageRepository(ctx))
+        var overview = (await new GetPackageOverview.Handler(new PackageRepository(ctx), new EmployeePayConfigRepository(ctx))
             .Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, p => p.Id == activePackageId);

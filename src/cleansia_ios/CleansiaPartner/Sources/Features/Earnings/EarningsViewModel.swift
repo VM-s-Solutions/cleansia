@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class EarningsViewModel: ViewModel {
-    @Published private(set) var state: UiState<DashboardStatsDto> = .loading
+    @Published private(set) var state: UiState<DashboardStats> = .loading
 
     private let client: PartnerDashboardClient
 

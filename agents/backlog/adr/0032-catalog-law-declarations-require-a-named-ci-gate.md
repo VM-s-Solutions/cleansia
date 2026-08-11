@@ -12,6 +12,11 @@
   ADR-0033**, where they are its D1 and D2 — they are *one* decision, because draft-D6's test 3 *is*
   D7. What remains here is one decision: **what a catalog entry that constrains call sites must state
   about its own enforcement.** ADR-0033 is `proposed`, not accepted (see its status block).
+  *[pointer, 2026-08-05 — **not an erratum**; signed by the dated closure appended at the end of this
+  ADR (§A). The sentence immediately above was true when written and is **false today**: ADR-0033 `:3`
+  reads `**Status:** accepted`, dated 2026-08-05. Do not act on it. The original text is left standing
+  because this is a record of what the ADR-0032 panel stated on 2026-08-01, not a mis-transcription.
+  This annotation carries no decision content of its own.]*
 - **Refines:** `agents/knowledge/conventions.md` §"Harvest good patterns back into the catalog" (the
   "earns its place" bar) and `agents/process/enforcement.md` (the "deterministic beats diligent"
   principle, the E9 two-tier precedent, and the **zero-baseline rule** at `enforcement.md:104-106`).
@@ -23,6 +28,12 @@
 - **Number note:** **0031 is taken** by `0031-nswag-regen-drift-is-guarded-at-regen-time.md`, which
   exists only in T-0439's worktree and has not reached `master`. **0033** is allocated by this panel to
   the split-off decision. A reader on `master` sees a gap at 0031 until T-0439 merges.
+  *[pointer, 2026-08-05 — **not an erratum**; signed by the dated closure appended at the end of this
+  ADR (§A). **There is no gap at 0031.** T-0439 merged as `acf2f0bc` (PR #175) and
+  `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` is a tracked file on
+  `master`. A reader following this note goes looking for a merge that has already happened. The
+  original text is left standing because it was true when written; this annotation carries no decision
+  content of its own.]*
 - **Ticket:** none — raised by the PM from the T-0451 reviewer's refusal to ratify a catalog edit
   inline. **Consumers:** one `patterns-mobile.md` hunk applied by its own lane holder (Block A), the
   `conventions.md` + `enforcement.md` edits applied with this ADR, and the follow-ups in §Follow-ups.
@@ -650,3 +661,87 @@ carries lasting business impact requiring an owner ruling.
 artifact. The amendments are concessions to the challenger's own proposals plus five overrules with
 their evidence stated; a new hole in the *amended* text is a new challenge, not a re-litigation of
 C1–C11.
+
+---
+
+## 2026-08-05 — Record-only closure: two header-block statements are stale (architect, T-0552)
+
+*Appended, dated and attributed per `adr/README.md:9-12` (**instrument 1 — a dated appended section**).
+The body above is **not rewritten**: two bracketed, dated **pointer** annotations were added inside the
+header block — one closing the **Split note (C8)**, one closing the **Number note** (cited by T-0552 as
+`:14` and `:23-25`; **named rather than numbered here, because the annotations themselves shift those
+digits** — ADR-0031 §A's lesson) — each self-describing and each signed by this block. **No decision content changes** — not
+the chosen option, not a threshold, not the scope, not an alternative's disposition, not the rationale.
+**ADR-0032's status remains `accepted`.** Filed as finding **F1** by the independent lead pass on
+2026-08-05, widened from one stale statement to two, and specified by **T-0552**.*
+
+### §A — Which instrument, and why it is not the erratum lane
+
+T-0552 asked for a *signed erratum*. **The erratum lane does not apply here, to either statement**, and
+saying so is the substance of this closure rather than a technicality.
+
+`adr/README.md:16-26` opens the in-body-annotation lane **only** for *"a **transcription error** — a
+value mis-copied from the ADR's **own cited source**, where that source plus the ADR's own ruling
+already determine the correct value"*, and closes with *"the erratum lane is for digits, not meaning"*
+(`:29`). Both statements below were **accurate when written on 2026-08-01** and were made false by
+events after acceptance. Nothing was mis-copied; the world moved. Stated as a rule so the next reader
+does not have to re-derive it:
+
+> **An erratum corrects the ADR against its own source. A closure records that the world moved.**
+> If the sentence was *right when written*, it is never an erratum, however wrong it is today.
+
+That line has now been drawn twice in four days on the same pair of ADRs: ADR-0033's false *"refines,
+does not reverse"* header claim rode a **dated record-only closure**, explicitly *"meaning, not digits,
+so not the erratum lane (`adr/README.md:16-29`)"* (`architecture/decisions/catalog-governance.md`,
+finding L3). This closure follows that precedent, not the ADR-0031 §A one — ADR-0031's errata re-anchored
+**line-number citations that had drifted**, which is the paradigm case of digits.
+
+The in-body **pointer** annotations are the ADR-0031 §"Amendment ledger" form, not the erratum form:
+*"a dated pointer annotation was added at V9 in the body so a reviewer cannot act on the withdrawn text
+— that annotation is signed by this block and carries no decision content of its own."* They exist
+because both stale statements sit in the **header block**, which is what a reader consults when asking
+*"does this ADR bind, and where is the split decision?"* — a correction that lives only 700 lines below
+does not reach that reader.
+
+### §B — The two stale statements, with the fact that made each stale
+
+*(Line citations below are T-0552's, i.e. the file **as it stood before** these annotations were added;
+the notes are named so the reference survives the shift.)*
+
+| # | Line | What it says | Why it is stale (verified at HEAD, 2026-08-05) |
+|---|---|---|---|
+| **1** | `:14` — the **Split note (C8)** | *"ADR-0033 is `proposed`, not accepted (see its status block)."* | **ADR-0033 is `accepted`.** Its status block reads `**Status:** accepted`, dated *"drafted `proposed`; the floor challenged and the ADR amended + accepted **2026-08-05** by the T-0471 panel"* (`0033-catalog-edit-authority-…md:3-5`), landed by `34a3c733` / `0e1af548`. **Made stale by the very round that produced this finding.** |
+| **2** | `:23-25` — the **Number note** | *"**0031 is taken** by `0031-nswag-regen-drift-is-guarded-at-regen-time.md`, which exists only in T-0439's worktree and has not reached `master` … A reader on `master` sees a gap at 0031 until T-0439 merges."* | **0031 is on `master`.** T-0439 merged as **`acf2f0bc`** (PR #175) and the file is tracked in the working tree. ADR-0033's own Number note (`:19-27`) carries the same correction, made in place there because **that** ADR was `proposed` at the time — and it names this one as needing a signed instrument instead. |
+
+**Statement 1 is the one that does damage.** A reader who asks *"does ADR-0033's routing rule bind?"*,
+finds this sentence, and stops, concludes the routing test is undecided. The truth is more specific:
+ADR-0033 is `accepted` **and, as of 2026-08-05, in force** — its named enforcer landed as
+reviewer-check 5 *"Catalog-edit routing"* (T-0549/T-0550/T-0551). Between 2026-08-01 and 2026-08-05 it
+was `accepted` **and not in force**, which is a third state this sentence could not express either.
+The living companion (`architecture/decisions/catalog-governance.md` §"What routes to the Architect")
+is the current-state record; this ADR is the 2026-08-01 record and stays that way.
+
+### §C — Deliberately NOT annotated: `:624`, the C5 verdict row
+
+The **same** phrase — *"ADR-0033 is `proposed`, not accepted"* — occurs a third time, in the `## Verdict`
+table's **C5** row, as the panel's stated *reason* for leaving the split-off decision unaccepted
+(*"because that floor is lead-authored rather than argued by either party"*). **That occurrence is left
+untouched, and it is not a third stale statement.** It records what the panel ruled on 2026-08-01 and is
+true as history; annotating it would falsify the record. This is ADR-0031 §A's rule applied unchanged:
+
+> *"Re-anchor citations that help a future reader find current config; leave citations that pin what was
+> ruled on."*
+
+The two annotated lines are forward-looking pointers (*"see its status block"*, *"until T-0439 merges"*);
+the verdict row is a finding. Same words, different jobs.
+
+### §D — What this closure does **not** do
+
+- It does **not** change ADR-0032's status. It is `accepted`, not `superseded`, and no clause is altered.
+- It does **not** touch ADR-0033's status, or its not-in-force history — that is the living doc's record
+  and T-0549's landing.
+- It does **not** rename this file to match the panel-amended H1. That is still **FT-7** (`git mv` + a
+  link sweep), unfiled as a ticket.
+- It does **not** re-open C5, the split, or any disposition in the verdict table.
+
+— Architect, 2026-08-05 (T-0552). This ADR remains immutable; further changes supersede.

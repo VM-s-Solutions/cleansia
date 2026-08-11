@@ -4,6 +4,8 @@ import cz.cleansia.customer.api.client.NotificationPreferencesApi as GenNotifica
 import cz.cleansia.customer.api.model.NotificationPreferencesDto as GenNotificationPreferencesDto
 import cz.cleansia.customer.api.model.UpdateNotificationPreferencesCommand as GenUpdateNotificationPreferencesCommand
 import kotlinx.serialization.Serializable
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -20,37 +22,44 @@ class NotificationPreferencesApi(
 ) {
     suspend fun getMine(): Response<NotificationPreferencesPayload> {
         val raw = notificationPreferencesApi.notificationPreferencesGetMine()
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun update(body: NotificationPreferencesPayload): Response<NotificationPreferencesPayload> {
         val raw = notificationPreferencesApi.notificationPreferencesUpdate(
             updateNotificationPreferencesCommand = body.toWire(),
         )
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
 
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
-
-private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload =
-    NotificationPreferencesPayload(
-        orderUpdates = this?.orderUpdates ?: true,
-        cleanerOnTheWay = this?.cleanerOnTheWay ?: true,
-        orderCompleted = this?.orderCompleted ?: true,
-        orderCancelled = this?.orderCancelled ?: true,
-        refundIssued = this?.refundIssued ?: true,
-        membershipExpiring = this?.membershipExpiring ?: true,
-        membershipCancelled = this?.membershipCancelled ?: true,
-        tierUpgrade = this?.tierUpgrade ?: true,
-        // Promo is opt-in — server-side default is false so the user has to
-        // explicitly turn it on. Mirror that here.
-        promo = this?.promo ?: false,
-        disputeReply = this?.disputeReply ?: true,
-        recurringScheduled = this?.recurringScheduled ?: true,
+/**
+ * Every toggle is refused, and this surface is the one where a coerced value does not stay a display
+ * bug: `update` is a replace-all PUT of the whole payload, so the next toggle the customer touches
+ * writes back all eleven — the client's invention becomes the server's record. A defaulted `promo`
+ * of `false` silently unsubscribes someone who opted in, and a defaulted `true` on any of the other
+ * ten re-subscribes someone who opted out, which is a consent decision the app has no standing to
+ * make on their behalf.
+ *
+ * A null body is refused rather than being read as a complete set of server-side defaults: the
+ * backend lazy-creates the row on read, so "no preferences exist" is not a state this endpoint has.
+ */
+private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload {
+    val prefs = required("NotificationPreferencesDto")
+    return NotificationPreferencesPayload(
+        orderUpdates = prefs.orderUpdates.required("orderUpdates"),
+        cleanerOnTheWay = prefs.cleanerOnTheWay.required("cleanerOnTheWay"),
+        orderCompleted = prefs.orderCompleted.required("orderCompleted"),
+        orderCancelled = prefs.orderCancelled.required("orderCancelled"),
+        refundIssued = prefs.refundIssued.required("refundIssued"),
+        membershipExpiring = prefs.membershipExpiring.required("membershipExpiring"),
+        membershipCancelled = prefs.membershipCancelled.required("membershipCancelled"),
+        tierUpgrade = prefs.tierUpgrade.required("tierUpgrade"),
+        promo = prefs.promo.required("promo"),
+        disputeReply = prefs.disputeReply.required("disputeReply"),
+        recurringScheduled = prefs.recurringScheduled.required("recurringScheduled"),
     )
+}
 
 private fun NotificationPreferencesPayload.toWire(): GenUpdateNotificationPreferencesCommand =
     GenUpdateNotificationPreferencesCommand(
@@ -75,15 +84,15 @@ private fun NotificationPreferencesPayload.toWire(): GenUpdateNotificationPrefer
  */
 @Serializable
 data class NotificationPreferencesPayload(
-    val orderUpdates: Boolean = true,
-    val cleanerOnTheWay: Boolean = true,
-    val orderCompleted: Boolean = true,
-    val orderCancelled: Boolean = true,
-    val refundIssued: Boolean = true,
-    val membershipExpiring: Boolean = true,
-    val membershipCancelled: Boolean = true,
-    val tierUpgrade: Boolean = true,
-    val promo: Boolean = false,
-    val disputeReply: Boolean = true,
-    val recurringScheduled: Boolean = true,
+    val orderUpdates: Boolean,
+    val cleanerOnTheWay: Boolean,
+    val orderCompleted: Boolean,
+    val orderCancelled: Boolean,
+    val refundIssued: Boolean,
+    val membershipExpiring: Boolean,
+    val membershipCancelled: Boolean,
+    val tierUpgrade: Boolean,
+    val promo: Boolean,
+    val disputeReply: Boolean,
+    val recurringScheduled: Boolean,
 )

@@ -36,8 +36,19 @@ final class ProfileViewModel: ViewModel {
         AvatarDisplay.resolve(photo: currentUser?.profilePhoto, edit: avatarEdit)
     }
 
+    /// There is a pick to discard, or a stored photo not already staged for deletion. Deliberately not
+    /// "an image is on screen": a stored photo whose signature came back blank draws as the initials,
+    /// and gating on what is drawn would hide the only way to delete it.
     var canRemoveAvatar: Bool {
-        editorAvatar.isImage
+        switch avatarEdit {
+        case .picked: true
+        case .removed: false
+        case .unchanged: hasStoredPhoto
+        }
+    }
+
+    private var hasStoredPhoto: Bool {
+        currentUser?.profilePhoto?.fileName != nil
     }
 
     /// Downscaled to the same 1920px / JPEG-0.7 bound every other upload on this platform uses, and
@@ -58,8 +69,11 @@ final class ProfileViewModel: ViewModel {
         )
     }
 
+    /// Remove is also how a pick is undone, so it is offered for an image the server has never seen.
+    /// There is nothing to delete then — asking for a removal would have the save confirm one that
+    /// never happened — so the pick is simply discarded.
     func removeAvatar() {
-        avatarEdit = .removed
+        avatarEdit = hasStoredPhoto ? .removed : .unchanged
     }
 
     func discardAvatarEdit() {
@@ -73,6 +87,12 @@ final class ProfileViewModel: ViewModel {
         guard avatarRetriedFor != fileName else { return }
         avatarRetriedFor = fileName
         await refresh()
+    }
+
+    /// The signature the refetch bought expires too, so a rendered image releases the guard: the next
+    /// failure of the same blob is a fresh expiry, not the loop the guard exists to stop.
+    func avatarLoadSucceeded() {
+        avatarRetriedFor = nil
     }
 
     func refresh() async {
@@ -107,10 +127,12 @@ final class ProfileViewModel: ViewModel {
             photo: avatarEdit.upload,
             removePhoto: avatarEdit.isRemoval
         )
+        let confirmation = AvatarSaveConfirmation.forEdit(avatarEdit)
         switch await repository.update(update) {
         case .success:
             saveState = .idle
             avatarEdit = .unchanged
+            snackbar.showSuccess(confirmation?.message ?? L10n.Profile.saveSuccess)
             saved.send()
         case let .failure(error):
             let message = localizer.message(for: error)

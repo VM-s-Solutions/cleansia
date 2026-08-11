@@ -54,4 +54,8 @@ enum L10n {
     static func format(_ key: String, _ args: CVarArg...) -> String {
         String(format: localized(key), arguments: args)
     }
+
+    static func format(_ key: String, arguments: [CVarArg]) -> String {
+        String(format: localized(key), arguments: arguments)
+    }
 }

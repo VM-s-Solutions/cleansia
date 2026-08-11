@@ -43,7 +43,7 @@ class MainShellViewModel @Inject constructor(
     fun refreshCatalog() {
         viewModelScope.launch {
             catalogRepository.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
     }
@@ -51,7 +51,7 @@ class MainShellViewModel @Inject constructor(
     fun refreshAddresses() {
         viewModelScope.launch {
             addressRepository.refreshFromServer().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
     }

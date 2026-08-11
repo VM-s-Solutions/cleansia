@@ -134,7 +134,9 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   }
 
   approveEmployee(employeeId: string, workCountryId: string, notes?: string): void {
-    const request = new ApproveEmployeeRequest({ workCountryId, notes });
+    const request = new ApproveEmployeeRequest();
+    request.workCountryId = workCountryId;
+    request.notes = notes;
     this.adminClient.adminEmployeeClient
       .approve(employeeId, request)
       .pipe(
@@ -213,7 +215,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   }
 
   rejectEmployee(employeeId: string, reason: string): void {
-    const request = new RejectEmployeeRequest({ reason });
+    const request = new RejectEmployeeRequest();
+    request.reason = reason;
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(

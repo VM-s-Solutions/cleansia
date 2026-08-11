@@ -43,7 +43,7 @@ public class DownloadInvoice
             if (invoice == null || string.IsNullOrEmpty(invoice.PdfBlobUrl))
             {
                 return BusinessResult.Failure<Response>(
-                    new Error(BusinessErrorMessage.InvoiceNotFound, "Invoice or PDF not found"));
+                    new Error(nameof(request.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
             }
 
             var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
@@ -53,7 +53,7 @@ public class DownloadInvoice
                 if (string.IsNullOrEmpty(employeeId) || invoice.EmployeeId != employeeId)
                 {
                     return BusinessResult.Failure<Response>(
-                        new Error(BusinessErrorMessage.InvoiceNotFound, "Invoice or PDF not found"));
+                        new Error(nameof(request.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
                 }
             }
 

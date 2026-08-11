@@ -1,18 +1,18 @@
 ---
 id: T-0499
 title: One file, five values — Functions host.json polls 14 queue listeners every 5s and defeats its own sampling (€35–42/month)
-status: draft
+status: done
 size: S
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
-adrs: [0015]
+adrs: [0015, 0029]
 layers: [architect, backend]
 security_touching: false
-manual_steps: []
+manual_steps: [azure-deploy]
 sprint: 15
 ---
 
@@ -132,6 +132,16 @@ investigation says 14).
 **This is the highest euro-per-line-changed item in the entire backlog: one file, five values.**
 
 ## Status log
+- 2026-08-05 — **in_review (backend).** **All five values were already changed** by `2012b014` and are
+  pinned by `HostJsonTelemetryCostTests`; this pass re-verified them, corrected one premise
+  (`newBatchThreshold`/`batchSize` are throughput, not idle-cost, settings), and **derived the listener
+  count from the triggers instead of trusting it** — 14, confirmed. That count surfaced a real drift:
+  `storage.bicep` provisioned **12 queues for 14 listeners**, missing `live-activity-dispatch` and its poison
+  companion despite its own comment claiming it mirrors `QueueNames.cs`. Fixed and pinned.
+  **`manual_steps: [azure-deploy]`** added — a new token; the Bicep queue addition needs a `Deploy to DEV`
+  to apply (nothing depends on it: both producer and listener create the queue at runtime). AC1 and AC5
+  remain **owner steps** and AC5 is an **owed measurement** — the change has been live since 2026-08-02, so
+  the ≥7-day window is already open.
 - 2026-08-02 — **draft (created by pm from the Azure cost investigation).** **The five values were
   PM-verified first-hand** — `host.json` was read in full and every claim in the investigation about
   its contents is accurate, including the sampling-configured-not-to-engage shape. The **€35–42
@@ -140,3 +150,109 @@ investigation says 14).
   them at cost.
 
 ## Review
+
+### Gate 0 — the five values were ALREADY CHANGED. This ticket is mostly a re-verification.
+
+`2012b014` (2026-08-02 17:31, on `master`) rewrote `host.json`. At `c15e295e` the file is:
+
+| Ticket's finding | At HEAD | AC |
+|---|---|---|
+| `maxPollingInterval: 00:00:05` | **`00:00:30`** (`host.json:19`) | AC2 done |
+| `excludedTypes: "Request;Exception"` | **`"Exception"`** + `maxTelemetryItemsPerSecond: 5` (`:7-8`) | AC3 done |
+| `Host.Aggregator: "Trace"` | **absent** — inherits the default (`:11-15`) | AC4 done |
+| `logLevel.default: "Information"` | **`"Warning"`** (`:12`) | AC4 done |
+| `newBatchThreshold: 0` + `batchSize: 1` | **unchanged** — see below | AC2, deliberately |
+
+The reasoning already lives in `Cleansia.Tests/Functions/HostJsonTelemetryCostTests.cs` (four tests, one per
+value), which is the right home: `host.json` admits no comments.
+
+**One premise in the ticket's table is wrong and should not be re-derived at cost.** `newBatchThreshold: 0`
+with `batchSize: 1` is listed as a cost driver — *"forces a fresh poll per message rather than batching"*.
+That is a **throughput** setting, not an idle-cost one. The bill described here is an **idle** system's:
+polls against **empty** queues, which retrieve nothing and are unaffected by batch size. Changing it would
+alter concurrency (today: strictly one message at a time) for no telemetry saving. Left alone, on purpose.
+
+### AC1 / AC5 — OWNER STEPS, not dischargeable here
+
+I have no Azure portal or `az` access. The cost attribution and the ≥7-day before/after both need the
+portal. **AC5 is an owed measurement and is the more valuable of the two**, because the change has already
+been live since 2026-08-02 — so the "after" window is open now, and the "before" is whatever the July
+invoice says. The **€35–42/month figure remains RELAYED and unverified by me.**
+
+### AC2 — the latency budget, per environment and per listener
+
+**The real count is 14, and it is now derived rather than asserted.** `QueueListenerInventoryTests`
+(new) reflects over every `[QueueTrigger]` in `Cleansia.Functions/Functions/`: **7 live + 7 poison = 14**.
+The investigation's number is correct.
+
+**Per-listener check — nothing here is sub-minute-critical:**
+
+- **7 of the 14 are poison companions.** They dead-letter and are irrelevant to alerting latency: the alert
+  fires on the storage `PutMessage` log row, not on the consumer
+  (`deploy/bicep/modules/queueAlerts.bicep:70-101`, `evaluationFrequency`-driven). **The briefing's concern
+  that a slower poison consumer blunts the alert does not apply** — the alert would fire at the same time if
+  the poison consumers did not exist. Their pickup speed only affects how fast forensics land.
+- **The two a user can perceive are `notifications-dispatch` (push) and `live-activity-dispatch` (iOS lock
+  screen).** Both are produced through the **outbox**, not enqueued directly —
+  `LiveActivityProducer.cs:35-49` calls `pendingDispatch.Enqueue`. So this ceiling is the *second* of three
+  legs: drainer tick ≤10 s + this backoff ≤30 s + handler ≈ **~40 s worst case**, matching the figure
+  `patterns-backend.md` already publishes. Typical is well under, since the ceiling is only reached by a
+  queue that has been idle.
+- The schedule-driven work (`AutoCancelStaleRecurringOrders`, `SendRecurringOrderReminders`, and 11 more) is
+  on **timer** triggers and never touches a queue listener.
+
+**Budget: ~40 s to a lock screen on a fully idle system is accepted for dev.** A Live Activity that updates
+40 s after the cleaner taps *On the way* is the one place this is arguable, and it is **named for the owner
+rather than silently bought back** — halving the interval re-buys the telemetry cost this ticket exists to
+remove.
+
+**Per environment: the file CANNOT express it, and here is the shape that can.** `extensions.queues` is
+host-global — there is no per-queue override — and one `host.json` ships to every environment. The
+override mechanism is the app setting
+`AzureFunctionsJobHost__extensions__queues__maxPollingInterval`, which **nothing sets**. Since dev is the
+only environment ever deployed, **the single value is dev's, and dev wins by default.** A prod that wants
+faster pickup buys it with that app setting on the Functions app, not by editing this file. All of this is
+now written into `HostJsonTelemetryCostTests.QueuePollingIntervalIsThirtySeconds`, where the rest of the
+reasoning lives.
+
+### AC7 — retention is NOT touched, and why
+
+**Retention was not changed and must not be.** The Log Analytics workspace is under the free-tier retention
+floor, so lowering it saves **€0** — it is motion that looks like a fix and produces nothing, while costing
+the forensic window on a platform whose error tracking is already thinner than assumed. The next person
+looking at this invoice should skip retention entirely and look at ingestion volume.
+
+### AC6 — no functional change
+
+All 14 listeners still fire — the trigger set is untouched, and `QueueListenerInventoryTests` now asserts
+every trigger names a declared queue or its poison companion. The four Functions smoke suites are green
+inside the full unit run.
+
+### A drift found while counting the listeners, and fixed
+
+**`deploy/bicep/modules/storage.bicep` provisioned 12 queues for 14 listeners.** Its own comment
+(`:52-55`) says the array mirrors `QueueNames.cs`, and it had drifted by one: `live-activity-dispatch` and
+its poison companion — required by ADR-0029, present in `QueueNames.cs`, present in two triggers — were
+never in the template.
+
+Nothing was broken, which is exactly why it survived: both the producer
+(`AzureStorageQueueClient.cs:17`, `CreateIfNotExistsAsync`) and the Functions listener create a missing
+queue on first use. The only symptom is two queues unmanaged by the template that claims to own them.
+
+Fixed by adding the name (one line; ARM queue creation is idempotent, so it is a no-op against the queues
+that already exist at runtime) and pinned by
+`QueueListenerInventoryTests.EveryDeclaredQueueIsProvisionedByTheStorageTemplate`, **mutation-proved** by
+removing it again → red.
+
+**`manual_step: azure-deploy`** — the Bicep change needs a `Deploy to DEV` run to take effect. Nothing
+depends on it (the queues exist), so it can ride the next deploy.
+
+### AC8 (Gate 0.5)
+
+Baselines re-measured locally at `c15e295e` before any edit: **3129 / 144 / 135**, all exit 0 (the ticket's
+2295 / 108 / 75 are stale). After: **3146 / 144 / 135**.
+
+**Leg 1 / mutation, under leg 3 as the AC asks:** there is no mutation for a JSON value, and no local
+measurement of a billing outcome. The four `host.json` value assertions were already shipped and are
+already the guard. What was *added* here is falsifiable and was mutation-proved — the queue-provisioning
+pin (see above). **The euro saving is asserted by nobody in this review; AC5 owes it.**

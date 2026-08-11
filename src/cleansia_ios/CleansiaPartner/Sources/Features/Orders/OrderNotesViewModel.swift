@@ -128,8 +128,16 @@ final class OrderNotesViewModel: ViewModel {
             .success([])
         }
 
-        func getById(orderId _: String) async -> ApiResult<CleansiaPartnerApi.OrderItem> {
-            .success(CleansiaPartnerApi.OrderItem())
+        func getById(orderId _: String) async -> ApiResult<OrderDetail> {
+            .success(.preview)
+        }
+
+        func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {
+            .success([])
+        }
+
+        func declinePreferredOffer(orderId _: String) async -> ApiResult<Void> {
+            .success(())
         }
 
         func takeOrder(orderId _: String) async -> ApiResult<Void> {

@@ -2,7 +2,6 @@ package cz.cleansia.partner.features.dashboard
 
 import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
@@ -12,6 +11,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.data.dashboard.DashboardRepository
 import cz.cleansia.partner.data.dashboard.DashboardSnapshot
+import cz.cleansia.partner.data.dashboard.dashboardStats
 import cz.cleansia.partner.features.dashboard.DashboardUiState
 import cz.cleansia.partner.features.dashboard.DashboardViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -44,7 +44,7 @@ class DashboardViewModelTest {
     private lateinit var notificationFeedRepository: NotificationFeedRepository
 
     private val snapshotFlow = MutableStateFlow(DashboardSnapshot())
-    private val stats = mockk<DashboardStatsDto>()
+    private val stats = dashboardStats()
 
     private val profile = UserProfileData(
         userId = "user-1",

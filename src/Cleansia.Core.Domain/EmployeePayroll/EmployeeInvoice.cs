@@ -8,6 +8,8 @@ namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class EmployeeInvoice : Auditable, ITenantEntity
 {
+    private const int PdfGenerationErrorMaxLength = 1000;
+
     [Required]
     public string EmployeeId { get; private set; }
     public Employee? Employee { get; private set; }
@@ -45,7 +47,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
 
     public bool PdfGenerationFailed { get; private set; }
 
-    [MaxLength(1000)]
+    [MaxLength(PdfGenerationErrorMaxLength)]
     public string? PdfGenerationError { get; private set; }
 
     public DateTime? PdfGenerationAttemptedAt { get; private set; }
@@ -92,12 +94,17 @@ public class EmployeeInvoice : Auditable, ITenantEntity
     private ICollection<OrderEmployeePay> _orderPays = [];
     public IReadOnlyCollection<OrderEmployeePay> OrderPays => _orderPays.ToList().AsReadOnly();
 
+    // variableSymbol is REQUIRED and deliberately not defaulted: it is claimed from the durable
+    // per-year counter before the invoice exists, and a defaulted parameter would let a future third
+    // creation path compile while silently issuing a payout invoice that carries no payment
+    // reference — which is exactly the state ADR-0046 closes.
     public static EmployeeInvoice Create(
         string employeeId,
         string payPeriodId,
         int totalOrders,
         decimal subTotal,
         string currencyId,
+        string variableSymbol,
         decimal bonusAmount = 0,
         decimal deductionAmount = 0)
     {
@@ -123,6 +130,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
             CurrencyId = currencyId,
             Status = EmployeeInvoiceStatus.Pending,
             GeneratedAt = DateTime.UtcNow,
+            VariableSymbol = variableSymbol,
             PaymentReference = invoiceNumber
         };
     }
@@ -131,7 +139,8 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         string employeeId,
         string payPeriodId,
         IReadOnlyCollection<OrderEmployeePay> orderPays,
-        string currencyId)
+        string currencyId,
+        string variableSymbol)
     {
         var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
 
@@ -141,6 +150,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
             orderPays.Count,
             subTotal,
             currencyId,
+            variableSymbol,
             bonusAmount,
             deductionAmount);
     }
@@ -193,10 +203,16 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
+    // Truncated to the column width on the way in: the message is an exception's, so its length is
+    // whatever a driver or a layout engine felt like emitting, and an over-long one makes the write
+    // that RECORDS the failure fail — losing the record and replacing a handled refusal with a
+    // truncation error from a completely different layer.
     public EmployeeInvoice SetPdfGenerationError(string error)
     {
         PdfGenerationFailed = true;
-        PdfGenerationError = error;
+        PdfGenerationError = error is { Length: > PdfGenerationErrorMaxLength }
+            ? error[..PdfGenerationErrorMaxLength]
+            : error;
         PdfGenerationAttemptedAt = DateTime.UtcNow;
         return this;
     }
@@ -209,8 +225,27 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
-    public EmployeeInvoice SetVariableSymbol(string? variableSymbol)
+    // A FIRST assignment to a row that has never had one, on an invoice against which no money has
+    // moved — never a reassignment. Both conditions are the whole safety argument: a symbol stamped
+    // after a transfer has left the bank claims a reference that was never on the wire, and a second
+    // symbol orphans every document already printed with the first.
+    public EmployeeInvoice AssignVariableSymbol(string variableSymbol)
     {
+        if (!string.IsNullOrEmpty(VariableSymbol))
+        {
+            throw new InvalidOperationException("Invoice already carries a variable symbol");
+        }
+
+        if (Status == EmployeeInvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException("Cannot assign a variable symbol to a paid invoice");
+        }
+
+        if (IsCancelled)
+        {
+            throw new InvalidOperationException("Cannot assign a variable symbol to a cancelled invoice");
+        }
+
         VariableSymbol = variableSymbol;
         return this;
     }
@@ -318,36 +353,20 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
+    // Derived, not stored: GeneratedAt is immutable once the invoice exists, so a regenerated PDF
+    // of an already-issued invoice always prints the same "datum splatnosti".
+    public DateTime CalculateDueDate(int paymentTermsDays)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(paymentTermsDays);
+
+        return GeneratedAt.Date.AddDays(paymentTermsDays);
+    }
+
     public string GenerateInvoiceNumber(string prefix = "EMP")
     {
         var employeeShort = EmployeeId.Substring(0, Math.Min(6, EmployeeId.Length)).ToUpper();
         var periodShort = PayPeriodId.Substring(0, Math.Min(6, PayPeriodId.Length)).ToUpper();
         return $"{prefix}-{periodShort}-{employeeShort}";
-    }
-
-    // FNV-1a-32 over the UTF-8 bytes — a process-independent stable hash. string.GetHashCode() is
-    // randomized per process in .NET, so a variable symbol recomputed in another process would
-    // silently mismatch the stored value on a payment reference (a fiscal correctness trap).
-    public static string GenerateVariableSymbol(string employeeId, string payPeriodId)
-    {
-        var empHash = StableHash(employeeId) % 10000;
-        var periodHash = StableHash(payPeriodId) % 1000000;
-        return $"{empHash:D4}{periodHash:D6}";
-    }
-
-    private static uint StableHash(string value)
-    {
-        const uint offsetBasis = 2166136261;
-        const uint prime = 16777619;
-
-        var hash = offsetBasis;
-        foreach (var b in System.Text.Encoding.UTF8.GetBytes(value))
-        {
-            hash ^= b;
-            hash *= prime;
-        }
-
-        return hash;
     }
 
     public decimal CalculateAveragePay()

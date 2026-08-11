@@ -9,8 +9,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import cz.cleansia.customer.api.model.AppliedDiscountSource as GenAppliedDiscountSource
 import cz.cleansia.customer.api.model.CreateOrderCommand as GenCreateOrderCommand
 import cz.cleansia.customer.api.model.CreateOrderResponse as GenCreateOrderResponse
+import cz.cleansia.customer.api.model.QuoteOrderResponse as GenQuoteOrderResponse
 
 /**
  * Pins the last hop before the wire — the app→generated mapping in
@@ -61,5 +63,43 @@ class BookingApiTest {
 
         assertEquals("Gate code 1234, dog is friendly.", sent.captured.specialInstructions)
         assertEquals("Side gate, key box code 4417.", sent.captured.accessInstructions)
+    }
+
+    /**
+     * The waiver verdict decides whether the summary charges the member 20 % or nothing, and a mapper
+     * that drops it defaults to `false` — which silently re-charges every waived booking while the
+     * whole suite stays green.
+     */
+    @Test
+    fun quote_carriesTheServerWaiverVerdictOntoTheAppDto() = runTest {
+        coEvery { orderApi.orderQuote(any()) } returns Response.success(
+            GenQuoteOrderResponse(
+                totalPrice = 1000.0,
+                finalPriceAfterDiscount = 900.0,
+                originalSubtotal = 1000.0,
+                appliedDiscountSource = GenAppliedDiscountSource._2,
+                currencyId = "c-1",
+                currencyCode = "CZK",
+                servicesSubtotal = 1000.0,
+                packagesSubtotal = 0.0,
+                extrasSubtotal = 0.0,
+                expressSurchargeApplied = false,
+                expressSurchargeAmount = 0.0,
+                expressSurchargeWaivedByMembership = true,
+                exchangeRate = 1.0,
+            ),
+        )
+
+        val quoted = BookingApi(orderApi).quote(
+            QuoteOrderCommand(
+                selectedServiceIds = listOf("s-1"),
+                selectedPackageIds = emptyList(),
+                rooms = 2,
+                bathrooms = 1,
+                cleaningDate = "2026-08-05T13:00:00Z",
+            ),
+        ).body()
+
+        assertEquals(true, quoted?.expressSurchargeWaivedByMembership)
     }
 }

@@ -31,6 +31,17 @@ public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseReposit
             .ToListAsync(cancellationToken);
     }
 
+    public async Task RemoveForEmployeeAsync(string employeeId, CancellationToken cancellationToken)
+    {
+        // No IsActive conjunct: a superseded version's row carries the same file name and reviewer notes as
+        // the live one, and the erasure has already deleted every version's blob.
+        var rows = await GetQueryableIgnoringTenant()
+            .Where(d => d.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
+
+        GetDbSet().RemoveRange(rows);
+    }
+
     public async Task<List<EmployeeDocument>> GetVersionHistoryAsync(string documentId, CancellationToken cancellationToken = default)
     {
         var document = await GetByIdAsync(documentId, cancellationToken);

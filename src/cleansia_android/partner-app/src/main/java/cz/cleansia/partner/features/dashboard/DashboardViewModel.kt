@@ -3,14 +3,14 @@ package cz.cleansia.partner.features.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
-import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
+import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
 import cz.cleansia.partner.data.dashboard.DashboardRepository
+import cz.cleansia.partner.data.dashboard.DashboardStats
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,9 +38,9 @@ sealed interface DashboardUiState {
     data class Loading(override val isUserRefreshing: Boolean) : DashboardUiState
 
     data class Loaded(
-        val stats: DashboardStatsDto?,
+        val stats: DashboardStats?,
         val upcoming: List<OrderListItem>,
-        val availableJobsPreview: AvailableJobsPreviewResponse?,
+        val availableJobsPreview: AvailableJobsPreview?,
         override val isUserRefreshing: Boolean,
     ) : DashboardUiState
 }

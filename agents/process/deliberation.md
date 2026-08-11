@@ -46,6 +46,14 @@ the author. (Same charter, parallel instances — DRY.)
         │
 5. LEAD adjudicates every open point: each challenge is RESOLVED (defended or fixed) or it BLOCKS.
      Consensus = zero blocking challenges remain. The lead records the verdict + the key decisions.
+     ├─ **Provenance check (named enforcer for `conventions.md` → "A claim about the tree cites the
+     │  tree").** For every load-bearing *code-state* claim in the artifact — a column exists, a path
+     │  is down, a call site is the only one, a migration is pending — the lead **re-opens the file**
+     │  rather than trusting the author's or the challenger's citation, and records any divergence in
+     │  the Verdict. A claim sourced from a ticket status log, a sprint status section or a living doc
+     │  BLOCKS until it is re-cited at `file:line` in the tree.
+     └─ A magnitude claim is re-derived too: a challenge can be right about the mechanism and wrong
+        about the size of it, and the Verdict says which.
         │
 6. FINALIZED. The artifact is locked; the PM may now create tickets / the architect may accept the ADR.
 ```

@@ -4,11 +4,18 @@ public struct LoginRequest: Encodable, Sendable {
     public let email: String
     public let password: String
     public let rememberMe: Bool
+    public let trustedDeviceToken: String?
 
-    public init(email: String, password: String, rememberMe: Bool = true) {
+    public init(
+        email: String,
+        password: String,
+        rememberMe: Bool = true,
+        trustedDeviceToken: String? = nil
+    ) {
         self.email = email
         self.password = password
         self.rememberMe = rememberMe
+        self.trustedDeviceToken = trustedDeviceToken
     }
 }
 
@@ -58,6 +65,7 @@ public struct GoogleAuthRequest: Encodable, Sendable {
     public let email: String
     public let firstName: String
     public let lastName: String
+    public let termsAccepted: Bool
 }
 
 public struct AppleAuthRequest: Encodable, Sendable {
@@ -65,4 +73,5 @@ public struct AppleAuthRequest: Encodable, Sendable {
     public let rawNonce: String
     public let firstName: String?
     public let lastName: String?
+    public let termsAccepted: Bool
 }

@@ -9,8 +9,11 @@ import { PromoCodeUiState } from './order-wizard.models';
 
 /** Dependencies the promo engine reads from the orchestrating wizard facade. */
 interface PromoConnection {
-  /** Post-surcharge subtotal the user is actually charged — promo validates against this. */
-  displayedTotalPrice: Signal<number | null | undefined>;
+  /**
+   * Pre-surcharge subtotal from the live quote — the base `CreateOrder.Handler` previews the promo
+   * against, and the only base whose verdict the submit reproduces.
+   */
+  preSurchargeSubtotal: Signal<number>;
   /** Echoes the raw promo input into the wizard form model. */
   persistPromoCode: (value: string) => void;
 }
@@ -62,19 +65,19 @@ export class OrderPromoFacade extends UnsubscribeControlDirective {
       return Promise.resolve({ kind: 'idle' });
     }
     this.promoCodeState.set({ kind: 'validating' });
-    // Validate against the price the user is actually charged — backend's
-    // CreateOrder.Handler resolves promo discounts against `finalTotalPrice`
-    // (post-express-surcharge), so a bare-subtotal validation could fail a
-    // min-order threshold that would otherwise pass on the real charge.
-    const subtotal = this.deps?.displayedTotalPrice() ?? 0;
+    // Validate against the RAW pre-surcharge subtotal. `CreateOrder.Handler` previews the promo
+    // against `calc.TotalPrice - calc.ExpressSurchargeAmount`, so a surcharge-inclusive base returns
+    // a percentage discount a fifth larger than the submit applies, and clears a minimum-order floor
+    // the submit then fails. It is also the only base that does not move once a code is applied —
+    // feeding the discounted total back in compounded the discount on every re-apply.
+    const subtotal = this.deps?.preSurchargeSubtotal() ?? 0;
+    const command = new ValidatePromoCodeCommand();
+    command.code = normalized;
+    command.orderSubtotal = subtotal;
+
     return new Promise<PromoCodeUiState>((resolve) => {
       this.customerClient.promoCodeClient
-        .validate(
-          new ValidatePromoCodeCommand({
-            code: normalized,
-            orderSubtotal: subtotal,
-          }),
-        )
+        .validate(command)
         .pipe(
           takeUntil(this.destroyed$),
           catchError(() => of(null)),

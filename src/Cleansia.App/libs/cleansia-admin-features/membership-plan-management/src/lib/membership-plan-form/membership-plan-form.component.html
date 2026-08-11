@@ -199,6 +199,34 @@
                 formControlName="allowsExpressUpgrade"
               />
             </div>
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.express_upgrades_per_month'
+                    | translate
+                "
+                formControlName="expressUpgradesPerMonth"
+                dataType="number"
+                [required]="true"
+              />
+              <small class="field-help">
+                {{
+                  'pages.membership_plans.form.field.express_upgrades_per_month_help'
+                    | translate
+                }}
+              </small>
+              @if (
+                form.controls.expressUpgradesPerMonth.touched &&
+                form.controls.expressUpgradesPerMonth.errors?.['min']
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.express_upgrades_negative'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
           </div>
         </cleansia-section>
 

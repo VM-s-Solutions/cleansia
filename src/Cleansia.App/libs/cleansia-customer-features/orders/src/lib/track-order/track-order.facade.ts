@@ -40,13 +40,14 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   lookupBatch(
     items: { orderId: string; email: string }[]
   ): Observable<LookupOrderBatchResponse> {
-    const batchItems = items.map(
-      (i) =>
-        new LookupOrderBatchOrderLookupItem({
-          orderId: i.orderId,
-          email: i.email,
-        })
-    );
-    return this.orderClient.lookupBatch(new LookupOrderBatchQuery({ items: batchItems }));
+    const query = new LookupOrderBatchQuery();
+    query.items = items.map((i) => {
+      const item = new LookupOrderBatchOrderLookupItem();
+      item.orderId = i.orderId;
+      item.email = i.email;
+      return item;
+    });
+
+    return this.orderClient.lookupBatch(query);
   }
 }

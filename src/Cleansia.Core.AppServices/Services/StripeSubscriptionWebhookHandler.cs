@@ -30,7 +30,7 @@ public class StripeSubscriptionWebhookHandler(
 {
     public async Task<string> HandleAsync(Event stripeEvent, CancellationToken cancellationToken)
     {
-        var (subscriptionId, stripeStatus, periodStart, periodEnd) = ExtractSubscriptionShape(stripeEvent);
+        var (subscriptionId, stripeStatus, periodStart, periodEnd, trialEnd) = ExtractSubscriptionShape(stripeEvent);
 
         if (string.IsNullOrEmpty(subscriptionId))
         {
@@ -51,7 +51,7 @@ public class StripeSubscriptionWebhookHandler(
         if (membership == null)
         {
             membership = await ProvisionFromCreatedEventAsync(
-                stripeEvent, subscriptionId, periodStart, periodEnd, cancellationToken);
+                stripeEvent, subscriptionId, periodStart, periodEnd, trialEnd, cancellationToken);
             if (membership == null)
             {
                 return subscriptionId;
@@ -60,10 +60,11 @@ public class StripeSubscriptionWebhookHandler(
 
         // For invoice.payment_failed we don't have fresh period bounds —
         // pass the existing ones so the row's CurrentPeriod* stays as-is.
+        // trial_end gets the same treatment inside UpdateFromStripeWebhook (ADR-0035 AM-18).
         var startToWrite = periodStart == default ? membership.CurrentPeriodStart : periodStart;
         var endToWrite = periodEnd == default ? membership.CurrentPeriodEnd : periodEnd;
 
-        membership.UpdateFromStripeWebhook(stripeStatus, startToWrite, endToWrite);
+        membership.UpdateFromStripeWebhook(stripeStatus, startToWrite, endToWrite, trialEnd);
 
         logger.LogInformation(
             "Synced membership {MembershipId} (sub {SubscriptionId}) from {EventType}: status now {Status}",
@@ -72,7 +73,7 @@ public class StripeSubscriptionWebhookHandler(
         return subscriptionId;
     }
 
-    private static (string? subscriptionId, string status, DateTime periodStart, DateTime periodEnd)
+    private static (string? subscriptionId, string status, DateTime periodStart, DateTime periodEnd, DateTime? trialEnd)
         ExtractSubscriptionShape(Event stripeEvent)
     {
         if (stripeEvent.Type == Constants.StripeEventType.InvoicePaymentFailed)
@@ -85,7 +86,8 @@ public class StripeSubscriptionWebhookHandler(
                 invoice?.Parent?.SubscriptionDetails?.SubscriptionId,
                 "past_due",
                 default,
-                default);
+                default,
+                null);
         }
 
         var subscription = stripeEvent.Data.Object as Subscription;
@@ -97,7 +99,8 @@ public class StripeSubscriptionWebhookHandler(
             subscription?.Id,
             subscription?.Status ?? "canceled",
             firstItem?.CurrentPeriodStart ?? DateTime.UtcNow,
-            firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow);
+            firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow,
+            subscription?.TrialEnd);
     }
 
     private async Task<UserMembership?> ProvisionFromCreatedEventAsync(
@@ -105,6 +108,7 @@ public class StripeSubscriptionWebhookHandler(
         string subscriptionId,
         DateTime periodStart,
         DateTime periodEnd,
+        DateTime? trialEnd,
         CancellationToken cancellationToken)
     {
         // Only customer.subscription.created provisions the row (web Checkout
@@ -176,7 +180,8 @@ public class StripeSubscriptionWebhookHandler(
             membershipPlanId: plan.Id,
             stripeSubscriptionId: subscriptionId,
             currentPeriodStart: periodStart,
-            currentPeriodEnd: periodEnd);
+            currentPeriodEnd: periodEnd,
+            trialEndsAtUtc: trialEnd);
         userMembershipRepository.Add(membership);
 
         // SEC-W2 / S7a + S7b — CLOSE the check-then-insert race at the write boundary. The

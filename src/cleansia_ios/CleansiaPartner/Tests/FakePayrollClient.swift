@@ -5,9 +5,9 @@ import Foundation
 
 final class FakePayrollClient: PartnerPayrollClient {
     var employeeIdResult: ApiResult<String> = .success("emp-1")
-    var periodPaysResult: ApiResult<PeriodPaySummaryDto> = .success(PeriodPaySummaryDto())
-    var invoicesResult: ApiResult<[EmployeeInvoiceDto]> = .success([])
-    var invoiceResult: ApiResult<EmployeeInvoiceDetailDto> = .success(EmployeeInvoiceDetailDto())
+    var periodPaysResult: ApiResult<PeriodPaySummary> = .success(.stub())
+    var invoicesResult: ApiResult<[Invoice]> = .success([])
+    var invoiceResult: ApiResult<InvoiceDetail> = .success(.stub())
     var downloadResult: ApiResult<URL> = .success(URL(fileURLWithPath: "/tmp/invoice.pdf"))
 
     private(set) var employeeIdCallCount = 0
@@ -27,20 +27,20 @@ final class FakePayrollClient: PartnerPayrollClient {
         return employeeIdResult
     }
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummaryDto> {
+    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary> {
         periodPaysCallCount += 1
         periodPaysEmployeeId = employeeId
         periodPaysPayPeriodId = payPeriodId
         return periodPaysResult
     }
 
-    func getPagedInvoices(employeeId: String) async -> ApiResult<[EmployeeInvoiceDto]> {
+    func getPagedInvoices(employeeId: String) async -> ApiResult<[Invoice]> {
         invoicesCallCount += 1
         invoicesEmployeeId = employeeId
         return invoicesResult
     }
 
-    func getInvoice(id: String) async -> ApiResult<EmployeeInvoiceDetailDto> {
+    func getInvoice(id: String) async -> ApiResult<InvoiceDetail> {
         invoiceCallCount += 1
         lastInvoiceId = id
         return invoiceResult

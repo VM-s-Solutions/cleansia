@@ -12,14 +12,17 @@ import SwiftUI
 public struct LiveActivityCardModel: Equatable, Sendable {
     public let card: LiveActivityCard
     public let orderNumber: String
-    public let finish: Date
+    /// The instant the current leg ends: the cleaner's expected ARRIVAL while they are on the way, the
+    /// clean's finish once it has started. The clock and the countdown both carry it, and
+    /// `card.timeCaption` is what says which of the two it is.
+    public let legEnd: Date
     /// The window the current leg fills over and the island counts down. Nil once nothing is left to time.
     public let liveRange: ClosedRange<Date>?
 
-    public init(card: LiveActivityCard, orderNumber: String, finish: Date, liveRange: ClosedRange<Date>?) {
+    public init(card: LiveActivityCard, orderNumber: String, legEnd: Date, liveRange: ClosedRange<Date>?) {
         self.card = card
         self.orderNumber = orderNumber
-        self.finish = finish
+        self.legEnd = legEnd
         self.liveRange = liveRange
     }
 
@@ -43,8 +46,8 @@ public struct LiveActivityCleanCard: View {
 
                 Spacer(minLength: 6)
 
-                if model.card.showsFinishTime {
-                    LiveActivityFinishTime(finish: model.finish, compact: false)
+                if let caption = model.card.timeCaption {
+                    LiveActivityClock(caption: caption, at: model.legEnd, compact: false)
                 }
             }
 
@@ -89,8 +92,8 @@ public struct LiveActivityOrderLabel: View {
 }
 
 /// The compact Dynamic Island's readout: direction A's countdown, in the slot most glances land on. It
-/// falls back to the wall-clock finish rather than a bare count-UP — an unlabelled number climbing away
-/// from zero in a slot this narrow reads as time remaining, and lies.
+/// falls back to the wall clock rather than a bare count-UP — an unlabelled number climbing away from zero
+/// in a slot this narrow reads as time remaining, and lies.
 public struct LiveActivityCompactReadout: View {
     private let model: LiveActivityCardModel
 
@@ -105,8 +108,8 @@ public struct LiveActivityCompactReadout: View {
                 .foregroundColor(CleansiaColors.primary)
                 .frame(maxWidth: 44)
                 .multilineTextAlignment(.trailing)
-        } else if model.card.showsFinishTime {
-            LiveActivityFinishTime(finish: model.finish, compact: true)
+        } else if let caption = model.card.timeCaption {
+            LiveActivityClock(caption: caption, at: model.legEnd, compact: true)
         } else {
             Image(systemName: symbol).foregroundColor(CleansiaColors.primary)
         }
@@ -139,29 +142,45 @@ public struct LiveActivityBrandLockup: View {
     }
 }
 
-/// The wall-clock instant the clean is expected to end. Static by construction: a time that does not tick
-/// cannot be caught looking frozen while a queued update is still in flight.
-public struct LiveActivityFinishTime: View {
-    private let finish: Date
+/// The wall-clock instant the current leg ends, under the caption that says what that instant IS. Static by
+/// construction: a time that does not tick cannot be caught looking frozen while a queued update is still
+/// in flight.
+public struct LiveActivityClock: View {
+    private let caption: LiveActivityTimeCaption
+    private let instant: Date
     private let compact: Bool
 
-    public init(finish: Date, compact: Bool) {
-        self.finish = finish
+    public init(caption: LiveActivityTimeCaption, at instant: Date, compact: Bool) {
+        self.caption = caption
+        self.instant = instant
         self.compact = compact
     }
 
     public var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
             if !compact {
-                Text(LiveActivityL10n.finish)
+                Text(caption.label)
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
             // Tabular figures rather than a monospaced FACE: the clock must not jitter as the digits
             // change, but a monospaced colon sets the two halves an em apart and reads as "17 : 35".
-            Text(finish, style: .time)
+            //
+            // ⚠️ `lineLimit(1)` is load-bearing in the COMPACT slot and is not styling. `Text(_, style:
+            // .time)` is rendered by the system in the DEVICE's locale, so a 12-hour region draws
+            // "5:33 PM" where a 24-hour one draws "17:33" — measurably wider. In the island's ~52pt
+            // compact slot the 12-hour string wrapped to a second row (30.5pt against 14.5pt), and the
+            // system clips that slot, so a US-locale cleaner saw a broken clock. It survived because
+            // every simulator we ran it on resolved to 24-hour: the dev machine's region is
+            // `en_US@rg=czzzzz` — US language, Czech regional formats.
+            //
+            // Scale rather than truncate: a clipped time is a wrong time, and losing "PM" is worse
+            // than a slightly smaller readout.
+            Text(instant, style: .time)
                 .font(.system(compact ? .caption : .title3, design: .rounded).weight(.bold).monospacedDigit())
                 .foregroundColor(CleansiaColors.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(compact ? 0.7 : 1)
         }
     }
 }

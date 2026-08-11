@@ -16,6 +16,11 @@ public protocol AppSettingsStore: AnyObject {
     func hasSeenOnboarding(userId: String) -> Bool
     func markOnboardingSeen(userId: String)
 
+    /// One-shot per-user asks whose answer cannot be read back off the value they set — the partner
+    /// job-radius prompt, whose "no limit" answer is indistinguishable from never having answered.
+    func hasAnsweredPrompt(_ prompt: String, userId: String) -> Bool
+    func markPromptAnswered(_ prompt: String, userId: String)
+
     /// The resolved language tag — an explicit choice, else the first supported
     /// entry of the device's ordered preferred languages, else "en". Always one
     /// of `supportedLanguageTags`.
@@ -47,6 +52,7 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     private enum Key {
         static let onboardingSeen = "settings.onboarding_seen"
+        static let promptAnswered = "settings.prompt_answered"
         static let language = "settings.language"
         static let theme = "settings.theme"
     }
@@ -84,6 +90,14 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     public func markOnboardingSeen(userId: String) {
         defaults.set(true, forKey: "\(Key.onboardingSeen)_\(userId)")
+    }
+
+    public func hasAnsweredPrompt(_ prompt: String, userId: String) -> Bool {
+        defaults.bool(forKey: "\(Key.promptAnswered).\(prompt)_\(userId)")
+    }
+
+    public func markPromptAnswered(_ prompt: String, userId: String) {
+        defaults.set(true, forKey: "\(Key.promptAnswered).\(prompt)_\(userId)")
     }
 
     public var languageTag: String {

@@ -5,6 +5,8 @@ import cz.cleansia.customer.api.model.AddSavedAddressCommand as GenAddSavedAddre
 import cz.cleansia.customer.api.model.SavedAddressDto as GenSavedAddressDto
 import cz.cleansia.customer.api.model.SetDefaultSavedAddressCommand as GenSetDefaultSavedAddressCommand
 import cz.cleansia.customer.api.model.UpdateSavedAddressCommand as GenUpdateSavedAddressCommand
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -13,14 +15,22 @@ import retrofit2.Response
  *
  * The hand-written [SavedAddressDto] keeps `id`, `label`, `street`, `city`,
  * `zipCode`, `countryId` as non-null so the address list view can render
- * without null-guards. We drop wire items missing any of these.
+ * without null-guards. A wire item missing any of these refuses the list.
  */
 class SavedAddressApi(
     private val savedAddressApi: GenSavedAddressApi,
 ) {
+    /**
+     * The body is refused rather than defaulted to empty. Of ADR-0048 amendment B1's three
+     * conditions, the first and third fail outright: an empty saved-address list is the app telling
+     * a returning customer they have never saved an address, and [AddressRepository.refreshFromServer]
+     * writes that answer to DataStore — so the default does not merely render wrong, it **deletes the
+     * addresses off the handset**. The second condition holds (nothing sums or paginates them) and
+     * does not rescue it; B1 needs all three.
+     */
     suspend fun getMine(): Response<List<SavedAddressDto>> {
         val raw = savedAddressApi.savedAddressGetMine()
-        return raw.mapBody { list -> list?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.mapWire { list -> list.required("SavedAddressDto[]").map { it.toAppDto() } }
     }
 
     suspend fun add(command: AddSavedAddressCommand): Response<SavedAddressDto> {
@@ -36,7 +46,7 @@ class SavedAddressApi(
                 longitude = command.longitude,
             ),
         )
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.required("SavedAddressDto").toAppDto() }
     }
 
     suspend fun update(command: UpdateSavedAddressCommand): Response<SavedAddressDto> {
@@ -52,7 +62,7 @@ class SavedAddressApi(
                 longitude = command.longitude,
             ),
         )
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.required("SavedAddressDto").toAppDto() }
     }
 
     suspend fun setDefault(command: SetDefaultSavedAddressCommand): Response<Unit> =
@@ -65,33 +75,26 @@ class SavedAddressApi(
     suspend fun delete(id: String): Response<Unit> = savedAddressApi.savedAddressDelete(id = id)
 }
 
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
-
 // ─── Generated → app DTO mappers ───
 //
-// Drop list items missing a load-bearing field. The list view's row component
-// reads id/label/street/city/zipCode/countryId directly without null-guards.
+// Refuses the list rather than dropping the row. Both `HomeTab` and `BookingBottomSheet` preselect
+// `addresses.firstOrNull { it.isDefault } ?: addresses.firstOrNull()`, so a dropped default does not
+// leave the picker empty — the fallback chain guarantees a plausible substitute, and the customer
+// books a cleaning to a different home than the one the screen has always defaulted to. `isDefault`
+// is refused for the same reason: at `false` on every row the same fallback picks whichever address
+// happens to be first.
 
-private fun GenSavedAddressDto.toAppDto(): SavedAddressDto? {
-    val id = id ?: return null
-    val label = label ?: return null
-    val street = street ?: return null
-    val city = city ?: return null
-    val zipCode = zipCode ?: return null
-    val countryId = countryId ?: return null
-    return SavedAddressDto(
-        id = id,
-        label = label,
-        street = street,
-        city = city,
-        zipCode = zipCode,
+private fun GenSavedAddressDto.toAppDto(): SavedAddressDto =
+    SavedAddressDto(
+        id = id.required("id"),
+        label = label.required("label"),
+        street = street.required("street"),
+        city = city.required("city"),
+        zipCode = zipCode.required("zipCode"),
         state = state,
-        countryId = countryId,
+        countryId = countryId.required("countryId"),
         country = country,
         latitude = latitude,
         longitude = longitude,
-        isDefault = isDefault ?: false,
+        isDefault = isDefault.required("isDefault"),
     )
-}

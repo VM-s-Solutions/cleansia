@@ -6,11 +6,16 @@ protocol PartnerProfileClient: AnyObject {
     func getCurrentEmployee() async -> ApiResult<EmployeeItem>
     func checkCurrentEmployee() async -> ApiResult<RegistrationCompletionStatus>
 
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?>
+
     func updatePersonalInfo(_ command: UpdatePersonalInfoCommand) async -> ApiResult<Void>
     func updateAddressInfo(_ command: UpdateAddressInfoCommand) async -> ApiResult<Void>
     func updateIdentificationInfo(_ command: UpdateIdentificationInfoCommand) async -> ApiResult<Void>
-    func updateBankDetails(_ command: UpdateBankDetailsCommand) async -> ApiResult<Void>
     func updateEmergencyContact(_ command: UpdateEmergencyContactCommand) async -> ApiResult<Void>
+
+    /// `nil` means the cleaner has no payout destination yet — see `PayoutDetailsRead`.
+    func getMyPayoutDetails() async -> ApiResult<MyPayoutDetails?>
+    func updateBankDetails(_ command: UpdateBankDetailsCommand) async -> ApiResult<Void>
 
     func getMyDocuments() async -> ApiResult<[GetMyDocumentsMyDocumentDto]>
     func saveMyDocuments(_ command: SaveMyDocumentsCommand) async -> ApiResult<Void>
@@ -33,6 +38,12 @@ final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
         }
     }
 
+    func updateJobRadius(_ command: UpdateJobRadiusCommand) async -> ApiResult<Int?> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerEmployeeAPI.employeeUpdateJobRadius(updateJobRadiusCommand: command).radiusKm
+        }
+    }
+
     func updatePersonalInfo(_ command: UpdatePersonalInfoCommand) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerEmployeeAPI.employeeUpdatePersonalInfo(updatePersonalInfoCommand: command)
@@ -49,6 +60,14 @@ final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerEmployeeAPI.employeeUpdateIdentificationInfo(updateIdentificationInfoCommand: command)
         }
+    }
+
+    func getMyPayoutDetails() async -> ApiResult<MyPayoutDetails?> {
+        await PayoutDetailsRead.normalize(
+            apiResult(mapError: ApiError.fromGenerated) {
+                try await PartnerEmployeeAPI.employeeGetMyPayoutDetails()
+            }
+        )
     }
 
     func updateBankDetails(_ command: UpdateBankDetailsCommand) async -> ApiResult<Void> {

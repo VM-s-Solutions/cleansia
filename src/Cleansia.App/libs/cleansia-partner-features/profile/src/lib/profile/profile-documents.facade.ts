@@ -206,17 +206,13 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     this.documentsState.update((s) => ({ ...s, saving: true }));
 
     try {
-      const documentsToSave = staged.map(
-        (d) =>
-          new SaveMyDocumentsDocumentToSave({
-            documentType: d.documentType,
-            file: d.file,
-            description: d.description,
-          })
-      );
-
-      const command = new SaveMyDocumentsCommand({
-        documents: documentsToSave,
+      const command = new SaveMyDocumentsCommand();
+      command.documents = staged.map((d) => {
+        const document = new SaveMyDocumentsDocumentToSave();
+        document.documentType = d.documentType;
+        document.file = d.file;
+        document.description = d.description;
+        return document;
       });
 
       await this.partnerClient.employeeClient

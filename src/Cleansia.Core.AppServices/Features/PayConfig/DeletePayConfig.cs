@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.PayConfig;
@@ -18,15 +20,24 @@ public class DeletePayConfig
     {
         private readonly IEmployeePayConfigRepository _payConfigRepository;
         private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPackageRepository _packageRepository;
+        private readonly IOrderRepository _orderRepository;
 
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
             IEmployeePayConfigRepository payConfigRepository,
-            IOrderEmployeePayRepository orderEmployeePayRepository) : base(userRepository, userSessionProvider)
+            IOrderEmployeePayRepository orderEmployeePayRepository,
+            IServiceRepository serviceRepository,
+            IPackageRepository packageRepository,
+            IOrderRepository orderRepository) : base(userRepository, userSessionProvider)
         {
             _payConfigRepository = payConfigRepository;
             _orderEmployeePayRepository = orderEmployeePayRepository;
+            _serviceRepository = serviceRepository;
+            _packageRepository = packageRepository;
+            _orderRepository = orderRepository;
 
             RuleFor(x => x.PayConfigId)
                 .Cascade(CascadeMode.Stop)
@@ -36,6 +47,93 @@ public class DeletePayConfig
                 .WithMessage(BusinessErrorMessage.PayConfigNotFound)
                 .MustAsync(BeNoOrderPaysUsingConfigAsync)
                 .WithMessage(BusinessErrorMessage.PayConfigHasOrderPays);
+
+            // The other direction into the same end state: removing the LAST platform-wide row for an
+            // entry that is still quoted blanks the pay on every cleaner's board at once. Named per
+            // entry, so the admin is told which one to deactivate or reconfigure first.
+            RuleFor(x => x)
+                .CustomAsync(async (command, context, cancellationToken) =>
+                {
+                    var blanked = await FindEntryThisDeleteWouldBlankAsync(command.PayConfigId, cancellationToken);
+                    if (blanked is null)
+                    {
+                        return;
+                    }
+
+                    context.AddFailure(new ValidationFailure(
+                        nameof(Command.PayConfigId),
+                        BusinessErrorMessage.PayConfigLastForLiveCatalogueEntry)
+                    {
+                        ErrorCode = blanked.Name
+                    });
+                });
+        }
+
+        /// <summary>
+        /// The entry this delete would leave unquotable, or null when it would not. Both conjuncts are
+        /// required: another platform-wide row keeps the estimator resolving (and a per-employee row was
+        /// never load-bearing, since the estimator falls back past it), and an entry nothing consults —
+        /// deactivated AND on no order — cannot blank a board that never asks about it.
+        /// </summary>
+        private async Task<PayCoverageTarget?> FindEntryThisDeleteWouldBlankAsync(
+            string payConfigId, CancellationToken cancellationToken)
+        {
+            var config = await _payConfigRepository.GetByIdAsync(payConfigId, cancellationToken);
+            if (config is null || config.EmployeeId is not null)
+            {
+                return null;
+            }
+
+            var siblingRemains = await _payConfigRepository.GetAll()
+                .AnyAsync(other =>
+                    other.Id != payConfigId
+                    && other.EmployeeId == null
+                    && (config.ServiceId != null
+                        ? other.ServiceId == config.ServiceId
+                        : other.PackageId == config.PackageId),
+                    cancellationToken);
+
+            if (siblingRemains)
+            {
+                return null;
+            }
+
+            if (config.ServiceId is not null)
+            {
+                var service = await _serviceRepository.GetAll()
+                    .Where(s => s.Id == config.ServiceId)
+                    .Select(s => new { s.Id, s.Name, s.IsActive })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (service is null)
+                {
+                    return null;
+                }
+
+                var carried = await _orderRepository.GetAll()
+                    .AnyAsync(o => o.SelectedServices.Any(s => s.ServiceId == config.ServiceId), cancellationToken);
+
+                return service.IsActive || carried
+                    ? new PayCoverageTarget(PayCoverageTargetKind.Service, service.Id, service.Name)
+                    : null;
+            }
+
+            var package = await _packageRepository.GetAll()
+                .Where(p => p.Id == config.PackageId)
+                .Select(p => new { p.Id, p.Name, p.IsActive })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (package is null)
+            {
+                return null;
+            }
+
+            var packageCarried = await _orderRepository.GetAll()
+                .AnyAsync(o => o.SelectedPackages.Any(p => p.PackageId == config.PackageId), cancellationToken);
+
+            return package.IsActive || packageCarried
+                ? new PayCoverageTarget(PayCoverageTargetKind.Package, package.Id, package.Name)
+                : null;
         }
 
         private async Task<bool> BeNoOrderPaysUsingConfigAsync(string payConfigId, CancellationToken cancellationToken)

@@ -7,7 +7,7 @@ import XCTest
 final class OrderRepositoryTests: XCTestCase {
     func testRefreshReplacesPageZeroAndSetsTotal() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 3)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 3)]
         let repo = OrderRepository(client: client, pageSize: 1)
 
         await repo.refresh()
@@ -22,8 +22,8 @@ final class OrderRepositoryTests: XCTestCase {
     func testLoadNextPageAppendsAdditively() async {
         let client = FakeOrderClient()
         client.pages = [
-            OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 2),
-            OrdersPage(items: [OrderFixtures.listItem(id: "b", statusValue: 5)], total: 2)
+            OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 2),
+            OrdersPage(items: [OrderFixtures.summary(id: "b", statusValue: 5)], total: 2)
         ]
         let repo = OrderRepository(client: client, pageSize: 1)
 
@@ -37,7 +37,7 @@ final class OrderRepositoryTests: XCTestCase {
 
     func testLoadNextPageNoOpWhenExhausted() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
         let repo = OrderRepository(client: client, pageSize: 1)
 
         await repo.refresh()
@@ -48,7 +48,7 @@ final class OrderRepositoryTests: XCTestCase {
 
     func testClearWipesCache() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
         let repo = OrderRepository(client: client, pageSize: 1)
         await repo.refresh()
 
@@ -70,7 +70,7 @@ final class OrdersListViewModelTests: XCTestCase {
 
     func testPullToRefreshLoadsAndSurfacesLoaded() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
         let (vm, _) = makeVM(client)
 
         await vm.pullToRefresh()
@@ -81,7 +81,7 @@ final class OrdersListViewModelTests: XCTestCase {
 
     func testEachTabActivationForcesAFreshNetworkFetch() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
         let (vm, _) = makeVM(client)
 
         await vm.onAppear()
@@ -126,7 +126,7 @@ final class OrdersListViewModelTests: XCTestCase {
 
     func testRefreshFailureWhileLoadedStaysLoaded() async {
         let client = FakeOrderClient()
-        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
         let (vm, _) = makeVM(client)
         await vm.pullToRefresh()
 
@@ -139,8 +139,8 @@ final class OrdersListViewModelTests: XCTestCase {
     func testLoadNextPageAppendsThroughViewModel() async {
         let client = FakeOrderClient()
         client.pages = [
-            OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 2),
-            OrdersPage(items: [OrderFixtures.listItem(id: "b", statusValue: 5)], total: 2)
+            OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 2),
+            OrdersPage(items: [OrderFixtures.summary(id: "b", statusValue: 5)], total: 2)
         ]
         let (vm, _) = makeVM(client)
         await vm.pullToRefresh()
@@ -155,10 +155,10 @@ final class OrdersListViewModelTests: XCTestCase {
     func testFilterMatchesUpcomingCompletedCancelled() async {
         let client = FakeOrderClient()
         client.pages = [OrdersPage(items: [
-            OrderFixtures.listItem(id: "new", statusValue: 0),
-            OrderFixtures.listItem(id: "ontheway", statusValue: 3),
-            OrderFixtures.listItem(id: "done", statusValue: 5),
-            OrderFixtures.listItem(id: "cancelled", statusValue: 6)
+            OrderFixtures.summary(id: "new", statusValue: 0),
+            OrderFixtures.summary(id: "ontheway", statusValue: 3),
+            OrderFixtures.summary(id: "done", statusValue: 5),
+            OrderFixtures.summary(id: "cancelled", statusValue: 6)
         ], total: 4)]
         let (vm, _) = makeVM(client)
         await vm.pullToRefresh()

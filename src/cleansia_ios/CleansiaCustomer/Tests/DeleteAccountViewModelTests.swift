@@ -91,13 +91,18 @@ final class DeleteAccountViewModelTests: XCTestCase {
         guard case .error = vm.deleteState else { return XCTFail("expected action error") }
     }
 
+    /// The re-entry is issued from **inside** the first call, so the second confirm evaluates its guard
+    /// while the first is suspended in the client with `.submitting` published. Two `async let`s could not
+    /// pin that: whether the second task reached the guard before the first finished and reset the state
+    /// back to `.idle` was a scheduling decision, so the assertion turned on timing rather than on the
+    /// guard. The guard itself is sound — it and the state write share one synchronous `@MainActor`
+    /// region with no `await` between them, which is what makes the check-then-act safe.
     func testReentryGuardDropsSecondDeleteWhileSubmitting() async {
         gdpr.deleteResult = .success(())
         let vm = makeVM()
+        gdpr.whileInFlight = { @Sendable [weak vm] in await vm?.confirmDelete() }
 
-        async let first: Void = vm.confirmDelete()
-        async let second: Void = vm.confirmDelete()
-        _ = await (first, second)
+        await vm.confirmDelete()
 
         XCTAssertEqual(gdpr.deleteCallCount, 1)
     }

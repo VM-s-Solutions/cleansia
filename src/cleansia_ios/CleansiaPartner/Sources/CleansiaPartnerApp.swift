@@ -16,7 +16,10 @@ struct CleansiaPartnerApp: App {
         let container = PartnerAppContainer(snackbar: snackbar)
         container.installGeneratedClientAuth()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
-        _preferences = StateObject(wrappedValue: PreferencesModel(settings: container.appSettings))
+        _preferences = StateObject(wrappedValue: PreferencesModel(
+            settings: container.appSettings,
+            languageSync: container.languageSync
+        ))
         self.container = container
     }
 
@@ -38,6 +41,7 @@ struct CleansiaPartnerApp: App {
                         badge?.notePushReceived(eventKey: eventKey)
                     }
                     container.startPush()
+                    container.startLanguageReconcile()
                     // The registration-token delegate misses cached tokens; pull it
                     // explicitly and let it retry as the APNs token settles.
                     appDelegate.requestFcmToken()

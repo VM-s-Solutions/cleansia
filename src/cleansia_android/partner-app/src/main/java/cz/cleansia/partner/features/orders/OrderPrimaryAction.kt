@@ -51,15 +51,21 @@ fun OrderPrimaryAction(
     onCashConfirmRequested: () -> Unit,
     canComplete: Boolean = true,
     needsCashCollection: Boolean = false,
+    isPreferredOffer: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     when (status) {
         OrderStatus._0, OrderStatus._2 -> {
             if (!isAssignedToCurrentUser) {
-                // Available offer the cleaner could take.
+                // Available offer the cleaner could take. On a job reserved for them by name the
+                // gesture is the same command with a different word: confirming IS taking.
                 SlideToCommit(
-                    idleLabel = stringResource(R.string.slide_to_take),
-                    busyLabel = stringResource(R.string.taking_order),
+                    idleLabel = stringResource(
+                        if (isPreferredOffer) R.string.offer_slide_to_confirm else R.string.slide_to_take,
+                    ),
+                    busyLabel = stringResource(
+                        if (isPreferredOffer) R.string.offer_confirming else R.string.taking_order,
+                    ),
                     onCommit = onTake,
                     isBusy = inFlight == OrderAction.Take,
                     modifier = modifier,
@@ -187,4 +193,3 @@ private fun CompleteBlockedHint(modifier: Modifier = Modifier) {
         )
     }
 }
-

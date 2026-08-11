@@ -30,7 +30,7 @@ enum OrdersFilter: CaseIterable {
 
 @MainActor
 final class OrdersListViewModel: ViewModel {
-    @Published private(set) var state: UiState<[OrderListItem]> = .loading
+    @Published private(set) var state: UiState<[CustomerOrderSummary]> = .loading
     @Published private(set) var refreshPhase: RefreshPhase = .idle
     @Published private(set) var loadingMore = false
     @Published private(set) var hasMore = false
@@ -47,7 +47,7 @@ final class OrdersListViewModel: ViewModel {
         bind()
     }
 
-    var filteredOrders: [OrderListItem] {
+    var filteredOrders: [CustomerOrderSummary] {
         guard let orders = state.loadedValue else { return [] }
         return orders.filter { activeFilter.matches($0.status) }
     }

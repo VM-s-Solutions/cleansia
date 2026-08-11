@@ -70,7 +70,7 @@ private struct EmailVerifyContent: View {
                     Spacer().frame(height: Spacing.l)
 
                     Text(L10n.Auth.verifyTitle)
-                        .font(CleansiaTypography.displayMedium)
+                        .cleansiaFont(CleansiaTypography.displayMedium)
                         .foregroundColor(CleansiaColors.onBackground)
                         .multilineTextAlignment(.center)
 

@@ -164,7 +164,7 @@ private struct NotificationsInboxEmptyView: View {
             subtitle: L10n.NotificationsInbox.emptySubtitle,
             verticallyCentered: true,
             imageSize: 160,
-            titleFont: CleansiaTypography.headlineSmall
+            titleStyle: CleansiaTypography.headlineSmall
         )
     }
 }
@@ -175,7 +175,7 @@ private struct NotificationsInboxEmptyView: View {
             VStack(spacing: Spacing.s) {
                 NotificationFeedRowCard(row: NotificationFeedRow(
                     id: "n-1",
-                    title: "Cleaner found! 🎉",
+                    title: "Booking confirmed ✅",
                     body: "Your booking #A-1042 is confirmed. Tap to see the details.",
                     createdOn: Date().addingTimeInterval(-3600),
                     isUnread: true

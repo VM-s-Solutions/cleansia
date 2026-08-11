@@ -44,9 +44,16 @@ public class UserMembership : Auditable, ITenantEntity
     public DateTime CurrentPeriodStart { get; private set; }
 
     /// <summary>
-    /// End of the current Stripe billing period. Used by benefit usage
-    /// tracking ("free express upgrade once per period") and by
-    /// <see cref="IsActive"/> to gate benefits during the grace window.
+    /// End of the current Stripe billing period, and the second half of
+    /// <see cref="IsActive"/>: benefits stop the moment it passes.
+    ///
+    /// <para>It does <b>not</b> bound the express-waiver quota. That quota is per CALENDAR month, sized by
+    /// <see cref="MembershipPlan.ExpressUpgradesPerMonth"/> and counted on
+    /// <c>(TenantId, UserId, BenefitKind, PeriodKey)</c> — deliberately not on this row, so it carries
+    /// across a mid-month plan switch and does not reset on re-subscribe.</para>
+    ///
+    /// <para>There is no grace window. <c>PastDue</c> is not <see cref="MembershipStatus.Active"/>, so
+    /// every benefit stops on the first payment failure (owner ruling 2026-08-03).</para>
     /// </summary>
     public DateTime CurrentPeriodEnd { get; private set; }
 
@@ -76,6 +83,30 @@ public class UserMembership : Auditable, ITenantEntity
     public DateTime? CancellationReminderSentAt { get; private set; }
 
     /// <summary>
+    /// End of the Stripe free trial, mirrored from the subscription's <c>trial_end</c>.
+    /// NULL = this enrolment is not, and never was, in a trial.
+    ///
+    /// <para>Metered benefits (ADR-0035) are withheld while <c>UtcNow &lt; TrialEndsAtUtc</c>; the
+    /// discount and the free-cancellation window are NOT (owner ruling 2026-08-03). Stripe flattens
+    /// <c>"active"</c> and <c>"trialing"</c> onto <see cref="MembershipStatus.Active"/> in
+    /// <see cref="UpdateFromStripeWebhook"/>, so without this column "is this member trialing?" has no
+    /// answer in the database.</para>
+    ///
+    /// <para>A stored instant rather than a bool, deliberately: a bool needs a writer to flip it on
+    /// conversion and no sweep exists, so it would go stale and grant waivers forever to anyone whose
+    /// conversion webhook was missed. A deadline expires by clock with no actor.</para>
+    ///
+    /// <para>Read across ALL of a user's rows it is also the once-per-customer trial marker (owner ruling
+    /// 2026-08-03) — see <c>IUserMembershipRepository.HasEverStartedTrialAsync</c>. That is why it is
+    /// never cleared once set: <see cref="UpdateFromStripeWebhook"/> coalesces rather than assigns, so the
+    /// <c>invoice.payment_failed</c> branch (an Invoice, carrying no <c>trial_end</c>) cannot erase it.</para>
+    /// </summary>
+    public DateTime? TrialEndsAtUtc { get; private set; }
+
+    /// <summary>Computed; do not persist. Expires by clock — no sweep, no job, no state transition.</summary>
+    public bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc;
+
+    /// <summary>
     /// True when the membership is currently providing benefits — Active status
     /// AND we're still inside the paid period. Computed; do not persist. Used
     /// by the pricing pipeline + cancellation policy resolver to decide whether
@@ -97,7 +128,8 @@ public class UserMembership : Auditable, ITenantEntity
         string membershipPlanId,
         string stripeSubscriptionId,
         DateTime currentPeriodStart,
-        DateTime currentPeriodEnd)
+        DateTime currentPeriodEnd,
+        DateTime? trialEndsAtUtc = null)
         => new()
         {
             UserId = userId,
@@ -106,6 +138,7 @@ public class UserMembership : Auditable, ITenantEntity
             Status = MembershipStatus.Active,
             CurrentPeriodStart = currentPeriodStart,
             CurrentPeriodEnd = currentPeriodEnd,
+            TrialEndsAtUtc = trialEndsAtUtc,
         };
 
     /// <summary>
@@ -117,7 +150,8 @@ public class UserMembership : Auditable, ITenantEntity
     public UserMembership UpdateFromStripeWebhook(
         string stripeStatus,
         DateTime currentPeriodStart,
-        DateTime currentPeriodEnd)
+        DateTime currentPeriodEnd,
+        DateTime? trialEndsAtUtc)
     {
         Status = stripeStatus switch
         {
@@ -136,6 +170,12 @@ public class UserMembership : Auditable, ITenantEntity
         }
         CurrentPeriodStart = currentPeriodStart;
         CurrentPeriodEnd = currentPeriodEnd;
+        // Null means the event said nothing about the trial — invoice.payment_failed carries an Invoice,
+        // which has no trial_end at all. Assigning it would clear the marker on a dunning event, handing
+        // the customer both their withheld benefits and a second free trial (ADR-0035 AM-18). Stripe
+        // keeps trial_end populated after a trial converts, so a genuine "no trial" subscription is the
+        // only one that stays null here.
+        TrialEndsAtUtc = trialEndsAtUtc ?? TrialEndsAtUtc;
         return this;
     }
 

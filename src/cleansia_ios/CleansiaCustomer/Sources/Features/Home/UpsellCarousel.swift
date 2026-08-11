@@ -112,7 +112,7 @@ private struct UpsellSlideCard: View {
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(.white.opacity(0.85))
             Text(slide.title)
-                .font(CleansiaFont.poppins(.bold, size: 18))
+                .cleansiaFont(.poppins(.bold, size: 18))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .padding(.top, Spacing.xxs)

@@ -72,17 +72,27 @@ public class OrderAccessService : IOrderAccessService
             return true;
         }
 
-        // Employee browsing the available list: let them open detail of any
-        // order that still has open spots, so they can read full info before
-        // tapping Take.
+        // Employee browsing the available list: let them open detail of an
+        // order they could take, so they can read it before tapping Take.
         var role = _userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
         if (role != UserProfile.Employee.ToString())
         {
             return false;
         }
 
+        // Three questions, three rules, all in-memory forms of the ones the board and the take gate
+        // already read. OrderAvailability (ADR-0037, Q-BROWSE-01 owner ruling) is the one that was
+        // missing: without it this branch admitted cancelled orders, finished ones whose crew was
+        // never filled, and card orders whose money has not landed — none of which TakeOrder accepts.
+        // Reached only after CanAccessOrderAsync returned true for an administrator, for the order's
+        // own customer and for an assigned cleaner, so narrowing it cannot hide a job from anyone who
+        // is on it.
         var employeeId = await GetCallerEmployeeIdAsync(cancellationToken);
-        return !string.IsNullOrEmpty(employeeId) && order.HasAvailableSpots;
+        return !string.IsNullOrEmpty(employeeId)
+            && OrderAvailability.IsOfferable(
+                order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
+            && order.HasAvailableSpots
+            && OrderVisibility.NotHeldFrom(order, employeeId, DateTime.UtcNow);
     }
 
     private async Task<string?> ResolveCallerEmployeeIdAsync()

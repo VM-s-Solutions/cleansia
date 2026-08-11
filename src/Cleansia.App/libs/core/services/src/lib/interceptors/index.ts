@@ -3,6 +3,7 @@ import { HttpErrorInterceptorFn } from './http-error.interceptor';
 import { RetryAfterInterceptorFn } from './retry-after.interceptor';
 
 export * from './content-disposition.interceptor';
+export * from './error-toast-suppression';
 export * from './http-error.interceptor';
 export * from './retry-after.interceptor';
 

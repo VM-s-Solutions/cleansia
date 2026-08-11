@@ -6,12 +6,12 @@ import Foundation
 enum PhotosUiState {
     case idle
     case loading
-    case loaded(GetOrderPhotosResponse)
+    case loaded(OrderPhotos)
     case error
 }
 
 extension PhotosUiState {
-    var loadedResponse: GetOrderPhotosResponse? {
+    var loadedResponse: OrderPhotos? {
         if case let .loaded(response) = self { return response }
         return nil
     }
@@ -19,14 +19,16 @@ extension PhotosUiState {
 
 @MainActor
 final class OrderDetailViewModel: ViewModel {
-    @Published private(set) var state: UiState<OrderItem> = .loading
+    @Published private(set) var state: UiState<CustomerOrderDetail> = .loading
     @Published private(set) var photos: PhotosUiState = .idle
     @Published private(set) var cancelState: ActionState = .idle
+    @Published private(set) var cancellationQuote: UiState<CancellationQuote> = .loading
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
+    @Published private(set) var hasMembership: Bool?
 
-    let cancelSucceeded = PassthroughSubject<CancelOrderResponse, Never>()
+    let cancelSucceeded = PassthroughSubject<OrderCancellation, Never>()
     let reviewSucceeded = PassthroughSubject<OrderReviewDto, Never>()
     let receiptReady = PassthroughSubject<URL, Never>()
     let recurringCardPayment = PassthroughSubject<PaymentSheetPresentation, Never>()
@@ -34,6 +36,7 @@ final class OrderDetailViewModel: ViewModel {
     private let orderId: String
     private let client: OrderClient
     private let repository: OrderRepository
+    private let membershipRepository: MembershipRepository
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
     private let liveActivity: OrderLiveActivitySyncing
@@ -42,11 +45,13 @@ final class OrderDetailViewModel: ViewModel {
 
     private var pollTask: Task<Void, Never>?
     private var eventCancellable: AnyCancellable?
+    private var quoteInFlight = false
 
     init(
         orderId: String,
         client: OrderClient,
         repository: OrderRepository,
+        membershipRepository: MembershipRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
@@ -60,13 +65,24 @@ final class OrderDetailViewModel: ViewModel {
         self.orderId = orderId
         self.client = client
         self.repository = repository
+        self.membershipRepository = membershipRepository
         self.snackbar = snackbar
         self.eventBus = eventBus
         self.liveActivity = liveActivity
         self.pollInterval = pollInterval
         self.now = now
         super.init()
+        membershipRepository.$current
+            .map { $0?.hasMembership }
+            .assign(to: &$hasMembership)
         subscribeToEvents()
+    }
+
+    /// Gates the "Make this recurring" shortcut, from the same nullable membership the
+    /// recurring list resolves. Nothing on this screen used to fetch that answer, so a
+    /// paid-up member lost the shortcut whenever no other screen had warmed the cache.
+    var recurringAuthoring: RecurringAuthoringGate {
+        .resolve(hasMembership: hasMembership)
     }
 
     deinit {
@@ -82,7 +98,20 @@ final class OrderDetailViewModel: ViewModel {
         // the fetch so it lands while the request is in flight: prewarming once the order is loaded runs in
         // the same main-thread turn as the hero's first render, so it can never win that race.
         AnimatedMascotView.prewarm(.cleaningInProgress)
-        await fetch(initial: state.loadedValue == nil)
+        let initial = state.loadedValue == nil
+        // Concurrent, not sequential: the order is what this screen renders, and it must
+        // not wait on the answer that decides one footer button.
+        async let membership: Void = refreshMembership()
+        await fetch(initial: initial)
+        await membership
+    }
+
+    /// A screen that gates on membership fetches it. Reading whatever another screen
+    /// happened to warm is what took the shortcut away from paid-up members on a cold
+    /// entry. Failure leaves `hasMembership` nil, which fails open.
+    private func refreshMembership() async {
+        guard membershipRepository.staleness.isStale else { return }
+        await membershipRepository.refresh()
     }
 
     func retry() async {
@@ -107,7 +136,7 @@ final class OrderDetailViewModel: ViewModel {
 
     // MARK: - Active-order poller
 
-    private func evaluatePoller(for order: OrderItem) {
+    private func evaluatePoller(for order: CustomerOrderDetail) {
         if OrderStatusGroup.isActive(order.status) {
             guard pollTask == nil else { return }
             pollTask = Task { [weak self, pollInterval] in
@@ -131,18 +160,17 @@ final class OrderDetailViewModel: ViewModel {
         }
     }
 
-    /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 LA-5): start (idempotent)
-    /// once the order is active — Confirmed / OnTheWay / InProgress — and end it on a terminal status. The
-    /// window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
+    /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 D2): start (idempotent)
+    /// once the cleaner is in the service window — OnTheWay / InProgress — and end it on a terminal status.
+    /// The window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
     /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
     /// counts against what really happened.
-    private func syncLiveActivity(for order: OrderItem) {
+    private func syncLiveActivity(for order: CustomerOrderDetail) {
         guard let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
         let orderNumber = order.displayOrderNumber ?? ""
-        if OrderStatusGroup.isActive(status) {
+        if let wireStatus = OrderStatusGroup.liveActivityStatus(status) {
             guard let window = EtaWindow.forOrder(order) else { return }
-            let wireStatus = OrderStatusGroup.liveActivityStatus(status)
             // start is idempotent (creates the activity once, with the current status); update rewrites a
             // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
             liveActivity.start(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
@@ -186,12 +214,9 @@ final class OrderDetailViewModel: ViewModel {
         let payload = (trimmed?.isEmpty ?? true) ? nil : trimmed
         switch await client.cancel(orderId: orderId, reason: payload) {
         case let .success(response):
-            let currency = state.loadedValue?.currency?.code
-            let message: String = if response.refundInitiated == true, (response.refundAmount ?? 0) > 0 {
-                L10n.OrderCancel.successWithRefund(OrdersFormat.price(
-                    response.refundAmount ?? 0,
-                    currencyCode: currency
-                ))
+            let currency = state.loadedValue?.currencyCode
+            let message: String = if let refunded = response.refunded {
+                L10n.OrderCancel.successWithRefund(OrdersFormat.price(refunded, currencyCode: currency))
             } else {
                 L10n.OrderCancel.successNoRefund
             }
@@ -208,6 +233,29 @@ final class OrderDetailViewModel: ViewModel {
 
     func dismissCancelError() {
         if case .error = cancelState { cancelState = .idle }
+    }
+
+    /// What cancelling costs, asked of the server every time the sheet opens: the tier turns on the
+    /// clock, on this customer's own free-cancellation window and on whether a cleaner has taken the
+    /// job, so the answer is only good for the moment it was asked. A failure resolves to `.error`
+    /// rather than lingering on `.loading` — the sheet degrades to its neutral prompt and the
+    /// cancellation stays available, and it is deliberately not snackbarred over a sheet the customer
+    /// opened to do something else.
+    func loadCancellationQuote() async {
+        guard !quoteInFlight else { return }
+        guard !orderId.isBlank else {
+            cancellationQuote = .error(ApiError(code: "missing_order_id"))
+            return
+        }
+        quoteInFlight = true
+        defer { quoteInFlight = false }
+        cancellationQuote = .loading
+        switch await client.cancellationQuote(orderId: orderId) {
+        case let .success(quote):
+            cancellationQuote = .loaded(quote)
+        case let .failure(error):
+            cancellationQuote = .error(error)
+        }
     }
 
     // MARK: - Review

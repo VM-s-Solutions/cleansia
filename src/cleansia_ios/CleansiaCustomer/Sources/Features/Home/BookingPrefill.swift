@@ -45,7 +45,7 @@ enum BookingPrefill {
     /// call fail loudly later.
     static func rebook(
         _ state: BookingState,
-        order: OrderItem,
+        order: CustomerOrderDetail,
         savedAddresses: [SavedAddress],
         catalog: Catalog?
     ) -> (state: BookingState, droppedUnavailableItems: Bool) {
@@ -57,8 +57,8 @@ enum BookingPrefill {
             }
         }
 
-        let originalServiceIds = (order.selectedServices ?? []).compactMap(\.id)
-        let originalPackageIds = (order.selectedPackages ?? []).compactMap(\.id)
+        let originalServiceIds = order.services.compactMap(\.id)
+        let originalPackageIds = order.packages.compactMap(\.id)
 
         let activeServiceIds = Set((catalog?.services ?? []).map(\.id))
         let activePackageIds = Set((catalog?.packages ?? []).map(\.id))
@@ -76,8 +76,8 @@ enum BookingPrefill {
         var next = state
         next.selectedServiceIds = Set(keptServiceIds)
         next.selectedPackageIds = Set(keptPackageIds)
-        if let rooms = order.rooms, rooms > 0 { next.rooms = rooms }
-        if let bathrooms = order.bathrooms, bathrooms > 0 { next.bathrooms = bathrooms }
+        if order.rooms > 0 { next.rooms = order.rooms }
+        if order.bathrooms > 0 { next.bathrooms = order.bathrooms }
         next.street = order.address?.street ?? ""
         next.city = order.address?.city ?? ""
         next.zipCode = order.address?.zipCode ?? ""

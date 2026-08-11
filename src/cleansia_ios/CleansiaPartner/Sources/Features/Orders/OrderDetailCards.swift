@@ -60,13 +60,14 @@ struct AccessCard: View {
     }
 }
 
+/// Shows the name and whichever location the server released to this caller — a street address,
+/// or the coarse zone a browsing cleaner gets. Phone + SMS chips appear once a phone arrives.
+///
+/// Navigate is offered only against a street address: a maps app opened on a city name is worse
+/// than no button.
 struct CustomerCard: View {
     @Environment(\.locale) private var locale
     let order: OrderDetail
-
-    private var addressLine: String? {
-        order.address?.singleLine
-    }
 
     var body: some View {
         // Title-less, matching Android's bare CustomerCard (CustomerCard.kt:54-71);
@@ -78,8 +79,8 @@ struct CustomerCard: View {
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                 }
-                if let addressLine {
-                    Label(addressLine, systemImage: "mappin.and.ellipse")
+                if let line = order.location.line {
+                    Label(line, systemImage: "mappin.and.ellipse")
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -91,12 +92,10 @@ struct CustomerCard: View {
 
     @ViewBuilder
     private var contactActions: some View {
-        // Contact PII gated to the assignee (server-side PII gating parity).
-        let showContact = order.isAssignedToCurrentUser
-            && !(order.customerPhone ?? "").isEmpty
-        if showContact || addressLine != nil {
+        let navigateTo = order.location.navigationTarget
+        if order.showsCustomerContact || navigateTo != nil {
             HStack(spacing: Spacing.xs) {
-                if showContact {
+                if order.showsCustomerContact {
                     ContactChip(
                         icon: "phone",
                         label: L10n.Orders.actionCall,
@@ -108,13 +107,13 @@ struct CustomerCard: View {
                         destination: ContactActions.smsURL(phone: order.customerPhone)
                     )
                 }
-                if addressLine != nil {
+                if let navigateTo {
                     ContactChip(
                         icon: "map",
                         label: L10n.Orders.actionNavigate,
                         destination: ContactActions.mapsURL(
-                            coordinate: order.coordinate,
-                            address: addressLine
+                            coordinate: navigateTo.coordinate,
+                            address: navigateTo.line
                         )
                     )
                 }
@@ -169,9 +168,17 @@ struct ScopeCard: View {
     var body: some View {
         OrderSectionCard(title: L10n.Orders.scopeSectionTitle, systemImage: "house") {
             VStack(alignment: .leading, spacing: Spacing.s) {
-                Text(roomsLine)
-                    .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(roomsLine)
+                        .font(CleansiaTypography.bodyLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+
+                    if let crew = order.crew {
+                        Text(OrdersFormat.crewLine(crew))
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                }
 
                 if !order.services.isEmpty || !order.packages.isEmpty {
                     sectionLabel(L10n.Orders.scopeServicesLabel)

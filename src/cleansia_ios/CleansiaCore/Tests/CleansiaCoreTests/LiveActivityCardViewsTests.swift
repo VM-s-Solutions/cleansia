@@ -14,7 +14,7 @@ final class LiveActivityCardViewsTests: XCTestCase {
     private let lockScreenWidth: CGFloat = 340
     private let compactWidth: CGFloat = 52
 
-    private let finish = Date(timeIntervalSince1970: 1_700_000_000)
+    private let legEnd = Date(timeIntervalSince1970: 1_700_000_000)
 
     override func tearDown() {
         CoreL10n.bundle = .module
@@ -26,8 +26,8 @@ final class LiveActivityCardViewsTests: XCTestCase {
         return LiveActivityCardModel(
             card: card,
             orderNumber: "ORD-AB12CD34",
-            finish: finish,
-            liveRange: live && card.showsFinishTime ? finish.addingTimeInterval(-1800) ... finish : nil
+            legEnd: legEnd,
+            liveRange: live && card.timeCaption != nil ? legEnd.addingTimeInterval(-1800) ... legEnd : nil
         )
     }
 
@@ -182,19 +182,54 @@ final class LiveActivityCardViewsTests: XCTestCase {
         XCTAssertEqual(Set(rendered).count, rendered.count, "two step-dot states render identically")
     }
 
-    // MARK: - Finish time
+    // MARK: - Clock
 
     /// The compact readout has to survive the Dynamic Island's one-row slot, so it drops the caption the
     /// lock screen carries. Bounded against the slot itself rather than against the full readout: a caption
     /// left in by accident is still shorter than the lock screen's, and would slip a relative check.
-    func testTheCompactFinishTimeIsASingleRowInsideTheIslandSlot() throws {
+    /// ⚠️ **The locale sweep is the test.** `Text(_, style: .time)` is drawn by the system in the
+    /// DEVICE's locale, so a 12-hour region renders `"5:33 PM"` where a 24-hour one renders `"17:33"`.
+    /// The wider string wrapped to a second row in the 52pt slot — 30.5pt against 14.5pt — and the
+    /// island clips it, so a US-locale cleaner saw a broken clock.
+    ///
+    /// It hid for months because **every simulator this ran on resolved to 24-hour**: the dev machine's
+    /// region is `en_US@rg=czzzzz` (US language, Czech regional formats), and CI is where plain `en_US`
+    /// finally appeared. A rendering test that does not pin its locale is only testing the machine it
+    /// last ran on — and the assertion was correct the whole time.
+    func testTheCompactClockIsASingleRowInsideTheIslandSlot() throws {
         let islandRowHeight: CGFloat = 24
-        let full = try render(LiveActivityFinishTime(finish: finish, compact: false), width: 120)
-        let compact = try render(LiveActivityFinishTime(finish: finish, compact: true), width: compactWidth)
 
-        XCTAssertLessThanOrEqual(compact.size.height, islandRowHeight, "the compact readout kept its caption")
-        XCTAssertGreaterThan(full.size.height, islandRowHeight, "the lock-screen readout lost its caption")
-        XCTAssertLessThanOrEqual(compact.size.width, compactWidth)
+        // en_US is 12-hour, en_GB and cs_CZ are 24-hour. Both shapes, explicitly, every run.
+        for identifier in ["en_US", "en_GB", "cs_CZ"] {
+            let locale = Locale(identifier: identifier)
+            let full = try render(
+                LiveActivityClock(caption: .finish, at: legEnd, compact: false).environment(\.locale, locale),
+                width: 120
+            )
+            let compact = try render(
+                LiveActivityClock(caption: .finish, at: legEnd, compact: true).environment(\.locale, locale),
+                width: compactWidth
+            )
+
+            XCTAssertLessThanOrEqual(
+                compact.size.height, islandRowHeight,
+                "\(identifier): the compact readout is more than one row — a kept caption, or a wrapped time"
+            )
+            XCTAssertGreaterThan(
+                full.size.height, islandRowHeight,
+                "\(identifier): the lock-screen readout lost its caption"
+            )
+            XCTAssertLessThanOrEqual(compact.size.width, compactWidth, "\(identifier) overflowed the compact slot")
+        }
+    }
+
+    /// The caption is the whole fix: the same instant means the cleaner's arrival on one leg and the
+    /// clean's finish on the next. A clock that draws one word for both is the defect back.
+    func testTheArrivalAndFinishClocksDrawDifferentCaptions() throws {
+        let arrival = try png(LiveActivityClock(caption: .arrival, at: legEnd, compact: false), width: 120)
+        let finish = try png(LiveActivityClock(caption: .finish, at: legEnd, compact: false), width: 120)
+
+        XCTAssertNotEqual(arrival, finish, "both legs render the same caption over the same instant")
     }
 
     /// A live window counts down; without one the same slot shows the wall clock; a card with nothing left

@@ -195,7 +195,8 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                     currentPeriodStart: DateTime.UtcNow.AddMonths(-2),
                     currentPeriodEnd: DateTime.UtcNow.AddMonths(-1));
                 // Drop the row OUT of the filtered (Status = Active) index predicate.
-                cancelled.UpdateFromStripeWebhook("canceled", cancelled.CurrentPeriodStart, cancelled.CurrentPeriodEnd);
+                cancelled.UpdateFromStripeWebhook(
+                    "canceled", cancelled.CurrentPeriodStart, cancelled.CurrentPeriodEnd, trialEndsAtUtc: null);
                 cancelled.TenantId = TenantId;
                 ctx.Add(cancelled);
                 await ctx.CommitAsync(CancellationToken.None);

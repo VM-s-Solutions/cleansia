@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 
@@ -57,6 +58,22 @@ public record CreateOrderInput(
     /// The factory applies discount + express surcharge on top.
     /// </summary>
     decimal RawSubtotal,
+    /// <summary>
+    /// The ONE clock reading for this creation, captured by the caller and threaded through the
+    /// express-window decision, so the price the factory freezes cannot land on the other side of the 4h
+    /// boundary from the waiver the caller already reserved. Required, never defaulted: a default is a
+    /// second clock read wearing a parameter's name.
+    /// </summary>
+    DateTime NowUtc,
+    /// <summary>
+    /// An express waiver the caller has ALREADY RESOLVED <b>and RESERVED</b> (ADR-0035 D6/AM-9), or null.
+    /// The factory consumes the answer and never resolves or reserves — that is what makes "exactly one
+    /// consuming call site" true by construction rather than by grep, and it keeps this contract's
+    /// collaborator count unchanged. <c>MaterializeRecurringBookings</c> passes null <b>explicitly</b>:
+    /// a recurring occurrence never draws a waiver, as a rule rather than as an accident of the current
+    /// template shape.
+    /// </summary>
+    MembershipBenefitUsage? ReservedExpressWaiver,
     /// <summary>
     /// Optional promo discount + code id from <c>PromoCodeService.Preview</c>.
     /// Caller computes; factory only feeds these into best-of-three.

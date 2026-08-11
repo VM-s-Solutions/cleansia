@@ -33,7 +33,20 @@ final class OrderPhotosViewModel: ViewModel {
         self.snackbar = snackbar
     }
 
-    func load() async {
+    /// `GetOrderPhotos` serves only a caller the strict access check admits, and every photo is a
+    /// forwardable one-hour signed URL into a private home — so a cleaner who has not taken the job
+    /// makes no request at all rather than making one and swallowing the refusal. Settling on an
+    /// empty list, not staying `.loading`, is what stops the rails spinning forever if the gate opens
+    /// later; the real fetch then replaces it.
+    func load(isAuthorized: Bool) async {
+        guard isAuthorized else {
+            state = .loaded([])
+            return
+        }
+        await reload()
+    }
+
+    private func reload() async {
         if state.loadedValue == nil {
             state = .loading
         }
@@ -90,7 +103,7 @@ final class OrderPhotosViewModel: ViewModel {
         switch result {
         case .success:
             mutated.send()
-            await load()
+            await reload()
         case let .failure(error):
             snackbar.showApiError(error)
         }
@@ -113,8 +126,16 @@ final class OrderPhotosViewModel: ViewModel {
             .success([])
         }
 
-        func getById(orderId _: String) async -> ApiResult<OrderItem> {
-            .success(OrderItem())
+        func getById(orderId _: String) async -> ApiResult<OrderDetail> {
+            .success(.preview)
+        }
+
+        func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {
+            .success([])
+        }
+
+        func declinePreferredOffer(orderId _: String) async -> ApiResult<Void> {
+            .success(())
         }
 
         func takeOrder(orderId _: String) async -> ApiResult<Void> {

@@ -246,6 +246,36 @@
   padding: 2rem;
 }
 
+.payout-details {
+  &__notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    font-size: 0.875rem;
+  }
+
+  &__revealed {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ffeeba;
+    background-color: #fffdf5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+}
+
 // Document cards styling
 .documents-group {
   margin-bottom: 2rem;

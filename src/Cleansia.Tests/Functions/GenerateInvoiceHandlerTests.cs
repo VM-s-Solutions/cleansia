@@ -206,4 +206,41 @@ public class GenerateInvoiceHandlerTests
         Assert.Null(first);
         Assert.Null(second);
     }
+
+    /// <summary>
+    /// The one named exception to the ack-everything rule. "Retrying won't change the verdict" is TRUE
+    /// for every other rejection and FALSE for this one: a retry allocates a different payout
+    /// reference, so acking would leave an invoice that never exists and nobody was told about.
+    /// </summary>
+    [Fact]
+    public async Task A_Duplicate_Payout_Reference_Throws_So_The_Queue_Retries()
+    {
+        ArrangeTenantEmployee();
+        _mediator
+            .Setup(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<GenerateInvoice.Response>(
+                new Error("VariableSymbol", BusinessErrorMessage.InvoiceReferenceUnavailable)));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateHandler().HandleAsync(Enveloped(EmployeeId, PayPeriodId, TenantId), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The opposite case, and the reason the carve-out is one error rather than a classification: a
+    /// retry inside the same year allocates nothing, so the default ack reasoning genuinely holds.
+    /// </summary>
+    [Fact]
+    public async Task An_Exhausted_Year_Is_Acked_Rather_Than_Retried()
+    {
+        ArrangeTenantEmployee();
+        _mediator
+            .Setup(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<GenerateInvoice.Response>(
+                new Error("VariableSymbol", BusinessErrorMessage.InvoiceReferenceCapacityExhausted)));
+
+        var thrown = await Record.ExceptionAsync(() =>
+            CreateHandler().HandleAsync(Enveloped(EmployeeId, PayPeriodId, TenantId), CancellationToken.None));
+
+        Assert.Null(thrown);
+    }
 }

@@ -25,12 +25,26 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public bool? IsUnassigned { get; set; }
     public string? ExcludeEmployeeId { get; set; }
 
+    // The full ADR-0037 offerability rule (status axis AND money axis), for the surfaces whose whole
+    // question is "what may a cleaner take" — the dashboard available count and its preview. A plain
+    // status set cannot express it: New is offerable only for cash, and Confirmed only once nothing
+    // scheduled can still retract the order.
+    public bool? OfferableOnly { get; set; }
+
     // Server-pinned scope for a non-admin caller: results are restricted to
     // rows the caller is assigned to OR rows that still have an open spot the
     // caller could take. A non-admin can never read another employee's
     // exclusive (assigned, no-spot) rows, regardless of the client-supplied
     // EmployeeId filter. Null = no restriction (admin / unscoped).
     public string? RestrictToEmployeeId { get; set; }
+
+    // The ADR-0036 preferred-cleaner hold, as its OWN conjunct rather than a term inside
+    // RestrictToEmployeeId (which CreateAvailableOrdersSpec never sets) and never as a reuse of
+    // ExcludeEmployeeId (whose polarity is the opposite: "orders I am NOT on"). NowUtc is the switch —
+    // set it and the rule applies, as of that instant, from NotHeldFromEmployeeId's point of view. A
+    // null caller under a live hold is nobody's beneficiary, so an unidentified reader is held out.
+    public string? NotHeldFromEmployeeId { get; set; }
+    public DateTime? NowUtc { get; set; }
 
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
@@ -109,11 +123,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         if (OrderStatuses is not null && OrderStatuses.Any())
         {
             // Reads the persisted Order.CurrentStatus column (denormalized from OrderStatusHistory at
-            // the AddOrderStatus seam) instead of a per-row latest-history subquery, so the status
-            // filter is index-served. Rows with a NULL column (pre-backfill) are excluded — the
-            // deploy runbook re-runs the idempotent backfill after rollout to close that window.
-            specification &= new DirectSpecification<Order>(x =>
-                x.CurrentStatus != null && OrderStatuses.Contains(x.CurrentStatus.Value));
+            // the AddOrderStatus seam) instead of a per-row latest-history subquery. OrderStatuses is a
+            // runtime value, so EF emits `= ANY (@p)`; the column is NOT NULL, so no null conjunct
+            // pushes the term inside an OR and it stays the leading index condition on
+            // IX_Orders_CurrentStatus_CleaningDateTime. OrderStatusSetPredicatePlanTests EXPLAINs it —
+            // an OR here keeps the index but demotes the status term to a residual filter.
+            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.CurrentStatus));
         }
 
         if (IsUnassigned.HasValue && IsUnassigned.Value)
@@ -131,11 +146,30 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.All(ae => ae.EmployeeId != ExcludeEmployeeId));
         }
 
+        if (OfferableOnly.HasValue && OfferableOnly.Value)
+        {
+            specification &= new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+        }
+
         if (!string.IsNullOrEmpty(RestrictToEmployeeId))
         {
-            specification &= new DirectSpecification<Order>(x =>
-                x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId)
-                || x.AssignedEmployees.Count < x.MaxEmployees);
+            // The server's only authoritative floor on what a browsing cleaner may read. The
+            // free-seat disjunct used to be pure seat arithmetic with no status term, so every
+            // Cancelled order that nobody had taken was readable — and takeable — by anyone. The
+            // client status lists are a display refinement on top of this, never the boundary.
+            Specification<Order> assignedToCaller = new DirectSpecification<Order>(x =>
+                x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId));
+            Specification<Order> openAndOfferable =
+                new DirectSpecification<Order>(x => x.AssignedEmployees.Count < x.MaxEmployees)
+                & new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+
+            specification &= assignedToCaller | openAndOfferable;
+        }
+
+        if (NowUtc.HasValue)
+        {
+            specification &= new DirectSpecification<Order>(
+                OrderVisibility.NotHeldFrom(NotHeldFromEmployeeId, NowUtc.Value));
         }
 
         return specification.SatisfiedBy();
@@ -147,7 +181,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
-        string? userId = null, string? restrictToEmployeeId = null) =>
+        string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null,
+        string? notHeldFromEmployeeId = null, DateTime? nowUtc = null) =>
         new()
         {
             Id = id,
@@ -168,6 +203,9 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             HasAvailableSpots = hasAvailableSpots,
             IsUnassigned = isUnassigned,
             ExcludeEmployeeId = excludeEmployeeId,
-            RestrictToEmployeeId = restrictToEmployeeId
+            RestrictToEmployeeId = restrictToEmployeeId,
+            OfferableOnly = offerableOnly,
+            NotHeldFromEmployeeId = notHeldFromEmployeeId,
+            NowUtc = nowUtc
         };
 }

@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -35,12 +36,18 @@ public class GoogleAuth
         }
     }
 
+    // TermsAccepted is what tells a signup apart from a sign-in: only the signup screen carries the terms
+    // tick, and only a call that asserts it may bring an account into existence. It is client-asserted
+    // and deliberately so — a checkbox is not a fact the server can observe — so it is NOT an
+    // authorization control; it is the record of which screen the account was created from. It defaults
+    // to false so a caller that says nothing gets the sign-in-only behaviour.
     public record Command(
         string Token,
         string GoogleId,
         string Email,
         string FirstName,
-        string LastName)
+        string LastName,
+        bool TermsAccepted = false)
         : ICommand<JwtTokenResponse>;
 
     public class Handler(
@@ -119,12 +126,33 @@ public class GoogleAuth
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
             }
 
+            if (!command.TermsAccepted)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
+            }
+
             // FirstName / LastName are kept from the command — the Google ID-token may not carry a name
             // claim, so the client-provided display name is the only available source for those two.
             var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);
 
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
+
+            // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
+            // lock, so (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous
+            // provisionings of the same verified address (ADR-0050). FLUSH here and own the loser's
+            // 23505 — and do it BEFORE minting a JWT, so no token is issued for a row that was rejected.
+            try
+            {
+                await userRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.ExistingUserWithEmail));
+            }
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(userEntity, rememberMe: true, hostAudience.Audience, cancellationToken));
         }

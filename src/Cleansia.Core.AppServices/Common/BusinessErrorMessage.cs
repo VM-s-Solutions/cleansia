@@ -16,6 +16,11 @@ public static class BusinessErrorMessage
     public const string InvalidConfirmationCode = "auth.invalid_confirmation_code";
     public const string InvalidGoogleUserToken = "auth.invalid_google_token";
     public const string InvalidAppleUserToken = "auth.invalid_apple_token";
+    // Google/Apple resolved a valid identity that matches no account, on a call that did not assert the
+    // signup terms tick. Sign-in refuses rather than provisioning: the consent record we want is the one
+    // made when the account was created, so the tick belongs on the signup screen alone — asking a
+    // returning user to re-accept on every sign-in is both odd and evidentially worthless.
+    public const string SocialAccountNotFound = "auth.social_account_not_found";
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";
@@ -46,8 +51,23 @@ public static class BusinessErrorMessage
     // Order
     public const string CleaningDateInFuture = "order.cleaning_date.future";
     public const string CleaningDateBelowLeadTime = "order.cleaning_date.below_lead_time";
+    // Customer + admin: CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus. NOT the take gate —
+    // see TakeOrderAlreadyCancelled below.
     public const string OrderAlreadyCancelled = "order.already_cancelled";
     public const string OrderAlreadyCompleted = "order.already_completed";
+
+    /// <summary>
+    /// The take gate's two terminal-state refusals, split off the customer keys above (ADR-0037 CH-X1:
+    /// <em>if two personas need different sentences for one key, the backend emits two keys</em>).
+    /// ADR-0037's gate made the customer keys newly reachable by a cleaner, and iOS resolves every
+    /// <c>error.*</c> string from the one shared CleansiaCore catalog — so a cleaner tapping a dead job
+    /// read the customer's sentence ("This booking is already cancelled"), in a register and with a
+    /// noun that are wrong for them. Sole intended emitter: <c>TakeOrder</c>; the <c>order.take.*</c>
+    /// segment is what keeps that true, since only a cleaner takes.
+    /// </summary>
+    public const string TakeOrderAlreadyCancelled = "order.take.already_cancelled";
+    public const string TakeOrderAlreadyCompleted = "order.take.already_completed";
+
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
@@ -68,6 +88,11 @@ public static class BusinessErrorMessage
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
     public const string OrderNotFound = "order.not_found";
+    // The take gate's residue refusal (ADR-0037 D6.1): everything OrderAvailability declines that
+    // is not one of the two terminal states above. Deliberately opaque — a cleaner is not a party
+    // to the customer's payment, and the same key covers OnTheWay/InProgress, so it may never be
+    // voiced as anything but "this job is no longer available".
+    public const string OrderNotTakeable = "order.not_takeable";
     public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
@@ -79,6 +104,25 @@ public static class BusinessErrorMessage
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string PreferredEmployeeNotEligible = "order.preferred_employee.not_eligible";
 
+    /// <summary>
+    /// Naming a favourite cleaner is a Cleansia Plus perk (owner ruling 2026-08-07, <c>Q-PLUS-03</c>).
+    /// Its own code rather than <see cref="PreferredEmployeeNotEligible"/>: that one says "not this
+    /// cleaner" and sends the customer back to pick a different one, which is the one instruction that
+    /// cannot resolve a missing subscription.
+    /// </summary>
+    public const string PreferredEmployeeMembershipRequired = "order.preferred_employee.membership_required";
+
+    /// <summary>
+    /// ADR-0045 D5.1 — the customer's second choice is not available on this order. ONE key for all five
+    /// structural refusals (the same cleaner as the row already carries, an order that already has a
+    /// cleaner, a live reservation belonging to someone else, a lead time too short to withhold a seat,
+    /// and a recurring occurrence) because ADR-0036 D5.2 forbids an error key that names the exclusivity:
+    /// a per-reason code would let the customer distinguish "someone else is still considering it" from
+    /// "your favourite passed", which is precisely what no surface may disclose.
+    /// </summary>
+    public const string PreferredOfferClosed = "order.preferred_offer_closed";
+    public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
+
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel
     // flows; the customer UI maps each key to a localized snackbar string.
     public const string MembershipPlanNotFound = "membership.plan.not_found";
@@ -87,6 +131,17 @@ public static class BusinessErrorMessage
     public const string MembershipNotOwnedByUser = "membership.not_owned_by_user";
     public const string MembershipStripeCustomerRequired = "membership.stripe_customer_required";
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
+
+    /// <summary>
+    /// ADR-0035 AM-8 — the member's free express upgrade was still available when the price was quoted
+    /// and is not available now. Distinct from <see cref="TotalPriceNotMatch"/> on purpose: every client
+    /// maps that one to a generic "the price changed" string, so the state that needs its own sentence
+    /// ("you've used both free express bookings this month") would never be rendered.
+    /// <para>It also guards the consent invariant: no path may persist an <c>Order.TotalPrice</c> greater
+    /// than the <c>command.TotalPrice</c> the validator approved. When the slot is lost after a waived
+    /// validation, the customer re-quotes; they are never silently charged 20% more.</para>
+    /// </summary>
+    public const string ExpressWaiverNoLongerAvailable = "membership.express_waiver.no_longer_available";
 
     // Membership plans — admin back-office CRUD
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
@@ -114,6 +169,7 @@ public static class BusinessErrorMessage
     public const string OrderNoteContentRequired = "order.note.content_required";
     public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
+    public const string OrderPaymentAlreadyPaid = "order.payment.already_paid";
     public const string OrderCreationFailed = "order.creation_failed";
     public const string OrderNotCompleted = "order.not_completed";
     public const string ReviewAlreadyExists = "order.review.already_exists";
@@ -143,6 +199,13 @@ public static class BusinessErrorMessage
     public const string EmployeeNotApproved = "employee.not_approved";
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
+    public const string EmployeeJobRadiusOutOfRange = "employee.job_radius_out_of_range";
+    // Approval asserts the cleaner can be quoted on the whole active catalogue, so an approved cleaner
+    // never opens the app to a board of blank pay. The refusal is emitted once PER uncovered catalogue
+    // entry with that entry's name as the failure's ErrorCode, so the ProblemDetails errors bag names
+    // what an admin has to configure — the remedy is BulkCreateEmployeePayConfigs or a platform-wide
+    // CreatePayConfig, and a bare "cannot approve" would get worked around instead.
+    public const string EmployeePayConfigMissing = "employee.pay_config_missing";
 
     // Employee Documents
     public const string DocumentNotFound = "employee_document.not_found";
@@ -167,6 +230,11 @@ public static class BusinessErrorMessage
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
+    public const string InvoiceNotApproved = "payroll.invoice.not_approved";
+    public const string InvoiceReferenceUnavailable = "payroll.invoice.reference_unavailable";
+    public const string InvoiceReferenceMissing = "payroll.invoice.reference_missing";
+    public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";
+    public const string InvoiceReferenceAlreadyAssigned = "payroll.invoice.reference_already_assigned";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
@@ -185,6 +253,10 @@ public static class BusinessErrorMessage
     public const string PayConfigAlreadyExists = "pay_config.already_exists";
     public const string PayConfigNotFound = "pay_config.not_found";
     public const string PayConfigHasOrderPays = "pay_config.has_order_pays";
+    // The last platform-wide config for an entry that is still quoted — active, or carried by an
+    // existing order. Removing it blanks the pay on EVERY cleaner's board at once, which is the same
+    // end state as never configuring the entry, reached from the other direction.
+    public const string PayConfigLastForLiveCatalogueEntry = "pay_config.last_for_live_catalogue_entry";
     public const string PayConfigBasePayNegative = "pay_config.base_pay_negative";
     public const string PayConfigExtraPerRoomNegative = "pay_config.extra_per_room_negative";
     public const string PayConfigExtraPerBathroomNegative = "pay_config.extra_per_bathroom_negative";
@@ -258,6 +330,24 @@ public static class BusinessErrorMessage
     public const string InvalidTaxId = "validation.invalid_tax_id";
     public const string InvalidIban = "validation.invalid_iban";
     public const string InvalidZipCode = "validation.invalid_zip_code";
+    // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
+    public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
+    public const string VatNumberInvalidFormat = "validation.vat_number.invalid_format";
+
+    // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
+    public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";
+    public const string PayoutSchemeNotSupported = "validation.payout.scheme_not_supported";
+    public const string PayoutAccountNumberRequired = "validation.payout.account_number_required";
+    public const string PayoutInvalidAccountNumber = "validation.payout.invalid_account_number";
+    public const string PayoutInvalidAccountPrefix = "validation.payout.invalid_account_prefix";
+    public const string PayoutInvalidBankCode = "validation.payout.invalid_bank_code";
+    public const string PayoutInvalidIban = "validation.payout.invalid_iban";
+    public const string PayoutIbanCountryMismatch = "validation.payout.iban_country_mismatch";
+    public const string PayoutIbanMismatch = "validation.payout.iban_mismatch";
+    public const string PayoutInvalidSwift = "validation.payout.invalid_swift";
+    public const string PayoutSwiftRequired = "validation.payout.swift_required";
+    public const string PayoutLooksLikeCard = "validation.payout.looks_like_card";
+    public const string PayoutDetailsNotFound = "payout.not_found";
 
     // Service
     public const string ServiceNotFound = "service.not_found";

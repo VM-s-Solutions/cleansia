@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Moq;
@@ -186,5 +187,43 @@ public class UpdateCurrentUserValidatorTests
         Assert.Contains(result.Errors, e =>
             e.ErrorCode == nameof(UpdateCurrentUser.Command.PhoneNumber)
             && e.ErrorMessage == BusinessErrorMessage.ExistingPhoneNumber);
+    }
+
+    [Fact]
+    public async Task Avatar_Over_TenMebibytes_Fails_FileSizeExceeded()
+    {
+        ArrangeOwner();
+        ArrangePhoneFree("+420123456789");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes + 1024) });
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.FileSizeExceeded);
+    }
+
+    [Fact]
+    public async Task Avatar_Under_TenMebibytes_Passes()
+    {
+        ArrangeOwner();
+        ArrangePhoneFree("+420123456789");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes - 1024) });
+
+        Assert.True(result.IsValid);
+    }
+
+    private const long TenMebibytes = 10L * 1024 * 1024;
+
+    /// <summary>
+    /// The FULL eight-byte PNG signature, not the four a reader recognises. The trailing
+    /// <c>0D 0A 1A 0A</c> is what a real encoder writes and what the sniff requires, so a four-byte
+    /// fixture would be an input no client produces — green here and refused in production.
+    /// </summary>
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    private static BlobFileDto Avatar(long size)
+    {
+        var png = new byte[size];
+        PngSignature.CopyTo(png, 0);
+        return new BlobFileDto("avatar.png", Convert.ToBase64String(png), "image/png");
     }
 }

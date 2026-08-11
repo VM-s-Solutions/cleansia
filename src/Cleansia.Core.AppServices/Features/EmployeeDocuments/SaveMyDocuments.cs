@@ -44,6 +44,14 @@ public class SaveMyDocuments
 
     public class Validator : UserEmailValidator<Command>
     {
+        /// <summary>
+        /// Ten is above any real batch — there are ten document types — and the number matters more than
+        /// it looks: the per-document size cap bounds one item, not the list, and the host body limit
+        /// buys thousands of SMALL ones. Without this, one request within that limit is tens of
+        /// thousands of blob uploads and rows.
+        /// </summary>
+        private const int MaxDocumentsPerRequest = 10;
+
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
 
@@ -60,28 +68,35 @@ public class SaveMyDocuments
                 .WithMessage(BusinessErrorMessage.EmployeeNotFound);
 
             RuleFor(x => x.Documents)
-                .NotEmpty().WithMessage(BusinessErrorMessage.Required);
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage(BusinessErrorMessage.Required)
+                .Must(documents => documents.Count <= MaxDocumentsPerRequest)
+                .WithMessage(BusinessErrorMessage.FileCountExceeded);
 
             RuleForEach(x => x.Documents).ChildRules(document =>
             {
                 document.RuleFor(d => d.File)
-                    .NotNull().WithMessage(BusinessErrorMessage.Required);
+                    .Cascade(CascadeMode.Stop)
+                    .NotNull().WithMessage(BusinessErrorMessage.Required)
+                    .SetValidator(new DocumentFileValidator());
 
-                document.RuleFor(d => d.File.FileName)
-                    .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                    .MaximumLength(255).WithMessage(BusinessErrorMessage.MaxLength);
-
-                document.RuleFor(d => d.File.Base64Content)
-                    .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                    .Must(content => !string.IsNullOrWhiteSpace(content))
-                    .WithMessage(BusinessErrorMessage.Required);
+                document.When(d => d.File is not null, () =>
+                {
+                    document.RuleFor(d => d.File.FileName)
+                        .Cascade(CascadeMode.Stop)
+                        .NotEmpty().WithMessage(BusinessErrorMessage.Required)
+                        .MaximumLength(255).WithMessage(BusinessErrorMessage.MaxLength);
+                });
 
                 document.When(d => !string.IsNullOrEmpty(d.Description), () =>
                 {
                     document.RuleFor(d => d.Description)
                         .MaximumLength(500).WithMessage(BusinessErrorMessage.MaxLength);
                 });
-            });
+            })
+            // Without this the per-item rules still decode every item of a list already refused for
+            // being too long, which is the cost the count cap exists to refuse.
+            .When(x => x.Documents.Count <= MaxDocumentsPerRequest);
         }
 
         private async Task<bool> EmployeeExistsAsync(Command command, CancellationToken cancellationToken)
@@ -111,19 +126,14 @@ public class SaveMyDocuments
 
             foreach (var doc in command.Documents)
             {
-                if (string.IsNullOrWhiteSpace(doc.File.Base64Content))
-                {
-                    continue;
-                }
-
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                 var randomGuid = Guid.NewGuid().ToString("N")[..8];
                 var fileExtension = Path.GetExtension(doc.File.FileName);
                 var uniqueFileName = $"{employee.Id}_{doc.DocumentType}_{timestamp}_{randomGuid}{fileExtension}";
                 var fullBlobPath = $"{employeeDocumentsPath}/{uniqueFileName}";
 
-                var base64Data = doc.File.Base64Content.ExtractBase64Data();
-                var contentType = doc.File.ContentType ?? DetermineContentType(fileExtension, base64Data);
+                var base64Data = doc.File.Base64Content!.ExtractBase64Data();
+                var contentType = SniffedContentType.FromContent(doc.File.Base64Content, UploadIntake.EmployeeDocument)!;
 
                 await using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
 
@@ -187,30 +197,6 @@ public class SaveMyDocuments
             {
                 Documents = savedDocuments
             });
-        }
-
-        private static string DetermineContentType(string fileExtension, string base64Data)
-        {
-            var contentType = fileExtension.ToLowerInvariant() switch
-            {
-                ".pdf" => "application/pdf",
-                ".doc" => "application/msword",
-                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                _ => "application/octet-stream"
-            };
-
-            // If still unknown, try to detect from base64 signature
-            if (contentType == "application/octet-stream" && base64Data.Length > 10)
-            {
-                var signature = base64Data[..10].ToLowerInvariant();
-                if (signature.StartsWith("jvber")) contentType = "application/pdf";
-                else if (signature.StartsWith("/9j/")) contentType = "image/jpeg";
-                else if (signature.StartsWith("ivbor")) contentType = "image/png";
-            }
-
-            return contentType;
         }
     }
 }

@@ -1,14 +1,12 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import {
-  CustomerClient,
-  UpdateNotificationPreferencesCommand,
-} from '@cleansia/customer-services';
+import { CustomerClient } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   NotificationPreferenceField,
   NotificationPreferencesValues,
+  buildUpdateNotificationPreferencesCommand,
   toPreferencesValues,
 } from './notification-preferences.models';
 
@@ -57,7 +55,7 @@ export class NotificationPreferencesFacade extends UnsubscribeControlDirective {
 
     this.saving.set(true);
     this.customerClient.notificationPreferencesClient
-      .update(new UpdateNotificationPreferencesCommand({ ...current }))
+      .update(buildUpdateNotificationPreferencesCommand(current))
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {

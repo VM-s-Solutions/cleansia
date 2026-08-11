@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/cleansia-partner.app/src",
-  "tags": [],
+  "tags": ["scope:partner", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:application",

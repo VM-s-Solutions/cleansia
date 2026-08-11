@@ -1,11 +1,11 @@
 ---
 id: T-0450
 title: Profile edit chip — shorten the label to the verb alone in all five locales, and truncate rather than wrap
-status: ready
+status: done
 size: S
 owner: android
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: []
 blocks: [T-0448, T-0449]
 stories: []

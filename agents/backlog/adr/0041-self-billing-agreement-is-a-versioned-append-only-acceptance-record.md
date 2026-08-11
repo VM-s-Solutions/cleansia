@@ -1,0 +1,4052 @@
+# ADR-0041 — The self-billing agreement is a **versioned, append-only `EmployeeAgreementStatement` log** with **two evidence channels** (server-served text vs. operator-recorded paper signature); **"mandatory" binds at admin approval only**; and an invoice's coverage is **DERIVED from the log at query time, never stamped on the invoice**
+
+- **Status:** `accepted` — PM, 2026-08-07, on the round-3 lead's own terms: a delta review of rev 4
+  against §R4 only, no fourth adversarial round. The limb that was holding acceptance is closed by the
+  owner's `Q-SELFBILL-06` → **(b)**. Three things were spot-checked at HEAD before accepting, not taken
+  from the report: the frozen **schema block is untouched** (the rev-4 diff contains no column, index,
+  key or FK change — only statements *about* it); the newly derived **sole-writer** claim holds
+  (`ContractStatus = ContractStatus.Approved` is assigned in exactly one place, `Employee.cs:268`,
+  reached only from `ApproveEmployee.cs:125` — every other match in the tree is a *read*); and the
+  refuted performance ratio survives nowhere as an assertion or a dependency, only as a
+  recognise-and-refuse marker plus the immutable deliberation trail that records its withdrawal.
+  **Rev 4 flagged three judgements it made beyond transcription rather than burying them** (§Y.3); the
+  load-bearing one — reading the latest acceptance statement unqualified and then checking its country,
+  rather than putting the country in the `WHERE` — is accepted, because the alternative skips a
+  paper-channel revocation that carries no country and would resurrect a revoked agreement. That is a
+  false positive on a mandatory gate, which is the failure this ADR exists to prevent.
+- **Superseded status line (rev 4, author):** `proposed` — **rev 4 (2026-08-07), authored by a tenth instance: not rev 1's, rev 2's or
+  rev 3's author, none of the four challengers, and none of the three leads.** Rev 4 executes
+  `## Verdict — round 3` §X.10's **CLOSED** list R4.1–R4.9 and applies **four owner answers of
+  2026-08-07** (`Q-SELFBILL-06`, `Q-SELFBILL-01`, `Q-SELFBILL-02`, `Q-PAYOUT-02`). **It is a
+  sentence-and-check revision, not a rebuild:** the **schema block is FROZEN** (D1's DDL, D1.8's five
+  `OnDelete`s, D1.9's one index) and **rev 4 did not touch a column, an index, a key or an FK** — the
+  §X.10 tripwire that would have re-convened a full panel did not fire. **No fourth adversarial lane is
+  authorized** (§X.12): rev 4 clears by a **delta review by a lead instance that is not its author**,
+  who confirms (i) R4.1–R4.9 are each discharged, (ii) the schema block is byte-identical, (iii) no new
+  sentence asserts a property of the running system without a check that fails on the **rejected**
+  alternative, and (iv) `Q-SELFBILL-06`'s answer is written into R4.1. **It is not `accepted` until that
+  review lands, and the author does not accept their own ADR.**
+- **The owner answered on 2026-08-07 and the acceptance gate is discharged** — see §Owner rulings 3.
+  `Q-SELFBILL-06` → **(b) open on Czech, with visibility.** The un-agreed non-Czech-reading cohort is
+  **counted and surfaced**, not hidden and not blocked (D4.5, D5, F6).
+- **THE SPLIT, EXECUTED (§W.6).** ADR-0041 is now **one decision**: *what shape holds a cleaner's
+  agreement such that the record is still defensible years later* — plus the **negative** that follows
+  from it, *`EmployeeInvoice` gains no column; coverage is derived from the log at query time, never
+  stamped.* **The coverage report's positive specification is SEVERED** — its anchor column, its
+  evaluation shape, its plan check, its stability over time and its four rows are written up in
+  `agents/architecture/decisions/self-billing-agreement.md` §*"SEVERED"*, **for the PM to lift into an
+  ADR and number.** No number is allocated here. The **coverage index goes with it**, on §W.6's rule:
+  *an index that serves a query is specified in the artifact that fixes the query.*
+- **Not buildable.** No ticket may be started or closed. **No EF migration exists, none may be created**
+  (§Migration). `manual_step: ef-migration` remains **withdrawn** — but the grounds have shrunk to one:
+  the VAT axis is **answered** (§Owner rulings 2), §W.10's schema items are **decided below**, the third
+  panel **has run** and froze the schema block, and what remains is rev 4's delta clearance plus the
+  pre-deploy `to_regclass` existence gate.
+- **Panel:** author rev 1 (2026-08-04) · challengers `challenges/0041-legal.md` +
+  `challenges/0041-schema.md` (2026-08-05) · lead ruling 2026-08-05 (`## Verdict`) · author rev 2
+  (2026-08-05, a fourth instance) · challenger round 2 `challenges/0041-schema-rev2.md` (a fifth
+  instance) · lead round 2 2026-08-05 (`## Verdict — round 2`, a sixth instance) · author rev 3
+  (2026-08-05, a seventh instance — `## Defense — rev 3`) · challenger round 3 `challenges/0041-rev3.md`
+  (an eighth instance) · lead round 3 2026-08-06 (`## Verdict — round 3`, a ninth instance) · **author
+  rev 4 (2026-08-07, a tenth instance — `## Defense — rev 4`).**
+- **Date:** 2026-08-04 (drafted) · 2026-08-05 (rebuilt) · 2026-08-05 (split + rev 3) ·
+  2026-08-07 (rev 4 — sentences and checks; owner answers applied)
+- **Supersedes:** — (composes with **ADR-0034** — the payout shape, its D1.1 gate-scalar rule, its D2
+  jurisdiction rule and its D7 gate-decoupling rule; **ADR-0033** — catalog-edit routing; **ADR-0017**
+  — per-country variation is config-driven; **ADR-0012** — the admin-mutation audit gate, ids-not-PII,
+  **and its `BaseEntity + ITenantEntity` writer obligation, D1.10**; **ADR-0007** — erasure semantics;
+  **ADR-0003** — rate-limit policies). **ADR-0035 is no longer composed with** — rev 2 borrowed its
+  atomic-append shape for `Sequence`, and D1.4 drops both (§W.3/§W.4b, P9).
+- **Superseded by:** —
+- **Applies to:** `Cleansia.Core.Domain` (**three new entities + three enums**) ·
+  `Cleansia.Infra.Database` (three entity configurations; **no change to any existing table**) ·
+  `Cleansia.Core.AppServices` (one resolver, one authority service, two partner self-service
+  endpoints, one admin command, **one validator rule on `ApproveEmployee`**, one redaction call in
+  `GdprDeletionService`) · **partner web + partner mobile + admin hosts; the customer hosts are
+  untouched** · `nswag-regen` + Android/iOS client regen · **no change to the tenancy filter, the pay
+  formula, the fiscal modes, `IsProfileComplete()`, `EmployeeInvoice`, or any invoice-issuance path**
+- **Owner input this ADR executes (verbatim, 2026-08-04):** *"I think that we can put somewhere a
+  checkbox in partner mobile/web that we're generating invoices on our own and that user agrees with it
+  (it's gonna be mandatory). Also it for sure will be written in the contract that user signs"* — and,
+  on `Q-PAYOUT-02` (2026-08-04): *"Nope, he's not an employee but signs a B2B contract with us and all
+  of the invoices will be generated by us but actually invoiced for employees."*
+
+### Why this feature exists — the owner's answer, and it is an OPERATIONAL reason, not a paperwork one
+
+**`Q-PAYOUT-02` was answered on 2026-08-07** (`agents/backlog/questions/open.md` §Q-PAYOUT-02): **a
+cleaner is an OSVČ — a self-employed supplier — and the platform SELF-BILLS.** The owner's own words are
+the motivation this ADR previously could not state, so they are quoted rather than paraphrased:
+
+> *"This is what I meant by self bill, instead of them making invoices on their own and sending them to
+> us one by one, we have all of the invoices generated from their completed orders in place for all of
+> the cleaners and pay for them in 1 day. So there is a need to have an agreement of self bill/paying."*
+
+**Read the causal chain in that sentence, because every decision below inherits it.** The platform does
+not self-bill because self-billing is tidier; it self-bills because **the payout is a single batch on a
+single day for every cleaner at once**, and a batch cannot wait on N suppliers each posting their own
+invoice. The prior agreement is what makes that batch **lawful** — in the EU a customer may issue the
+supplier's invoice only where the supplier agreed in advance. So the agreement is not a compliance
+ornament bolted onto a payout that would work without it: **it is the precondition of the payout shape
+the business runs on.** Three consequences that this ADR already decided and that this motivation now
+*explains* rather than merely asserts:
+
+- **Why the record must be per-supplier, versioned and timestamped, not a platform-wide policy flag.**
+  The batch pays *each* cleaner; the authority to invoice *for* them is held per cleaner. A6 (rely on the
+  contract clause alone) cannot say which wording *this* supplier agreed to, when, and from where.
+- **Why the gate is at approval and not at issuance (D5, A5).** Blocking issuance would break the
+  one-day batch — the thing the agreement exists to enable — to punish a cleaner for a gap the platform
+  created. Gating the *entry* to the batch (approval) costs one operator interaction; gating the *batch*
+  costs every cleaner in it their tax document.
+- **Why coverage is derived and never stamped (D6).** The batch has two writers today and will acquire
+  more; a derived answer covers a writer added in 2027 on the day it is written.
+
+*(This also fixes a stale premise the header carried: `Q-PAYOUT-02`'s 2026-08-04 wording — *"signs a B2B
+contract with us"* — was read by rev 1 as the whole legal basis. The 2026-08-07 answer names the
+**operational** reason as well, and it is the stronger one.)*
+
+### Owner rulings that landed between rev 2 and rev 3 (2026-08-05) — **they SUBTRACT**
+
+Both are recorded here because each **deletes** a section of rev 2 rather than amending one. Rev 3's
+job on them is to remove the machinery, not to carry it forward "for production later".
+
+**1. The database is being dropped. DEV only; there is no production.** Owner, relayed by the PM,
+verbatim: *"So don't be bothered with existing cleaners."*
+
+> **What this moots: the BACKLOG of "cleaners nobody has asked" — and only the backlog.** There are no
+> pre-existing cleaners without an agreement, so rev 2's historical machinery has no subject. Deleted in
+> rev 3, by name: rev 2's **F3** (the un-asked cohort *as a historical population*), **F4** (the
+> pre-clause cohort), **D5's "already-approved cleaner with no statement" row** and its dismissible
+> interstitial, **D6.4's keep-issuing default**, the *"closing backlog"* / *"shrinking number"*
+> framing everywhere it appears, and the **`cleaners with no current acceptance`** report row.
+> **Those deletions are right and rev 4 does not restore any of them.**
+>
+> ⚠️ **REV 4 WITHDRAWS THE SENTENCE THAT SAID THE COHORT *"CANNOT FORM"* (R4.1 / §X.1).** Rev 3 wrote:
+> *"With D5's gate at `ApproveEmployee` from day one, no cleaner reaches work in a jurisdiction with
+> demandable text without a statement — so the cohort **cannot form**."* **That is false against this
+> ADR's own D4.3, and check #12 is the evidence.** D4.3 makes the agreement *demandable* only where the
+> **caller's own language** has a `BusinessSupplied`+ text; check #12 asserts that with only `cs`
+> reviewed, a `uk` caller's `ApproveEmployee` **succeeds**. So the ruling empties the **backlog** and
+> says nothing about the **rate**: on the owner's Czech-first launch the platform keeps approving
+> cleaners whose app language has no reviewed body, and they work and are self-billed with no statement.
+> **What is true, and is all that is claimed now:** *there is no historical backlog, and D5's gate stops
+> the population from re-forming **wherever text is demandable**.* Two residues remain and each is named
+> as its own finding rather than folded into the other — **F3′** (a jurisdiction opened before its text
+> exists — the owner has now committed that this will not happen, §Owner rulings 3) and **F6** (the
+> per-language gap, which survives F3′ being fully closed).
+>
+> **CH-A2 and CH-L2's monotonicity half revive in the language form only.** They were correct against
+> rev 1, lost their *historical* subject with F3/F4, and their subject returns as F6: a population that
+> grows with hiring. They do **not** revive in the historical form and rev 4 does not re-import rev 2's
+> prompt design.
+>
+> ✅ **PM item discharged.** This ruling and the four 2026-08-07 answers are now recorded in
+> `agents/backlog/questions/open.md`; the rev-3 note that they were *"not yet in `questions/`"* is
+> superseded by §Owner rulings 3.
+
+**2. No VAT.** Owner on `Q-PAYOUT-03` (`questions/open.md:889-895`, re-read 2026-08-05), verbatim:
+*"I wouldn't ask them if they're VAT payers. So I wouldn't consider that there is a need to implement
+VAT functionality around cleaner invoices."*
+
+> **This answers §Escalations item 2 and unblocks the version key.** `AgreementVersion` is keyed on
+> **jurisdiction alone** — `UNIQUE (Kind, CountryId, Version)` — **by decision, on the owner's ruling**,
+> not by omission. CH-L3 is **closed**; the round-1 lead's *"blocks the migration, not the design"*
+> ruling is discharged. The key needs no VAT axis because the platform does not determine VAT
+> character.
+>
+> ⚠️ **Noted and deliberately NOT acted on.** `open.md:897-908` records that the tree still carries a
+> self-service `Employee.VatNumber` and an invoice PDF that branches on it, so *"we don't ask"* is true
+> of onboarding and false of the data model. The owner has that recorded **as a cleanup question**.
+> **This ADR does not reopen it and does not design around it** — no `AgreementVersion` column, no
+> resolver term, no report row keys on VAT character, in either this artifact or the severed one.
+
+### Owner rulings 3 — **the 2026-08-07 answer batch.** Four answers, and they close the acceptance gate
+
+> **Provenance, stated because this ADR got it wrong for three revisions.** §Escalations claimed since
+> rev 1 that `Q-SELFBILL-01`…`-05` were *"filed as one block… by the PM"*. **They were not** — the
+> round-3 lead grepped the backlog and found them only inside this ADR (§X.11). They were filed
+> 2026-08-06 and **answered by the owner on 2026-08-07**. `Q-SELFBILL-06` was filed correctly on
+> 2026-08-06 and answered in the same batch. **Cited by question id and date, not by line number**, so
+> the citation survives the PM appending to that file.
+
+**3a. `Q-SELFBILL-06` → (b): open on Czech, WITH VISIBILITY.** Verbatim: *"(b) — open on Czech, with
+visibility. Launch is not delayed and the un-agreed cohort is counted and surfaced rather than hidden.
+ADR-0041 can now be accepted on this limb."*
+
+> **This is the limb that was gating acceptance (§X.1), and it is an ADD, not a subtract.** The owner
+> declined (a) *delay the launch until all five locales are reviewed* and declined (c) *accept the gap
+> silently*. So F6's population is **real, permitted, and must be visible**: neither blocked at the door
+> (D4.3 stands — a signature over bytes the signer cannot read is not evidence) nor hidden. **D4.5 gains
+> the counting query and D5 gains the prompt row.** Note what is *not* restored: this is **not** rev 2's
+> already-approved-cohort interstitial, which counted a historical backlog that genuinely does not
+> exist. It is a **forward** measure over a population the platform creates one approval at a time.
+
+**3b. `Q-SELFBILL-01` → the text is NOT reviewed yet.** Verbatim: *"A lawyer will review it in the
+future."*
+
+> **Two things follow and they point in opposite directions, so both are stated.** (i) **No version may
+> be marked reviewed on anyone's say-so**, and in particular not on the owner's — `ReviewStatus` is a
+> *provenance* column (D4.6), and *"a lawyer will review it"* is a future event, not a provenance claim.
+> Every `AgreementVersionText` ships `NotReviewed`, so by D4.4 **nothing renders and nothing is
+> demanded**: the feature ships **inert**, which is exactly the recorded default. (ii) **The wait now has
+> an END CONDITION rather than being open.** Rev 3 had to write *"the single thing standing between the
+> design and a working feature"* against a question nobody had asked; the question has now been asked and
+> answered, and the answer is *"counsel, later"*. That converts an unbounded hold into a **named
+> dependency on a named event** — which is what D6/P15's exposure-window argument (*"the table holds zero
+> rows until `Q-SELFBILL-01` is answered"*) needed and did not have.
+>
+> ⚠️ **The honest cost, named rather than glossed:** the feature is buildable and inert for an unknown
+> duration. That is *safe* — an inert gate refuses nobody and demands nothing — but it means the tickets
+> below ship a surface no cleaner sees. **This ADR does not treat "counsel will review it" as licence to
+> pre-mark anything `BusinessSupplied`.** The one thing the owner *may* do without counsel is supply
+> `BusinessSupplied` text under their own name (D4.6: a named accountable human supplied this text for
+> this jurisdiction) — that is a different and weaker claim than `CounselReviewed`, and the enum already
+> distinguishes them.
+
+**3c. `Q-SELFBILL-02` → (a) the invoice is INVALID; (b) the PRINT DATE authorizes the document.**
+Verbatim: *"(a) the invoice is INVALID — and the residue is empty by construction, because 'it never
+will be a case that a company registers before the agreement text exists.' … (b) the PRINT DATE
+(`GeneratedAt`) authorizes the document, not the pay period it covers."*
+
+> **(a) upgrades F3′ from an engineering default to an OWNER COMMITMENT, and that is a strictly stronger
+> thing.** D4.5's launch precondition was rev 3's own sequencing judgement with the cost line *"if the
+> owner opens a country early anyway, nothing in the platform objects."* The owner has now stated the
+> sequencing as a commitment **and** stated the legal consequence of breaking it — the document is
+> **invalid**, not merely unevidenced. So F3′ is closed **by the owner**, and D4.5's precondition is
+> recorded as their rule rather than the architect's. **What does not change: it still has no enforcer**
+> (R.3 hedge 3), and rev 4 does not dress it up as one. What changes is the *stake* — the counting query
+> 3a mandates covers the jurisdiction axis too, so a breach is visible even though it is not blocked.
+>
+> **(b) ANSWERS THE ANCHOR — and the answer belongs to the SEVERED decision, which is where it lands.**
+> `<ANCHOR>` in D6.1 is **`EmployeeInvoice.GeneratedAt`** (`EmployeeInvoice.cs:60`, `DateTime`,
+> `private set`, written only in `Create` at `:125`), **not** `PayPeriodId` (`:16`, same immutability,
+> written at `:116`). **ADR-0041 still does not fill the placeholder in**, and that is deliberate rather
+> than pedantic: §W.6 severed the anchor *with the query shape and its plan check*, and the CLR-type
+> direction the severed spec §S4 pins (`OccurredAt` is `DateTimeOffset`; EF casts the **invoice** side,
+> leaving the statement column sargable) is a property of the comparison, which lives there. **Rev 4
+> records the owner's answer in the severed spec and in §Escalations, so the severed decision's author
+> inherits it instead of re-asking.** What it settles here: D6's *definition* sentence is now readable
+> against a decided anchor, and R.3 hedge 6's *"the two artifacts must be read together on exactly one
+> sentence"* is discharged — the sentence has an answer.
+>
+> ⚠️ **And it prices a consequence the owner should see once, in this artifact.** The print date is
+> stamped up to a month after the work (`PayPeriodBackgroundService` closes monthly). Under (b), a
+> cleaner who accepts on **31 July** covers the invoice printed in August **for June's work**, and one
+> who accepts on **5 August** does not cover an invoice printed on 4 August. That is the trade the owner
+> took, and it is the *simpler* of the two: authorization attaches to the **document we issued**, which
+> is the document a tax authority would look at. The severed decision states it; nothing here re-opens it.
+
+**3d. `Q-PAYOUT-02` → OSVČ + self-billing.** Recorded above under *"Why this feature exists"*, because it
+is motivation rather than a ruling on a section. **T-0522 unblocks** on that answer; **this ADR does
+not** — it is gated by rev 4's delta clearance, not by `Q-PAYOUT-02`.
+
+> **One decision:** *what shape holds a cleaner's agreement to be self-billed such that the record is
+> still defensible years later, and such that its absence never becomes an outage.* Everything else is
+> a corollary. The answer is **not** a `bool`, **not** a fifth `ConsentType`, and **not** a gate on work
+> or payment — it is: **a consent record's job is to say what was agreed, to what text, by whom, when,
+> and from where; and a compliance control whose failure mode is "the cleaner does not get paid" is
+> worse than the gap it closes.** So the record is a rich append-only log, and the enforcement is
+> *visibility* plus **one** gate at the one edge where a human is already present.
+
+> **The constraint that governs three decisions below.** ADR-0034 §F2/§D7 exists because a
+> profile-completeness term that trips on the existing population **403s every cleaner off the entire
+> partner surface** (`[RequireCompleteProfile]` is class-level on the partner host's `OrderController`,
+> `EmployeePayrollController`, `DashboardController`, `DisputeController`). D5 therefore goes nowhere
+> near that gate, and says so structurally rather than by intention.
+>
+> ⚠️ **Rev 2's version of this sentence rested on "every cleaner alive today would fail this term", and
+> §Owner rulings 1 deletes that evidence.** The rule survives its evidence and I say why rather than
+> quietly keeping the conclusion: a completeness term is **retroactive by construction** — it is
+> evaluated against every row that exists at the moment it ships, not against the transition that
+> created them — so it re-arms the moment the population is non-empty, which is the day after launch.
+> ADR-0034 D7's own catalog rule says the same thing in general form (`consistency.md` §*"Moving a gate
+> onto a new denormalized column…"*: *"a flag defaulting to `false` is `false` for every existing row
+> on release morning"*). An empty database on the day of the decision is not a licence to put a term in
+> `IsProfileComplete()`; it is only a licence to stop citing the current population as the reason.
+
+---
+
+## Context
+
+> **Verification scope — read this before citing anything below.** Rev 1 carried the header *"every
+> citation verified in the working tree"* and **two load-bearing rows in it were false**, each of which
+> *produced* a wrong decision (§V.7). That header is **deleted and does not return.** Each row below
+> carries who last opened it and when. **`A3` = re-opened by the rev-3 author on 2026-08-05 in the
+> working tree.** `A2` = the rev-2 author, 2026-08-05. `P` = a first-panel lane. `P2` = the round-2
+> challenger's 22-citation sample. `—` = cited from rev 1 and NOT re-verified: **treat as a lead, not a
+> fact.** No blanket claim is made about the table.
+>
+> **What rev 3 re-opened, and what it found.** I re-read **24** rows rather than inheriting them, and
+> **23 were exact.** The one that was not is corrected in place and named here so nobody re-derives it:
+> rev 2's *tenantless siblings* row said **`CountryConfiguration : BaseEntity`**; it is
+> **`CountryConfiguration : Auditable`** (`Configuration/CountryConfiguration.cs:9`). The **load-bearing
+> half is unaffected** — none of the four implements `ITenantEntity`, which is the whole claim — but
+> `Auditable` is precisely the base whose configuration emits the index D1.9 is about, so the drift is
+> not cosmetic. *(Round 1's lead had it right at §V.4; rev 2 flattened it.)*
+>
+> **Two rows below are NEW in rev 3 and neither was in front of any panel** — the `AuditableEntityConfiguration`
+> index and the `DbContextAuditWriter` tenant-stamp obligation. They are the evidence for D1.9 and
+> D1.10, and they are the first things a challenger should try to break.
+
+### What exists today
+
+| Thing | State (file:line) | Verified |
+|---|---|---|
+| **Anything recording a self-billing agreement** | **Nothing.** `rg -i 'samofaktur\|self.?bill'` over `src/` returns one hit, `cleansia_ios/.../MembershipModels.swift` (`self.billingInterval`) — a regex artefact. No column, no enum value, no PDF marking | `P` (both lanes) |
+| The document being generated | A **self-billing invoice**: cleaner = *Dodavatel*, Cleansia = *Odběratel*. Shipped by **T-0522** on the owner's `Q-PAYOUT-02` ruling. `INDEX.md` records it blocked on `Q-PAYOUT-02`/`-03`; **`-03` is still open** | `P` (legal lane) |
+| **`UserConsent`** | `class UserConsent : Auditable, ITenantEntity` — `UserId`, `ConsentType`, `IsGranted`, `GrantedAt`, `WithdrawnAt`, `IpAddress(45)`, `UserAgent(500)`; factories `Grant` / `Withdraw` / `Regrant`. **`Regrant` (`UserConsent.cs:46-54`) overwrites `GrantedAt`, `IpAddress` and `UserAgent`.** No version column | `A2` |
+| Its cardinality | `UserConsentEntityConfiguration.cs:31-32` — `HasIndex(new { UserId, ConsentType }).IsUnique()`. **One mutable row per (user, type). No history** | `A2` |
+| **The withdraw surface** | `WithdrawConsent.Command(ConsentType)` (`WithdrawConsent.cs:12`); the **only** validator rule is `RuleFor(c => c.ConsentType).IsInEnum()` (`:18`); the handler withdraws whatever type the caller names (`:31-38`). Live on four user-facing hosts | `A2` |
+| Its type set | `ConsentType` — `TermsOfService`, `PrivacyPolicy`, `MarketingEmails`, `DataProcessing`. All four are GDPR/marketing consents | — |
+| Its grant path | `ConsentService.TryGrantAsync` — IP + device read **server-side** from `IRequestMetadataProvider`, with the comment *"a client that could name its own audit fields could forge the proof of consent"*; returns `false` when already granted. `IRequestMetadataProvider` is registered in the **shared** config, so it is available on the partner mobile host with no new plumbing | `P` (legal lane §3) |
+| Where a cleaner is asked | Web onboarding only (`UpdateEmployee` validator ⇒ `ConsentType.DataProcessing`). **Mobile partner onboarding posts four/six granular section PUTs and asks for no consent at all** — a mobile-only cleaner has no `UserConsent` row (T-0504 finding 3; ticket 9 defers it) | `P` (both lanes) |
+| GDPR erasure vs. consents | `GdprDeletionService.cs:206-208` — every granted consent is `Withdraw()`n and `IpAddress`/`UserAgent` are **left intact** on the row | `A2` |
+| **`[RequireCompleteProfile]`** | `RequireCompleteProfileAttribute.cs:32-35`: `IsProfileComplete() && Documents.Any(IsActive) && (ContractStatus is Approved or Active)` → bare **403** (`:37-49`). **A `Pending` cleaner is already 403'd off the whole partner surface today** | `A2` |
+| `Employee.IsProfileComplete()` | `Employee.cs:323-349`. Its payout term is `HasPayoutDestination() => HasPayoutDetails \|\| !string.IsNullOrEmpty(IBAN)` (`:321`) — **two scalars on the row, no navigation**, by ADR-0034 D1.1 | `A2` |
+| **`ApproveEmployee`** | `ApproveEmployee.cs` — validator checks existence, not-already-approved, **`IsProfileComplete()` (`:36-49`)**, and `WorkCountryId` is `NotEmpty` + exists + **serviced** (`:56-62`). Handler re-checks completeness (`:114-119`) then `AssignWorkCountry` + `Approve` (`:124-125`). **`WorkCountryId` is a scalar ON THE COMMAND.** `[AuditAction("employee.approve", ResourceType = "User")]` (`:12`) | `A2` |
+| **Invoice issuance — TWO writers, no shared handler** | (1) the **monthly close** builds the row **inline**: `EmployeeInvoice.CreateFromOrderPays(...)` at `PayPeriodBackgroundService.cs:328`, `Add` at `:334`, its own duplicate guard at `:312-323`, **no MediatR**; reached from the timer → `CloseExpiredPeriodsAndOpenNewAsync:107` → `SendPeriodClosedEmailsAsync:155` → `GenerateInvoiceForEmployeeAsync:298`. (2) `GenerateInvoice.Command` (`GenerateInvoice.cs:87`) is reached only from `AdminPayrollController` and the queue consumer, whose sole producer is `FiscalReconciliationService` | `A2` + `P` |
+| **…and both go through one sink** | `CreateFromOrderPays` (`EmployeeInvoice.cs:130-146`) **delegates to `EmployeeInvoice.Create` (`:138`)**, which is separately `public static` and separately called (seeds, mock factories, tests). **A required parameter on `CreateFromOrderPays` alone leaves a second construction path open** | `A2` (lead-found, RB-2) |
+| **`EmployeeInvoice`'s immutable anchors** | `EmployeeId` and `GeneratedAt` are `private set`, written **only** in `Create` (`:115`, `:125`); no mutator touches either. The entity's own comment at `:321-322` states *"`GeneratedAt` is immutable once the invoice exists"* | `A2` — **this is the load-bearing new fact behind D6** |
+| **The sweep's tenancy** | **Correct today, and rev 1's F5 was false.** `PayPeriodBackgroundService.cs:115-122` reads ignoring-tenant, `:133-142` groups by tenant and `SetTenantOverride`s, **then** `:155` issues, and `:187` commits **inside** the loop. `GenerateInvoiceHandler.cs:48-61` does the same before `mediator.Send`. This is the reference shape `CLAUDE.md` documents | `A2` + `P` (both lanes) |
+| **The tenant query filter** | `CleansiaDbContext.cs:229-264`: `providerNull \|\| (currentTenantId == null && e.TenantId == null) \|\| e.TenantId == currentTenantId`. With `currentTenantId = "T1"` and `e.TenantId = NULL` the middle clause is false and the last is SQL `NULL` ⇒ **the row is excluded** | `A2` |
+| **The tenantless siblings** | `Country : Auditable` (`:7`), `Language : BaseEntity` (`:6`), `CountryInvoiceConfig : BaseEntity` (`:8`), **`CountryConfiguration : Auditable` (`:9` — rev 2 said `BaseEntity`; corrected)** — **none** implements `ITenantEntity` | `A3` |
+| **⚠️ NEW — the base configuration emits a `TenantId`-only index on every `Auditable` table** | `AuditableEntityConfiguration.Configure` (`EntityConfiguration.cs:31`): `builder.HasIndex(e => e.TenantId);` — **non-unique, single-column, inherited by every entity whose configuration derives from it**. `BaseEntityConfiguration` (`:10-17`) does **not**, so an `AdminActionAudit`-shaped entity escapes it | `A3` — **load-bearing for D1.9** |
+| **⚠️ NEW — the adopted archetype is NOT tenant-stamped by the commit pipeline** | `CleansiaDbContext.CommitAsync`'s stamping loop is `foreach (var entity in ChangeTracker.Entries<Auditable>())` (`:74`), and the stamp is at `:89-92`. **A `BaseEntity + ITenantEntity` entity is not in that loop.** The archetype's own writer says so in a doc-comment and compensates: `DbContextAuditWriter` (`Infra.Database/Auditing/DbContextAuditWriter.cs:10-12`) — *"Because `AdminActionAudit` is `BaseEntity + ITenantEntity` (not `Auditable`), `CommitAsync` does not stamp its `TenantId` (its loop is over `Auditable` only); this writer stamps it here"* — `entry.TenantId ??= tenantProvider.GetCurrentTenantId();` (`:18`) | `A3` — **load-bearing for D1.10; falsifies rev 2's D10** |
+| Per-country legal-text precedent, **shipped** | `CountryInvoiceConfig.LegalDisclaimerTemplate` + `LegalDisclaimerLanguageCode` + `LegalNoticeReviewStatus` (`NotReviewed`/`BusinessSupplied`/`CounselReviewed`). Its doc-comment: *"only a notice above `NotReviewed` is printed … and the platform's generic fallback prints in its place"* | `A2` |
+| The catalog rule behind it | `patterns-backend.md` §*"A statutory string is DATA WITH PROVENANCE, never a label"* (`:469-501`): *"the assurance cannot be inferred from the text and is a column"*; the fallback is a `const` so **the type system, not a convention, stops the translation** | `A2` — **load-bearing for A3's rejection** |
+| **"Append-only" has no mechanism in this repository** | `rg 'HasCheckConstraint\|HasTrigger'` over `src/` ⇒ **0**. `IRepository<TEntity, TKey>` declares `Remove` (`:41`), `RemoveRange` (`:43`), `Deactivate` (`:45`), `DeactivateRange` (`:47`) and `GetQueryableIgnoringTenant` (`:59`). `BaseEntity.IsActive` has a **public setter** (`BaseEntity.cs:7`) | `A2` |
+| **…and every repository interface inherits it** | Every `I*Repository` in `Core.Domain/Repositories/` derives from `IRepository<T, string>` — **including `IAdminActionAuditRepository`** (`:5`), the append-only audit log. There is **no** precedent for a narrow repository surface | `A2` (confirms RB-7) |
+| **The shipped append-only archetype** | `AdminActionAudit` (`Auditing/AdminActionAudit.cs:6-35`) — `sealed : BaseEntity, ITenantEntity`, **every payload property `init`-only**, its own `OccurredOn` (`DateTimeOffset`), and `AdminActionAuditConfiguration.cs:15-21` maps `TenantId` **by hand** with a comment saying why (it does not inherit `AuditableEntityConfiguration`). Four named indexes | `A2` |
+| **The house answer to "which row is latest"** | `OrderStatusTrack.Sequence` (`OrderStatusTrack.cs:14-18`) — *"CreatedOn is millisecond-resolution and ties … Sequence is the deterministic tiebreaker"*, `internal void AssignSequence` (`:27`), never set by the caller. `Order.AddOrderStatus` (`Order.cs:445-459`) orders on **`CreatedOn DESC, Sequence DESC`** and its comment notes *"a track appended with a backdated `CreatedOn` … correctly does NOT become current"* | `A2` — **load-bearing for D1.4** |
+| The house answer to an **ordinal under concurrency** — **and why rev 3 does not use it** | ADR-0035 / `MembershipBenefitUsageRepository.TryReserveSlotAsync`: one atomic `INSERT … SELECT … ON CONFLICT DO NOTHING RETURNING`, `SqlQueryRaw` at `:105-107`, **no retry** — `if (reservedOrdinals.Count == 0) { return null; }` (`:109-111`) — tenant hand-written and typed `NpgsqlDbType.Text` with the `42P08` comment naming single-tenant mode (`:95-101`), and `reserved.TenantId = tenantId` (`:117`). **Zero rows there means "the quota is exhausted", a business outcome; here it would mean "a lost race".** Same SQL, opposite semantics | `A3` (re-read line by line) — **the reason D1.4 drops `Sequence`** |
+| **Non-unique `TenantId`-leading indexes already shipped** | Besides `EntityConfiguration.cs:31`: `IX_AdminActionAudits_TenantId_OccurredOn` (`AdminActionAuditConfiguration.cs:65-67`) and `IX_MembershipBenefitUsages_Quota` = `(TenantId, UserId, BenefitKind, PeriodKey)` (`MembershipBenefitUsageEntityConfiguration.cs:70-71`, emitted at `Initial.cs:2877-2879`). **A non-unique index has no enforcement job, so its only possible job is to serve a read** | `A3` — **decides how D1.9 routes** |
+| `Auditable` | `TenantId` (public setter), `CreatedBy`, `CreatedOn` (`DateTimeOffset`, defaulted at construction, re-stamped by `Created(...)`), `UpdatedBy/On`, `DeactivatedBy/On`; `Deactivated()` (`:35-42`) sets `IsActive = false` and **does not touch `ContractStatus`** | `A2` |
+| `Employee` jurisdiction fields | `WorkCountryId` (`:114`) — *"Nullable until admin approves the cleaner for a country"*; `AddressId`/`Address` (`:120-121`) — a **reference navigation** | `A2` |
+| `Employee.Anonymize()` | `:294-308` — nulls `VatNumber`, marks `RegistrationNumber`/`IBAN`/`PassportId`, clears `HasPayoutDetails`. Does **not** touch `ContractStatus` | `A2` |
+| The `Language` shape | `citext`, `HasMaxLength(5)`, `HasAlternateKey(l => l.Code)`; `User.PreferredLanguageCode` FKs it with `HasPrincipalKey(l => l.Code)` | `P` (schema lane, DDL cited) |
+| Partner error-key contract | The shared `HttpErrorInterceptorFn` resolves `` `api.${dotValue}` ``; a key only under `errors.*` renders `api.common.error_occurred`. *(The guard's blind spot is a separate row below, re-verified in rev 3.)* | `A2` |
+| The migration set | **exactly one** — `Migrations/20260723182623_Initial.cs`, already regenerated once to absorb ADR-0034. `MigrationService/Program.cs:31-36` returns 0 when `GetPendingMigrationsAsync()` is empty ⇒ **regenerating an already-applied `Initial` is a silent no-op** on any environment that ran it | `P` (schema lane) |
+| **The launch population** | **Zero, and about to be zero again.** The executed seed is one file (`Infra.Scripts/SeedData/insert_seed_data.sql`, pinned byte-for-byte against `sql-scripts/insert_seed_data.sql` by `StartupSeedScriptSyncTests`) and it inserts **zero users and zero employees**; `insert_users_employees.sql` is **not on the reseed path**. **On top of that the owner is dropping the database (§Owner rulings 1).** So the population this design lands on is empty by seed *and* empty by decision | `P` (schema lane §CH-S12(3)) + `P2` + **owner** |
+| **`Q-PAYOUT-03`'s VAT limb** | **Answered 2026-08-05** (`questions/open.md:889-895`), with the tension recorded at `:897-908` as a **cleanup question**, explicitly *"does not reopen the ruling"* | `A3` |
+| **`BusinessErrorMessage` → partner locales** | The parity spec **does** parse `BusinessErrorMessage.cs` (`parseBusinessErrorValues`, `error-contract-parity.spec.ts:43`) but asserts **array → backend** (`:223-225`, over `PARTNER_SURFACE_ERROR_KEYS` at `:95`). There is **no backend → array** assertion, so a constant that never enters the array is never checked in any locale and the spec stays green | `A3` |
+| No version concept anywhere | `rg 'TermsVersion\|AcceptedTerms\|agreementVersion'` over `src/` → two hits, both client-local view-model state, neither persisted | — |
+
+### The findings that shape the decision — **two deleted by an owner ruling, two added by rev 3**
+
+**F1 — the existing consent record structurally cannot hold this.** No version column; the unique index
+makes it **one mutable row per type**; and `Regrant` **overwrites** the grant timestamp and the request
+metadata (`UserConsent.cs:46-54`). A cleaner who agreed to *v1* in 2026 and re-agreed to *v2* in 2027
+leaves **one row that says v2**, with v1's evidence destroyed. T-0504 AC5 already stated the
+requirement — *"'store a boolean' is not enough"* — and the table does not meet it for **any** of its
+four current types either. *(Sustained by both lanes and the lead.)*
+
+**F2 — folding it in would make a commercial term withdrawable through a GDPR endpoint.**
+`WithdrawConsent` takes a bare `ConsentType` whose only rule is `IsInEnum()`, on four hosts. Add
+`ConsentType.SelfBilling` and a cleaner — or anything holding their token — revokes the legal basis for
+the whole payout-document pipeline with a one-field POST. That is the *designed* behaviour of that
+endpoint, and correctly so **for a GDPR consent**, which must be as easy to withdraw as to give. A
+self-billing agreement is a **term of a B2B contract** (the owner's own `Q-PAYOUT-02` words), not a
+lawful basis for processing. One withdrawal semantic cannot serve both. *(Sustained by both lanes.)*
+
+**~~F3 — the un-asked cohort is real and it is GROWING.~~ ~~F4 — the pre-clause cohort is covered by
+neither instrument.~~ DELETED BY OWNER RULING 1 — recorded, not silently removed.** Both findings were
+about a **historical** population of cleaners the platform had failed to ask. **The database is being
+dropped and there is no production**, so that population is empty, and **rev 4 does not restore any of
+the machinery**: the *"closing backlog"*, the *"shrinking number"*, the interstitial prompt, D6.4's
+keep-issuing-for-the-pre-clause-cohort default, and the report row that counted them all stay deleted.
+**This is written as a deletion rather than an edit because a future reader will otherwise find rev 2's
+careful F3/F4 reasoning intact somewhere and re-import it.**
+
+> ⚠️ **Rev 3's rider *"and D5's gate binds at `ApproveEmployee` from day one, so it cannot refill"* is
+> WITHDRAWN (R4.1 / §X.1).** It is true **only where text is demandable**, and D4.3 makes demandability
+> a property of the **caller's language**. On the owner's Czech-first launch the population refills at
+> the hiring rate in four of five partner locales. That is **F6**, below — a separate finding, on a
+> separate axis, which survives F3′ being fully closed. *(CH-A2 and CH-L2's monotonicity half revive in
+> that form and in no other; see §Owner rulings 1.)*
+
+**F3′ — the JURISDICTION residue: a country opened before its text exists.** *(Narrowed in rev 4 to the
+jurisdiction axis alone; the language axis is F6.)* D4.4 keeps the feature inert wherever no
+`BusinessSupplied`+ text exists for a country, so a **jurisdiction opened before its text lands**
+approves cleaners with no statement. That is materially different from F3/F4 and must not be
+re-described as a cohort: it is not *"people we failed to ask"* — it is *"a country we chose to open
+early"*, it is fully determined by the owner's own sequencing, and **the platform already knows the
+answer without scanning anything**: it is a `SELECT` over `AgreementVersionText`, a config table with
+tens of rows. Rev 3 converted it from a report row into a **launch precondition** (D4.5) — *a
+jurisdiction is not opened to cleaner registration before it has a `BusinessSupplied`+ text*.
+
+> ✅ **CLOSED BY THE OWNER, 2026-08-07 (§Owner rulings 3c).** `Q-SELFBILL-02(a)`: a document issued in a
+> jurisdiction with no agreement text is **invalid** — *and* *"it never will be a case that a company
+> registers before the agreement text exists."* So the precondition is now the **owner's commitment**,
+> not the architect's engineering default, and the residue is empty by their own sequencing.
+> **What that does NOT do is give it an enforcer.** It is still a human step (R.3 hedge 3). Rev 4's
+> response is proportionate to that: the jurisdiction axis becomes **one row of the same counting query**
+> F6 requires (D4.5), so a breach of the owner's own commitment is *visible* even though nothing blocks
+> it. A commitment plus a count is materially stronger than a commitment alone, and it costs nothing
+> extra because the query has to exist anyway.
+
+**F6 — the LANGUAGE residue: the platform approves, works and self-bills cleaners whose language has no
+reviewed text, and D4.5 does not reach them.** *(NEW in rev 4. This is CH-R3-1, sustained at §X.1 as the
+one finding that gated acceptance. It is filed as its **own** finding, not under F3′, because it
+survives F3′ being **fully** closed.)*
+
+Three sentences of this ADR, read together, and all three are still correct:
+
+- **D4.3** — *demandable* means **the caller's own language** has a `BusinessSupplied`+ text. A cleaner
+  without one gets *"the prompt, never the block"*. This is right and rev 4 does not weaken it: a
+  server-computed SHA-256 proving *which bytes were displayed* is worthless over bytes the signer cannot
+  read (`BodyHash` makes the record precise; it does not make it true).
+- **Check #12** — with only `cs` reviewed, for a `uk` caller, **`ApproveEmployee` succeeds**. Unchanged
+  by rev 4 (§X.1 is explicit): it is not the defect, it is the **evidence**, and it is the check that
+  goes red if a future author "fixes" F6 by hard-blocking a cleaner on a text they cannot read.
+- **D4.5's precondition** — satisfied by **one** reviewed language. It closes the *jurisdiction* axis
+  and nothing else.
+
+So on the owner's stated launch case — Czech text first, five partner locales shipped **precisely
+because cleaners are not all Czech readers** — the population is *every cleaner whose app language has
+no reviewed body*. They are approved, they work, they are issued self-billed invoices **in their own
+name**, and they have **no statement**. It is not a backlog: it **grows with hiring**, one approval at a
+time, and nothing in rev 3 counted it, because rev 3 deleted the four instruments that could have seen
+it on the strength of the *"cannot form"* sentence §Owner rulings 1 now withdraws.
+
+> **The owner ruled (b): open on Czech, and make it VISIBLE** (§Owner rulings 3a). Not (a) *delay the
+> launch for four translations and their review*, not (c) *accept it silently*. **Rev 4's job is
+> therefore to specify the counting and the surfacing at a level a reviewer can check** — D4.5 carries
+> the query, D5 carries the prompt row and the gate's predicate, and checks #12, #23 and #24 carry the
+> assertions. **An architect may not choose between "delay the launch" and "self-bill people who were
+> never shown the agreement", and did not** — the owner did.
+>
+> ⚠️ **What F6 still costs after (b), stated rather than glossed.** Visibility is not consent. Between
+> approval and the day their text lands, these cleaners are self-billed on the **contract clause alone**
+> (A6's instrument), with no per-cleaner record. The count does not fix that; it makes the size of it a
+> number somebody can read, and the prompt closes each case the day the text exists. **The only complete
+> fix is the four translations**, which is option (a), which the owner declined for launch timing. That
+> is a recorded, deliberate, owner-taken risk with a named remedy — which is the most an architecture
+> document can honestly deliver here.
+
+**F4′ — the adopted archetype does not get its tenant from the pipeline, and rev 2 asserted that it
+does.** *(NEW in rev 3. This is a fact about the running system that no lane checked.)* D1.1 adopts the
+`AdminActionAudit` shape — `sealed : BaseEntity, ITenantEntity` — and D10 concludes *"it rides the
+filter"*. **`CleansiaDbContext.CommitAsync`'s stamping loop is over `ChangeTracker.Entries<Auditable>()`
+(`:74`), and the stamp is inside it (`:89-92`), so a `BaseEntity + ITenantEntity` row is never
+stamped.** The archetype ships with the compensating writer and a doc-comment naming exactly this
+(`DbContextAuditWriter.cs:10-12,18`). Left unstated, every `EmployeeAgreementStatement` inserts with
+`TenantId = NULL` and — by the same filter round 1's CH-S4 turned on — becomes **invisible to its own
+tenanted reader**: the approval gate would find no statement and refuse a cleaner who had just
+accepted. **This is round 1's CH-S4 defect relocated onto the legal record itself, arriving through the
+archetype the panel adopted to fix a different problem.** Note what it is *not*: it is not an argument
+against the archetype (the four columns it drops are still meaningless on an immutable row) and it is
+**not** fixed by dropping `Sequence` — §W.3 flagged the tenant term as a cost *of the raw append*, and
+this is broader: it is true of a **tracked** `Add` too. D1.10 states the obligation and check #7 pins it.
+
+**F5 — the invoice-issuance paths already establish their tenant correctly; do not "fix" them.**
+*(Rewritten in rev 2. Rev 1 asserted the opposite and it produced a mandated cross-tenant read.)* Both
+issuance sites do exactly what `security-rules.md` S8 prescribes — tenant-ignoring *selection*
+(`PayPeriodBackgroundService.cs:120`), then `SetTenantOverride` (`:141`), then tenant-**scoped** work,
+then commit **inside** the loop (`:187`); `GenerateInvoiceHandler.cs:48-63` does the same. The ambient
+tenant is already correct at both sites. **A tenant-ignoring read of a legal record there would be a
+cross-tenant read this codebase does not have today.** The surviving, load-bearing half of the S8 lesson
+is the *test* obligation: **a pinning test seeds a non-null `TenantId`** — a fixture wired
+`tenantId: null` proves nothing, and it is the test that catches both CH-S4 and F4′.
+
+---
+
+## Decision
+
+### D1 — A dedicated **append-only `EmployeeAgreementStatement`** log over **tenantless versioned text** — not a `ConsentType`, not a column
+
+**D1.0 — the entity is renamed.** Rev 1 called it `EmployeeAgreementAcceptance` while shipping
+`Action.Revoked` from day one (D2.4, deliberately). *"An acceptance whose action is Revoked"* is a
+contradiction that a schema freezes. The log holds **statements** about an agreement, of which
+acceptance is one kind. **Entity: `EmployeeAgreementStatement`.** The *concept* is still "a versioned,
+append-only acceptance record", which is why the topic keeps that name. Pre-DDL is the only free moment
+for this and it is taken now.
+
+```
+AgreementVersion : BaseEntity                          -- PLATFORM CONFIG. Not ITenantEntity: D10.
+    Kind             AgreementKind    NOT NULL          -- SelfBilling = 1
+    CountryId        varchar FK Country NOT NULL        -- the jurisdiction the terms are written for
+    Version          varchar(32)      NOT NULL          -- external handle, e.g. "2026-08"
+    EffectiveFrom    timestamptz      NOT NULL
+        UNIQUE (Kind, CountryId, Version)          -- the stable external handle
+        UNIQUE (Kind, CountryId, EffectiveFrom)    -- makes "greatest EffectiveFrom" a FUNCTION  (CH-S6)
+        ALTERNATE KEY (Id, Kind)                   -- principal for the discriminator chain    (CH-S8b)
+
+AgreementVersionText : BaseEntity                      -- PLATFORM CONFIG. Not ITenantEntity: D10.
+    AgreementVersionId  varchar FK      NOT NULL
+    Kind                AgreementKind   NOT NULL        -- propagated, and PINNED by the composite FK below
+    LanguageCode        citext(5) FK Languages(Code)  NOT NULL     -- citext + FK, per CH-S9
+    Body                text            NOT NULL
+    ReviewStatus        LegalNoticeReviewStatus NOT NULL DEFAULT NotReviewed   -- reused, not invented
+        UNIQUE (AgreementVersionId, LanguageCode)
+        ALTERNATE KEY (Id, Kind)
+        FOREIGN KEY (AgreementVersionId, Kind) REFERENCES AgreementVersion(Id, Kind)
+
+EmployeeAgreementStatement : sealed BaseEntity, ITenantEntity   -- APPEND-ONLY. Archetype: AdminActionAudit.
+    TenantId                varchar(26)              NULL       -- mapped BY HAND; stamped BY THE REPOSITORY: D1.10
+    EmployeeId              varchar(26) FK Employee  NOT NULL
+    Kind                    AgreementKind            NOT NULL
+    Action                  AgreementAction          NOT NULL   -- Accepted = 1 | Revoked = 2
+    Channel                 AgreementChannel         NOT NULL   -- PartnerWeb | PartnerMobile | AdminRecordedContract
+    AgreementVersionTextId  varchar(26) FK           NULL       -- the EXACT row served. NULL by variant: D1.3
+    BodyHash                char(64)                 NULL       -- server-computed SHA-256.  NULL by variant: D1.3
+    OccurredAt              timestamptz              NOT NULL   -- the LEGAL time. CLR DateTimeOffset. OccurredAt <= RecordedAt: D1.3
+    RecordedAt              timestamptz              NOT NULL   -- the RECORDING time. CLR DateTimeOffset. Never backdated
+    IpAddress               varchar(45)              NULL       -- server-observed, never client-claimed
+    DeviceLabel             varchar(500)             NULL       -- server-observed
+    RecordedByUserId        varchar(26)              NULL       -- AdminRecordedContract only
+    ContractReference       varchar(200)             NULL       -- AdminRecordedContract only. PII: D8
+        INDEX (EmployeeId, Kind, RecordedAt DESC, Id DESC)   -- SUPERSESSION. Reader-consumed ⇒ no leading TenantId: D1.9
+        FOREIGN KEY (AgreementVersionTextId, Kind) REFERENCES AgreementVersionText(Id, Kind)
+        -- NO unique index of any kind. D1.5. There is no ordinal, so there is nothing to arbitrate.
+        -- NO coverage index. It serves the SEVERED query and is specified with it (§W.6).
+
+EmployeeInvoice                                        -- *** UNCHANGED. No column is added. See D6. ***
+```
+
+> **What changed in the block since rev 2, and each change's authority.** `Sequence` and its
+> `UNIQUE (TenantId, EmployeeId, Kind, Sequence) NULLS NOT DISTINCT` arbiter are **gone** (D1.4, §W.4b
+> P9/P10). The lookup index no longer leads with `TenantId` and no longer carries `OccurredAt` (D1.9,
+> §W.2 P6; §W.6). `TenantId` is now written in the block because D1.10 makes it a decision rather than
+> an inherited default. `OccurredAt`/`RecordedAt` carry their CLR type (P21) and their invariant (P11).
+> **Net: the statement table has one index and zero unique constraints**, down from two indexes one of
+> which was forbidden.
+
+**Why an entity and not a `ConsentType`** — F1 and F2, plus a third reason neither covers: a
+`UserConsent` row keys on **`UserId`**, and the party to a self-billing arrangement is the **supplier**,
+which this domain models as the `Employee` row (`VatNumber`, `RegistrationNumber`, the *Dodavatel*
+block). Keying on `EmployeeId` puts the record on the same aggregate as the payout destination it
+authorizes (ADR-0034) and makes every join direct rather than two-hop through `User`. *(The lead tested
+this against `Q-PAYOUT-02`'s "not an employee but signs a B2B contract" and could not break it.)*
+
+**D1.1 — the archetype is `AdminActionAudit`, not `EmployeePayConfig` (RB-6).** Rev 1 said *"exactly
+like `EmployeePayConfig`, `EmployeeInvoice`, `PayPeriod`, `EmployeePayoutDetails`"* — **all four are
+mutable-by-design records**, and ADR-0034's archetype sentence is explicitly *"for a related record"*.
+It was never the archetype for a log. `AdminActionAudit` is: `sealed : BaseEntity, ITenantEntity`, every
+payload property `init`-only, its own occurrence timestamp, `TenantId` mapped by hand because it does
+not inherit `AuditableEntityConfiguration`. Adopting it drops four columns that are meaningless on an
+immutable row and actively misleading when populated (`UpdatedBy/On`, `DeactivatedBy/On`) and removes
+the C# path that can mutate a loaded instance. **This is a decision change, not a note** — it
+contradicts rev 1's own archetype sentence.
+
+**D1.2 — what `IsActive` means here: nothing, and no reader may look at it (RB-8).**
+`BaseEntity.IsActive` has a public setter and there is no global filter over it (S10), so it exists on
+this table whether we like it or not. **Rule: no query, specification, or predicate over
+`EmployeeAgreementStatement`, `AgreementVersion` or `AgreementVersionText` may reference `IsActive`.**
+A statement is not deactivatable — supersession is by a later statement (D1.4). A version is not
+deactivatable — supersession is by a later `EffectiveFrom`; a "retired" version that read as inactive
+would either be hidden from the record that proves the agreement, or need an `IgnoreQueryFilters`-shaped
+exception on a legal read path. Reviewer check #2 is a grep.
+
+**D1.3 — the statement is a discriminated variant, and the schema must say so (CH-S10 / RB, sustained).**
+For `Channel = AdminRecordedContract` there is **no served text** — and by D4.3, for the very cohort
+that channel exists to serve there is often **no version row at all**, so a `NOT NULL`
+`AgreementVersionTextId` makes the command physically unable to insert, and a `NOT NULL` `BodyHash`
+forces a **fabricated attestation** onto a legal record. The house precedent for nullable-by-variant is
+`EmployeePayoutDetails` + `PayoutScheme`, where *"which identifier fields are meaningful is decided by
+`Scheme`; which are **required** is decided per scheme by the payout validator, not by the column's
+nullability"* (`EmployeePayoutDetails.cs:22-24`). The same split applies:
+
+```
+Channel ∈ {PartnerWeb, PartnerMobile}  ⇒  AgreementVersionTextId NOT NULL ∧ BodyHash NOT NULL
+                                          ∧ RecordedByUserId NULL ∧ ContractReference NULL
+                                          ∧ OccurredAt = RecordedAt          -- see below
+Channel = AdminRecordedContract        ⇒  RecordedByUserId NOT NULL ∧ ContractReference NOT NULL
+                                          ∧ AgreementVersionTextId NULL ∧ BodyHash NULL
+                                          ∧ OccurredAt <= RecordedAt         -- see below
+
+ANY Channel × ANY Action.                                                    -- see D1.3.2
+```
+
+enforced **in the two named factory methods** (`AcceptServedText(...)` / `RecordPaperSignature(...)`),
+which are the only constructors. There is no third factory; a `private` parameterless ctor exists for EF
+only. *(Postgres composite-FK `MATCH SIMPLE` semantics make the `(AgreementVersionTextId, Kind)`
+constraint vacuously satisfied when the id is NULL — which is exactly right for this variant, and is
+stated because a reader will otherwise think the FK is broken for the paper channel. Confirmed against
+emitted DDL by the round-2 challenger, §CH-S2-7.)*
+
+**D1.3.1 — the `OccurredAt` invariant, in two halves, because the two channels are different problems
+(CH-S2-6 sustained, P11).** Rev 2 left `OccurredAt` with no stated bound at all on the one channel where
+a human types it.
+
+- **Self-service:** there is no separate legal date. The act *is* the tick, so the factory sets
+  `OccurredAt = RecordedAt` from one server clock read. **The operator-typo class of defect does not
+  exist on this channel, and the schema should say so rather than leave a settable field.**
+- **Paper signature:** the operator supplies the contract's signature date, and the factory enforces
+  **`OccurredAt <= RecordedAt`** — *"you cannot file a signature that has not happened yet"*. This is
+  the invariant the two orders in D1.4 depend on; without it `RecordedAt`-ordering and
+  `OccurredAt`-ordering can disagree in a way neither is right about.
+- **The lower bound is a validator rule, not a factory rule, and that split is deliberate.** The
+  factory has an `employeeId`, not an `Employee`, so it cannot know when the supplier existed; the
+  command validator can. Putting it in the validator also obeys the house rule that handlers hold
+  happy-path logic and validators hold validation.
+
+  > ❌ **`OccurredAt >= employee.CreatedOn` is WITHDRAWN as the REFUSAL (R4.8 / §X.7 CH-R3-9). The
+  > author's own stated fallback fired.** R.3 hedge 2 said: *"If a cleaner can somehow hold a signed
+  > contract predating their platform registration, it is **wrong** and the bound should become a
+  > platform constant instead… I did not escalate it because I could not construct the case."* **The
+  > round-3 challenger constructed it, and the first construction is the EXPECTED OPERATING MODE of the
+  > very channel D7 exists to provide:** an operator countersigns the framework contract on the spot and
+  > the cleaner registers in the app later that week. `Employee.CreatedOn` (`Auditable.cs:9`, on the row
+  > because `Employee : Auditable` — `Employee.cs:11`) is the *registration* time, not the *relationship*
+  > time, and the two are not ordered.
+  >
+  > **The harms are asymmetric in the direction this ADR cares about.** A mistyped year produces a false
+  > record on an append-only row that **cannot be corrected**. The `CreatedOn` floor produces a **refusal
+  > to file a true one** — recoverable only by an operator typing a date they know is wrong, which is a
+  > worse outcome than the one it prevents, on a legal log. **No owner question is needed** (§X.7): the
+  > author pre-stated the fallback and its condition is now met.
+
+- **The lower bound, as rev 4 ships it — a PLATFORM CONSTANT refusal plus a PER-EMPLOYEE WARNING.**
+  Both limbs §X.7 offered, because they catch different things and neither is redundant:
+  - **Refusal:** `OccurredAt >= AgreementPolicy.EarliestRecordableSignatureDate` — **one platform
+    constant, in one place, greppable, changed by decision and not derived per row.** Its meaning is
+    *"the platform did not exist before this"*, so it catches CH-S2-6's mistyped year (2020 against a
+    platform that began operating years later) without knowing anything about the individual supplier.
+    **This ADR does not set its value** — that is a `const` the schema/backend ticket carries, and
+    inventing a date here would be an architect asserting a business fact.
+  - **Warning, never a refusal:** `OccurredAt < employee.CreatedOn` is **suspicious but legitimate**, so
+    the admin surface says so and lets the operator proceed. It is exactly the paper channel's main
+    line, and a surface that shouts at its main line is a surface operators learn to ignore.
+  - **Check #22(c) moves with the rule** — it now asserts the *constant* is the refusal and the
+    `CreatedOn` comparison is **not** one, so a future author who "restores the tighter bound" goes red.
+- **What this does NOT claim.** A typo *within* the valid window is still uncorrectable on an
+  append-only row, and rev 3 does not pretend otherwise. **Under the split that consequence lives with
+  the severed decision** (it is a statement about coverage's stability over time, not about the
+  record's shape), and the severed spec carries it. What ADR-0041 owes is the invariant, and the honest
+  sentence that the invariant **narrows** the blast radius rather than removing it.
+
+**D1.3.2 — an `AdminRecordedContract` statement MAY carry `Action = Revoked` (P13, answered).** The
+alternative — restricting the operator channel to `Accepted` — is superficially safer and is wrong. **A
+channel says *how we know*; `Action` says *what happened*.** A supplier who withdraws in writing has
+withdrawn, and a log that cannot record it says `Accepted` forever — a false record by omission, which
+is the exact failure this ADR is named against. `ContractReference` is `NOT NULL` on that channel
+either way, so a recorded revocation must still name the instrument it came from. This does **not**
+pre-empt `Q-SELFBILL-04`, which asks a different question — *may a **cleaner** revoke in-app* — and
+whose answer changes a command surface, not the schema.
+
+This also gives the severed report's *"evidenced by contract only"* bucket a real predicate —
+`Channel = AdminRecordedContract` — instead of a category the schema cannot express.
+
+**D1.4 — "the latest statement" is defined, and it is defined TWICE because there are two questions
+(CH-S7, upgraded to blocking).** Rev 1 ordered on `OccurredAt` alone. `OccurredAt` is **operator-typed**
+on the paper-signature channel (correctly — it is the contract's signature date), and it is not a total
+order. The house has already written the lesson down: `OrderStatusTrack.Sequence` (`:14-18`, re-read)
+exists because *"CreatedOn is millisecond-resolution and ties"*, and `Order.AddOrderStatus` orders on
+**two** columns, with the explicit note that *"a track appended with a backdated `CreatedOn` correctly
+does NOT become current"*. **What transfers from that precedent is the TWO-COLUMN TOTAL ORDER; the
+column itself does not** — `OrderStatusTrack.Sequence` is assigned *in memory inside the loaded
+aggregate* (`Order.cs:447-448`) under the stated enabling condition *"the order is the consistency
+boundary"*, and that condition is absent here. D1.4's second half is where rev 2 got that wrong.
+Applying the transferable half surfaces that rev 1 was conflating two questions:
+
+| Question | Who asks | Order | Whose artifact |
+|---|---|---|---|
+| **Supersession** — *what is the state of this agreement now?* | the gate (D5), the status endpoint | `ORDER BY RecordedAt DESC, Id DESC LIMIT 1` | **this ADR** |
+| **Coverage at T** — *was an agreement in force at time T?* | the derivation (D6), the report | `WHERE OccurredAt <= T ORDER BY OccurredAt DESC, RecordedAt DESC, Id DESC LIMIT 1` | **the severed decision** — D6 fixes the *definition*; the severed artifact fixes the *shape*, the anchor and the plan check |
+
+Using `OccurredAt` for supersession is a live defect, not a theoretical one: an operator recording a
+paper signature **dated June**, filed in August, after the cleaner revoked in July, would silently
+*resurrect* the agreement. Using `RecordedAt` for coverage is the mirror defect: it would refuse to let
+a genuine, correctly-dated paper signature cover the invoice it actually covered — which is the exact
+repair `Q-SELFBILL-02` may require. **Both orders are total** (`Id` is the primary key, therefore unique
+within any partition), and both are computed from columns no mutator on this entity can reach.
+
+`RecordedAt` is a dedicated column and **not** `Auditable.CreatedOn`: this entity is not `Auditable`
+(D1.1), and `CreatedOn` is re-stamped by the commit pipeline anyway (`CleansiaDbContext.cs:85-87`).
+**Both are `DateTimeOffset`** — matching the archetype's `AdminActionAudit.OccurredOn`
+(`AdminActionAudit.cs:26`), and stated because the CLR type decides which side of a comparison gets
+cast and therefore whether an index is reachable (P21). *The comparison direction is the severed
+decision's problem, and it is written down there so nobody has to re-derive it.*
+
+**`Sequence` is DROPPED. The tiebreak is `Id`, the primary key.** *(§W.4b P9/P10; CH-S2-3 and CH-S2-4
+sustained; rev 2's mechanism is disavowed, not amended.)*
+
+**What rev 2 got wrong, said plainly.** Rev 2 imported `OrderStatusTrack.Sequence` and then, noticing
+that the enabling condition was absent — *"there is no loaded aggregate to count within"* — reached for
+ADR-0035's atomic-append machinery instead of asking whether the **column** transferred. It did not.
+The round-2 challenger **measured** the result: `MAX+1` + `ON CONFLICT DO NOTHING RETURNING` returns
+**zero rows** to the losing writer, raises nothing, and the `Revoked` **is not in the log** — which
+falsifies D1.5's own sentence, *"the append never refuses a true statement."* The precedent has no retry
+(`MembershipBenefitUsageRepository.cs:109-111`, re-read) and its zero-row return means *"the quota is
+exhausted"*, a business outcome; here it has exactly one cause, a lost race. Rev 2's hedge said *"I
+would rather be attacked for over-machinery than for a probability argument"* — **and the over-machinery
+is what lost the data.** Its companion sentence, *"the schema is identical either way"*, was the one
+that made the hedge look cheap, and it was false.
+
+**Why `Id` is sufficient, stated without overclaiming.** `BaseEntity.Id` is `Ulid.NewUlid().ToString()`
+(`BaseEntity.cs:5`) — the primary key, therefore unique, therefore **`(RecordedAt DESC, Id DESC)` is a
+total order**, which is every property the supersession read needs. Two honest qualifications the lead
+was right to demand:
+- **`Id` is not "immutable"** — `BaseEntity.Id` has a **public setter** (`:5`), and the very precedent
+  rev 2 cited assigns it (`MembershipBenefitUsageRepository.cs:116`). It is immutable in exactly the
+  sense check #2 *exempts*, which is the same sense `Sequence` would have been. Both columns are
+  equally exposed to `psql`; neither was ever a defence against that.
+- **Neither column gives insertion order.** `RecordedAt` is stamped in C# before the insert, so a
+  tiebreak only ever arbitrates a microsecond tie — and in a tie two requests can stamp in one order and
+  insert in the other. `Sequence` was *"an arbitrary-but-stable tiebreak with extra steps"*, and the
+  challenger's phrase is exactly right. A ULID's millisecond prefix means `Id DESC` usually agrees with
+  time and is arbitrary within a millisecond. **The property claimed is deterministic and stable, not
+  causal**, and no reader in this design needs more.
+
+**What goes with `Sequence`, enumerated so the removal is not silent (P10).**
+
+| Removed | Was |
+|---|---|
+| the column | `Sequence int NOT NULL` |
+| the arbiter index | `UNIQUE (TenantId, EmployeeId, Kind, Sequence) NULLS NOT DISTINCT` |
+| the `NULLS NOT DISTINCT` argument **and** check #18's `NullsNotDistinctIndexModelTests` entry | The test's theory list (`:52-57`) is hand-maintained; **there is now nothing to add to it** — neither config table's unique key contains a nullable column, and the statement table has no unique index at all |
+| check #16's *"`Sequence` may never ride a DTO"* leak rule | a monotonic per-partition ordinal is an information leak; there is no ordinal |
+| the raw `SqlQueryRaw` append, its `42P08` parameter-typing trap, its auto-commit ahead of the unit of work, and `consistency.md` §ADR-0038 (a)'s sanctioned-exception doc-comment obligation | all consequences of deriving an ordinal in SQL |
+| the composition with **ADR-0035** | recorded in §Supersedes |
+| **an interior-deletion signal** | ⚠️ **the one real loss, and I price it rather than zeroing it.** A dense ordinal makes a *gap* evidence that a row was deleted; a ULID PK has no such property. The lead corrected the challenger's ground here and was right to. **It does not save the column**, for the reason the lead gave: the signal is **tail-blind** — deleting the latest statement, or the only statement a cleaner has, leaves `0…n-1` dense and invisible, and that is the realistic case. Weighed against seven costs including a measured data-loss bug, and against a property rev 2 **claimed nowhere** (no report row, no check), it loses |
+
+**And what the removal buys, which is the part that matters.** The append becomes an ordinary
+`repository.Add(statement)` riding the pipeline's `SaveChangesAsync`. **§W.10 P8's property — *a lost
+race either succeeds on retry or surfaces to the caller as an error; never as a silent success* — is
+then satisfied by construction rather than by mechanism: there is no ordinal to contend for, so there
+is no race to lose.** `ON CONFLICT DO NOTHING` + a zero-row return mapped to caller success — the named
+forbidden shape — is not merely avoided, it is **unreachable from this design**, and check #20 is what
+keeps it that way. That is the strongest available form of P8 and it is why I took the drop rather than
+the keep.
+
+**D1.5 — no uniqueness AT ALL on this table, and *"the append never refuses a true statement"* returns
+as a REQUIREMENT rather than a boast (§W.3 ruling 1).** Both round-1 lanes tested rev 1's *"no unique
+index on the acceptance is a security property"* and could not break it; the round-2 lead ruled that the
+**property is right** — it is why this design declines to constrain content — and that what was false
+was rev 2's claim to **have** it.
+
+So it is stated as an obligation with a test, not as prose:
+
+> **P8, as a property of this design — RESTATED IN REV 4 ABOUT THE APPEND (R4.6 / §X.6):** *there is no
+> unique index of any kind on `EmployeeAgreementStatements`. Two concurrent identical accepts are two
+> identical true rows. An `Accepted` racing a `Revoked` is two rows, ordered totally by D1.4. **No
+> APPEND path can respond to a write by returning success without a row.*** Check #20 discharges it.
+
+> ❌ **Rev 3's universal — *"No code path can respond to a write by returning success without a row"* —
+> is WITHDRAWN, because this document falsifies it 170 lines later.** D2's idempotency rule specifies
+> exactly such a path: an accept whose latest statement is already an `Accepted` of the same
+> `AgreementVersionTextId` is *"a **no-op returning success**"*. Both sentences were in rev 3 and the
+> contradiction needed no measurement. **The product answer is right and the sentence was wrong**, so
+> the sentence narrows to the **append** and D2's no-op is named as the **one sanctioned exception**, in
+> the same breath, rather than left to be discovered.
+
+**The sanctioned exception, and its deliberate divergence from the precedent D2 cites.** D2 says it
+copies `ConsentService`'s already-granted short-circuit. It copies the *shape* and **not** the return
+semantics, and rev 4 records that rather than letting the citation imply otherwise:
+`ConsentService.TryGrantAsync` (`ConsentService.cs:12-34`) returns **`false`** at `:27-30` when the
+consent is already granted — a caller-distinguishable *"nothing happened"*, pinned by a shipped test
+(`ConsentServiceTests.cs:44-57`, which also asserts `Add` was never called). **This design deliberately
+returns success instead**, because a double-click on a legal checkbox must not 409 and the client has
+nothing useful to do with a `false`. The cost is that the caller cannot tell *"you accepted just now"*
+from *"you had already accepted"* — which is acceptable **only** because the response carries
+`currentStatement` (D3.1), so the client can read the state it actually needs. **A future author who
+finds this divergence has the reason here instead of re-deriving it.**
+
+Nothing constrains `(Employee, Kind, Action, AgreementVersionTextId)`, and with `Sequence` gone nothing
+constrains anything else either — so there is no index left that could refuse an insert. The round-1
+observation that *"a duplicate is harmless"* becomes false once `Revoked` exists is an **ordering**
+problem, and D1.4 answers it with a total order rather than by constraining content. **Idempotency (D2)
+is still a read-then-write short-circuit with no index behind it, deliberately** — its failure mode is a
+second identical true row, which is the outcome this section wants.
+
+**"Unreachable" gets the check that makes it true (§X.6).** D1.4 ends by claiming the forbidden
+`ON CONFLICT DO NOTHING` + zero-rows-as-success shape is *"unreachable from this design"*. That is a
+function of **D1.5's "no uniqueness AT ALL" and of nothing else**, and the obvious future edit that
+breaks it is an idempotency arbiter on `(TenantId, EmployeeId, Kind, AgreementVersionTextId)` — which is
+precisely what an author making D2's read-then-write race-safe would reach for. So *"unreachable"*
+survives **with** a check, not as prose: **check #20(c), a model assertion that the entity type declares
+ZERO unique indexes**, on the same `ctx.Model` reflection surface checks #2 and #18 already use
+(`NullsNotDistinctIndexModelTests.cs:102-111` walks `entityType.GetIndexes()`). **Run it against the
+rejected alternative and it goes red**, which is the property §X.12 requires of every check rev 4 writes.
+*(Check #18 is **not** touched — §X.6 refuted the challenger's parenthetical about it.)*
+
+**D1.6 — the discriminator is propagated and pinned at the database (CH-S8b).** `Kind` appears on all
+three tables and is closed by two composite FKs to two alternate keys
+(`AgreementVersionText(AgreementVersionId, Kind) → AgreementVersion(Id, Kind)`;
+`EmployeeAgreementStatement(AgreementVersionTextId, Kind) → AgreementVersionText(Id, Kind)`). Without
+them a row could say `Kind = SelfBilling` while pointing at a `CodeOfConduct` text, and every read in
+this ADR filters on the statement's own `Kind` — so the row would be a **false positive on the gate**.
+The C# factories cannot produce that row; the threat model is a human with `psql`, which is the same
+threat model D3.3's hash takes seriously and the same one ADR-0034 D6 §2 established this platform
+provisions.
+
+> ✅ **The hedge was answered by a specialist and the answer is YES.** Rev 2 flagged EF feasibility for
+> the `db` lane rather than asserting it; the round-2 challenger built all three entities on EF Core
+> 10 + Npgsql 10, read the emitted DDL, and confirmed both alternate keys, both composite FKs, `citext`
+> with its extension, and — the genuinely uncertain part — that the **mixed-nullability composite FK
+> models as an optional relationship with `Kind` staying `NOT NULL`** (§CH-S2-7). D1.3's `MATCH SIMPLE`
+> note is right. **Recorded as the hedging discipline working**, on the one limb an architect had no
+> business asserting. Three of its four costs become ADR text (D1.7, check #19, D12's first-of-class
+> row); the fourth is accepted below.
+>
+> **First-of-class, and it does NOT need its own ADR.** The schema today has **one** `HasAlternateKey`
+> (`LanguageEntityConfiguration.cs:18`, re-verified) and **zero** composite FKs. Per ADR-0033 as
+> restated in the Architect charter: test 1 does not fire (nothing is put in violation), test 2 does not
+> fire (no catalog sentence governs FK shape), test 3 is discharged **because a specialist built and ran
+> that stack**, and **novelty alone does not route an edit to the Architect**. So: no catalog edit, no
+> separate ADR. It is a first *use* of an ordinary construct.
+
+**D1.7 — the statement references the served text BY ID AND CARRIES NO NAVIGATION (CH-S8a; P17).** It
+holds `AgreementVersionTextId` and not `(AgreementVersionId, LanguageCode)`: the version and the
+language are one join from **the exact row that was served**, pinned *by identity* rather than by two
+loose columns that can drift apart. That makes check #8 (recompute the hash) **mechanically total** —
+the referenced row is guaranteed to exist because the FK is `Restrict`, so the recompute always has
+something to compare. Rev 1's design could not see a *deletion* of the served text at all.
+
+**And the relationship is FK-scalar-only — no `AgreementVersionText` navigation property on the
+statement.** This is forced, not stylistic: `Kind` is simultaneously an FK property and required
+payload, and EF's fixup **nulls every FK property when a navigation is severed** — against a
+non-nullable enum. *(The CRC card is corrected accordingly: the collaborator is **the referenced row, by
+id**, not a navigation. §W.5.3 is right that under responsibility-driven design a collaborator that
+cannot be a navigation was a collaborator stated wrong.)*
+
+**D1.8 — the five delete behaviours, each with its reason (CH-S2).** This repository states `OnDelete`
+explicitly everywhere and the EF default for the shape D1 names is **Cascade** — which would delete the
+evidence D8 says must survive.
+
+| FK | Behaviour | Why |
+|---|---|---|
+| `EmployeeAgreementStatement.EmployeeId → Employees` | **Restrict** | The record must outlive erasure (D8). Erasure anonymizes + deactivates the employee row, it does not delete it, so `Restrict` costs nothing on the live path and blocks the one path that would destroy the evidence. |
+| `EmployeeAgreementStatement.(AgreementVersionTextId, Kind) → AgreementVersionText` | **Restrict** | The served row must not be deletable while a statement attests to it, or reviewer check #8 is vacuous. |
+| `AgreementVersionText.(AgreementVersionId, Kind) → AgreementVersion` | **Restrict** | A version referenced transitively by a statement must not vanish; D6's "which text authorized this" join is otherwise one delete from a dangling id. |
+| `AgreementVersion.CountryId → Countries` | **Restrict** | Matches every other country FK in this schema. |
+| `AgreementVersionText.LanguageCode → Languages(Code)` | **Restrict** | A language referenced by a legal text may not be hard-deleted. |
+
+### D1.9 — **A writer-consumed index may lead with `TenantId`; a reader-consumed one SHOULD NOT** — and the reason is the lost btree PATHKEY, because `TenantId` is NULLABLE and `null` is the production value
+
+*(§W.2 P6/P7, adopted. The round-2 challenger measured it; the lead generalized it and told rev 3 to
+state it as the rule. **Rev 4 keeps the CHOICE and deletes the stated MECHANISM** — R4.2 / §X.2, after
+round 3 measured the same joint and got the opposite plan.)*
+
+> ❌ **WITHDRAWN, not softened (§X.2 ruling 2).** Rev 3's two sentences — *"a btree cannot put an OR'd
+> predicate on its **leading** column into an `Index Cond`"* and *"every column behind the leading one
+> becomes unreachable with it"* — are **deleted.** They are stated as facts about the running system;
+> one measurement says they are false in the plan mode production actually uses; and **no check in this
+> ADR goes red when they stop being true.** That is §W.12's own rule applied to the sentence §W.2 asked
+> rev 3 to write, and applying it costs the decision nothing.
+>
+> **Why they are false here, with the repo-side leg re-verified at HEAD by rev 4 rather than inherited.**
+> The three-armed filter's two booleans arrive as **bound parameters**; PostgreSQL plans an unnamed
+> extended-protocol statement as a **custom plan** with those values substituted, so the `OR`
+> constant-folds to `TenantId IS NULL`, which is an indexable btree qual. The demotion round 2 measured
+> reproduces only under `plan_cache_mode = force_generic_plan`. **Production does not get generic
+> plans:** `Max Auto Prepare` appears **nowhere** in `src/` (re-grepped at HEAD, zero hits), and
+> `DbContextBindingExtensions.cs:35` builds a plain `NpgsqlDataSourceBuilder` whose only options are
+> `EnableDynamicJson()` / `EnableUnmappedTypes()` (`:36`, `:40`), handed to `options.UseNpgsql(dataSource)`
+> at `:68` with no preparation settings. Npgsql's default is auto-prepare **disabled**.
+
+> **THE RULE, restated on the property that actually differs — and it is a PREFERENCE WITH A STATED BET,
+> not a prohibition by construction.** An index whose job is **enforcement** (a unique arbiter) may lead
+> with `TenantId`: uniqueness is evaluated by the index itself, so the leading column is never read
+> through the global filter. An index whose job is to **serve an ordered read** should not, because
+> **`TenantId` is nullable, `null` is the production value, and a leading `IS NULL` nulltest is
+> *indexable* but yields no btree *ordering*** — so every `ORDER BY … LIMIT 1` behind it becomes a
+> **sort of the whole matched group** rather than a one-row seek. A reader-consumed index therefore
+> leads with the query's sargable **equality** terms, which is **also the only column order that stays
+> optimal once a tenant exists**. `consistency.md` §*"Tenant-scoped unique indexes"* already decides
+> `NULLS NOT DISTINCT` by *"the index's JOB"*; **the same job test decides column order.**
+>
+> **The bet, named:** we are choosing the order that is optimal in **both** tenancy modes over the one
+> that is optimal only in the multi-tenant one we do not have yet. Both round-2 and round-3 challengers
+> agree on the choice **from opposite mechanisms**, which is why the choice survives either measurement
+> and the mechanism did not.
+>
+> ⚠️ **The scope narrows with the mechanism, and rev 4 says so rather than quietly keeping the reach.**
+> The pathkey argument bites only on indexes serving an **ordered** read. A `TenantId`-leading index
+> serving an unordered aggregate loses nothing — see the corrected evidence table below.
+
+Applied here: the supersession index is `(EmployeeId, Kind, RecordedAt DESC, Id DESC)`. `EmployeeId` is
+a ULID and pins its tenant transitively, so the index is seekable **however** the filter lands. **After
+D1.4 there is no unique index on this table at all, so the writer half of the rule has no instance in
+this ADR** — it is stated because the severed decision inherits the rule for the coverage index, and
+because leaving only the prohibition would read as a blanket ban.
+
+**P7 — the choice is discharged by an `Index Cond` assertion on the captured statement, never by an
+index declaration.** `consistency.md` §T-0540 is ratified and binding and says both halves verbatim
+(*"EXPLAIN the captured statement, never a hand-written copy of it"*; *"'No Seq Scan' is not the
+assertion"*), with `OrderStatusSetPredicatePlanTests` and `UserMembershipCancellationSweepIndexPlanTests`
+as shipped precedents. Check #21 is that assertion for the supersession read. *(The coverage read's plan
+check belongs to the severed artifact, per §W.6 — an index that serves a query is specified with the
+query.)*
+
+**⚠️ The thing no lane checked, and it changes how this rule is ROUTED, not whether it is right.** The
+lead's §W.2 reads as though the rule is merely *unnoticed*. It is not — the shipped schema already does
+this. **Rev 3 counted three instances; round 3 showed that only one of them is in violation of the
+corrected rule, and rev 4 ships the corrected count (R4.2 / §X.2 ruling 4).** Every row below was
+re-opened at HEAD by rev 4:
+
+| Shipped, non-unique, `TenantId`-leading | Where | Ordered read behind the leading column? | Verdict |
+|---|---|---|---|
+| `IX_AdminActionAudits_TenantId_OccurredOn` — on the very archetype D1.1 adopts | `AdminActionAuditConfiguration.cs:65-67`, declared `.IsDescending(false, true)` | **YES** — the index exists to serve `OccurredOn DESC` | ⚠️ **IN VIOLATION. This is the one.** |
+| `IX_MembershipBenefitUsages_Quota` = `(TenantId, UserId, BenefitKind, PeriodKey)` | `MembershipBenefitUsageEntityConfiguration.cs:70-71`; its own comment at `:68-69` says it *"serves the remaining-count read"* | **NO** — a `COUNT` has no `ORDER BY`, so there is no pathkey to lose | ✅ **NOT in violation** |
+| **A single-column `TenantId` index on EVERY `Auditable` table** | `AuditableEntityConfiguration.Configure` → `EntityConfiguration.cs:31` | **N/A** — nothing is behind the leading column | ✅ **NOT in violation** (its own separate question is whether it earns its storage) |
+
+A non-unique index has **no enforcement job**, so its only possible job is to serve a read. Four
+consequences, and rev 4 is deliberate about which are and are not claimed:
+
+1. **These are not bugs and rev 4 does not call them bugs.** They are correct the moment `TenantId` is
+   non-null. Today they cost storage and write amplification and buy nothing. They are a **bet on a
+   multi-tenant future that has not arrived** — a legitimate thing to have bought, and a different thing
+   from a defect.
+2. **The rule must be stated as *"`TenantId` is nullable and null is the production value"*, not as
+   *"never lead with `TenantId`"*.** The lead required this framing for the catalog entry; the shipped
+   indexes are why it is not optional. A bare prohibition would be false as soon as the first tenant
+   exists.
+3. **The catalog version still fires ADR-0033 routing test 1 — *the edit puts code that exists today in
+   violation* — on ONE shipped index rather than three.** One instance is enough to fire test 1, so the
+   **routing is unchanged**: it needs an Architect-ratified catalog edit **plus a canonicalization
+   decision** on `IX_AdminActionAudits_TenantId_OccurredOn` (keep the bet, or reorder and re-buy it when
+   a tenant exists), **plus** the named enforcer the lead required. **Not written here** —
+   `agents/knowledge/` is another lane's this sprint and §W.11 routed it there.
+4. **The EVIDENCE travels corrected, with the plan mode named, and that is the part that matters
+   (§X.2.4).** A law whose stated reason a `db` agent can falsify in ten minutes is how a
+   confidently-wrong comment stops the next reviewer from checking. Ticket 13 carries: the **pathkey**
+   mechanism (not the `Index Cond` one), the **plan-mode boundary** (*Npgsql does not auto-prepare —
+   `Max Auto Prepare` is absent from `src/`; `DbContextBindingExtensions.cs:35`/`:68`*), and **one**
+   shipped index in violation.
+
+### D1.10 — **The statement's `TenantId` is stamped by the REPOSITORY, not by the commit pipeline** — rev 2's *"it rides the filter"* is FALSE and is disavowed
+
+*(NEW in rev 3, from F4′. This corrects a sentence in D10 that no lane checked.)*
+
+D1.1 adopts `sealed : BaseEntity, ITenantEntity`. **`CleansiaDbContext.CommitAsync` stamps `TenantId`
+inside `foreach (var entity in ChangeTracker.Entries<Auditable>())` (`:74`, stamp at `:89-92`) — a
+`BaseEntity + ITenantEntity` row is not in that loop and is never stamped.** Left implicit, every
+statement inserts `TenantId = NULL`, and by the same filter round 1's CH-S4 turned on, the row is
+**invisible to its own tenanted reader**: a cleaner accepts, the approval gate finds nothing, and the
+mandatory gate refuses a cleaner who has complied. That is CH-S4's defect relocated onto the legal
+record, arriving through the archetype adopted to fix something else.
+
+**The archetype already ships its own answer and rev 3 copies it rather than inventing one.**
+`DbContextAuditWriter` (`Infra.Database/Auditing/DbContextAuditWriter.cs`) carries the doc-comment
+stating exactly this problem (`:10-12`) and the one-line fix (`:18`):
+
+```csharp
+entry.TenantId ??= tenantProvider.GetCurrentTenantId();
+```
+
+So: **`IEmployeeAgreementStatementRepository.Append(statement)` stamps `TenantId` from `ITenantProvider`
+before `Add`, with a doc-comment naming `DbContextAuditWriter` as the sibling and `CommitAsync`'s
+`Auditable`-only loop as the reason.** Three notes:
+
+- **This is not an argument against the archetype.** The four columns it drops (`UpdatedBy/On`,
+  `DeactivatedBy/On`) are still meaningless on an immutable row and still misleading when populated.
+  The archetype has a **writer obligation**, and rev 2 adopted the archetype without adopting it.
+- **It is not fixed by dropping `Sequence`.** §W.3 named the hand-written tenant term as a cost *of the
+  raw SQL append*. It is broader: a **tracked** `Add` of a `BaseEntity + ITenantEntity` is equally
+  unstamped. The two findings are independent and only one of them evaporated with the mechanism.
+- **`TenantId` must also be mapped by hand in the entity configuration**, for the same reason
+  (`AdminActionAuditConfiguration.cs:15-21`, which explains it in a comment) — `BaseEntityConfiguration`
+  maps only the key. **A bonus of the archetype, now that D1.9 exists:** because the configuration does
+  *not* derive from `AuditableEntityConfiguration`, this table does **not** inherit
+  `EntityConfiguration.cs:31`'s `TenantId`-leading index. The archetype and D1.9 agree by construction.
+
+**D1.10.1 — `Append` IS THE SOLE WRITER: `Add` and `AddRange` are FORBIDDEN for this entity.** *(NEW in
+rev 4, R4.5 / §X.5. The finding above is confirmed by the round-3 challenger and independently by the
+lead; **its repair did not hold**, and this is the repair.)*
+
+**Why the rev-3 repair was insufficient, stated plainly.** `IEmployeeAgreementStatementRepository`
+derives from `IRepository<T, string>` — rev 3 re-verified that and **correctly refused to narrow it**
+(RB-7; narrowing fires ADR-0033 tests 1 and 2). Rev 4 re-opened the interface at HEAD: **`Add` is at
+`IRepository.cs:37` and `AddRange` at `:39`, on the same object as `Append`**, and they are the idiom
+every other feature uses. **Neither stamps `TenantId`.** So *"the repository stamps it"* was a
+**convention on a method nobody is obliged to call**, and check #7 as written is a happy-path round trip
+through `Append` — it **stays green** on the day a handler, a seeder or a sweep calls `Add`, and the
+failure it would miss is the worst one in this design by the ADR's own account: a cleaner accepts, the
+gate cannot see the statement, and the mandatory gate refuses someone who complied.
+
+> **The rule, on the shipped §B10 model:** *the **only** sanctioned writer of an
+> `EmployeeAgreementStatement` is `IEmployeeAgreementStatementRepository.Append`. Calling
+> `Add`/`AddRange` on that repository, or `context.Set<EmployeeAgreementStatement>().Add(...)`, is
+> **forbidden**.* `consistency.md` §B10 (`:105-115`) fixes exactly this shape for dispute terminal-state
+> transitions — an allowlist of sanctioned writers, *"mechanically checked by `check-consistency.mjs`
+> (rule B10)"* — so this is a **house idiom applied**, not a mechanism invented in a feature ADR.
+
+**Check #7 gains the half that can go red.** The round-trip is the *positive* half and stays; the new
+*negative* half is a **static sole-writer sweep**: no production site adds an `EmployeeAgreementStatement`
+other than through `Append`. **Tested against the rejected alternative — an `Add` call site — it goes
+red**, which the round-trip does not.
+
+**D1.10.2 — the GENERAL defect is ROUTED, not absorbed and not silently taken (§X.5).** The gap found
+here is not this feature's: **`CommitAsync` fails to stamp `TenantId` on *every* `BaseEntity +
+ITenantEntity` entity**, present and future, and the archetype compensates per-writer by hand. An ADR
+that finds a general defect in shipped infrastructure owes one of three things — take it, refuse it in
+writing with a reason, or route it — and **the lead ruled it may not be the first.** Widening
+`CommitAsync`'s loop touches a shared file and a shipped audit path; that is not a feature ADR's call
+(ADR-0033's archetype rule, the same one that correctly routed ticket 11). **Routed as ticket 14**, to
+the `db`/infra lane, carrying two facts rev 4 re-opened at HEAD:
+
+- **the observed gap** — `CleansiaDbContext.CommitAsync`'s loop is
+  `foreach (var entity in ChangeTracker.Entries<Auditable>())` (`:74`) with the `ITenantEntity` test
+  **nested inside it** at `:89-92`, so a non-`Auditable` tenant entity is never reached;
+- **the `??=` vs `IsNullOrEmpty` divergence** — the pipeline stamps when
+  `string.IsNullOrEmpty(tenantEntity.TenantId)` (`:89`), the archetype's compensating writer stamps with
+  `entry.TenantId ??= tenantProvider.GetCurrentTenantId();` (`DbContextAuditWriter.cs:18`). **An
+  empty-string `TenantId` is replaced by one and survives the other.** Whichever way ticket 14 lands,
+  the two must agree, and today nobody has decided which is right.
+
+Check #7 pins the feature-local half, and it is a **real-PostgreSQL round-trip with a non-null tenant**,
+not a unit test — which is F5's surviving obligation and the one test shape that catches this whole
+family.
+
+### D2 — What is recorded, and what each field is for
+
+A boolean is not a consent record. Every field answers a question that will be asked in a dispute:
+
+1. **Who** — `EmployeeId` (the supplier), plus `RecordedByUserId` when an operator recorded a paper
+   signature rather than the cleaner ticking a box.
+2. **What text** — `AgreementVersionTextId` + `BodyHash`. **The exact served row is not optional.** A
+   Czech cleaner who read the Czech body and a Ukrainian cleaner who read the Ukrainian body of the same
+   version agreed to two different strings, and only one of them is what we would produce in a dispute.
+3. **When — twice, but only one channel can make them differ.** `OccurredAt` is the **legal** timestamp;
+   `RecordedAt` is the **recording** timestamp. A paper contract signed on 3 June and recorded on 4
+   August has two different true timestamps and the record carries both (D1.4 shows they answer
+   different questions). **On the self-service channels the factory sets them equal from one clock read
+   (D1.3.1)** — the act *is* the tick, so there is nothing for an operator or a client to disagree
+   about. Neither is `Auditable.CreatedOn`, which is infrastructure and is re-stamped by the commit
+   pipeline (`CleansiaDbContext.cs:85-87`).
+4. **What kind of event** — `Action`. `Revoked` exists **from day one and is not decoration**: it costs
+   one enum member now, and it makes every read *"the latest statement is an `Accepted`"* instead of
+   *"a row exists"*. Adding it later means a migration **plus rewriting every read predicate on a legal
+   path**. Whether a cleaner may *invoke* revocation is a product question (`Q-SELFBILL-04`); the schema
+   not being able to express it would be an architectural one. **CH-S7 is the reason it must ship now:**
+   it is what makes ordering load-bearing, and ordering is the thing that cannot be retrofitted cheaply.
+5. **From where** — `Channel` (server-supplied per host at the controller), `IpAddress` and
+   `DeviceLabel` from `IRequestMetadataProvider`, exactly as `ConsentService` does and for the reason its
+   comment gives: *"a client that could name its own audit fields could forge the proof of consent."*
+   `Channel` deliberately does **not** split Android from iOS — the server cannot know that reliably,
+   `DeviceLabel` carries it, and an enum claiming a precision we do not have is worse than one that does
+   not.
+
+**Idempotency (S7).** Accepting when the latest statement (supersession order, D1.4) is already an
+`Accepted` of **the same `AgreementVersionTextId`** is a **no-op returning success** — not a new row.
+This makes the double-click, the client retry and a duplicated submit safe. Re-consent is expressed by
+the *served text changing*, never by re-posting the same one. *(The **shape** is copied from
+`ConsentService`'s already-granted short-circuit deliberately; the **return semantics are not** —
+`ConsentService.cs:27-30` returns `false` there. See D1.5.)*
+
+> ⚠️ **This no-op is the ONE sanctioned exception to P8, and it is named as one in D1.5 rather than left
+> to contradict it (R4.6 / §X.6).** It lives in the **handler**, not in the append path: the append
+> itself still cannot return success without a row. **A reviewer who finds a second success-without-a-row
+> path is looking at a violation**, and check #20(a)'s grep plus #20(b)'s two-concurrent-appends test are
+> what keep the append half honest — neither can see a handler short-circuit, which is exactly why the
+> exception is written down instead of tested for.
+
+### D3 — The **version is server-decided**; the client echoes it and a mismatch is **rejected**
+
+The record's whole value is the claim *"this is what they read."* A client-supplied version defeats it:
+an app rendering v1's body while posting `version: "v2"` writes a record that is **false and looks
+perfect**. So:
+
+1. **`GET .../me/self-billing-agreement`** (partner web + partner mobile hosts) returns
+   `{ agreementVersionTextId, version, languageCode, body, bodyLanguageIsFallback, reviewStatus,
+   currentStatement: { agreementVersionTextId, occurredAt, action } | null, renderable, demandable }`.
+   The **server** resolves which version and which language body (D4).
+2. **`POST .../me/self-billing-agreement/accept { agreementVersionTextId }`** — a single **echo**,
+   validated against the live resolution. A mismatch fails with a distinct `agreement.version_stale`; it
+   is **never** silently upgraded to the current text. An un-updated app must not be able to record an
+   acceptance of text it did not display.
+3. **`BodyHash` is computed by the server** from the `AgreementVersionText` row it served:
+   `SHA-256` over `agreementVersionTextId + "\n" + lower(languageCode) + "\n" + NFC(body)`, lower-case
+   hex. **Never accepted from the client.** The language code is lower-cased **explicitly** in the
+   pre-image so the hash is reproducible from the stored row alone in 2029 without anybody remembering
+   what casing was used (CH-S9.3). Its job is to make *"a version's text is immutable once referenced"*
+   **checkable instead of declared** — the one principal that can edit a row behind the application is a
+   human with `psql`, and a stored hash turns a silent edit into a one-query detection (check #8).
+4. **No `EmployeeId` on the wire** (S1). The subject is resolved from `IUserSessionProvider` in the
+   handler.
+5. **The stale-echo loop is closed, not left to the clients (CH-L6).** Both error keys are
+   **`agreement.version_stale`** and **`agreement.self_billing_required`**, they go under
+   **`api.agreement.*`** in all five locales on partner web, and they are added to
+   `PARTNER_SURFACE_ERROR_KEYS` **in the same change** — because the parity spec asserts
+   *array → backend* only, so a constant that never enters the array is never checked and renders as
+   *"An error occurred. Please try again."* The client contract on `agreement.version_stale` is
+   **binding on tickets 4/5/6**: re-run the GET, re-render the body, **untick the box**, and show a
+   specific string ("the agreement was updated — please review it again"). Silence here ships a retry
+   loop into the same failure.
+
+### D4 — The **text is server-owned**, per country, per language, provenance-gated — and **renderable ≠ demandable**
+
+This ADR does **not** author legal text. It specifies the shape and makes "nobody has written it yet" a
+first-class runtime state rather than a TODO.
+
+1. **Which jurisdiction — the resolver takes a country id as a PARAMETER; it never walks a navigation
+   (CH-S13).** ADR-0034 D1.1 moved the payout term onto a scalar precisely because include lists are
+   hand-written and a missing one reads as *"absent"* rather than *"not loaded"*; rev 1 cited that ruling
+   approvingly and then wrote `Employee.WorkCountryId ?? Employee.Address.CountryId` into a resolver.
+   Under D5's gate placement the problem dissolves rather than being managed: **the only two callers each
+   already hold a scalar.**
+   - the **gate** is on `ApproveEmployee`, whose `Command` carries `WorkCountryId` — validated `NotEmpty`,
+     exists, and *serviced* by rules that already run (`ApproveEmployee.cs:56-62`);
+   - the **status/accept endpoints** are reached by the cleaner themselves through
+     `EmployeeRepository.GetByUserEmailAsync`, which **does** include `Address`, so
+     `WorkCountryId ?? Address.CountryId` is evaluated *at that call site*, by a caller whose include
+     list is named in the ticket — not inside the resolver.
+   ADR-0034 D2's rule (work country is the jurisdiction of the engagement; the address is the fallback
+   because approval happens after onboarding) is reused verbatim; **no handler branches on a country
+   code** (ADR-0017).
+1a. **The resolver distinguishes *"no version for this country"* from *"this is not a country"* at its
+   boundary (§W.7.5, P20).** This is not a nicety, it is the containment for a live fail-open the
+   round-2 challenger found in D5's validator: `ApproveEmployee.Validator`'s class-level cascade is
+   FluentValidation's default `Continue`, so D5's rule runs **regardless** of the `WorkCountryId` chain's
+   verdict (`ApproveEmployee.cs:56-62`, re-verified). A blank or unserviced country id would resolve to
+   *"no version for this country"*, which D4.4 reports as *"the gate does not fire"* — so **the mandatory
+   gate would silently pass on exactly the inputs that are invalid.** That is round 1's CH-S4 pattern
+   again: the safety valve disguising the failure.
+
+   So the resolver's return type is **three-valued, not two-valued**: `Renderable(text…)` ·
+   `NoVersionForCountry` · `NotAJurisdiction`. The third is returned when the country id does not
+   resolve to a `Country` row **at all**, and it is an **error**, never a fail-open — D5's gate refuses
+   the approval, and it refuses with the country error, not the agreement error. *(The validator's
+   chain ordering — how to stop the second chain running on a bad id — is the **backend lane's**, per
+   §W.9 CH-S2-9. What is ADR-0041's, and is here, is that the resolver may not be the thing that
+   swallows it.)* The CRC card's "does NOT know" list is checked against this: the resolver must not
+   know *"what to do about"* an invalid jurisdiction, only that it is one.
+
+2. **Which version** — the `AgreementVersion` for `(kind, country)` with the greatest
+   `EffectiveFrom <= now`, tie-broken deterministically by `Version DESC` so the query is total even
+   against a database predating the `(Kind, CountryId, EffectiveFrom)` unique index (CH-S6). **The key
+   is `(Kind, CountryId, Version)` — jurisdiction alone, no VAT axis — BY DECISION, on the owner's
+   ruling of 2026-08-05 (§Owner rulings 2), not by omission.** CH-L3 is closed.
+3. **Renderable vs. demandable — the split rev 1 collapsed (CH-L4, sustained).**
+   - **Renderable**: the version has **any** `BusinessSupplied`+ text. The GET returns a body; the
+     checkbox can be shown.
+   - **Demandable**: the **caller's own language** has a `BusinessSupplied`+ text for that version. Only
+     then may D5's gate fire.
+   Rev 1 made the activation gate *any one language*, so the expected launch case — the owner delivers
+   reviewed **Czech** first — hard-blocks a Ukrainian- or Russian-speaking cleaner on affirming a Czech
+   legal text flagged as a fallback by a boolean their client may not surface. That lands on D3's own
+   premise: a server-computed SHA-256 proving *which bytes were displayed*, over bytes the signer cannot
+   read. **`BodyHash` makes the record precise; it does not make it true.** The shipped precedent does
+   not transfer and rev 1 transferred it without noticing: `patterns-backend.md`'s
+   *"the notice is printed in the language it was reviewed in"* governs a notice **printed on a
+   document**, where the reader is not asked to *assent*. Assent is a different act. A cleaner without a
+   reviewed body in their language gets the **prompt**, never the block — so "we shipped Czech first" is
+   a partial rollout, not a language barrier at the door.
+4. **If nothing is renderable for that country — the feature is OFF there.** `renderable: false`, no
+   checkbox, the gate does not fire. **The platform never demands agreement to text nobody wrote.** This
+   is what makes it safe to ship schema and plumbing *before* `Q-SELFBILL-01` is answered.
+5. **D4.5 — the fail-open, its TWO axes, and what closes each. The precondition is PER-JURISDICTION; the
+   counting query is PER-LOCALE.** *(Rewritten in rev 4 under R4.1 / §X.1, on the owner's `Q-SELFBILL-06`
+   answer (b) and `Q-SELFBILL-02(a)` commitment. CH-L9 is discharged HERE and not before — rev 2 conceded
+   it with a report row, rev 3 replaced that row with the precondition below, and the precondition does
+   not reach the language axis.)*
+
+   Rev 1 presented D4.4 as the safe direction and never stated the other half: *and therefore the platform
+   keeps issuing self-billed documents with no consent capture, to nobody's knowledge.* The posture is
+   defensible; the silence is not. **The silence has two independent causes and rev 3 answered only one of
+   them**, which is what CH-R3-1 caught:
+
+   | Axis | Who is un-agreed | Closed by | Status |
+   |---|---|---|---|
+   | **Jurisdiction (F3′)** — no `BusinessSupplied`+ text in **any** language for a country | every cleaner in that country | **the launch precondition below** — a human step, once per country | ✅ **owner commitment**, §Owner rulings 3c |
+   | **Locale (F6)** — a reviewed text exists for the country, but **not in the caller's language** | every cleaner whose app language has none | **nothing, by design** — D4.3 refuses to block them | ⚠️ **permitted and counted**, owner answer (b) |
+
+   > **The precondition, PER-JURISDICTION, unchanged in substance and now the owner's rather than the
+   > architect's:** *a jurisdiction is not opened to cleaner registration before it has a
+   > `BusinessSupplied`+ text in **at least one** language.* It is a launch step a human takes once per
+   > country, alongside *"is the country serviced"*. **"At least one" is the correct threshold and rev 4
+   > states it explicitly** rather than leaving it to be inferred: requiring all five would be option (a)
+   > of `Q-SELFBILL-06`, which the owner declined.
+
+   **What the precondition buys and what it does not.** It buys: the jurisdiction-axis window is closed by
+   **sequencing** rather than measured after the fact. It does **not** buy: an enforcer (nothing in the
+   platform objects if a country is opened early — R.3 hedge 3, unretracted), and it does **not** reach
+   F6, because it is satisfied by one reviewed language while a cleaner reads a different one.
+
+   > **THE COUNTING QUERY (owner answer (b)). It is one `SELECT` over config, it covers BOTH axes, and it
+   > is specified here so a reviewer can check it rather than infer it.**
+   >
+   > **Subject:** the set of `(country, language)` pairs a cleaner can actually be approved into and read
+   > in, with **no** `BusinessSupplied`+ body.
+   >
+   > **Left side — the pairs that must be covered.** `Country` rows with **`IsServiced = true`**
+   > (`Country.cs:24`, whose own doc-comment distinguishes it from `BaseEntity.IsActive`: *"True when the
+   > company actually operates in this country"*; it is the same term `ApproveEmployee.Validator` already
+   > gates approval on at `ApproveEmployee.cs:61`) **CROSS JOIN** `Language` rows with
+   > **`IsActive = true`** (`Language : BaseEntity`, `Language.cs:6`).
+   >
+   > **Right side — what covers a pair.** An `AgreementVersionText` whose `LanguageCode` matches, whose
+   > `AgreementVersion` has `Kind = SelfBilling` and that `CountryId`, and whose
+   > `ReviewStatus >= BusinessSupplied`. **The version's `EffectiveFrom` is NOT a term** — a pair is
+   > covered if *any* version's text covers it, because the resolver (D4.2) will pick the current one and
+   > we are measuring the absence of text, not the currency of it.
+   >
+   > **Output:** the uncovered pairs, plus — and this is the half that makes it answer `Q-SELFBILL-06`
+   > rather than merely restating F3′ — **the count of `Employee` rows with `ContractStatus = Approved`
+   > whose `(WorkCountryId, User.PreferredLanguageCode)` falls in an uncovered pair.** That number *is*
+   > the un-agreed cohort the owner asked to see. A country with **no** covered language is an F3′ breach
+   > (the owner's commitment broken); a country with some covered languages and some not is F6.
+   >
+   > ⚠️ **Three properties a reviewer checks, because each is a way this query goes quietly wrong.**
+   > **(1) It reads `IsActive` on `Language`, which is legal — D1.2's prohibition is scoped to
+   > `EmployeeAgreementStatement`, `AgreementVersion` and `AgreementVersionText`, and to those three
+   > only.** It does **not** read `IsActive` on `AgreementVersionText`; the provenance term is
+   > `ReviewStatus`. **(2) It is a `SELECT` over config plus one `COUNT` over `Employees` — tens of rows
+   > on the left, an indexed count on the right. It does NOT scan `EmployeeInvoices` and it does NOT
+   > evaluate coverage**, so it inherits none of the cost that consumed two panels and none of the severed
+   > decision's plan obligation. **(3) Its cardinality claim is `countries × languages`, which is a
+   > property of config and is asserted, not assumed** — check #23.
+   >
+   > **Where it surfaces:** the admin surface, as a standing operator-visible readout — **not** a report
+   > row on the severed coverage report, which is a different artifact measuring a different thing over
+   > `EmployeeInvoices`. The severed spec's §S7 row is re-opened accordingly and **resolved there as
+   > *"keep, and it is this query, not a coverage-report row"***.
+
+   **The other half of (b): the prompt.** *"…plus an in-app prompt to those cleaners once their text
+   lands."* That is a **D5 surface row**, not a D4 concern, and it is written there.
+6. **The `LegalNoticeReviewStatus` reuse stands, and the inversion is stated at the call site (CH-A6
+   closed by the lead).** `BusinessSupplied` makes the same **provenance** claim in both places — a named
+   accountable human supplied this text for this jurisdiction. What does *not* transfer is the **failure
+   posture**: on an invoice, `NotReviewed` still prints a generic fallback (fail-**soft**); here it
+   renders nothing and demands nothing (fail-**open**). Same type, inverted posture — so the enum is
+   reused and the entity carries a doc-comment saying exactly that.
+7. **Five locales are a completeness obligation on the version, not a blocker.** The target is a
+   `BusinessSupplied`+ text for every active `Language`; `MustCoverAllActiveLanguages` is the idiom
+   if/when an authoring screen exists. Until then a version ships with the languages the owner supplied
+   and the rest fall back **visibly** — and, per D4.3, **unenforcedly**.
+8. **v1 has no admin authoring UI.** Versions and texts are **owner-run SQL**, exactly as the country
+   invoice configs are. The v2 screen, when it exists, may **create** a version and its texts and **set**
+   review status; it may **never edit a text any statement references** (check #8).
+
+**What the body must convey** (the owner's or counsel's words, never an agent's — six propositions, so
+the drafter has a checklist and the reviewer has an acceptance test): **(a)** Cleansia issues invoices
+**in the cleaner's name and on the cleaner's behalf** for work performed through the platform;
+**(b)** on those documents the cleaner is the **supplier / dodavatel** and Cleansia the **customer /
+odběratel**; **(c)** the cleaner **agrees in advance**, and how they may **object to an individual
+document** and **withdraw** the arrangement, and what follows; **(d)** the invoice is produced from
+**the cleaner's own profile data** (legal name, address, IČ, VAT status, bank account) and keeping it
+correct is the cleaner's responsibility; **(e)** this **mirrors the corresponding clause of the signed
+contract**, so the two instruments cannot be read as contradicting each other; **(f)** where the **full
+text** can be re-read and how to obtain a copy.
+
+**Presentation requirements** (binding on tickets 4/5/6): the full body is **reviewable inline, before
+the box can be ticked** — a link to a web page is an *addition*, never a substitute (a link can 404, be
+offline, or open in the wrong language, and "they could have clicked" is not evidence). The checkbox is
+**unticked by default**, is the only control, and the surrounding sentence uses the shipped consent
+components (`CleansiaConsentCheckbox` on both mobile platforms, `<cleansia-checkbox>` on web) so link
+taps are not swallowed. Only the **body** is server-served; heading, label, "read full text" affordance
+and error strings stay in the client i18n catalogs in five locales, where the `ConsentCatalog` guards
+already live.
+
+### D5 — "Mandatory" binds at **`ApproveEmployee`**. Not the profile save, not the job board, not payment
+
+> **The rule:** **no cleaner is approved to work without a current acceptance, from the day the feature
+> is demandable for the country they are being approved for. Nothing else is ever blocked.**
+
+**This reverses rev 1, which put the gate on `UpdateEmployee`.** CH-L5 is sustained on three counts and
+the lead verified the first: `UpdateEmployee` is the general **profile save** — the partner web profile
+page posts it (`profile.facade.ts:202`) — so the rule would fire on a year-two phone-number edit and
+rev 1's own justification (*"they are on the form anyway; the cost is one tick"*) is false for that
+request. It also made rev 1's own table self-contradictory (row 1 blocks; row 6 says a stale cleaner is
+*"prompted, not blocked"*; a stale cleaner editing their address hits both). And it has **no mobile
+attachment point at all**: mobile posts four independent section PUTs, so attaching to all four means a
+cleaner cannot fix a typo without accepting, and attaching to none means *mandatory is web-only* — which
+rev 1's **own ticket 9** records as an unsolved structural gap while D5 assumed it solved.
+
+**`ApproveEmployee` satisfies every criterion rev 1 itself stated, and rev 1 never named it.**
+
+| Criterion rev 1 stated | `ApproveEmployee` |
+|---|---|
+| must be a **write path** (failure = a rejected submit with a translated message, never a 403 on an unrelated GET) | it is a command with a validator |
+| must not touch `IsProfileComplete()` / `[RequireCompleteProfile]` | it **calls** `IsProfileComplete()` but the new term is a **separate validator rule** on the command — check #1 is a `git diff` on `Employee.cs` that must stay empty |
+| must not lock out a working cleaner | it governs only the `Pending → Approved` edge. **A cleaner who is already `Approved` is never re-gated.** Deploy-day lockouts: **zero** |
+| must be host-agnostic | it is admin-only and covers web **and** mobile registrations with one rule — closing CH-L5(b) |
+| must have an operator release valve | **D7's `RecordPaperSignature`**, which this ADR already specifies |
+| the jurisdiction must not depend on query shape | `WorkCountryId` is **on the command** (CH-S13 dissolved at this site) |
+| it must bite where the harm is | *"the moment an admin approves them they can work, accrue pay, and be issued a self-billed invoice"* — rev 1 named that moment and did nothing about it. This is that moment. **The ruling that empties the database does not touch this argument**: the gate is a precondition on a *transition*, so it is correct on an empty population and on a full one |
+
+**What it costs, stated plainly.** Back-office friction: an admin cannot approve a cleaner who has not
+accepted. That is a *smaller* harm than the payment outage A5 was rejected for and a *different* one from
+the platform-wide 403 ADR-0034 D7 exists to prevent — it is one person, at a desk, with a release valve
+and a "resend the request" button. And D4.3 keeps it inert wherever no demandable text exists.
+
+**D5.1 — THE GATE'S PREDICATE, WRITTEN DOWN.** *(NEW in rev 4, R4.8 / CH-R3-10 §X.7. D1.4's table fixed
+an **order**; this paragraph fixed a **country-qualified question**; neither wrote the predicate, so
+check #21 was pinning whatever ticket 2 happened to emit. §W.6's own rule — *an index is specified in
+the artifact that fixes the query* — applies to the supersession index too, so the query has to be
+here.)*
+
+```
+-- STEP 1. The supersession read. UNQUALIFIED — no country term, no channel term. (D1.4)
+latest := SELECT * FROM EmployeeAgreementStatements
+          WHERE EmployeeId = @employeeId AND Kind = SelfBilling
+          ORDER BY RecordedAt DESC, Id DESC
+          LIMIT 1
+
+-- STEP 2. The verdict, in memory, on that one row.
+passes  :=  latest is not null
+        AND latest.Action = Accepted
+        AND ( latest.Channel = AdminRecordedContract          -- D7's release valve: country-agnostic
+              OR countryOf(latest.AgreementVersionTextId) = @command.WorkCountryId )
+```
+
+**Which of §X.7's two readings this is, and why.** It is **"latest statement, then check its country"**,
+**not** *"latest statement whose version's country is X"*. They are observably different and the
+difference is not a matter of taste:
+
+- **The rejected reading pushes the country term into the `WHERE`, and a `Revoked` on the paper channel
+  carries no country at all** — D1.3 makes `AgreementVersionTextId` NULL for `AdminRecordedContract`, and
+  D1.3.2 deliberately allows `Action = Revoked` there. So a country-filtered read **skips the
+  revocation** and returns the older `Accepted`. That is the *resurrection* defect D1.4 exists to
+  prevent, arriving through a different door, and it fails in the **unsafe** direction: a **false
+  positive on a mandatory gate**, which D1.6 already names as the worst outcome on this table.
+- **The chosen reading fails in the safe direction.** Its cost is real and is stated: a cleaner who
+  accepted CZ terms and later accepted SK terms is **refused** for a CZ approval, because their latest
+  statement is the SK one. The admin's remedies are the two D5 already provides — ask them to re-accept
+  (the prompt surface carries it) or record the paper contract (D7). **A recoverable refusal at a desk
+  beats a silent pass**, which is the same trade D5 takes everywhere else.
+- **The paper channel passes for any country, deliberately.** It has no text and therefore no derivable
+  jurisdiction; it *is* the operator override, and an override that could not clear a country mismatch
+  would not be one. `ContractReference` is `NOT NULL` there, so the instrument is always named.
+
+**The language term is the SUBJECT'S, never the caller's — and that is a live trap.** D4.3 says
+*"the caller's own language"*, and at this gate the HTTP caller is the **approving admin**. The
+demandability question is about the **employee being approved**: their `User.PreferredLanguageCode`
+(`User.cs:95`). A `uk`-reading cleaner approved by a `cs`-reading admin must **succeed** — that is
+exactly what check #12 asserts, and reading the admin's language would flip it green-to-green while
+breaking F6's whole premise. **`PreferredLanguageCode` is nullable** (`:95`; nulled by anonymization at
+`:424`, defaulted `?? "en"` on every creation path — `:138`, `:154`, `:166`), so: **a null language is
+treated as "not demandable" and the rule does not fire** — the same direction D4.3 takes, for the same
+reason (we do not know what they can read), and D4.5's counting query counts them as **uncovered** so
+they are visible rather than lost.
+
+**Ordering, and where each negative goes.** `NotAJurisdiction` (D4.1a) refuses with the **country**
+error, never the agreement error. `NoVersionForCountry` and *not demandable* mean **the rule does not
+fire at all** (checks #12/#13). Only when the text is demandable for that employee in that country is
+the predicate above evaluated, and only then can `SelfBillingAgreementRequired` be returned.
+
+**And the original edge this paragraph replaced, preserved because it is still the motivating case.** The
+acceptance is collected during onboarding, when `WorkCountryId` is still null and the served text is
+resolved from `Address.CountryId`; an admin may then approve the cleaner for a *different* work country.
+Under the predicate above that mismatch refuses the approval with a specific message. That is correct:
+**agreeing to Czech terms is not agreeing to Slovak ones.**
+
+**D5.2 — `ApproveEmployee` is the SOLE PRODUCTION WRITER of `ContractStatus = Approved`, and that is now
+a stated property with a check.** *(NEW in rev 4, R4.8 / CH-R3-11 §X.7. §Owner rulings 1 used
+*"the population cannot refill"* to delete four things; the sentence carrying that weight was never
+written down, and a `Continue`-cascade validator rule is worth nothing if a second path writes the
+column.)*
+
+> **The property:** *the only production code path that sets `Employee.ContractStatus = Approved` is
+> `ApproveEmployee.Handler` via `Employee.Approve` — so the gate on that command is the gate on the
+> transition. A second writer must carry the gate or be refused.* Modelled on `consistency.md` §B10
+> (`:105-115`), the shipped **allowlist-of-sanctioned-writers** idiom for dispute terminal states, which
+> is *"mechanically checked by `check-consistency.mjs` (rule B10)"*.
+
+**It holds at HEAD and I opened every site rather than grepping for a name.** `Employee.Approve`
+(`Employee.cs:266-278`) sets `ContractStatus = ContractStatus.Approved` at `:268`, and its only
+production caller is `ApproveEmployee.cs:125` (every other caller is a test or `DomainSeed`). **Two
+other public domain mutators can reach `Approved` and have no production caller**, which is precisely
+what a future *"bulk-approve imported cleaners"* would reach for: `Employee.UpdateContractStatus(...)`
+(`:260-264`, writes at `:262`; callers: two unit tests only) and `Employee.UpdateEmployeeDetails(...)`'s
+**optional trailing `ContractStatus?` parameter** (`:161`, applied at `:173-176`) — whose two production
+callers, `UpdateEmployee.cs:347-357` and `AdminUpdateEmployee.cs:149-161`, both **omit** it, so the
+branch never runs today. **Check #24 is what keeps that true.**
+
+**P22 — what compensates D5's non-blocking posture. CORRECTED IN REV 4 (R4.1 / §X.1).**
+
+> ❌ **Rev 3's sentence *"The gate IS the control"* is WITHDRAWN as written**, because it asserts a
+> property of the running system that this ADR's own D4.3 and check #12 falsify. It claimed *"every
+> cleaner approved for a jurisdiction with demandable text has a statement… the residue — a jurisdiction
+> opened before its text lands — is closed by D4.5's launch precondition"*, and then enumerated the
+> residues **with the language one missing**.
+>
+> ✅ **What replaces it, and it is narrower and true:** *the gate is the control **exactly where the text
+> is demandable for that cleaner** — there, `ApproveEmployee` refuses without a statement, and that is
+> not a report, not a forward reference, and not a promise.* **Where the text is NOT demandable the gate
+> is inert by design (D4.3), and the compensating control is not the gate at all — it is D4.5's counting
+> query and D5's prompt row**, which is what the owner ruled for in `Q-SELFBILL-06`(b). The two residues
+> are named separately: **F3′** (jurisdiction) closed by the owner's sequencing commitment, **F6**
+> (locale) permitted, counted and prompted.
+>
+> **P22's original obligation is still discharged and by the same argument:** none of D5, A5 or D4.5
+> cites the **severed** coverage report as its justification. The counting query is not that report — it
+> is a `SELECT` over config plus one indexed `COUNT`, it lives on the admin surface, and it is specified
+> in this artifact (D4.5), so nothing here is a forward reference to a decision that has not been filed.
+
+| Surface | Behaviour | Why |
+|---|---|---|
+| **`ApproveEmployee`** | **BLOCKS** — one validator rule, `BusinessErrorMessage.SelfBillingAgreementRequired` = `"agreement.self_billing_required"` | See above |
+| **`IsProfileComplete()` / `[RequireCompleteProfile]`** | **NEVER READ.** No new term, no new scalar on `Employee` | ADR-0034 §F2/§D7. A completeness term is evaluated against **every row that exists when it ships**, not against the transition that created them, so it 403s the whole partner surface (`RequireCompleteProfileAttribute.cs:32-49`) the moment the population is non-empty — which is the day after launch, empty database or not. **This is the outage ADR-0034 exists to prevent and this ADR must not re-create it.** *(Rev 2 justified this row with "every cleaner alive today fails this term". That evidence is gone; the rule is not — see the framing note at the top.)* |
+| **`UpdateEmployee` / the granular mobile PUTs** | **NEVER READ** | CH-L5(a). A profile save is not an act of assent |
+| **`TakeOrder` / job board** | **NEVER READ** | Locking a cleaner off work over a checkbox is a larger harm than the gap |
+| **Any invoice-issuance path** | **NEVER BLOCKS, AND NEVER READS** (D6) | Withholding a cleaner's tax document — up to ~31 days, pay periods are monthly (`PayPeriodBackgroundService.cs:93`, `:165`, re-verified) — because our *corroboration* is missing **inverts the harm**, and re-creates ADR-0034 D7.2's fiscal-reconciliation noise |
+| ~~**The already-approved cleaner with no statement — the HISTORICAL backlog**~~ | **ROW DELETED — §Owner rulings 1.** The database is dropped, so this *historical* population is empty. The card, the dismissible interstitial and *"a closing backlog"* go with it | Recorded as a deletion so a future reader does not re-import rev 2's prompt design from an old checkout. ⚠️ **Rev 3's *"and cannot refill"* is struck** (R4.1): it holds only where text is demandable — see the next row |
+| **NEW — the approved cleaner whose LANGUAGE has no reviewed text (F6)** | **Never blocked. COUNTED, and PROMPTED the day their text lands** | **The owner's `Q-SELFBILL-06` answer (b), 2026-08-07.** D4.3 refuses to block them (a signature over unreadable bytes is not evidence) and D4.5's precondition does not reach them, so they are approved with no statement and grow with hiring. Not hidden: **counted** by D4.5's `(country × language)` query, and **prompted** by a partner-home card that fires when the resolver first answers *demandable* for a cleaner whose supersession read returns **no statement at all**. **This is NOT rev 2's interstitial** — that was dismissible, retroactive and aimed at a backlog; this is a card driven off the *same* supersession read the gate already issues, aimed at a forward population, and it makes no enforcement claim |
+| **The cleaner whose accepted text is superseded** | **Prompted, not blocked** | Their old statement is still a *true record of what they agreed to*. It is not void; it is out of date. **This row survives the ruling** — supersession happens to a cleaner who *did* comply, so it is not a cohort question. It is one card on the partner home surface, driven off the supersession read the gate already issues |
+
+> **The two prompt rows are ONE surface and one read, and that is the point.** Both are answered by the
+> supersession read (D1.4) the gate already issues, plus the resolver's `demandable` verdict (D4.3): *no
+> statement + demandable now* → the F6 card; *`Accepted` of a superseded text + demandable now* → the
+> supersession card. **No new query, no new index, no scan.** Check #25 pins that they are distinguishable
+> and that neither fires on a cleaner whose latest statement is an `Accepted` of the current text.
+
+**CH-A3 loses its subject; CH-A2 does NOT — it revives in the language form.** *(Corrected in rev 4,
+R4.1 / §X.1.)* CH-A3 (*"the interstitial is a soft gate in a costume"*) was a finding against rev 2's
+dismissible retroactive prompt, which is deleted and not restored — **gone.** CH-A2 (*"mandatory that
+blocks only new cleaners is barely mandatory"*) was declared to have lost its subject too, on the
+strength of the *"cannot form"* sentence. **Its historical subject is gone; a growing un-asked
+population is not**, and F6 is exactly that population. Rev 4 does not pretend otherwise: **where text is
+not demandable, "mandatory" binds nobody**, and the honest answer is the owner's — count it, prompt it,
+and close each case when the translation lands. The remedy that would make CH-A2 fully wrong is option
+(a) of `Q-SELFBILL-06`, and the owner declined it for launch timing.
+
+**The acceptance is its own endpoint, not a field on any onboarding command.** Two shapes of partner
+onboarding exist (web posts one all-or-nothing `UpdateEmployee`; mobile posts granular commands) and
+T-0504 decision 7 has not chosen between them. A `SelfBillingConsent: bool` on `UpdateEmployee` would be
+dead on mobile, would be re-done whichever way T-0504 lands, and would reduce a legal acceptance to a
+form field. **The existing `Consent` bool and its `DataProcessing` grant are untouched by this ADR.**
+
+### D6 — Coverage is **DERIVED from the log**, never stamped on the invoice — **THE NEGATIVE ONLY. The positive specification is SEVERED**
+
+> **What this section decides, and what it deliberately does not.** It decides **`EmployeeInvoice` gains
+> no column**: RB-1 and RB-2 are satisfied vacuously because there is no stamp site to miss. It fixes
+> the **definition** of coverage, because that definition is a property of the log's shape. It does
+> **not** decide which column anchors the comparison, the evaluation shape, the plan check, whether a
+> coverage answer is stable over time, or the report's rows — **all of that is SEVERED** to a decision
+> the PM files and numbers (`agents/architecture/decisions/self-billing-agreement.md` §*"SEVERED"*).
+>
+> **The seam, and why it is clean.** The lead tested it by looking for a column on the three new tables
+> that moves with the severed decision and found none — `OccurredAt`, `RecordedAt`, `Channel`, the
+> variant nullability and the FKs are all required by the **supersession** reads the gate and the status
+> endpoint issue, which stay here. **One index moves, and it yields the rule:** *an index that serves a
+> query must be specified in the artifact that fixes the query, or it is specified against a query
+> nobody has written.* So ticket 1 creates the three tables and the supersession index; **the coverage
+> index lands with the coverage decision.** Pre-prod that costs nothing, because schema changes fold
+> into `Initial`.
+>
+> **P15 — D6 is NOT conditional on the append-only-trigger ADR (ticket 11), and here is why (§W.4c).**
+> The lead ruled that shipping derivation ahead of its routed mitigation is acceptable **for the log**
+> but not as an *unstated* dependency of D6. Stated: the table holds **zero rows** until
+> `Q-SELFBILL-01` is answered, so the exposure window is bounded by counsel's delivery and not by a
+> ticket; the threat is an insider with `psql`, which is the same threat model `BodyHash` already
+> answers with **detection rather than prevention** (check #8); and inventing a trigger inside a feature
+> ADR is the archetype failure ADR-0033 forbids. **This is a conditionality, not a footnote, and D11
+> carries what it costs.**
+
+**D6.1 — the question, and why it has an answer at query time.** *"Was an agreement in force for this
+supplier when this document was issued?"* has exactly three inputs, and **all three are already
+immutable**: `EmployeeInvoice.EmployeeId` (`:12`) and its temporal anchor (`GeneratedAt` `:60` /
+`PayPeriodId` `:16` — **both `private set`, both written only in `Create` at `:115`/`:116`/`:125`**, and
+the entity's own comment at `:321-322` states `GeneratedAt` is immutable once the invoice exists), and
+the append-only statement log with its `OccurredAt` (D1.4, coverage order). So:
+
+```
+covered(invoice) :=
+    the latest statement for (invoice.EmployeeId, SelfBilling) with OccurredAt <= <ANCHOR>
+    -- ordered by (OccurredAt DESC, RecordedAt DESC, Id DESC)
+    exists AND its Action = Accepted
+```
+
+> ✅ **`<ANCHOR>` = `EmployeeInvoice.GeneratedAt`. ANSWERED BY THE OWNER, 2026-08-07 (`Q-SELFBILL-02`
+> (b); §Owner rulings 3c).** *"The PRINT DATE (`GeneratedAt`) authorizes the document, not the pay
+> period it covers."* Rev 2 wrote `GeneratedAt` and the round-2 challenger was right that it was chosen
+> **by availability, not by argument** (CH-S2-8, upgraded to blocking) — **so the value is unchanged and
+> its authority is not: it is now the owner's ruling instead of an accident.**
+>
+> **The column, re-opened at HEAD.** `EmployeeInvoice.GeneratedAt` is `DateTime`, `private set`
+> (`EmployeeInvoice.cs:60`), written **only** in `Create` at `:125` as `DateTime.UtcNow`, with the
+> entity's own comment at `:321-322` stating it *"is immutable once the invoice exists"*. The rejected
+> alternative `PayPeriodId` sits on the same immutable row (`:16`, written at `:116`) and stays
+> rejected. The trade the owner took is stated rather than hidden: the print date can be up to a month
+> after the work, so **a cleaner accepting 31 July covers an August-printed invoice for June's work, and
+> one accepting 5 August does not cover an invoice printed on 4 August.** It is the simpler of the two
+> and it attaches authorization to **the document a tax authority would actually look at**.
+>
+> ⚠️ **The placeholder stays in the definition above, deliberately, and this is not evasion.** What
+> ADR-0041 owns is the *definition*; what §W.6 severed is the **shape** of the comparison, its **plan
+> check**, and its **CLR-cast direction** — `OccurredAt` is `DateTimeOffset` and `GeneratedAt` is
+> `DateTime`, so which side EF casts decides whether the statement column stays sargable, and writing
+> the predicate the wrong way round kills the index. **That is a property of the query, it lives with
+> the query, and the severed spec §S1/§S4 now carries the owner's answer** so its author inherits the
+> decision instead of re-asking. **Nothing here gates ticket 1**: the answer moves no column on the
+> three new tables, which is the seam test §W.6 applied and it still passes.
+
+**D6.2 — why derivation beats stamping. REWRITTEN ON THE MARGIN THE PANEL LEFT (§W.1, P16).**
+
+> **Rev 2 claimed "wins four, ties one". That table is not ratifiable and I do not defend it.** The
+> round-2 lead re-tested all five and the true margin is: **wins test 1, ties 2 and 4, wins 3 with a
+> newly-named cost, and LOSES the referential anchor on 5.** That is a real margin and a much thinner
+> one, and the conclusion rests almost entirely on **one** test. I would rather ship a decision that
+> says so than one whose justification a third panel has to hole again.
+
+| # | Test | Verdict after round 2 |
+|---|---|---|
+| **1** | **Completeness** (RB-1/RB-2) | **DERIVATION WINS — intact, unattacked, and it carries the decision on its own.** See below |
+| **2** | **Discrimination** (RB-4) | **TIE.** Rev 2's *"the negative has one meaning"* is **FALSIFIED** (CH-S2-6): it unions *never stated · revoked before issuance · stated after issuance · **row deleted** · the country had no reviewed text*. It is a tie and not a loss only because a stamp's NULL unions causes too — RB-4 said so itself |
+| **3** | **The number can go down** | **DERIVATION WINS, with a cost rev 2 did not name.** A later-recorded paper signature with an earlier `OccurredAt` does correctly re-attribute. But **the same mechanism rewrites history in both directions**, and rev 2 framed it as pure upside |
+| **4** | **Which rule applies** (RB-5) | **TIE.** `patterns-backend.md` §B8 is genuinely not invoked — nothing is computed and stored — but rev 2's *"a derivation self-heals"* is true of a **code** bug and **false of a data error**, and the data error is the unfixable one. Rev 2 generalized from the case that favours it |
+| **5** | **What derivation loses** | **DERIVATION LOSES.** Both limbs of rev 2's dismissal are retracted below |
+
+**Test 1, in full, because it is the load-bearing one.** Stamping requires every invoice writer to
+stamp. There are two today, converging on `EmployeeInvoice.Create` — so a required parameter there
+enumerates them at compile time, but `Create` is a **pure static factory with no async and no
+repositories** (`:95-128`), so it cannot *resolve* the value; the caller must, and the caller can
+satisfy the compiler with a benign default. **Compilation enumerates call sites, never correctness.**
+And it is not free: `Create` has **seven** direct call sites outside the class — `DomainSeed.cs:160`,
+`PayrollMockFactory.cs:52`, `FiscalReconciliationQueryTests.cs:337`, `EmployeeInvoiceEntityTests.cs:19`
+and `:34`, `MarkInvoicePaidNotifyTests.cs:26`, `AdminInvoiceAdjustmentHandlerTests.cs:25` — plus the
+in-class delegation at `:138`; every one would have to name an outcome it does not care about, which is
+how benign defaults get written. *(Count independently re-verified by the round-2 challenger, which
+looked for an eighth and found none.)* Derivation requires nothing of any writer: **a third invoice
+writer added in 2027 is covered on the day it is written**, with no reviewer, no ADR, no compile break.
+
+**And the reason test 1 outweighs a lost anchor is EMPIRICAL, not aesthetic.** Rev 1 *did* forget a
+writer — it stamped `GenerateInvoice`, which does not issue the invoices cleaners receive, and its own
+compliance checklist passed green on that. That is a **measured** failure of stamping on this codebase,
+by this team, on this exact feature. The anchor's loss is a *hypothetical* deletion by an insider with
+`psql`. **One is a thing that happened; the other is a thing that might.** I put that comparison in the
+record rather than leaving the margin unexplained, and a challenger who wants to overturn D6 should
+attack it there.
+
+**Test 5 — the retractions, in rev 2's own words so they cannot be missed.**
+
+- ❌ ~~*"a partial anchor is worse than no anchor"*~~ — **RETRACTED. It is a non-sequitur** and the lead
+  sustained the challenger's logic: under stamping, an FK `Restrict` is a **database** enforcement
+  against deleting a *referenced* statement, and **the referenced rows are exactly the ones that
+  matter.** That it leaves un-referenced statements deletable does not make it worthless. **Derivation
+  moves the only database-enforced anchor off the design and routes its replacement (ticket 11) to a
+  future ADR, then ships the design that depends on it.** That is the honest statement of the trade-off
+  and it is a **loss**, priced against test 1 above and conditioned in P15.
+- ❌ ~~*"query cost is not a loss: the coverage index serves it"*~~ — **RETRACTED and REMOVED, not
+  softened.** It was a plan claim with no plan test. **What replaces it is the MECHANISM and nothing
+  else (R4.4 / §X.4):** written as LINQ, EF Core 10 emits D6.1's correlated top-1 lookup **twice per
+  invoice row** — `covered` is a two-part boolean, needing an equality test *and* a null test — and
+  PostgreSQL cannot `Memoize` a `SubPlan`. **Both challengers reproduced that mechanism independently
+  and it is sustained.**
+
+  > ⚠️ **NO RATIO IS STATED HERE OR ANYWHERE ELSE IN THIS DECISION.** Rev 3 carried a wall-clock ratio
+  > into **three** artifacts as *"the measurement that forced this"*. **It is a seeding artefact and it is
+  > withdrawn** (§X.4, which writes the figure out once so a future reader can recognise and refuse it).
+  > Round 2's own report disclaims its baseline **in the same document that produced it**
+  > (`challenges/0041-schema-rev2.md:138-143`: a **75 % `Memoize` hit rate from a 12-distinct-key seed**,
+  > and an admission that the honest floor for the LATERAL shape is *"~4×"* its own measurement, because
+  > production `GeneratedAt` is distinct per invoice — `EmployeeInvoice.cs:125` stamps `DateTime.UtcNow`
+  > per row — so the real hit rate is 0 %). Round 3, seeding what §W.10 P3 actually demands, measured the
+  > work ratio at roughly the mechanism's own prediction of ×2. **Two probes on two throwaway stacks
+  > produced wall-clock numbers for the same shape more than an order of magnitude apart**, which is
+  > precisely why a plan claim is discharged by a check on the captured statement and never by a digit in
+  > prose. If an artifact of this topic quotes anything, it quotes **`Buffers: shared hit`**, which is
+  > hardware-independent; laptop-container wall clock is not evidence about production.
+  >
+  > ✅ **And the constructive half is worth more than the correction.** Round 3 measured that
+  > **`SelectMany` + `Take(1).DefaultIfEmpty()` makes EF Core 10 emit a `LEFT JOIN LATERAL`** — one
+  > evaluation per invoice row, buffer-identical to the hand-written form, **global query filter intact,
+  > change tracker intact, no raw SQL.** So *"derive, but not through the expression tree"* answers a
+  > question that does not arise: there is no `SqlQueryRaw` sanctioned exception to write, no
+  > doc-comment obligation to carry, and no ADR-0033 question to route. **The idiom is recorded in the
+  > severed spec so its author does not re-derive it.**
+
+  **The failure never reached this decision, and the collapse of the number makes that stronger, not
+  weaker.** The challenger could not make derivation return the wrong Boolean; the index carried its
+  terms in both plans. **The withdrawn magnitude was a cost argued AGAINST the chosen option** — it is
+  why rev 2's *"query cost is not a loss"* was retracted — so a cost against derivation **shrinking by
+  more than an order of magnitude** makes derivation's margin **wider**, and nothing in D6 depended on
+  the number in either direction. D6 rests on test 1, which round 3 explicitly declined to attack.
+  **The sentence is still deleted rather than repaired**, because it was of the exact class this
+  ADR keeps failing on, and the *obligation* it should have carried — a plan check on the captured
+  statement, with a non-uniform seed — moves to the severed artifact where the query is fixed.
+- ✅ **"What the issuer consulted" still survives as a non-loss.** Under D5 the issuer consults
+  **nothing** — issuance never blocks — so a stamp would record a lookup that changed no outcome. This
+  limb was not attacked and I keep it.
+
+**D6.3 — the report: SEVERED, and rev 3 does not specify it here.** Rev 2 specified four rows; §W.6
+severs the specification. The four rows, the anchor question, the evaluation shape, the plan check and
+the stability-over-time disclosure are written up for the PM in
+`agents/architecture/decisions/self-billing-agreement.md` §*"SEVERED"*. Two rows changed shape before
+they left, and I record why so the severed author does not inherit rev 2's version:
+
+- ❌ **`Cleaners with no current acceptance` is DELETED, not moved** (§Owner rulings 1). It counted a
+  population that no longer exists and cannot re-form.
+- ✂️ **`Jurisdictions with no BusinessSupplied+ text` is DEMOTED from a compensating control to
+  optional operator visibility** (D4.5). It is a `SELECT` over a config table; the fail-open it existed
+  to surface is now closed by a launch precondition instead.
+
+**~~D6.4 — the keep-issuing default.~~ DELETED BY OWNER RULING 1.** It governed *"a supplier with no
+self-billing agreement of any kind"*, which was rev 2's name for the F4 cohort. There is no such
+supplier: the database is dropped and the gate binds at approval. **The `Q-SELFBILL-02` escalation
+survives in a narrowed form** — see §Escalations 1 — because the *legal* question about a document
+issued without an agreement is still worth an answer for the F3′ residue, and because its **anchor
+half** (§W.7.4) is genuinely open and belongs to the severed decision. But it no longer carries a
+default about a population, and it no longer needs a count attached.
+
+**D6.5 — what D6 does NOT claim (CH-L8, sustained as narrowing).** `RegenerateInvoicePdf` rebuilds the
+supplier block **live** from the current `Employee` row on two hosts, and `Anonymize()` nulls
+`VatNumber` — so a regenerated document can print differently from the one originally issued. Coverage
+therefore binds to the **invoice row's issuance**, not to the document's bytes. **Invoice-content
+immutability is a separate decision and is routed, not folded in** (ticket 10). The challenger's
+collateral note — `RegenerateInvoicePdf.Command` has no ownership term and is currently saved only by
+`AdminOnly` in the frozen policy map — is **routed to the security lane** and is not this ADR's to
+decide.
+
+**D6.6 — the condition under which this decision should be superseded.** **Three** triggers, named now
+so a future author does not have to re-derive them:
+- **If issuance ever becomes conditional on coverage** (i.e. D5's "never blocks" is superseded), then the
+  consultation has a consequence and recording it becomes right — stamp at that point.
+- **If `Q-SELFBILL-03` returns "the document must state the acceptance date, immutably"**, a re-print
+  must not be able to change that date, and a frozen stamp is the mechanism. *(Note this is no worse
+  today than the status quo CH-L8 documents: the entire supplier block is already rebuilt live.)*
+- **NEW, and it follows from conceding test 5: if ticket 11 is REJECTED** — i.e. the panel that owns
+  database-enforced append-only decides this platform will not have a trigger or a column `REVOKE` — then
+  **the referential anchor A7 would have bought has no replacement anywhere, ever**, and D6 should be
+  re-argued on a margin of exactly one test. Rev 2 could not name this trigger because it believed the
+  anchor was worthless; rev 3 retracts that, so the trigger becomes visible.
+
+### D7 — The operator-recorded paper signature is a **distinct kind of evidence**, forever
+
+> **One of this channel's two justifications was deleted by §Owner rulings 1, and I restate it rather
+> than let it coast.** Rev 2 justified `AdminRecordedContract` as (a) the instrument that closes F4's
+> pre-clause cohort and (b) D5's operator release valve. **(a) is gone with the cohort.** (b) survives
+> and is sufficient on its own: D5 makes approval *mandatory*, and **a mandatory gate with no override
+> is an operational trap** — its cost line ("back-office friction") has no relief without one. It is
+> also the answer to D5's own ruled edge, where a cleaner accepted for country A is approved for country
+> B. And the owner's *"it for sure will be written in the contract that user signs"* means a
+> countersigned paper agreement is a real, expected instrument that the platform must be able to record
+> truthfully rather than ignore. **If a challenger judges (b) insufficient, the honest consequence is
+> that D5's gate needs a different release valve, not that the channel becomes optional** — and the
+> channel is the cheaper of the two.
+
+`RecordPaperSignature` (admin host) writes a statement with `Channel = AdminRecordedContract`,
+`RecordedByUserId`, `ContractReference`, and the **contract's own signature date** as `OccurredAt` (with
+`RecordedAt` = now — D1.4 is what keeps a backdated filing from resurrecting a revoked agreement). Being
+a `Command` run by an `Administrator`, it is **audited by the existing engine with zero audit code**
+(ADR-0012); its `IAuditContext` snapshot is **ids-only** — the subject's data is the subject's PII.
+
+**An operator may never write a `PartnerWeb`/`PartnerMobile` statement on someone's behalf.** The
+channel enum keeps *"they ticked a box"* and *"we hold their signature"* distinguishable forever, and a
+record that blurs them is worth less than no record. D1.3's variant invariant is what makes that
+structural rather than a convention.
+
+### D8 — Erasure and retention: **keep the agreement facts, redact every personal fingerprint**
+
+`GdprDeletionService` today `Withdraw()`s every consent and **leaves `IpAddress`/`UserAgent` intact**
+(`:206-208`). Neither behaviour is right here:
+
+- **`Withdraw()` is semantically wrong** — erasure is not the supplier revoking a commercial term, and
+  writing a `Revoked` statement would be the platform **asserting an act the cleaner never performed**
+  into an append-only legal log.
+- **The agreement facts are retained**: `Kind`, `Action`, `Channel`, `AgreementVersionTextId`,
+  `BodyHash`, `OccurredAt`, `RecordedAt`. They are the authority for invoices that are
+  themselves retained — `GdprDeletionService.HasBlockingInvoiceAsync` already refuses erasure while
+  invoices are open, and settled ones are financial record. **Destroying the authority for documents that
+  still exist is a worse outcome than retaining a text id.** *(And under D6 the retained statement is
+  what keeps every past invoice's coverage answerable after erasure — the `EmployeeId` join survives
+  anonymization, which does not change ids.)*
+- **The personal fingerprints are redacted: `IpAddress = null`, `DeviceLabel = null`, and
+  `ContractReference = null` (CH-L10, sustained).** Rev 1 omitted the third. `ContractReference` is an
+  **operator-typed free-text field** whose content `Q-SELFBILL-05` has not even defined — so it takes
+  whatever an operator types *about the subject* and, in rev 1, survived erasure untouched while the ADR
+  was scrupulous that the *audit snapshot* be ids-only. Either constrain it to an id into a document
+  store, or redact it; this ADR redacts it and asks the owner to constrain it (`Q-SELFBILL-05`).
+- **The write is id-keyed, in `GdprDeletionService`, not a navigation walk** —
+  `IEmployeeAgreementStatementRepository.RedactPersonalFieldsForEmployeeAsync(employeeId)`. ADR-0034
+  D1.1.2 exactly: the aggregate is loaded with a hand-written include list and there is no lazy loading,
+  so a clear reaching through a navigation is a **silent no-op that returns success**.
+- **`Employee.Anonymize()` does not touch it**, for the same reason.
+- **The GDPR export** gains the statement rows (ids, text id, timestamps, channel, action) — it is the
+  data subject's own record and they are entitled to it.
+- **This redaction is the ONE sanctioned mutation of an append-only row** (D11).
+
+### D9 — `ContractStatus` is a **false friend**. Do not read it, do not extend it, do not treat it as evidence of a contract
+
+It is an **admin approval state wearing a legal-sounding name**. It carries no document, no signature, no
+date, no version, no counterparty. **Piggybacking on it would be the worst available design**: `Approve()`
+is a back-office click, so `ContractStatus = Approved` would silently *manufacture a legal agreement* on
+an operator's action — and it would inherit the confirmed defect that `Auditable.Deactivated()` does not
+clear it, so an **anonymized, deactivated** cleaner still reads `Approved`.
+
+**Rev 1's supporting sentence was false and is corrected (CH-L10).** It claimed all nine readers spell it
+`Approved or Active`. There are **three** distinct predicates: `Approved || Active`
+(`RequireCompleteProfileAttribute`, `NewJobsDigestService`, `PreferredCleanerHoldResolver`), `== Approved`
+exactly (`TakeOrder`, `StartOrder`, `CompleteOrder`, `MarkCashCollected`), and `!= Terminated`
+(`PeriodReminderBackgroundService`, `EmployeeRepository`). The true fact points the same way and is more
+interesting: **`ContractStatus.Active` is accepted by the profile filter and by no order-lifecycle gate**,
+so an `Active` cleaner passes the 403 and then fails every action. An ADR that told future readers the
+call sites agree would license the next author to write `Approved or Active` in a new gate.
+
+**Note the interaction with D5, and that it is not a contradiction.** D5 puts the gate *inside*
+`ApproveEmployee` — the command that **writes** `ContractStatus`. That is the opposite of reading
+`ContractStatus` as evidence: the gate is a precondition on the transition, not an inference from the
+state. Nothing in this ADR ever reads `ContractStatus` to conclude anything about an agreement.
+
+The `Deactivated()`/`ContractStatus` divergence is real and is **not this ADR's to fix** — routed
+(ticket 8), because changing it touches nine call sites including two order-lifecycle gates.
+
+### D10 — Tenancy: the acceptance log is tenant-scoped; **the two config tables are NOT** (RB-9)
+
+**This reverses rev 1, which made all three `ITenantEntity`.** The composition CH-S4 found is a silent
+fail-open on the one control this ADR exists to add:
+
+1. D4.8 lands version rows by **owner SQL**, and every config row in this schema arrives `TenantId NULL`
+   (the seed says so in its own comment).
+2. The global filter (`CleansiaDbContext.cs:229-264`) **excludes** a `TenantId NULL` row from any caller
+   that has a tenant.
+3. So `ResolveCurrentVersion` returns nothing for a tenanted cleaner → D4.4 reports that invisibility as
+   `renderable: false` → **no checkbox, no gate, no coverage.** Indistinguishable from *"the owner hasn't
+   written the text yet"*, **invisible in single-tenant mode**, and undetectable by any check rev 1
+   listed. **The safety valve becomes the failure mode's disguise.**
+
+Every comparable table in this schema answered S8's question with "no": `Country`, `Language`,
+`CountryConfiguration`, and — this ADR's **own cited precedent for per-country legal text under a
+`LegalNoticeReviewStatus` gate** — `CountryInvoiceConfig`. Rev 1 copied the mechanism and inverted the
+tenancy without noticing.
+
+- **`AgreementVersion` and `AgreementVersionText` are `BaseEntity`, not `ITenantEntity`**, each carrying
+  S8's mandated one-line *"why it isn't"* comment naming `CountryInvoiceConfig` as the sibling. Their
+  unique keys lose the nullable column, so **the `.AreNullsDistinct(false)` question evaporates** rather
+  than being answered on the wrong grounds (CH-S14.3).
+- **`EmployeeAgreementStatement` stays `ITenantEntity`** — a per-employee fact; two tenants can both have
+  rows; it is **subject to** the filter. Three lanes and two leads tried to move it and none could. A
+  tenanted child FK'ing a tenantless parent is house-normal (`EmployeePayoutDetails → Country`).
+  > ❌ **Rev 2's phrase *"it rides the filter"* is FALSE and is disavowed, not softened.** Being subject
+  > to the *read* filter and being *stamped on write* are two different mechanisms, and this entity gets
+  > only the first for free. `CommitAsync`'s stamping loop is over `Auditable` (`:74`), and D1.1's
+  > archetype is not `Auditable` — so **the tenant is written by the repository or it is not written at
+  > all** (D1.10, F4′). Unstated, this is round 1's own CH-S4 defect landing on the legal record. §W.3
+  > flagged one instance of this (*"the tenant term is hand-written for a raw append"*); it is broader,
+  > and it does **not** go away when the raw append does.
+- **If a franchise genuinely needs its own terms**, that is a per-tenant *override on platform config* —
+  a problem `CountryInvoiceConfig`, `CountryConfiguration` and `Country` all share and none has solved.
+  **Routed as a question; not pre-solved on one table at the price of a live silent failure.**
+- **The `…IgnoringTenantAsync` variants rev 1 made "mandatory" are WITHDRAWN (RB-10).** F5's premise was
+  false (see F5, rewritten). Under D6 the point is stronger than the lead's ruling: **no
+  invoice-issuance path reads the agreement tables at all**, so the tenancy question at issuance does not
+  arise. The only tenanted reads are the cleaner's own status/accept (request context, scoped, correct)
+  and the admin report (admin context, scoped, correct). Reviewer check #6 is **inverted**: assert that
+  **no** ignoring-tenant agreement method exists or is referenced anywhere.
+- **What survives from F5 and is load-bearing: the pinning test seeds a NON-NULL `TenantId`.** Both lanes
+  and the lead sustained it; it is the test that would have caught this very defect.
+
+### D11 — "Append-only": what is real, what is not, and what the real thing costs (RB-6/RB-7/RB-8)
+
+**Confirmed in the tree: nothing enforces it.** Zero `HasCheckConstraint`, zero `HasTrigger` anywhere in
+the solution. `IRepository` ships `Remove` / `RemoveRange` / `Deactivate` / `DeactivateRange`, and
+**every one of the repository interfaces derives from it — including `IAdminActionAuditRepository`**, the
+append-only audit log. `CommitAsync` actively stamps `Modified` entities. And **D8 itself requires an
+UPDATE**. Rev 1 asserted the property in a code comment and then listed fourteen verification steps, **not
+one of which checked the property the ADR is named after**.
+
+**RB-7 is respected: I am NOT narrowing the repository interface.** CH-S1's remedy (b) claimed *"there is
+precedent for a narrow interface surface; nothing forces the generic base."* There is no such precedent —
+I re-verified it. Creating one would be a **new canonical archetype that puts existing code in violation**,
+which ADR-0033 routing tests 1 and 2 both fire on, so it needs **its own ADR** and cannot ride in as an
+ADR-0041 amendment.
+
+**So the claim narrows — and in rev 3 it narrows a SECOND time, against a different bypass than rev 2
+named (§W.4c, P14).** Rev 2's checks #2/#3/#4 enumerate the **entity-materializing** destructive
+methods. The bypass this codebase actually uses **never materializes an entity**:
+
+> **The property, stated without a total (R4.8 / §X.7 CH-R3-8):** *`IRepository<TEntity, TKey>` returns
+> a bare `IQueryable<TEntity>` from **many** of its members — read the interface
+> (`Cleansia.Core.Domain/Repositories/IRepository.cs`), do not read a list here — and on **any** of them
+> `ExecuteUpdateAsync` / `ExecuteDeleteAsync` is one call away.* **Rev 4 deliberately quotes no count and
+> writes no enumeration**, because rev 2 said four, rev 3 inherited four, and the true figure at HEAD is
+> nine (`:17`, `:19`, `:21`, `:23`, `:26`, `:33`, `:35`, `:49`, `:59`) — the **third** count on this ADR
+> corrected by the next lane. A closed enumeration in prose is a number that rots; the property does not.
+> **A reviewer discharges this by opening the interface, not by trusting this paragraph.**
+>
+> **The codebase uses that escape at production sites in seven files** — `UserRepository.cs:164/186/206/222`,
+> `RefreshTokenRepository.cs:102` and `:175`, `PromoCodeRepository.cs:43/61`,
+> `UserNotificationRepository.cs:45`, `MembershipBenefitUsageRepository.cs:159`,
+> `DataRetentionBackgroundService.cs:79/85/129`, `DeactivateAdminUser.cs:71` (re-opened at HEAD by rev 4;
+> the remaining matches in the tree are test files). **The enumeration is illustrative and the finding
+> does not rest on its size** — one such site would be enough to make the point.
+>
+> **`ExecuteUpdateAsync` never materializes an entity, so check #2's reflection test is VACUOUS against
+> it**: it can set `Action`, `OccurredAt`, `BodyHash`, anything. And this design supplies the template a
+> future author will copy — **D8 requires a repository method that mutates existing statement rows**,
+> and `DataRetentionBackgroundService` is exactly how bulk redaction is written here today.
+
+**The honest v1 property, restated with the clause it was missing:**
+
+> **Append-only by construction at the entity** — `sealed`, no public setters on any payload property,
+> two named factories and no other constructor — **with exactly one named mutator** (D8's redaction of
+> `IpAddress`, `DeviceLabel`, `ContractReference`) — **on a repository base that still exposes `Remove`
+> and `Deactivate`, on a database that enforces nothing, and against a data-access layer on which a
+> set-based `UPDATE` or `DELETE` is one call from any holder of the repository — against which the
+> entity-level property is *vacuous*, because no entity is materialized.**
+
+**Tier, named per `conventions.md` §"The price of a law".** Check #3 is a reviewer grep: **`T3-HUMAN`**
+— and **`T2-ADVISORY` if it is ever mechanized as a `check-consistency.mjs` rule**, because that tool
+appears in **zero** `.github/` workflows and can therefore never set an exit code (`consistency.md` says
+so of itself, at §"Interim implementations…"). **A mechanism that cannot fail a build is `T2-ADVISORY`
+however it is labelled.** Rev 3 does not claim more.
+
+**Check #3 therefore states the PROPERTY, not a method list** — *no production code issues a DELETE or
+an UPDATE against `EmployeeAgreementStatements` other than D8's named redaction* — discharged against
+the **emitted SQL**, because a method-name grep is what let the non-materializing path through in the
+first place.
+
+**And the real mechanism, priced rather than hand-waved.** If the owner wants a genuinely tamper-evident
+legal record, there are exactly two mechanisms and neither exists here:
+
+| Mechanism | What it buys | What it costs | Blocker |
+|---|---|---|---|
+| **`BEFORE UPDATE OR DELETE` trigger** raising an exception except on the three redaction columns | real enforcement against `psql` and against any future C# path | one `migrationBuilder.Sql(...)` block (raw SQL in a migration is a shipped construct — `MigrationBuilderExtensions`); **a new canonical archetype** for this repository | needs **its own ADR** (ADR-0033 test 1: it puts nothing in violation, but it is a first mechanism of its class with a cross-cutting rule — and it must be decided together with whether *other* logs get it) |
+| **Column-level `REVOKE UPDATE` / `REVOKE DELETE`** from the application role | same, cheaper, no trigger | one SQL block + a role split | **Unknown whether the app connects as a role distinct from the table owner.** On a managed Postgres the app frequently *is* the owner, in which case `REVOKE` buys nothing. **This is a factual question for the `db`/infra lane before it can be costed** — I will not assert it |
+
+**Recommendation: neither in v1** — the entity-level property plus the three checks is proportionate for a
+record whose only C# writer is a two-factory append — **and the trigger is routed as ticket 11**, to be
+decided across every append-only table at once rather than invented on this one. That routing is itself
+the honest answer: a mechanism that would be a new archetype does not get created inside a feature ADR.
+
+### D12 — What the second country, language, kind and version cost (priced, not asserted)
+
+| Adding… | Migrations | Backend code | Config/data | Client changes |
+|---|---|---|---|---|
+| **SK** (or any second jurisdiction) | **0** | **0** | 1 `AgreementVersion` row + its texts | **0** |
+| **A new version of the CZ text** | **0** | **0** | 1 row + texts; live on **every installed app**, including app-store-gated ones | **0** |
+| **A new language** | **0** | **0** | 1 `AgreementVersionText` row | 0 (body) / 5 keys (surrounding UI) |
+| **A second agreement kind** | **0** | the new gate's rule, wherever it belongs | 1 enum member + rows | 1 per client |
+| **Cleaner-initiated revocation** | **0** | 1 command + the product rule | 0 | 1 per client |
+| **An admin authoring screen** | **0** | CRUD + the immutability guard | 0 | 1 (admin only) |
+| **A third invoice writer** | **0** | **0** | 0 | 0 — *this row is D6's whole argument* |
+| **The composite-FK discriminator chain itself** (P19) | part of the 3 tables | 0 | 0 | 0 — but **first-of-class here**: the schema has **one** `HasAlternateKey` (`LanguageEntityConfiguration.cs:18`) and **zero** composite FKs, so D1.6 adds the first two composite FKs and the second and third alternate keys. **Built and run by a specialist (§CH-S2-7), so ADR-0033 test 3 is discharged and no separate ADR or catalog edit is created.** Its real cost is **check #19**: identifier truncation at 63 bytes, where PostgreSQL emits a `NOTICE` (not an error) and EF truncates *differently*, so one index can have three candidate names and a hand-copied `DROP INDEX` fails with *"does not exist"* |
+
+Rows 2 and 7 are why the text is server-owned (D3/D4) and why coverage is derived (D6).
+
+---
+
+## Alternatives considered
+
+**A1 — `ConsentType.SelfBilling` on the existing `UserConsent`.** *The obvious answer.* **Rejected on
+three counts, any one sufficient:** withdrawable by its subject through a live GDPR endpoint on four
+hosts with no allow-list (F2); no version column, and its unique index makes re-consent an **overwrite**
+that destroys the prior evidence (F1); and it files a commercial contract term into the register of GDPR
+lawful bases, so a consent register produced for a supervisory authority would contain a payment term.
+*What survives:* the **grant mechanics** — server-read IP/device from `IRequestMetadataProvider`, and the
+already-granted no-op. Copied deliberately (D2.5). *(Both lanes independently verified and sustained
+this rejection.)*
+
+**A2 — `Employee.SelfBillingAcceptedAt` (nullable timestamp) or a bool.** Cheapest; one additive column;
+materialized by every loader. **Rejected:** it cannot say *which text*, cannot express re-consent, cannot
+distinguish a tick from a signature, and its presence on the `Employee` row invites exactly the mistake
+D5 forbids — a term in `IsProfileComplete()`, i.e. a platform-wide 403. It is the stale boolean asserting
+agreement to text nobody read, written down. *(Sustained by both lanes.)*
+
+**A3 — server owns the *version key*; the *text* lives in the client i18n catalogs.**
+> ⚠️ **The first panel did NOT test this.** The rev-1 author flagged it as the limb they most expected to
+> concede (CH-A1); neither challenger attacked it, and under `process/deliberation.md` **silence is not
+> assent**. The lead recorded its rejection as *the author's position, not a panel finding*, and noted it
+> is now load-bearing because CH-S8, CH-S9 and CH-S10 are all costs of the text table that A3 does not
+> pay. **Rev 2 does not inherit rev 1's reason — that reason is wrong. Two new arguments are offered and
+> a challenger should attack THEM.**
+
+*Materially cheaper: two tables instead of three, and it reuses the shipped consent-copy pattern
+(`ConsentMarkup`/`ConsentMarkdown`/`CleansiaConsentCheckbox` + the 5-locale `ConsentCatalog` guards)
+rather than serving a legal string over an API.*
+
+**Rev 1's stated reason is wrong, and I say so rather than leaning on it.** It claimed A3 produces *"a
+record that says v2 about a screen that showed v1, undetectably"*. A **correctly built** A3 does not: the
+client posts the version **its own bundle** declares, so the server sees `v1 ≠ current v2` and refuses.
+The record stays true. What A3 actually produces is worse in a different way, and that is argument one:
+
+- **A3(i) — a legal-copy change becomes an onboarding outage on every un-updated device.** To keep the
+  record true, a stale client must be **refused**. Two of the five clients are app-store gated, so the
+  refusal window is weeks. Under D5 the gate is mandatory, so *"the owner corrected a sentence in the
+  agreement"* would mean *"no cleaner on an un-updated app can be approved for weeks."* D12 row 2 —
+  *effective immediately on every installed app* — inverts into *broken on every installed app*. That is
+  a coupling between a legal-text edit and app-store release timing, on a mandatory path, and it is the
+  single most expensive kind of coupling this platform can acquire.
+- **A3(ii) — it puts a statutory string back into a label set, which a ratified catalog rule forbids by
+  name.** `patterns-backend.md` §*"A statutory string is DATA WITH PROVENANCE, never a label"*
+  (`:469-501`, learned on this very document's `LegalDisclaimerTemplate`) rules that *"the assurance
+  cannot be inferred from the text and is a column"*, and makes the fallback a `const` so **"the type
+  system, not a convention, stops the translation."** A body in an i18n catalog has **no provenance
+  column**: it is edited by whoever edits the catalog, in a PR, in five locales, with no
+  reviewed/not-reviewed distinction — so D4's entire provenance gate, and with it D4.4's fail-open
+  safety, becomes unimplementable. This is not a judgement call; it is the catalog rule applying a
+  fortiori to an instrument stronger than a printed notice.
+
+*Conceded costs of the chosen option, unchanged:* one more table, a legal string served over an API, an
+offline caveat (mitigated — onboarding is not an offline flow), and the CH-S8/S9/S10 costs, which D1.3,
+D1.6, D1.7 and CH-S9's `citext` FK now actually pay rather than leaving open.
+
+**A4 — snapshot the full agreed text onto every statement row.** Maximally defensible; no join needed
+years later. **Rejected:** it duplicates a paragraph per cleaner per version and — the real objection —
+it invites the statement to become the *display* source of truth, at which point two copies of the text
+exist and can disagree. `BodyHash` + the FK to the exact served row buys the same tamper-evidence for 64
+characters (D3.3, D1.7).
+
+**A5 — block invoice issuance on missing coverage (the ADR-0034 D7 shape, applied here).** Symmetrical
+with the payout-details gate and superficially the "safe" choice. **Rejected — but one of rev 2's four
+reasons is deleted and I say which, because a rejection standing on fewer legs is a different
+rejection.** ❌ ~~*"on day one it hits 100% of the population"*~~ — gone with F3; and with the gate at
+approval, most approved cleaners **would** pass such a block, so its expected cost is genuinely lower
+than rev 2 argued. What survives, and is still decisive: ADR-0034's issuance block protects against a
+document that is *unusable* (no payee account ⇒ the money cannot move), whereas here **the document is
+perfectly usable and the missing thing is our own corroboration** — so blocking **inverts the harm**;
+it would withhold a tax document for up to ~31 days (monthly periods — `PayPeriodBackgroundService.cs:93`,
+`:165`, re-verified in rev 3); it would re-create ADR-0034 D7.2's permanent fiscal-reconciliation
+candidate; and it would fire hardest in exactly the F3′ window, punishing cleaners for a jurisdiction
+the platform opened early. **Rev 3 also stops citing the report as A5's compensating control** (P22) —
+the gate is the control. *(Sustained by both round-1 lanes on the surviving reasons.)*
+
+**A6 — do nothing in software; rely on the contract clause alone.** Not absurd — the contract is the
+legal basis. **Rejected, on a reason that is now different from rev 2's.** ❌ ~~*"F4 — the pre-clause
+cohort is covered by neither instrument"*~~ — deleted with F4. The surviving reason is the one the
+owner's own instruction implies and it is enough: **the contract is one instrument for the whole
+relationship; the record is per-cleaner, per-version and timestamped.** Contracts get amended, and after
+an amendment the contract alone cannot say *which wording this supplier agreed to, when, or from where*.
+The owner asked for the checkbox and said it is mandatory; A6 cannot express "mandatory" at all, because
+there is nothing to check. *(Note the honest residue: with an empty database and a clause in every
+future contract, A6 is **closer** to sufficient than it was under rev 2. It is rejected on evidence
+quality and on the owner's explicit instruction, not on an uncovered population.)*
+
+**A7 — stamp the coverage on `EmployeeInvoice` at issuance (rev 1's design, plus CH-S11's outcome
+column).** *The horn the lead deliberately left open, and the one rev 1 took.* **Rejected — but on a
+thinner margin than rev 2 claimed, and the margin is now in the record (D6.2).** In one line: it
+requires every future invoice writer to remember, and **rev 1 empirically demonstrated that this
+requirement is not met on this codebase** — that one test carries the decision. What A7 genuinely wins:
+**the referential anchor** (an FK `Restrict` is a *database* enforcement against deleting a referenced
+statement), and rev 2's dismissal of it is **retracted**. What it no longer wins: *"the number can never
+go down"* was rev 2's decisive point against it and it dies with the population it counted. *Revisit
+triggers are named in D6.6; the anchor's replacement is routed as ticket 11 and D6/P15 states that
+derivation ships ahead of it.*
+
+---
+
+## How a reviewer verifies compliance
+
+*(Rev 1's fourteen steps omitted the two properties this ADR is named after and step 3 **certified a
+violating implementation** — §V.2. Rev 2 added those two and then introduced a property of its own —
+"derivation is cheap" — with no check, which is what returned it. **Rev 3's rule, taken from §W.12: a
+sentence that asserts a property of the running system is either accompanied by the check that fails
+when it stops being true, or it is deleted.** Applied literally below — where I could not name a check,
+I deleted the sentence instead of writing a weaker one.)*
+
+> **REV 4'S RULE, which is §X.12's and supersedes nothing above it — it adds the missing half.** *A
+> check that cannot distinguish this design from the alternative the decision REJECTED is not a check.*
+> The way to test that is to ask what the check does on the **rejected** alternative. **This ADR
+> produced four vacuities of exactly that class** — check #21 on a `TenantId`-leading index, check #7 on
+> an `Add`, check #3 on an `ExecuteUpdateAsync`, check #20 on D2's no-op — and **all four answered "it
+> stays green."** Every check rev 4 writes or rewrites below carries, in its own text, **what makes it
+> go red**. A check that cannot name that is not finished.
+
+**Rewritten in rev 4 (R4.3, R4.5, R4.6, R4.7, R4.8) because each was vacuous on the rejected
+alternative:** **#3** (gains the static sweep), **#7** (gains the static sole-writer half), **#20**
+(gains the zero-unique-index model assertion), **#21** (asserts the discriminating property, not the
+containing one), **#22(c)** (follows the `CreatedOn` floor's replacement).
+**New in rev 4, all three from the owner's `Q-SELFBILL-06`(b):** **#23** (the counting query),
+**#24** (`ContractStatus`'s sole writer), **#25** (the two prompt surfaces).
+**New in rev 3 and unchanged:** **#12** — §X.1 is explicit that it is *not* the defect but the
+**evidence**, and it is what goes red if a future author "fixes" F6 by hard-blocking a cleaner on a
+text they cannot read.
+
+1. **`Employee.cs` and `RequireCompleteProfileAttribute.cs` are untouched by agreement terms.**
+   `git diff` on both must contain no agreement reference. Any addition there is a D5 violation and a
+   platform-wide 403. Likewise `TakeOrder` / `StartOrder` / `CompleteOrder` / `MarkCashCollected` /
+   `NewJobsDigestService` / `PreferredCleanerHoldResolver`.
+2. **APPEND-ONLY, part 1 — the entity cannot be mutated.** A reflection test over
+   `EmployeeAgreementStatement` asserts: it is `sealed`; **every** property has no public setter except
+   the four the base types force (`Id`, `IsActive`, `TenantId`) and the three D8 redaction targets; it
+   declares exactly two public factories and one `private` parameterless constructor. *(This is the check
+   rev 1 did not have for the property it is named after.)*
+3. **APPEND-ONLY, part 2 — the PROPERTY, not a method list. TWO HALVES, and rev 4 adds the total one
+   (R4.7 / §X.7 CH-R3-7).** The property is *"no production code issues a DELETE or an UPDATE against
+   `EmployeeAgreementStatements` other than D8's named redaction"*.
+   - **(a) STATIC, and this is the half that makes the property TOTAL over production code.** A sweep
+     over `src/` for **every site naming `EmployeeAgreementStatement`,
+     `IEmployeeAgreementStatementRepository` or `Set<EmployeeAgreementStatement>`** — a set-based write
+     must name one of the three, so the sweep cannot be evaded — asserting that the only mutating call
+     is D8's named redaction.
+   - **(b) BEHAVIOURAL, the belt.** The `DbCommandInterceptor` the plan tests already use, asserting the
+     **emitted SQL** on paths tests do drive.
+   > **Why (a) is not optional, and it is the fourth vacuity of the same class.** Rev 3 had only (b). A
+   > `DbCommandInterceptor` is **existential over test coverage** while the property is **universal over
+   > production code**: an `ExecuteUpdateAsync` in a sweep that no integration test drives **emits
+   > nothing to observe, and the check reports clean.** Run rev 3's check #3 against the rejected
+   > alternative — an `ExecuteUpdateAsync` on this table in an undriven code path — and **it stays
+   > green.** Both dimensions are purchasable at once and (a) is one sentence.
+   >
+   > A grep for `Remove` / `RemoveRange` / `Deactivate` / `DeactivateRange` is **not** the check either:
+   > it is a closed list of four names that `ExecuteUpdateAsync` and `ExecuteDeleteAsync` do not use, and
+   > **those are the calls that never materialize an entity, so check #2 is vacuous against them** (D11,
+   > P14).
+   >
+   > **Tier: `T3-HUMAN`** as a reviewer step; **`T2-ADVISORY`** if mechanized as a `check-consistency.mjs`
+   > rule, which is in zero `.github/` workflows and can never set an exit code. **A mechanism that
+   > cannot fail a build is `T2-ADVISORY` however it is labelled.** The ADR states plainly that the
+   > repository base still exposes all of it (D11); this check is what makes the narrower claim true
+   > rather than aspirational, and its tier is named so nobody mistakes it for enforcement.
+4. **APPEND-ONLY, part 3 — `IsActive` is never read.** `rg 'IsActive'` intersected with the three new
+   entity/spec/repository files must be empty (D1.2).
+5. **MOVED TO THE SEVERED DECISION.** Rev 2's check #5 drove `PayPeriodBackgroundService.CloseExpiredPeriodsAndOpenNewAsync`
+   end-to-end and asserted the **coverage report's** classification. That is a check on the severed
+   artifact's subject, and it goes there **together with the plan assertion it was missing** — the lead
+   noted it asserts *classification*, which is correctness, not cost, and **would pass green at 90
+   seconds**. What ADR-0041 keeps is the *negative*, which is check #6. **Recorded as a move, not a
+   deletion**, because RB-3's lesson — *discharge against an invoice produced by the timer path, never
+   against a handler's source* — is the single most expensive thing this panel learned and must not be
+   lost in the split.
+6. **`EmployeeInvoice` and both issuance paths are untouched.** `git diff` on `EmployeeInvoice.cs`,
+   `GenerateInvoice.cs` and `PayPeriodBackgroundService.cs` must be **empty**. A new column, a new
+   constructor parameter or a new agreement read on any of them is a **D6 violation** — the point of
+   derivation is that these files never learn about this feature. *(This is the check that survives the
+   split intact, and it is the one that pins the decision ADR-0041 still owns.)*
+7. **THE TENANT IS ACTUALLY STAMPED — TWO HALVES, and rev 4 adds the one that can go red (R4.5 /
+   §X.5).**
+   - **(a) BEHAVIOURAL — a real-PostgreSQL round trip, not a unit test.** Under
+     `SetTenantOverride("T1")`, append a statement **through `Append`**, **commit**, then read it back
+     through the **tenant-scoped** repository as the same tenant and assert it is found and its
+     `TenantId == "T1"`. The failure mode it catches is the worst one in the design: a cleaner accepts,
+     the gate cannot see the statement, and the mandatory gate refuses someone who complied. **A
+     `tenantId: null` fixture proves nothing here and would pass while production is broken** (S8;
+     ADR-0034 D8.8's lesson).
+   - **(b) STATIC — the SOLE-WRITER sweep, and this is the half that fails.** No production site adds an
+     `EmployeeAgreementStatement` other than through `IEmployeeAgreementStatementRepository.Append` —
+     **no `Add`, no `AddRange`, no `context.Set<EmployeeAgreementStatement>().Add(...)`** (D1.10.1). The
+     §B10 idiom, `consistency.md:105-115`.
+   > **Run (a) against the rejected alternative and it stays green — which is why (b) exists.** Rev 3's
+   > check #7 was a **happy-path round trip through `Append`**. `Add` is at `IRepository.cs:37` and
+   > `AddRange` at `:39`, **on the same object**, and neither stamps; the day a handler, a seeder or a
+   > sweep calls one, (a) still passes and production is broken. **(b) is the check that reddens on that
+   > exact edit.**
+   >
+   > **And, separately: no ignoring-tenant agreement method exists** — `rg 'IgnoringTenant'` over the
+   > three new repositories must be empty (RB-10, inverting rev 1's step 6, which mandated a cross-tenant
+   > read).
+8. **Text immutability is checked, not declared.** An integration test recomputes `BodyHash` for every
+   statement from its **referenced** `AgreementVersionText` row and asserts equality. The FK is
+   `Restrict`, so the referenced row is guaranteed to exist and the recompute cannot silently skip
+   (D1.7). The authoring path, when it exists, refuses to update a referenced text.
+9. **The variant invariant holds at the factory.** A test asserts that no code path can construct a
+   `PartnerWeb`/`PartnerMobile` statement without `AgreementVersionTextId` + `BodyHash`, or an
+   `AdminRecordedContract` statement with them (D1.3).
+10. **The accept command carries no `EmployeeId`, no `bodyHash`, no `occurredAt` and no `tenantId`**
+    (S1/D3). The record has exactly `AgreementVersionTextId`. `Channel`, `IpAddress`, `DeviceLabel`,
+    `OccurredAt`, `RecordedAt` and `TenantId` are all server-side — `OccurredAt` because on this channel
+    it *is* `RecordedAt` (D1.3.1), and `TenantId` because it comes from `ITenantProvider` in the
+    repository (D1.10).
+11. **A stale echo is rejected, not upgraded**, and it is *legible*. A test posts a superseded
+    `agreementVersionTextId` and asserts `agreement.version_stale` **and that no row was written**; a
+    second test asserts the key exists under `api.agreement.version_stale` in **all five** partner locales
+    **and** in `PARTNER_SURFACE_ERROR_KEYS` — because the parity spec only checks array → backend, so a
+    key absent from the array renders as the generic error and the spec stays green (CH-L6).
+12. **Nothing is demandable in a language the signer cannot read.** A test with a version whose only
+    `BusinessSupplied` text is `cs` asserts, for a `uk` caller: `renderable: true`, `demandable: false`,
+    and that `ApproveEmployee` **succeeds** for that cleaner (D4.3).
+13. **Nothing renders when nothing is reviewed.** A test with all texts `NotReviewed` asserts
+    `renderable == false`, no body in the response, and that `ApproveEmployee`'s rule does **not** fire.
+14. **Erasure is id-keyed and proven through the real query shape.** An integration test runs
+    `GdprDeletionService` end-to-end (**not** a hand-populated navigation) and asserts `IpAddress`,
+    `DeviceLabel` **and `ContractReference`** are null while `AgreementVersionTextId`, `OccurredAt`,
+    `RecordedAt`, `BodyHash`, `Channel` and `Action` survive. ADR-0034 D8.8's lesson: an in-memory test
+    with the navigation populated passes green while production silently does nothing.
+15. **S6:** neither the body, the IP, the device label, the hash nor `ContractReference` is logged above
+    `Debug`. The body is free text, so `patterns-backend.md`'s `IsSensitivePath` rule applies to the GET
+    route.
+16. **S4:** `IpAddress` / `DeviceLabel` / `RecordedByUserId` / `ContractReference` never ride a paged DTO
+    and never reach a non-admin, non-self caller. *(Rev 2 also listed `Sequence`, on the grounds that a
+    monotonic per-partition ordinal leaks on a shared surface. **That entry is removed with the column**
+    — D1.4/P10. `Id` does not replace it: a ULID is already the primary key and is already on the wire
+    for every entity in this system, so it carries no per-partition count.)*
+17. **S11 (mobile):** any Android `@Singleton` / iOS injected holder caching the agreement status or body
+    is per-user state and **joins the session-wipe set** (`SessionScopedCache` /
+    `SessionScopedCacheRegistry`), or the next account on a shared handset sees the previous cleaner's
+    state.
+18. **`FrozenPermissionMapTests`** is updated in the same change as any new `Policy.` constant.
+    ⚠️ **The `NullsNotDistinctIndexModelTests` half of rev 2's check #18 is REMOVED, and the removal is
+    the assertion:** *this ADR adds **no** index requiring `.AreNullsDistinct(false)`, so the theory list
+    at `:52-57` gains no row.* With `Sequence` gone (D1.4/P10) the statement table has no unique index at
+    all, and neither config table's unique key contains a nullable column. **A reviewer who finds a new
+    entry in that list is looking at a design that is not this one.**
+19. **Every index on the three new tables is named** with `HasDatabaseName`
+    (`IX_EmployeeAgreementStatements_*`) — **including the two EF auto-generates to back the composite
+    FKs** (`IX_AgreementVersionTexts_AgreementVersionId_Kind`,
+    `IX_EmployeeAgreementStatements_AgreementVersionTextId_Kind`), which EF creates whether or not the
+    configuration mentions them and which the check cannot reach without redeclaring them explicitly
+    (P18). **The reason is load-bearing, not cosmetic parity:** PostgreSQL truncates identifiers at 63
+    bytes with a **`NOTICE`, not an error**, and EF truncates *differently* — so an unnamed long index
+    can have three candidate names, `pg_indexes` reports one of them, and a `DROP INDEX` /
+    `CREATE INDEX CONCURRENTLY` hand-copied out of the migration file fails with *"does not exist"*.
+    Measured by the round-2 challenger against the emitted DDL (§CH-S2-7 cost 2).
+20. **P8 — the APPEND cannot return success without a row. THREE parts after rev 4 (R4.6 / §X.6).**
+    (a) **Structural:** `rg` over the statement repository for `ON CONFLICT`, `SqlQueryRaw`,
+    `ExecuteUpdate`, `ExecuteDelete` must return **nothing but D8's named redaction**.
+    (b) **Behavioural:** a real-PostgreSQL test issues two concurrent appends for the same
+    `(employee, kind)` — one `Accepted`, one `Revoked` — and asserts **two rows exist** and the
+    supersession read returns exactly one of them deterministically. *(This is the test the round-2
+    challenger's measurement would have failed: it got zero rows, no exception, and the `Revoked` was not
+    in the log.)*
+    (c) **NEW — MODEL: the entity type declares ZERO unique indexes.** A reflection assertion over
+    `ctx.Model.FindEntityType(typeof(EmployeeAgreementStatement))!.GetIndexes()` that **none**
+    `IsUnique` — the same surface checks #2 and #18 already use
+    (`NullsNotDistinctIndexModelTests.cs:102-111` walks exactly that API).
+    > **What makes each go red, and why (c) had to be added.** The forbidden shape
+    > (`ON CONFLICT DO NOTHING` + a zero-row return mapped to caller success) is claimed **unreachable**,
+    > and that claim is a function of D1.5's *"no uniqueness AT ALL"* and of nothing else. (a) greps the
+    > repository and (b) tests two appends of **different** actions — **neither can see the edit that
+    > actually breaks the claim**, which is a future author adding an idempotency arbiter on
+    > `(TenantId, EmployeeId, Kind, AgreementVersionTextId)` to make D2's read-then-write race-safe.
+    > **Run (a) and (b) against that edit: both stay green. (c) goes red.**
+    > *(Neither (a) nor (b) can see D2's handler-level no-op either — that is the **sanctioned
+    > exception**, named in D1.5 and D2 precisely because no check here can distinguish it.)*
+21. **D1.9 — the supersession read's plan is pinned by the property that DIFFERS, not by the one that is
+    merely present. REWRITTEN IN REV 4 (R4.3 / §X.3).** A `DbCommandInterceptor` re-runs
+    `"EXPLAIN " + command.CommandText` on the same connection, transaction and parameters for the
+    statement **the production entry point actually emits** (the approval gate's read, D5.1 step 1), and
+    asserts, on the node naming `IX_EmployeeAgreementStatements_Supersession`:
+    - **(i) NO `Sort` node above the index scan** — the ordering is served by the index, which is exactly
+      what a `TenantId`-leading index would lose (D1.9's pathkey argument), and
+    - **(ii) NO `TenantId` term in that node's `Index Cond`** — the direct negation of the rule, and
+    - **(iii) the seed's selectivity, as an assertion rather than as prose** (`consistency.md` §T-0540:
+      *"a predicate that matches most of the table makes a seq scan the correct plan and the whole pin
+      meaningless"*), over thousands of rows across many employees.
+    > ❌ **Rev 3's assertion — *"the `Index Cond` carries `EmployeeId` and `Kind`"* — is WITHDRAWN as
+    > VACUOUS.** An `Index Cond` of `TenantId IS NULL AND EmployeeId = … AND Kind = …` **contains**
+    > `EmployeeId` and `Kind`. **Run it against the rejected alternative — the `TenantId`-leading index
+    > D1.9 forbids — and it passes green**; the only thing that would fail is the index's *name*, which
+    > is P7's forbidden discharge wearing an `EXPLAIN`. **(i) and (ii) are correct under EITHER
+    > measurement** of the round-2/round-3 dispute, which is why the repair is measurement-independent
+    > and why the check no longer depends on the mechanism §X.2 withdrew.
+    >
+    > Precedents: `OrderStatusSetPredicatePlanTests`, `UserMembershipCancellationSweepIndexPlanTests`.
+    > §T-0540's remaining deviating forms apply in full: **"no Seq Scan" is not the assertion**, and a
+    > hand-retyped copy of the SQL pins the retyping.
+22. **P11 — the `OccurredAt` invariant.** A test asserts (a) `AcceptServedText` produces
+    `OccurredAt == RecordedAt` and exposes **no** way to set them apart; (b) `RecordPaperSignature`
+    **throws** on `OccurredAt > RecordedAt`; **(c) — REPLACED IN REV 4 (R4.8 / §X.7 CH-R3-9)** — the
+    `RecordPaperSignature` command validator **refuses** an `OccurredAt` earlier than
+    `AgreementPolicy.EarliestRecordableSignatureDate` with a translated business error, **and does NOT
+    refuse** an `OccurredAt` between that constant and `employee.CreatedOn`.
+    > **Both directions are asserted, and the second is the point.** A test that only checks the refusal
+    > passes on rev 3's over-tight `>= employee.CreatedOn` bound — which **refuses the paper channel's
+    > main line** (an operator countersigns on the spot; the cleaner registers later that week). The
+    > negative assertion is what reddens if a future author "restores the tighter bound".
+23. **NEW — the un-agreed cohort is COUNTED (`Q-SELFBILL-06`(b), D4.5).** A test seeds a serviced
+    `Country` with a `BusinessSupplied`+ text in **`cs` only**, two active `Language` rows (`cs`, `uk`),
+    and an **approved** cleaner whose `User.PreferredLanguageCode` is `uk`, then asserts the readout
+    (i) **names the `(country, uk)` pair as uncovered**, (ii) **counts that cleaner**, (iii) does **not**
+    name `(country, cs)`, and (iv) **its cardinality is `serviced countries × active languages`** —
+    asserted, not assumed (D4.5 property 3).
+    > **Run it against the rejected alternative — option (c), "accept the gap silently" — and the
+    > readout is empty while the cleaner is un-agreed. That is the failure this check exists for.** It
+    > also reddens on the subtler wrong answer: a query that filters *jurisdictions* rather than
+    > *(country, language) pairs* returns nothing here, because the country **is** covered — in Czech.
+24. **NEW — `ApproveEmployee` is the SOLE production writer of `ContractStatus = Approved` (D5.2).** An
+    allowlist assertion on the §B10 model (`consistency.md:105-115`): the only production call site of
+    `Employee.Approve` is `ApproveEmployee.Handler`, and no production site calls
+    `Employee.UpdateContractStatus(...)` or passes a non-null `contractStatus` to
+    `Employee.UpdateEmployeeDetails(...)`. **A new writer must carry the gate or be added to the
+    allowlist with a reviewable justification.**
+    > **Why it can go red rather than merely documenting today's tree.** Both bypasses are **public
+    > domain mutators that exist and have no production caller** — `Employee.cs:260-264` (writes at
+    > `:262`) and the optional trailing `ContractStatus?` at `Employee.cs:161` (applied at `:173-176`,
+    > omitted by both production callers, `UpdateEmployee.cs:347-357` and `AdminUpdateEmployee.cs:149-161`).
+    > **A "bulk-approve imported cleaners" feature would reach for exactly one of them, and this check is
+    > what stops it silently voiding D5.**
+25. **NEW — the two prompt surfaces are distinguishable and neither over-fires (D5, `Q-SELFBILL-06`(b)).**
+    Given one supersession read plus the resolver's `demandable` verdict, a test asserts: **no statement
+    + demandable now** ⇒ the **F6 card**; **`Accepted` of a superseded text + demandable now** ⇒ the
+    **supersession card**; **`Accepted` of the current text** ⇒ **neither**; **not demandable** ⇒
+    **neither**. **No new query and no new index** — the same read the gate already issues.
+    > **The last two clauses are the ones that go red on the rejected alternative**, which is rev 2's
+    > interstitial: a prompt that fires on a cleaner who has already complied is the *"soft gate in a
+    > costume"* CH-A3 named, and a prompt that fires before the text is demandable asks a cleaner to
+    > affirm bytes they cannot read.
+
+---
+
+## Escalations — owner / counsel
+
+> ❌ **The sentence that stood here from rev 1 to rev 3 — *"Filed as one block in
+> `agents/backlog/questions/open.md` by the PM"* — was FALSE for the whole life of this ADR, and rev 4
+> replaces it rather than quietly correcting it.** The round-3 lead grepped the backlog and found
+> `Q-SELFBILL-01`…`-05` **nowhere** (§X.11); three deliberation rounds reasoned about *"defaults if the
+> owner does not answer"* while the owner had never been shown the questions. **They were filed
+> 2026-08-06 and ANSWERED 2026-08-07.** The owner's instruction on delivering that batch is on the
+> record: *"Write my every answer and DON'T FORGET ABOUT IT SINCE I HAD TO ANSWER THE QUESTIONS THAT
+> WERE ALREADY RESERVED IN THE PAST."* **This table is now a record of answers, not of intentions**, and
+> it cites by **question id and date** rather than by line number so it cannot drift as the PM appends.
+
+**Status: four of seven ANSWERED (`-01`, `-02`, `-06`, and the VAT limb). Three remain open and none of
+them blocks anything. Nothing in this list gates the schema, and nothing gates acceptance any more** —
+`Q-SELFBILL-06` was the last one that did.
+
+| Id | Question | Blocks | Default if unanswered |
+|---|---|---|---|
+| **1. `Q-SELFBILL-02`** ✅ **ANSWERED 2026-08-07 — BOTH HALVES** | *(a) If we open a country before its agreement text exists, is the document valid?* → **INVALID** — *and* the owner commits the case will not arise: *"it never will be a case that a company registers before the agreement text exists."* **That is an owner commitment about sequencing, which is strictly stronger than the engineering default this row used to carry.** *(b) Were we authorized to issue **this document** or to self-bill **this work**?* → **the PRINT DATE (`GeneratedAt`) authorizes the document**, not the pay period it covers | **Nothing, any more.** (a) closes **F3′** (§Owner rulings 3c). (b) resolves D6.1's `<ANCHOR>` and is handed to the **SEVERED** decision, which still owns the comparison's shape, plan check and CLR-cast direction. Neither half ever gated ticket 1 | — *(answered; the old default —* "do not open a jurisdiction before its text exists" *— is now the owner's rule rather than the architect's, and D4.5 records it as one)* |
+| ~~**2. The VAT axis on the version key**~~ | **✅ ANSWERED 2026-08-05 and CLOSED.** Owner on `Q-PAYOUT-03` (`open.md:889-895`): *"I wouldn't ask them if they're VAT payers…"* So `AgreementVersion` is keyed on **jurisdiction alone, by decision** (D4.2). **CH-L3 is discharged and the round-1 lead's migration hold on this ground is released** | — | — *(The recorded tension at `open.md:897-908` — a self-service `VatNumber` and a PDF that branches on it — is the **owner's cleanup question**. This ADR does not reopen it and does not design around it)* |
+| **3. `Q-SELFBILL-01`** ✅ **ANSWERED 2026-08-07 — and the answer is "not yet"** | **The agreement text** in five locales + **who reviewed it**. Owner: ***"A lawyer will review it in the future."*** So **the text is NOT reviewed, and no version may be marked reviewed on anyone's say-so** — `ReviewStatus` is a provenance column (D4.6), and a future event is not a provenance claim. Six propositions still stand as the drafter's checklist — D4 (a)–(f) | The feature's **activation**, not its build. Schema, endpoints and clients ship **inert** | **Unchanged in substance, changed in kind:** every text stays `NotReviewed` ⇒ nothing rendered, nothing demanded (D4.4). **The wait now has an END CONDITION — counsel's review — instead of being open**, which is what D6/P15's *"the table holds zero rows until `Q-SELFBILL-01` is answered"* exposure argument needed. The owner may supply `BusinessSupplied` text under their own name meanwhile; that is a weaker claim than `CounselReviewed` and the enum already distinguishes them |
+| **4. `Q-SELFBILL-03`** | Must the **invoice itself** state that it was issued by the customer on the supplier's behalf, and in what words? | Nothing today | Nothing is printed. **If the answer requires an immutable acceptance date on the document, that is D6.6's trigger to freeze a stamp** |
+| **5. `Q-SELFBILL-04`** | May a cleaner **withdraw** in-app, and what follows — they invoice us instead, or they stop working? | Nothing | Not exposed in v1. `Action.Revoked` exists so answering it later costs no migration — and D1.4's ordering is what makes it *safe* to answer later |
+| **6. `Q-SELFBILL-05`** | Does an operator recording your **countersigned contract** count as the agreement (D7), and **what may `ContractReference` carry** — a contract number, a scan id, or free text? | The admin ticket only | **Yes**, `AdminRecordedContract`, distinct forever from a self-service tick. `ContractReference` is treated as **PII and redacted on erasure** (D8) until you constrain it |
+| **7. `Q-SELFBILL-06`** ✅ **ANSWERED 2026-08-07 — this was the ONE thing gating acceptance** | *A cleaner who does not read Czech is approved, works, and is self-billed without ever being shown the agreement (F6). (a) delay the launch until all five locales are reviewed · (b) open on Czech, accept the gap, make it VISIBLE · (c) open on Czech, accept it silently.* → **(b).** Owner: *"open on Czech, with visibility. Launch is not delayed and the un-agreed cohort is counted and surfaced rather than hidden."* | **Was: the acceptance of this ADR, and nothing else.** No ticket, no schema, no migration. **Now: nothing** | — *(answered; **(b)** was the stated default and the owner confirmed it. Landed in **D4.5**'s counting query, **D5**'s prompt row, **F6**, and checks **#23**/**#25**; **check #12 is deliberately unchanged**, per §X.1)* |
+
+**Not an owner question — routed to the `db`/infra lane:** *does the application connect to Postgres as a
+role distinct from the table owner?* It decides whether D11's `REVOKE`-based enforcement is even
+purchasable. Do not assert an answer.
+
+---
+
+## The migration — **withdrawn, and the preconditions are listed so it can be un-withdrawn cleanly**
+
+**No migration exists and none may be created.** The lead withdrew `manual_step: ef-migration` and the
+withdrawal stands. Rev 1's urgency argument is refuted and **not reinstated**: it claimed the window was
+open *today* because later the FK would land on a populated `EmployeeInvoices` whose rows could never be
+back-stamped — but by D4.4 plus `Q-SELFBILL-01`'s **own stated default**, the feature is inert until
+reviewed text exists, so every invoice in that window is uncovered whether or not any column exists. The
+window is bounded by counsel's delivery, not by DDL. **And under D6 the argument cannot even be restated:
+there is no column on `EmployeeInvoices` at all.**
+
+**The delta, when it is eventually written, is smaller than rev 1's and smaller again than rev 2's:**
+3 new tables, 3 enums (`int`-stored C# types, no DDL), **zero changes to any existing table**, and —
+after D1.4 and the split — **one column fewer, one unique index fewer, and one lookup index fewer** than
+rev 2 specified. S9-clean by construction: no rename, no drop, no non-nullable-without-default.
+*(Additivity re-verified against the emitted DDL by the round-2 challenger, §Found-sound 6.)*
+
+**Preconditions — rev 3 discharges two of four; two remain:**
+
+1. ✅ **DISCHARGED.** §Escalations item 2 is **answered by the owner**: no VAT axis, so `AgreementVersion`
+   is keyed on jurisdiction alone **by decision** with the ruling recorded (§Owner rulings 2).
+2. ⬜ **OPEN, but narrowed to a DELTA REVIEW — the third panel HAS run and it FROZE the schema block.**
+   The round-3 challenger attacked D1.4's `Sequence` drop, D1.9, D1.10, D1.3/D1.3.2, D10 and the split
+   from a fourth independent lane and **broke none of them**; **not one of its eleven findings moves a
+   column, an index, a key or an FK** (§X.10). What remains is §X.12's clearance: **a lead instance that
+   is not rev 4's author** confirms on a rev 3 → rev 4 delta read that R4.1–R4.9 are discharged, the
+   schema block is byte-identical, every new sentence asserting a property of the running system carries
+   a check that fails on the **rejected** alternative, and `Q-SELFBILL-06`'s answer is written into R4.1.
+   **A fourth adversarial lane is NOT authorized** — it would re-attack a shape four lanes have failed to
+   break. *(Rev 4 touched no part of the schema block, so the §X.10 tripwire back into a full panel did
+   not fire.)*
+3. ⬜ **OPEN — a verifiable pre-deploy gate, discharged by evidence per environment:**
+   `SELECT to_regclass('public."EmployeeAgreementStatements"');` returns non-null **before** the backend
+   ticket deploys. **The mechanism (CH-S12(4)) is unchanged and still bites:**
+   `MigrationService/Program.cs:31-36` returns 0 when `GetPendingMigrationsAsync()` is empty, so folding
+   new tables into a regenerated `Initial` is a **silent no-op** on any database that already ran it —
+   the migrator prints a reassuring line and Aspire's `WaitForCompletion` is satisfied. With D5's gate
+   being a `MustAsync` on the approval path, the failure is `42P01` → an untranslated 500 on an admin
+   action.
+   > ⚠️ **§Owner rulings 1 makes this gate MORE important, not less, and I say so because the opposite
+   > reading is the tempting one.** *"The database is being dropped"* sounds like it dissolves the
+   > problem — a fresh database has no `__EFMigrationsHistory` row, so a regenerated `Initial` applies
+   > in full. **It dissolves it only if the drop actually happens on every environment the code runs
+   > against, and that is a manual owner step with no artifact.** The failure mode is precisely a
+   > *partial* drop: one environment reseeded, another still carrying the old `Initial`, and the second
+   > one silently missing three tables. `to_regclass` is the one check that distinguishes them, it costs
+   > one query, and **it is now the only thing standing between an assumed drop and a 500 on the
+   > approval path.**
+4. ⬜ **OPEN — the ADR must state, at that point, whether this is a regenerated `Initial` or a stacked
+   migration.** It cannot be left implicit; (3) is the check that catches getting it wrong either way.
+   *(Recurring: the same `Initial`-regeneration no-op has been found by two independent challengers on
+   two ADRs three weeks apart — the round-1 lead routed it to the catalog lane as a `consistency.md` +
+   `check-consistency.mjs` candidate, and the round-2 lead declined to advance it to a third occurrence
+   because confirming a mitigation is not a new occurrence. **Rev 3 does not advance it either** — this
+   paragraph re-states an existing mitigation, it does not find the mechanism again.)*
+
+**The seed instruction is DROPPED (CH-S12(2)).** Rev 1 said to seed one `NotReviewed` `AgreementVersion`
+row per country. The executed seed is **one file**, pinned byte-for-byte against the repo-root copy by
+`StartupSeedScriptSyncTests`, and both copies are owner territory — so editing only the path rev 1 named
+turns a shipped test red. An inert placeholder row is a nicety, and **D4.4 already handles its absence
+correctly**. If the owner wants it, it is a `manual_step` naming **both** paths and the pin.
+
+**Seeding a statement row is forbidden, permanently.** A seeded statement is a **manufactured legal
+record**. Cleaners land un-stated, which is the correct state, and **D5's gate is what turns that state
+into a real acceptance before anyone works.** *(Rev 2 also named "D5's prompt" and "D6.3's report" here;
+both are gone — §Owner rulings 1 and §W.6. The ban is unaffected: it never rested on either.)*
+**§Owner rulings 1 sharpens this rather than relaxing it** — a fresh database is exactly the moment
+somebody reaches for a convenience seed to make the gate stop firing in DEV. **It must not be an
+agreement row.** Seed the `AgreementVersion` and its texts if you must; never a statement.
+
+⚠️ `manual_steps: [ef-migration, nswag-regen]` — **owner-only, and both are on hold.** No agent may run
+`dotnet ef migrations add`.
+
+---
+
+## Responsibility-driven design — CRC sketches
+
+*(Role cards to be written into `agents/knowledge/roles/` by whoever owns that file next — this ADR does
+not edit the catalog.)*
+
+**`AgreementVersionResolver` (domain service)**
+- **Responsibility:** given a **country id**, an agreement kind and a caller language, name the one
+  `AgreementVersionText` that may be shown and say whether it is *renderable* and *demandable* — **or
+  say which of the two negatives applies** (P20).
+- **Collaborators:** `IAgreementVersionRepository`, `ICountryRepository`, `ILanguageRepository`.
+- **Returns a THREE-valued answer, never a boolean:** `Renderable(text, demandable)` ·
+  `NoVersionForCountry` · `NotAJurisdiction`. **Collapsing the last two is the fail-open D5's mandatory
+  gate would silently pass through** (§W.7.5) — so the distinction is the resolver's responsibility, at
+  its boundary, and `ICountryRepository` is on the collaborator list *because of it*.
+- **Does NOT know:** who is asking, which client, whether anyone has stated anything, what an invoice is,
+  **how to find an employee's country** (it takes a country id — D4.1; the caller resolves it and the
+  caller's include obligation is named in the ticket), what a country code *means* (it reads rows; it
+  never branches on `"CZ"` — ADR-0017), and **what to DO about a `NotAJurisdiction`** — it reports the
+  fact; the validator decides the refusal.
+
+**`EmployeeAgreementStatement` (entity)**
+- **Responsibility:** be an immutable statement that a named supplier accepted or revoked a named
+  agreement, at a named legal time, recorded at a named real time, from a named channel.
+- **Collaborators:** `Employee`; and **the referenced `AgreementVersionText` row, BY ID — not by
+  navigation** (P17, §W.5.3). Rev 2's card said the collaborator *is* `AgreementVersionText`, which reads
+  as a navigation and contradicts D1.7: `Kind` is an FK property and required payload at once, and EF's
+  fixup nulls every FK property when a navigation is severed. **Under responsibility-driven design a
+  collaborator that cannot be a navigation is a collaborator stated wrong**, and this is the corrected
+  statement.
+- **Does NOT know:** how to change itself (two factories, one redaction mutator, nothing else), whether
+  it is "current", whether an invoice relied on it, whether the cleaner may work, **and how to get its
+  own `TenantId`** — that belongs to the repository (D1.10). *If a scenario forces this entity to read
+  the ambient tenant, the collaborator is missing.*
+
+**`IEmployeeAgreementStatementRepository` (adapter)**
+- **Responsibility:** append a statement **with its tenant stamped**, answer the supersession read, and
+  perform D8's id-keyed redaction. Nothing else.
+- **Collaborators:** `CleansiaDbContext`, **`ITenantProvider`**.
+- **Does NOT know:** what a statement means, whether one supersedes another for a business reason,
+  whether the cleaner may be approved.
+- **Why `ITenantProvider` is on that list and is not an accident:** D1.1's archetype is
+  `BaseEntity + ITenantEntity`, and `CommitAsync` stamps only `Auditable` (`CleansiaDbContext.cs:74`) —
+  so **this adapter is the only place the tenant can be written.** Sibling with the same obligation and
+  the same one-line answer: `DbContextAuditWriter` (`:16-20`). *(NEW in rev 3 — rev 2 had no card for
+  this role, which is part of why the obligation went unnoticed.)*
+- **`Append` is the SOLE WRITER, and that is a responsibility, not a convention (rev 4, D1.10.1).** The
+  inherited `Add` (`IRepository.cs:37`) and `AddRange` (`:39`) sit on this same object and **do not
+  stamp**. Under responsibility-driven design, an adapter whose responsibility is *"append **with its
+  tenant stamped**"* while exposing two inherited members that append **without** it has a
+  responsibility its own surface contradicts. **The interface is deliberately NOT narrowed** (RB-7 —
+  narrowing fires ADR-0033 tests 1 and 2), so the contradiction is closed by an **allowlist plus a
+  static check** (§B10 idiom, check #7(b)) rather than by the type system. *If a future scenario forces
+  a caller to reach `Add` on this repository, the responsibility is wrong or ticket 14 has landed.*
+
+**`SelfBillingAuthorityService` (domain service)**
+- **Responsibility:** answer *"what is the current state of this cleaner's self-billing agreement?"*
+  (supersession order, D1.4). **The coverage question — *"was an agreement in force at time T?"* — is
+  the SEVERED decision's** and is not on this card until that decision is filed; adding it here before
+  then would be a responsibility assigned by a document that does not exist yet.
+- **Collaborators:** `IEmployeeAgreementStatementRepository` (**scoped only** — there is no
+  ignoring-tenant variant, D10), `AgreementVersionResolver`.
+- **Does NOT know:** how to block anything, and **what an `EmployeeInvoice` is**. *If a future caller
+  asks it "may I refuse to issue?", the responsibility is wrong or D5 has been superseded.*
+
+> **Handler-collaborator count.** The approval gate adds **one** collaborator to `ApproveEmployee`'s
+> validator (`SelfBillingAuthorityService`), which already takes two (`IEmployeeRepository`,
+> `ICountryRepository` — `ApproveEmployee.cs:17-19`). Three is well inside the "a handler wiring 8
+> services is a smell" bound. That is the whole coupling cost of D5, and it is the reason D5 is a
+> validator rule and not a service wired into a handler.
+
+---
+
+## Tickets that follow
+
+*(Listed, not created — ticket authoring is the PM's. Sizes are the author's estimate. **None may start
+before rev 4 clears its delta review** (§X.12) **and this ADR is `accepted`**; ticket 1 additionally
+needs §Migration's preconditions 3 and 4. **The owner's 2026-08-07 answers unblock no ticket here** —
+they discharge the acceptance gate, which is a different thing.)*
+
+| # | Owner | Size | Scope |
+|---|---|---|---|
+| **1 — schema** | `db` | `M` | 3 entities + 3 configurations + 3 enums; the two alternate keys and two composite FKs (D1.6 — **feasibility already confirmed against emitted DDL, §CH-S2-7**); five stated `OnDelete`s (D1.8); `citext` FK for `LanguageCode`; **`TenantId` mapped by hand and stamped in the repository (D1.10)**; **exactly one index on the statement table — `(EmployeeId, Kind, RecordedAt DESC, Id DESC)`, not leading with `TenantId` (D1.9)** — plus every EF-generated FK-backing index `HasDatabaseName`d (check #19). **No `Sequence`, no unique index, no `NULLS NOT DISTINCT`, no coverage index.** No change to any existing table. `manual_steps: [ef-migration]` — **on hold** |
+| **2 — backend** | `backend` | `M` | `AgreementVersionResolver` (**three-valued**, P20) + `SelfBillingAuthorityService`; `GET`/`POST` on the **partner web** and **partner mobile** hosts (rate-limited `auth`); the `ApproveEmployee` validator rule + `SelfBillingAgreementRequired` / `AgreementVersionStale`; the D8 redaction call + GDPR export rows. **`manual_steps: [nswag-regen]`**, `security_touching: true`. **Explicitly out of scope: `EmployeeInvoice`, `GenerateInvoice`, `PayPeriodBackgroundService` — check #6 is a diff-must-be-empty.** *Includes §W.9's routed `ApproveEmployee.Validator` chain-ordering fix (the backend lane's half of CH-S2-9); D4.1a is the ADR's half* |
+| **3 — admin** | `backend` + `frontend` | `S` | **(a) D7's `RecordPaperSignature`** (with `ContractReference`, the P11 validator bound — the **platform-constant** floor, not `employee.CreatedOn`, D1.3.1 — and the audit engine picking it up for free). **(b) NEW in rev 4 — D4.5's COUNTING QUERY readout** (`Q-SELFBILL-06`(b)): the uncovered `(serviced country × active language)` pairs plus the approved-cleaner count in them, with check #23. **It is a `SELECT` over config plus one indexed `COUNT` — it does NOT scan `EmployeeInvoices` and does NOT evaluate coverage.** **The coverage REPORT is still NOT in this ticket** — that belongs to the severed decision and is filed with it |
+| **4 — partner web** | `frontend` | `S` | The agreement card (server body inline, unticked box) + the D3.5 stale-refetch contract + **two prompt cards off the ONE supersession read** (check #25): the supersession card, and **NEW in rev 4 — the F6 card** for a cleaner with no statement whose language has just become demandable. **Rev 2's already-approved-cohort interstitial stays removed** (§Owner rulings 1) — the F6 card is a different thing on a different population and must not be built from that design |
+| **5 — partner Android** | `android` | `S` | Same, via `CleansiaConsentCheckbox` + `ConsentMarkup` with the **server-supplied** body; both prompt cards; the status holder joins `SessionScopedCache` (S11) |
+| **6 — partner iOS** | `ios` | `S` | Same, via Core `CleansiaConsentCheckbox` + `ConsentMarkdown`; both prompt cards; registers with `SessionScopedCacheRegistry` (S11) |
+| **7 — copy** | `docs`/`frontend` | `S` | The **surrounding** UI strings ×5 locales × web/Android/iOS + both error keys under **`api.agreement.*`** **and** in `PARTNER_SURFACE_ERROR_KEYS`, in the same change; `ConsentCatalog` guards extended. **The agreement body is data, not copy** |
+| **8 — follow-up** | `backend` | `S` | `Auditable.Deactivated()` leaves `ContractStatus` untouched, so an erased cleaner reads `Approved` (D9). Nine call sites, three distinct predicates, two order-lifecycle gates — needs its own decision |
+| **9 — follow-up** | `backend` | `S` | Mobile partner onboarding grants **no** `DataProcessing` consent at all (T-0504 finding 3). Out of scope here; **do not fix it by widening this feature** |
+| **10 — routed out** | `backend` | `M` | **Invoice-content immutability** — `RegenerateInvoicePdf` rebuilds the supplier block live on two hosts and `Anonymize()` nulls `VatNumber`, so an issued document's bytes are not stable (D6.5, CH-L8). Separate decision. *(Its collateral — `RegenerateInvoicePdf` has no ownership term — is routed to the **security** lane.)* |
+| **11 — routed out** | `architect` | `S` | **An ADR for database-enforced append-only logs** (trigger and/or column `REVOKE`), decided across every append-only table at once rather than invented inside a feature ADR (D11, ADR-0033 routing). **D6/P15 states that derivation ships ahead of this and why** — it is a stated conditionality, not a blocker |
+| **12 — SEVERED, PM numbers it** | `architect` → `db`/`backend`/`frontend` | `M` | **The coverage decision.** Specified in `agents/architecture/decisions/self-billing-agreement.md` §*"SEVERED"*: the anchor column (`GeneratedAt` vs `PayPeriodId`, folded into `Q-SELFBILL-02`), the evaluation **shape** with its `Index Cond` plan check on the **captured** statement, the coverage index, the stability-over-time disclosure, and the report's surviving rows. **No ADR number is allocated in this document** |
+| **13 — catalog lane** | `architect` (catalog) | `S` | **The nullable-`TenantId` rule** (§W.2 + §W.11), with **rev 4's CORRECTED evidence** (R4.2 / §X.2.4) — *the earlier three-index claim travelled with a mechanism a `db` agent can falsify in ten minutes, which is how a confidently-wrong law stops the next reviewer from checking.* Carry: **(i)** the mechanism is the lost btree **pathkey**, not an unreachable `Index Cond`; **(ii)** the **plan mode** — the `Index Cond` demotion reproduces only under `plan_cache_mode = force_generic_plan`, and production does not get generic plans (`Max Auto Prepare` absent from `src/`; `DbContextBindingExtensions.cs:35`/`:68` build a plain data source); **(iii)** **ONE** shipped index in violation, not three — `IX_AdminActionAudits_TenantId_OccurredOn` (`AdminActionAuditConfiguration.cs:65-67`, ordered), while `IX_MembershipBenefitUsages_Quota` (`MembershipBenefitUsageEntityConfiguration.cs:70-71`, an unordered `COUNT`) and `EntityConfiguration.cs:31` (nothing behind the leading column) are **not**. **ADR-0033 test 1 still fires on one instance, so the routing is unchanged**: Architect-ratified edit + a canonicalization decision on that one index, filed under *"`TenantId` is nullable"*, with a **named enforcer that can fail a build** (D1.9) |
+| **14 — routed out** *(NEW in rev 4)* | `db`/infra | `S` | **`CommitAsync` does not tenant-stamp `BaseEntity + ITenantEntity` entities** (D1.10.2, §X.5). Decided **across every future adopter of the `AdminActionAudit` archetype**, not per repository, which is why ADR-0041 routes it instead of taking it — widening the loop touches a shared file and a shipped audit path. Carry: the loop is `ChangeTracker.Entries<Auditable>()` (`CleansiaDbContext.cs:74`) with the `ITenantEntity` stamp **nested inside it** (`:89-92`); the archetype compensates per-writer (`DbContextAuditWriter.cs:10-12`, `:18`); and **the two stamps do not agree** — the pipeline tests `string.IsNullOrEmpty(tenantEntity.TenantId)` (`:89`) while the writer uses `??=` (`:18`), so **an empty-string `TenantId` is replaced by one and survives the other.** Nobody has decided which is right |
+
+---
+
+## Challenge — the panel ran 2026-08-05
+
+Two challenger lanes, spawned independently, neither the author:
+
+| Lane | File | Findings | Author-marked blocking |
+|---|---|---|---|
+| **legal sufficiency / obligation** | [`challenges/0041-legal.md`](challenges/0041-legal.md) (`f1947706`) | CH-L1 … CH-L10 | 7 |
+| **schema / data integrity / migration** | [`challenges/0041-schema.md`](challenges/0041-schema.md) (`a87bda31`) | CH-S1 … CH-S14 | 7 |
+
+Both lanes carry a "what I attacked and could not break" section; the lead's disposition of every finding
+is in `## Verdict` §V.8.
+
+### CH-A1 … CH-A6 below are **author-anticipated** (rev 1), written before the panel ran. They are not challenger findings.
+
+**CH-A1 — three tables for a checkbox.** *(A challenger should press A3 hard.)* → **Answered in rev 2 with
+two new arguments (A3(i), A3(ii)); rev 1's stated reason is disavowed as wrong.** Still untested by a
+panel; attack the new arguments, not the old one.
+
+**CH-A2 — "mandatory" that blocks only new cleaners is barely mandatory.** → **Answered by moving the gate
+to `ApproveEmployee` (D5)**: no cleaner reaches work without a statement, and D6.3 measures a closing
+backlog rather than a permanent stream.
+
+**CH-A3 — the interstitial prompt is a soft gate wearing a costume.** → **Answered in D5**: with the gate
+at approval, the prompt's population is the already-approved cohort only — finite and shrinking.
+
+**CH-A4 — `Action.Revoked` is unused-enum-value smell.** → **Resolved for the author, and CH-S7 is the
+reason it must ship:** it is what makes ordering load-bearing, and ordering (D1.4) is the thing that
+cannot be retrofitted cheaply.
+
+**CH-A5 — D6.1's default is a legal judgement an architect may not make.** → **Superseded by CH-L2's
+sharper form; see D6.4 and §Escalations 1.** The contradiction is removed; the default is stated as an
+engineering judgement about harm and nothing more.
+
+**CH-A6 — the `LegalNoticeReviewStatus` reuse may be a false friend.** → **Closed by the lead.** Provenance
+transfers; the failure posture does not. Keep the enum, state the inversion (D4.6).
+
+## Defense — **rebuild, rev 2, 2026-08-05**
+
+*Rev 1's author never filed a defense; the lead ruled on the record because the decisive finding was a
+fact about the codebase. **This rebuild is the defense.** Every row of §V.8 is answered below by
+REBUT-with-evidence, CONCEDE + REVISE, or ESCALATE, with the decision that carries it.*
+
+| §V.8 row | Answer | Where |
+|---|---|---|
+| **CH-L1 / CH-S5** (the stamp is on a path that does not issue) | **CONCEDE — and the repair is to delete the stamp, not to move it.** Verified first-hand: `PayPeriodBackgroundService.cs:328` builds the row inline; `CreateFromOrderPays` delegates to `EmployeeInvoice.Create` (`:138`), which is separately public. RB-1/RB-2 satisfied **vacuously** — there is no stamp site to miss | **D6**, A7 |
+| **CH-L2** (which horn; the number can never go down; B8 misapplied) | **CONCEDE.** The contradiction is removed (D6.4); the escalation is re-framed verbatim as the challenger proposed; B8 is **not cited** because derivation does not freeze a computed output | **D6.2 test 3, D6.4**, Esc. 1 |
+| **CH-L3** (VAT axis; `Q-PAYOUT-03` open) | **ESCALATE, and state the key's basis.** D1 keys `AgreementVersion` on jurisdiction alone **by decision, pending the answer**; the question is folded into the already-blocking `Q-PAYOUT-03` and **gates the schema** | **D1**, Esc. 2 |
+| **CH-L4** (renderable vs demandable) | **CONCEDE.** The split is adopted; the precedent's non-transfer (a printed notice vs an act of assent) is stated | **D4.3**, check #12 |
+| **CH-L5** (gate placement; `ApproveEmployee` never answered) | **CONCEDE — and adopt `ApproveEmployee`.** Rev 1's `UpdateEmployee` gate is withdrawn; the criterion-by-criterion answer is in the record, as a decision with a real trade-off must have | **D5** |
+| **CH-L6** (stale rejection renders as the generic error; no refetch; unsequenced pair) | **CONCEDE, with the guard's behaviour re-verified.** Keys under `api.agreement.*` **and** in `PARTNER_SURFACE_ERROR_KEYS` in the same change; a binding client refetch contract. **The accept/submit interleaving disappears** — with the gate at approval there is no same-flow pair | **D3.5**, check #11 |
+| **CH-L7 / CH-S3** (tenancy of the sweep; `IgnoringTenant` mandated) | **CONCEDE.** F5 is **rewritten** (not merely deleted) so no accepted ADR asserts a correct sweep is broken; the variants are withdrawn; check #7 inverts. **Under D6 no issuance path reads these tables at all** | **F5, D10**, check #7 |
+| **CH-L8** (immutable acceptance bound to a mutable document) | **CONCEDE as narrowing.** Coverage binds to the invoice **row's** issuance, never to the document's bytes; invoice immutability routed (ticket 10); the IDOR note routed to security | **D6.5** |
+| **CH-L9** (fail-open is invisible) | **CONCEDE.** D6.3 gains the jurisdictions row; the fail-open posture is stated in the ADR's own words rather than implied | **D4.5, D6.3** |
+| **CH-L10** (D9's evidence sentence false; `ContractReference` survives erasure) | **CONCEDE both.** Three predicates, named; the more interesting true fact (`Active` passes the 403 filter and no order gate) recorded. `ContractReference` joins the redaction set and checks #14/#16 | **D9, D8** |
+| **CH-S1** (append-only is a word) | **CONCEDE remedy (a) — RB-6; ACCEPT RB-7's refutation of remedy (b); narrow the claim — RB-8.** The archetype becomes `AdminActionAudit`. I **re-verified** that every repository interface derives from `IRepository`, including `IAdminActionAuditRepository` — so (b) has no precedent and would need its own ADR. The real mechanisms are **priced and routed**, not hand-waved | **D1.1, D11**, checks #2–#4, ticket 11 |
+| **CH-S2** (five unstated `OnDelete`s) | **CONCEDE.** Five stated with reasons — and the fifth is now `AgreementVersionText → Languages` rather than an invoice FK, because there is no invoice FK | **D1.8** |
+| **CH-S4** (the real tenancy defect is the query filter) | **CONCEDE — RB-9.** Both config tables become `BaseEntity` with the S8 "why it isn't" comment naming `CountryInvoiceConfig`; the acceptance log stays tenant-scoped; the franchise-override problem is **routed, not pre-solved** | **D10** |
+| **CH-S6** (the unique index constrains the wrong column) | **CONCEDE.** `(Kind, CountryId, EffectiveFrom)` UNIQUE added; `(Kind, CountryId, Version)` kept as the external handle and *said to be*; a deterministic resolver tiebreak regardless | **D1, D4.2** |
+| **CH-S7** (no insertion ordinal; the ordering column is backdatable) — *upgraded to blocking by the lead* | **CONCEDE, and go further: there are TWO orders, not one.** Rev 1 used the legal timestamp as the supersession key. `RecordedAt` + `Sequence` decide supersession; `OccurredAt` decides coverage. The house's written lesson (`OrderStatusTrack`, `Order.AddOrderStatus`) is followed on both the two-column point *and* the "a backdated timestamp must not become current" point | **D1.4** |
+| **CH-S8** (integrity stops one hop short, twice) | **CONCEDE both.** (a) the statement references the **exact `AgreementVersionText` row**, so `AgreementVersionId`/`LanguageCode` are dropped as loose columns; (b) `Kind` is pinned by composite FKs to two alternate keys, with the EF feasibility **flagged for the `db` agent** rather than asserted | **D1.6, D1.7** |
+| **CH-S9** (`varchar(10)` language code) | **CONCEDE.** `citext(5)` + FK to `Languages(Code)` with `HasPrincipalKey`, `Restrict`; the hash pre-image lower-cases the code **explicitly** so it is reproducible from the stored row alone | **D1, D3.3** |
+| **CH-S10** (NOT NULL is false by construction for the paper channel) | **CONCEDE.** Nullable-by-variant on the `EmployeePayoutDetails`/`PayoutScheme` precedent, with the invariant in the two factories and a check for it | **D1.3**, check #9 |
+| **CH-S11** (`IS NULL` unions four causes) — *sustained as a required PROPERTY, not a solution* | **CONCEDE the property; REJECT the outcome column.** Derivation's negative has **one** cause, so RB-4 is met without a second frozen column — and the column's proposed members are engineering causes masquerading as legal categories | **D6.2 test 2** |
+| **CH-S12** (urgency misattributed; seed breaks a test; the `Initial` no-op) | **CONCEDE all four.** The urgency argument is **not reinstated**; the seed instruction is **dropped** with the reason; the `to_regclass` pre-deploy gate is recorded as a precondition; F3 is rewritten from the true evidence | **§Migration, F3** |
+| **CH-S13** (the jurisdiction term reads a navigation) | **CONCEDE — and it dissolves.** The resolver takes a **country id parameter**; under D5 both callers already hold a scalar (`command.WorkCountryId`; and `GetByUserEmailAsync`, which does include `Address`). No denormalized column needed | **D4.1** |
+| **CH-S14** (index/config gaps) | **CONCEDE 2, 3, 4, 5; 1 is MOOT.** No index on `EmployeeInvoices.SelfBillingAcceptanceId` is needed because **there is no such column**. The resolver's index is specified; `NULLS NOT DISTINCT` gets the catalog's own *job* test as its reason and joins `NullsNotDistinctIndexModelTests`; the `LiveActivityTokenConfiguration` mis-citation is dropped; every index is named | **D1, D1.4**, checks #18–#19 |
+| **CH-A1 (A3)** — *UNTESTED; author's position only* | **DEFENDED WITH NEW ARGUMENTS, and the old one disavowed.** Rev 1's reason ("a false record, undetectably") is **wrong** — a correctly built A3 refuses the stale client. The real objections are A3(i) an onboarding outage tied to app-store timing on a mandatory path, and A3(ii) a **ratified catalog rule** forbidding a statutory string in a label set. **Still panel-untested; attack these** | **A3** |
+| **CH-A2 / CH-A3** | **ANSWERED** (they were "OPEN — subsumed" only because the number could not be produced) | **D5, D6.3** |
+| **CH-A4 / CH-A5 / CH-A6** | Resolved / superseded / closed, as above | **D2.4, D6.4, D4.6** |
+
+### What rev 2 changed that NO challenger asked for — attack these first
+
+A challenger's time is best spent where nobody has looked. Five things here are the rev-2 author's own,
+and none has been through a panel:
+
+1. **D6 — deriving coverage instead of stamping it.** The lead posed the fork and refused to decide it.
+   The four-of-five-tests argument is in D6.2. The strongest attack: *derivation makes history a function
+   of code, and a deleted statement silently un-authorizes every past document.* My answer is D11 + checks
+   #2–#4, and I concede it is the weakest joint in this ADR.
+2. **D5 — the gate at `ApproveEmployee`.** CH-L5 asked for it to be *answered*, not adopted. Adopting it
+   is mine. The strongest attack: *back-office friction is a real operational cost the owner has not
+   agreed to, and "mandatory" now depends on an admin's queue.*
+3. **D1.0 — renaming the entity to `EmployeeAgreementStatement`.** Nobody raised it. Justified because
+   `Revoked` ships day one; pre-DDL is the only free moment.
+4. **D1.4's atomic append** (vs. `MAX+1` + retry). Flagged as a hedge in D1.4 itself.
+5. **D1.6's composite-FK discriminator chain.** CH-S8(b) asked for *a* pin; the three-level chain is mine
+   and its EF feasibility is **flagged, not asserted**.
+
+---
+
+## Verdict — **RETURNED TO AUTHOR. Rebuild required.** *(lead, 2026-08-05)*
+
+> **This verdict ruled on rev 1 and is preserved verbatim as the record. It has not been edited.** Its
+> "operative state" box describes rev 1's state; the current state is in §Status at the top, and every
+> row of §V.8 and every requirement RB-1…RB-11 is answered in **`## Defense — rebuild`** above.
+
+> **Operative state, so nobody has to infer it.** This ADR is **`proposed` and not buildable**.
+> **No ticket may be closed against it. Ticket 1 (schema) may not be *started*** — four of the rulings
+> below change the schema block, and starting DDL work now would freeze contested decisions in a
+> migration. **The `ef-migration` manual step is withdrawn** (§V.6). Tickets may still be *filed*, and
+> the escalations in §V.9 should go to the owner **now**, because two of them gate the rebuild.
+> The living doc `agents/architecture/decisions/self-billing-agreement.md` carries the same state and
+> has had its two known-false rows corrected.
+
+### V.0 — Why not `accepted`, not `accepted with amendments`, and not `rejected`
+
+`accepted` is foreclosed: 14 blocking findings across two lanes, and the ADR's own §How-a-reviewer-
+verifies step 3 **passes green on an implementation that stamps nothing** (§V.2). A compliance
+checklist that certifies a violating implementation is the exact failure this panel format exists to
+catch.
+
+`accepted with amendments` is the verdict I most wanted to reach and cannot. Amendments are for things
+you can bolt onto a frozen artifact. Four of the required changes rewrite the **schema block**
+(tenancy of the two config tables, nullability by channel, the supersession key, the entity archetype),
+one rewrites the **title** — which asserts *"whose text the server owns and whose version the server
+stamps"*, false for the `AdminRecordedContract` channel this ADR introduces to close its own headline
+cohort — and one deletes a **context header** (*"every citation verified in the working tree"*). Title,
+schema and context are precisely what acceptance freezes. Amending them post-acceptance would need a
+superseding ADR within days.
+
+`rejected` is wrong and would be expensive. The shape survived two adversarial lanes and my own
+attempts (§V.1). Rejecting would re-open F1/F2/A1/A2/A5 — the strongest work in the document — to
+re-litigate them into the same answer.
+
+So the verdict is the fourth thing the brief made available: **the decision is right and its
+enforcement story must be rebuilt.** The author revises this `proposed` draft; a second panel checks
+the revision against §V.10.
+
+### V.1 — Does the core shape survive? **Yes — narrowed in two places that are not "enforcement"**
+
+Both challengers concluded independently that the shape survives. I tested the split rather than
+inheriting it, and it holds — but not exactly where they drew the line.
+
+**What I could not break** (with what I tried):
+
+- **Keying on `Employee`, not `User`.** I attacked this from the owner's own `Q-PAYOUT-02` ruling
+  (*"not an employee but signs a B2B contract"*) — if the supplier is an OSVČ or an s.r.o., is the
+  `Employee` row the right party? It is: the platform models the supplier as the `Employee` row
+  (`VatNumber`, `RegistrationNumber`, the *Dodavatel* block), and keying there puts the agreement on
+  the same aggregate as the payout destination it authorizes. Sound.
+- **A rich record over a boolean; an entity over a `ConsentType`.** Both lanes opened
+  `UserConsentEntityConfiguration.cs:31-32` and `WithdrawConsent.cs` independently and agree: one
+  mutable row per `(user, type)`, `Regrant` overwrites the evidence, and the withdraw endpoint takes a
+  bare enum with only `IsInEnum()` on four hosts. **A1 and A2 are correctly rejected.**
+- **D2.3 — `OccurredAt` must not be `Auditable.CreatedOn`.** Verified by the schema lane against the
+  mechanism (`CommitAsync` re-stamps `CreatedOn`). Right, and right for the stated reason.
+- **The `LegalNoticeReviewStatus` reuse (CH-A6).** The two lanes *look* like they disagree and do not,
+  so I adjudicate it rather than leaving it: the schema lane is right that `BusinessSupplied` makes the
+  same **provenance** claim in both places (a named human supplied this text for this jurisdiction), so
+  the reuse stands and CH-A6 closes. CH-L9 is right that the **failure posture is inverted** —
+  `NotReviewed` on an invoice still prints a generic notice (fail-soft), `NotReviewed` here renders
+  nothing and demands nothing (fail-open). Both true, different axes. **Keep the enum; state the
+  inversion at the call site.**
+- **D8's ruling** (`ContractStatus` is a false friend, do not read it, do not extend it). Both lanes
+  sustained it against the tree; the `Deactivated()` divergence is live. The ruling stands; only its
+  evidence sentence is false (§V.7).
+
+**Where the shape itself narrows — these are decision changes, not amendments:**
+
+1. **The central read predicate is not well-defined.** The whole design is *"the latest row for
+   `(employee, kind)`"*. Its only ordering column is `OccurredAt`, which D6.4 has an **operator type
+   into an admin form** (correctly — it is the contract's signature date). With `Action.Revoked`
+   shipping from day one (D2.4, deliberately), an `Accepted` racing a `Revoked` on a tie decides
+   whether a cleaner is currently agreed, and the schema has no tiebreak. `OrderStatusTrack.Sequence`
+   (`OrderStatusTrack.cs:14-18`) is this house's written-down lesson on exactly this, and
+   `Order.AddOrderStatus` orders on **two** columns because one is not a total order. **CH-S7 is
+   sustained and I upgrade it to blocking**: the challenger filed it non-blocking, but "append-only log
+   whose latest row is the current state" *is* the shape, and if "latest" is undefined the shape does
+   not hold. A supersession key no operator can write is required.
+2. **The record is a discriminated variant, and the title denies it.** For
+   `Channel = AdminRecordedContract` there is no served text, so `AgreementVersionId` and `BodyHash`
+   have nothing true to hold — and by D4.3, for the very cohort D6.4 exists to serve there is often **no
+   version row at all**, so the command cannot insert. **CH-S10 sustained.** The remedy shape is house
+   precedent (`EmployeePayoutDetails` + `PayoutScheme`, nullable-by-variant), and it pays for itself:
+   D6.3's *"evidenced by contract only"* bucket becomes a real predicate instead of a category the
+   schema cannot express. But it means the ADR's **title** over-claims, and titles are frozen on
+   acceptance.
+
+**One limb of the shape is untested and must not be treated as adjudicated.** The author flagged **A3**
+(server owns the version, clients own the text) as the alternative they most expected to concede
+(CH-A1). **Neither challenger attacked it.** Under `process/deliberation.md` silence is not assent.
+A3's rejection therefore **stands as the author's position, not as a panel finding** — and it is now
+load-bearing in a new way, because CH-S9 (citext), CH-S10 (nullability) and CH-S8 (no FK to the served
+text row) are all costs of the `AgreementVersionText` table that A3 does not pay. The rebuild must
+either carry a challenge to A3 or state plainly that it went untested.
+
+### V.2 — The stamp: where it must attach *(the decisive finding; both lanes, opposite directions)*
+
+CH-L1 and CH-S5 converged from the legal axis and the schema axis on one defect, and I verified it
+first-hand rather than inheriting it:
+
+- The monthly close builds the invoice **inline** — `EmployeeInvoice.CreateFromOrderPays(...)` at
+  `PayPeriodBackgroundService.cs:328`, `Add` at `:334`, its own duplicate guard at `:311-325`, no
+  MediatR — reached from `PayPeriodTimerHandler` → `CloseExpiredPeriodsAndOpenNewAsync` →
+  `SendPeriodClosedEmailsAsync:155` → `GenerateInvoiceForEmployeeAsync:298`.
+- `GenerateInvoice.Command` — the handler this ADR stamps — is reached only from
+  `AdminPayrollController:61` (an admin button) and the queue consumer, whose sole production producer
+  is `FiscalReconciliationService.cs:151-152`.
+
+So **every ordinary invoice a cleaner receives would carry a null acceptance, permanently**, D6.3's
+detection report would return 100% of rows, and verification #3 (*"`GenerateInvoice`'s validator gains
+no rule. It gains a stamp in the handler"*) certifies that implementation as compliant. This deletes
+the compensating control that D5's non-blocking posture, A5's rejection, and CH-A2's answer all rest
+on. **Both lanes' findings sustained in full.**
+
+I do not design the repair. The constraints the repair must satisfy:
+
+- **RB-1 — no invoice-creation path may go unstamped by omission.** The mechanism must be enumerated by
+  the compiler or the schema, not by a reviewer reading a handler.
+- **RB-2 — the enumeration sink is `EmployeeInvoice.Create`, not `CreateFromOrderPays`.** *(Neither
+  challenger caught this; CH-S5's remedy #2 names the wrong sink.)* `CreateFromOrderPays` **delegates
+  to `Create`** (`EmployeeInvoice.cs:138`), and `Create` is separately public and separately called
+  (`DomainSeed.cs:160`, `PayrollMockFactory.cs:52`, four test sites). A required parameter on
+  `CreateFromOrderPays` alone leaves a second construction path open for the next writer to walk
+  through — which is how this ADR got here in the first place.
+- **RB-3 — the compliance check is discharged against an invoice produced by the timer path**, not
+  against a handler's source. Verification #3 and #10 are rewritten accordingly, or they certify the
+  defect again.
+- **RB-4 — the attribution must be answerable without a single nullable FK whose NULL has four
+  causes.** CH-S11 is sustained: `SelfBillingAcceptanceId IS NULL` unions *legacy* / *feature off for
+  this country* / *never asked* / *bug*, and under `Q-SELFBILL-01`'s own default it is **100% of rows on
+  the day it ships**. `patterns-backend.md`'s fail-soft condition (3) demands a predicate that separates
+  the signal from the design; this one cannot. (I do not mandate CH-S11's outcome-column solution — I
+  mandate the property.)
+- **RB-5 — and the fork this ADR never named must be answered: *stamp at issuance* vs *derive the
+  attribution from the append-only log*.** The log is append-only and carries `OccurredAt`, so *"was
+  there a current acceptance at `GeneratedAt`?"* is computable at query time with **no column on
+  `EmployeeInvoice` at all** — which dissolves RB-1/RB-2 entirely (there is no stamp site to miss) and
+  dissolves CH-L2's *"the number can never go down"* (a later-recorded paper signature with an earlier
+  `OccurredAt` would correctly attribute a June invoice). Its costs are real: history becomes a function
+  of the resolver's current rules, and the record stops saying what the issuer actually consulted.
+  **I am not choosing it.** I am ruling that a design cannot claim the freeze rule (`patterns-backend.md`
+  §B8 / ADR-0009 D2) without answering it — and CH-L2 is right that B8 freezes a *computed output
+  against config drift*, not *new evidence about the state of the world at issuance*, so the citation as
+  used is a misapplication. Answer the fork, then cite whichever rule actually applies.
+
+### V.3 — "Append-only": needs a mechanism **and** a narrower claim. One challenger remedy is refuted
+
+**Confirmed:** zero `HasCheckConstraint`, zero `HasTrigger` anywhere in the solution. `IRepository`
+ships `Remove` / `RemoveRange` / `Deactivate` / `DeactivateRange` (`IRepository.cs:41-47`,
+`BaseRepository.cs:122-146`). `CommitAsync` actively stamps `Modified` entities. And **D7 itself
+requires an UPDATE** (redacting `IpAddress`/`DeviceLabel`). So today the word is enforced by a code
+comment — and §How-a-reviewer-verifies has fourteen checks, **not one of which checks the property the
+ADR is named after**. That is the same defect as §V.2, in a different place: everything is verified
+except the thing that matters. **CH-S1 sustained.**
+
+Ruling, in three parts:
+
+- **RB-6 — the entity archetype changes.** I sustain CH-S1's remedy **(a)**: the shipped
+  `AdminActionAudit` shape (`sealed : BaseEntity, ITenantEntity`, `init`-only payload, its own
+  `OccurredOn`, `TenantId` mapped by hand because it does not inherit `AuditableEntityConfiguration`) is
+  a real, in-tree, append-only, tenant-scoped log, and it answers D2.3 and half of D1 without inventing
+  anything. It also drops four columns (`UpdatedBy/On`, `DeactivatedBy/On`) that are meaningless on an
+  immutable row and actively misleading when populated. **This contradicts D1's own archetype sentence**
+  (*"exactly like `EmployeePayConfig`, `EmployeeInvoice`, `PayPeriod`, `EmployeePayoutDetails`"* — all
+  four of which are mutable-by-design records), which is why this is a decision change and not a note.
+- **RB-7 — CH-S1's remedy (b) is REFUTED.** The challenger asserts *"there is precedent for a narrow
+  interface surface; nothing forces the generic base."* I checked: **all 58 repository interfaces in
+  `src/Cleansia.Core.Domain/Repositories/` derive from `IRepository<T, string>`** — including
+  `IAdminActionAuditRepository.cs:5`, the append-only audit log the challenger holds up as the model,
+  which therefore ships `Remove` and `Deactivate` today. There is **no** precedent. Adopting (b) would
+  be a new canonical archetype that puts existing code in violation — ADR-0033 routing tests 1 and 2
+  both fire — so it needs its **own** ADR and cannot ride in as an ADR-0041 amendment. The challenger
+  flagged catalog routing for (a) and missed that it applies with more force to (b); good instinct,
+  wrong limb.
+- **RB-8 — therefore the claim narrows, and is stated rather than implied.** The honest v1 property is:
+  *append-only **by construction at the entity** — no public setters, no mutators — with exactly one
+  named exception (D7's redaction of `IpAddress`/`DeviceLabel`), on a repository base that still exposes
+  `Remove`/`Deactivate` and a database that enforces nothing.* Anything stronger is a claim this
+  repository cannot currently make about any table. D1 must also say what `IsActive` means on an
+  immutable row, since `BaseEntity.IsActive` has a public setter and there is no global filter (S10).
+  And a reviewer check must exist for the property, or it is documentation.
+
+### V.4 — Tenancy: **CH-S4 confirmed, and it is the better finding.** Ruled together with CH-S3/CH-L7
+
+I verified the filter myself rather than taking it: `CleansiaDbContext.cs:230-268` builds
+`providerNull || (currentTenantId == null && e.TenantId == null) || e.TenantId == currentTenantId`.
+With `currentTenantId = "T1"` and `e.TenantId = NULL`, the middle clause is false and the last is SQL
+`NULL` — **the row is excluded**. And the siblings are all tenantless: `Country : Auditable`,
+`Language : BaseEntity`, `CountryInvoiceConfig : BaseEntity`, `CountryConfiguration : Auditable` — none
+implements `ITenantEntity`. `CountryInvoiceConfig` is this ADR's **own cited precedent** for per-country
+legal text under a `LegalNoticeReviewStatus` gate.
+
+The composition is the finding: D4.6 lands version rows by owner SQL with `TenantId NULL` → invisible to
+any tenanted caller → `ResolveCurrentVersionAsync` returns nothing → **D4.3 reports that invisibility as
+`required: false`** → no checkbox, no gate, no stamp. The feature silently switches itself off **in the
+unsafe direction**, indistinguishable from "the owner hasn't written the text yet", invisible in
+single-tenant mode, and undetectable by any of the fourteen verification steps. **The safety valve
+becomes the failure mode's disguise.** It also confirms the framing I was handed: this is a
+**query-filter** defect, not a unique-index one — and per `CLAUDE.md`'s own warning a `(TenantId, …)`
+unique index enforces nothing while `TenantId` is null anyway, so D9's index argument answers a question
+that is not the exposure.
+
+- **RB-9 — `AgreementVersion` and `AgreementVersionText` are platform config: `BaseEntity`, **not**
+  `ITenantEntity`**, carrying S8's mandated one-line "why it isn't" comment naming `CountryInvoiceConfig`
+  as the sibling. The unique keys lose their nullable column, so the `.AreNullsDistinct(false)` question
+  evaporates rather than being answered on the wrong grounds (CH-S14.3 sustained: `consistency.md` decides
+  that option by the index's **job**, and neither of these is a sole arbiter of a concurrent claim).
+  A tenanted acceptance FK'ing a tenantless version is house-normal (`EmployeePayoutDetails` → `Country`).
+  **`EmployeeAgreementAcceptance` stays `ITenantEntity`** — a per-employee fact; both lanes agree and I
+  could not break it either. If a franchise genuinely needs its own terms, that is a per-tenant *override*
+  on platform config — a problem `CountryInvoiceConfig`, `CountryConfiguration` and `Country` all share
+  and none has solved. Route it as a question; do not pre-solve it on one table at the price of a live
+  silent failure.
+- **RB-10 — F5 is false and D9's `…IgnoringTenantAsync` variants are withdrawn.** Both lanes falsified
+  F5 independently and I verified the timer path myself: `:119-122` reads ignoring-tenant, `:133-142`
+  groups by tenant and sets the override, **then** `:155` issues, and `:187` commits **inside** the loop —
+  the reference shape `CLAUDE.md` documents. `GenerateInvoiceHandler.cs:48-61` does the same before
+  `mediator.Send` at `:63`. **The ambient tenant is already correct at both issuance sites**, so a scoped
+  read is right and an ignoring read would stamp tenant A's invoice from tenant B's rows — a cross-tenant
+  read of a legal record **that verification #6 currently mandates**. Worse for the version lookup, which
+  is keyed on `(countryId, kind)` and bounded by nothing. Verification #6 inverts: assert that **no**
+  ignoring-tenant agreement method is referenced from `GenerateInvoice`, `PayPeriodBackgroundService`, or
+  the accept/status handlers. **D9's surviving sentence — the pinning test seeds a non-null `TenantId` —
+  is sustained by both lanes and by me; it is the test that would have caught RB-9.**
+- **RB-11 — and F5 must be rewritten, not merely deleted.** As written it asserts that a **correct,
+  shipped** sweep is broken. An accepted ADR saying that teaches the next reader to "fix" working code,
+  which is the failure `security-rules.md` warns about in its own margin.
+
+These two had to be ruled together, as the schema lane asked: with the config tables tenantless,
+`ResolveCurrentVersionIgnoringTenantAsync` has nothing left to ignore.
+
+### V.5 — Where the legal lane's remaining blockers land
+
+- **CH-L4 (language) — sustained.** D4.5 (*"a missing locale degrades honestly; it never blocks"*) and
+  D5 (blocks on acceptance) cannot both be true once the activation gate is *any one* reviewed language:
+  the expected launch case is a Ukrainian- or Russian-speaking cleaner hard-blocked on affirming a Czech
+  text. And it lands on D3's premise — the ADR spends a SHA-256 proving *which bytes were displayed* and
+  then lets those bytes be unreadable to the signer. The challenger's own quotation of the ADR against
+  itself is fair: *"a record that is false and looks perfect."* The **renderable vs demandable** split is
+  the shape of the fix; the rebuild states it, and states that `patterns-backend.md`'s printed-notice
+  precedent does not transfer to an act of assent.
+- **CH-L5 (gate placement) — sustained, and this one I verified.** `profile.facade.ts:202` posts
+  `updateEmployee` from the partner **profile page**, so D5's rule would fire on a year-two phone-number
+  edit and D5's justification (*"they are on the form anyway; the cost is one tick"*) is false for that
+  request. D5's table then contradicts itself: row 1 blocks, row 6 says a stale cleaner is *"prompted,
+  not blocked"*, and a stale cleaner editing their address hits both. Mobile has no attachment point at
+  all, and this ADR's **own ticket 9** records that gap as unsolved. **`ApproveEmployee` — which meets
+  every criterion D5 itself states (write path, already validates completeness twice, host-agnostic,
+  governs only the `Pending → Approved` edge, cannot lock out a working cleaner, and has D6.4 as its
+  operator release valve) — is never named.** A decision with a real trade-off must answer its
+  alternatives. Adopt it or reject it with reasons; do not leave it out of the record.
+- **CH-L6 (the stale-version loop) — sustained, with its phrasing corrected.** Ticket 7 puts both error
+  keys under `errors.*`, which on partner web is read by nothing: the shared interceptor resolves
+  `` `api.${dotValue}` `` and substitutes `api.common.error_occurred`, so a version-stale refusal renders
+  as *"An error occurred. Please try again."* — literally the generic bug message, on a flow with no
+  specified refetch, which retries into the same failure. The challenger says the parity guard *"asserts
+  against a hand-maintained array, not against `BusinessErrorMessage.cs` at runtime"*; that phrasing is
+  imprecise and I correct it so a rebuild author does not check it, find it wrong, and dismiss the
+  finding. The spec **does** read `BusinessErrorMessage.cs` (`parseBusinessErrorValues`, `:43-52`) — but
+  only in the direction `array → backend` (*"every partner-surface key exists as a BusinessErrorMessage
+  value"*, `:223`). There is **no** `backend → array` coverage assertion, so a new constant that never
+  enters `PARTNER_SURFACE_ERROR_KEYS` (`:95`) is never checked in any locale and the spec stays green.
+  **Conclusion sustained; the guard cannot catch this.** (Note `CLAUDE.md`'s own sentence — *"they assert
+  against `BusinessErrorMessage.cs` directly"* — is what would mislead an implementer here. Routed to the
+  Docs/catalog lane, not fixed by me.)
+- **CH-L2 (which horn) — sustained as a coherence defect; the legal question is escalated, not decided.**
+  D6.1 justifies continued issuance *"on the contract's basis"* for **exactly the cohort F4 defines by
+  the absence of that clause**, and `Q-SELFBILL-02` carries the same sentence into the owner's inbox. An
+  architect cannot rule which horn is legally right — but they must stop asserting both. The escalation
+  is re-framed as the challenger proposes: not *"may we keep issuing on the contract's basis"* but *"for
+  a supplier with no self-billing agreement of any kind, is the document valid, and if not is the remedy
+  reissue or a retroactive acceptance?"*, with D6.3's count attached so the owner accepts a **number**.
+  Until then D6.3 must stop calling the exposure "closable" (see RB-5 — the derive-vs-stamp fork is the
+  same seam).
+- **CH-L8 — sustained as narrowing.** `RegenerateInvoicePdf` rebuilds the supplier block live from the
+  current `Employee` row on two hosts, and `Anonymize()` nulls `VatNumber` — so the "specific document"
+  the stamp binds to is not fixed. D6.2 must claim only what it delivers. Invoice immutability is a
+  separate decision; **routed**, not folded in. The challenger's collateral IDOR note on
+  `RegenerateInvoicePdf` (no ownership term, currently saved by `AdminOnly` in the frozen policy map) is
+  correctly routed to the security lane and is **not** ADR-0041's to decide.
+- **CH-L9 — sustained as operability.** D4.3 is fail-**open** and no operator can see it. D6.3 gains the
+  row: *jurisdictions with no `BusinessSupplied`+ text, with active-cleaner and invoice counts.* Without
+  it, "the feature is off" and "nobody has ticked yet" are the same number.
+- **CH-L10 — sustained.** D8's *ruling* upheld, its evidence sentence false; `ContractReference` joins
+  the redaction set and verification #12.
+
+### V.6 — The VAT question and the migration: **the migration does not proceed** — and the urgency argument is refuted
+
+**Verified:** `Q-PAYOUT-03` is open, `blocking: YES`, unanswered, owner-plus-accountant, and asks
+verbatim whether *"null means not registered"* suffices *"(and can it change mid-pay-period)"*.
+`IsVatPayer = vatNumber != null` is derived **live at PDF-build time**, and `Employee.VatNumber` is
+self-service editable on two hosts.
+
+- **CH-L3 sustained, and narrowed to where it bites.** The open question does not block the whole
+  schema; it blocks **the version key**. `UNIQUE (Kind, CountryId, Version)` has no axis for the
+  supplier's VAT character, and adding a dimension to that key **after** append-only acceptance rows
+  exist is precisely the expensive change D1 exists to prevent. The challenger's ask is well put and I
+  adopt it: **D1 must state whether `AgreementVersion` is keyed on jurisdiction alone by decision or by
+  omission.** If by decision, the reason (one text serves both VAT variants) is the owner's or counsel's
+  to give, not the architect's — escalate it.
+- **CH-S12(1) sustained — and it is the single most useful paragraph in either challenge, because it
+  removes schedule pressure from a panel.** The ADR argues the window is open *today* because later the
+  FK lands on a populated `EmployeeInvoices` whose rows can never be back-stamped. That harm is not
+  caused by the migration's timing: by D4.3 plus `Q-SELFBILL-01`'s **own stated default**, the feature is
+  inert until reviewed text exists, so every invoice in that window is unattributed whether the column
+  exists or not. The window is bounded by counsel's delivery. **The urgency argument is self-defeating
+  against the ADR's own default and is withdrawn.**
+- **CH-S12(4) sustained and decisive on mechanism.** `MigrationService/Program.cs:31-36` calls
+  `GetPendingMigrationsAsync()` and **returns 0 when the list is empty**; `Initial` is already applied on
+  live DEV. Folding three tables into `Initial` is therefore a **silent no-op** there — and the failure
+  direction is worse than ADR-0040's, where the drift merely left a column nullable. Here three tables
+  are **absent** behind a `MustAsync` on the onboarding submit path: `42P01` → an untranslated 500 on the
+  one path a new cleaner must pass, which is exactly the failure mode D5 chose the write path to avoid.
+  **A verifiable pre-deploy gate (`SELECT to_regclass(...)` non-null, per environment, discharged by
+  evidence) is required in the ADR**, plus an explicit statement of whether this is a regenerated
+  `Initial` or a stacked migration.
+- **CH-S12(2) sustained.** The seed instruction as written edits one of two byte-identical files pinned
+  by `StartupSeedScriptSyncTests`, and both are owner territory. It becomes a `manual_step` naming both
+  paths and the pin, or it is dropped — D4.3 already handles the row's absence.
+- **CH-S2 sustained** (five unstated `OnDelete`s; the EF default for the shape D1 names is **Cascade**,
+  which deletes the evidence D7 says must survive) and **CH-S6, CH-S8, CH-S9, CH-S13, CH-S14 sustained**
+  as pre-DDL requirements. Each changes the schema block, which is the second reason ticket 1 cannot
+  start.
+
+**Ruling: the `ef-migration` manual step is withdrawn** until (i) the version key's VAT axis is stated
+or escalated, (ii) RB-6/RB-9/CH-S10/CH-S7 land in the schema block, and (iii) the pre-deploy existence
+gate is recorded. There is no cost to waiting, because §CH-S12(1) shows there never was one.
+
+> **Recurring-mechanism flag (pattern-evolution loop).** *"Folding into an already-applied `Initial` is
+> a silent no-op"* has now been found by **two** independent challengers on **two** ADRs three weeks
+> apart (ADR-0040 §CH-W3, ADR-0041 §CH-S12(4)), each time against the same migration. Two is not yet the
+> ~3 that makes it a missing rule under `process/enforcement.md`, but it is on the clock, and it is
+> mechanically checkable. **Routed** to the catalog lane as a candidate `consistency.md` entry plus a
+> `check-consistency.mjs` ticket. I did not write it — `agents/knowledge/` is another lane's file this
+> sprint and a rule written without its enforcer is the thing ADR-0032 exists to stop.
+
+### V.7 — The two falsified context claims: what the credibility costs
+
+The section is headed **"Context — every citation verified in the working tree, 2026-08-04"**. Two
+load-bearing facts in it are false:
+
+| Claim | Reality |
+|---|---|
+| **F5** — *"the invoice sweep runs with no tenant claim"* / *"`PayPeriodBackgroundService` → `GenerateInvoice` → the D6.2 stamp"* | Both limbs false. The sweep sets the tenant override before issuing; the arrow does not exist |
+| **F3** — *"The reseed **does** create cleaners (five)"* | The executed seed (`insert_seed_data.sql`) inserts **zero** users and **zero** employees; `insert_users_employees.sql` is not on the reseed path |
+
+Plus sampled drifts: `:125-127` vs `:132-134`, "AC0–AC12" vs AC0–AC15, "zero hits" vs one (benign), and
+D8's *"all of them spelling it `Approved or Active`"* vs **three** distinct predicates
+(`Approved || Active` / `== Approved` / `!= Terminated`) — where, as CH-L10 notes, the true fact is more
+interesting and points the same way.
+
+**What it costs, precisely:**
+
+1. **Mechanically — each false fact *produced* a wrong decision, so correcting the fact does not correct
+   the decision.** F5 produced D9's mandated cross-tenant read **and** put the stamp on the writer that
+   does not issue. F3 produced a D5/D6 sized against a fixed cohort of five, when the real cohort is
+   *"everyone who registers between reseed and activation"* — a **growing** number the owner shrinks by
+   shipping, which changes what the report is for. This is the concrete difference between an amendment
+   and a rebuild.
+2. **Evidentially — the blanket header is a claim about *method*, and it is the claim a later reader uses
+   to decide whether to re-open a citation.** Once two load-bearing rows in a section asserting blanket
+   verification are false, no *unchecked* row in it carries weight. The two lanes sampled 11 and 9
+   citations; between them roughly two-thirds of the table is covered. **The remainder is unverified and
+   the rebuild must not treat it as verified.** That is the real price: the section stops being a
+   shortcut and becomes a to-do list.
+3. **Procedurally — the header goes.** An immutable ADR must not carry a blanket verification claim. Per-
+   row citations stand on their own; a false blanket claim contaminates the true ones. Replace it with
+   what was actually sampled, by whom, and when.
+4. **What it does *not* cost — and I state this deliberately, because the correction most likely to do
+   damage here is over-correction into hedging.** The *reasoning* in this ADR is strong and survived two
+   adversarial lanes: F1, F2, D2.3, D8's ruling, the A1/A2/A5 rejections, the `LegalNoticeReviewStatus`
+   reuse, and the "no unique index on an append-only log is a security property" argument were all
+   attacked and all held. Both challengers spent a whole section on what they could not break. The
+   failure is **not** weak argument; it is a strong argument aimed at a model of the running system that
+   is wrong in two places. The fix is grounding, not prose.
+
+### V.8 — Full disposition (a challenge stands unless defended or conceded)
+
+| Finding | Lane | Disposition |
+|---|---|---|
+| **CH-L1 / CH-S5** | both | **SUSTAINED — blocking.** Lead-verified. The stamp is on a path that does not issue ordinary invoices → RB-1…RB-5 |
+| **CH-L2** | legal | **SUSTAINED — blocking.** Coherence defect + B8 misapplied; escalation re-framed |
+| **CH-L3** | legal | **SUSTAINED, narrowed — blocks the migration, not the design** → V.6 |
+| **CH-L4** | legal | **SUSTAINED — blocking.** Split renderable from demandable |
+| **CH-L5** | legal | **SUSTAINED — blocking.** Lead-verified at `profile.facade.ts:202`. `ApproveEmployee` must be answered |
+| **CH-L6** | legal | **SUSTAINED — blocking**, phrasing corrected (V.5). Keys under `api.*` + the array + a refetch contract |
+| **CH-L7 / CH-S3** | both | **SUSTAINED — blocking.** Lead-verified. Withdraw the ignoring-tenant variants; invert verification #6 |
+| **CH-L8** | legal | **SUSTAINED as narrowing.** D6.2 claims more than it delivers; invoice immutability + the IDOR note **routed out** |
+| **CH-L9** | legal | **SUSTAINED.** Fail-open must be visible; one more row on D6.3 |
+| **CH-L10** | legal | **SUSTAINED.** D8's *ruling* upheld, its evidence sentence false; `ContractReference` joins the redaction set and verification #12 |
+| **CH-S1** | schema | **SUSTAINED — blocking.** Remedy **(a) adopted** (RB-6); remedy **(b) REFUTED** (RB-7); claim narrowed (RB-8) |
+| **CH-S2** | schema | **SUSTAINED.** Five `OnDelete`s stated with reasons, pre-DDL |
+| **CH-S4** | schema | **SUSTAINED — blocking, and confirmed as the better tenancy finding** → RB-9 |
+| **CH-S6** | schema | **SUSTAINED.** `(Kind, CountryId, EffectiveFrom)` + a total-order tiebreak in the resolver |
+| **CH-S7** | schema | **SUSTAINED and UPGRADED to blocking** (filed non-blocking). It is the shape's read predicate → V.1(1) |
+| **CH-S8** | schema | **SUSTAINED.** (b) especially — a denormalized `Kind` with nothing joining it is a false positive on the gate |
+| **CH-S9** | schema | **SUSTAINED.** `citext` + FK + an explicitly normalized hash pre-image; free now, a data migration later |
+| **CH-S10** | schema | **SUSTAINED — blocking, and it reaches the title** → V.1(2) |
+| **CH-S11** | schema | **SUSTAINED as a required property, not a required solution** → RB-4 |
+| **CH-S12** | schema | **SUSTAINED,** incl. (1) refuting the urgency argument and (4) the deploy-day 500 → V.6 |
+| **CH-S13** | schema | **SUSTAINED.** The jurisdiction term must not depend on query shape; `GetByIdIgnoringTenantAsync` loads no `Address` |
+| **CH-S14** | schema | **SUSTAINED** (1,2,3,4,5). Note 4: `LiveActivityTokenConfiguration` is mis-cited — its index carries no `TenantId` |
+| **CH-A1 (A3)** | author | **UNTESTED.** No challenger attacked it. Stands as the author's position, **not** as a panel finding → V.1 |
+| **CH-A2 / CH-A3** | author | **OPEN — subsumed.** "Will anyone watch the number" is moot until the number can be produced (RB-4) |
+| **CH-A4** | author | **RESOLVED for the author** — `Action.Revoked` stays, and CH-S7 is the *reason* it must: it is what makes ordering load-bearing |
+| **CH-A5** | author | **SUSTAINED as framing**, superseded by CH-L2's sharper form |
+| **CH-A6** | author | **CLOSED.** The provenance claim transfers (schema lane); the failure posture does not (CH-L9). Keep the enum, state the inversion |
+
+### V.9 — Escalations (PM: file these; two of them gate the rebuild)
+
+1. **Re-frame `Q-SELFBILL-02`** per CH-L2 — *"for a supplier with no self-billing agreement of any kind,
+   is the document valid, and if not is the remedy reissue or a retroactive acceptance?"*, with the count
+   attached. The current wording carries the D6.1/F4 contradiction into the owner's inbox.
+2. **New: does the required wording differ by the supplier's VAT status, and is `VatNumber != null` the
+   authoritative determination?** Fold into the already-open **`Q-PAYOUT-03`** rather than opening a
+   sixth `Q-SELFBILL-*` — it is literally part (a) of that question and `Q-PAYOUT-03` is already
+   `blocking: YES`. **Gates the version key, therefore the migration.**
+3. `Q-SELFBILL-01`, `-03`, `-04`, `-05` stand as filed; `-01` still gates activation, not the build.
+
+### V.10 — What the second panel checks
+
+A revised draft is ready when: every row of §V.8 is answered in the artifact (rebut with evidence /
+concede + revise / escalate); RB-1…RB-11 are satisfied *as properties*, not as prose; the "every
+citation verified" header is gone and the unsampled context rows are re-grounded; the title no longer
+asserts what is false for the `AdminRecordedContract` channel; and **§How-a-reviewer-verifies contains a
+check for append-only-ness and a check discharged against an invoice produced by the timer path** —
+the two properties this ADR is named after and currently cannot verify.
+
+**Consensus: not reached.** The disagreement is not between panel members — both challengers and the
+lead agree on shape and on defect. It is between the ADR and the codebase, and the codebase wins.
+
+---
+
+## Verdict — round 2: **RETURNED. Rev 3 authorized and SCOPED. The ADR must SPLIT.** *(lead, 2026-08-05)*
+
+> **This verdict rules on rev 2 against `challenges/0041-schema-rev2.md`. `## Verdict` above ruled on
+> rev 1 and is preserved verbatim.** Where the two disagree about operative state, this one governs.
+
+> **Operative state.** `proposed`, **not buildable**. **No ticket may be started or closed.**
+> `manual_step: ef-migration` stays **withdrawn**. Rev 3 is authorized and its scope is **closed** by
+> §W.10 — a third full rebuild is not authorized, and rev 3 may not re-open anything §W.8 records as
+> surviving. The living doc `agents/architecture/decisions/self-billing-agreement.md` carries the same
+> state.
+
+### W.0 — What kind of verdict this is, and why it is not the same one as round 1
+
+Round 1 returned rev 1 because **the central control was wired to code that does not run** and two
+load-bearing context rows were false. That is a grounding failure and it invalidated the mechanism.
+
+Round 2 is different in kind and the difference decides the verdict. The challenger **measured**: it
+built rev 2's schema as a throwaway EF Core 10 / Npgsql 10 model outside the repo, read the emitted
+DDL and SQL, and ran it against its own disposable PostgreSQL. Its numbers are evidence. I could not
+re-run them and I did not try; **a lead's job on an unreproducible measurement is to rule on the
+obligation it invokes, not on the digit** — so for every measured finding below I verified the *rule*
+it lands on and the *precedent* it names, in the working tree, and ruled on those.
+
+The result: **14 blocking findings became 6; none of the 6 says the design is wrong.** Three are
+schema-shaped and narrow (one index's column order, whether one column exists, one factory invariant);
+two are missing checks; one is a disclosure. The trajectory is convergence, not divergence, and I say
+so plainly because the brief invited the opposite reading and the evidence does not support it.
+
+`accepted` is foreclosed — three of the six change the schema block, which acceptance freezes.
+`accepted with amendments` is foreclosed for the same reason round 1 gave.
+`rejected` is wrong: the shape has now survived **three** adversarial lanes and two leads.
+
+So the verdict is a **scoped return plus a structural ruling**. The scoping is the substance: rev 2's
+author answered 25 findings across a 1 600-line document, and handing back an open-ended "rebuild" a
+second time is how a panel loops. §W.10 is a closed list.
+
+### W.1 — Does derivation survive? **YES. The failure does not reach the decision — but four of D6.2's five tests do not survive as written**
+
+The brief asks whether two mechanisms have now failed on evidence such that the decision needs a third
+shape. **They have not failed in the same way, and the difference is the ruling.**
+
+- **Rev 1's stamp failed *as a mechanism*.** It attached to `GenerateInvoice`, which does not issue the
+  invoices cleaners receive. No query shape repairs that; the control did not exist.
+- **Rev 2's derivation did not fail as a mechanism.** The challenger states it explicitly and I hold
+  it to that: *"I could not construct a case where derivation returns the wrong Boolean for a
+  well-formed log."* What failed is (a) **one unmeasured sentence** — D6.2 test 5, *"query cost is not
+  a loss"* — and (b) **one LINQ formulation** of a definition that is otherwise sound. The challenger's
+  own measurement proves the repair space is non-empty: its hand-written form is **109× faster on the
+  same data and the same index, from the same definition**, and it says so — *"The index is not the
+  problem… the problem is the outer loop cardinality × 2."*
+
+So: **derivation is salvageable with a different query form, and "derive, but not through EF's
+expression tree" is available in this repository** — `SqlQueryRaw` is a shipped construct
+(`MembershipBenefitUsageRepository.cs:105-107`, `PromoCodeRepository.cs:43/61`), so no new data-access
+archetype is required and ADR-0033 does not fire. **I am not designing the repair.** §W.10 P1–P5 state
+what it must satisfy.
+
+**But I will not let the conclusion stand on a justification the panel has holed.** I re-tested D6.2's
+five tests myself rather than inheriting either side:
+
+| D6.2 test | After round 2 |
+|---|---|
+| **1 — completeness** | **Intact, unattacked, and decisive.** Stamping requires every future writer to remember, and rev 1 *empirically demonstrated* that this team on this codebase does not. That is a measured failure of stamping, not a predicted one. It is the whole reason derivation still wins |
+| **2 — discrimination** ("the negative has one meaning") | **FALSIFIED** (CH-S2-6). The negative unions: never stated · revoked before issuance · stated after issuance · row deleted · country had no reviewed text. But a stamp's NULL unions causes too (RB-4 said so), so this becomes a **tie**, not a loss |
+| **3 — the number can go down** | **Survives as a fact**, and CH-S2-6 confirms the mechanism works. Its framing as pure upside is falsified: the same mechanism rewrites history in **both** directions |
+| **4 — which rule applies** | **Narrowed to a tie.** *"A derivation self-heals"* is true of a **code** bug and false of a **data** error, and CH-S2-6 shows the data error is the unfixable one. The ADR generalized from the case that favours it |
+| **5 — what derivation loses** | **Falsified twice.** The cost limb by CH-S2-1; the anchor limb by CH-S2-5, whose logic I sustain — *"a partial anchor is worse than no anchor"* does not follow, and the referenced rows are exactly the ones that matter |
+
+**Net: derivation wins on test 1, ties 2 and 4, wins 3 with a newly-named cost, and LOSES the
+referential anchor on 5.** That is a real margin and a much thinner one than the ADR claims. The
+conclusion is ratifiable; **the table is not**, and rev 3 rewrites it on this margin with the anchor
+loss stated rather than dismissed.
+
+### W.2 — The tenancy pattern: **the third occurrence, and it now needs a general answer.** This is the more important ruling
+
+**Sustained, and I generalize it beyond what the challenger claimed.** CH-S2-2 measured the coverage
+predicate. The same demotion applies to **every** read of `EmployeeAgreementStatement`, including the
+supersession read the approval gate and the status endpoint issue, because they all carry the same
+global filter over the same `TenantId`-leading index. The finding is larger than its author drew it.
+
+**Can this ADR carry a tenant-scoped index at all? Yes — but the line is not where the ADR drew it,
+and it is a line the catalog already implies without stating:**
+
+> **An index consumed by the WRITER may lead with `TenantId`; an index consumed by the READER may not.**
+> Uniqueness is evaluated by the index itself, so a tenant-scoped **unique arbiter**
+> (`… NULLS NOT DISTINCT`, mandatory per `consistency.md` §"Tenant-scoped unique indexes") is correct
+> and stays. A **lookup** index is reached through the global filter, which puts `TenantId` inside a
+> three-armed `OR` — so a `TenantId`-leading lookup index on an `ITenantEntity` is **unseekable by
+> construction**, and every column behind it is unreachable with it. `consistency.md` already decides
+> `NULLS NOT DISTINCT` by *"the index's JOB"*; the same job test decides **column order**, and nobody
+> had noticed that it extends.
+
+So: the ADR's `UNIQUE (TenantId, EmployeeId, Kind, Sequence)` is *correct as an arbiter* (and lives or
+dies with §W.3's ruling on `Sequence`); its `INDEX (TenantId, EmployeeId, Kind, OccurredAt DESC, …)` is
+**forbidden as specified**. Discharged by an `Index Cond` assertion, never by an index declaration.
+
+**Does the pattern need a general answer? Yes — and there are four facets, not three, and they do not
+all point the same way.** The unifying fact is not "single-tenant hides bugs":
+
+> **`TenantId` is nullable and `null` is the production value. Every mechanism that consumes it behaves
+> differently at `null` than at a value — the query filter's three-armed `OR` (visibility), a UNIQUE
+> index's NULL semantics (enforcement), a btree's leading column (sargability), and a bare SQL
+> parameter's type inference (`42P08`). A tenanted test and an untenanted test therefore exercise
+> DIFFERENT CODE, and neither is the other's superset.**
+
+Occurrences: round 1 CH-S4 (visibility — fires *only* when tenanted) · `consistency.md` §"Tenant-scoped
+unique indexes" (enforcement — fires *only* untenanted) · CH-S2-2 (sargability — untenanted only) ·
+`MembershipBenefitUsageRepository.cs:95-100`, which carries the `42P08` trap **as a code comment
+naming exactly this** (*"in SINGLE-TENANT mode only, which is why the promo path shipped this bug past
+a tenanted test run"*). Three partial rules cover three facets; **visibility is covered by nothing**,
+and no rule states the unifying fact.
+
+That is over `process/enforcement.md`'s bar. **Routed to the catalog lane, not written here** — the
+knowledge files are another lane's this sprint, and per `conventions.md` §"The price of a law" the
+entry needs `**Enforced by:** <named enforcer> — <tier token>`, which I cannot provision from this
+seat. Two constraints for whoever takes it: the enforcer must be able to **fail a build**, or the entry
+is `T2-ADVISORY` however it is labelled (`check-consistency.mjs` is in **zero** `.github/` workflows —
+`consistency.md` says so itself); and the rule is about **`TenantId` being nullable**, not about
+"multi-tenancy", or it will be filed under a heading nobody reads while single-tenant.
+
+*(Not advanced: the `Initial`-regeneration no-op stays at **2** occurrences. CH-S2-7 §Found-sound 6
+re-verifies the `to_regclass` mitigation; confirming a mitigation is not a third occurrence.)*
+
+### W.3 — The append: **the sentence goes AND the mechanism goes** — and the general lesson is bigger than either
+
+D1.5 says *"the append never refuses a true statement."* Measured: the losing writer receives **zero
+rows**, no exception, and the `Revoked` **is not in the log**. I verified the precedent the ADR names,
+line by line, and the challenger's reading is exact: `MembershipBenefitUsageRepository` has **no
+retry** — `if (reservedOrdinals.Count == 0) { return null; }` (`:109-111`) — and its zero-row return
+means *"the quota is exhausted"*, a legitimate business outcome the caller handles. Here zero rows has
+**one** cause: a lost race. Same SQL, opposite semantics.
+
+**Ruling, in three parts:**
+
+1. **The sentence goes as a claim and RETURNS as a requirement.** *"The append never refuses a true
+   statement"* is the right property — it is why D1.5 declines to constrain content, and that limb
+   survived three lanes. What is false is the claim that this design **has** it. Promote it from prose
+   to an obligation with a test (§W.10 P8).
+2. **The mechanism goes.** It fails the property it was chosen to protect. Note the irony precisely,
+   because it is the generalizable part: D1.4's hedge said *"I would rather be attacked for
+   over-machinery than for a probability argument."* **The over-machinery is what introduced the data
+   loss; the probability argument would have been safe.** The author's instinct to distrust
+   "concurrent legal statements are unlikely" was right; the execution imported a shipped shape without
+   importing the condition that makes its failure legible.
+3. **The lesson, stated so it outlives this ADR:** *importing a concurrency shape without importing the
+   semantics of its failure return is worse than not importing it. `ON CONFLICT DO NOTHING` + a
+   zero-row return mapped to caller success is the forbidden form.*
+
+The **choice** of replacement is downstream of §W.4's ruling on `Sequence` and is not mine to make.
+Two further costs the ADR does not price and rev 3 must, both verified in the cited precedent: the raw
+INSERT bypasses the global filter and the change tracker, so the tenant term is **hand-written twice**
+(`:41-59`) plus `reserved.TenantId = tenantId` (`:117`) — D10's *"it rides the filter"* is false for a
+raw append and D10 does not say so; and the self-commit carries `consistency.md` §ADR-0038 (a)'s
+**sanctioned-exception doc-comment** obligation, which the ADR does not name.
+
+**One thing neither side measured, flagged as a lead observation and NOT as a fact:** the arbiter
+index's own read path — `MAX(Sequence) … WHERE … TenantId IS NOT DISTINCT FROM @tenantId` — uses a
+predicate PostgreSQL does not turn into a btree `Index Cond`. If `Sequence` survives, that read wants
+its own measurement. **I have not run it. Do not cite this as measured.**
+
+### W.4 — `Sequence`, and append-only enforcement: **ruled together, because they are coupled in a way neither the author nor the challenger noticed**
+
+**W.4a — the challenger's ground is wrong; its conclusion still stands.** CH-S2-4 says `Sequence`
+*"buys nothing the primary key does not already provide."* That is too strong, and the counter-example
+sits inside the challenger's own next finding.
+
+`Sequence` is dense by construction (`MAX+1`; a lost race under `ON CONFLICT DO NOTHING` inserts
+nothing, so it leaves no hole; a retry loop also leaves none). **A gap in a dense ordinal is evidence
+that a row was deleted.** `Id` is a ULID and has no such property — delete a statement and nothing is
+missing. So `Sequence` buys exactly one thing the PK does not: **a deletion signal on the joint
+CH-S2-5 says is unguarded and the author himself names as the weakest in the design.**
+
+There is a real inconsistency here and I name it: **CH-S2-5 argues that a partial anchor counts, and
+CH-S2-4 argues that a partial detection signal counts for nothing.** Applied evenly, the challenger's
+own standard obliges it to *price* the property, not zero it.
+
+**It does not save the column.** Pressed, the property is weakest exactly where the threat is
+strongest: a gap detects **interior** deletion only. Deleting the **tail** — the latest statement, or
+the only statement a cleaner has — leaves `0…n-1` dense and is invisible. That is the realistic case.
+Weigh a partial, tail-blind signal the ADR **claims nowhere** (no report row, no check) against seven
+costs including a measured data-loss bug, and the finding survives its own correction.
+
+**W.4b — the ruling.** **`Sequence` may not stay in its current state**, which pays every cost and
+claims no property. Two dispositions are ratifiable and the choice is the author's:
+
+- **Drop it** — and the ADR **records what goes with it**: the arbiter index, check #18's entry, check
+  #16's leak rule, and the interior-deletion signal. Silent removal is not available.
+- **Keep it** — and the ADR **states the property it buys**, carries the report row and the check that
+  make it real, states the tail-blindness, and prices it against §W.3's seven costs.
+
+Ruled together with §W.3 as the challenger asked, and for its reason: ruling on the mechanism without
+ruling on the column is how the seven costs get paid one at a time.
+
+**W.4c — is v1's append-only enforcement honest? NO. It must narrow a second time, and the narrowing
+names a different bypass than the one the ADR names.**
+
+D11 is the most honest section in the document and RB-7's refutation is right — I re-verified: **every**
+`I*Repository` derives from `IRepository<T, string>`, including `IAdminActionAuditRepository.cs:5`.
+Routing the trigger to its own ADR is correct and ADR-0033 fires on it.
+
+But checks #2/#3/#4 enumerate the **entity-materializing** destructive methods and miss the
+**non-materializing** ones, which are precisely the ones an entity-level property cannot see.
+`IRepository` hands out **four** queryable-returning members — `GetFiltered` (`:33`), `GetAll` (`:35`),
+`GetQueryable` (`:49`), `GetQueryableIgnoringTenant` (`:59`) — the challenger named three. On any of
+them `ExecuteUpdateAsync` / `ExecuteDeleteAsync` is one call away, and **`ExecuteUpdateAsync` never
+materializes an entity, so check #2's reflection test is VACUOUS against it**: it can set `Action`,
+`OccurredAt`, `BodyHash`, anything. That is the sentence D11's honest-property paragraph is missing —
+*"append-only by construction at the entity"* is doing work it cannot do.
+
+Tier, named per `conventions.md` §"The price of a law": check #3 is a reviewer grep, conditional on
+another lane mechanizing it — **`T3-HUMAN`**, and `T2-ADVISORY` if written as a `check-consistency.mjs`
+rule, because that tool is in zero workflows and can never set an exit code.
+
+**Is that acceptable for v1? Yes for the log, NO as an unstated dependency of D6.** The exposure window
+is bounded by `Q-SELFBILL-01`, not by ticket 11 — the table is empty until then; the threat is an
+insider with `psql`, the same model the `BodyHash` check already answers with detection rather than
+prevention; and inventing a trigger inside a feature ADR is the archetype failure ADR-0033 forbids.
+**So derivation may ship before ticket 11 — and D6 must say so, say why, and retract D6.2 test 5's
+non-sequitur.** A conceded weakest joint whose mitigation is routed out is a **conditionality**, not a
+footnote.
+
+### W.5 — The sustain: **record it as the process working.** The four costs are acceptable; three become ADR text
+
+The author flagged EF feasibility for a specialist (*"⚠️ Flagged for the `db` agent, not asserted"*)
+instead of asserting it. A specialist built it and answered **yes**, with the emitted DDL. **That is
+the pattern-evolution loop and the hedging discipline working exactly as designed, on the one limb
+where an architect had no business asserting** — and it is worth more than the finding it produced.
+I re-verified the surrounding fact: the schema today has **one** `HasAlternateKey`
+(`LanguageEntityConfiguration.cs:18`) and **zero** composite FKs, so D1.6 really is first-of-class.
+
+Costs, and my ruling on each:
+
+1. **Two EF-generated FK-backing indexes check #19 cannot reach** — acceptable; check #19 is restated
+   to cover *every* index on these tables including generated ones, or the ADR accepts them unnamed and
+   says so.
+2. **63-byte identifier truncation, three candidate names, a `NOTICE` not an error** — acceptable, and
+   it **upgrades check #19 from cosmetic parity to load-bearing**. It applies to the coverage index too,
+   whose name is longer still, so it survives §W.4b either way.
+3. **`Kind` is FK property and required payload at once** — acceptable, and it forces a design sentence:
+   the statement carries **no navigation** to `AgreementVersionText`, FK scalar only. **The CRC card
+   contradicts this** ("Collaborators: `AgreementVersionText`"). Under responsibility-driven design a
+   collaborator that cannot be a navigation is a collaborator stated wrong: it is *the referenced row,
+   by id*. Fix the card in rev 3.
+4. **First-of-class construct** — acceptable and **no separate ADR**. ADR-0033 test 1 does not fire
+   (nothing is put in violation), test 2 does not fire (no catalog sentence governs FK shape), and
+   test 3 is **discharged by CH-S2-7's own measurement** — a specialist built and ran that stack. Under
+   ADR-0033 as restated in the Architect charter, **novelty alone does not route it to the Architect**,
+   so no catalog edit is created either; the challenger was right to propose none. It gains a row in
+   D12's pricing table.
+
+### W.6 — Structural ruling: **this ADR is carrying two decisions and must split**
+
+Three panels have now run and the pattern in *where they land* is clearer than the pattern in any
+finding. The record's shape — entity-not-`ConsentType`, keyed on `Employee`, versioned tenantless text,
+two evidence channels, two orders, `Restrict` everywhere, the gate at `ApproveEmployee` — has been
+attacked from a legal lane, two schema lanes and two leads, and **has held every time**. What has
+failed twice, consuming most of both panels, is the **attribution/reporting** limb: rev 1's stamp,
+rev 2's derivation cost. My charter's first ADR rule is *"one decision per ADR; if you're writing two,
+split."* This is two.
+
+**The split, on the seam the panel actually found — the negative held, the positive specification did
+not:**
+
+- **ADR-0041 KEEPS:** the record's shape (D1–D4, D7–D11), where "mandatory" binds (D5), and the
+  **negative** coverage decision — *`EmployeeInvoice` gains no column; coverage is derived from the log
+  at query time, never stamped* (D6.1's definition + test 1's reasoning + D6.6's revisit triggers).
+  **The title survives**, which matters: round 1 killed `accepted with amendments` partly on a false
+  title, and this one asserts only what still holds.
+- **SEVERED to a decision the PM files and numbers** (no number is allocated here): the coverage
+  **report's** specification — which column anchors it (§W.7 CH-S2-8), the evaluation shape and its
+  plan check, its stability over time, the four report rows, and the conditionality on ticket 11.
+
+**Why the seam is clean, tested rather than asserted:** I looked for a column on the three new tables
+that changes with the severed decision and found none. `OccurredAt`, `RecordedAt`, `Channel`, the
+variant nullability and the FKs are all required by the *supersession* reads the gate and the status
+endpoint issue, which stay here. **One qualification, and it is the useful half:** the **coverage index**
+is motivated *only* by the severed query. So — *an index that serves a query must be specified in the
+artifact that fixes the query, or it is specified against a query nobody has written.* Ticket 1 creates
+the three tables, the arbiter (if `Sequence` survives) and the supersession index; the coverage index
+lands with the coverage decision. Pre-prod that costs nothing — schema changes fold into `Initial`.
+
+**Two costs of splitting, stated rather than glossed:**
+
+- **D5's non-blocking posture cites the report as its compensating control**, and that citation becomes
+  a forward reference. Rev 3 must state it as an interim with a named end state per `consistency.md`
+  §"Interim implementations must name their end state" — an id that is present in `INDEX.md`, open, and
+  not blocked — **not** as a control it has.
+- A5's rejection and D4.5's fail-open visibility rest on the same report. Same treatment.
+
+**Why splitting is not an evasion:** the severed decision is a report over a table that will hold
+**zero rows** until counsel delivers text (`Q-SELFBILL-01`), and the version key that gates the schema
+is blocked on `Q-PAYOUT-03`. Two panels have now spent their strongest work on the query plan of an
+empty table while the decision that unblocks everything downstream sat behind it. Severing is what lets
+the record's shape finish.
+
+### W.7 — Where the challenger is wrong, imprecise, or under-filed
+
+Its measurements are strong; some of its inferences and one of its counts are not.
+
+1. **"`ExecuteUpdateAsync` at 16 production sites" is WRONG. It is 13** — and the challenger's own
+   enumeration lists exactly 13 (`UserRepository.cs:164/186/206/222`, `RefreshTokenRepository.cs:102`,
+   `PromoCodeRepository.cs:43/61`, `UserNotificationRepository.cs:45`,
+   `MembershipBenefitUsageRepository.cs:159`, `DataRetentionBackgroundService.cs:79/85/129`,
+   `DeactivateAdminUser.cs:71`). With `ExecuteDeleteAsync` at `RefreshTokenRepository.cs:175` the true
+   figure is **14 production sites in 7 files**. The finding is untouched — 13 is not 3 — but the
+   headline was assembled loosely and **rev 3 must not inherit the number.** *(In the other direction
+   the challenger under-counted: `IRepository` exposes **four** queryable-returning members, not three
+   — `GetFiltered` (`:33`) is missing from its list.)*
+2. **CH-S2-4's "buys nothing" is false** — §W.4a. Finding sustained, ground replaced.
+3. **CH-S2-4 calls `Id` "immutable". It is not** — `BaseEntity.Id` has a **public setter** (`:5`) and
+   the very precedent the challenge cites assigns it (`MembershipBenefitUsageRepository.cs:116`). It is
+   immutable in exactly the sense the ADR's own check #2 *exempts*. This does not change the
+   conclusion — both columns are equally exposed to `psql` — but the word must not enter rev 3
+   unqualified.
+4. **CH-S2-8 was filed non-blocking and I UPGRADE it to blocking on the severed decision.** Whether
+   coverage anchors on `GeneratedAt` (the print date) or `PayPeriodId` (the work period) decides *what
+   the Boolean means*, and the two disagree for the same work: a cleaner accepting 31 July covers June's
+   work, one accepting 5 August does not, decided by when a timer ran. I verified the alternative is
+   available on the same immutable row — `EmployeeInvoice.PayPeriodId` is `private set`, written only in
+   `Create` (`:16`, `:116`). A decision with a real trade-off must answer its alternatives; this one is
+   not in the record at all. **It is the owner's/counsel's to answer** — *were we authorized to issue
+   this document, or to self-bill this work?* — and it **folds into the re-framed `Q-SELFBILL-02`**
+   rather than opening a seventh question. It does **not** gate ticket 1.
+5. **CH-S2-9 overstates its repair and mis-files its better half.** The composite-error problem is one
+   clause: this validator already ships the cross-chain guard idiom
+   (`.When(x => !string.IsNullOrEmpty(x.EmployeeId))`, `ApproveEmployee.cs:34`, `:49`). But the
+   **fail-open** half is not fixed by `.When` and is **not the backend lane's** — a blank or unserviced
+   `WorkCountryId` resolves to "no version for this country", which D4.4 reports as *"the gate does not
+   fire"*, so **the mandatory gate silently passes on exactly the inputs that are invalid.** That is
+   round 1's CH-S4 defect class recurring — the safety valve disguising the failure — and it belongs to
+   **D4 and to `AgreementVersionResolver`'s CRC card**: *"no version for this country"* and *"this is
+   not a country"* must be distinguishable at the resolver's boundary. Rev 3 carries it.
+6. **Two immaterial line-number drifts**, recorded only so a rev-3 author does not check them, find
+   them off, and dismiss the finding — the exact failure round 1's lead corrected on CH-L6: the `42P08`
+   comment is `:95-100` (cited `:92-98`); the zero-row return is `:109-111` (cited `:107-111`).
+
+### W.8 — What I tried to break and could not *(rev 3 may not re-open these)*
+
+- **CH-S2-1's obligation, independent of its number.** I could not re-run the measurement, so I
+  verified the rule instead: `consistency.md` §T-0540 is **ratified and binding** and says verbatim
+  what is cited — *"EXPLAIN the captured statement, never a hand-written copy of it"*, *"'No Seq Scan'
+  is not the assertion"*, the OR-demotion sentence, and *"a plan assertion on an empty or uniform
+  table"* as a deviating form. Both named precedents exist as files
+  (`OrderStatusSetPredicatePlanTests.cs`, `UserMembershipCancellationSweepIndexPlanTests.cs`). **The
+  obligation stands whatever the ratio is**, and §How-a-reviewer-verifies has 19 checks and no plan
+  assertion. Check #5 asserts *classification* and would pass green at 90 seconds.
+- **CH-S2-3's reading of its precedent.** Verified line by line: no retry, `Count == 0 → null`
+  (`:109-111`), tenant hand-written in the INSERT list and in **both** guard subqueries (`:41-59`),
+  `NpgsqlDbType.Text` with the `42P08` comment naming single-tenant mode (`:95-100`), and
+  `reserved.TenantId = tenantId` (`:117`). Exact, and the semantic divergence is real.
+- **CH-S2-4's premise.** `Order.cs:447-448` assigns the ordinal **in memory inside the loaded
+  aggregate**, and `OrderStatusTrack.cs:14-18` states the enabling condition — *"the order is the
+  consistency boundary"* — which is absent here. The two-column total order transfers; the column does
+  not carry its safety with it.
+- **D10's tenancy split.** Third lane to try, third to fail. It stays.
+- **The severability of D6 from D1** (§W.6) — I looked for a column that moves and found one index, not
+  one column, and said so.
+- Everything §V.1 and CH-S2-7 §Found-sound record as surviving: F1, F2, the A1/A2/A5/A6 rejections,
+  **A3 on argument (ii)**, D1.3's nullable-by-variant, D1.8's `Restrict`s, the supersession half of
+  D1.4, the migration's additivity, and RB-7's refutation.
+
+### W.9 — Full disposition
+
+| Finding | Disposition |
+|---|---|
+| **CH-S2-1** — derivation's cost claim is unmeasured and false in EF's naive shape | **SUSTAINED — blocking**, on the *obligation* (T-0540), not on the ratio. **Does not reach the decision** (§W.1). → severed artifact, P1–P5 |
+| **CH-S2-2** — the coverage index leads with `TenantId`; three of four columns demote | **SUSTAINED — blocking, and GENERALIZED** to every read of the table (§W.2). The lookup index as specified is **forbidden**; the arbiter index is not |
+| **CH-S2-3** — the atomic append silently drops a true statement | **SUSTAINED — blocking.** The sentence goes as a claim and returns as a requirement; the mechanism goes (§W.3) |
+| **CH-S2-4** — `Sequence` buys nothing | **SUSTAINED — blocking; GROUND CORRECTED** (§W.4a). It buys a tail-blind interior-deletion signal the ADR claims nowhere. Ruled with CH-S2-3 |
+| **CH-S2-5** — the checks miss the delete mechanism actually used | **SUSTAINED — blocking**, and sharpened: the reflection check is **vacuous** against a non-materializing UPDATE, and there are **four** queryable-returning members. Tier named `T3-HUMAN`. **D6 may ship before ticket 11 and must say so** (§W.4c) |
+| **CH-S2-6** — coverage decided by an operator-typed, uncorrectable column | **SUSTAINED — blocking, SPLIT.** The `OccurredAt` invariant and the `AdminRecordedContract`/`Revoked` question stay **here** (factories + schema). The *stability over time* half goes to the severed artifact |
+| **CH-S2-7** — the composite-FK chain works | **SUSTAIN RECORDED — the process working** (§W.5). Four costs acceptable; three become ADR text |
+| **CH-S2-8** — the anchor is `GeneratedAt` by availability, not by argument | **SUSTAINED and UPGRADED to blocking** on the severed decision (§W.7.4). Folds into `Q-SELFBILL-02`. Does not gate ticket 1. Its CLR-type half stays here |
+| **CH-S2-9** — the gate's validator chain | **SPLIT.** Chain ordering → **backend lane**. The **resolver-boundary fail-open** is ADR-0041's and stays (§W.7.5) |
+
+### W.10 — Rev 3's scope. **This list is CLOSED.** A third full rebuild is not authorized
+
+Rev 3 answers exactly these, leaves everything in §W.8 alone, and does not re-argue anything already in
+the record. Properties, not repairs — I have not designed any of them.
+
+**In ADR-0041 (the record's shape):**
+
+- **P6** — no **lookup** index on an `ITenantEntity` in this design leads with `TenantId`; the
+  writer-consumed vs reader-consumed distinction is **stated as the rule** (§W.2). **P7** — the choice
+  is discharged by an `Index Cond` assertion on the captured statement, never by a declaration.
+- **P8** — the append satisfies: **a lost race either succeeds on retry or surfaces to the caller as an
+  error; never as a silent success.** `ON CONFLICT DO NOTHING` + a zero-row return mapped to success is
+  the named forbidden shape, and there is a test. If the raw form survives, D10 stops saying *"it rides
+  the filter"*, the tenant term is hand-written in every place the precedent hand-writes it, and
+  `consistency.md` §ADR-0038 (a)'s sanctioned-exception doc-comment obligation is named.
+- **P9** — `Sequence` is dropped **with an explicit record of what goes with it**, or kept **with its
+  property, its report row, its check, and its tail-blindness stated** (§W.4b). **P10** — if it goes,
+  the arbiter index, check #18's entry and check #16's rule go with it, in the same edit.
+- **P11** — the `OccurredAt` invariant (at minimum `OccurredAt <= RecordedAt`) is named in D1.3's
+  variant block and enforced in **both** factories. **P13** — the ADR says whether an
+  `AdminRecordedContract` statement may carry `Action = Revoked`.
+- **P14** — D11's honest property is restated against the bypass this codebase uses: *set-based
+  `UPDATE`/`DELETE` through any of the **four** queryable-returning members, against which the
+  entity-level property is **vacuous** because no entity is materialized* — with the tier named
+  (`T3-HUMAN`; `T2-ADVISORY` if mechanized as a `check-consistency.mjs` rule). Check #3 states the
+  property, not a method list. The **13 + 1 = 14** figure is used, not the challenger's 16.
+- **P15** — D6 states that it is **not** conditional on ticket 11, and why (§W.4c). **P16** — D6.2 test
+  5 retracts *"a partial anchor is worthless"*, and D6.2's table is rewritten on §W.1's margin.
+- **P17** — the statement carries **no navigation** to `AgreementVersionText`; the CRC card is corrected
+  to name the referenced row by id (§W.5.3). **P18** — check #19 covers EF-generated FK-backing
+  indexes; the 63-byte truncation is recorded as its reason. **P19** — D12 gains the first-of-class row.
+- **P20** — `AgreementVersionResolver` distinguishes *"no version for this country"* from *"this is not
+  a country"* at its boundary, so the mandatory gate cannot silently pass on an invalid jurisdiction
+  (§W.7.5). Its CRC "does NOT know" list is checked against this.
+- **P21** — the CLR type of `OccurredAt` is stated, with the comparison direction, because the cast side
+  decides sargability (CH-S2-8's non-blocking half).
+- **P22** — D5, A5 and D4.5 state the report as a **named-end-state interim**, not as a control they
+  have (§W.6).
+
+**In the severed artifact (PM files and numbers it):** P1 — the coverage read is stated as a **shape**
+(one scan node per invoice row over `EmployeeAgreementStatements`), not only as a definition. P2 — a
+plan check that `EXPLAIN`s the **captured statement the production entry point emits** and asserts the
+`Index Cond`. P3 — its seed is populated inside the index's selectivity **with distinct `GeneratedAt`
+values**; a uniform seed flatters the design by ~4× and the challenger says its own probe fell in.
+P4 — if the shape cannot go through EF's expression tree, the construct that carries it is one this
+repository already ships (`SqlQueryRaw` is), or it routes to its own ADR. P5 — the anchor question
+(§W.7.4), the four report rows, and coverage's instability over time.
+
+### W.11 — Routed
+
+- **Catalog lane** — the nullable-`TenantId` rule (§W.2), with the enforcer-tier constraint. **Do not
+  write it without a named enforcer.**
+- **Backend lane** — CH-S2-9's chain ordering in `ApproveEmployee.Validator`.
+- **Docs lane** — `CLAUDE.md`'s *"PayPeriod | Bi-weekly pay cycle"* is stale;
+  `PayPeriodBackgroundService.cs:93` and `:165` both compute `startDate.AddMonths(1).AddDays(-1)`. The
+  ADR's A5 is right and the project guide is wrong. *(Confirms round 1's separate routing of
+  `CLAUDE.md`'s error-contract-parity sentence.)*
+- **PM** — file and number the severed coverage decision; fold §W.7.4's anchor question into the
+  re-framed `Q-SELFBILL-02`; send §Escalations 1 and 2 **now** if they have not gone.
+
+### W.12 — Consensus
+
+**Not reached — and the residue is small, bounded and engineering, not business.** No panel member
+disputes the shape, the tenancy split, the two-order ruling, the variant nullability, or the rejection
+of A1/A2/A5/A6. **Round 1's disagreement was between the ADR and the codebase. Round 2's is between the
+ADR and its own unmeasured sentences** — a different and much cheaper failure, and the third instance
+of one method pattern worth naming once:
+
+> **This ADR keeps making claims of a class it has no way to check, on the exact joint it is being
+> ratified on.** Rev 1: *"append-only"*, unchecked. Rev 2: *"query cost is not a loss"*, unchecked, and
+> *"the append never refuses a true statement"*, false. Each time, everything else was verified. **The
+> rule rev 3 should carry out of here: a sentence that asserts a property of the running system is
+> either accompanied by the check that fails when it stops being true, or it is deleted.**
+
+Nothing is lost by taking the extra round. The legal text does not exist, the version key is blocked on
+`Q-PAYOUT-03`, and the feature is inert regardless.
+
+---
+
+## Defense — **rev 3, 2026-08-05** *(author: a seventh instance — not rev 1's or rev 2's author, none of the three challengers, neither lead)*
+
+**What this revision is.** §W.10 handed rev 3 a **closed** list and forbade a third rebuild. This is not
+a rebuild. It executes §W.6's split, answers P6–P22, and applies two owner rulings that **subtract**
+sections. Nothing in §W.8 is re-opened. *(One §W.8 entry is **strengthened, not re-opened**: D10's
+tenancy split stays exactly as ruled — the config tables tenantless, the statement tenant-scoped — and
+rev 3 supplies the write-side mechanism that D10 asserted wrongly. See P-new-2 below.)*
+
+### R.1 — §W.10's closed list, answered
+
+| P | Answer | Where |
+|---|---|---|
+| **P6** — no reader-consumed index leads with `TenantId`; the rule is stated | **ADOPTED and stated as the rule.** The one index on the statement table is `(EmployeeId, Kind, RecordedAt DESC, Id DESC)`. **And the rule is stated with the qualification the lead's framing needs**: it holds *because `TenantId` is nullable and null is the production value*, not "forever" — the shipped indexes are why | **D1.9** |
+| **P7** — discharged by an `Index Cond` assertion, never a declaration | **DONE.** Check #21, over the **captured** statement the approval gate emits, with T-0540's deviating forms (empty/uniform seed, "no Seq Scan") named | **check #21** |
+| **P8** — a lost race never surfaces as silent success; `ON CONFLICT DO NOTHING` + zero-row-as-success is forbidden; there is a test | **SATISFIED BY CONSTRUCTION, which is stronger than satisfied by mechanism.** Dropping `Sequence` removes the ordinal, so there is nothing to contend for and the forbidden shape is **unreachable**, not merely unused. The sentence *"the append never refuses a true statement"* returns as an **obligation with a test** | **D1.5, D1.4**, check #20 |
+| **P9** — `Sequence` dropped with a record of what goes, or kept with its property | **DROPPED**, with a seven-row table of what goes with it and the **interior-deletion signal priced, not zeroed** — including its tail-blindness, which is why it loses | **D1.4** |
+| **P10** — if it goes, the arbiter index, check #18's entry and check #16's rule go in the same edit | **DONE, all three, in this edit.** Check #18's removal is written as an **assertion** (*this ADR adds no `NULLS NOT DISTINCT` index; the theory list gains no row*) so it is checkable rather than an absence | **D1.4**, checks #16/#18 |
+| **P11** — the `OccurredAt` invariant named in D1.3 and enforced in both factories | **DONE, in two halves.** Self-service: `OccurredAt = RecordedAt` from one clock read — the class of defect does not exist there. Paper: `OccurredAt <= RecordedAt` in the factory, **plus a lower bound (`>= employee.CreatedOn`) in the validator**, which is what actually catches CH-S2-6's mistyped year | **D1.3.1**, check #22 |
+| **P13** — may an `AdminRecordedContract` statement carry `Action = Revoked`? | **YES, ruled and reasoned.** A channel says *how we know*; `Action` says *what happened*. A log that cannot record a written withdrawal says `Accepted` forever — a false record by omission | **D1.3.2** |
+| **P14** — D11 restated against the non-materializing bypass; tier named; check #3 states the property; use 13+1=14 | **DONE**, with the count **independently re-run** (14 sites, 7 files). Tier `T3-HUMAN` / `T2-ADVISORY`-if-mechanized, with the reason (`check-consistency.mjs` is in zero workflows) | **D11**, check #3 |
+| **P15** — D6 says it is not conditional on ticket 11, and why | **DONE** — empty table until `Q-SELFBILL-01`, the same insider-with-`psql` threat model `BodyHash` answers by detection, and ADR-0033 forbids inventing the trigger here | **D6** header |
+| **P16** — retract *"a partial anchor is worthless"*; rewrite D6.2 on §W.1's margin | **DONE.** The five-test table is rewritten as **wins 1, ties 2 and 4, wins 3 with a new cost, LOSES 5**, and both retractions are written in rev 2's own words with ❌ so they cannot be skimmed past | **D6.2** |
+| **P17** — no navigation to `AgreementVersionText`; CRC card corrected | **DONE**, in D1.7 and on the card, with EF's fixup-nulls-FK-properties reason | **D1.7**, CRC |
+| **P18** — check #19 covers EF-generated FK-backing indexes; truncation is the reason | **DONE**, both auto-indexes named | **check #19** |
+| **P19** — D12 gains the first-of-class row | **DONE**, with the ADR-0033 four-test disposition (no separate ADR, no catalog edit) | **D12** |
+| **P20** — the resolver distinguishes "no version" from "not a jurisdiction" | **DONE** — a **three-valued return**, with `ICountryRepository` added to the CRC card *because of it*, and the "does NOT know" list checked against it | **D4.1a**, CRC |
+| **P21** — the CLR type of `OccurredAt`, with the comparison direction | **DONE.** `DateTimeOffset`, matching `AdminActionAudit.OccurredOn` (`:26`). **The comparison direction is stated in the SEVERED artifact**, because that is where the comparison lives | **D1.4**, severed spec |
+| **P22** — D5, A5 and D4.5 state the report as a named-end-state interim | **ANSWERED BY REMOVING THE DEPENDENCY, which is better than labelling it.** The gate is the control; D4.5's launch precondition closes the fail-open. **No forward reference remains to mark.** I also state why the interim-marker fallback is *not currently available* (the severed decision is not filed, so `INDEX.md` has no id to name) — which is itself an argument for removing the dependency rather than marking it | **D5, D4.5, A5** |
+
+### R.2 — What rev 3 changed that NOBODY asked for. **Attack these first.**
+
+A challenger's time is best spent where no panel has looked. Six things here are mine.
+
+1. **D1.10 / F4′ — the adopted archetype is not tenant-stamped by the commit pipeline, and D10's *"it
+   rides the filter"* is FALSE.** `CommitAsync`'s loop is over `Auditable` (`CleansiaDbContext.cs:74`);
+   `DbContextAuditWriter.cs:10-12,18` documents the gap and compensates for it. **Three lanes and two
+   leads passed over this**, and it is the highest-consequence thing in rev 3: unstated, a cleaner
+   accepts and the mandatory gate refuses them. *Strongest attack: "you are inventing an obligation the
+   `db` lane would have caught at ticket 1 anyway."* My answer is that ticket 1's author would have
+   copied the archetype, and the archetype's compensation lives in a **different project**
+   (`Infra.Database/Auditing/`) from the entity — which is exactly how it stayed invisible for three
+   panels. But it is a fair attack and I would not call it settled.
+2. **D1.9's second half — the rule the lead generalized already has shipped violations, and that changes
+   its ADR-0033 routing.** `EntityConfiguration.cs:31` puts a `TenantId`-only index on **every**
+   `Auditable` table. §W.2 reads as though the rule is merely unnoticed; it is not. *Strongest attack:
+   "you are calling working code broken."* I deliberately do **not** — I call them a bet on a
+   multi-tenant future, which is a different thing — and the whole point of the finding is that a bare
+   prohibition would be wrong, which is why it routes to a ratified edit plus a canonicalization
+   decision rather than to an inline note.
+3. **Dropping `Sequence` rather than keeping it.** §W.4b left the choice to me and both dispositions
+   were ratifiable. *Strongest attack: "you have given up the only deletion signal in a design whose
+   author calls deletion its weakest joint."* Answered in D1.4 (tail-blind, unclaimed, seven costs) —
+   but a challenger who wants to argue that a tail-blind signal plus a **report row that claims it** is
+   worth one column has a real case, and the cheap `MAX+1`-in-handler + retry variant is available
+   without any of the raw-SQL costs. I judged it not worth a column that the design would then have to
+   defend forever; I would listen.
+4. **D4.5 — replacing the fail-open report row with a launch precondition.** *Strongest attack: "a
+   precondition nothing enforces is weaker than a number somebody reads."* True, and I state it in
+   D4.5's own cost line. My answer is that the number was never read either, and that a config `SELECT`
+   answerable before any cleaner registers beats a scan over invoices answerable after.
+5. **The two owner rulings are applied as DELETIONS, aggressively.** I removed the prompt, the
+   interstitial, the keep-issuing default, a report row and two findings. *Strongest attack: "you
+   deleted machinery that production will need."* The brief was explicit that it must not be preserved
+   "for production later", and the structural reason is in §Owner rulings 1: **the checkbox is mandatory
+   at onboarding from day one, so the cohort cannot form.** F3′ is where I refused to let the ruling
+   swallow the residue.
+6. **The severed spec lives in the living decision doc, not in an unnumbered ADR file.** `agents/backlog/adr/`
+   is numbered `NNNN-*`; an unnumbered draft there would collide with that convention and with "one
+   decision per ADR". *Strongest attack: "a specification in a living doc is not a decision and nobody
+   will ratify it."* Correct — which is why it is marked **`SEVERED — awaiting an ADR number`** and
+   listed as ticket 12 for the PM to file and number.
+
+### R.3 — My own hedges, named rather than buried
+
+Rev 2 flagged five and routed one to a specialist who confirmed it; that is the process working, and
+here are mine.
+
+1. ⚠️ **I did not re-run the round-2 measurements and I did not try.** The 109×, the `Index Cond`
+   demotion and the zero-row append are the challenger's numbers on its own throwaway stack. I did what
+   the lead did: **verified the rule each one lands on** (`consistency.md` §T-0540, §"Tenant-scoped
+   unique indexes", §ADR-0038 (a)) in the working tree, and ruled on the obligation, not the digit.
+   Where I cite a ratio I attribute it.
+2. ⚠️ **D1.3.1's lower bound (`OccurredAt >= employee.CreatedOn`) is mine and is untested by anyone.**
+   It is the least arbitrary floor I could find on data that exists. If a cleaner can somehow hold a
+   signed contract predating their platform registration, it is **wrong** and the bound should become a
+   platform constant instead. *This is a question for the owner if a challenger thinks it is real; I did
+   not escalate it because I could not construct the case.*
+3. ⚠️ **D4.5's launch precondition has no enforcer.** It is a human step. I considered making
+   `Country.IsServiced` depend on the text's existence and rejected it — it would couple the whole
+   booking surface to a legal-copy table, which is a far worse seam than the one it closes. **Named as
+   an unenforced rule rather than dressed up as a control.**
+4. ⚠️ **D7's justification now stands on one leg.** The paper channel's release-valve rationale is
+   sound, but I want it said out loud that rev 2 had two reasons and rev 3 has one.
+5. ⚠️ **`Id DESC` as a tiebreak is stable, not causal**, and `BaseEntity.Id` has a **public setter**.
+   I use "deterministic and stable" throughout and never "immutable", per §W.7.3.
+6. ⚠️ **The split's cost that I cannot fully retire:** D6 fixes the coverage *definition* while the
+   severed artifact fixes its *shape and anchor*. If the owner answers `Q-SELFBILL-02` with
+   *"authorization attaches to the work, not the document"*, D6.1's `<ANCHOR>` becomes `PayPeriodId` and
+   the **definition sentence in this ADR is the one that has to be read alongside it**. I left the
+   placeholder rather than pick, which is right, but it means the two artifacts must be read together
+   on exactly one sentence. **I could not find a cheaper seam and I am not claiming there is none.**
+
+### R.4 — Routed out of rev 3
+
+- **Catalog lane** — the nullable-`TenantId` rule (§W.2/§W.11), **now with rev 3's evidence that it
+  fires ADR-0033 test 1** (three shipped index sites, D1.9). Still needs a named enforcer that can fail
+  a build; still must be filed under *"`TenantId` is nullable"*. **Not written here** — that file is
+  another lane's this sprint and a law without its enforcer is what ADR-0032 exists to stop.
+- **PM** — (1) file and number the **severed** decision from the living doc; (2) **record §Owner rulings
+  1** in `questions/`, where it currently does not appear; (3) update `Q-SELFBILL-02` to the narrowed
+  wording **without** the count and **with** the anchor half; (4) mark the VAT limb **closed**.
+- **Backend lane** — `ApproveEmployee.Validator`'s chain ordering (§W.9 CH-S2-9); folded into ticket 2.
+- **Docs lane** — unchanged and still open: `CLAUDE.md`'s *"PayPeriod | Bi-weekly pay cycle"* is stale
+  (`PayPeriodBackgroundService.cs:93` and `:165` both compute `startDate.AddMonths(1).AddDays(-1)` —
+  **re-verified in rev 3**), and `CLAUDE.md`'s error-contract-parity sentence (*"they assert against
+  `BusinessErrorMessage.cs` directly"*) misleads on the direction of the assertion.
+
+### R.5 — Where rev 3 leaves the disagreement
+
+**I am the author and I do not declare consensus.** For the third panel, the honest summary:
+
+- **The record's shape has now survived three challenger lanes and two leads and is not re-opened.**
+- **What the two owner rulings changed is the amount of design, not its direction** — this revision is
+  *smaller* than rev 2 by one column, one unique index, one lookup index, one report, one prompt
+  surface, one escalation and two findings.
+- **What is genuinely new and unexamined is D1.10 and D1.9's violation evidence.** Both are facts about
+  the running system, both are cited to `file:line`, and both are the class of claim this topic has
+  failed on three times. **Check them first.**
+- **The method rule I carried out of §W.12 and applied literally:** *a sentence that asserts a property
+  of the running system is either accompanied by the check that fails when it stops being true, or it is
+  deleted.* Two sentences were deleted under it rather than repaired — *"query cost is not a loss"* and
+  *"it rides the filter"* — and four checks were added because I wanted to keep the sentences that
+  earned them.
+
+---
+
+## Verdict — round 3: **RETURNED for a NARROW rev 4 — sentences and checks only. The SCHEMA BLOCK IS FROZEN. One item is ESCALATED to the owner and it is the only thing gating acceptance.** *(lead, 2026-08-06 — a ninth instance: not rev 1's, rev 2's or rev 3's author, none of the four challengers, neither prior lead)*
+
+> **This verdict rules on rev 3 against `challenges/0041-rev3.md`. `## Verdict` (round 1) and
+> `## Verdict — round 2` are preserved verbatim and are not edited. Where any of the three disagree
+> about operative state, THIS one governs.**
+
+> **Operative state.** `proposed`, **not buildable**. **No ticket may be started or closed.**
+> `manual_step: ef-migration` stays **withdrawn**. **The schema block (D1's DDL, D1.8's five
+> `OnDelete`s, D1.9's one index) is FROZEN** — not one of the eleven round-3 findings moves a column, an
+> index, a key or an FK, and the challenger says so in terms. **Rev 4 is authorized and its scope is the
+> CLOSED list §X.10.** It is a *sentence-and-check* revision, not a rebuild, not a re-argument, and not a
+> re-opening of anything §V.1, §W.8 or §X.8 records as surviving. **Rev 4 does NOT convene a fourth
+> adversarial lane** (§X.12 states how it clears instead) — **unless it touches the schema block, in
+> which case it re-enters a full panel automatically.** The living doc
+> `agents/architecture/decisions/self-billing-agreement.md` carries the same state and has had the
+> refuted magnitude fenced off in place (§X.4).
+
+### X.0 — What kind of verdict this is, and why "another round" is not the same as "a loop"
+
+Three returns look like a panel that cannot finish. Look at *what* was returned each time and it is the
+opposite:
+
+| Round | Blocking | What they touched | The disagreement was between… |
+|---|---|---|---|
+| 1 | 14 | the **mechanism** (a control wired to a path that does not issue), the **title**, the **schema block** ×4 | the ADR and the codebase |
+| 2 | 6 | the **schema block** ×3, two missing checks, one disclosure | the ADR and its own unmeasured sentences |
+| **3** | **6** | the **schema block ×0.** Four sentences, three checks, one deletion executed on a false premise | the ADR and **its own other sections** |
+
+Round 3's challenger attacked the record's shape from a fourth independent lane — D10's tenancy split,
+the `Sequence` drop, D1.3's variant, D1.3.2, the two-order split, D1.10 itself — and broke none of them
+(`0041-rev3.md` §Found sound, 10 entries). **The shape is now settled and I am ruling it settled.** What
+survives is a residue that costs one owner answer and roughly a dozen sentences.
+
+`accepted` is foreclosed, for one reason and I want it to be the only one on the record: **§Owner
+rulings 1 and D5's §P22 assert a property of the running system that this ADR's own D4.3 and check #12
+falsify** (§X.1), and the choice of what to do about it is the owner's. Acceptance freezes those
+sentences and a superseding ADR within days is exactly what round 1 refused to set up.
+
+`accepted with amendments` is foreclosed for a narrower reason than either predecessor gave. Nothing
+here rewrites the schema or the title — but §X.1's answer can change a row of **D5's surface table** and
+the wording of **D4.5**, and those are decision text, not commentary.
+
+`rejected` is not defensible and I record why so nobody proposes it as a fourth-round shortcut: four
+adversarial lanes and three leads have now failed to break the record's shape, and rejecting would
+re-open F1, F2, D1.3, D1.4, D5, D10 and the A1–A6 rejections to re-litigate them into the same answer.
+
+### X.1 — CH-R3-1 — **SUSTAINED. The cohort *can* form, the ADR says it cannot, and the choice of remedy is the OWNER's.** This is the crux and it is the one thing gating acceptance
+
+**The finding is verifiable inside this document and I verified it there rather than taking the
+challenger's word.** Three sentences of rev 3, read together:
+
+- **D4.3** (sustained from CH-L4, correct, and one of the best decisions in this ADR): *demandable* =
+  **the caller's own language** has a `BusinessSupplied`+ text. A cleaner without one gets *"the prompt,
+  never the block"*.
+- **Check #12** makes that an acceptance criterion: with only `cs` reviewed, for a `uk` caller,
+  **`ApproveEmployee` succeeds**.
+- **§Owner rulings 1**: *"no cleaner reaches work in a jurisdiction with demandable text without a
+  statement — so the cohort **cannot form**"*, and **D5 §P22**: *"The gate IS the control. Every cleaner
+  approved for a jurisdiction with demandable text has a statement… The residue — a jurisdiction opened
+  before its text lands — is closed by D4.5's launch precondition."*
+
+The first two make demandability a property of **the caller's language**; the last two reason about it
+as a property of **the jurisdiction**, and then enumerate the residues with the language one missing.
+On the owner's own stated launch case — Czech text first, five partner locales shipped precisely
+because cleaners are not all Czech readers — the population is *every cleaner whose app language has no
+reviewed body*, they are approved, they work, they are issued self-billed invoices in their own name,
+and **they have no statement**. D4.5 does not reach them: it is satisfied by **one** reviewed language.
+
+**This is not F3′ and rev 4 must not file it there.** F3′ is *"a country we chose to open early"* and
+D4.5 closes it. This one survives D4.5 fully satisfied.
+
+**The owner ruling does not dispose of it, and I want the reason stated precisely because the ruling is
+correct about what it addresses.** *"I'll drop an entire DB… don't be bothered with existing cleaners"*
+empties the **backlog**. It says nothing about the **rate**. Rev 3 read it as removing both, and on the
+strength of that reading deleted the four instruments that could have seen this population: the
+`cleaners with no current acceptance` report row, the partner-surface prompt, D6.4's keep-issuing
+default, and `Q-SELFBILL-02`'s count. **The deletions of the historical machinery are right; the
+deletion of the *visibility* is what CH-R3-1 catches, and it was executed on a premise the same
+revision falsifies three sections earlier.**
+
+**Two prior findings partially revive with it, and I fold them in here rather than re-open them
+separately** — they are one fact seen from three lanes:
+
+- **CH-L9** (*"the fail-open is invisible"*) was conceded in rev 2 with a report row and rev 3 replaced
+  that row with D4.5. **D4.5 does not cover the per-language fail-open, so CH-L9 is NOT fully
+  discharged.** This is the one place where rev 3 materially changed the ground a recorded verdict stood
+  on, and I am re-ruling on it explicitly, as the brief requires.
+- **CH-L2's monotonicity half** and **CH-A2** (*"mandatory that blocks only new cleaners is barely
+  mandatory"*) were declared to have "lost their subject". Their historical subject is genuinely gone.
+  **A growing un-asked population is not**, in the language form. They revive **only** in that form.
+
+**Why this is an owner escalation and not an architecture call.** Three shapes are available and they
+differ in *business* cost, not in design quality: (a) do not open a country until its text exists in
+**all five** partner locales — closes it by sequencing, at the price of delaying the owner's Czech-first
+launch by four translations and their review; (b) open on Czech, accept the gap, and make it **visible**
+(a config `SELECT` over `(country × active language)` naming the pairs with no reviewed text, plus the
+prompt restored for the affected cleaners once their text lands); (c) open on Czech and accept the gap
+silently. An architect may not pick between "delay the launch" and "self-bill cleaners who were never
+shown the agreement". **Filed as `Q-SELFBILL-06`** in `agents/backlog/questions/open.md`, with **(b)** as
+the stated default because it is the only one that neither delays the owner's launch nor hides the gap,
+and because its visibility half is a query over tens of config rows — it inherits none of the cost that
+consumed two panels.
+
+**What rev 4 owes regardless of how the owner answers** (this part is not conditional): §Owner rulings 1
+stops claiming the cohort cannot form; D5 §P22 stops claiming the gate is *the* control and states that
+it is the control **exactly where text is demandable**; the residue is named as its **own** finding
+(not under F3′); and D4.5 states whether the precondition is per-jurisdiction or per-locale. **Check #12
+stays exactly as written** — it is not the defect, it is the *evidence*, and it is the check that will
+fail if a future author "fixes" this by hard-blocking a cleaner on a text they cannot read.
+
+*Blocking: **YES**, and it is the only finding that gates acceptance.*
+
+### X.2 — CH-R3-2 — **SUSTAINED on the sentence and on the routed evidence; REFUTED as an attack on the index.** I re-open §W.2's stated MECHANISM (not its conclusion), because the ground moved
+
+§W.2 generalized a measured demotion into a rule and rev 3 states it **as the rule** (D1.9). Round 3
+measured the same joint and got the opposite plan, with a reconciliation: the three-armed filter's two
+booleans arrive as **bound parameters**, PostgreSQL plans an unnamed extended-protocol statement as a
+**custom plan** with those values substituted, the `OR` constant-folds to `TenantId IS NULL`, and that
+is an indexable btree qual; the demotion round 2 measured reproduces only under
+`plan_cache_mode = force_generic_plan`.
+
+**I cannot re-run either probe, so I did what a lead can do: I tested the repo-side leg of the
+reconciliation myself, and it holds.** `Max Auto Prepare` appears **nowhere** in `src/` (grep over the
+whole tree, zero hits), and `DbContextBindingExtensions.cs:35/:68` builds a plain
+`NpgsqlDataSourceBuilder` → `options.UseNpgsql(dataSource)` with no preparation settings. Npgsql's
+default is auto-prepare **disabled**, so production statements are unnamed and re-planned with their
+values. **The premise round 3 needs is true of this repository.**
+
+**The ruling, in four parts:**
+
+1. **The conclusion stands and the index does not move.** `(EmployeeId, Kind, RecordedAt DESC, Id DESC)`
+   is the only column order that is optimal in **both** tenancy modes — both challengers agree, from
+   opposite mechanisms. D1.9's *choice* is right for a reason that survives either measurement.
+2. **The stated mechanism is withdrawn.** *"A btree cannot put an OR'd predicate on its leading column
+   into an `Index Cond`"* and *"every column behind the leading one becomes unreachable with it"* are
+   **deleted, not softened.** They are stated as facts about the running system, one measurement says
+   they are false in the plan mode production uses, and no check in this ADR fails when they stop being
+   true. That is §W.12's own rule, applied to the sentence §W.2 asked rev 3 to write.
+3. **What replaces them is smaller and still a decision:** *`TenantId` is nullable and `null` is the
+   production value; a leading `IS NULL` nulltest is indexable but yields **no btree ordering**, so
+   every `ORDER BY … LIMIT 1` behind it becomes a sort of the whole matched group. A reader-consumed
+   index therefore leads with the query's sargable equality terms — which is also the only order that
+   stays optimal once a tenant exists.* That is a **preference with a stated bet**, not a prohibition by
+   construction, and D1.9 must say so. It does not weaken the choice; it correctly prices it.
+4. **Ticket 13's evidence is corrected before the catalog lane writes a law.** Round 3's reading is
+   right on its face and I checked the two I could: a `COUNT` with no `ORDER BY`
+   (`IX_MembershipBenefitUsages_Quota`) loses no pathkey and is **not** in violation;
+   `IX_AdminActionAudits_TenantId_OccurredOn` is the affected shape; `EntityConfiguration.cs:31`'s
+   single-column index has nothing behind it. **ADR-0033 test 1 still fires — on one shipped index, not
+   three** — so the routing is unchanged and the *evidence* must travel corrected, **with the plan mode
+   named**. A law whose stated reason a `db` agent can falsify in ten minutes is how a confidently-wrong
+   comment stops the next reviewer from checking.
+
+*Blocking: yes, pre-ratification — acceptance freezes a sentence stated as the rule.*
+
+### X.3 — CH-R3-3 — **SUSTAINED. Check #21 asserts the wrong half of its own property, and the repair is measurement-independent**
+
+Check #21 asserts the `Index Cond` of the node naming `IX_EmployeeAgreementStatements_Supersession`
+**carries `EmployeeId` and `Kind`**. An `Index Cond` of `TenantId IS NULL AND EmployeeId = … AND
+Kind = 1` **contains `EmployeeId` and `Kind`**. So under round 3's measurement the check passes green on
+the exact shape D1.9 forbids and the only thing that would fail is the index's *name* — which is P7's
+forbidden discharge wearing an `EXPLAIN`.
+
+**I note the coupling honestly, and it does not save the check:** if §W.2's mechanism were the true one,
+the forbidden index *would* fail check #21, and the check would be adequate. **The check is therefore
+sound only if the claim it exists to discharge is true — which is precisely the thing in dispute.** A
+check whose adequacy is conditional on the disputed claim discharges nothing. The repair is one line and
+is correct under **either** measurement: assert the property that **changes between the two shapes** —
+**no `Sort` node above the index scan** (the ordering is served by the index) **and** **no `TenantId`
+term in that node's `Index Cond`** (the direct negation of the rule) — plus the seed's selectivity as an
+assertion rather than as prose, per §T-0540.
+
+This is the **third** vacuity of the same class this panel has found (check #2 against a
+non-materializing `UPDATE`; check #5 passing green at 90 seconds; now check #21), and the first the ADR
+authored for itself after naming the pattern. Rev 3 listed check #21 first among *"the four a challenger
+should test for vacuity"*. It was right to.
+
+*Blocking: yes.*
+
+### X.4 — CH-R3-4 — **The MECHANISM is sustained; the MAGNITUDE is WITHDRAWN from all three artifacts; §S5 is deleted.** The design survives without the number, and it survives *better*
+
+The brief for this panel asks the right question: does the design survive without the number, is the
+number repairable, or must the claim come out? **The claim comes out, and D6 does not move.**
+
+**What two independent measurements agree on, and it is the whole load-bearing part:** written as LINQ,
+EF Core 10 emits D6.1's correlated top-1 lookup **twice per invoice row**, because `covered` is a
+two-part boolean, and PostgreSQL cannot `Memoize` a `SubPlan`. Round 3 reproduced round 2's captured
+statement character-for-character on its own model. **Sustained.**
+
+**What does not survive is the ratio, and the decisive evidence is round 2's own disclosure, which I
+read in the source file rather than through round 3.** `challenges/0041-schema-rev2.md:138-143` states
+that its 827 ms baseline enjoyed a **75 % `Memoize` hit rate from a 12-distinct-key seed**, that in
+production `GeneratedAt` is distinct per invoice so the hit rate is **0 %**, and that *"the honest floor
+for the LATERAL shape is therefore ~4× the measured 827 ms"*. **The measurer disclaimed the baseline in
+the same document that produced the number.** Rev 3 then carried *"90 411 ms vs 827 ms … (109×)"* into
+**three** artifacts as *"the measurement that forced this"* — D6.2 test 5, the severed spec §S2, and the
+living doc. Round 3, seeding what §W.10 P3 actually demands (48 000 invoices, **distinct** anchors, 0 %
+hits **for both shapes**), measures the work ratio at **1.94× in buffers** — the mechanism's own
+prediction of ×2.
+
+**I am not adjudicating between two throwaway stacks and I do not need to.** Two things are settled
+without doing so: round 2's ratio is **not** a production-shaped comparison *by its own account*, and
+the panel has now produced two wall-clock numbers for the same shape that differ by more than an order
+of magnitude. **Ruling: no artifact of this topic states a ratio.** What may be stated is the mechanism
+(*"two evaluations per row instead of one"*) and the **obligation** — which is what §W.8 sustained in
+the first place, is untouched, and is now doubly justified: a plan claim is discharged by a check on the
+captured statement with a non-uniform seed, never by a digit in prose. `Buffers: shared hit` is the
+metric an artifact may quote, because it is hardware-independent; wall clock from a laptop container is
+not evidence about production.
+
+**Why the collapse cannot hurt D6, stated so nobody reads this as weakening derivation.** The 109× was a
+cost **against** the chosen option — it is why rev 2's *"query cost is not a loss"* was retracted. A cost
+argument against derivation shrinking from 109× to ~2× makes derivation's margin **wider**, not thinner.
+D6's decision rests on test 1 (completeness), which round 3 explicitly declined to attack and which is
+backed by rev 1's *demonstrated* failure to stamp. **D6 stands, unmoved, on the record it already had.**
+
+**And the constructive half is worth more than the correction.** Round 3 measured that
+`SelectMany` + `Take(1).DefaultIfEmpty()` makes EF Core 10 emit a `LEFT JOIN LATERAL` — one evaluation
+per row, byte-identical buffers to the hand-written form, global query filter intact, change tracker
+intact, no raw SQL. **§S5 of the severed spec (*"if the shape cannot go through EF's expression tree,
+say what carries it"*) answers a question that does not arise and is DELETED, not softened.** That
+removes a `SqlQueryRaw` sanctioned-exception, its doc-comment obligation and an ADR-0033 question from
+an artifact that has not even been numbered yet — the cheapest possible moment to remove them.
+
+*Blocking: yes, narrowly — on three sentences and one severed-spec section, not on D6.*
+
+### X.5 — CH-R3-5 — **SUSTAINED. D1.10's finding is the best thing in rev 3 and its repair is a convention that check #7 cannot fail on**
+
+**The finding first, because I verified it independently and it deserves the record.**
+`CleansiaDbContext.cs:74` — `foreach (var entity in ChangeTracker.Entries<Auditable>())`, with the
+`ITenantEntity` test **nested inside it** at `:89-92`. A `BaseEntity + ITenantEntity` row is never
+stamped. Three lanes and two leads passed over it. **F4′/D1.10 is exactly as cited and it stays.**
+
+**The repair does not close what the finding opens.** `IEmployeeAgreementStatementRepository` derives
+from `IRepository<T, string>` — rev 3 re-verified this itself and **correctly refused to narrow it**
+(RB-7; narrowing would fire ADR-0033 tests 1 and 2). I opened the interface: `Add` is at
+`IRepository.cs:37` and `AddRange` at `:39`, on the same object as `Append`, and they are the idiom every
+other feature uses. Neither stamps. Check #7 as written is a **happy-path round-trip through `Append`**;
+it goes green on the day a handler, a seeder or a sweep calls `Add`, and the failure it would miss is
+the worst one in the design **by the ADR's own account**: a cleaner accepts, the gate cannot see the
+statement, and the mandatory gate refuses someone who complied.
+
+**The remedy is named and it has a house precedent I verified.** `consistency.md` §B10 fixes an
+**allowlist of sanctioned writers** for dispute terminal-state transitions and is *"mechanically checked
+by `check-consistency.mjs` (rule B10)"* (`consistency.md:105-115`). Rev 4 states that `Add`/`AddRange`
+are **forbidden for this entity**, and check #7 gains the half that can go red: a **static** assertion
+that no production site adds an `EmployeeAgreementStatement` other than through `Append`. The
+round-trip is the positive half; the sole-writer sweep is the half that fails.
+
+**And the asymmetry the challenger names is real: rev 3 routed the sibling general finding (D1.9 →
+ticket 13) with evidence, and absorbed this one into a doc-comment.** An ADR that finds a general defect
+in shipped infrastructure owes one of three things — take it, refuse it in writing with a reason, or
+route it. **Rev 4 must do one of the three, and I rule that it may not be the first.** Widening
+`CommitAsync`'s loop touches a shared file and a shipped audit path and is not a feature ADR's call
+(ADR-0033's archetype rule, the same one that correctly routed ticket 11). **Route it** — a ticket
+alongside 13, owned by the `db`/infra lane, stating the observed gap, the archetype's compensating
+writer, and the `??=` vs `string.IsNullOrEmpty` divergence the challenger spotted at `:18` vs `:89`
+(an empty-string `TenantId` survives one and is replaced by the other).
+
+*Blocking: yes.*
+
+### X.6 — CH-R3-6 — **SUSTAINED, narrowly. P8's universal is falsified by D2, and "unreachable" needs the check that makes it true**
+
+D1.5 states *"**No code path can respond to a write by returning success without a row.**"* D2, 170
+lines earlier, specifies exactly such a path: an idempotent accept of the same `AgreementVersionTextId`
+is *"a **no-op returning success**"*. Both sentences are in this document; the contradiction needs no
+measurement. Check #20(a) greps the repository and (b) tests two concurrent appends of *different*
+actions — neither can see a short-circuit that lives in the handler.
+
+**The product answer is probably right and the sentence is wrong.** A double-click should not 409. But
+the precedent D2 says it copies — `ConsentService.TryGrantAsync` — returns **`false`**, a distinguishable
+*"nothing happened"*. Rev 4 states P8 **about the append** (*no **append** path returns success without a
+row*), names D2's no-op as the one sanctioned exception in the same breath, and records that its return
+semantics deliberately diverge from the precedent it cites.
+
+**On *"unreachable"*, the challenger's test is better than its conclusion and I adopt the test.** The
+forbidden shape's unreachability is a function of D1.5's *"no uniqueness AT ALL"* and of nothing else —
+and the obvious future edit that breaks it is an idempotency arbiter on
+`(TenantId, EmployeeId, Kind, AgreementVersionTextId)`, which is precisely what an author making D2's
+read-then-write race-safe would reach for. So *"unreachable"* survives **with** a check: a **model
+assertion that the entity type declares zero unique indexes**, on the same reflection surface checks #2
+and #18 already use.
+
+**Where I find against the challenger, and it is the only place in eleven findings.** Its parenthetical
+that `NullsNotDistinctIndexModelTests`'s theory list *"already fails to enumerate a shipped instance"*
+because `LiveActivityToken` is missing is **wrong**, and I checked the file rather than the grep. The
+test's subject, stated in its own doc-comment (`NullsNotDistinctIndexModelTests.cs:14-22`) and in its
+assertion message (`:66-67`), is **tenant-scoped sole-arbiter unique indexes** — indexes that *"never
+fire when `TenantId` is null"*. `LiveActivityTokenConfiguration.cs:28` declares
+`.AreNullsDistinct(false)` on `(UserId, DeviceId, OrderId)`, which **contains no `TenantId`**. Its
+absence from a `TenantId` list is correct by construction, not a gap. **Check #18's assertion stands
+intact and rev 4 changes nothing about it.** Nothing else in the finding depends on the parenthetical.
+
+*Blocking: yes, narrowly — it is the ADR's own flagship property, stated as satisfied "by construction".*
+
+### X.7 — The five non-blocking findings, disposed of rather than filed away
+
+- **CH-R3-7 (check #3's discharge) — SUSTAINED, and I fold it into rev 4's list.** The property is
+  **universal over production code**; a `DbCommandInterceptor` is **existential over test coverage**. A
+  `ExecuteUpdateAsync` in a sweep no integration test drives emits nothing to observe and the check
+  reports clean. The challenger is right that both dimensions are purchasable at once, and the fix is
+  one sentence: a **static** sweep over `src/` for every site naming `EmployeeAgreementStatement`,
+  `IEmployeeAgreementStatementRepository` or `Set<EmployeeAgreementStatement>` (total — a set-based write
+  must name one of them), with the interceptor as the belt on paths tests do drive. Filed non-blocking by
+  the challenger; it joins the list because it is the **fourth** instance of the vacuity class, it is the
+  check for the property this ADR is *named after*, and a sentence-level revision is happening anyway.
+  Tier `T3-HUMAN` / `T2-ADVISORY`-if-mechanized is not contested.
+- **CH-R3-8 (nine, not four) — ACCEPTED, and I verified it myself** rather than propagating a third
+  count: `IRepository<TEntity, TKey>` returns `IQueryable<TEntity>` from **nine** members —
+  `:17`, `:19`, `:21`, `:23`, `:26`, `:33`, `:35`, `:49`, `:59`. §W.7.1 said four and rev 3 inherited it.
+  D11's prose reads as a closed enumeration; it must not. *(This is the third count on this ADR to be
+  corrected by the next lane. §X.10 R4.8 makes it the last: rev 4 states the property and cites the
+  interface, and quotes no total.)*
+- **CH-R3-9 (the `OccurredAt >= employee.CreatedOn` floor) — SUSTAINED. The author's own stated fallback
+  fires.** R.3 hedge 2 said: *"If a cleaner can somehow hold a signed contract predating their platform
+  registration, it is wrong… I did not escalate it because I could not construct the case."* The
+  challenger constructed three, and the first is the **expected operating mode** of the channel D7 exists
+  to provide: an operator countersigns the framework contract on the spot and the cleaner registers later
+  that week. The harms are asymmetric in the direction this ADR cares about — a mistyped year produces a
+  false record that cannot be corrected; the floor produces a **refusal to file a true one**, recoverable
+  only by typing a date the operator knows is wrong. **The floor is replaced by the author's own named
+  alternative (a platform constant) or demoted to a warning on the admin surface.** No owner question is
+  needed: the author pre-stated the fallback and its condition is now met. Check #22(c) moves with it.
+- **CH-R3-10 (the gate's predicate is never written down) — SUSTAINED.** D1.4's table specifies a
+  `(EmployeeId, Kind)` order; D5 specifies a **country-qualified** question; neither writes the gate's
+  actual predicate. Check #21 then pins *"whatever ticket 2 happens to emit"*. **One sentence: D5 states
+  which of the two readings is the decision** — *"latest statement, then check its country"* or *"latest
+  statement whose version's country is X"* — and D1.4's table carries it. They differ observably on the
+  status endpoint for a cleaner holding two true, un-revoked acceptances, and §W.6's own rule (*an index
+  is specified in the artifact that fixes the query*) applies to the supersession index too.
+- **CH-R3-11 (`ContractStatus`'s sole-writer property) — SUSTAINED as a missing sentence.** The
+  challenger checked and the property holds today; two public domain mutators with no production caller
+  are what a future *"bulk-approve imported cleaners"* will use. **One sentence in D5** on the §B10 model
+  — *the only production writer of `ContractStatus = Approved` is `ApproveEmployee`; a second must carry
+  the gate or be refused* — and a check. §Owner rulings 1 used *"cannot refill"* to delete four things;
+  the sentence that carries that weight should be written down.
+
+### X.8 — What I tried to break and could not — **rev 4 may not re-open any of it**
+
+- **The record's shape.** Four lanes, three leads. D1's three tables, the `Employee` key, the two
+  evidence channels, the two-order split, `Restrict` everywhere, the tenantless config tables, the
+  variant nullability, D1.3.2's `Revoked`-on-the-paper-channel ruling. **Settled.**
+- **D1.9's index, D1.4's `Sequence` drop, D1.10's finding, D10's tenancy split** — attacked by round 3
+  from a fourth direction and recorded as sound with reasons (`0041-rev3.md` §Found sound 1–10). I add
+  one: round 3 strengthened the `Sequence` drop rather than weakening it — the deletion signal is not
+  merely tail-blind, it is **defeatable by the same actor** who could renumber it.
+- **D6's test 1** and therefore D6 itself. Untouched by round 3 by its own statement, and X.4 removes a
+  cost from the *other* side of the ledger.
+- **§V.1 and §W.8's surviving lists** in full.
+- **The migration's additivity and the `to_regclass` pre-deploy gate**, re-verified by round 3, including
+  rev 3's argument that the drop makes the gate **more** important because a *partial* drop is exactly
+  what it distinguishes.
+
+### X.9 — Full disposition — round 3
+
+| Finding | Disposition |
+|---|---|
+| **CH-R3-1** — the cohort *can* form; the deletion was executed on a false premise | **SUSTAINED — blocking. ESCALATED** (`Q-SELFBILL-06`). Carries CH-L9's undischarged half and the language form of CH-L2/CH-A2 (§X.1) |
+| **CH-R3-2** — D1.9's mechanism is false in the plan mode production uses | **SUSTAINED — blocking, on the SENTENCE and the routed evidence. REFUTED as an attack on the index.** Repo-side leg lead-verified (§X.2) |
+| **CH-R3-3** — check #21 passes green on the forbidden shape | **SUSTAINED — blocking.** Repair is measurement-independent (§X.3) |
+| **CH-R3-4** — "109×" is a seeding artefact | **SUSTAINED — blocking on the sentence in three artifacts. Mechanism SUSTAINED, magnitude WITHDRAWN, §S5 DELETED. D6 is untouched** (§X.4) |
+| **CH-R3-5** — D1.10's repair is a convention; check #7 cannot fail | **SUSTAINED — blocking.** Forbid `Add`/`AddRange` + a sole-writer assertion; **route** the general fix (§X.5) |
+| **CH-R3-6** — P8's universal is falsified by D2; "unreachable" is unchecked | **SUSTAINED — blocking, narrowly.** Its `NullsNotDistinctIndexModelTests` parenthetical is **REFUTED**; check #18 stands (§X.6) |
+| **CH-R3-7** — check #3's discharge is existential over test coverage | **SUSTAINED — non-blocking; folded into rev 4's list** (§X.7) |
+| **CH-R3-8** — nine queryable-returning members, not four | **ACCEPTED — lead-verified at `IRepository.cs`** (§X.7) |
+| **CH-R3-9** — the `CreatedOn` floor refuses the paper channel's main line | **SUSTAINED — non-blocking.** The author's own stated fallback fires (§X.7) |
+| **CH-R3-10** — the gate's predicate is never written down | **SUSTAINED — non-blocking.** One sentence (§X.7) |
+| **CH-R3-11** — `ContractStatus`'s sole-writer property is unstated | **SUSTAINED — non-blocking.** One sentence + a check (§X.7) |
+
+**Standing disposition of the three earlier challenge files, so no reader has to reconstruct it:**
+
+| File | Standing |
+|---|---|
+| `challenges/0041-schema.md` (CH-S1…S14) | **All sustained (§V.8) and all CONCEDED** in rev 2 / rev 3. **Closed.** CH-S14's `NULLS NOT DISTINCT` limb went moot with `Sequence` (check #18 records the removal as an assertion); CH-S3/CH-S4's tenancy finding was **strengthened** by D1.10. **Nothing re-opens** |
+| `challenges/0041-legal.md` (CH-L1…L10) | **All sustained (§V.8) and all CONCEDED.** **Closed with one exception: CH-L9 is NOT fully discharged** — rev 3 replaced its conceded remedy with D4.5, and D4.5 does not reach the per-language fail-open. Re-ruled in §X.1 and folded into `Q-SELFBILL-06`. CH-L2's monotonicity half and CH-A2 revive **only** in that same language form |
+| `challenges/0041-schema-rev2.md` (CH-S2-1…S2-9) | **All sustained (§W.9) and all CONCEDED** in rev 3. **Closed, with two limbs amended by round 3:** CH-S2-1's **obligation** stands exactly as §W.8 ruled while its **ratio** is withdrawn (§X.4); CH-S2-2's **conclusion** stands while §W.2's **stated mechanism** is corrected (§X.2). Neither amendment disturbs a disposition |
+
+### X.10 — Rev 4's scope. **CLOSED list. The schema block is FROZEN. This is not a rebuild**
+
+Rev 4 edits sentences and checks. It answers exactly these, changes nothing else, and re-argues nothing
+in §V.1, §W.8 or §X.8. **If any edit touches a column, an index, a key or an FK, rev 4 re-enters a full
+panel automatically** — that tripwire is what makes a delta clearance safe.
+
+- **R4.1 (CH-R3-1)** — §Owner rulings 1 stops asserting *"the cohort cannot form"*; D5 §P22 stops
+  asserting the gate is *the* control and states it is the control **where text is demandable**; the
+  language residue is named as its **own** finding, not under F3′; D4.5 states per-jurisdiction or
+  per-locale. **The chosen remedy is written in only after `Q-SELFBILL-06` is answered** — until then
+  rev 4 carries the *honest statement* plus the three options and the default. Check #12 is unchanged.
+- **R4.2 (CH-R3-2)** — D1.9's *"unseekable by construction"* mechanism is **deleted**; the pathkey
+  formulation replaces it; the rule reads as a preference with a stated bet. **Ticket 13's evidence is
+  corrected to one shipped index, with the plan mode named.**
+- **R4.3 (CH-R3-3)** — check #21 asserts **no `Sort` above the index scan** and **no `TenantId` term in
+  the `Index Cond`**, plus the seed's selectivity as an assertion.
+- **R4.4 (CH-R3-4)** — **no ratio anywhere.** D6.2 test 5 keeps the mechanism (*two evaluations per row*)
+  and drops *"90 411 ms vs 827 ms (109×)"*; the same edit lands in the living doc's §S2, §S4 and §Status;
+  **§S5 is deleted**; the `SelectMany` + `Take(1).DefaultIfEmpty()` ⇒ `LEFT JOIN LATERAL` finding is
+  recorded in the severed spec so its future author does not re-derive it. **D6's conclusion, D6.2's
+  margin table and test 1 are untouched.**
+- **R4.5 (CH-R3-5)** — `Add`/`AddRange` are forbidden for this entity; check #7 gains the **static
+  sole-writer** half (§B10 idiom); the general `CommitAsync` gap is **routed as its own ticket** with the
+  `??=` / `IsNullOrEmpty` divergence noted. Not absorbed, not silently taken.
+- **R4.6 (CH-R3-6)** — P8 is restated **about the append**; D2's no-op is named as the sanctioned
+  exception with its divergence from `ConsentService`; D1.5 gains the **zero-unique-index model
+  assertion**. Check #18 is **not** touched (§X.6).
+- **R4.7 (CH-R3-7)** — check #3 gains the **static sweep** as its total half; the interceptor stays as
+  the belt.
+- **R4.8 (CH-R3-8/9/10/11)** — D11 cites `IRepository` and quotes **no total**; the `CreatedOn` floor
+  becomes a platform constant or a warning (check #22(c) follows); D5 writes the **gate's predicate**
+  down; D5 states the **`ContractStatus` sole-writer** sentence with a check.
+- **R4.9 — the deliberation trail.** Rev 4 adds `## Defense — rev 4` answering R4.1–R4.8 by
+  concede-and-revise or rebut-with-evidence, in the house format. **It does not edit this verdict, §W or
+  §V.**
+
+### X.11 — Escalated, and routed
+
+- **OWNER —** `Q-SELFBILL-06`, filed 2026-08-06 in `agents/backlog/questions/open.md`. **It gates
+  acceptance of this ADR and nothing else** — no ticket, no schema, no migration. **PM: add it to the
+  Pre-prod blocking index** at the top of that file (I appended only my entry, per the shared-file rule).
+- **PM — a procedural finding I made while filing it, and it is not small.** **None of
+  `Q-SELFBILL-01…05` exists in `agents/backlog/questions/`** — I grepped the whole backlog and they
+  appear only inside ADR-0041 and its four challenge files. §Escalations says they were *"filed as one
+  block… by the PM"*; they were not. So *"the owner has been asked"* is **false today** for the agreement
+  text itself (`-01`), which §Escalations calls *"the single thing standing between the design and a
+  working feature"*. **File the block.** Also still outstanding from §R.4: record §Owner rulings 1 in
+  `questions/`, apply the narrowed `Q-SELFBILL-02` wording, mark the VAT limb closed, and file+number the
+  severed decision (ticket 12).
+- **Catalog lane (ticket 13)** — takes the **corrected** evidence from §X.2: the pathkey mechanism, the
+  plan-mode boundary (*Npgsql does not auto-prepare, verified: no `Max Auto Prepare` in `src/`;
+  `DbContextBindingExtensions.cs:35/:68`*), and **one** shipped index in violation, not three. Still
+  needs a named enforcer that can fail a build; still filed under *"`TenantId` is nullable"*.
+- **`db`/infra lane — NEW ticket (§X.5).** The `CommitAsync` stamping gap for
+  `BaseEntity + ITenantEntity`, decided across every future adopter rather than per repository.
+- **Catalog lane — a CANDIDATE, deliberately not written here.** §X.12's *"test every check against the
+  rejected alternative"* is a general rule and this ADR is four-for-four evidence for it. **I am not
+  writing it into `knowledge/` from this seat**, for the reason §W.2 gave and §R.4 repeated: per
+  `conventions.md` §*"The price of a law"* the entry needs `**Enforced by:** <named enforcer> — <tier
+  token>`, I cannot provision one, and a rule whose only enforcer is a human reading a checklist is
+  `T3-HUMAN` however it is written — which is what a law without its enforcer means. Two notes for
+  whoever takes it: `consistency.md` §T-0540 already states the **plan-claim instance** of this rule
+  (*"'No Seq Scan' is not the assertion"*), so an entry is a **broadening** of a governed subject rather
+  than a narrowing of it, and ADR-0033's routing should be run on that footing; and the evidence is
+  four *named* vacuities in one artifact (checks #21, #7, #3, #20), not an impression.
+- **Backend lane / docs lane** — unchanged from §W.11 and §R.4.
+- **Not re-routed:** the `Initial`-regeneration no-op stays at two occurrences. Round 3 re-verified the
+  `to_regclass` mitigation; confirming a mitigation is still not a new occurrence.
+
+### X.12 — Consensus, and how rev 4 clears without a fourth panel
+
+**Not reached — and for the first time the residue contains exactly one thing that is not an editing
+task.** No panel member disputes the record's shape, the tenancy split, the two orders, the variant
+nullability, the `Sequence` drop, D1.10's finding, D6's conclusion or the rejection of A1–A6. Round 1's
+disagreement was between the ADR and the codebase; round 2's between the ADR and its own unmeasured
+sentences; **round 3's is between the ADR's own sections — and one of them is a question only the owner
+can answer.**
+
+> **The method pattern, updated once and then closed.** §W.12 named it: *a sentence that asserts a
+> property of the running system is either accompanied by the check that fails when it stops being true,
+> or it is deleted.* Rev 3 applied it literally and deleted two sentences under it — **and then wrote
+> four more of the same class** (§Owner rulings 1's *"cannot form"*, D1.9's mechanism, P8's universal,
+> and a magnitude its own source had disclaimed), plus three checks that cannot fail on the property they
+> name. **The rule is right and repetition is not evidence against it.** What round 3 adds is the second
+> half: *a check that cannot distinguish the design from the thing the decision forbids is not a check* —
+> and the way to test that is to ask what the check does on the **rejected** alternative. Check #21 on a
+> `TenantId`-leading index, check #7 on an `Add`, check #3 on an `ExecuteUpdateAsync`, check #20 on D2's
+> no-op: **four times, the answer was "it stays green."** Rev 4 runs that question over every check it
+> writes, and a future author of any ADR on this platform should run it too.
+
+**How rev 4 clears.** A fourth full adversarial lane is **not authorized** — it would re-attack a shape
+that four lanes have failed to break, and §X.10 is a closed editing list, not a design space. Rev 4
+clears when a **lead instance that is not its author** confirms, on a delta read of rev 3 → rev 4, that
+(i) R4.1–R4.9 are each discharged in the artifact, (ii) the schema block is byte-identical, (iii) no new
+sentence asserts a property of the running system without a check that fails on the rejected
+alternative, and (iv) `Q-SELFBILL-06` is answered and its answer is written into R4.1. **Then it is
+`accepted`, and the deliberation trail — four challenge files, three verdicts, four revisions — stays in
+the artifact.**
+
+Nothing is lost by taking this round either. The agreement text does not exist and has not, until today,
+even been asked for; the migration is withdrawn; the database is being dropped; the feature is inert
+whatever this document says.
+
+---
+
+## Defense — **rev 4, 2026-08-07** *(author: a tenth instance — not rev 1's, rev 2's or rev 3's author, none of the four challengers, none of the three leads)*
+
+**What this revision is, and what it deliberately is not.** §X.10 handed rev 4 a **CLOSED** list of
+sentence-and-check edits and froze the schema block. **This is not a rebuild, not a re-argument, and not
+a fourth design pass.** Nothing in §V.1, §W.8 or §X.8 is re-opened; no alternative is added; no ruling is
+revisited. Four owner answers landed on 2026-08-07 and they are **transcribed**, not re-deliberated.
+
+> **THE SCHEMA BLOCK IS BYTE-IDENTICAL.** D1's DDL fence, D1.8's five `OnDelete`s and D1.9's one index
+> are untouched by this revision. **No edit moved a column, an index, a key or an FK**, so §X.10's
+> tripwire back into a full panel did not fire. Where an R4 item *could* have reached the schema — R4.6's
+> zero-unique-index assertion, R4.3's plan check, R4.5's sole-writer rule — it was discharged as a
+> **check or a convention over the existing shape**, never as a change to it. **A delta reviewer should
+> verify this first**, because it is the cheapest thing to verify and the one that decides whether the
+> rest of the review is even in scope.
+
+### Y.1 — §X.10's closed list, answered
+
+| R4 | Answer | Where |
+|---|---|---|
+| **R4.1** (CH-R3-1) — the *"cannot form"* sentence; P22; the residue as its own finding; D4.5's granularity | **DONE, and the owner answered the escalation.** §Owner rulings 1 now **withdraws** *"cannot form"* and says exactly what the DB-drop empties (the **backlog**) and what it does not (the **rate**). **P22 no longer claims *"the gate IS the control"*** — it is the control **where text is demandable**, and the two residues are named separately. **F6 is its own finding, not filed under F3′.** D4.5 states the precondition is **per-jurisdiction** ("at least one language") and the counting query is **per-locale**. **Check #12 is unchanged**, as §X.1 required | **§Owner rulings 1 & 3a, F3′, F6, D4.5, D5 table, P22** |
+| **R4.2** (CH-R3-2) — delete D1.9's mechanism; pathkey formulation; preference-with-a-bet; ticket 13's evidence | **DONE.** The two sentences are **deleted, not softened**. The replacement is the lost btree **pathkey**, with the plan-mode boundary re-verified at HEAD by rev 4 (`Max Auto Prepare` absent from `src/`; `DbContextBindingExtensions.cs:35`/`:68`). The rule reads as a **preference with a stated bet** and its **scope narrows with its mechanism** — it bites only on *ordered* reads. Ticket 13 carries **one** shipped index in violation | **D1.9**, ticket 13 |
+| **R4.3** (CH-R3-3) — check #21 asserts the discriminating property | **DONE.** No `Sort` above the scan · no `TenantId` term in the `Index Cond` · selectivity as an assertion. **Correct under either measurement**, so the check no longer depends on the claim it exists to discharge | **check #21** |
+| **R4.4** (CH-R3-4) — no ratio anywhere; §S5 deleted; the LATERAL idiom recorded | **DONE, in both artifacts.** D6.2 test 5 keeps the **mechanism** (two evaluations per row) and states **no ratio**; the living doc's §S2, §S4 and §Status are rewritten and **§S5 is DELETED**; the `SelectMany` + `Take(1).DefaultIfEmpty()` ⇒ `LEFT JOIN LATERAL` finding is recorded for the severed author. **D6's conclusion, D6.2's margin table and test 1 are untouched** | **D6.2**, living doc §S2/§S4/§S5/§Status |
+| **R4.5** (CH-R3-5) — forbid `Add`/`AddRange`; static sole-writer half; route the general gap | **DONE, and routed rather than absorbed.** D1.10.1 forbids `Add`/`AddRange` on the §B10 allowlist model; check #7 gains the **static** half that reddens on an `Add`. The general `CommitAsync` gap is **ticket 14**, carrying the `??=` vs `IsNullOrEmpty` divergence | **D1.10.1/D1.10.2**, check #7, ticket 14, CRC |
+| **R4.6** (CH-R3-6) — P8 about the append; D2's no-op as the sanctioned exception; zero-unique-index assertion | **DONE.** P8 is restated **about the append**; D2's no-op is named as the **one** sanctioned exception in the same breath, **with its deliberate divergence from `ConsentService.cs:27-30`'s `false`**; check #20 gains **(c)**, a model assertion of zero unique indexes. **Check #18 is not touched** | **D1.5, D2**, check #20 |
+| **R4.7** (CH-R3-7) — check #3's total half | **DONE.** A **static sweep** over `src/` for the three names a set-based write must use, with the interceptor as the belt. Tier `T3-HUMAN` / `T2-ADVISORY`-if-mechanized, uncontested | **check #3** |
+| **R4.8** (CH-R3-8/9/10/11) — no total; the `CreatedOn` floor; the gate's predicate; `ContractStatus`'s sole writer | **DONE, all four.** D11 **cites the interface and quotes no member total**. The floor becomes a **platform constant** refusal **plus** a per-employee **warning** — both limbs §X.7 offered, because they catch different things — and check #22(c) follows. **D5.1 writes the gate's predicate down** and rules which of the two readings it is. **D5.2 states the `ContractStatus` sole-writer property** with check #24 | **D11, D1.3.1, D5.1, D5.2**, checks #22/#24 |
+| **R4.9** — the deliberation trail | **This section.** It does **not** edit `## Verdict — round 3`, `§W` or `§V` | **§Defense — rev 4** |
+
+### Y.2 — The four owner answers, and exactly what each moved
+
+| Answer | What it settles | What it did NOT let me do |
+|---|---|---|
+| **`Q-SELFBILL-06` → (b)** | The acceptance gate. F6 is **permitted, counted and prompted**: D4.5's `(serviced country × active language)` query with the approved-cleaner count, D5's F6 card, checks #23/#25 | It did **not** license restoring rev 2's interstitial, and it did **not** let me weaken D4.3 into a block. **Check #12 stays** — it is the tripwire against exactly that "fix" |
+| **`Q-SELFBILL-01` → "a lawyer will review it in the future"** | The text is **not reviewed**. Nothing may be marked reviewed; the feature ships **inert**; the wait gains an **end condition**, which is what D6/P15's exposure-window argument needed | It did **not** let me pre-mark anything `BusinessSupplied` on the owner's behalf, and it did **not** unblock activation |
+| **`Q-SELFBILL-02(a)` → invalid + a sequencing commitment** | **F3′ closes by owner commitment**, which is stronger than the engineering default rev 3 recorded. D4.5's precondition is now the owner's rule | It did **not** give the precondition an enforcer. I kept R.3 hedge 3 unretracted and answered it with a **count**, not a claim |
+| **`Q-SELFBILL-02(b)` → the print date** | `<ANCHOR>` = **`EmployeeInvoice.GeneratedAt`** (`:60`, `private set`, written only at `:125`). D6.1 records it; R.3 hedge 6 is discharged | It did **not** let me pull the severed decision back in. The **shape**, the **plan check** and the **CLR-cast direction** stay severed, because they are properties of the query |
+| **`Q-PAYOUT-02` → OSVČ + self-billing** | **The motivation this ADR could not previously state**: the agreement is what makes the **single-day batch payout lawful**, not paperwork attached to one. It now *explains* D5's gate placement, A5's rejection and D6's derivation rather than merely asserting them | It changed **no decision**. Every conclusion it explains was already reached on other grounds — which is the honest test of whether a motivation is post-hoc |
+
+### Y.3 — What rev 4 changed that NOBODY asked for. **A delta reviewer should look here first.**
+
+Rev 3's §R.2 was the most useful thing in it. Mine is shorter, because the list was closed and I kept it
+closed. **Three items, and each is a judgement I could have declined to make:**
+
+1. **I took BOTH limbs of §X.7's "or" on the `CreatedOn` floor** — a platform-constant refusal **and** a
+   per-employee warning — where the verdict offered either. *Strongest attack: "you built two things
+   where one was authorized."* My answer is that they catch different defects (an absurd year vs. a
+   plausible-but-odd one) and the second is a **warning**, so it forbids nothing; taking only the
+   constant would silently drop the signal §X.7 called *"suspicious"*. I would concede this without
+   argument if a lead prefers one limb.
+2. **D5.1 rules the gate's predicate on a REVOCATION argument the verdict did not name.** §X.7 asked
+   only that D5 *state which reading is the decision*. Choosing between them turned out to be forced:
+   the rejected reading pushes the country term into the `WHERE`, and a paper-channel `Revoked` carries
+   **no country** (D1.3), so it would be skipped and the agreement resurrected. *Strongest attack: "that
+   is a new decision, not a transcription."* **Fair, and I flag it as the one place rev 4 decided
+   something** — but the alternative was to write down a predicate I had just shown fails open on a
+   mandatory gate, and §X.10's list explicitly asked for the predicate.
+3. **D5.1 states that the language term is the SUBJECT'S, not the caller's.** D4.3 says *"the caller's
+   own language"*, and at `ApproveEmployee` the caller is the **admin**. Nobody raised it. *Strongest
+   attack: "you are patching D4.3's wording through D5."* I am — because check #12 (*a `uk` caller
+   succeeds*) is only meaningful under the subject reading, and a gate that read the admin's language
+   would pass check #12 as written while breaking F6's premise entirely.
+
+### Y.4 — My own hedges, named rather than buried
+
+1. ⚠️ **I re-ran no measurement and had no shell.** Every number in this revision comes from a file I
+   opened. Where the record needed a magnitude I stated the **mechanism** and no ratio, per §X.4 — and
+   the one number I do assert (nine queryable-returning members on `IRepository`) I removed from the
+   prose anyway, because that count has now been corrected three times and the property does not need it.
+2. ⚠️ **D4.5's counting query is specified, not measured.** I claim it is cheap — config on the left, an
+   indexed `COUNT` on the right — and I have **not** proven that with a plan test. **It therefore carries
+   check #23's cardinality assertion rather than a cost claim**, which is the §W.12 rule applied to my own
+   sentence. If a challenger thinks the `COUNT` over `Employees` needs a plan check, that is a fair
+   finding and the answer is to add one, not to soften the sentence.
+3. ⚠️ **`AgreementPolicy.EarliestRecordableSignatureDate` has no value in this ADR.** I refused to invent
+   a date, because it is a business fact. **The ticket must set it**, and until it does, check #22(c) has
+   a constant to assert against but no number — a reviewer should treat an unset constant as unfinished.
+4. ⚠️ **F6's prompt closes each case only when the text lands.** Between approval and that day, these
+   cleaners are self-billed on the contract clause alone. **The count makes the exposure legible; it does
+   not remove it.** The only complete fix is option (a), which the owner declined for launch timing. I
+   have written that as a recorded owner-taken risk rather than dressing the count up as a remedy.
+5. ⚠️ **I did not verify every inherited citation.** I re-opened the ones this revision writes, keeps or
+   depends on, and deleted the ones I could not open (`Initial.cs:2877-2879`,
+   `MembershipBenefitUsageRepository.cs:105-107` in D6.2 — the latter went with §S5's premise anyway).
+   **Citations in sections rev 4 did not touch carry their existing verification marks and no more.**
+
+### Y.5 — Where rev 4 leaves it
+
+**I am the author and I do not declare consensus, and I do not accept this ADR.**
+
+- **The record's shape was ruled settled by the round-3 lead and rev 4 did not go near it.** Four
+  challenger lanes, three leads, ten instances.
+- **The one thing that gated acceptance is answered.** `Q-SELFBILL-06` → (b), and it landed as a query, a
+  card and three checks rather than as a paragraph.
+- **What a delta reviewer should test, in order:** (i) the schema block is byte-identical; (ii) each of
+  R4.1–R4.9 is discharged in the artifact, not merely mentioned in Y.1; (iii) **every check rewritten or
+  added below names what makes it go red on the rejected alternative** — that is §X.12's rule and it is
+  the one this topic kept skipping; (iv) `Q-SELFBILL-06`'s answer is in R4.1's sections, not only in the
+  escalation table.
+- **The residual disagreement is Y.3 item 2**, and I have flagged it rather than hidden it: writing the
+  gate's predicate down required choosing between two readings, and choosing is closer to deciding than a
+  transcription pass is supposed to get.

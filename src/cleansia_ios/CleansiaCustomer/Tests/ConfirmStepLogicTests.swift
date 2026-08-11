@@ -79,13 +79,10 @@ final class CancellationPolicyTests: XCTestCase {
 @MainActor
 final class PreferredCleanerViewModelTests: XCTestCase {
     func testHiddenForNonPlusAndDoesNotFetchCleaners() async {
-        let membership = FakeMembershipClient(result: .success(
-            MembershipSnapshot(hasMembership: false, freeCancellationWindowHours: nil)
-        ))
         let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
-        let vm = PreferredCleanerViewModel(membershipClient: membership, cleanersClient: cleaners)
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
 
-        await vm.load()
+        await vm.load(membership: MembershipSnapshot(hasMembership: false, freeCancellationWindowHours: nil))
 
         XCTAssertFalse(vm.isVisible)
         XCTAssertFalse(vm.isPlus)
@@ -93,60 +90,58 @@ final class PreferredCleanerViewModelTests: XCTestCase {
     }
 
     func testHiddenForPlusWithNoEligibleCleaners() async {
-        let membership = FakeMembershipClient(result: .success(
-            MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
-        ))
         let cleaners = FakeServingCleanersClient(result: .success([]))
-        let vm = PreferredCleanerViewModel(membershipClient: membership, cleanersClient: cleaners)
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
 
-        await vm.load()
+        await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48))
 
         XCTAssertTrue(vm.isPlus)
         XCTAssertFalse(vm.isVisible)
     }
 
     func testVisibleForPlusWithCleaners() async {
-        let membership = FakeMembershipClient(result: .success(
-            MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
-        ))
         let cleaners = FakeServingCleanersClient(result: .success([
             ServingCleaner(id: "e-1", fullName: "Eva"),
             ServingCleaner(id: "e-2", fullName: "Petr")
         ]))
-        let vm = PreferredCleanerViewModel(membershipClient: membership, cleanersClient: cleaners)
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
 
-        await vm.load()
+        await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48))
 
         XCTAssertTrue(vm.isVisible)
         XCTAssertEqual(vm.cleaners.count, 2)
     }
 
     func testCancellationPolicyReflectsPlusWindow() async {
-        let membership = FakeMembershipClient(result: .success(
-            MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
-        ))
-        let vm = PreferredCleanerViewModel(
-            membershipClient: membership,
-            cleanersClient: FakeServingCleanersClient(result: .success([]))
-        )
+        let vm = PreferredCleanerViewModel(cleanersClient: FakeServingCleanersClient(result: .success([])))
 
-        await vm.load()
+        await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48))
 
         XCTAssertEqual(vm.cancellationPolicy.freeHours, 48)
         XCTAssertTrue(vm.cancellationPolicy.hasPlusPerk)
     }
 
     func testLoadIsIdempotent() async {
-        let membership = FakeMembershipClient(result: .success(
-            MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
-        ))
         let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
-        let vm = PreferredCleanerViewModel(membershipClient: membership, cleanersClient: cleaners)
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
+        let membership = MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
 
-        await vm.load()
-        await vm.load()
+        await vm.load(membership: membership)
+        await vm.load(membership: membership)
 
-        XCTAssertEqual(membership.callCount, 1)
         XCTAssertEqual(cleaners.callCount, 1)
+    }
+
+    /// A guest, or a membership read that failed, must not silently look like a Plus member.
+    func testAMissingMembershipLeavesTheStandardPolicyAndHidesThePicker() async {
+        let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
+
+        await vm.load(membership: nil)
+
+        XCTAssertFalse(vm.isPlus)
+        XCTAssertFalse(vm.isVisible)
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 24)
+        XCTAssertEqual(cleaners.callCount, 0)
     }
 }

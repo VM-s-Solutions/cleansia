@@ -23,7 +23,7 @@ zero infra dependencies.
 2. `agents/knowledge/consistency.md` — the canonical form for paged queries (A1–A8) and commands
    (B1–B9). Do the operation **the same way** the rest of the codebase does; a new deviation is a hard
    review fail.
-3. `agents/knowledge/security-rules.md` — S1–S10. **Non-negotiable.** Self-check against it before
+3. `agents/knowledge/security-rules.md` — S1–S12. **Non-negotiable.** Self-check against it before
    you hand off; the Security Reviewer will too.
 4. `agents/knowledge/conventions.md` — naming, quality bars, owner-only steps.
 5. `docs/architecture/backend.md` + `fiscal-compliance.md` — canonical architecture.
@@ -75,9 +75,20 @@ tests on pure logic fail review.
     — those rot into dangling pointers; the *why* goes in the comment, the *traceability* in the commit
     message. When you change a line, delete any now-stale comment on it.
 12. **Harvest patterns back** (`conventions.md` → "Harvest good patterns back into the catalog"). If you
-    discover a cleaner/more-consistent idiom worth reusing, apply it AND fold a small clarification into
-    `patterns-backend.md` / `consistency.md` in the same change (note it in the ticket's `## Review`).
-    Anything that redefines "the one way to do X" is an Architect call — raise it via the ticket.
+    discover a cleaner/more-consistent idiom worth reusing, apply it, then decide who ratifies the
+    `patterns-backend.md` / `consistency.md` entry by running the routing test in `conventions.md`
+    §"Who ratifies a catalog edit" — *"Apply in order. The **first** one that fires routes the edit to
+    the **Architect** … If none fires, edit inline."* Two shifts from the old wording, in opposite
+    directions. **More passes inline:** the inline lane *"covers both a clarification inside an existing
+    rule's scope **and** the first statement of a canonical form where nothing governed the subject"* —
+    a new canonical archetype is no longer an Architect call on that ground alone. **Fewer narrowings
+    do:** the test is *semantic, not lexical* — *"the canonical form is X" narrows exactly as much as
+    "the ONE way is X"* — so carving an exception out of a sentence that already governs the subject
+    *"at any level of generality"* routes to the Architect however it is worded. **Inline is not free:**
+    record in the ticket's `## Review` the code sweep (test 1) and the catalog file + term you searched
+    (test 2's floor — *"a floor claimed with no search is not claimed: route it"*), and an entry that
+    constrains call sites carries `**Enforced by:** <named enforcer> — <tier token>`. The Reviewer runs
+    the same tests as **`Catalog-edit routing`**.
 
 ## Adapter discipline
 Adding a second provider must not change `Core.AppServices`. If it must, the abstraction is wrong —

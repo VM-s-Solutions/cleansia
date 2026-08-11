@@ -17,11 +17,19 @@ import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
+import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { createAddressDto } from './order-wizard.models';
+import {
+  EXPRESS_DISCOUNTED_QUOTE,
+  EXPRESS_QUOTE,
+  PLAIN_QUOTE,
+} from './order-quote.fixtures';
 
 describe('OrderWizardFacade', () => {
   let facade: OrderWizardFacade;
@@ -33,6 +41,7 @@ describe('OrderWizardFacade', () => {
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
+  let membershipClient: { getMine: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
   let snackbar: { showError: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -45,12 +54,7 @@ describe('OrderWizardFacade', () => {
     add: jest.Mock;
   };
 
-  const quoteResponse = {
-    totalPrice: 1000,
-    expressSurchargeApplied: false,
-    expressSurchargeAmount: 0,
-    currencyId: 'czk',
-  };
+  const quoteResponse = PLAIN_QUOTE;
 
   const savedAddress = {
     id: 'addr-1',
@@ -78,6 +82,7 @@ describe('OrderWizardFacade', () => {
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
+    membershipClient = { getMine: jest.fn().mockReturnValue(of({ hasMembership: false })) };
     authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
     snackbar = { showError: jest.fn() };
     router = { navigate: jest.fn() };
@@ -92,6 +97,8 @@ describe('OrderWizardFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        OrderMembershipFacade,
+        OrderPreferredCleanerFacade,
         OrderPricingFacade,
         OrderPromoFacade,
         OrderSavedAddressFacade,
@@ -109,6 +116,7 @@ describe('OrderWizardFacade', () => {
             extraClient,
             userClient,
             apiClient,
+            membershipClient,
           },
         },
         { provide: CustomerAuthService, useValue: authService },
@@ -186,11 +194,14 @@ describe('OrderWizardFacade', () => {
       expect(facade.formData().promoCode).toBe('SAVE10');
     });
 
-    it('validates the promo against the displayed total (post-surcharge subtotal)', async () => {
+    it('validates the promo against the pre-surcharge subtotal the submit will use', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
       await facade.validatePromoCodeNow('save10');
 
       const command = promoCodeClient.validate.mock.calls[0][0];
-      expect(command.orderSubtotal).toBe(facade.displayedTotalPrice() ?? 0);
+      expect(command.orderSubtotal).toBe(1000);
     });
 
     it('clearPromoCode resets the state and wipes the form value', async () => {
@@ -222,7 +233,7 @@ describe('OrderWizardFacade', () => {
 
     function setAddress(partial: Partial<{ city: string; countryId: string }>): void {
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Main 1',
           city: partial.city ?? 'Prague',
           zipCode: '11000',
@@ -238,7 +249,7 @@ describe('OrderWizardFacade', () => {
 
     it('stays idle when city or country is missing', () => {
       facade.updateFormData({
-        address: new AddressDto({ street: '', city: '', zipCode: '', countryId: 'cz', state: '' }),
+        address: createAddressDto({ street: '', city: '', zipCode: '', countryId: 'cz', state: '' }),
       });
 
       expect(facade.cityServiced()).toBe('idle');
@@ -328,7 +339,7 @@ describe('OrderWizardFacade', () => {
         longitude: 14.42,
       });
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Wenceslas Square',
           city: 'Prague',
           zipCode: '11000',
@@ -369,7 +380,7 @@ describe('OrderWizardFacade', () => {
     it('step 1 rejects a custom address without coordinates', () => {
       facade.goToStep(1);
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Wenceslas Square',
           city: 'Prague',
           zipCode: '11000',
@@ -505,7 +516,7 @@ describe('OrderWizardFacade', () => {
       facade.selectSavedAddress('addr-1');
 
       facade.updateAddressFromForm(
-        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
       );
 
       expect(facade.selectedSavedAddressId()).toBeNull();
@@ -533,7 +544,7 @@ describe('OrderWizardFacade', () => {
 
     it('saveCurrentAddressAsSaved returns false without coordinates and skips the store', async () => {
       facade.updateAddressFromForm(
-        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
       );
 
       const saved = await facade.saveCurrentAddressAsSaved('Home');
@@ -671,6 +682,29 @@ describe('OrderWizardFacade', () => {
       expect(command.accessInstructions).toBeUndefined();
     });
 
+    // Every member of a generated command is optional, so a dropped assignment type-checks.
+    // These pin the serialized body instead (ADR-0031).
+    it('sends the cleaner the customer asked for, and nothing else about them', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        preferredEmployeeId: 'emp-1',
+      });
+
+      await facade.submitOrder();
+
+      const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
+      expect(body.preferredEmployeeId).toBe('emp-1');
+    });
+
+    it('leaves the preference off the body when the customer asked for nobody', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder();
+
+      const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
+      expect(body).not.toHaveProperty('preferredEmployeeId');
+    });
+
     it('shows an error and clears submitting when create fails', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
       orderClient.createOrder.mockReturnValue(throwError(() => new Error('boom')));
@@ -740,14 +774,7 @@ describe('OrderWizardFacade', () => {
     });
 
     it('renders the express quote verbatim — server total, no client gross-up', async () => {
-      orderClient.quote.mockReturnValue(
-        of({
-          totalPrice: 1200,
-          expressSurchargeApplied: true,
-          expressSurchargeAmount: 200,
-          currencyId: 'czk',
-        }),
-      );
+      orderClient.quote.mockReturnValue(of(EXPRESS_QUOTE));
       facade.updateFormData({ selectedServiceIds: ['s1'] });
       await facade.refreshQuoteNow();
 
@@ -755,6 +782,16 @@ describe('OrderWizardFacade', () => {
       expect(facade.expressSurcharge()).toBe(200);
       expect(facade.preSurchargeSubtotal()).toBe(1000);
       expect(facade.displayedTotalPrice()).toBe(1200);
+    });
+
+    it('shows the charged price, not the gross minus the discount, on a discounted express quote', async () => {
+      orderClient.quote.mockReturnValue(of(EXPRESS_DISCOUNTED_QUOTE));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      expect(facade.displayedTotalPrice()).toBe(1080);
+      expect(facade.effectiveDiscount()).toBe(100);
+      expect(facade.totalPrice()).toBe(1200);
     });
 
     it('charges no surcharge and shows the bare total for a standard quote', async () => {

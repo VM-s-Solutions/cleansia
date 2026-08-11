@@ -26,9 +26,8 @@ struct LiveQuoteClient: QuoteClient {
             selectedExtraSlugs: request.extraSlugs,
             cleaningDate: request.cleaningDate
         )
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerOrderAPI.orderQuote(quoteOrderCommand: command)
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await BookingQuote(from: CustomerOrderAPI.orderQuote(quoteOrderCommand: command))
         }
-        return result.map(BookingQuote.init(from:))
     }
 }

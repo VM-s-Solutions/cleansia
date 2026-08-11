@@ -110,13 +110,15 @@
         <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_recurring_body' | translate }}</p>
       </div>
     </li>
-    <li class="membership-subscribe__perk">
-      <span class="membership-subscribe__perk-icon"><i class="pi pi-bolt"></i></span>
-      <div>
-        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_express_title' | translate }}</h3>
-        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_express_body' | translate }}</p>
-      </div>
-    </li>
+    @if (selectedPlan()?.allowsExpressUpgrade) {
+      <li class="membership-subscribe__perk">
+        <span class="membership-subscribe__perk-icon"><i class="pi pi-bolt"></i></span>
+        <div>
+          <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_express_title' | translate }}</h3>
+          <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_express_body' | translate }}</p>
+        </div>
+      </li>
+    }
   </ul>
 
   <!-- ─── Sticky CTA ─── -->

@@ -1,17 +1,27 @@
-import { BlobFileDto, UpdateCurrentUserCommand } from '@cleansia/customer-services';
+import {
+  AddSavedAddressCommand,
+  BlobFileDto,
+  ChangePasswordCommand,
+  UpdateCurrentUserCommand,
+  UpdateSavedAddressCommand,
+} from '@cleansia/customer-services';
 
 export const AVATAR_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
-// The backend accepts an avatar by magic bytes (Constants.ImageSignatures, checked by
-// ImageFileValidator); these are the browser content types that decode to those signatures.
+/**
+ * The intersection of what the backend stores and what it will ever serve as an image.
+ * `ImageFileValidator` also accepts bmp and tiff by magic bytes, but `ServedContentType`
+ * will only ever hand those back as `application/octet-stream`, and no desktop browser
+ * renders a tiff in an `<img>` — so accepting one produces an upload that appears to
+ * succeed and an avatar that never appears. SVG is absent on both sides: it is XML that
+ * can carry script and would run with the storage origin.
+ */
 export const AVATAR_ALLOWED_CONTENT_TYPES = [
   'image/jpeg',
   'image/jpg',
   'image/png',
   'image/webp',
   'image/gif',
-  'image/bmp',
-  'image/tiff',
 ] as const;
 
 export const AVATAR_ACCEPT_ATTRIBUTE = AVATAR_ALLOWED_CONTENT_TYPES.join(',');
@@ -61,6 +71,60 @@ export function buildAvatarBlobFile(file: File, dataUrl: string): BlobFileDto {
   photo.base64Content = dataUrl;
   photo.contentType = file.type;
   return photo;
+}
+
+export interface SavedAddressFields {
+  label: string;
+  street: string;
+  city: string;
+  zipCode: string;
+  countryId?: string;
+  latitude: number;
+  longitude: number;
+}
+
+export function buildChangePasswordCommand(
+  email: string | undefined,
+  newPassword: string | undefined
+): ChangePasswordCommand {
+  const command = new ChangePasswordCommand();
+  command.email = email;
+  // The signed-in flow has no emailed code; the session identifies the user.
+  command.code = '';
+  command.newPassword = newPassword;
+  return command;
+}
+
+export function buildAddSavedAddressCommand(
+  fields: SavedAddressFields,
+  setAsDefault: boolean
+): AddSavedAddressCommand {
+  const command = new AddSavedAddressCommand();
+  command.label = fields.label;
+  command.street = fields.street;
+  command.city = fields.city;
+  command.zipCode = fields.zipCode;
+  command.countryId = fields.countryId;
+  command.latitude = fields.latitude;
+  command.longitude = fields.longitude;
+  command.setAsDefault = setAsDefault;
+  return command;
+}
+
+export function buildUpdateSavedAddressCommand(
+  savedAddressId: string,
+  fields: SavedAddressFields
+): UpdateSavedAddressCommand {
+  const command = new UpdateSavedAddressCommand();
+  command.savedAddressId = savedAddressId;
+  command.label = fields.label;
+  command.street = fields.street;
+  command.city = fields.city;
+  command.zipCode = fields.zipCode;
+  command.countryId = fields.countryId;
+  command.latitude = fields.latitude;
+  command.longitude = fields.longitude;
+  return command;
 }
 
 export function buildUpdateCurrentUserCommand(

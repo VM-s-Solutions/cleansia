@@ -1,26 +1,25 @@
 import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { SavedAddressStore } from '@cleansia/customer-stores';
-import {
-  GoogleAuthCommand,
-  JwtTokenResponse,
-  RequestPasswordChangeCommand,
-  ResendConfirmationEmailCommand,
-} from '@cleansia/partner-services';
 import { AUTH_COOKIE_KEYS, CleansiaCustomerRoute } from '@cleansia/services';
 import {
   AppleAuthCommand,
   ConfirmUserEmailCommand,
+  GoogleAuthCommand,
+  JwtTokenResponse,
   LoginCommand,
   LogoutCommand,
   RefreshTokenCommand,
   RegisterCommand,
+  RequestPasswordChangeCommand,
+  ResendConfirmationEmailCommand,
 } from '../client/customer-client';
 import { setLocalStorageValueByKey } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
+import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
+import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +28,9 @@ export class CustomerAuthService {
   private readonly customerClient = inject(CustomerClient);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly savedAddressStore = inject(SavedAddressStore);
+  private readonly sessionListeners =
+    inject(SESSION_LIFECYCLE_LISTENERS, { optional: true }) ?? [];
+  private readonly signupConsent = inject(SignupConsentService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
   // Guard storage access by platform, not `typeof localStorage` — Node 22+
   // exposes a global localStorage whose methods throw during SSR.
@@ -41,14 +42,21 @@ export class CustomerAuthService {
   private readonly _isLoggedIn = signal<boolean>(this.hasValidSession());
   readonly isLoggedIn: Signal<boolean> = computed(() => this._isLoggedIn());
 
+  private currentLanguage(): string {
+    return this.translate.currentLang || this.translate.getDefaultLang();
+  }
+
   login(
     email: string,
     password: string,
     rememberMe = false
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient.login(
-      new LoginCommand({ email, password, rememberMe })
-    );
+    const command = new LoginCommand();
+    command.email = email;
+    command.password = password;
+    command.rememberMe = rememberMe;
+
+    return this.customerClient.authClient.login(command);
   }
 
   register(
@@ -58,91 +66,145 @@ export class CustomerAuthService {
     lastName: string,
     referralCode?: string
   ): Observable<boolean> {
-    return this.customerClient.authClient.register(
-      new RegisterCommand({
-        email,
-        password,
-        firstName,
-        lastName,
-        language: this.translate.currentLang || this.translate.getDefaultLang(),
-        referralCode: referralCode?.trim() ? referralCode.trim().toUpperCase() : undefined,
+    const command = new RegisterCommand();
+    command.email = email;
+    command.password = password;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.language = this.currentLanguage();
+    command.referralCode = referralCode?.trim()
+      ? referralCode.trim().toUpperCase()
+      : undefined;
+
+    return this.customerClient.authClient.register(command);
+  }
+
+  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
+    const command = new ConfirmUserEmailCommand();
+    command.code = code;
+    command.email = email;
+
+    return this.customerClient.authClient.confirmUserEmail(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
       })
     );
   }
 
-  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .confirmUserEmail(new ConfirmUserEmailCommand({ code, email }))
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
-  }
-
   resendEmailConfirmation(email: string): Observable<boolean> {
+    const command = new ResendConfirmationEmailCommand();
+    command.email = email;
+    command.language = this.currentLanguage();
+
     return this.customerClient.authClient
-      .resendConfirmationEmail(
-        new ResendConfirmationEmailCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .resendConfirmationEmail(command)
       .pipe(map(() => true));
   }
 
-  authenticateWithGoogle(
+  /**
+   * Signup and sign-in are four methods rather than two with a flag because the
+   * consent assertion has to be a property of the call. One root-provided
+   * service serves both screens, so anything the flag could be read from
+   * outlives the call that set it — and a ticked signup form reaching a sign-in
+   * request provisions an account nobody agreed to. An identity the sign-in
+   * pair does not recognize is refused with `auth.social_account_not_found`.
+   */
+  signUpWithGoogle(
     token: string,
     googleId: string,
     email: string,
     firstName: string,
     lastName: string
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .googleAuth(
-        new GoogleAuthCommand({ token, googleId, email, firstName, lastName })
-      )
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
+    return this.googleAuth(token, googleId, email, firstName, lastName, true);
+  }
+
+  signInWithGoogle(
+    token: string,
+    googleId: string,
+    email: string,
+    firstName: string,
+    lastName: string
+  ): Observable<JwtTokenResponse> {
+    return this.googleAuth(token, googleId, email, firstName, lastName, false);
+  }
+
+  signUpWithApple(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): Observable<JwtTokenResponse> {
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true);
+  }
+
+  signInWithApple(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): Observable<JwtTokenResponse> {
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false);
+  }
+
+  private googleAuth(
+    token: string,
+    googleId: string,
+    email: string,
+    firstName: string,
+    lastName: string,
+    termsAccepted: boolean
+  ): Observable<JwtTokenResponse> {
+    const command = new GoogleAuthCommand();
+    command.token = token;
+    command.googleId = googleId;
+    command.email = email;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.termsAccepted = termsAccepted;
+
+    return this.customerClient.authClient.googleAuth(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
+      })
+    );
   }
 
   /**
    * `rawNonce` is the RAW nonce; Apple was handed its SHA-256. See
    * `createAppleNonce`.
    */
-  authenticateWithApple(
+  private appleAuth(
     identityToken: string,
     rawNonce: string,
-    firstName?: string,
-    lastName?: string
+    firstName: string | undefined,
+    lastName: string | undefined,
+    termsAccepted: boolean
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .appleAuth(
-        new AppleAuthCommand({ identityToken, rawNonce, firstName, lastName })
-      )
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
+    const command = new AppleAuthCommand();
+    command.identityToken = identityToken;
+    command.rawNonce = rawNonce;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.termsAccepted = termsAccepted;
+
+    return this.customerClient.authClient.appleAuth(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
+      })
+    );
   }
 
   forgotPassword(email: string): Observable<boolean> {
+    const command = new RequestPasswordChangeCommand();
+    command.email = email;
+    command.language = this.currentLanguage();
+
     return this.customerClient.userClient
-      .requestPasswordChange(
-        new RequestPasswordChangeCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .requestPasswordChange(command)
       .pipe(map(() => true));
   }
 
@@ -151,8 +213,11 @@ export class CustomerAuthService {
     // there. We still POST so the server can revoke it; best-effort: if the
     // call fails (offline, etc.) we wipe local state anyway because user
     // intent is clear.
+    const command = new LogoutCommand();
+    command.token = '';
+
     const serverCall = this.customerClient.authClient
-      .logout(new LogoutCommand({ token: '' }))
+      .logout(command)
       .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
@@ -174,12 +239,13 @@ export class CustomerAuthService {
    * through to full logout.
    */
   refreshSession(): Observable<boolean> {
-    return this.customerClient.authClient
-      .refreshToken(new RefreshTokenCommand({ token: '' }))
-      .pipe(
-        tap((authResult) => this.setSession(authResult)),
-        map(() => true)
-      );
+    const command = new RefreshTokenCommand();
+    command.token = '';
+
+    return this.customerClient.authClient.refreshToken(command).pipe(
+      tap((authResult) => this.setSession(authResult)),
+      map(() => true)
+    );
   }
 
   /**
@@ -247,10 +313,14 @@ export class CustomerAuthService {
 
     this._isLoggedIn.set(true);
 
+    // The signup tick predates any session, and the identity here is the
+    // server's rather than whatever a form held.
+    this.signupConsent.flush(authResult.email);
+
     // Preload saved addresses so the order wizard finds them warm, even when
     // the user lands there without visiting profile first. Fire-and-forget —
     // refresh() already snackbars on failure and must not block sign-in.
-    void this.savedAddressStore.refresh();
+    this.sessionListeners.forEach((listener) => listener.onSessionStarted());
   }
 
   removeSession(): void {
@@ -263,7 +333,7 @@ export class CustomerAuthService {
     // Logout endpoint's Set-Cookie deletes — JS can't touch them directly.
     // Blank the cached addresses so user B doesn't see user A's list on the
     // same device between sign-out and the next post-signin refresh().
-    this.savedAddressStore.clear();
+    this.sessionListeners.forEach((listener) => listener.onSessionEnded());
     this._isLoggedIn.set(false);
   }
 }

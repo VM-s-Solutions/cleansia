@@ -3,9 +3,8 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
-using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,14 +16,27 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 /// cleaner sees "earn up to €X" without pulling the full paged order list.
 ///
 /// Authorisation: same as the main paged-orders endpoint — caller must
-/// resolve to an employee. The returned rows exclude orders the caller is
-/// already assigned to.
+/// resolve to an employee. The spec passes <c>excludeEmployeeId</c>, so every row returned is by
+/// construction an order the caller is NOT assigned to — the population the pre-acceptance redaction
+/// exists for. The location is therefore the coarse form the board and the detail already serve, built
+/// by <see cref="OrderMappers.BuildApproximateAddress(string?, string?)"/>; the street is never
+/// selected, so it does not leave the database.
 /// </summary>
 public class GetAvailableJobsPreview
 {
     /// <summary>
-    /// [Limit] caps the per-call row count so the dashboard never streams
-    /// pages of detail. 5 covers the carousel + headline math.
+    /// Server ceiling on the rows one call may return. Not tuned: it is the bound
+    /// <c>GetMyPendingOffers</c> already applies to the other cleaner-facing pre-acceptance list on
+    /// this host, and a second literal for the same job on the same surface is drift. Both clients ask
+    /// for 5, so the ceiling is an abuse bound rather than a product number — the failure asymmetry
+    /// runs one way (too high hands out the whole board in one call; too low under-fills a carousel
+    /// beside a <c>TotalAvailableCount</c> that stays exact).
+    /// </summary>
+    private const int MaxJobs = 50;
+
+    /// <summary>
+    /// [Limit] is what the caller ASKS for, never the cap — the cap is server-side and the caller
+    /// cannot raise it. 5 is what both partner clients send; it covers the carousel + headline math.
     /// </summary>
     public record Query(int Limit = 5) : IQuery<AvailableJobsPreviewResponse>;
 
@@ -43,30 +55,28 @@ public class GetAvailableJobsPreview
                     BusinessErrorMessage.EmployeeNotFound));
             }
 
-            // Specification matches the "Available Orders" tab on the mobile
-            // dashboard: Pending or Confirmed, unassigned spots remain, and
-            // not already mine. We sort by TotalPrice DESC so the cleaner
-            // sees the highest-value jobs first.
-            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId);
+            // Sorted by TotalPrice DESC so the cleaner sees the highest-value jobs first.
+            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
             var totalCount = await orderRepository.GetCountAsync(spec.SatisfiedBy(), cancellationToken);
             var orders = await orderRepository.GetQueryable()
                 .Where(spec.SatisfiedBy())
                 .OrderByDescending(o => o.TotalPrice)
-                .Take(query.Limit)
+                .Take(Math.Clamp(query.Limit, 1, MaxJobs))
                 .Select(o => new
                 {
                     o.Id,
                     o.DisplayOrderNumber,
                     o.CleaningDateTime,
                     o.TotalPrice,
-                    Address = o.CustomerAddress,
+                    City = o.CustomerAddress!.City,
+                    ZipCode = o.CustomerAddress.ZipCode,
                 })
                 .ToListAsync(cancellationToken);
 
             var jobs = orders.Select(o => new AvailableJobPreviewDto(
                 Id: o.Id,
                 DisplayOrderNumber: o.DisplayOrderNumber,
-                CustomerAddress: FormatAddress(o.Address),
+                CustomerAddressApproximate: OrderMappers.BuildApproximateAddress(o.City, o.ZipCode),
                 CleaningDateTime: o.CleaningDateTime,
                 TotalPrice: o.TotalPrice
             )).ToList();
@@ -76,15 +86,6 @@ public class GetAvailableJobsPreview
                 TotalPotentialEarnings: jobs.Sum(j => j.TotalPrice),
                 TotalAvailableCount: totalCount
             );
-        }
-
-        private static string? FormatAddress(Address? a)
-        {
-            if (a is null) return null;
-            var parts = new[] { a.Street, a.City, a.ZipCode }
-                .Where(s => !string.IsNullOrWhiteSpace(s));
-            var joined = string.Join(", ", parts);
-            return string.IsNullOrWhiteSpace(joined) ? null : joined;
         }
     }
 }

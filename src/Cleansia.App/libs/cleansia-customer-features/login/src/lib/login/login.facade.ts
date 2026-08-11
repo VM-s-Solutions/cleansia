@@ -64,7 +64,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
     this.authService
-      .authenticateWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .signInWithGoogle(credential, googleId, email, firstName || '', lastName || '')
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
@@ -93,7 +93,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
     lastName?: string
   ): void {
     this.authService
-      .authenticateWithApple(identityToken, rawNonce, firstName, lastName)
+      .signInWithApple(identityToken, rawNonce, firstName, lastName)
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {

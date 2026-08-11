@@ -16,9 +16,6 @@
     <!-- Personal Information Section -->
     <cleansia-profile-personal-info [facade]="facade" />
 
-    <!-- Bank Details Section -->
-    <cleansia-profile-bank-details [facade]="facade" />
-
     <!-- Emergency Contact Section -->
     <cleansia-profile-emergency-contact [facade]="facade" />
 
@@ -27,6 +24,15 @@
 
     <!-- Availability Section -->
     <cleansia-profile-availability [facade]="facade" />
+
+    <!-- Job alert distance — its own endpoint, so its own save -->
+    <cleansia-partner-profile-job-radius
+      [facade]="facade.jobRadiusFacade"
+      (retry)="facade.refreshProfile()"
+    />
+
+    <!-- Bank Details Section — its own endpoint, so its own form and save -->
+    <cleansia-partner-profile-bank [facade]="facade.bankFacade" />
 
     <!-- Consent Section -->
     <div class="cleansia-profile__consent">

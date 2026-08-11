@@ -317,6 +317,13 @@ commands") and extends it from *commands* to *queue consumers*, naming `Processe
 
 ### D3 — The poison / dead-letter contract (F3): every queue has a dead-letter handler and an alert
 
+> **[Pointer, added 2026-08-10 — no word of D3 below is edited.]** D3's **retention** half is partially
+> superseded by §*"Partial supersede — 2026-08-10 (architect, T-0584)"* at the end of this file: the
+> `DeadLetter` row keeps its **envelope** and ages out its **body**, and the phrases *"the recovery
+> source"* / *"admin-replayable"* are corrected there (§A1). Everything else in D3 — the `-poison`
+> consumer per queue, persist-then-alert-then-ack, D3.3's classification, D3.4's reconciliation — is
+> untouched and still binding.
+
 `maxDequeueCount` stays at 5 (`host.json:22`) but a poisoned message must **not** vanish into an
 unread `<queue>-poison`. Contract:
 
@@ -645,3 +652,368 @@ draft and is fixed here).
 **Escalations to the owner:** none. The two new tables (`ProcessedMessage`, `DeadLetter`) are
 owner-only `manual_step: ef-migration` (flagged, not a decision). The reconciliation cadence (default
 15 min) is a tunable, not a business decision.
+
+---
+
+## Partial supersede — 2026-08-10 (architect, T-0584): D3's dead-letter row gets two clocks
+
+*Appended per `adr/README.md` §"Accepted ADRs are immutable" form 1 (dated partial supersede). Nothing
+above this line is edited. This section supersedes the **retention** half of D3 and nothing else — the
+poison floor, the per-queue `-poison` consumer requirement, the ack-never-throw rule, D3.3's
+classification, and D3.4's fiscal reconciliation are all untouched and still binding.*
+
+### A1 — The words that change
+
+D3 never wrote the word "unbounded"; it wrote **"durable"** and **"the recovery source"**, and the tree
+read those as *forever*. Three sentences carry the change. Quoted before, then as they now read:
+
+| # | Where | Before (D3, unedited above) | Now reads (this amendment governing) |
+|---|---|---|---|
+| 1 | D3.1, code-block comment | *"No throw: acking removes it from `-poison`. **The durable `DeadLetter` row is the recovery source**."* | *"No throw: acking removes it from `-poison`. The durable `DeadLetter` row is the **forensic record**, and — for a **bounded window** — the triage copy of the body. It is **not** a replay source: nothing reads it (A3)."* |
+| 2 | D3.1, prose | *"For `generate-receipt`/`generate-invoice` the durable `DeadLetter` DB row is the fiscal/financial recovery path and is mandatory; the other three log+alert+store at minimum."* — the load-bearing words are **"recovery path"** and **"mandatory"** (and *"the other three"*, which was true of five queues and is now five of seven) | *"For every business queue the durable `DeadLetter` row is **mandatory** and its **envelope is retained**; the **body** is retained only for `DeadLetterRetention.BodyRetentionDays`. On the two fiscal queues the **recovery path is D3.4's reconciliation sweep, not this row** (A3) — the row's mandate is evidentiary."* |
+| 3 | §Consequences | *"Poisoned *enqueued* fiscal/financial work is durable and admin-replayable (D3)."* — the load-bearing word is **"admin-replayable"** | **Record-only closure:** false at HEAD and false when written. There is no admin read endpoint and no replay path (A3). The accurate claim is *"…is durable and **admin-inspectable once an endpoint exists**; the fiscal work itself is re-enqueued by D3.4, independently of this row."* |
+
+Two further statements outside D3 inherit the same correction and are recorded here rather than edited:
+`IDeadLetterStore.RecordAsync`'s param doc *"the raw, verbatim poisoned message body (**stored
+unbounded**)"* (`src/Cleansia.Core.Queue.Abstractions/IDeadLetterStore.cs:21`) and the entity's
+*"Stored as `text` (**unbounded**) so nothing is truncated — this is the load-bearing **recovery/replay
+source** for fiscal artifacts"* (`src/Cleansia.Core.Domain/DeadLettering/DeadLetter.cs:34-35`, mirrored
+at `EntityConfigurations/DeadLetterEntityConfiguration.cs:25-26`). **`text` stays** — the amendment
+bounds the row's *age*, never truncates a body it keeps. What retires is the *implication of
+permanence* and the *replay* claim.
+
+### A2 — Why this had to move: bounded in credential value, unbounded in PII value
+
+The `send-email` body is `SendEmailMessage(EmailType, Email, UserName, Code, LanguageCode, UserId,
+TenantId)` (`Messages/SendEmailMessage.cs:16-23`) — recipient address, real name, user id, and `Code`,
+the **raw** confirmation/reset token. `e84aed25` closed the *alert* leak (S6): `PoisonAlert` projects a
+body to `(MessageKey, TenantId, Bytes, Fingerprint)` and nothing else (`Handlers/PoisonAlert.cs:53-60`),
+fail-closed by reading two fields **by name** rather than denylisting (`:26-30`). The **row** was never
+in that fix's scope and still holds the bytes: `PoisonHandlerBase.cs:80` persists `body` verbatim.
+
+The credential half self-heals — the code expires in 15 minutes. The PII half does not: an e-mail
+address and a real name are as identifying on day 900 as on day 1, in plaintext, in a table nothing
+ages out. That asymmetry is the whole finding, and it is why the answer is a clock on the **body**
+rather than a stronger rule about the alert.
+
+### A3 — "Recovery source" is **nominal**, and that is the load-bearing fact
+
+Verified at HEAD, and this is what the shape ruling rests on:
+
+- **Nothing reads a `DeadLetter` row.** `IDeadLetterRepository` has exactly four occurrences in `src/`
+  — the interface (`Core.Domain/Repositories/IDeadLetterRepository.cs:9`), a DI comment
+  (`Cleansia.Config/Repositories/RepositoryExtensions.cs:21`), the store's constructor
+  (`Infra.Database/DeadLetterStore.cs:18`) and the repository class
+  (`Infra.Database/Repositories/DeadLetterRepository.cs:11`). **None is a read.** A grep for
+  `DeadLetter` across `src/Cleansia.Web.Admin` returns nothing: there is no endpoint, no query, no
+  replay command. The only documented way to reach a body is the `LIKE` in a log line
+  (`Handlers/PoisonHandlerBase.cs:95`).
+- **The fiscal recovery D3 promised is delivered by something else.** `FiscalReconciliationService`
+  re-derives the message from **domain state** — `MessageKeys.Receipt(order.Id)` and
+  `new GenerateReceiptMessage(order.Id, languageCode)` (`Services/FiscalReconciliationService.cs:93,
+  100-104`) — off a candidate query that is `receipt-eligible ∧ CreatedOn ≤ cutoff ∧ no registered
+  receipt`, with **no lower bound on order age** (`Repositories/OrderRepository.cs:380-410`), on a
+  5-minute timer with a 15-minute threshold (`Functions/FiscalReconciliationFunction.cs:16`,
+  `FiscalReconciliationConfig.cs:14`). It never touches the table. **On the two queues where D3 calls
+  the row MANDATORY, the row contributes zero to recovery.**
+- **The drainer-written rows are a second copy of a row we already keep.**
+  `OutboxDrainerService.cs:81,86` calls `row.MarkFailed(...)` **and** `deadLetterStore.RecordAsync(
+  row.QueueName, row.Body, …)` — and `PruneOutbox` deletes **only** `Status == Dispatched`
+  (`Features/DataRetention/PruneOutbox.cs:72-74`; `IOutboxRetentionConfig.cs:15-17` says so in terms).
+  So for every drainer dead-letter the identical body also sits on an `OutboxMessage` row that is
+  retained forever.
+
+**Consequence for the argument.** If the replay role were *real* — an endpoint reading `RawBody` and
+re-enqueuing — the body would be an operational asset and the correct shape would be per-queue with a
+"still needed" predicate. It is not. The body is a **triage convenience with a days-scale half-life**,
+which is what makes a short window defensible rather than merely tolerable. **This ruling is
+conditional on that absence: building a replay path that reads `RawBody` is a superseding-ADR event,
+not a feature ticket.** The read endpoint the row deserves needs `SourceQueue`, `MessageKey`,
+`TenantId`, `Error`, `DeadLetteredAt`, `Bytes`, `Fingerprint` — **and not the body**.
+
+### A4 — DECISION: two clocks, uniform across queues, delete-then-redact
+
+**A4.1 — The body has a short clock; the row has a long one. Neither is per-queue.**
+
+```
+DeadLetterRetention (new config section; mirrors OutboxRetention's shape)
+  Enabled            = true
+  RowRetentionDays   = 90   ← delete the ROW  (age from DeadLetteredAt)
+  BodyRetentionDays  = 7    ← redact RawBody  (age from DeadLetteredAt)
+  BatchSize          = 500
+```
+
+- **Redaction, not truncation, not nulling.** `RawBody` is overwritten with
+  `AnonymizationMarker.Value` (`Core.Domain/Common/AnonymizationMarker.cs:5` = `"[DELETED]"`) — the
+  same marker the order/dispute/user anonymizers already use. The column stays `text` and stays
+  `IsRequired()`, so no nullability migration; "redacted" is distinguishable from "empty"; and the
+  marker is self-describing to whoever runs the query.
+- **Delete runs first, then redact.** With `RowRetentionDays > BodyRetentionDays` this makes the two
+  steps disjoint per run and removes the need for a cross-field config invariant — a row past the row
+  clock is deleted, never redacted-then-deleted in the same wakeup.
+- **No queue term anywhere in either predicate.** See A5 for why this is the decision and not laziness.
+
+**A4.2 — The row's identity is promoted out of the body into columns (`manual_step: ef-migration`).**
+`DeadLetter` gains `MessageKey` (string, indexed, `<unparseable>`/`<absent>` sentinels permitted) and
+`BodyFingerprint` (string, the `MessageKeys.HashCode` of the verbatim body). This is **required by**
+A4.1, not adjacent to it: redaction destroys the only handle D3 documented
+(`RawBody LIKE '%{MessageKey}%'`, `PoisonHandlerBase.cs:95`), so redacting without promoting the key
+converts an admin-visible row into an anonymous blob.
+
+**Both writers already hold both values and throw them away.** `PoisonHandlerBase.cs:69` computes
+`PoisonAlert.Describe(body)` — which *is* `(MessageKey, TenantId, Bytes, Fingerprint)` — and then calls
+`RecordAsync(SourceQueue, body, error: null, ct)` at `:80` passing neither. `OutboxDrainerService.cs:86`
+has `row.MessageKey` in hand (it logs it at `:85`). So `IDeadLetterStore.RecordAsync` gains
+`messageKey` + `bodyFingerprint` parameters and **no call site has to compute anything new**.
+
+The key is not a credential: the `send-email` key is `email:{purpose}:{userId}:{codeHash}` where
+`codeHash` is a one-way SHA-256 prefix (`MessageKeys.cs:62-63,70-71`), and `PoisonAlert` already ships
+the whole key to Sentry — storing it in our own Postgres is **strictly less** exposure than what ships
+today. It *is* a pseudonymous identifier on two queues, which is exactly what makes T-0583 possible
+(A7).
+
+**A4.3 — The still-needed-at-expiry answer (the reason D3 said "unbounded").**
+
+**Ruling: the body is redacted on schedule regardless, because "still needed for recovery" is not a
+state this table can be in.** Enumerated over all seven queues, at HEAD:
+
+| Queue | If the effect is still wanted when the body clock runs out | Body needed? |
+|---|---|---|
+| `generate-receipt`, `generate-invoice` | D3.4's sweep is **still re-enqueueing it**, re-derived from the order/pay-period rows, forever (A3) | **No** — the row is a duplicate of a live retry |
+| any queue, drainer-written | the identical body is on the `OutboxMessage` row, `Status = Failed`, never pruned (A3) | **No** — second copy |
+| `send-email` | recovery is a **re-issue** (`ResendConfirmationEmail` / `RequestPasswordChange`), which needs user id + purpose — both in the clear inside the key. A replay after 15 min mails a **dead token**: a link that fails for the user | **No** — replay is *worse* than nothing |
+| `notifications-dispatch`, `live-activity-dispatch`, `sitewide-promo-fanout` | §Consequences already accepts the loss (*"on the other three (push/promo) a lost dispatch is a lost notification, accepted"*). A stale replay is a **harm**: an "on the way" push for a finished job; a Live Activity whose `TransitionAtUtc` is days old, which ActivityKit will discard anyway (`Messages/SendLiveActivityUpdateMessage.cs:12-14`) | **No** — replay is *harmful* |
+
+**A body older than the window is not a recovery asset; it is a stale one.** That is the substantive
+answer, and it is why the answer is "redact anyway" rather than "hold while needed": a hold-while-needed
+rule would need a *reader* to set the flag, and there is no reader (A3).
+
+**The residual, named rather than assumed.** The still-needed case is real for a *hypothetical* queue
+whose effect is (i) still wanted, (ii) **not** re-derivable from domain state, and (iii) has **no** live
+`OutboxMessage` row. **Today: none of the seven.** So this amendment adds one clause to D3's
+"Every **new queue** MUST" list in §Consequences:
+
+> **A new queue declares its dead-letter body class** — `re-derivable` (a sweep rebuilds it),
+> `duplicated-in-outbox` (a retained `Failed` row holds it), or `not-recoverable-from-body` (replay is
+> a no-op or a harm). A queue that can claim none of the three must have its retention decided in the
+> ADR that introduces it. **Until it does, the default windows apply** — a new queue never silently
+> inherits permanence.
+
+And the safety valve: **redaction is not deletion.** For `RowRetentionDays` the row survives with
+queue, key, tenant, error, timestamp, byte count and fingerprint. An operator who discovers a missing
+fiscal artifact three months later has the reconciliation sweep still re-enqueueing it, the order row,
+and a dead-letter row proving it poisoned and when. What they do not have is a body they had no way to
+replay in the first place.
+
+### A5 — What was rejected, and why
+
+- **A single uniform delete (no redaction).** Rejected: it discards the *evidentiary* half — which
+  queue, which key, which error, when — at the same clock as the PII half, and those have genuinely
+  different half-lives. The forensic value lives in `SourceQueue`/`Error`/`DeadLetteredAt`/`MessageKey`,
+  **not** in `RawBody`; splitting the clocks costs one extra predicate and keeps the useful half for
+  free.
+- **Per-queue retention (fiscal rows outlive `send-email` rows).** **Rejected, and this is the ruling
+  most worth reading.** Three reasons, in order of weight:
+  1. **It is a denylist maintained by memory, and this exact path already refused one.** `PoisonAlert`
+     is *"fail-closed by construction, not by denylist … so a message type that gains a field tomorrow
+     is withheld by default rather than needing someone to remember it"* (`PoisonAlert.cs:26-30`). A
+     retention `switch` on `SourceQueue` is the same shape one layer down: queue #8 lands, nobody edits
+     the switch, and it inherits whichever branch falls through. An allowlist-of-long-lived-queues
+     inverts the failure but still needs an editor.
+  2. **The premise is backwards.** The long window would be granted to `generate-receipt`/
+     `generate-invoice` on D3's word "mandatory" — but those are precisely the bodies with **no**
+     credential and **no** PII (`GenerateReceiptMessage(OrderId, LanguageCode)`,
+     `GenerateInvoiceMessage(EmployeeId, PayPeriodId, LanguageCode)`; ids the key already encodes) and
+     the queues whose recovery does not read the row at all (A3). The split would buy a longer life for
+     the bodies that need it least.
+  3. **The fiscal rows are the ones that need the clock most.** A permanently-failing receipt is
+     re-enqueued by the sweep **every 5 minutes forever** (A3), each cycle poisoning after 5 dequeues
+     into a **new** `DeadLetter` row. One broken order is an unbounded row generator. Exempting fiscal
+     rows from retention would point the exemption at the only known amplification path in the table.
+- **Truncate `RawBody` to N bytes, keep the head.** Rejected: it is redaction that leaks. The
+  `send-email` wire body is camelCase-serialized in declaration order
+  (`OutboxPendingDispatch.cs:34-39`), so the head is `emailType`, `email`, `userName` — a prefix
+  truncation keeps the **address and the name** and drops the already-expired token. It optimizes for
+  the wrong half.
+- **A per-row "still needed" flag with an extendable clock.** Rejected: it requires a reader to set it,
+  and there is none (A3). A flag nobody can set is a column that always reads `false`.
+- **Hosting the sweep in `DataRetentionBackgroundService`.** Rejected on two mechanics: it runs
+  **weekly** (`Functions/DataRetentionTimerFunction.cs:10`, `0 0 3 * * 0`), which turns a 7-day body
+  window into a worst case of 14; and the whole job short-circuits on a feature flag
+  (`DataRetentionBackgroundService.cs:29-36`, `DataRetentionJobEnabled`) — a PII-minimization clock
+  that an unrelated ops toggle silently disables is the wrong home. A **pointer comment** there is
+  required instead (A6), so discoverability is not what pays for this.
+- **A third timer Function.** Rejected: a third cron, a third lease, a third smoke test for a sweep
+  that reuses `PruneOutbox`'s batch loop verbatim and wants its cadence.
+
+### A6 — Where it lives (the build seam)
+
+**A new `PruneDeadLetters` MediatR command** in `Cleansia.Core.AppServices/Features/DataRetention/`,
+invoked by the **existing** `PruneOutboxTimerHandler` — one wakeup, two `mediator.Send` calls — on the
+existing daily 04:00 shell (`Functions/PruneOutboxFunction.cs:11`).
+
+Why a second command rather than a third step inside `PruneOutbox`: `PruneOutbox`'s charter sentence is
+load-bearing and must stay literally true — *"read-terminal-then-delete only — it never touches a
+Pending/Failed outbox row … so dispatch and duplicate-suppression are unchanged"* (`PruneOutbox.cs:17-19`).
+A redaction is an **update**, and it is destructive by design; folding it in makes that sentence false
+and puts a PII clock behind `OutboxRetention.Enabled`. Separate commands, separate config sections,
+separate counters, one timer.
+
+### A6.1 — Build spec (hand this straight to a backend lane)
+
+**Files. New:**
+
+| Path | What |
+|---|---|
+| `Cleansia.Core.AppServices/Features/DataRetention/PruneDeadLetters.cs` | `Command` / `Validator` (empty) / `Response(int DeletedCount, int RedactedCount)` / `Handler`, the one-file feature shape |
+| `Cleansia.Infra.Common/Configuration/DeadLetterRetentionConfig.cs` | `AutoBindConfig(configuration, "DeadLetterRetention")` — copy `OutboxRetentionConfig.cs` verbatim in shape |
+| `Cleansia.Infra.Common/Configuration/Interfaces/IDeadLetterRetentionConfig.cs` | `Enabled` (true), `RowRetentionDays` (90), `BodyRetentionDays` (7), `BatchSize` (500) |
+| `Cleansia.Tests/Dispatch/DeadLetterRetentionTests.cs` | the unit gate (beside its sibling `PruneOutboxHandlerTests.cs` — mirror, don't invent a folder) |
+| `Cleansia.IntegrationTests/Features/DataRetention/DeadLetterRetentionPostgresTests.cs` | the tenant-null + real-SQL gate |
+
+**Files. Changed:**
+
+| Path | Change |
+|---|---|
+| `Cleansia.Core.Domain/DeadLettering/DeadLetter.cs` | add `MessageKey` (required, ≤512) + `BodyFingerprint` (required, ≤64); extend `Create(...)`; **rewrite the `RawBody` docstring** — it currently claims "unbounded … load-bearing recovery/replay source" (§A1) |
+| `Cleansia.Infra.Database/EntityConfigurations/DeadLetterEntityConfiguration.cs` | map the two columns; `HasIndex(e => e.MessageKey)`; fix the mirrored "unbounded" comment at `:25-26` |
+| `Cleansia.Core.Queue.Abstractions/IDeadLetterStore.cs` | `RecordAsync(sourceQueue, messageKey, bodyFingerprint, body, error, ct)`; **rewrite the "(stored unbounded)" param doc at `:21`** |
+| `Cleansia.Infra.Database/DeadLetterStore.cs` | pass the two new values through |
+| `Cleansia.Functions.Core/Handlers/PoisonHandlerBase.cs` | pass `alert.MessageKey` / `alert.Fingerprint` (already computed at `:69`) into `RecordAsync` at `:80`; update the `:95` lookup comment — the handle is now the **column**, not `RawBody LIKE` |
+| `Cleansia.Core.AppServices/Services/OutboxDrainerService.cs` | pass `row.MessageKey` (in hand at `:85`) + `MessageKeys.HashCode(row.Body)` at `:86` |
+| `Cleansia.Functions.Core/Handlers/PruneOutboxTimerHandler.cs` | second `mediator.Send(new PruneDeadLetters.Command(), ct)`; log both results; **a failure of one must not skip the other** |
+| `Cleansia.Config/Configurations/ConfigurationExtensions.cs` | register the new config |
+| `Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs` | **pointer comment only** above `RunAllRetentionTasksAsync`: dead-letter retention lives in `PruneDeadLetters` (daily, not weekly; not behind `DataRetentionJobEnabled`) — §A5 |
+
+**⚠️ `manual_step: ef-migration` (owner-only)** — two columns + one index on `DeadLetters`. Pre-prod,
+folded into `Initial` per the house rule. **The build cannot self-apply it.**
+
+**Handler shape.** Copy `PruneOutbox.Handler` structurally: `if (!config.Enabled) return
+BusinessResult.Success(new Response(0, 0));`, then **step 1 delete**, then **step 2 redact** (that
+order — §A4.1), each a bounded loop, each committing per batch, each `ThrowIfCancellationRequested()`
+at the top of the loop. Both steps use `deadLetterRepository.GetQueryableIgnoringTenant()` — system
+job, no JWT, and `TenantId` is nullable on this entity by design.
+
+```
+// step 1 — delete the row (runs FIRST)
+d.DeadLetteredAt < now.AddDays(-config.RowRetentionDays)
+    .OrderBy(d => d.DeadLetteredAt).Take(config.BatchSize)  →  RemoveRange + CommitAsync
+
+// step 2 — redact the body
+d.DeadLetteredAt < now.AddDays(-config.BodyRetentionDays)
+    && d.RawBody != AnonymizationMarker.Value          // ← the idempotence term; without it the sweep
+                                                       //   re-counts the same rows every night forever
+    .OrderBy(d => d.DeadLetteredAt).Take(config.BatchSize)
+    →  select ids, then ExecuteUpdateAsync(s => s.SetProperty(d => d.RawBody, AnonymizationMarker.Value))
+       over Where(d => batchIds.Contains(d.Id))
+```
+
+Use `ExecuteUpdateAsync` over an id batch (not over `.Take()` — it does not translate) so the update
+is set-based and self-committing, matching `DataRetentionBackgroundService.cs:77-87`'s pure-modify
+shape. `SourceQueue` **must not appear in either predicate**.
+
+**Tests — these are the gate, not aspiration.**
+
+1. **`Redacts_Only_Past_The_Body_Window`** — a row at `BodyRetentionDays - 1` keeps `RawBody`
+   **byte-equal**; a row at `+1` reads `AnonymizationMarker.Value`.
+2. **`Redaction_Preserves_The_Envelope`** — after redaction the row still carries `SourceQueue`,
+   `MessageKey`, `BodyFingerprint`, `TenantId`, `Error`, `DeadLetteredAt`. This is the test that fails
+   if someone "simplifies" redaction into a delete.
+3. **`No_Queue_Is_Exempt`** — **parameterize over every `public const string` on `QueueNames` read
+   reflectively**, not over a hand-written list. Same age in, same outcome out. This is the test that
+   catches a per-queue branch being reintroduced, and reading the constants reflectively is what makes
+   queue #8 covered without anyone remembering (`consistency.md` §"there are exactly *N*").
+4. **`Sweep_Is_Idempotent`** — two consecutive runs: `RedactedCount` is `n` then **`0`**, and no row
+   changes on the second. Kills a missing `!= AnonymizationMarker.Value` term.
+5. **`Row_Clock_Deletes_And_Runs_First`** — a row past `RowRetentionDays` is **gone**, and
+   `RedactedCount` does not also count it.
+6. **`Disabled_Config_Is_A_No_Op`** — `Enabled = false` → `(0, 0)` and no row mutated.
+7. **`Batching_Is_Bounded`** — seed `BatchSize + 1` eligible rows; assert every eligible row is
+   processed **and** that it took more than one batch (loop actually iterates; no single unbounded
+   statement).
+8. **Anti-vacuity** — every test above asserts a **non-empty** eligible corpus before asserting the
+   outcome. A sweep that processes nothing must not read as a pass (`consistency.md` §"an empty result
+   is legal; an empty scan is not").
+9. **`Tenant_Null_Rows_Are_Swept` (Postgres, integration)** — a `DeadLetter` with `TenantId = null`
+   **and** one with a non-null tenant are both swept under a `FixedTenantProvider(null)` and under a
+   provider returning some *other* tenant. This one must run against **real Postgres**: a
+   tenant-filtered queryable silently returns zero rows, and that failure is invisible in a
+   mock/SQLite harness.
+10. **`Poison_Handler_Persists_The_Identity`** — `PoisonHandlerBase.HandleAsync` with an unparseable
+    body writes a row whose `MessageKey == PoisonAlert.Unparseable` and whose `BodyFingerprint`
+    equals `MessageKeys.HashCode(body)` — i.e. the alert and the row agree. Extends the existing
+    `PoisonHandlerTests` / `DeadLetterStorePersistenceTests`.
+
+**Out of scope for this build, explicitly:** no admin read endpoint (its projection is specified in
+§A3 for whoever builds it, and it does **not** include the body); no replay path (that is a
+superseding ADR — §A3); no change to `OutboxMessage.Body` (§A8); no change to the poison floor,
+D3.3's classification, or D3.4's sweep.
+
+### A7 — Composition with T-0583 (GDPR erasure of `DeadLetter` rows)
+
+**They compose; neither subsumes the other — except on one subset, where retention is the only
+erasure.** Two different clocks on the same bytes:
+
+| | Retention (this amendment) | Erasure (T-0583) |
+|---|---|---|
+| Clock | **absolute**, from `DeadLetteredAt` | **event**, from the erasure request |
+| Scope | every row | one subject |
+| Answers | *"nobody's data lives here forever"* | *"this person's data is gone now"* |
+
+- **Erasure is not replaceable by retention.** A user erased today whose dead letter is 2 days old
+  keeps their address and name in plaintext for 5 more days. For those 5 days the platform's
+  "you were deleted" statement is false. T-0583 still has to run, and must run **immediately**.
+- **Retention bounds erasure's residual.** After the body window there is no body to erase, so
+  T-0583's hardest problem — finding a subject inside an opaque blob — has a bounded lifetime.
+- **A4.2 is what makes erasure implementable.** Today the *only* handle on a subject is a substring of
+  `RawBody`: `GdprDeletionService` has no `DeadLetter` walk and the table has no `UserId` column. With
+  `MessageKey` promoted and indexed, `send-email` (`email:{purpose}:{userId}:{codeHash}`) and
+  `notifications-dispatch` (`push:{userId}:{eventKey}:{subject}`) become **prefix matches on the
+  subject**, `calculate-order-pay`/`generate-invoice` match on employee id, and `generate-receipt`
+  matches the order ids `GdprDeletionService.cs:160-162` already enumerates.
+- **Sequencing, so T-0583 is not blocked.** T-0583 lands now against the handles it can get; A4.2 turns
+  that from a `LIKE` scan into an indexed match. That is a narrowing, **not** a rewrite — *provided
+  T-0583 puts the match behind one named method on `IDeadLetterRepository`* (e.g.
+  `RemoveForSubjectAsync`) instead of inlining a `LIKE` in the service. **That seam is the only thing
+  T-0584 asks of T-0583.**
+- **The subset where retention IS the erasure.** A row whose body was unparseable carries
+  `MessageKey = "<unparseable>"` (`PoisonAlert.cs:39`) — no subject handle exists, by construction, and
+  no content match can be trusted. For that subset the **retention clock is the only control that ever
+  removes the data.** T-0583's AC must say so rather than claim a completeness it cannot have.
+
+### A8 — Named residual (not fixed here; needs its own ticket)
+
+**`OutboxMessage.Body` is the same defect one table over, and it is larger.** A `Failed` outbox row is
+**never** pruned (`PruneOutbox.cs:72-74`) and holds the identical verbatim body — for `send-email`,
+address + name + raw code (`OutboxPendingDispatch.cs:38-39`, `EmailDispatch.cs:27-34`). Bounding
+`DeadLetter` alone leaves those bytes in place. This is deliberately **not** folded in: the
+`Failed`-row body is genuinely re-drivable (a `Failed` row is what an operator would re-open to retry a
+send), so its clock is a different argument with a real recovery role behind it — which is exactly the
+argument A3 found absent here. **PM: this needs its own row**, and it is why the catalog entry lands at
+`(gate pending: …)` rather than `T1-CI`.
+
+### A9 — Deliberation trail (single-architect adversarial round, T-0584)
+
+Author drafted; the same architect ran the challenger pass against the draft and adjudicated. Every
+challenge below changed the artifact — none was answered by assertion.
+
+| # | Challenge | Disposition | Where |
+|---|---|---|---|
+| CH-A | *"D3 says fiscal rows are MANDATORY, so they must outlive the rest"* — the obvious per-queue shape | **CONCEDE the premise, REJECT the conclusion.** The fiscal bodies carry no PII/credential and their recovery does not read the row; they are also the only amplification path | A3, A5 (2)(3) |
+| CH-B | A uniform delete is simpler than two clocks | **REVISE**: two clocks, because the evidentiary half and the PII half have different half-lives and splitting them costs one predicate | A4.1, A5 (1) |
+| CH-C | Redaction breaks the documented `RawBody LIKE '%{MessageKey}%'` lookup — the amendment would destroy the row's only handle | **CONCEDE + REVISE**: A4.2 promotes `MessageKey`/`BodyFingerprint` to columns; both writers already compute them and discard them | A4.2 |
+| CH-D | "Recovery source" cannot be dismissed without proof | **DEFEND with evidence**: four occurrences of `IDeadLetterRepository`, none a read; no admin endpoint; the fiscal sweep re-derives from domain state | A3 |
+| CH-E | The still-needed case is being assumed away | **CONCEDE the form**: enumerated per queue, and the residual named as a standing obligation on new queues rather than an assumption | A4.3 |
+| CH-F | Truncation is cheaper than redaction and keeps the head for triage | **REJECT with evidence**: camelCase declaration order puts `email`/`userName` in the head and the expired token in the tail — it keeps the PII and drops the nothing | A5 |
+| CH-G | The retention job belongs in the retention service | **REJECT with mechanics** (weekly cadence, feature-flag short-circuit) **+ CONCEDE the discoverability point** as a required pointer comment | A5, A6 |
+| CH-H | T-0583 is landing now and this blocks it | **CONCEDE + REVISE**: T-0583 lands unblocked; A4.2 narrows it later, conditional only on one named repository method | A7 |
+| CH-I | This fixes one table and leaves the identical bytes next door | **CONCEDE, scope out, name it**: `OutboxMessage.Body` on `Failed` rows has a real recovery role and needs its own decision; recorded as a residual and as the reason the catalog tier is `(gate pending)` | A8 |
+
+**Escalations to the owner:** none. `BodyRetentionDays = 7` / `RowRetentionDays = 90` are tunables in
+the same sense D3.4's 15 minutes is — if the owner wants a legal-retention figure on the evidentiary
+row, it moves the number, not the shape. `manual_step: ef-migration` (owner-only) for A4.2's two
+columns + index.
+
+**Living companion updated in the same change:** `agents/architecture/decisions/outbox.md`
+(§"Dead-letter retention"), `agents/knowledge/patterns-backend.md`, `agents/knowledge/consistency.md`,
+`agents/knowledge/roles/dead-letter-record.md` (new).

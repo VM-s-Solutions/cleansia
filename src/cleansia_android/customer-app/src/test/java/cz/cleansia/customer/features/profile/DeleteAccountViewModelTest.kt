@@ -31,14 +31,16 @@ class DeleteAccountViewModelTest {
 
     private lateinit var repository: UserRepository
     private lateinit var snackbar: SnackbarController
+    private lateinit var appContext: android.content.Context
 
     @Before
     fun setUp() {
         repository = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
+        appContext = mockk(relaxed = true)
     }
 
-    private fun viewModel() = DeleteAccountViewModel(repository, snackbar)
+    private fun viewModel() = DeleteAccountViewModel(repository, snackbar, appContext)
 
     @Test
     fun `starts Idle`() {
@@ -68,7 +70,7 @@ class DeleteAccountViewModelTest {
         vm.deleteAccount()
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError("server boom") }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertTrue(vm.deleteState.value is ActionState.Error)
     }
 

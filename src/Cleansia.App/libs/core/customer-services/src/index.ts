@@ -178,6 +178,19 @@ export type {
   FileParameter,
 } from './lib/client/customer-client';
 export {
+  ChoosePreferredCleanerCommand,
+  ChoosePreferredCleanerResponse,
+  GetMyServingCleanersResponse,
+  PreferredOfferDetails,
+  PreferredOfferState,
+} from './lib/client/customer-client';
+export type {
+  IChoosePreferredCleanerCommand,
+  IChoosePreferredCleanerResponse,
+  IGetMyServingCleanersResponse,
+  IPreferredOfferDetails,
+} from './lib/client/customer-client';
+export {
   NotificationPreferencesClient,
   NotificationPreferencesDto,
   UpdateNotificationPreferencesCommand,

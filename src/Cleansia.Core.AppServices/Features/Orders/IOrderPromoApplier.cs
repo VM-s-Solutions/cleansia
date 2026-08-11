@@ -7,12 +7,13 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <see cref="PreviewAsync"/> (compute the discount to fold into the order's price snapshot) and the
 /// post-persist <see cref="ApplyAsync"/> (append the redemption ledger row once the order id exists).
 ///
-/// The contract preserves the handler's original semantics exactly:
 ///   * preview is a no-op (zero discount, null code id) unless both a promo code and a logged-in user
 ///     are present, and only adopts the discount when the preview succeeds;
-///   * apply runs only when a positive discount was previewed against a real code + user, and is
-///     <b>best-effort</b> — a failed apply is logged and swallowed, never rolled back and never blocks
-///     the booking (the customer already paid; the promo simply goes untracked).
+///   * apply runs only when the PERSISTED order carries the promo (<c>PromoCodeId</c> +
+///     <c>PromoDiscountAmount</c>) — the factory may discard a previewed promo in favour of a larger
+///     membership+tier combination — and is <b>best-effort</b>: a failed apply is logged and
+///     swallowed, never rolled back and never blocks the booking (the customer already paid; the
+///     promo simply goes untracked).
 /// </summary>
 public interface IOrderPromoApplier
 {
@@ -27,7 +28,7 @@ public interface IOrderPromoApplier
         CreateOrder.Command command,
         string userId,
         Order order,
-        OrderPromoPreview preview,
+        decimal rawSubtotal,
         string currencyId,
         CancellationToken cancellationToken);
 }

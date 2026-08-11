@@ -58,9 +58,14 @@ public enum LiveActivityL10n {
         }
     }
 
-    /// The caption over the wall-clock finish time.
+    /// The caption over the wall-clock instant the clean is expected to end.
     public static var finish: String {
         CoreL10n.localized("live_activity.finish")
+    }
+
+    /// The caption over the wall-clock instant the cleaner is expected to arrive.
+    public static var arrival: String {
+        CoreL10n.localized("live_activity.arrival")
     }
 
     /// Spoken form of the stepper. It is the accessibility label of the four legs, and the written

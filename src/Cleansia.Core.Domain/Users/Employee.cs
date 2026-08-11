@@ -23,14 +23,48 @@ public class Employee : Auditable, ITenantEntity
 
     public string? IBAN { get; private set; }
 
+    /// <summary>
+    /// ADR-0034 D1.1 — the profile-completeness gate's payout term, as a scalar on the employee row
+    /// rather than a test of <see cref="PayoutDetails"/>. There is no lazy loading in this repository and
+    /// <c>GetByUserEmailAsync</c>'s include list is hand-written, so a gate reading the navigation would
+    /// return 403 for every cleaner the moment the navigation was not loaded. A column is materialized by
+    /// every loader that loads an <see cref="Employee"/> at all.
+    ///
+    /// <para>Invariant: <c>HasPayoutDetails == (an EmployeePayoutDetails row exists for this employee)</c>.
+    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to payout
+    /// issuance, and never retroactively invalidates a profile.</para>
+    /// </summary>
+    public bool HasPayoutDetails { get; private set; }
+
+    /// <summary>
+    /// The payout destination (ADR-0034). <b>Never <c>Include</c>d on a paged or list query</b> — the
+    /// gate does not need it (see <see cref="HasPayoutDetails"/>), and materializing the unmasked record
+    /// on the admin grid is the exposure D8's read contract exists to prevent.
+    /// </summary>
+    public EmployeePayoutDetails? PayoutDetails { get; private set; }
+
+    /// <summary>Flips the gate scalar alongside the one payout write path that creates or replaces the record.</summary>
+    public Employee MarkPayoutDetailsProvided()
+    {
+        HasPayoutDetails = true;
+        return this;
+    }
+
+    /// <summary>Clears the gate scalar alongside the id-keyed delete of the payout record (erasure, D1.1.2).</summary>
+    public Employee ClearPayoutDetails()
+    {
+        HasPayoutDetails = false;
+        return this;
+    }
+
     public decimal AverageRating { get; private set; }
 
     public int ComplaintsCount { get; private set; }
 
     /// <summary>
     /// Timestamp of the last "new jobs available" digest push delivered to
-    /// this cleaner. Used by the 30-min digest sweep to find newly-eligible
-    /// orders since the cleaner was last notified. Null = never notified
+    /// this cleaner. Used by the digest sweep to find newly-eligible orders
+    /// since the cleaner was last notified. Null = never notified
     /// (cleaner gets all currently-eligible orders on first digest).
     /// </summary>
     public DateTimeOffset? LastNewJobsDigestAt { get; private set; }
@@ -43,6 +77,33 @@ public class Employee : Auditable, ITenantEntity
     public Employee MarkNewJobsDigestSent(DateTimeOffset at)
     {
         LastNewJobsDigestAt = at;
+        return this;
+    }
+
+    /// <summary>
+    /// How far from their home address this cleaner wants to be told about work, in kilometres
+    /// (Q-FEED-03). Read by the new-jobs digest through <see cref="Orders.JobProximity"/>.
+    ///
+    /// <para><b>NULL means "no preference expressed", and that is a meaningful value, not a missing
+    /// one</b> — it keeps today's country-wide reach. There is deliberately no backfilled default: a
+    /// number nobody chose would silently cut an existing cleaner's job notifications down to it, and a
+    /// notification that stops arriving produces no complaint from the person it costs.</para>
+    /// </summary>
+    public int? JobRadiusKm { get; private set; }
+
+    /// <summary>
+    /// Sets or clears the digest radius. Null clears it back to country-wide; the range is the
+    /// validator's business error first, so reaching the throw means a non-HTTP caller bypassed it.
+    /// </summary>
+    public Employee SetJobRadius(int? radiusKm)
+    {
+        if (radiusKm is { } value
+            && (value < Orders.JobProximity.MinRadiusKm || value > Orders.JobProximity.MaxRadiusKm))
+        {
+            throw new ArgumentOutOfRangeException(nameof(radiusKm), value, "Job radius is out of range");
+        }
+
+        JobRadiusKm = radiusKm;
         return this;
     }
 
@@ -120,7 +181,6 @@ public class Employee : Auditable, ITenantEntity
         string? legalEntityName,
         string nationalityId,
         string passportId,
-        string iban,
         Address address,
         Dictionary<string, List<TimeRange>> availability,
         string? emergencyContactName,
@@ -133,7 +193,6 @@ public class Employee : Auditable, ITenantEntity
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         NationalityId = nationalityId;
         PassportId = passportId;
-        IBAN = iban;
         Address = address;
         EmergencyContactName = emergencyContactName;
         EmergencyContactPhone = emergencyContactPhone;
@@ -172,6 +231,11 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// The legacy payout column. Written only by the payout write path, which mirrors the derived IBAN
+    /// here so the invoice's supplier block keeps printing the current account until T-0522 moves that
+    /// read onto <see cref="PayoutDetails"/>. <see cref="EmployeePayoutDetails"/> is the source of truth.
+    /// </summary>
     public Employee UpdateBankDetails(string iban)
     {
         IBAN = iban;
@@ -263,8 +327,25 @@ public class Employee : Auditable, ITenantEntity
         PassportId = AnonymizationMarker.Value;
         EmergencyContactName = null;
         EmergencyContactPhone = null;
+        // The child payout record is deleted by GdprDeletionService with an id-keyed write, because a
+        // navigation-walking clear here would be a silent no-op whenever the caller did not Include it
+        // (ADR-0034 D1.1.2). This only drops the gate scalar, which lives on the row already loaded.
+        HasPayoutDetails = false;
         return this;
     }
+
+    /// <summary>
+    /// The profile gate's payout term: PRESENCE of a payout destination, never its validity (ADR-0034 D7).
+    ///
+    /// <para>It reads two scalars on this row and no navigation, so it is materialized by every loader and
+    /// cannot depend on a hand-written include list. <see cref="IBAN"/> is the second term because the
+    /// launch and DEV databases carry cleaners whose destination predates
+    /// <see cref="EmployeePayoutDetails"/> and there is no backfill: reading only
+    /// <see cref="HasPayoutDetails"/> would mark every one of them incomplete on deploy day and 403 them
+    /// off the whole partner surface, which is the outage D7 exists to prevent. The term retires when the
+    /// legacy column does.</para>
+    /// </summary>
+    private bool HasPayoutDestination() => HasPayoutDetails || !string.IsNullOrEmpty(IBAN);
 
     public bool IsProfileComplete()
     {
@@ -280,7 +361,7 @@ public class Employee : Auditable, ITenantEntity
                         Address?.ZipCode != null &&
                         Address?.CountryId != null;
 
-        var hasEmployeeInfo = !string.IsNullOrEmpty(IBAN) &&
+        var hasEmployeeInfo = HasPayoutDestination() &&
                              !string.IsNullOrEmpty(PassportId) &&
                              !string.IsNullOrEmpty(NationalityId) &&
                              !string.IsNullOrEmpty(RegistrationNumber);
@@ -310,7 +391,10 @@ public class Employee : Auditable, ITenantEntity
         if (string.IsNullOrEmpty(RegistrationNumber)) missingFields.Add("profile.fields.registrationNumber");
         if (EntityType == EmployeeEntityType.LegalEntity && string.IsNullOrEmpty(LegalEntityName))
             missingFields.Add("profile.fields.legalEntityName");
-        if (string.IsNullOrEmpty(IBAN)) missingFields.Add("profile.fields.iban");
+        // The key still says "iban" because five shipped clients translate it, two of them app-store
+        // gated; renaming it to "payoutDetails" would show a raw key on every un-updated device. Rename
+        // on a coordinated mobile release (ADR-0034 D7).
+        if (!HasPayoutDestination()) missingFields.Add("profile.fields.iban");
         if (string.IsNullOrEmpty(PassportId)) missingFields.Add("profile.fields.passportId");
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("profile.fields.nationality");
 

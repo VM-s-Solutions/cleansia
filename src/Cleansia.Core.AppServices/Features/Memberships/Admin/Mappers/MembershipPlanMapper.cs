@@ -17,6 +17,7 @@ public static class MembershipPlanMapper
             TrialPeriodDays: plan.TrialPeriodDays,
             FreeCancellationWindowHours: plan.FreeCancellationWindowHours,
             AllowsExpressUpgrade: plan.AllowsExpressUpgrade,
+            ExpressUpgradesPerMonth: plan.ExpressUpgradesPerMonth,
             IsActive: plan.IsActive,
             CreatedOn: plan.CreatedOn);
 
@@ -33,6 +34,7 @@ public static class MembershipPlanMapper
             TrialPeriodDays: plan.TrialPeriodDays,
             FreeCancellationWindowHours: plan.FreeCancellationWindowHours,
             AllowsExpressUpgrade: plan.AllowsExpressUpgrade,
+            ExpressUpgradesPerMonth: plan.ExpressUpgradesPerMonth,
             IsActive: plan.IsActive,
             CreatedOn: plan.CreatedOn,
             UpdatedOn: plan.UpdatedOn);

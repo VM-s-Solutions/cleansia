@@ -93,6 +93,14 @@ class TokenStore(context: Context) {
         /** Millis-since-epoch, UTC. Returned by the server. */
         val refreshTokenExpiresAt: Long,
     ) {
+        /**
+         * What a login presents to prove this handset already held a session, so a locked-out
+         * account can still be reached from its own device. Blank normalizes to null: the server
+         * field is optional and absent means "no previous session", where an empty string is a
+         * value that matches nothing.
+         */
+        val trustedDeviceToken: String? get() = refreshToken.takeIf { it.isNotBlank() }
+
         fun isAccessExpired(nowMs: Long = System.currentTimeMillis()): Boolean =
             nowMs >= accessTokenExpiresAt
 

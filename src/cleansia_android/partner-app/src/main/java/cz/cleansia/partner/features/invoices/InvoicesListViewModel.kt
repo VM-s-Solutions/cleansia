@@ -3,10 +3,10 @@ package cz.cleansia.partner.features.invoices
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.EmployeeInvoiceDto
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +32,7 @@ data class InvoicesListUiState(
      * by [isInitialLoad] in the screen to gate the full-page spinner.
      */
     val isBackgroundRefreshing: Boolean = false,
-    val invoices: List<EmployeeInvoiceDto> = emptyList(),
+    val invoices: List<Invoice> = emptyList(),
     val error: String? = null,
     /**
      * True once the first load (success or error) has completed.

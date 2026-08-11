@@ -1,3 +1,4 @@
+using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -12,6 +13,7 @@ namespace Cleansia.Web.Mobile.Partner.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[RequireCompleteProfile]
 public class OrderController(IMediator mediator) : MobileApiController(mediator)
 {
     [HttpGet("GetPaged")]
@@ -247,5 +249,34 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<DeleteOrderIssue.Response>(result);
+    }
+
+    // ADR-0045 D9 — "jobs waiting for your answer": the orders reserved for this cleaner alone until
+    // their deadline. Four existing conjuncts and one equality; no new predicate anywhere.
+    [HttpGet("MyPendingOffers")]
+    [Permission(Policy.CanViewPagedOrder)]
+    [ProducesResponseType(typeof(IReadOnlyList<PendingOfferItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MyPendingOffers(CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetMyPendingOffers.Query(), cancellationToken);
+        return HandleResult<IReadOnlyList<PendingOfferItem>>(result);
+    }
+
+    // The other half of Confirm. "Confirm" is TakeOrder, unchanged, with a different label — a second
+    // acquisition path would either duplicate TakeOrder's ordered chain or be weaker than it.
+    [HttpPost("DeclinePreferredOffer")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(DeclinePreferredOffer.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeclinePreferredOffer(
+        [FromBody] DeclinePreferredOffer.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<DeclinePreferredOffer.Response>(result);
     }
 }

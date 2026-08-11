@@ -28,6 +28,23 @@ final class ProfileAvatarRenderingTests: XCTestCase {
         assertCentre(rendered, isCloseTo: UIColor.magenta)
     }
 
+    func testARenderedPhotoReportsItsSuccess() throws {
+        let bytes = Self.magentaJpeg()
+        let cache = RemoteImageCache(loader: { _ in bytes })
+        let successes = Box()
+        let view = ProfileAvatar(
+            display: .remote(ProfileFixtures.photo()),
+            initials: "JD",
+            cache: cache,
+            onLoadSuccess: { successes.count += 1 }
+        )
+
+        let rendered = try render(view, settleFor: 1.0)
+
+        assertCentre(rendered, isCloseTo: UIColor.magenta)
+        XCTAssertEqual(successes.count, 1)
+    }
+
     func testAFailedLoadFallsBackToTheInitialsDiscAndReportsTheFailure() throws {
         let cache = RemoteImageCache(loader: { _ in throw RemoteImageError.unreachable })
         let failures = Box()

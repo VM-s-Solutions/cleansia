@@ -80,11 +80,13 @@ public class CancelInvoice
             {
                 invoice.Cancel(command.Reason, actorId);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.InvoiceId),
-                    ex.Message));
+                    invoice.IsCancelled
+                        ? BusinessErrorMessage.InvoiceAlreadyCancelled
+                        : BusinessErrorMessage.CannotCancelPaidInvoice));
             }
 
             return BusinessResult.Success(new Response(invoice.Id));

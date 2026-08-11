@@ -28,7 +28,7 @@ class ServicesStepViewModel @Inject constructor(
     fun refreshCatalog() {
         viewModelScope.launch {
             catalogRepository.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
     }

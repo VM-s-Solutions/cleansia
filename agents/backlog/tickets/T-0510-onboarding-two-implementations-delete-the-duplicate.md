@@ -123,5 +123,72 @@ AC2 must weigh.
   because a rewrite landing before the field rulings gets redone, and a rewrite bundled with five
   defect fixes cannot be reviewed. **AC8 forbids fixing any defect in this diff**, which is the bound
   that keeps it an `M`.
+- 2026-08-06 — **AC1 discharged by `backend` (matrix below). No code written; AC2–AC8 remain BLOCKED
+  on T-0504 decision 7, which has never run.** The premise is confirmed but its wording is wrong in
+  one load-bearing way: the two shapes are not two implementations of *one* flow, they are one flow
+  and a **partial** second one. Correcting that changes what "delete the duplicate" can mean.
 
 ## Review
+
+### AC1 — the two implementations, at file:line
+
+| | all-or-nothing | granular |
+|---|---|---|
+| Command(s) | `UpdateEmployee` (`Features/Employees/UpdateEmployee.cs:203`) | `UpdatePersonalInfo` `:52` · `UpdateAddressInfo` `:66` · `UpdateIdentificationInfo` `:112` · `UpdateEmergencyContact` `:44` · `UpdateAvailability` `:80` · `UpdateBankDetails` `:89` |
+| Exposed on partner web | `Web.Partner/Controllers/EmployeeController.cs:41` | **`UpdateBankDetails` only** (`:53`) |
+| Exposed on partner mobile | `Web.Mobile.Partner/Controllers/EmployeeController.cs:40` | all six (`:52`,`:63`,`:74`,`:85`,`:107`,`:118`) |
+| Actually called by web | **yes** — `profile.facade.ts:202` | `UpdateBankDetails` only |
+| Actually called by mobile | **no caller in either app** | yes — `ProfileRepository.kt:192,265,291,305`, `PartnerProfileClient.swift:39-73` |
+
+**Field-by-field.** `UpdateEmployee` is a superset of five of the six, **minus bank details**, plus
+two fields no granular command has:
+
+| Field | `UpdateEmployee` | granular | persisted by both? |
+|---|---|---|---|
+| FirstName/LastName/BirthDate/Phone | ✅ | `UpdatePersonalInfo` | yes |
+| Street/City/ZipCode/CountryId/State | ✅ | `UpdateAddressInfo` | yes |
+| **Latitude/Longitude** | ❌ | ✅ `UpdateAddressInfo:80-85` | **granular only** |
+| Nationality/PassportId | ✅ | `UpdateIdentificationInfo` | yes |
+| EntityType/RegistrationNumber/VatNumber/LegalEntityName | ✅ (format-checked against `CountryId`) | ✅ (format-checked against **`BusinessCountryId`**, a separate field, `:112`) | yes, **different scoping key** |
+| EmergencyName/EmergencyPhone | ✅ | `UpdateEmergencyContact` | yes |
+| Availability | ✅ | `UpdateAvailability` | yes |
+| **Documents** (`List<BlobFileDto>`) | ✅ `:226` | ❌ — mobile uses `SaveMyDocuments` | different endpoint |
+| **Consent** | ✅ `:225`, gated `:132-134`, **persisted `:263`** | ❌ **on all six** | **all-or-nothing only** |
+| Bank/payout | ❌ | ✅ `UpdateBankDetails` | granular only |
+
+### Is the shape difference itself a defect? No. Three of its consequences are.
+
+An all-or-nothing write and an incremental one are both legitimate, and AC2's trade-off is real. What
+is **not** legitimate is that the two disagree about *facts*, and each disagreement has its own
+consequence, independent of which shape survives:
+
+1. **Consent** — the only genuine behavioural divergence. → **T-0507**, verdict recorded there.
+2. **Coordinates** — `UpdateEmployee` cannot carry a map pin and always re-geocodes
+   (`UpdateEmployee.cs:253` calls `PopulateCoordinatesAsync` unconditionally); `UpdateAddressInfo`
+   trusts client coords when present and geocodes only as fallback (`:127-129`). A web onboarding
+   therefore stores a *re-geocoded approximation* where mobile stores the exact pin. **Not filed
+   anywhere.** AC8 forbids fixing it here — **recorded for the PM to file.**
+3. **Tax-id scoping key** — `UpdateEmployee` validates IČO/VAT format against `CountryId` (the
+   **home address** country, `:101`/`:115`); `UpdateIdentificationInfo` validates against a dedicated
+   `BusinessCountryId` (`:112`). For a cleaner living in one country and registered in another the
+   two commands reach **opposite verdicts on the same number**. **Not filed anywhere.** Recorded for
+   the PM to file.
+
+### AC3 — "deleting the loser is safe" cannot be answered yet, and one leg of it is already decided
+
+`UpdateEmployee` is exposed on **both** hosts and its `Consent` field is already in the shipped
+generated clients (`cleansia_ios/CleansiaPartnerApi/Models/UpdateEmployeeCommand.swift:33`, and the
+Android/partner equivalent). So deleting the **granular** side would strand two shipped mobile
+binaries whose entire profile surface is those six calls — that is AC3's "broken app in the field",
+not a compile error. Deleting the **all-or-nothing** side would strand the web profile page
+(`profile.facade.ts:202`) and, today, the only path that records consent at all. **Neither deletion
+is currently safe without a client release first**, which is the fact AC2 should be decided against.
+
+### Verdict: BLOCKED, not executable
+
+AC2 says the surviving shape is chosen "per T-0504 decision 7". **T-0504 is still `status: draft` and
+its panel has not run**, so there is no ruling to implement and this ticket cannot proceed without
+re-litigating a decision it explicitly declines to take. AC6's `nswag-regen` + `mobile-spec-redump`
+are owner-gated. Recommend: run T-0504, then re-size this against the matrix above — the two
+undeclared divergences (2) and (3) mean AC4's "behaviour is preserved" now has **three** rows to
+resolve, not one, which is the `split before starting` trigger the `## Implementation notes` names.

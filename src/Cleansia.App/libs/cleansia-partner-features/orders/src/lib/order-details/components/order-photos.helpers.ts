@@ -109,14 +109,13 @@ export function createStagedPhoto(
 export function buildPhotosToSave(
   staged: StagedPhoto[]
 ): SaveOrderPhotosPhotoToSave[] {
-  return staged.map(
-    (sp) =>
-      new SaveOrderPhotosPhotoToSave({
-        photoType: sp.photoType,
-        file: sp.file,
-        notes: sp.notes,
-      })
-  );
+  return staged.map((sp) => {
+    const photo = new SaveOrderPhotosPhotoToSave();
+    photo.photoType = sp.photoType;
+    photo.file = sp.file;
+    photo.notes = sp.notes;
+    return photo;
+  });
 }
 
 export function calculateStagedIndex(

@@ -3,10 +3,10 @@ package cz.cleansia.partner.features.earnings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.dashboard.DashboardRepository
+import cz.cleansia.partner.data.dashboard.DashboardStats
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import javax.inject.Inject
 sealed interface EarningsSummaryUiState {
     data object Loading : EarningsSummaryUiState
     data object Error : EarningsSummaryUiState
-    data class Loaded(val stats: DashboardStatsDto) : EarningsSummaryUiState
+    data class Loaded(val stats: DashboardStats) : EarningsSummaryUiState
 }
 
 /**

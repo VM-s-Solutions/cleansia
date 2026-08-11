@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Sentry;
 using Sentry.OpenTelemetry;
 
 namespace Cleansia.ServiceDefaults;
@@ -54,13 +55,7 @@ public static class Extensions
                     .AddSentry();
             });
 
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(
-            configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
-        if (useOtlpExporter)
-        {
-            services.AddOpenTelemetry().UseOtlpExporter();
-        }
+        AddTelemetryExporters(services, configuration);
 
         services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
@@ -76,39 +71,74 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Configures Sentry error monitoring on the web host.
-    /// Reads DSN from configuration key "Sentry:Dsn". If the DSN is absent OR blank, Sentry is left
-    /// completely uninitialized (disabled) — an EMPTY DSN is treated the same as a missing one, because
-    /// the Sentry SDK rejects an empty/whitespace DSN and would otherwise fail startup. (Dev runs with no
-    /// DSN; prod sets the real one.)
+    /// Configures Sentry error monitoring on the web host. The OpenTelemetry bridge is the web half of
+    /// it: it needs the <c>TracerProvider</c> <see cref="AddServiceDefaults(IServiceCollection, IConfiguration, IHostEnvironment)"/>
+    /// builds, which a host outside ASP.NET does not have.
     /// </summary>
     public static IWebHostBuilder UseSentryMonitoring(this IWebHostBuilder webBuilder)
     {
         webBuilder.UseSentry((context, options) =>
         {
-            var dsn = context.Configuration["Sentry:Dsn"];
-            if (string.IsNullOrWhiteSpace(dsn))
+            if (ConfigureSentry(options, context.Configuration["Sentry:Dsn"]))
             {
-                // No usable DSN → leave Sentry disabled. Clearing the DSN keeps the SDK from attempting
-                // to initialize with an invalid value (which throws on startup).
-                options.Dsn = string.Empty;
-                options.AutoSessionTracking = false;
-                return;
+                options.UseOpenTelemetry();
             }
-
-            options.Dsn = dsn;
-            options.SendDefaultPii = false;
-            options.AttachStacktrace = true;
-            options.AutoSessionTracking = true;
-            options.TracesSampleRate = 0.2;
-            options.UseOpenTelemetry();
-            // Drop client-disconnect noise — RequestLoggingMiddleware re-throws
-            // OperationCanceledException for normal cancellation; without this
-            // filter Sentry captures every navigation-cancelled request.
-            options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
         });
 
         return webBuilder;
+    }
+
+    /// <summary>
+    /// Sentry on a host that has no <see cref="IWebHostBuilder"/> — the isolated Functions worker, which
+    /// runs every timer sweep, the fiscal receipt queue and the invoice queue, and which since
+    /// Application Insights was removed has no other off-box error signal at all.
+    ///
+    /// <para>Neither shape the API hosts use applies: <c>Sentry.AspNetCore</c>'s <c>UseSentry</c> hangs
+    /// off the web host, and the <c>Sentry.OpenTelemetry</c> bridge needs a <c>TracerProvider</c> the
+    /// worker never builds (it does not call <c>AddServiceDefaults</c>, so this is also its ONE Sentry
+    /// initialisation). What is left is the logging integration, which is what that host actually needs:
+    /// its alerting contract — <c>PoisonHandlerBase</c> step 2 — is an <c>ILogger.LogError</c> call.</para>
+    /// </summary>
+    public static ILoggingBuilder AddSentryMonitoring(this ILoggingBuilder logging, IConfiguration configuration)
+    {
+        logging.AddSentry(options =>
+        {
+            // The alert threshold for a dead-lettered fiscal message, pinned rather than inherited: below
+            // this level a log is a breadcrumb attached to some later event, not an event of its own.
+            options.MinimumEventLevel = LogLevel.Error;
+            ConfigureSentry(options, configuration["Sentry:Dsn"]);
+        });
+
+        return logging;
+    }
+
+    /// <summary>
+    /// The ONE DSN guard, shared by every host. Absent OR blank DSN → Sentry stays disabled: dev and the
+    /// test hosts run without one, and a host that fails to start over missing telemetry is worse than a
+    /// host with none. Empty string is the SDK's explicit "disabled" sentinel — clearing the DSN is what
+    /// keeps it from initialising with an invalid value (which throws) or, on null, from adopting
+    /// whatever <c>SENTRY_DSN</c> happens to be in the environment.
+    /// </summary>
+    /// <returns><c>true</c> when a usable DSN was applied.</returns>
+    private static bool ConfigureSentry(SentryOptions options, string? dsn)
+    {
+        if (string.IsNullOrWhiteSpace(dsn))
+        {
+            options.Dsn = string.Empty;
+            options.AutoSessionTracking = false;
+            return false;
+        }
+
+        options.Dsn = dsn;
+        options.SendDefaultPii = false;
+        options.AttachStacktrace = true;
+        options.AutoSessionTracking = true;
+        options.TracesSampleRate = 0.2;
+        // Drop cancellation noise — RequestLoggingMiddleware re-throws OperationCanceledException for a
+        // client disconnect, and worker shutdown cancels every in-flight invocation; without this filter
+        // Sentry captures every navigation-cancelled request and every deploy.
+        options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
+        return true;
     }
 
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
@@ -135,35 +165,41 @@ public static class Extensions
                     .AddHttpClientInstrumentation();
             });
 
-        AddOpenTelemetryExporters(builder);
+        AddTelemetryExporters(builder.Services, builder.Configuration);
 
         return builder;
     }
 
-    private static IHostApplicationBuilder AddOpenTelemetryExporters(IHostApplicationBuilder builder)
+    /// <summary>
+    /// Where the OTel pipeline is SHIPPED, for both <c>AddServiceDefaults</c> overloads.
+    ///
+    /// It lives here, taking the two things either overload can supply, because the exporter previously
+    /// hung off the <see cref="IHostApplicationBuilder"/> path alone — which no host in this solution
+    /// calls. The five APIs use the Startup-class pattern, so they reach service registration with an
+    /// <see cref="IServiceCollection"/> and nothing else, and every API host therefore collected
+    /// telemetry in-process and exported it nowhere for as long as the exporter had existed. Anything
+    /// added to one overload and not the other repeats that, silently.
+    ///
+    /// Both exporters stay guarded on their own configuration value so a host with neither configured
+    /// (local dev, the test hosts) registers no exporter at all.
+    /// </summary>
+    private static void AddTelemetryExporters(IServiceCollection services, IConfiguration configuration)
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(
-            builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
-        if (useOtlpExporter)
+        if (!string.IsNullOrWhiteSpace(configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
         {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            services.AddOpenTelemetry().UseOtlpExporter();
         }
 
-        // Export the OTel pipeline (traces/metrics/logs) to Application Insights when a connection string
-        // is configured (the Bicep sets APPLICATIONINSIGHTS_CONNECTION_STRING on every API host). Without
-        // this the OTel data was collected but never shipped — API failures were invisible in App Insights.
-        // Guarded on the connection string so local dev (no App Insights) is unaffected.
-        var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+        var appInsightsConnectionString = configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        if (string.IsNullOrWhiteSpace(appInsightsConnectionString))
         {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
-            {
-                options.ConnectionString = appInsightsConnectionString;
-            });
+            return;
         }
 
-        return builder;
+        services.AddOpenTelemetry().UseAzureMonitor(options =>
+        {
+            options.ConnectionString = appInsightsConnectionString;
+        });
     }
 
     public static IHostApplicationBuilder AddDefaultHealthChecks(this IHostApplicationBuilder builder)

@@ -68,14 +68,14 @@ private struct PeriodPayErrorView: View {
                 PeriodPayContent(summary: sample, currencyCode: "CZK")
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded")
-                PeriodPayContent(summary: PeriodPaySummaryDto(grandTotal: 0), currencyCode: "CZK")
+                PeriodPayContent(summary: emptySample, currencyCode: "CZK")
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded · empty jobs")
             }
         }
 
-        private static var sample: PeriodPaySummaryDto {
-            PeriodPaySummaryDto(
+        private static var sample: PeriodPaySummary {
+            PeriodPaySummary(
                 payPeriodLabel: "1 – 15 Jun 2026",
                 totalOrders: 3,
                 totalBasePay: 3600,
@@ -84,11 +84,28 @@ private struct PeriodPayErrorView: View {
                 totalBonusPay: 150,
                 totalDeductionPay: 50,
                 grandTotal: 4200,
-                orderPays: [
-                    OrderEmployeePayDto(orderNumber: "ORD-1001", totalPay: 1400, createdOn: Date()),
-                    OrderEmployeePayDto(orderNumber: "ORD-1002", totalPay: 1400, createdOn: Date()),
-                    OrderEmployeePayDto(orderNumber: "ORD-1003", totalPay: 1400, createdOn: Date())
-                ]
+                orderPays: (1 ... 3).map { index in
+                    OrderPayLine(
+                        id: "line-\(index)",
+                        orderNumber: "ORD-100\(index)",
+                        totalPay: 1400,
+                        createdOn: Date()
+                    )
+                }
+            )
+        }
+
+        private static var emptySample: PeriodPaySummary {
+            PeriodPaySummary(
+                payPeriodLabel: nil,
+                totalOrders: 0,
+                totalBasePay: 0,
+                totalExtrasPay: 0,
+                totalExpensesPay: 0,
+                totalBonusPay: 0,
+                totalDeductionPay: 0,
+                grandTotal: 0,
+                orderPays: []
             )
         }
     }

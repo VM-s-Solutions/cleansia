@@ -44,7 +44,7 @@ public class CreatePaymentIntent
                 .MustAsync(BeCardPaymentAsync)
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(NotAlreadyPaidAsync)
-                .WithMessage("order.payment.already_paid");
+                .WithMessage(BusinessErrorMessage.OrderPaymentAlreadyPaid);
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string orderId, CancellationToken cancellationToken)

@@ -26,6 +26,18 @@ final class CreateRecurringBindingTests: XCTestCase {
         XCTAssertTrue(source.contains("vm.setSavedAddressId(address.id)"), "a picked address is never applied")
     }
 
+    /// The view model resolving the notice proves nothing about the form drawing it, and an edit that
+    /// silently leaves already-booked cleanings behind is exactly the claim a customer must not have to
+    /// discover.
+    func testTheFormDrawsTheEditAppliesNotice() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(
+            source.contains("if let appliesNotice = vm.appliesNotice"),
+            "the form never asks whether it owes the customer the edit notice"
+        )
+        XCTAssertTrue(source.contains("AppliesNotice(text: appliesNotice)"), "the notice is resolved and dropped")
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

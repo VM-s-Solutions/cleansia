@@ -14,7 +14,7 @@
 | 2 | Autoscale | `autoscaleEnabled`, `autoscaleMinInstances`, `autoscaleMaxInstances` | `false`, 1, 3 | `true`, 1, 3 | yes |
 | 3 | Postgres HA + geo-backup | `postgresHighAvailabilityMode`, `postgresGeoRedundantBackup`, `postgresBackupRetentionDays` | `Disabled`, `Disabled`, 7 | `ZoneRedundant`, `Enabled`, 35 | yes (geo-backup only at first provision) |
 | 4 | ACR image retention | `acrImageRetentionEnabled`, `acrImageRetentionDays` | `false`, 30 | `true`, 30 | yes |
-| 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapGb`) | 100 (off), 1 GB/day | 50%, 5 GB/day | yes (module params) |
+| 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapMb`) | 10%, 500 MB/day | 50%, 5000 MB/day | yes (module params) |
 | 6 | VNet + private endpoints (Q-INFRA-03) | `privateNetworkingEnabled` | `false` | **`false` — the documented flag** | yes, see §6 |
 
 **Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
@@ -36,6 +36,16 @@ Vault references would swap a broken instance into production.
   with production for the same Storage Queue messages (double-consumption). Functions deploys stay
   the container-set + restart they are today.
 - S1 supports 5 slots per app; B-series rejects slot creation, which is why dev stays `false`.
+- **Slots are not coming to dev, and "upgrade dev to Standard so it can have them" is the wrong fix —
+  it is both the expensive option and the worse one.** The intuitive cure for a cold dev host is a
+  staging slot, so this is written down rather than left to be re-derived. Standard is the lowest tier
+  that accepts a slot, and the step from dev's **B2 (2 vCPU / 3.5 GB)** to **S1 (1 vCPU / 1.75 GB)**
+  *halves both the RAM and the CPU* of the plan that already holds 7 always-on processes — on the very
+  hosts whose cold start prompted the question. Paying more for less memory to fix a memory-sensitive
+  symptom is a net loss before the invoice is even opened. (The monthly delta is a pricing-table lookup
+  and is deliberately not quoted here; the SKU arithmetic above is the decisive part and does not go
+  stale.) Always On plus the post-deploy warm probe already close the dev gap at **€0** — see the Always
+  On note above and `.github/workflows/deploy-azure.yml`'s *Warm the deployed site* step.
 - **Slots are NOT Always On** (hardcoded `alwaysOn: false` on the slot resource): Always On is on
   Azure's not-swapped (slot-sticky) settings list, so a warm slot buys zero swap benefit — the CI
   workflow warms the slot explicitly before swapping. Mirroring the parent's prod `alwaysOn: true`
@@ -98,14 +108,49 @@ to honor the byte-unchanged dev rule.
 
 ## 5. App Insights sampling + ingestion cap (module-internal env switch)
 
-`modules/appInsights.bicep`, following its existing pattern of env-keyed internals (retention was
-already `env == 'prod' ? 90 : 30`):
+`modules/appInsights.bicep`, following its existing pattern of env-keyed internals. **Ingestion is the
+entire bill here** — dev measured 27.29 GB/month, all Analytics-tier, and that is where the ~€49/month
+line came from. Retention is not a lever (see below).
 
-- `samplingPercentage` — prod 50, dev 100 (= off; the property is omitted, preserving the dev shape).
-  SDK adaptive sampling layers on top.
-- `dailyCapGb` — prod **5 GB/day** (was uncapped `{}`), dev keeps its historical 1 GB. `0` = uncapped.
-  **The cap is a runaway-cost breaker, not a budget**: when hit, ingestion stops until the next UTC
-  day and alerts go blind — if it trips in normal operation, raise it rather than live with it.
+- **`samplingPercentage`** — dev **10**, prod **50**. Dev was 100, i.e. no sampling at all; 10 puts dev
+  ingestion inside the 5 GB/month pay-as-you-go free grant. Prod stays 50 deliberately: prod is
+  authored, not deployed, so it is no part of the measured bill, and 50 is the rate at which the one
+  rule that reads this component still resolves (below). Re-derive prod from real traffic, not from
+  dev's number.
+- **`dailyCapMb`** — dev **500**, prod **5000**. The unit is MB because Bicep has no float type and the
+  useful dev value is fractional. `0` = uncapped. **The cap is a runaway-cost breaker, not a budget**:
+  when hit, ingestion stops until the next UTC day and every alert over the workspace goes blind — if
+  it trips in normal operation, raise it rather than live with it. Dev's previous 1 GB cap sat *above*
+  the 0.88 GB/day dev was actually running, which is precisely why a year of drift produced no signal;
+  500 MB is ~4× the new steady state and below the level a reverted sampling knob would restore.
+- **`retentionInDays` is NOT a cost knob** — dev 30, prod 90, both unchanged and both deliberately so.
+  31 days of analytics retention are included in the ingestion price, and Application Insights
+  (`App*`) tables are kept **90 days at no charge** on top of that. Both values sit inside those
+  allowances, so lowering either saves exactly €0 and only shortens the investigable window.
+
+**Two couplings a prod go-live must not tune blind:**
+
+- `alerts.bicep`'s exceptions spike reads `exceptions/count`, which is a **log-based** metric:
+  `AppExceptions | summarize sum(itemCount)`. Sampling leaves the count unbiased but resolvable only
+  in steps of `1/samplingPercentage` — steps of 2 against prod's threshold of 10, steps of 10 against
+  dev's 25. Lowering prod sampling without lowering what that threshold claims turns a paging rule
+  into a coin flip.
+- `Cleansia.Functions/host.json` excludes `Exception` from the worker's own adaptive sampling, which
+  means those exceptions reach the ingestion endpoint **unsampled** and are therefore sampled *here*.
+  `samplingPercentage` is the only sampler that host's exceptions ever meet.
+
+**The Basic table plan is not the lever it looks like.** All 27.29 GB is Analytics at $2.99/GB against
+Basic's $0.65, but per Microsoft's current table-feature matrix `AppDependencies`, `AppRequests`,
+`AppExceptions`, `AppMetrics` and `AppPerformanceCounters` **do not support the Basic plan at all** —
+only `AppTraces` does (and `StorageQueueLogs`). Moving `AppTraces` would also give up the ability to
+purge personal data from it, which is the wrong trade one week after `e84aed25` found a live reset
+token on a `LogError` path. Revisit only if prod ingestion turns out to be `AppTraces`-dominated.
+
+**One real prod-only retention cost, recorded rather than fixed here:** the workspace's 90-day setting
+also applies to `StorageQueueLogs`, which is a resource-log table and so gets the 31-day allowance,
+not the 90-day one — prod pays retention on days 32-90 of it. The fix, if it ever matters, is a
+per-table retention override (a `Microsoft.OperationalInsights/workspaces/tables` child resource), not
+a change to the workspace default.
 
 ## 6. Q-INFRA-03 — VNet + private endpoints for Postgres + Storage (`privateNetworkingEnabled`)
 

@@ -122,12 +122,12 @@ private struct InvoiceDetailErrorView: View {
             .background(CleansiaColors.background)
         }
 
-        private static var sample: EmployeeInvoiceDetailDto {
-            EmployeeInvoiceDetailDto(
+        private static var sample: InvoiceDetail {
+            InvoiceDetail(
                 id: "inv-1",
+                invoiceNumber: "INV-2026-001",
                 payPeriodId: "pp-1",
                 payPeriodLabel: "1 – 15 Jun 2026",
-                invoiceNumber: "INV-2026-001",
                 variableSymbol: "20260001",
                 paymentReference: "REF-001",
                 totalOrders: 3,
@@ -137,6 +137,7 @@ private struct InvoiceDetailErrorView: View {
                 totalAmount: 4200,
                 currencyCode: "CZK",
                 status: ._3,
+                pdfGenerationFailed: false,
                 generatedAt: Date(),
                 approvedAt: Date(),
                 paidAt: Date(),

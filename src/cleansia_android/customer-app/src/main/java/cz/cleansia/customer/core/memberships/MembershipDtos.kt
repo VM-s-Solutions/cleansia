@@ -62,7 +62,6 @@ data class CreateMembershipSubscriptionResponse(
 
 @Serializable
 data class CancelMembershipSubscriptionResponse(
-    val membershipId: String,
     /** ISO-8601 instant — last day benefits apply before status flips to Cancelled. */
     val effectiveEndDate: String,
 )
@@ -76,7 +75,6 @@ data class CancelMembershipSubscriptionResponse(
 @Serializable
 data class GetMyMembershipResponse(
     val hasMembership: Boolean,
-    val membershipId: String? = null,
     val planCode: String? = null,
     val planName: String? = null,
     val monthlyPriceCzk: Double? = null,
@@ -91,6 +89,15 @@ data class GetMyMembershipResponse(
     val billingInterval: Int? = null,
     /** Per-month equivalent: same as [monthlyPriceCzk] for monthly, /12 for yearly. */
     val monthlyEquivalentPriceCzk: Double? = null,
+    /** The resolver's quota, already zero for a plan whose express flag is off. */
+    val expressUpgradesPerMonth: Int? = null,
+    /**
+     * Live waivers left this calendar month, before any booking under composition. Null = no
+     * membership; 0 = exhausted OR still inside the trial — [trialEndsAtUtc] tells those apart.
+     */
+    val expressUpgradesRemaining: Int? = null,
+    /** End of the Stripe free trial. In the future means metered benefits have not started yet. */
+    val trialEndsAtUtc: kotlinx.datetime.Instant? = null,
 )
 
 /**
@@ -121,7 +128,6 @@ data class SwapMembershipPlanRequest(
 
 @Serializable
 data class SwapMembershipPlanResponse(
-    val membershipId: String,
     val newPlanCode: String,
     val currentPeriodEnd: String,
 )

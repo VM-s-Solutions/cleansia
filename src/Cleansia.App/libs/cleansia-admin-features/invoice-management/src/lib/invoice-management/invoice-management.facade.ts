@@ -162,10 +162,9 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
 
     this.retryingPdf.set(true);
 
-    const command = new RegenerateInvoicePdfCommand({
-      invoiceId: invoice.id,
-      languageCode: this.translate.currentLang || 'en',
-    });
+    const command = new RegenerateInvoicePdfCommand();
+    command.invoiceId = invoice.id;
+    command.languageCode = this.translate.currentLang || 'en';
 
     this.adminClient.adminInvoiceClient
       .regeneratePdf(command)

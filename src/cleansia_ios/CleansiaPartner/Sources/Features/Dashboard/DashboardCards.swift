@@ -87,7 +87,7 @@ struct PayPeriodCard: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
                 Text(DashboardFormat.plainMoney(period.earnings))
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 ProgressView(value: progress.fraction)
                     .tint(CleansiaColors.primary)

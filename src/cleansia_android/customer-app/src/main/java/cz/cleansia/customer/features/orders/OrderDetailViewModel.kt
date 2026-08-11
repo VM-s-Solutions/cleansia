@@ -8,13 +8,16 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
+import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.OrderReviewDto
+import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,12 +29,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -65,6 +71,18 @@ sealed interface PhotosUiState {
 }
 
 /**
+ * The server's answer to "what does cancelling cost right now", fetched each
+ * time the cancel sheet opens. There is deliberately no Idle case: the sheet
+ * asks on open, so anything before an answer is a spinner, and there is no
+ * client-side estimate to fall back to.
+ */
+sealed interface CancellationPreviewUiState {
+    data object Loading : CancellationPreviewUiState
+    data object Error : CancellationPreviewUiState
+    data class Loaded(val preview: CancellationFeePreviewDto) : CancellationPreviewUiState
+}
+
+/**
  * Fetches a single order's detail from [OrderRepository] and exposes the
  * result as a [StateFlow] of [OrderDetailUiState]. The `orderId` is read
  * from the navigation args — Compose Nav 2.8 typed routes serialize
@@ -87,7 +105,7 @@ class OrderDetailViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle,
-    val membershipRepository: cz.cleansia.customer.core.memberships.MembershipRepository,
+    private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
 ) : ViewModel() {
 
@@ -96,6 +114,16 @@ class OrderDetailViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val state: StateFlow<OrderDetailUiState> = _state.asStateFlow()
+
+    /**
+     * Gates the "Make this recurring" shortcut, from the same nullable membership
+     * the recurring list resolves. This screen fetches the answer itself rather
+     * than reading whatever another screen warmed: the cache it used to read is
+     * empty on a cold deep link, and a paid-up member lost the shortcut for it.
+     */
+    val recurringAuthoring: StateFlow<RecurringAuthoringGate> = membershipRepository.current
+        .map { RecurringAuthoringGate.resolve(it?.hasMembership) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, RecurringAuthoringGate.Allowed)
 
     /**
      * Wave 4 — collapsed `_cancelling: Boolean` + `_cancelError: String?` into
@@ -118,6 +146,38 @@ class OrderDetailViewModel @Inject constructor(
      */
     private val _cancelResult = MutableSharedFlow<CancelOrderResponse>(extraBufferCapacity = 1)
     val cancelResult: SharedFlow<CancelOrderResponse> = _cancelResult.asSharedFlow()
+
+    private val _cancellationPreview =
+        MutableStateFlow<CancellationPreviewUiState>(CancellationPreviewUiState.Loading)
+    val cancellationPreview: StateFlow<CancellationPreviewUiState> = _cancellationPreview.asStateFlow()
+
+    private var cancellationPreviewJob: Job? = null
+
+    /**
+     * Ask what cancelling costs. Called every time the sheet opens: the answer
+     * is computed against the server clock at that instant, so a quote from an
+     * earlier open can have crossed a tier boundary while the sheet sat closed.
+     *
+     * The in-flight fetch is cancelled rather than raced, so a slow first answer
+     * can never overwrite a fresher one. Failure is deliberately silent on the
+     * snackbar — the fee card is already saying it, and the cancel button stays
+     * live either way.
+     */
+    fun loadCancellationPreview() {
+        val id = orderId
+        if (id.isNullOrBlank()) {
+            _cancellationPreview.value = CancellationPreviewUiState.Error
+            return
+        }
+        cancellationPreviewJob?.cancel()
+        _cancellationPreview.value = CancellationPreviewUiState.Loading
+        cancellationPreviewJob = viewModelScope.launch {
+            val preview = orderRepository.getCancellationPreview(id).getOrNull()
+            _cancellationPreview.value = preview
+                ?.let { CancellationPreviewUiState.Loaded(it) }
+                ?: CancellationPreviewUiState.Error
+        }
+    }
 
     /** Wave 4 — collapsed `_submittingReview: Boolean` + `_reviewError: String?` into [ActionState]. */
     private val _reviewState = MutableStateFlow<ActionState>(ActionState.Idle)
@@ -147,6 +207,9 @@ class OrderDetailViewModel @Inject constructor(
 
     init {
         load()
+        viewModelScope.launch {
+            if (membershipRepository.staleness.isStale()) membershipRepository.refresh()
+        }
         // Push-triggered refetch — when an order.* FCM event arrives for this
         // orderId, refetch immediately so the UI reflects the new status without
         // waiting for the next poll tick. The poller below stays as a safety
@@ -538,6 +601,6 @@ class OrderDetailViewModel @Inject constructor(
      * the result so callers can `.getOrNull()` for the success branch.
      */
     private fun <T> ApiResult<T>.surfaceError(): ApiResult<T> = onError { error ->
-        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+        if (error !is ApiError.Network) snackbar.showError(error)
     }
 }

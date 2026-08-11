@@ -66,7 +66,7 @@ private struct LoginContent: View {
                 Spacer().frame(height: Spacing.l)
 
                 Text(L10n.welcomeBack)
-                    .font(CleansiaTypography.displayMedium)
+                    .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                     .multilineTextAlignment(.center)
 

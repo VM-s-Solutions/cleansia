@@ -485,6 +485,17 @@
     <string name="account_number">Номер рахунку</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT код</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Країна банку</string>
+    <string name="bank_account_prefix">Префікс рахунку</string>
+    <string name="bank_account_prefix_helper">Необов\'язково — коротке число перед дефісом, якщо ваш рахунок його має.</string>
+    <string name="bank_account_number_helper">Частина перед скісною рискою, наприклад 5885638003.</string>
+    <string name="bank_code">Код банку</string>
+    <string name="bank_code_helper">Чотири цифри після скісної риски, наприклад 5500.</string>
+    <string name="iban_helper">Для чеського або словацького рахунку можете залишити порожнім — ми обчислимо його з чисел вище.</string>
+    <string name="swift_code_helper">Потрібен лише тоді, коли ваш банк в іншій країні, ніж та, де ви працюєте.</string>
+    <string name="bank_account_holder">Власник рахунку</string>
+    <string name="bank_account_holder_helper">Необов\'язково — ім\'я, яке банк має на рахунку, якщо воно відрізняється від вашого.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Екстрений контакт</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Профіль ще не завантажено</string>
-    <string name="error_iban_required">IBAN обов\'язковий</string>
     <string name="error_name_required">Ім\'я контакту обов\'язкове</string>
     <string name="error_phone_required">Телефон контакту обов\'язковий</string>
     <string name="error_pick_nationality">Виберіть громадянство</string>
@@ -891,6 +901,19 @@
         <item quantity="many">+%1$d додатково</item>
         <item quantity="other">+%1$d додатково</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">Потрібен %1$d прибиральник</item>
+        <item quantity="few">Потрібні %1$d прибиральники</item>
+        <item quantity="many">Потрібно %1$d прибиральників</item>
+        <item quantity="other">Потрібно %1$d прибиральника</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d вільне місце</item>
+        <item quantity="few">%1$d вільні місця</item>
+        <item quantity="many">%1$d вільних місць</item>
+        <item quantity="other">%1$d вільного місця</item>
+    </plurals>
+    <string name="crew_no_spots">Вільних місць немає</string>
     <string name="history">Історія</string>
     <string name="you_earn">ви заробите</string>
     <string name="distance_unknown">Місце невідоме</string>
@@ -1020,7 +1043,7 @@
     <string name="profile_fields_country">Країна</string>
     <string name="profile_fields_registrationNumber">Реєстраційний номер</string>
     <string name="profile_fields_legalEntityName">Назва юридичної особи</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Банківські реквізити</string>
     <string name="profile_fields_passportId">Паспорт / посвідчення</string>
     <string name="profile_fields_nationality">Громадянство</string>
 
@@ -1067,13 +1090,14 @@
     <string name="error_employee_document_not_owned">Цей документ вам не належить.</string>
 
     <string name="error_order_not_found">Замовлення не знайдено.</string>
-    <string name="error_order_already_cancelled">Це замовлення вже скасовано.</string>
-    <string name="error_order_already_completed">Це замовлення вже виконано.</string>
+    <string name="error_order_take_already_cancelled">Це замовлення вже скасовано.</string>
+    <string name="error_order_take_already_completed">Це замовлення вже виконано.</string>
     <string name="error_order_in_progress_cannot_cancel">Замовлення виконується, його не можна скасувати.</string>
     <string name="error_order_cancellation_window_closed">Термін скасування вичерпано.</string>
     <string name="error_order_empty">Замовлення порожнє.</string>
     <string name="error_order_already_assigned">Це замовлення щойно взяв інший прибиральник.</string>
-    <string name="error_order_no_available_spots">На цьому замовленні немає вільних місць.</string>
+    <string name="error_order_no_available_spots">Це замовлення вже взяв інший прибиральник.</string>
+    <string name="error_order_not_takeable">Це замовлення більше не доступне.</string>
     <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
     <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
     <string name="error_order_employee_already_assigned">Вас уже призначено на це замовлення.</string>
@@ -1134,8 +1158,25 @@
     <string name="error_validation_invalid_tax_id">Введіть, будь ласка, дійсний податковий ID.</string>
     <string name="error_validation_invalid_iban">Введіть, будь ласка, дійсний IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
+    <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
+    <string name="error_validation_vat_number_invalid_format">Введіть дійсний номер ПДВ для обраної країни.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
     <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
+
+    <!-- Payout / bank details -->
+    <string name="error_payout_not_found">Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату.</string>
+    <string name="error_validation_payout_country_not_supported">Ми поки не надсилаємо виплати в банки цієї країни. Перевірте обрану країну банку або зверніться до підтримки — ми допоможемо.</string>
+    <string name="error_validation_payout_scheme_not_supported">Ми поки не надсилаємо виплати на такий тип рахунку. Зверніться до підтримки — ми допоможемо це вирішити.</string>
+    <string name="error_validation_payout_looks_like_card">Це схоже на номер платіжної картки. Введіть натомість номер банківського рахунку — його вказано у виписці або в банківському застосунку.</string>
+    <string name="error_validation_payout_account_number_required">Введіть номер рахунку — до цього банку ми надсилаємо гроші за номером рахунку та кодом банку, самого лише IBAN недостатньо.</string>
+    <string name="error_validation_payout_invalid_account_number">Не вдалося перевірити цей номер рахунку — майже завжди це друкарська помилка. Звірте цифри з випискою.</string>
+    <string name="error_validation_payout_invalid_account_prefix">Не вдалося перевірити префікс — це коротке число перед дефісом у номері рахунку. Перевірте цифри або залиште поле порожнім, якщо ваш рахунок не має префікса.</string>
+    <string name="error_validation_payout_invalid_bank_code">Введіть чотиризначний код банку — це число після скісної риски в номері рахунку.</string>
+    <string name="error_validation_payout_invalid_iban">Цей IBAN недійсний. Звірте його з випискою — зазвичай це один неправильний символ.</string>
+    <string name="error_validation_payout_iban_country_mismatch">Цей IBAN належить іншій країні, ніж та, яку ви обрали для банку. Змініть одне з них, щоб вони збігалися.</string>
+    <string name="error_validation_payout_iban_mismatch">Цей IBAN не збігається з введеними номером рахунку та кодом банку. Виправте те, що неправильне, або залиште IBAN порожнім — ми заповнимо його за вас.</string>
+    <string name="error_validation_payout_swift_required">Ваш банк в іншій країні, ніж та, де ви працюєте, тому нам потрібен ще й SWIFT/BIC. Його вказано у виписці.</string>
+    <string name="error_validation_payout_invalid_swift">Цей SWIFT/BIC належить іншій країні, ніж ваш банк. Звірте його з випискою.</string>
 
     <string name="error_email_sending_failed">Не вдалося надіслати е-пошту. Спробуйте пізніше.</string>
     <string name="error_email_invalid_format">Введіть, будь ласка, дійсну е-пошту.</string>
@@ -1179,8 +1220,14 @@
 
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_order_assigned_title">Нове замовлення у вашому графіку</string>
+    <string name="notification_order_assigned_body">Вам призначено замовлення №%1$s. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_order_assignment_revoked_title">Замовлення перепризначено</string>
+    <string name="notification_order_assignment_revoked_body">Замовлення №%1$s перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <string name="notification_preferred_offer_title">Клієнт попросив саме вас</string>
+    <string name="notification_preferred_offer_body">Замовлення %1$s — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="devices_title">Ваші пристрої</string>
     <string name="profile_devices_summary">Керування пристроями, на яких виконано вхід</string>
@@ -1235,4 +1282,40 @@
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
     <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
     <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>
+
+    <string name="job_radius_title">Відстань для сповіщень</string>
+    <string name="job_radius_summary_all_jobs">Замовлення будь-де у вашій країні</string>
+    <string name="job_radius_summary_within">Замовлення в межах %1$d км від дому</string>
+    <string name="job_radius_explainer">Це змінює лише те, про які нові замовлення ми вас сповіщаємо. У списку й далі є всі замовлення у вашій країні, і ви можете взяти будь-яке.</string>
+    <string name="job_radius_limit_label">Сповіщати лише про замовлення поблизу</string>
+    <string name="job_radius_limit_off_hint">Ми сповіщатимемо вас про кожне нове замовлення у вашій країні.</string>
+    <string name="job_radius_value">%1$d км</string>
+    <string name="job_radius_prompt_title">Про які нові замовлення вас сповіщати?</string>
+    <string name="job_radius_prompt_body">Зараз ми сповіщаємо вас про кожне нове замовлення у вашій країні. Виберіть відстань від дому, щоб чути лише про ті, що поруч — у списку й далі будуть усі.</string>
+    <string name="job_radius_prompt_choose">Вибрати відстань</string>
+    <string name="job_radius_prompt_keep_all">Залишити всі замовлення</string>
+    <string name="error_employee_job_radius_out_of_range">Виберіть відстань від 1 до 500 км.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Зарезервовано для вас</string>
+    <string name="offers_subtitle">Замовлення, у яких клієнт попросив саме вас. Підтвердите \u2014 вони ваші; відмовитеся \u2014 повернуться до всіх.</string>
+    <string name="offer_reserved_until_today">Ваше до %1$s сьогодні</string>
+    <string name="offer_reserved_until_tomorrow">Ваше до %1$s завтра</string>
+    <string name="offer_reserved_until_date">Ваше до %1$s, %2$s</string>
+    <string name="offer_reserved_ended">Це резервування завершилося</string>
+    <string name="offer_confirm">Підтвердити</string>
+    <string name="offer_slide_to_confirm">Проведіть, щоб підтвердити</string>
+    <string name="offer_confirming">Підтверджуємо\u2026</string>
+    <string name="offer_decline">Відхилити</string>
+    <string name="offer_decline_title">Звільнити це замовлення?</string>
+    <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>
+    <string name="offer_decline_cta">Звільнити</string>
+    <string name="offer_declined_toast">Звільнено \u2014 замовлення тепер відкрите для всіх.</string>
+    <string name="offer_empty">Зараз нічого не чекає на вашу відповідь.</string>
+    <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
+    <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
+    <string name="offer_release_failed_title">Не вдалося звільнити це замовлення</string>
+    <string name="offer_release_failed_body">%1$s\n\nНічого не звільнено \u2014 замовлення точно таке, як було, і за мить ви можете спробувати ще раз.</string>
+    <string name="offers_card_title">Клієнт попросив саме вас</string>
+    <string name="offers_card_more">+%1$d ще</string>
+    <string name="offers_card_cta">Подивитися, що чекає</string>
 </resources>

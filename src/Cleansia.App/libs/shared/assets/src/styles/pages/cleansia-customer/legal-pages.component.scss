@@ -1,10 +1,11 @@
 // Legal pages (privacy + terms) — hero band + section cards matching the
 // services/order page language.
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-lighter: #f0f9ff;
 $text-dark: #0f172a;
 $max-width: 900px;
-$font-heading: 'Poppins', sans-serif;
 
 .legal-page {
   max-width: $max-width;

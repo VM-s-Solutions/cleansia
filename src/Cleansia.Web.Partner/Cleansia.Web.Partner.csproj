@@ -6,7 +6,39 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>58a2f81b-2ff8-4dd7-afbf-0999d43a5775</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!--
+      Do NOT re-enable. This kills the recursive bin/Debug/net10.0/bin/Debug/net10.0/... output
+      nesting that broke this project's build with MSB3021 (path too long) on macOS.
+
+      Chain: `dotnet ef` on macOS emits a directory whose NAME literally contains a backslash —
+      `bin\Debug` (see .gitignore:525-526; it is created here because this is the EF
+      startup-project, and in Cleansia.Infra.Database because that is the migrations project).
+      MSBuild's glob walker enumerates that entry, path-normalizes the backslash to '/', then reads
+      the REAL bin/Debug — so the SDK's own `bin/**` default exclude never prunes it (that exclude
+      prunes the entry named `bin`, and `bin\Debug` is a different entry). Microsoft.NET.Sdk.Web's
+      default `<Content Include="**\*.json" CopyToOutputDirectory="PreserveNewest">` therefore
+      ingests this project's OWN output and re-copies it one level deeper on every build; the copies
+      also flow to Cleansia.Tests and Cleansia.HostTests via ProjectReference. Measured: 9 nesting
+      levels, 57 Content items where there should be 3.
+
+      No exclude can fix it — MSBuild normalizes '\' to '/' in patterns on Unix, so no pattern can
+      name the aliased entry (verified: `bin%5CDebug/**` in DefaultItemExcludes changes nothing).
+      Removing the stray directory fixes it until the next `dotnet ef` run recreates it. Not having
+      a recursive content glob at all is the only structural fix.
+
+      The two items below are the exact set the default glob produced here (verified with
+      `dotnet msbuild -getItem:Content`): three appsettings files. launchSettings.json was already
+      excluded by the SDK's own DefaultWebContentItemExcludes; this project has no wwwroot and no
+      .config, so nothing else is lost.
+    -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.*.json" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" />

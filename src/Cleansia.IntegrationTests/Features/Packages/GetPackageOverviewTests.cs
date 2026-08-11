@@ -1,4 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Features.Packages;
+using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.TestUtilities.MockDataFactories.Packages;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,21 @@ public class GetPackageOverviewTests(PostgresContainerFixture fixture) : BaseInt
                 var package1 = PackageMockFactory.Generate();
                 var package2 = PackageMockFactory.Generate(new PackageMockFactory.PackagePartial { Name = "Name2", Description = "Description2" });
                 context.Packages.AddRange(package1, package2);
+
+                // The overview offers an entry only when it is quotable, so each seeded package needs
+                // its platform-wide pay config or the wizard withholds it and this asserts nothing.
+                var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+                currency.Created("system", DateTimeOffset.UtcNow);
+                context.Currencies.Add(currency);
+                foreach (var payConfig in new[]
+                         {
+                             EmployeePayConfig.CreateForPackage(package1.Id, 250m, currency.Id),
+                             EmployeePayConfig.CreateForPackage(package2.Id, 250m, currency.Id)
+                         })
+                {
+                    payConfig.Created("system", DateTimeOffset.UtcNow);
+                    context.EmployeePayConfigs.Add(payConfig);
+                }
             },
             act: async provider =>
             {

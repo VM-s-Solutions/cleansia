@@ -78,7 +78,7 @@ final class AddressSectionViewModel: ViewModel {
     }
 
     func save() async {
-        guard !action.isSubmitting else { return }
+        guard case .loaded = state, !action.isSubmitting else { return }
         guard let picked else {
             snackbar.showError(L10n.Profile.errorAddressNotPicked)
             return

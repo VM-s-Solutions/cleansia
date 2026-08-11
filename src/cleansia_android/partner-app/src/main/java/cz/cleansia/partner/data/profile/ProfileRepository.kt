@@ -4,6 +4,7 @@ import cz.cleansia.partner.api.client.EmployeeApi
 import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
+import cz.cleansia.partner.api.model.MyPayoutDetails
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.api.model.SaveMyDocumentsCommand
 import cz.cleansia.partner.api.model.SaveMyDocumentsDocumentToSave
@@ -13,9 +14,11 @@ import cz.cleansia.partner.api.model.UpdateAvailabilityTimeRangeDto
 import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateEmergencyContactCommand
 import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
+import cz.cleansia.partner.api.model.UpdateJobRadiusCommand
 import cz.cleansia.partner.api.model.UpdatePersonalInfoCommand
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import kotlinx.serialization.json.Json
@@ -106,9 +109,29 @@ interface ProfileRepository {
         legalEntityName: String?,
     ): ApiResult<Unit>
 
+    /**
+     * The cleaner's own payout destination, unmasked. A cleaner who has never saved one is
+     * not a failure: the backend answers `payout.not_found`, which maps to `Success(null)`
+     * so the form opens empty instead of showing an error screen on first entry.
+     */
+    suspend fun getPayoutDetails(): ApiResult<MyPayoutDetails?>
+
+    /**
+     * The account is identified by its local parts — the server derives the IBAN from them
+     * and rejects a supplied [iban] that disagrees, so [iban] is a cross-check the cleaner
+     * may leave empty. [swift] becomes required when the bank sits in a different country
+     * than the one the cleaner works in; the server decides that and says so.
+     */
     suspend fun updateBankDetails(
         employeeId: String,
-        iban: String,
+        bankCountryId: String?,
+        accountPrefix: String?,
+        accountNumber: String?,
+        bankCode: String?,
+        iban: String?,
+        swift: String?,
+        bankName: String?,
+        holderName: String?,
     ): ApiResult<Unit>
 
     suspend fun updateEmergencyContact(
@@ -122,6 +145,19 @@ interface ProfileRepository {
         employeeId: String,
         availability: Map<String, List<Pair<String, String>>>,
     ): ApiResult<Unit>
+
+    /**
+     * How far from home this cleaner wants to be TOLD about work. It narrows the "new jobs near you"
+     * digest alone — the board still shows every job in their country and they can still take one
+     * anywhere, so no copy around this may suggest the board shrinks. The current value is read off
+     * [EmployeeItem.jobRadiusKm].
+     *
+     * [radiusKm] `null` asks for the country-wide digest back — a choice, not an omission. The
+     * app-wide `Json` runs with `explicitNulls = false`, so it leaves as an ABSENT member and binds
+     * to the server's `SetJobRadius(null)`. Never substitute `0`: the server reads that as a
+     * zero-kilometre radius and rejects it as out of range.
+     */
+    suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit>
 
     suspend fun getMyDocuments(): ApiResult<List<GetMyDocumentsMyDocumentDto>>
 
@@ -233,12 +269,36 @@ class ProfileRepositoryImpl @Inject constructor(
         )
     }.map { }
 
+    override suspend fun getPayoutDetails(): ApiResult<MyPayoutDetails?> =
+        when (val result = safeApiCall(json) { employeeApi.employeeGetMyPayoutDetails() }) {
+            is ApiResult.Success -> result
+            is ApiResult.Error ->
+                if (result.error.isPayoutNotFound()) ApiResult.Success(null) else result
+        }
+
     override suspend fun updateBankDetails(
         employeeId: String,
-        iban: String,
+        bankCountryId: String?,
+        accountPrefix: String?,
+        accountNumber: String?,
+        bankCode: String?,
+        iban: String?,
+        swift: String?,
+        bankName: String?,
+        holderName: String?,
     ): ApiResult<Unit> = safeApiCall(json) {
         employeeApi.employeeUpdateBankDetails(
-            UpdateBankDetailsCommand(employeeId = employeeId, iban = iban),
+            UpdateBankDetailsCommand(
+                employeeId = employeeId,
+                iban = iban,
+                bankCountryId = bankCountryId,
+                accountPrefix = accountPrefix,
+                accountNumber = accountNumber,
+                bankCode = bankCode,
+                swift = swift,
+                bankName = bankName,
+                holderName = holderName,
+            ),
         )
     }.map { }
 
@@ -272,6 +332,13 @@ class ProfileRepositoryImpl @Inject constructor(
         )
     }.map { }
 
+    override suspend fun updateJobRadius(employeeId: String, radiusKm: Int?): ApiResult<Unit> =
+        safeApiCall(json) {
+            employeeApi.employeeUpdateJobRadius(
+                UpdateJobRadiusCommand(employeeId = employeeId, radiusKm = radiusKm),
+            )
+        }.map { }
+
     override suspend fun getMyDocuments(): ApiResult<List<GetMyDocumentsMyDocumentDto>> =
         safeApiCall(json) { employeeApi.employeeGetMyDocuments() }
             .map { it.documents.orEmpty() }
@@ -285,4 +352,12 @@ class ProfileRepositoryImpl @Inject constructor(
     override suspend fun deleteDocument(documentId: String): ApiResult<Unit> =
         safeApiCall(json) { employeeApi.employeeDeleteMyDocument(documentId = documentId) }
             .map { }
+}
+
+private const val PAYOUT_NOT_FOUND_KEY = "payout.not_found"
+
+private fun ApiError.isPayoutNotFound(): Boolean {
+    val badRequest = this as? ApiError.BadRequest ?: return false
+    return badRequest.errorKey == PAYOUT_NOT_FOUND_KEY ||
+        badRequest.validationErrors?.values?.any { PAYOUT_NOT_FOUND_KEY in it } == true
 }

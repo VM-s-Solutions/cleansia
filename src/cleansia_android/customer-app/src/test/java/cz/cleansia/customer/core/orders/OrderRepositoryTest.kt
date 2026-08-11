@@ -69,7 +69,12 @@ class OrderRepositoryTest {
 
     private fun newRepo() = OrderRepository(api, appContext)
 
-    private fun listItem(id: String) = OrderListItemDto(id = id)
+    private fun listItem(id: String) = OrderListItemDto(
+        id = id,
+        totalPrice = 4380.0,
+        originalSubtotal = 3650.0,
+        appliedDiscountSource = 2,
+    )
 
     // ── refresh() ──
 
@@ -153,6 +158,63 @@ class OrderRepositoryTest {
         coVerify(exactly = 1) { api.getMyOrders(offset = 1, limit = 20) }
     }
 
+    /**
+     * The drop-the-row ruling makes the cache smaller than the page the server sent, so an offset
+     * read off the cache re-requests the rows that survived and never reaches the ones after the row
+     * that did not.
+     */
+    @Test
+    fun loadNextPage_givenADroppedRow_asksForTheOffsetTheServerSentTo() = runTest {
+        val firstPage = OrderListResponseDto(total = 4, data = listOf(listItem("o-1")), receivedCount = 2)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+
+        coEvery { api.getMyOrders(offset = 2, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 4, data = listOf(listItem("o-3")), receivedCount = 2),
+        )
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 2, limit = 20) }
+        assertEquals(listOf("o-1", "o-3"), repo.orders.value.map { it.id })
+    }
+
+    /**
+     * `size >= total` compares survivors against the server's count, so one dropped row keeps the
+     * stop condition permanently false and the list keeps asking for pages it already has.
+     */
+    @Test
+    fun loadNextPage_givenADroppedRow_stillStopsAtTheServersCount() = runTest {
+        val firstPage = OrderListResponseDto(total = 4, data = listOf(listItem("o-1")), receivedCount = 2)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getMyOrders(offset = 2, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 4, data = listOf(listItem("o-3")), receivedCount = 2),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 2, limit = 20) }
+    }
+
+    @Test
+    fun loadNextPage_givenAPageTheServerAnsweredEmpty_stopsRatherThanAskingAgain() = runTest {
+        val firstPage = OrderListResponseDto(total = 9, data = listOf(listItem("o-1")), receivedCount = 1)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getMyOrders(offset = 1, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 9, data = emptyList(), receivedCount = 0),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 1, limit = 20) }
+    }
+
     @Test
     fun loadNextPage_doesNothingWhenAlreadyLoading() = runTest {
         // Bring repo into the "has-more-pages" state so loadNextPage isn't a
@@ -200,7 +262,7 @@ class OrderRepositoryTest {
 
     @Test
     fun getById_givenSuccess_returnsBody() = runTest {
-        val detail = OrderDetailDto(id = "o-1")
+        val detail = OrderDetailDto(id = "o-1", totalPrice = 4380.0, originalSubtotal = 3650.0, appliedDiscountSource = 2)
         coEvery { api.getById("o-1") } returns Response.success(detail)
 
         val result = newRepo().getById("o-1")
@@ -236,7 +298,13 @@ class OrderRepositoryTest {
 
     @Test
     fun cancel_givenSuccess_returnsResponse() = runTest {
-        val resp = CancelOrderResponse(orderId = "o-1", feeRate = 0.5, refundAmount = 10.0)
+        val resp = CancelOrderResponse(
+            orderId = "o-1",
+            feeRate = 0.5,
+            refundAmount = 10.0,
+            totalPrice = 20.0,
+            refundInitiated = true,
+        )
         coEvery { api.cancel(any()) } returns Response.success(resp)
 
         val result = newRepo().cancel("o-1", reason = "changed mind")
@@ -253,6 +321,45 @@ class OrderRepositoryTest {
 
         assertTrue((result as ApiResult.Error).error is ApiError.BadRequest)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ── getCancellationPreview() ──
+
+    @Test
+    fun cancellationPreview_givenSuccess_returnsBody() = runTest {
+        val preview = CancellationFeePreviewDto(
+            orderId = "o-1",
+            tier = 3,
+            feeRate = 0.25,
+            feeAmount = 250.0,
+            refundAmount = 750.0,
+            totalPrice = 1000.0,
+            currencyCode = "CZK",
+            expressWaiverForfeitedOnCancel = false,
+        )
+        coEvery { api.getCancellationPreview("o-1") } returns Response.success(preview)
+
+        assertEquals(preview, newRepo().getCancellationPreview("o-1").getOrNull())
+    }
+
+    @Test
+    fun cancellationPreview_givenHttpError_returnsErrorWithoutASnackbar() = runTest {
+        val errBody = "{}".toResponseBody("application/json".toMediaType())
+        coEvery { api.getCancellationPreview("o-x") } returns Response.error(400, errBody)
+
+        val result = newRepo().getCancellationPreview("o-x")
+
+        assertTrue((result as ApiResult.Error).error is ApiError.BadRequest)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun cancellationPreview_givenUnmappableBody_returnsError() = runTest {
+        // The adapter answers null when the server sends a tier this build does
+        // not know. A quote we cannot read is not a free cancellation.
+        coEvery { api.getCancellationPreview("o-1") } returns Response.success(null)
+
+        assertTrue(newRepo().getCancellationPreview("o-1") is ApiResult.Error)
     }
 
     // ── submitReview() ──
@@ -351,6 +458,57 @@ class OrderRepositoryTest {
         repo.clear()
 
         assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
+    }
+
+    // ── a refused page is not an empty one ──
+
+    /**
+     * A bodiless 2xx is refused by the mapper, not read as an empty page: reading it as `Success`
+     * reproduced, one layer up, the exact failure the refusal exists to prevent — the page ends and
+     * the customer's older orders stop existing rather than fail to load.
+     */
+    @Test
+    fun refresh_givenARefusedBody_reportsAnErrorRatherThanAnEmptySuccess() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(null)
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("a refused page must not read as Success", result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Server)
+        assertFalse("a refused page must not latch first-paint", repo.loaded.value)
+        assertTrue("a refused page must not pass as fresh", repo.staleness.isStale())
+    }
+
+    @Test
+    fun loadNextPage_givenARefusedBody_reportsAnErrorRatherThanEndingPagination() = runTest {
+        val firstPage = OrderListResponseDto(total = 5, data = listOf(listItem("o-1")))
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+
+        coEvery { api.getMyOrders(offset = 1, limit = 20) } returns Response.success(null)
+        val result = repo.loadNextPage()
+
+        assertTrue("a refused page must not read as Success", result is ApiResult.Error)
+        assertEquals(listOf("o-1"), repo.orders.value.map { it.id })
+        assertEquals(5, repo.totalRecords.value)
+    }
+
+    /** The other half: a page the server genuinely answered with no rows is still a success. */
+    @Test
+    fun refresh_givenAGenuinelyEmptyPage_isStillASuccess() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns
+            Response.success(OrderListResponseDto(total = 0, data = emptyList()))
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("an empty page is a real answer", result is ApiResult.Success)
+        assertEquals(emptyList<OrderListItemDto>(), repo.orders.value)
+        assertEquals(0, repo.totalRecords.value)
+        assertTrue(repo.loaded.value)
+        assertFalse(repo.staleness.isStale())
     }
 
     // ── loading flow transitions (Turbine) ──

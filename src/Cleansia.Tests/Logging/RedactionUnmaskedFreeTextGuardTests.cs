@@ -1,8 +1,4 @@
-using System.Reflection;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Cleansia.Tests.Logging;
 
@@ -44,6 +40,9 @@ namespace Cleansia.Tests.Logging;
 /// Member order is reflection order, which equals wire order here because <c>[JsonPropertyOrder]</c>
 /// appears nowhere in the repository; if that ever changes, this flattening must change with it.
 ///
+/// The route→DTO walk itself lives in <see cref="WireSurface"/>, shared with
+/// <see cref="RequestLogPiiSurfaceGuardTests"/>.
+///
 /// Sibling guards in this idiom: <c>RateLimitCoverageGuardTests</c>,
 /// <c>AnonymousAllowListExhaustivenessTests</c>, <c>FrozenPermissionMapTests</c>.
 /// </summary>
@@ -52,8 +51,15 @@ public class RedactionUnmaskedFreeTextGuardTests
     /// <summary>
     /// The field names the hosts' <c>SensitiveFieldRegex</c> collapses. Read from the live regex rather
     /// than restated, so adding a token to the middleware automatically widens this guard.
+    ///
+    /// <para><b>Only the credential/payload family counts as "window-freeing".</b> Contact identity is
+    /// redacted by a second regex and is deliberately NOT read here: those values are bounded at tens of
+    /// bytes and the sentinel is 15, so collapsing one shifts the window by tens of bytes rather than
+    /// hundreds — and for a short name it lengthens the body outright. Treating both families as
+    /// window-freeing made every string member of every DTO report as unmasked, which is a guard that has
+    /// stopped saying anything.</para>
     /// </summary>
-    private static readonly IReadOnlyList<string> RedactionTokens = ReadRedactionTokens();
+    private static readonly IReadOnlyList<string> RedactionTokens = WireSurface.ReadRedactionTokens();
 
     /// <summary>
     /// String members that are NOT operator/user free text — file plumbing, ids, MIME types, URLs.
@@ -81,6 +87,8 @@ public class RedactionUnmaskedFreeTextGuardTests
         "PreferredLanguageCode",
         "PreferredLanguageName",
         "LanguageCode",       // ISO code, e.g. "cs"
+        // RegisterDevice.Validator admits only "android" or "ios"; nothing else reaches the handler.
+        "Platform",
         "PaymentIntentId",    // Stripe machine id, e.g. "pi_3Abc…"
         // Opaque Stripe id, not narrative text — so it is out of scope for THIS guard. That these
         // responses hand a StripeCustomerId to the client at all is a separate S4 question about the
@@ -89,43 +97,32 @@ public class RedactionUnmaskedFreeTextGuardTests
     };
 
     /// <summary>
-    /// Genuine free text behind a redaction token that this ticket did NOT expose and does not own.
-    /// Each entry is a measured claim that the text was ALREADY inside the window before the
-    /// redact-before-truncate change — so suppressing the route here would be silently absorbing
-    /// someone else's finding. They belong to T-0457.
+    /// Genuine free text behind a redaction token that the finding ticket did NOT expose and does not
+    /// own. Each entry is a measured claim that the text was ALREADY inside the window before the
+    /// redact-before-truncate change — so suppressing the route here would be silently absorbing someone
+    /// else's finding.
     ///
-    /// This list is for **pre-existing** exposure only. A NEWLY unmasked field must be fixed, not
-    /// added here — which is the whole point of the guard.
+    /// <para>This list is for <b>pre-existing</b> exposure only. A NEWLY unmasked field must be fixed,
+    /// not added here — which is the whole point of the guard.</para>
+    ///
+    /// <para><b>Empty, and that is the desired state.</b> The seven entries it carried were the S6 debt
+    /// T-0446 handed to T-0457, and both halves are now closed rather than accepted: the three
+    /// <c>CreateAdminUser.Command</c> names are redacted by the contact-identity pass, and
+    /// <c>GetMyDocuments</c>' description/review notes are suppressed wholesale by route. An entry
+    /// nobody owns is a claim nobody will ever check, so keep this at zero.</para>
     /// </summary>
-    private static readonly HashSet<string> AcceptedPreExisting = new(StringComparer.Ordinal)
-    {
-        // CreateAdminUser.Command, measured: body 190 B before redaction and 192 B after — redacting
-        // the SHORT password value LENGTHENS the body, so no window is freed and nothing moved. All
-        // three sit far inside the 1000 B request window either way (68 / 94 / 122). Pre-existing
-        // S6 exposure of admin PII, owned by T-0457.
-        "CreateAdminUser.Command.FirstName",
-        "CreateAdminUser.Command.LastName",
-        "CreateAdminUser.Command.PhoneNumber",
-
-        // GetMyDocuments (one document), measured: body 484 B, description at 427 and reviewNotes at
-        // 462 — both already inside the 500 B response window BEFORE the ordering change. OLD=True for
-        // each, measured separately rather than inherited from its neighbour. T-0457.
-        "GetMyDocuments.MyDocumentDto.Description",
-        "GetMyDocuments.MyDocumentDto.ReviewNotes",
-        "GetMyDocuments.Response.Description",
-        "GetMyDocuments.Response.ReviewNotes",
-    };
+    private static readonly HashSet<string> AcceptedPreExisting = new(StringComparer.Ordinal);
 
     [Fact]
     public void EveryDtoWhoseRedactedFieldUnmasksFreeText_HasItsRoutesSuppressed()
     {
         var failures = new List<string>();
 
-        foreach (var (route, dtoTypes) in RoutesWithTheirWireTypes())
+        foreach (var (route, dtoTypes) in WireSurface.RoutesWithTheirWireTypes())
         {
             foreach (var dto in dtoTypes)
             {
-                if (IsSensitivePathOnEveryHost(route))
+                if (WireSurface.IsSensitivePathOnEveryHost(route))
                 {
                     continue;
                 }
@@ -155,7 +152,7 @@ public class RedactionUnmaskedFreeTextGuardTests
     [Fact]
     public void Guard_ActuallyInspectsTheWireSurface()
     {
-        var routes = RoutesWithTheirWireTypes();
+        var routes = WireSurface.RoutesWithTheirWireTypes();
 
         Assert.InRange(routes.Count, 400, 1000);
         Assert.NotEmpty(RedactionTokens);
@@ -179,7 +176,7 @@ public class RedactionUnmaskedFreeTextGuardTests
     [InlineData("/api/AdminAuth/RefreshToken")]
     [InlineData("/api/AdminAuth/Logout")]
     public void TheKnownUnmaskingRoutes_AreSuppressed(string route) =>
-        Assert.True(IsSensitivePathOnEveryHost(route), $"{route} must be in IsSensitivePath on all five hosts");
+        Assert.True(WireSurface.IsSensitivePathOnEveryHost(route), $"{route} must be in IsSensitivePath on all five hosts");
 
     // ── detection ───────────────────────────────────────────────────────────────────────────────────
 
@@ -193,11 +190,18 @@ public class RedactionUnmaskedFreeTextGuardTests
     {
         var seenToken = false;
 
-        foreach (var (name, type) in FlattenedMembers(dto, depth: 0))
+        foreach (var (name, type) in WireSurface.FlattenedMembers(dto, depth: 0))
         {
-            if (RedactionTokens.Contains(name, StringComparer.OrdinalIgnoreCase))
+            if (RedactionTokens.Any(token => Regex.IsMatch(name, $"^(?:{token})$", RegexOptions.IgnoreCase)))
             {
                 seenToken = true;
+                continue;
+            }
+
+            // Redacted by the contact-identity pass, so it is not exposed free text — but it does not
+            // free meaningful window either, so it must not arm `seenToken` for what follows it.
+            if (WireSurface.IsRedacted(name))
+            {
                 continue;
             }
 
@@ -206,168 +210,5 @@ public class RedactionUnmaskedFreeTextGuardTests
                 yield return name;
             }
         }
-    }
-
-    /// <summary>
-    /// DTOs that are machine projections, never narrative. <c>Code(Type, Name, Value)</c> is the enum
-    /// wire shape — flattening it would surface generic members like <c>Type</c> and <c>Name</c>, and
-    /// allowlisting THOSE names globally would blind the guard to a real person's <c>Name</c>.
-    /// </summary>
-    private static readonly HashSet<Type> OpaqueDtos = [typeof(Cleansia.Core.AppServices.Shared.DTOs.Enums.Code)];
-
-    private static IEnumerable<(string Name, Type Type)> FlattenedMembers(Type type, int depth)
-    {
-        if (depth > 4 || OpaqueDtos.Contains(type))
-        {
-            yield break;
-        }
-
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            // [JsonIgnore] members never reach the wire, so they can neither be redacted nor leaked.
-            if (property.GetCustomAttribute<JsonIgnoreAttribute>() is not null)
-            {
-                continue;
-            }
-
-            var memberType = UnwrapCollection(property.PropertyType);
-
-            if (IsAppServicesDto(memberType))
-            {
-                foreach (var nested in FlattenedMembers(memberType, depth + 1))
-                {
-                    yield return nested;
-                }
-            }
-            else
-            {
-                yield return (property.Name, Nullable.GetUnderlyingType(memberType) ?? memberType);
-            }
-        }
-    }
-
-    private static Type UnwrapCollection(Type type)
-    {
-        if (type == typeof(string))
-        {
-            return type;
-        }
-
-        if (type.IsArray)
-        {
-            return type.GetElementType()!;
-        }
-
-        // Take the element type off the IEnumerable<> INTERFACE, not off the type's own generic
-        // arguments — for Dictionary<string, T> the latter yields the KEY type and mis-reports the
-        // member as a string.
-        var enumerable = type.GetInterfaces().Append(type)
-            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
-
-        return enumerable is null ? type : enumerable.GetGenericArguments()[0];
-    }
-
-    private static bool IsAppServicesDto(Type type) =>
-        type.Assembly == typeof(Cleansia.Core.AppServices.Common.Constants).Assembly &&
-        !type.IsEnum &&
-        type is { IsClass: true, IsAbstract: false } or { IsValueType: true, IsPrimitive: false, IsEnum: false };
-
-    // ── the wire surface ────────────────────────────────────────────────────────────────────────────
-
-    private sealed record RouteWireTypes(string Route, IReadOnlyList<Type> WireTypes);
-
-    private static List<RouteWireTypes> RoutesWithTheirWireTypes()
-    {
-        var results = new List<RouteWireTypes>();
-
-        foreach (var host in HostAssemblies())
-        {
-            foreach (var controller in host.GetTypes().Where(t => typeof(ControllerBase).IsAssignableFrom(t)))
-            {
-                // A controller may carry several [Route] attributes (versioned surfaces do), so take
-                // them all rather than GetCustomAttribute, which throws on the ambiguity.
-                var routeAttributes = controller.GetCustomAttributes<RouteAttribute>().ToList();
-                if (routeAttributes.Count == 0)
-                {
-                    continue;
-                }
-
-                var controllerName = controller.Name.EndsWith("Controller", StringComparison.Ordinal)
-                    ? controller.Name[..^"Controller".Length]
-                    : controller.Name;
-
-                foreach (var routeAttribute in routeAttributes)
-                {
-                    var basePath = routeAttribute.Template.Replace("[controller]", controllerName);
-
-                    foreach (var action in controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-                    {
-                        var verb = action.GetCustomAttributes()
-                            .OfType<HttpMethodAttribute>()
-                            .FirstOrDefault();
-                        if (verb is null)
-                        {
-                            continue;
-                        }
-
-                        var route = "/" + basePath + (string.IsNullOrEmpty(verb.Template) ? "" : "/" + verb.Template);
-                        route = route.Replace("//", "/");
-
-                        var wireTypes = action.GetParameters().Select(p => p.ParameterType)
-                            .Concat(action.GetCustomAttributes<ProducesResponseTypeAttribute>().Select(a => a.Type))
-                            .Where(t => t is not null)
-                            .SelectMany(t => Expand(UnwrapCollection(t!), 0))
-                            .Where(IsAppServicesDto)
-                            .Distinct()
-                            .ToList();
-
-                        results.Add(new RouteWireTypes(route, wireTypes));
-                    }
-                }
-            }
-        }
-
-        return results;
-    }
-
-    /// <summary>The type plus every DTO reachable from it — an offending shape is usually nested.</summary>
-    private static IEnumerable<Type> Expand(Type type, int depth)
-    {
-        if (depth > 4 || !IsAppServicesDto(type))
-        {
-            yield break;
-        }
-
-        yield return type;
-
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            foreach (var nested in Expand(UnwrapCollection(property.PropertyType), depth + 1))
-            {
-                yield return nested;
-            }
-        }
-    }
-
-    private static IEnumerable<Assembly> HostAssemblies() =>
-        RequestLoggingHarness.AllHostMiddleware.Select(t => t.Assembly).Distinct();
-
-    private static bool IsSensitivePathOnEveryHost(string route) =>
-        RequestLoggingHarness.AllHostMiddleware
-            .All(middleware => (bool)middleware
-                .GetMethod("IsSensitivePath", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, [new Microsoft.AspNetCore.Http.PathString(route)])!);
-
-    private static IReadOnlyList<string> ReadRedactionTokens()
-    {
-        var middleware = RequestLoggingHarness.AllHostMiddleware[0];
-        var regex = (Regex)middleware
-            .GetMethod("SensitiveFieldRegex", BindingFlags.NonPublic | BindingFlags.Static)!
-            .Invoke(null, null)!;
-
-        var alternation = Regex.Match(regex.ToString(), @"\""\(([^)]*)\)\""");
-        Assert.True(alternation.Success, "could not read the token alternation out of SensitiveFieldRegex");
-
-        return alternation.Groups[1].Value.Split('|', StringSplitOptions.RemoveEmptyEntries);
     }
 }

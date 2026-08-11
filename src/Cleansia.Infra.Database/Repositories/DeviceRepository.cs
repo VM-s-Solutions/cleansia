@@ -56,6 +56,17 @@ public class DeviceRepository(CleansiaDbContext context, IUserSessionProvider us
             .ToListAsync(cancellationToken);
     }
 
+    public async Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken)
+    {
+        // No IsActive conjunct, deliberately — a logged-out tombstone is exactly the row the erasure used to
+        // miss, and the stale-device sweep misses it too.
+        var rows = await GetQueryableIgnoringTenant()
+            .Where(d => d.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        GetDbSet().RemoveRange(rows);
+    }
+
     public override void Deactivate(Device entity)
     {
         var actorId = userSessionProvider?.GetUserId();

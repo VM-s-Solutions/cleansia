@@ -101,6 +101,9 @@ Concretely:
   components/composables, no raw HTML form controls.
 - **No magic numbers/strings** — constants in the right home (Policy class, enum, theme).
 - **Naming + file layout** match the canonical tables.
+- **Editing the catalog is not the same as conforming to it.** A diff that touches
+  `agents/knowledge/*.md` is routed by **reviewer-check 5 "Catalog-edit routing"** (ADR-0033's three
+  tests + ADR-0032's enforcer/tier label), not by this gate.
 
 ### Gate 2 — Acceptance criteria (always)
 Every AC item in the ticket has **verifiable evidence**: an automated test, a screenshot from the
@@ -109,7 +112,7 @@ not evidence. An AC with no evidence fails the gate.
 
 ### Gate 3 — Security (mandatory iff `security_touching: true`)
 The Security Reviewer walks [`../knowledge/security-rules.md`](../knowledge/security-rules.md)
-(S1–S10) against the diff. A ticket is **security-touching** if it adds/changes any of: an
+(S1–S12) against the diff. A ticket is **security-touching** if it adds/changes any of: an
 endpoint, auth/authorization, a resource-by-id operation, a response DTO, tenancy scoping, a
 side-effecting command (payment, email, loyalty, referral, invoice), file upload, logging of user
 data, or rate-limited routes. The verdict names the **specific risk**, not a category — e.g.
@@ -172,8 +175,17 @@ red before this change".
   owner. The agents do **not** regenerate clients.
 - If a schema changed, the ticket carries a `MANUAL_STEP: ef-migration` flag. The agents do **not**
   run migrations.
-- If shipped behavior changed, the Docs agent updates the relevant `docs/**` page and the changelog
-  in the same ticket (or a linked docs ticket).
+- If shipped behavior changed, the Docs agent updates the relevant `docs/**` page and the changelog —
+  [`CHANGELOG.md`](../../CHANGELOG.md) at the **repository root** — in the same ticket (or a linked
+  docs ticket).
+- **The changelog leg is conditional and the condition is written down.** A changelog entry is owed
+  when a **customer, cleaner, admin, operator or API consumer** would notice the change; `CHANGELOG.md`
+  §"What does NOT get an entry" enumerates what is excluded (refactors, test-only changes, CI/tooling,
+  agent-process and backlog work, client regeneration, anything no user can reach yet). A ticket that
+  falls entirely inside those exclusions clears this gate with **no changelog edit** — but the
+  reviewer states which of the two it was, so "no entry" stays a decision rather than an omission.
+  This gate went years without a file to write to; the way it dies again is by becoming a second
+  commit log nobody reads.
 
 ### Gate 8 — Mechanical checks pass (always; this is what makes the rules real)
 Deterministic beats diligent. Before a ticket reaches `done`, the **mechanical** checks for the
@@ -227,6 +239,27 @@ deferred check stays visibly open until CI goes green.
 A ticket whose mechanical checks fail cannot be `done`, regardless of how good the review reads. If a
 check is failing for a reason genuinely unrelated to the change (a flaky test, a pre-existing
 baseline item), the Reviewer says so explicitly with evidence — it is never waved through silently.
+
+> ⚠️ **"Flaky" is a VERDICT, not a first description — and reaching it costs a measured rate and a
+> read of the production path.** Measured 2026-08-11: an iOS gate that failed **3 times in 20** full
+> suite runs and **0 in 40** isolated. One in seven is not noise, and the isolated-vs-suite gap is the
+> tell — scheduling pressure, not the code. Two candidate failures, both shaped *"two happened where
+> one was expected, under concurrency"*, which is the signature of a real race far more often than of
+> a bad test. Both turned out to be **test** defects, but that was the finding, not the assumption:
+> the fixture threw a 401 on every task's first attempt regardless of which token the request carried,
+> so it could not distinguish *failed to coalesce* from *the new token was rejected too* — and the
+> second refresh it intermittently counted was **correct behaviour**. Had it gone the other way, the
+> bug was two refreshes racing one rotating refresh token, i.e. **the customer silently signed out**.
+>
+> **A de-flake that is not mutation-proven is the same failure as a guard that passes without looking
+> — it just fails from the other side.** The evidence is in the tree: a `Task.yield()` in
+> `ProfileFakes.swift` carried a comment claiming it had fixed this exact flake, and it had not. It
+> yielded on the generic executor *after* the call had already left the actor, so it never handed the
+> actor to the re-entry it was meant to schedule. Decoration with a comment on it. So a de-flake owes
+> the same two artifacts as any other fix: **a before/after rate over enough runs to mean something**,
+> and **a mutation showing the repointed test still reddens for the reason it exists** — here,
+> inserting a suspension between the in-flight check and its assignment reddens both coalescing tests,
+> which proves the invariant is live rather than merely green.
 
 ### Gate 8.5 — iOS 16.4 floor smoke (every `layers: [ios]` ticket)
 

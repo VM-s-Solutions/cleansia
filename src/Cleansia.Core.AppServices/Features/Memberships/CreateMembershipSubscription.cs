@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
@@ -64,6 +65,7 @@ public class CreateMembershipSubscription
         IMembershipPlanRepository membershipPlanRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IMembershipTrialResolver membershipTrialResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -121,11 +123,12 @@ public class CreateMembershipSubscription
                 // subscription instead of creating a second billable one. A re-subscribe after
                 // cancellation carries a new token, so it is correctly a new subscription.
                 var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code);
+                var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
                 SubscriptionResult subscription;
                 try
                 {
                     subscription = await stripeClient.CreateSubscriptionAsync(
-                        stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, attemptId, cancellationToken);
+                        stripeCustomerId, plan.StripePriceId, trial.Days, attemptId, cancellationToken);
                 }
                 catch (StripeException ex)
                 {
@@ -170,7 +173,8 @@ public class CreateMembershipSubscription
                     membershipPlanId: plan.Id,
                     stripeSubscriptionId: subscription.SubscriptionId,
                     currentPeriodStart: subscription.CurrentPeriodStart,
-                    currentPeriodEnd: subscription.CurrentPeriodEnd);
+                    currentPeriodEnd: subscription.CurrentPeriodEnd,
+                    trialEndsAtUtc: subscription.TrialEnd);
                 userMembershipRepository.Add(membership);
 
                 // The re-check above still leaves a window where the loser sees null because the winner

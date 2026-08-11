@@ -63,18 +63,32 @@ final class PartnerAppContainer: AppContainer {
         base.apiClient
     }
 
+    var signupConsent: SignupConsentRepository {
+        authStack.signupConsent
+    }
+
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
     let payrollClient: PartnerPayrollClient = LivePartnerPayrollClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
+    let userClient: PartnerUserClient = LivePartnerUserClient()
     let devicesClient: PartnerDevicesClient
     let orderClient: PartnerOrderClient = LivePartnerOrderClient()
     let ordersStaleness = OrdersStaleness()
     let invoicesStaleness = InvoicesStaleness()
+    lazy var pendingOffers = PendingOffersStore(client: orderClient, ordersStaleness: ordersStaleness)
     let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
     lazy var serviceArea = ServiceAreaProvider(dataSource: PartnerServiceAreaDataSource(client: profileClient))
+    lazy var languageSync: LanguagePreferenceSync = LiveLanguagePreferenceSync(
+        tokenStore: authStack.spine.tokenStore,
+        client: userClient
+    )
+    lazy var languageReconciler = LanguageReconciler(settings: appSettings) { [languageSync] tag in
+        languageSync.send(languageCode: tag)
+    }
+
     let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel
@@ -123,6 +137,7 @@ final class PartnerAppContainer: AppContainer {
         }
         sessionScopedCaches.register(ordersStaleness)
         sessionScopedCaches.register(invoicesStaleness)
+        sessionScopedCaches.register(pendingOffers)
         sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)
         // Rule 3: the authed Device/Unregister DELETE runs while the Bearer is
@@ -151,6 +166,13 @@ final class PartnerAppContainer: AppContainer {
 
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
+    }
+
+    /// Rides the same session signal the device registration does, for the same reason: it is derived
+    /// from the token state, so it fires on a restored session as well as a fresh sign-in and no auth
+    /// path can forget to call it. Nothing here belongs to a screen — the seam detaches its own work.
+    func startLanguageReconcile() {
+        languageReconciler.attach(hasSession: hasSessionSubject.eraseToAnyPublisher())
     }
 
     func installGeneratedClientAuth() {

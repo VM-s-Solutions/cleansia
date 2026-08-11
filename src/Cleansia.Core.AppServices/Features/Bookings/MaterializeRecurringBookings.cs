@@ -1,26 +1,38 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Features.Orders;
-using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
 /// <summary>
-/// Daily sweep that turns active <see cref="RecurringBookingTemplate"/> rows
-/// into concrete <see cref="Cleansia.Core.Domain.Orders.Order"/> records 7 days
-/// ahead. Idempotent via <see cref="RecurringBookingTemplate.LastMaterializedFor"/>:
-/// running it twice on the same day is a no-op for templates that already
-/// have an order created within the horizon.
+/// Daily sweep that turns active <see cref="Cleansia.Core.Domain.Bookings.RecurringBookingTemplate"/>
+/// rows into concrete <see cref="Cleansia.Core.Domain.Orders.Order"/> records 7 days ahead. Running it
+/// twice on the same day is a no-op for templates whose horizon is already materialized — see the
+/// per-template command for why that is a query for the existing orders and not <c>LastMaterializedFor</c>,
+/// which an edit clears.
 ///
-/// No UI exists today to create templates, so on a fresh database this handler
-/// processes zero rows — the entity + materializer are foundations for when
-/// Cleansia Plus's "recurring bookings" perk launches.
+/// <para>This handler is a <b>dispatcher, not a worker</b>. It selects the candidate template ids and
+/// sends one <see cref="MaterializeRecurringBookingTemplate.Command"/> per template, each inside its OWN
+/// DI scope — and therefore its own <c>DbContext</c>, change tracker, tenant provider and pending-dispatch
+/// buffer. All the per-template work lives in that command; see its docs for why the isolation has to be
+/// a scope and cannot be a <c>try/catch</c> around a shared context.</para>
+///
+/// <para><b>What this buys.</b> One permanently-bad template used to starve every template ordered after
+/// it: the throw propagated out of the sweep, so the templates it had not reached yet were never
+/// processed on that tick — or on any later tick, because the bad template sorted the same way every
+/// time. Now a template that throws is logged, counted in <c>TemplatesFailed</c>, and the sweep moves on;
+/// its wreckage dies with its scope. The failed template keeps its old marker, so the next tick retries
+/// it from exactly where it was.</para>
+///
+/// <para>No UI exists today to create templates, so on a fresh database this handler processes zero rows
+/// — the entity + materializer are foundations for when Cleansia Plus's "recurring bookings" perk
+/// launches.</para>
 /// </summary>
 public class MaterializeRecurringBookings
 {
@@ -34,163 +46,93 @@ public class MaterializeRecurringBookings
         }
     }
 
-    public record Response(int OrdersCreated, int TemplatesProcessed);
+    /// <summary>
+    /// <paramref name="TemplatesProcessed"/> counts the templates that completed (including the ones that
+    /// legitimately produced no occurrences); <paramref name="TemplatesFailed"/> counts the ones that
+    /// threw or returned a failure and were skipped. A healthy tick reports zero failures, so the pair
+    /// doubles as the alerting signal for a template that is permanently stuck.
+    /// </summary>
+    public record Response(int OrdersCreated, int TemplatesProcessed, int TemplatesFailed = 0);
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
-        ISavedAddressRepository savedAddressRepository,
-        IAddressRepository addressRepository,
-        ICurrencyRepository currencyRepository,
-        IOrderPricingCalculator pricingCalculator,
-        IOrderFactory orderFactory,
-        ITenantProvider tenantProvider,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            // One clock for the whole sweep — the per-template command is handed this same instant so a
+            // long sweep cannot drift its own selection window.
             var now = DateTime.UtcNow;
             var horizon = now.AddDays(command.HorizonDays);
 
-            var activeTemplates = await templateRepository.GetQueryableIgnoringTenant()
-                .Include(t => t.User)
+            // Ids only. Entities loaded HERE would belong to this scope's context, and the per-template
+            // command needs them tracked by its own — so the handoff is deliberately just the key.
+            var templateIds = await templateRepository.GetQueryableIgnoringTenant()
                 .Where(t => t.IsActive
                     && t.StartsOn <= horizon
                     && (t.EndsOn == null || t.EndsOn > now))
+                .Select(t => t.Id)
                 .ToListAsync(cancellationToken);
 
-            // Default currency once per sweep — every template uses it. Templates
-            // don't carry a currency today (single-market launch), but if multi-
-            // currency lands, switch this to per-template lookup.
-            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken)
-                ?? throw new InvalidOperationException("No default currency configured");
-
             var ordersCreated = 0;
-            foreach (var template in activeTemplates)
+            var processed = 0;
+            var failed = 0;
+
+            foreach (var templateId in templateIds)
             {
-                tenantProvider.ClearTenantOverride();
-                if (!string.IsNullOrEmpty(template.TenantId))
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
                 {
-                    tenantProvider.SetTenantOverride(template.TenantId);
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+                    var result = await mediator.Send(
+                        new MaterializeRecurringBookingTemplate.Command(templateId, now, command.HorizonDays),
+                        cancellationToken);
+
+                    if (result.IsSuccess && result.Value != null)
+                    {
+                        ordersCreated += result.Value.OrdersCreated;
+                        processed++;
+                    }
+                    else
+                    {
+                        failed++;
+                        logger.LogError(
+                            "Recurring template {TemplateId} failed to materialize: {Error}. The sweep continues; "
+                            + "the template keeps its previous marker and will be retried on the next tick.",
+                            templateId,
+                            result.Error?.Message ?? "unknown");
+                    }
                 }
-
-                var occurrences = ComputeOccurrences(template, now, horizon).ToList();
-                if (occurrences.Count == 0)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    continue;
+                    // Host shutdown is not a template defect — stop the sweep rather than burn through the
+                    // remaining templates recording false failures.
+                    throw;
                 }
-
-                // Resolve the template's address once, fail-soft per-template.
-                var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
-                if (saved == null)
+                catch (Exception ex)
                 {
-                    logger.LogWarning(
-                        "Template {TemplateId} references missing SavedAddress {SavedAddressId}; skipping",
-                        template.Id, template.SavedAddressId);
-                    continue;
-                }
-                var address = saved.Address
-                    ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
-                if (address == null)
-                {
-                    logger.LogWarning(
-                        "SavedAddress {SavedAddressId} references missing Address {AddressId}; skipping template {TemplateId}",
-                        saved.Id, saved.AddressId, template.Id);
-                    continue;
-                }
-
-                // Recurring orders are scheduled days/weeks in advance,
-                // so the express surcharge never applies — pass null
-                // CleaningDate to skip the surcharge check. Extras aren't
-                // part of the recurring template today; pass empty.
-                var rawSubtotalResult = await pricingCalculator.CalculateAsync(
-                    template.SelectedServiceIds,
-                    template.SelectedPackageIds,
-                    Array.Empty<string>(),
-                    template.Rooms,
-                    template.Bathrooms,
-                    defaultCurrency.Id,
-                    cleaningDateUtc: null,
-                    cancellationToken);
-
-                var customerName = string.Join(" ",
-                    new[] { template.User.FirstName, template.User.LastName }
-                        .Where(s => !string.IsNullOrWhiteSpace(s)));
-
-                foreach (var occurrence in occurrences)
-                {
-                    var input = new CreateOrderInput(
-                        UserId: template.UserId,
-                        CustomerName: customerName,
-                        CustomerEmail: template.User.Email,
-                        CustomerPhone: template.User.PhoneNumber ?? string.Empty,
-                        Address: address,
-                        Rooms: template.Rooms,
-                        Bathrooms: template.Bathrooms,
-                        Extras: new(),
-                        CleaningDate: occurrence,
-                        PaymentType: template.PaymentType,
-                        Currency: defaultCurrency,
-                        SelectedServiceIds: template.SelectedServiceIds,
-                        SelectedPackageIds: template.SelectedPackageIds,
-                        RawSubtotal: rawSubtotalResult.TotalPrice,
-                        PromoDiscountAmount: 0m,
-                        PromoCodeId: null,
-                        PreferredEmployeeId: null,
-                        RecurringTemplateId: template.Id);
-
-                    await orderFactory.CreateAsync(input, cancellationToken);
-                    template.MarkMaterializedFor(occurrence);
-                    ordersCreated++;
+                    failed++;
+                    logger.LogError(
+                        ex,
+                        "Recurring template {TemplateId} threw while materializing. The sweep continues; its "
+                        + "scope (and any half-built order in it) is discarded, and the template keeps its "
+                        + "previous marker so the next tick retries it.",
+                        templateId);
                 }
             }
 
-            return BusinessResult.Success(new Response(ordersCreated, activeTemplates.Count));
-        }
-
-        /// <summary>
-        /// Compute the list of UTC DateTimes this template should spawn within
-        /// the [now, horizon] window, skipping any already-materialized via
-        /// <see cref="RecurringBookingTemplate.LastMaterializedFor"/>.
-        /// </summary>
-        internal static IEnumerable<DateTime> ComputeOccurrences(
-            RecurringBookingTemplate template,
-            DateTime now,
-            DateTime horizon)
-        {
-            // Determine the search start: max(template.StartsOn, lastMaterialized + step, now).
-            var step = template.Frequency switch
+            if (failed > 0)
             {
-                RecurrenceFrequency.Weekly => TimeSpan.FromDays(7),
-                RecurrenceFrequency.Biweekly => TimeSpan.FromDays(14),
-                RecurrenceFrequency.Monthly => TimeSpan.FromDays(30), // approximation, fine for matching pool
-                _ => TimeSpan.FromDays(7),
-            };
-
-            var searchStart = template.LastMaterializedFor.HasValue
-                ? template.LastMaterializedFor.Value + step
-                : template.StartsOn;
-            if (searchStart < now) searchStart = now;
-
-            // Find the first occurrence on or after searchStart that lands on
-            // template.DayOfWeek at template.TimeOfDay.
-            var candidate = searchStart.Date;
-            while (candidate.DayOfWeek != template.DayOfWeek)
-            {
-                candidate = candidate.AddDays(1);
+                logger.LogWarning(
+                    "Recurring sweep finished with {Failed} of {Total} templates failing; {Orders} orders created",
+                    failed, templateIds.Count, ordersCreated);
             }
-            var occurrence = candidate
-                .AddHours(template.TimeOfDay.Hour)
-                .AddMinutes(template.TimeOfDay.Minute);
 
-            while (occurrence <= horizon)
-            {
-                if (occurrence >= template.StartsOn
-                    && (template.EndsOn == null || occurrence <= template.EndsOn))
-                {
-                    yield return occurrence;
-                }
-                occurrence = occurrence.Add(step);
-            }
+            return BusinessResult.Success(new Response(ordersCreated, processed, failed));
         }
     }
 }

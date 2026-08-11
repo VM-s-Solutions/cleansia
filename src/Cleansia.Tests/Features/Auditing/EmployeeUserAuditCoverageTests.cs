@@ -44,6 +44,7 @@ public sealed class EmployeeUserAuditCoverageTests
     [InlineData(typeof(RejectEmployee.Command), "employee.reject")]
     [InlineData(typeof(AdminUpdateEmployee.Command), "employee.update")]
     [InlineData(typeof(AdminUpdateEmployeeAvailability.Command), "employee.availability.update")]
+    [InlineData(typeof(RevealEmployeePayoutDetails.Command), "employee.payout_details.reveal")]
     public void Employee_Admin_Commands_Carry_The_Frozen_User_Typed_Label(Type commandType, string expectedLabel)
     {
         var descriptor = AuditActionDescriptor.For(commandType);
@@ -74,7 +75,8 @@ public sealed class EmployeeUserAuditCoverageTests
         employeeRepository.Setup(r => r.GetQueryable()).Returns(new[] { employee }.AsQueryable().BuildMock());
 
         var handler = new ApproveEmployee.Handler(
-            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext);
+            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
         var result = await handler.Handle(
             new ApproveEmployee.Command(SubjectEmployeeId, "country-cz", "fast-track onboarding"),
             CancellationToken.None);
@@ -101,7 +103,8 @@ public sealed class EmployeeUserAuditCoverageTests
         employeeRepository.Setup(r => r.GetQueryable()).Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
 
         var handler = new ApproveEmployee.Handler(
-            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext);
+            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
         var result = await handler.Handle(
             new ApproveEmployee.Command("missing-emp", "country-cz"), CancellationToken.None);
 
@@ -168,7 +171,6 @@ public sealed class EmployeeUserAuditCoverageTests
                 RegistrationNumber: null,
                 VatNumber: null,
                 LegalEntityName: null,
-                Iban: null,
                 EmergencyName: null,
                 EmergencyPhone: null),
             CancellationToken.None);
@@ -261,6 +263,31 @@ public sealed class EmployeeUserAuditCoverageTests
         return mock;
     }
 
+    /// <summary>
+    /// A one-entry catalogue with its platform-wide pay config, so the approval reaches the audit write
+    /// through the real pay gate rather than past it on an empty catalogue.
+    /// </summary>
+    private static (IServiceRepository services, IPackageRepository packages, IEmployeePayConfigRepository payConfigs) CoveredCatalogue()
+    {
+        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d", 500m, 150m);
+        service.Id = "svc-audit";
+
+        var services = new Mock<IServiceRepository>();
+        services.Setup(r => r.GetAll()).Returns(new[] { service }.AsQueryable().BuildMock());
+
+        var packages = new Mock<IPackageRepository>();
+        packages.Setup(r => r.GetAll())
+            .Returns(Array.Empty<Cleansia.Core.Domain.Packages.Package>().AsQueryable().BuildMock());
+
+        var payConfigs = new Mock<IEmployeePayConfigRepository>();
+        payConfigs.Setup(r => r.GetAll()).Returns(new[]
+        {
+            Cleansia.Core.Domain.EmployeePayroll.EmployeePayConfig.CreateForService(service.Id, 250m, "czk")
+        }.AsQueryable().BuildMock());
+
+        return (services.Object, packages.Object, payConfigs.Object);
+    }
+
     private static Employee BuildEmployee()
     {
         var user = User.CreateWithPassword(SubjectEmail, "Passw0rd!", SubjectFirstName, SubjectLastName, UserProfile.Employee);
@@ -276,11 +303,11 @@ public sealed class EmployeeUserAuditCoverageTests
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: SubjectPassport,
-            iban: SubjectIban,
             address: Address.Create("Wenceslas Square 1", "Prague", "11000", "country-cz"),
             availability: new Dictionary<string, List<TimeRange>>(),
             emergencyContactName: null,
             emergencyContactPhone: null);
+        employee.UpdateBankDetails(SubjectIban);
 
         return employee;
     }

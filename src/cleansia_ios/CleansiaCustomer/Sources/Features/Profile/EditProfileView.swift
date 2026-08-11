@@ -41,7 +41,8 @@ struct EditProfileView: View {
                         onTap: { showPhotoSourceDialog = true },
                         onLoadFailure: { photo in
                             Task { await vm.avatarLoadFailed(fileName: photo.fileName) }
-                        }
+                        },
+                        onLoadSuccess: vm.avatarLoadSucceeded
                     )
                     CleansiaTextField(
                         value: $firstName,
@@ -169,6 +170,7 @@ private struct AvatarField: View {
     let cache: RemoteImageCache
     let onTap: () -> Void
     let onLoadFailure: (ProfilePhoto) -> Void
+    let onLoadSuccess: () -> Void
 
     var body: some View {
         Button(action: onTap) {
@@ -181,7 +183,8 @@ private struct AvatarField: View {
                         diameter: 96,
                         strokeWidth: 1,
                         strokeColor: CleansiaColors.outlineVariant,
-                        onLoadFailure: onLoadFailure
+                        onLoadFailure: onLoadFailure,
+                        onLoadSuccess: onLoadSuccess
                     )
                     Image(systemName: "camera.fill")
                         .font(.system(size: 12, weight: .semibold))

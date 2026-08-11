@@ -7,7 +7,7 @@ public struct MascotEmptyState<Actions: View>: View {
     private let topSpacer: CGFloat
     private let verticallyCentered: Bool
     private let imageSize: CGFloat
-    private let titleFont: Font
+    private let titleStyle: CleansiaTextStyle
     private let actions: Actions
 
     public init(
@@ -17,7 +17,7 @@ public struct MascotEmptyState<Actions: View>: View {
         topSpacer: CGFloat = 220,
         verticallyCentered: Bool = false,
         imageSize: CGFloat = 180,
-        titleFont: Font = CleansiaTypography.titleMedium,
+        titleStyle: CleansiaTextStyle = CleansiaTypography.scale.titleMedium,
         @ViewBuilder actions: () -> Actions
     ) {
         self.image = image
@@ -26,7 +26,7 @@ public struct MascotEmptyState<Actions: View>: View {
         self.topSpacer = topSpacer
         self.verticallyCentered = verticallyCentered
         self.imageSize = imageSize
-        self.titleFont = titleFont
+        self.titleStyle = titleStyle
         self.actions = actions()
     }
 
@@ -42,7 +42,7 @@ public struct MascotEmptyState<Actions: View>: View {
                 .scaledToFit()
                 .frame(width: imageSize, height: imageSize)
             Text(text)
-                .font(titleFont)
+                .cleansiaFont(titleStyle)
                 .foregroundColor(CleansiaColors.onSurface)
                 .multilineTextAlignment(.center)
                 .padding(.top, Spacing.m)
@@ -72,7 +72,7 @@ public extension MascotEmptyState where Actions == EmptyView {
         topSpacer: CGFloat = 220,
         verticallyCentered: Bool = false,
         imageSize: CGFloat = 180,
-        titleFont: Font = CleansiaTypography.titleMedium
+        titleStyle: CleansiaTextStyle = CleansiaTypography.scale.titleMedium
     ) {
         self.init(
             image: image,
@@ -81,7 +81,7 @@ public extension MascotEmptyState where Actions == EmptyView {
             topSpacer: topSpacer,
             verticallyCentered: verticallyCentered,
             imageSize: imageSize,
-            titleFont: titleFont,
+            titleStyle: titleStyle,
             actions: { EmptyView() }
         )
     }

@@ -27,38 +27,37 @@ public static class FileExtensions
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
         IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
-        string dateFormat = "dd.MM.yyyy")
+        EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
     {
+        var supplier = employee.CreateSupplierData(payoutDetails);
+        var vatAmount = countryContext?.VatWithinGross(invoice.TotalAmount, supplier.IsVatPayer) ?? 0m;
+
         return new InvoicePdfData
         {
             InvoiceNumber = invoice.InvoiceNumber,
             VariableSymbol = invoice.VariableSymbol,
-            PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol,
+            ConstantSymbol = countryContext?.ConstantSymbol,
             GeneratedAt = invoice.GeneratedAt,
-            EmployeeName = $"{employee.User?.FirstName} {employee.User?.LastName}",
-            EmployeeAddress = employee.Address != null
-                ? $"{employee.Address.Street}, {employee.Address.City}, {employee.Address.ZipCode}"
-                : "N/A",
-            EmployeeEmail = employee.User?.Email ?? "N/A",
+            DueDate = invoice.CalculateDueDate(Constants.PayoutInvoice.PaymentTermsDays),
+            Supplier = supplier,
             PayPeriodStart = invoice.PayPeriod!.StartDate.ToString(dateFormat),
             PayPeriodEnd = invoice.PayPeriod.EndDate.ToString(dateFormat),
             SubTotal = invoice.SubTotal,
             BonusAmount = invoice.BonusAmount,
             DeductionAmount = invoice.DeductionAmount,
-            VatAmount = 0,
+            VatAmount = vatAmount,
             TotalAmount = invoice.TotalAmount,
             CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
             CurrencySymbol = currency?.Symbol ?? "Kč",
-            Orders = orderPays.Select(op => new OrderLineItem
+            LineItems = orderPays.Select(op => new InvoiceLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",
-                CompletedAt = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
-                BasePay = op.BasePay,
-                ExtrasPay = op.ExtrasPay,
-                ExpensesPay = op.ExpensesPay,
-                TotalPay = op.TotalPay
+                PerformedOn = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
+                Quantity = 1,
+                UnitPrice = LineAmount(op),
+                LineTotal = LineAmount(op)
             }).ToList(),
-            LegalDisclaimer = countryContext?.LegalDisclaimerTemplate,
+            LegalDisclaimer = countryContext?.ReviewedLegalNotice,
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,
@@ -80,5 +79,67 @@ public static class FileExtensions
                 ContactInfo = companyInfo.GetFormattedContactInfo()
             }
         };
+    }
+
+    // One line = one completed job. TotalPay already folds the period bonus/deduction in, so backing
+    // them out is what makes Σ lines equal the invoice's SubTotal — leaving them in would print them
+    // once per line and again in the summary.
+    private static decimal LineAmount(OrderEmployeePay pay) =>
+        pay.TotalPay - pay.BonusPay + pay.DeductionPay;
+
+    private static InvoiceSupplierData CreateSupplierData(this Employee employee, EmployeePayoutDetails? payoutDetails)
+    {
+        // A registered cleaner is rare rather than impossible, so the document expresses both variants
+        // and the presence of a validated DIČ is what selects between them.
+        var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
+
+        return new InvoiceSupplierData
+        {
+            Name = !string.IsNullOrWhiteSpace(employee.LegalEntityName)
+                ? employee.LegalEntityName
+                : $"{employee.User?.FirstName} {employee.User?.LastName}".Trim(),
+            Street = employee.Address?.Street,
+            ZipCode = employee.Address?.ZipCode,
+            City = employee.Address?.City,
+            Country = employee.Address?.Country?.Name,
+            RegistrationNumber = employee.RegistrationNumber,
+            VatNumber = vatNumber,
+            IsVatPayer = vatNumber != null,
+            Email = employee.User?.Email,
+            Phone = employee.User?.PhoneNumber,
+            BankName = payoutDetails?.BankName,
+            BankAccountNumber = FormatLocalAccountNumber(payoutDetails),
+            // Cleaners who provided an account before EmployeePayoutDetails existed were never
+            // backfilled (ADR-0034 D7), so the legacy column is still their only destination.
+            Iban = payoutDetails?.Iban ?? employee.IBAN,
+            Swift = payoutDetails?.Swift
+        };
+    }
+
+    /// <summary>
+    /// The Czech local form, <c>[prefix-]number/bankCode</c>. ADR-0034 D5.1 stores the parts zero-padded
+    /// so that <c>123456</c> and <c>0000123456</c> canonicalize to one account; the padding is storage,
+    /// never how the number is written, and an all-zero prefix is not written at all.
+    /// </summary>
+    private static string? FormatLocalAccountNumber(EmployeePayoutDetails? payoutDetails)
+    {
+        if (payoutDetails is null ||
+            string.IsNullOrWhiteSpace(payoutDetails.AccountNumber) ||
+            string.IsNullOrWhiteSpace(payoutDetails.BankCode))
+        {
+            return null;
+        }
+
+        var number = payoutDetails.AccountNumber.TrimStart('0');
+        if (number.Length == 0)
+        {
+            number = "0";
+        }
+
+        var prefix = payoutDetails.AccountPrefix?.TrimStart('0');
+
+        return string.IsNullOrEmpty(prefix)
+            ? $"{number}/{payoutDetails.BankCode}"
+            : $"{prefix}-{number}/{payoutDetails.BankCode}";
     }
 }

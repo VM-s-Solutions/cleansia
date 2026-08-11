@@ -34,47 +34,62 @@ feature/* ──PR──> master ──auto──> DEV
 
 ## Backend CI (`backend-ci.yml`)
 
-Runs on every pull request. Simple build-and-test pipeline.
+Runs on every pull request. Every step uses `working-directory: ./src` — the solution lives at
+`src/Cleansia.Api.sln`, not the repo root.
 
 ```yaml
 steps:
   - Setup .NET 10.x
+  - Cache ~/.nuget/packages   # keyed on Directory.Packages.props + all csprojs
   - dotnet restore Cleansia.Api.sln
-  - dotnet build --configuration Release
-  - dotnet test --configuration Release
+  - dotnet build Cleansia.Api.sln --configuration Release --no-restore
+  # Three suites, single-threaded, fast-first:
+  - dotnet test Cleansia.Tests/Cleansia.Tests.csproj                        # unit
+  - dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # Testcontainers Postgres
+  - dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz/isolation
 ```
+
+::: tip Why the container-backed suites exist
+`Cleansia.IntegrationTests` and `Cleansia.HostTests` spin a real PostgreSQL via Testcontainers.
+They are what catch the multi-tenant / FK / migration / webhook bugs the SQLite-and-mocks unit tests
+structurally cannot — for example the SQL-vs-C# equivalence pins on `OrderAvailability` and
+`OrderVisibility`. Both run with `xUnit.parallelizeTestCollections=false`.
+:::
 
 ## Deploy to DEV (`deploy-dev.yml`)
 
-Triggered on every push to `master`. Builds, tests, migrates the database, and deploys all 8 components sequentially.
+Triggered on every push to `master`. It is a thin caller — the pipeline itself lives in the reusable
+`deploy-azure.yml`, which `deploy-pro.yml` also calls. Nine deployable components.
 
 ### Pipeline Stages
 
 ```
-build-dotnet ──┬──> migrate-database ──> deploy-partner-api (1/7)
-               │                    ──> deploy-admin-api (2/7)
-               │                    ──> deploy-customer-api (3/7)
-               │                    ──> deploy-mobile-api (4/7)
+build-dotnet ──┬──> provision (Bicep) ──> migrate-database ──> deploy-partner-api
+               │                                          ──> deploy-admin-api
+               │                                          ──> deploy-customer-api
+               │                                          ──> deploy-partner-mobile-api
+               │                                          ──> deploy-customer-mobile-api
                │
-               └──> build-and-deploy-functions (5/8)
+               └──> build-and-deploy-functions
 
-build-angular ─────> deploy-customer-ssr (6/8)
-              ─────> deploy-partner-spa (7/8)
-              ─────> deploy-admin-spa (8/8)
+build-angular ─────> deploy-customer-ssr
+              ─────> deploy-partner-spa
+              ─────> deploy-admin-spa
 ```
 
 ### Job Details
 
 #### 1. Build .NET APIs
 
-Publishes four API projects as separate artifacts:
+Publishes **five** API projects as separate artifacts (`deploy-azure.yml:120-136`):
 
 | Artifact | Project |
 |----------|---------|
-| `partner-api` | `Cleansia.Web.Partner.csproj` |
-| `admin-api` | `Cleansia.Web.Admin.csproj` |
-| `customer-api` | `Cleansia.Web.Customer.csproj` |
-| `mobile-api` | `Cleansia.Web.Mobile.csproj` |
+| `partner-api` | `Cleansia.Web.Partner/Cleansia.Web.Partner.csproj` |
+| `admin-api` | `Cleansia.Web.Admin/Cleansia.Web.Admin.csproj` |
+| `customer-api` | `Cleansia.Web.Customer/Cleansia.Web.Customer.csproj` |
+| `partner-mobile-api` | `Cleansia.Web.Mobile.Partner/Cleansia.Web.Mobile.Partner.csproj` |
+| `customer-mobile-api` | `Cleansia.Web.Mobile.Customer/Cleansia.Web.Mobile.Customer.csproj` |
 
 #### 2. Build Angular Apps
 
@@ -95,7 +110,7 @@ Creates and runs an EF Core migrations bundle:
 ```bash
 dotnet ef migrations bundle \
   --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-  --startup-project Cleansia.Web/Cleansia.Web.Partner.csproj \
+  --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
   --configuration Release \
   --output ./efbundle
 

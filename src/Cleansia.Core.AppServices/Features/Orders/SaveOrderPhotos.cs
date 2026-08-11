@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Media;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -34,7 +36,15 @@ public class SaveOrderPhotos
 
     public class Validator : AbstractValidator<Command>
     {
-        private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+        /// <summary>
+        /// Three times the ten the two document intakes use, because the batch it bounds is a different
+        /// shape: a document set is bounded by the ten document types, while a photo set is before AND
+        /// after per documented area and the web client sends both phases in one command, so a
+        /// fifteen-area home is a legitimate thirty. What the cap is for is unaffected by the difference
+        /// — the per-photo size rule bounds one item, and the request body divided by a SMALL item is
+        /// thousands of blob uploads and rows. Thirty makes that tens.
+        /// </summary>
+        private const int MaxPhotosPerRequest = 30;
 
         public Validator(IOrderRepository orderRepository)
         {
@@ -46,30 +56,34 @@ public class SaveOrderPhotos
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Photos)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .Must(photos => photos.Count() <= MaxPhotosPerRequest)
+                .WithMessage(BusinessErrorMessage.FileCountExceeded);
 
             RuleForEach(x => x.Photos).ChildRules(photo =>
             {
                 photo.RuleFor(p => p.File.FileName)
+                    .Cascade(CascadeMode.Stop)
                     .NotEmpty()
                     .WithMessage(BusinessErrorMessage.Required)
                     .MaximumLength(255)
                     .WithMessage(BusinessErrorMessage.MaxLength);
 
-                photo.RuleFor(p => p.File.Base64Content)
-                    .NotEmpty()
+                // The presence rule has to stay ahead of the size rule and cannot be folded into it:
+                // the shared predicate treats blank content as out of bounds, so the order is the only
+                // thing deciding whether a missing photo reports itself as an oversized one.
+                photo.RuleFor(p => p.File)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(file => !string.IsNullOrWhiteSpace(file.Base64Content))
                     .WithMessage(BusinessErrorMessage.FileRequired)
-                    .Must(base64 => GetBase64DataSize(base64) <= MaxFileSizeBytes)
+                    .Must(BlobFileSize.HasContentWithinLimit)
                     .WithMessage(BusinessErrorMessage.FileSizeExceeded);
-            });
-        }
-
-        private static long GetBase64DataSize(string? base64)
-        {
-            if (string.IsNullOrEmpty(base64)) return 0;
-            var data = base64.Contains(',') ? base64.Split(',')[1] : base64;
-            return (long)(data.Length * 0.75);
+            })
+            // Without this the per-item rules still walk every item of a list already refused for being
+            // too long, which is the cost the count cap exists to refuse.
+            .When(x => x.Photos is not null && x.Photos.Count() <= MaxPhotosPerRequest);
         }
     }
 
@@ -120,11 +134,10 @@ public class SaveOrderPhotos
                 var uniqueFileName = $"{command.OrderId}_{photoToSave.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
                 var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
-                using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
-                var metadata = Metadata.CreateBuilder()
-                    .WithMetadata(MetadataName.ContentType, contentType)
-                    .Build();
-                await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
+                var storedBytes = ImageMetadata.Scrub(Convert.FromBase64String(base64Data)).Bytes;
+
+                using var stream = new MemoryStream(storedBytes);
+                await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
                 var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 
@@ -151,23 +164,26 @@ public class SaveOrderPhotos
             return BusinessResult.Success(new Response(Photos: savedPhotos));
         }
 
+        /// <summary>
+        /// The client's own <c>data:</c> URI prefix is a hint, never the answer: it is an arbitrary
+        /// caller string, and this value is stored on the row and later pinned onto the served
+        /// <c>Content-Type</c>. Resolving it through <see cref="ServedContentType"/> means the worst a
+        /// caller can achieve is the opaque default, so a <c>data:image/svg+xml</c> or
+        /// <c>data:text/html</c> upload cannot put its own type on a header.
+        /// </summary>
         private static string DetermineContentType(string fileName, string? base64Content)
         {
             if (!string.IsNullOrEmpty(base64Content) && base64Content.StartsWith("data:"))
             {
-                var contentType = base64Content.Split(';')[0].Replace("data:", "");
-                if (!string.IsNullOrEmpty(contentType))
-                    return contentType;
+                var declared = ServedContentType.ForRecordedType(base64Content.Split(';')[0].Replace("data:", ""));
+                if (declared != ServedContentType.Opaque)
+                {
+                    return declared.Value;
+                }
             }
 
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".webp" => "image/webp",
-                _ => "image/jpeg"
-            };
+            var byExtension = ServedContentType.ForFileName(fileName);
+            return byExtension == ServedContentType.Opaque ? "image/jpeg" : byExtension.Value;
         }
     }
 }

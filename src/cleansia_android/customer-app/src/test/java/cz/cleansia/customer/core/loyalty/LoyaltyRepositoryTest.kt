@@ -65,6 +65,38 @@ class LoyaltyRepositoryTest {
 
     private fun newRepo() = LoyaltyRepository(api, appContext)
 
+    /**
+     * `ApiError.Network` is never the channel for a 2xx whose body breaks the contract (ADR-0048 §D5
+     * ground 3): the transport is the one thing that did not fail, and Network is the silent arm the
+     * interceptor already owns — so a refused page came back as a ledger that simply stopped growing.
+     */
+    @Test
+    fun loadActivity_givenA2xxWithNoBody_blamesTheServerAndNotTheConnection() = runTest {
+        coEvery { api.getActivity(any(), any()) } returns Response.success(null)
+
+        val result = newRepo().loadActivity(offset = 0)
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertTrue(
+            "a broken body is a server fault, got ${(result as ApiResult.Error).error}",
+            result.error is ApiError.Server,
+        )
+    }
+
+    /**
+     * The account carries the points balance the whole Rewards tab is about. Assigning a null body
+     * straight into the snapshot reported Success while the tab rendered the no-account state.
+     */
+    @Test
+    fun refresh_givenA2xxWithNoAccountBody_refusesRatherThanReportingNoAccount() = runTest {
+        coEvery { api.getMy() } returns Response.success(null)
+
+        val result = newRepo().refresh()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Server)
+    }
+
     // ── refresh() ──
 
     @Test

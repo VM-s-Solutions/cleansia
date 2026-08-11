@@ -21,6 +21,7 @@ final class LiveActivityL10nTests: XCTestCase {
         ("status.cancelled.detail", { LiveActivityL10n.Status.cancelledDetail }),
         ("status.generic.title", { LiveActivityL10n.Status.genericTitle }),
         ("finish", { LiveActivityL10n.finish }),
+        ("arrival", { LiveActivityL10n.arrival }),
         ("booking_fallback", { LiveActivityL10n.bookingFallback }),
         ("order_number", { LiveActivityL10n.orderNumber("AB12CD34") })
     ]
@@ -50,6 +51,20 @@ final class LiveActivityL10nTests: XCTestCase {
                     )
                 }
             }
+        }
+    }
+
+    /// The two captions are what tell an arrival apart from a finish. If a language renders them the same,
+    /// the card is back to showing one instant under one word for both legs.
+    func testTheTwoClockCaptionsNeverReadTheSameInAnyLanguage() {
+        for region in Self.regions {
+            CoreL10n.apply(languageTag: region)
+
+            XCTAssertNotEqual(
+                LiveActivityTimeCaption.arrival.label,
+                LiveActivityTimeCaption.finish.label,
+                "\(region) captions an arrival and a finish identically"
+            )
         }
     }
 

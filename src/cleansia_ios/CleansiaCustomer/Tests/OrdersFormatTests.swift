@@ -25,10 +25,9 @@ final class OrdersFormatTests: XCTestCase {
     }
 
     func testServicesSummaryUsesTranslationForAppLocale() {
-        let order = OrderListItem(
-            selectedPackages: [],
-            selectedServices: [
-                ServiceListItem(name: "Deep Clean", translations: ["ru": Translation(name: "Глубокая уборка")])
+        let order = OrderFixtures.summary(
+            services: [
+                CustomerOrderLineName(name: "Deep Clean", translations: ["ru": Translation(name: "Глубокая уборка")])
             ]
         )
 
@@ -37,11 +36,10 @@ final class OrdersFormatTests: XCTestCase {
     }
 
     func testServicesSummaryFallsBackToFrozenNameWhenLocaleMissing() {
-        let order = OrderListItem(
-            selectedPackages: [
-                PackageListItem(name: "Move-Out", translations: ["cs": Translation(name: "Vystěhování")])
-            ],
-            selectedServices: []
+        let order = OrderFixtures.summary(
+            packages: [
+                CustomerOrderLineName(name: "Move-Out", translations: ["cs": Translation(name: "Vystěhování")])
+            ]
         )
 
         XCTAssertEqual(OrdersFormat.servicesSummary(order, locale: ruLocale), "Move-Out")

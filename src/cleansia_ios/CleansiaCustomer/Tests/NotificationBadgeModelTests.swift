@@ -41,6 +41,11 @@ final class NotificationBadgeModelTests: XCTestCase {
         XCTAssertEqual(client.unreadCountCallCount, 0)
     }
 
+    func testPushReceiptIncrementsForCleanerAssigned() {
+        badge.notePushReceived(eventKey: "order.cleaner_assigned")
+        XCTAssertEqual(badge.unreadCount, 1)
+    }
+
     func testPushReceiptIgnoresPromoAndUnknownKeys() {
         badge.notePushReceived(eventKey: "promo.new_sitewide")
         badge.notePushReceived(eventKey: "totally.unknown")

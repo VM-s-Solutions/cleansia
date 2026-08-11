@@ -3,7 +3,7 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct SubmitReviewSheet: View {
-    let existingReview: OrderReviewDto?
+    let existingReview: CustomerOrderReview?
     let isSubmitting: Bool
     let errorMessage: String?
     let onConfirm: (Int, String?) -> Void
@@ -15,7 +15,7 @@ struct SubmitReviewSheet: View {
     private let maxCommentLength = 2000
 
     init(
-        existingReview: OrderReviewDto?,
+        existingReview: CustomerOrderReview?,
         isSubmitting: Bool,
         errorMessage: String?,
         onConfirm: @escaping (Int, String?) -> Void,
@@ -42,7 +42,7 @@ struct SubmitReviewSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 Text(isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
 
                 StarPicker(rating: $rating, enabled: !isSubmitting)

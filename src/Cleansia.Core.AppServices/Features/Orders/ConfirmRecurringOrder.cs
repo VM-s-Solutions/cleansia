@@ -65,6 +65,7 @@ public class ConfirmRecurringOrder
         IStripeClient stripeClient,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
+        IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -90,7 +91,7 @@ public class ConfirmRecurringOrder
             if (order.PaymentStatus != PaymentStatus.Pending)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentStatus), "order.payment.already_paid"));
+                    nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
             }
 
             return order.PaymentType switch
@@ -133,6 +134,14 @@ public class ConfirmRecurringOrder
                     order.Id,
                     cancellationToken);
             }
+
+            // Q-BROWSE-01 (b): a recurring occurrence is never offerable at creation — the money term
+            // demands Paid for anything carrying a RecurringTemplateId, because AutoCancelStaleRecurring
+            // Orders retracts those while they are Pending. The two writes above are that transition, so
+            // this is where its preferred cleaner is told. The card flavour is told by the Stripe
+            // webhook instead, and the PaymentStatus guard upstream keeps either to one announcement.
+            await PreferredOfferNotifier.NotifyBecameOfferableAsync(
+                order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

@@ -50,7 +50,8 @@ public class CancelOrder
         ILoyaltyService loyaltyService,
         ICancellationPolicyResolver cancellationPolicyResolver,
         INotificationProducer notificationProducer,
-        ILiveActivityProducer liveActivityProducer
+        ILiveActivityProducer liveActivityProducer,
+        IExpressWaiverConsumer expressWaiverConsumer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -77,47 +78,19 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            var latestStatus = order.CurrentStatus;
-
-            if (latestStatus == OrderStatus.Cancelled)
+            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),
-                    BusinessErrorMessage.OrderAlreadyCancelled));
-            }
-            if (latestStatus == OrderStatus.Completed)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.OrderId),
-                    BusinessErrorMessage.OrderAlreadyCompleted));
-            }
-            if (latestStatus == OrderStatus.InProgress)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.OrderId),
-                    BusinessErrorMessage.OrderInProgressCannotCancel));
+                    blockedReason));
             }
 
             var now = DateTime.UtcNow;
-            const bool isFirstTime = false;
-            var hasBeenAccepted = order.OrderStatusHistory
-                .Any(s => s.Status == OrderStatus.Confirmed);
             var policy = await cancellationPolicyResolver
                 .ResolveForUserAsync(userId, cancellationToken);
-            var feeRate = BookingPolicy.CalculateCancellationFeeRate(
-                order.CleaningDateTime,
-                order.CreatedOn.UtcDateTime,
-                now,
-                isFirstTime,
-                hasBeenAccepted,
-                freeCancellationHoursOverride: policy.FreeCancellationHours);
-
-            // Round to the currency's 2 dp at the source (away-from-zero): the
-            // Refund row persists numeric(18,2) (rounds) while Stripe truncates
-            // (long)(amount*100), so an unrounded value can make the ledger and
-            // Stripe diverge by a cent and skew the Refunded/PartiallyRefunded
-            // comparison. Rounding once here makes every downstream reader agree.
-            var refundAmount = Math.Round(order.TotalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+            var assessment = CancellationAssessor.Assess(order, policy, now);
+            var feeRate = assessment.FeeRate;
+            var refundAmount = assessment.RefundAmount;
 
             order.Cancel(
                 cancelledAtUtc: now,
@@ -158,6 +131,18 @@ public class CancelOrder
                         order.Id,
                         cancellationToken);
                 }
+            }
+
+            // Release the express waiver iff no cleaner was ever pulled onto this short-notice job —
+            // the SAME assignment predicate the fee above uses, and for the same reason: nothing was
+            // consumed, so the member keeps their credit. With an assignment the credit is spent, which
+            // is what bounds the book → cleaner accepts → cancel → repeat loop at two attempts a month.
+            // Deliberately keyed on the order's own state, not on CancelledBy: both system sweeps append
+            // a status track without calling Order.Cancel, so their orders release here with no change to
+            // either sweep.
+            if (!assessment.HasBeenAccepted)
+            {
+                await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
             }
 
             // Tell every cleaner who ACCEPTED this job that it's off — they hear nothing today.

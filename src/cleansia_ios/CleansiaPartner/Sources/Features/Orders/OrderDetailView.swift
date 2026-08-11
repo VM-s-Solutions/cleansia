@@ -15,14 +15,16 @@ struct OrderDetailView: View {
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
-        mapProvider: MapProvider
+        mapProvider: MapProvider,
+        pendingOffers: PendingOffersStore
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
                 orderId: orderId,
                 client: client,
                 staleness: staleness,
-                snackbar: snackbar
+                snackbar: snackbar,
+                pendingOffers: pendingOffers
             )
         )
         _checklistVM = StateObject(
@@ -42,7 +44,7 @@ struct OrderDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .task { await vm.load() }
-            .task { await photosVM.load() }
+            .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
             .onReceive(photosVM.mutated) { Task { await vm.load() } }
     }
@@ -71,7 +73,11 @@ struct OrderDetailView: View {
                 order: order,
                 primaryAction: vm.primaryAction,
                 inFlightAction: vm.inFlightAction,
+                preferredOffer: vm.preferredOffer,
+                refusal: vm.refusal,
                 onConfirm: { action in Task { await vm.dispatch(action) } },
+                onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
+                onDismissRefusal: vm.dismissActionError,
                 checklistVM: checklistVM,
                 notesVM: notesVM,
                 photosVM: photosVM
@@ -81,10 +87,9 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func mapBackdrop(_ order: OrderDetail) -> some View {
-        // The View never imports MapKit — the provider encapsulates it. On
-        // Cancelled (no coords / never-visited) a plain surface stands in for
-        // the map.
-        if order.canShowMap, let coordinate = order.coordinate {
+        // The View never imports MapKit — the provider encapsulates it. A plain surface stands in
+        // whenever the location resolved to nothing precise to point at.
+        if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
             CleansiaColors.primaryContainer

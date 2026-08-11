@@ -12,6 +12,16 @@ public record OrderItem(
     string CustomerEmail,
     string CustomerPhone,
     OrderAddress? Address,
+    /// <summary>
+    /// City + zip-prefix combo safe to show before the cleaner accepts the job, e.g. "Praha · 120".
+    /// The same value and the same builder as <c>OrderListItem.CustomerAddressApproximate</c>: the
+    /// board row and the detail behind it describe one order to one caller, so the coarse location
+    /// cannot be on one and missing from the other. Always populated when the address has a city;
+    /// the backend never blanks this field, including for a browsing cleaner whose
+    /// <see cref="Address"/> is nulled — deciding whether a job is worth taking is a question about
+    /// distance.
+    /// </summary>
+    string CustomerAddressApproximate,
     int Rooms,
     int Bathrooms,
     Dictionary<string, bool> Extras,
@@ -46,6 +56,25 @@ public record OrderItem(
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn,
     IEnumerable<AssignedEmployeeDto> AssignedEmployees,
+    /// <summary>
+    /// Crew size and seat occupancy, the same five members and the same values as on
+    /// <c>OrderListItem</c>. The board row already shows all five to a browsing cleaner, so the detail
+    /// behind it discloses nothing new by repeating them — and without them the screen a cleaner taps
+    /// Take on cannot say whether a seat is free, while <c>TakeOrder</c>'s free-seat conjunct refuses
+    /// the take anyway. Neither <see cref="RequiredEmployees"/> nor <see cref="MaxEmployees"/> is
+    /// derivable client-side, so a client cannot reconstruct the block from the rest of the payload.
+    /// </summary>
+    int RequiredEmployees,
+    int MaxEmployees,
+    /// <summary>
+    /// <c>MaxEmployees - AssignedEmployeesCount</c>, and <c>AvailableSpots &gt; 0</c>. Both are
+    /// derivable from the three members above and are carried anyway, because the list carries them
+    /// and a client that reads one shape and computes the other is how the two come to disagree.
+    /// Server-computed on both shapes from one source, so they cannot.
+    /// </summary>
+    int AvailableSpots,
+    int AssignedEmployeesCount,
+    bool HasAvailableSpots,
     string? ReceiptNumber,
     IEnumerable<OrderNoteDto> OrderNotes,
     IEnumerable<OrderIssueDto> OrderIssues,
@@ -74,5 +103,29 @@ public record OrderItem(
     /// round-tripping to the server's <c>AfterPhotosRequired</c>
     /// validator. The validator stays on as a safety net.
     /// </summary>
-    bool HasAfterPhotos
+    bool HasAfterPhotos,
+    /// <summary>
+    /// ADR-0035 AM-13 — cancelling this order right now would use up one of the customer's free express
+    /// bookings for the month. Server-computed: the client cannot derive it (no waiver field reaches it,
+    /// and the release rule reads server-side assignment state).
+    ///
+    /// <para>The cancel confirmation MUST say so when this is true, and <b>especially</b> when the
+    /// cancellation fee is 0 — inside the 15-minute oops window and on every cash order the fee is zero
+    /// and the forfeiture is otherwise completely invisible. A silent forfeiture against a paid
+    /// subscription is the one thing this design refused to ship.</para>
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field simply
+    /// omits it and behaves exactly as before.</para>
+    /// </summary>
+    bool? ExpressWaiverForfeitedOnCancel = null,
+    /// <summary>
+    /// ADR-0045 D7.2 — the state of the customer's favourite-cleaner reservation on this order.
+    /// CUSTOMER-ONLY: null for every other caller, so no cleaner ever learns an order was reserved for
+    /// someone else and nobody ever learns they were passed over.
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field omits
+    /// it and behaves exactly as before. An absent block must render as "no offer" and must never drop
+    /// the order row — both mobile mappers carry a row-dropping idiom that would.</para>
+    /// </summary>
+    PreferredOfferDetails? PreferredOffer = null
 );

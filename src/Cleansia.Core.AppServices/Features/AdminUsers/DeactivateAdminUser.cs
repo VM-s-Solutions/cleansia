@@ -59,6 +59,11 @@ public class DeactivateAdminUser
             // admins can both pass the validator under READ COMMITTED and zero out active admins. This
             // single conditional UPDATE deactivates the target ONLY while another ACTIVE admin still
             // exists; 0 rows affected ⇒ the target is (now) the last active admin ⇒ CannotDeactivateLastAdmin.
+            // It is a SANCTIONED self-commit: ExecuteUpdateAsync bypasses the change tracker and lands
+            // before the UnitOfWork pipeline's commit, which is required — the guard is atomic only while
+            // the other-active-admin predicate and the write are one statement the database evaluates
+            // together — and it rolls nothing back: 0 rows leaves the target untouched under the refusal
+            // below, and a deactivation that did land stays landed whatever the rest of the request does.
             var now = DateTimeOffset.UtcNow;
             var rowsAffected = await userRepository.GetAll()
                 .Where(u => u.Id == command.UserId

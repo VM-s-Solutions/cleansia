@@ -7,10 +7,10 @@ import cz.cleansia.partner.R
  * The per-event notification templates — the single source for BOTH surfaces
  * that render an event_key + args into user-visible text: the FCM push display
  * ([CleansiaFirebaseMessagingService]) and the notifications feed. Keys unknown
- * to this catalog are silently dropped on both surfaces (drop-parity). The
- * server feed only writes `order.new_available` rows for partners today; the
- * order-lifecycle and dispute keys stay so a partner-targeted dispatch (T-0431)
- * slots straight in without touching two maps.
+ * to this catalog are silently dropped on both surfaces (drop-parity), which is
+ * why a key lands here BEFORE the server registers it for APNs display or for
+ * the feed keyset — registering it first would put a raw key on a lock screen
+ * and badge a feed row the app drops unrendered.
  */
 object NotificationTemplates {
 
@@ -51,9 +51,30 @@ object NotificationTemplates {
             R.string.notification_order_assignment_cancelled_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        // Both admin-reassign events ride order-updates rather than new-jobs: the server returns a
+        // null category for them so they cannot be muted, and new-jobs is the channel a cleaner
+        // silences to stop hearing about work they have not accepted.
+        "order.assigned" -> Template(
+            R.string.notification_order_assigned_title,
+            R.string.notification_order_assigned_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
+        "order.assignment_revoked" -> Template(
+            R.string.notification_order_assignment_revoked_title,
+            R.string.notification_order_assignment_revoked_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         "order.new_available" -> Template(
             R.string.notification_new_jobs_title,
             R.string.notification_new_jobs_body,
+            NotificationChannels.CHANNEL_NEW_JOBS,
+        )
+        // New-jobs channel, not a channel of its own: the server treats this as
+        // NotificationCategory.NewJobsAvailable and declines the whole offer for a cleaner who
+        // muted new jobs, so a separate channel would be a mute the server cannot honor.
+        "order.preferred_offer" -> Template(
+            R.string.notification_preferred_offer_title,
+            R.string.notification_preferred_offer_body,
             NotificationChannels.CHANNEL_NEW_JOBS,
         )
         "payroll.invoice_paid" -> Template(
@@ -76,6 +97,9 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.assignment_cancelled",
+            "order.assigned",
+            "order.assignment_revoked",
+            "order.preferred_offer",
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
             "order.new_available" -> {
                 val count = args["count"]?.toIntOrNull() ?: 1

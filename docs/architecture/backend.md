@@ -1,33 +1,39 @@
 # Backend Architecture
 
-The Cleansia backend is built on .NET 10 using a Clean Architecture layout with CQRS, split across 12+ projects and 4 separate API hosts.
+The Cleansia backend is built on .NET 10 using a Clean Architecture layout with CQRS, split across
+20+ projects and **5** separate API hosts. The solution file is `src/Cleansia.Api.sln` — under `src/`,
+not at the repo root.
 
 ## Project Structure
 
 ```
 src/
-├── Cleansia.Core.Domain/          # Entities, enums, repository interfaces
+├── Cleansia.Core.Domain/          # Entities, enums, specifications, repository interfaces
 ├── Cleansia.Core.AppServices/     # CQRS handlers, validators, services
 ├── Cleansia.Config/               # Shared startup, middleware, auth config
 ├── Cleansia.Infra.Database/       # EF Core DbContext, migrations
 ├── Cleansia.Infra.Common/         # Shared infra utilities
 ├── Cleansia.Infra.Services/       # Service implementations (email, PDF, etc.)
+├── Cleansia.Infra.Fiscal/         # Fiscalization providers
 ├── Cleansia.Infra.Azure.Storage.Blobs/  # Azure Blob Storage wrappers
 ├── Cleansia.Infra.Azure.Storage.Queues/ # Azure Queue Storage wrappers
 ├── Cleansia.Infra.Clients/        # External API clients (Stripe, SendGrid)
 ├── Cleansia.ServiceDefaults/      # .NET Aspire service defaults
-├── Cleansia.Web/                  # Partner API (port 5000)
+├── Cleansia.Web.Partner/          # Partner API (port 5000)
 ├── Cleansia.Web.Admin/            # Admin API (port 5001)
-├── Cleansia.Web.Mobile/           # Mobile API (port 5002)
+├── Cleansia.Web.Mobile.Partner/   # Partner Mobile API (port 5002)
 ├── Cleansia.Web.Customer/         # Customer API (port 5003)
-├── Cleansia.Functions/            # Azure Functions (Docker)
+├── Cleansia.Web.Mobile.Customer/  # Customer Mobile API (port 5004)
+├── Cleansia.Functions/            # Azure Functions host — thin trigger shells only
+├── Cleansia.Functions.Core/       # Function bodies + DI (ADR-0002 D5)
+├── Cleansia.MigrationService/     # EF migrator; Aspire runs it before every API
 └── Cleansia.AppHost/              # .NET Aspire orchestrator
 ```
 
 ### Layer Dependency Graph
 
 ```
-Web / Web.Admin / Web.Mobile / Web.Customer / Functions
+Web.Partner / Web.Admin / Web.Mobile.Partner / Web.Customer / Web.Mobile.Customer / Functions
         │
         ▼
     Cleansia.Config

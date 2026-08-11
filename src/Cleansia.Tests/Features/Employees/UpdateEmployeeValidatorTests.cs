@@ -72,7 +72,6 @@ public class UpdateEmployeeValidatorTests
         RegistrationNumber: "12345678",
         VatNumber: null,
         LegalEntityName: null,
-        Iban: "CZ6508000000192000145399",
         EmergencyName: null,
         EmergencyPhone: null,
         Consent: true);
@@ -88,7 +87,7 @@ public class UpdateEmployeeValidatorTests
     }
 
     [Fact]
-    public async Task Not_Owner_Fails_NotAllowedToUpdateEmployee()
+    public async Task A_Caller_With_No_Employee_Record_Fails_NotAllowedToUpdateEmployee()
     {
         ArrangePassingContext();
         _employeeRepository
@@ -100,17 +99,22 @@ public class UpdateEmployeeValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotAllowedToUpdateEmployee);
     }
 
-    [Fact]
-    public async Task Unknown_Employee_Fails_NotFound()
+    /// <summary>
+    /// The id on the wire is inert (S1, [OWN-DATA]): the subject is the JWT caller, so neither an id
+    /// naming another cleaner nor no id at all is a validation concern. The rule this replaces made the
+    /// route uncallable for any client that cannot supply the id, while stopping no attacker.
+    /// </summary>
+    [Theory]
+    [InlineData("emp-somebody-else")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task Any_Employee_Id_Passes_Because_The_Id_Is_Never_Read(string? employeeId)
     {
         ArrangePassingContext();
-        _employeeRepository.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await CreateValidator().ValidateAsync(Valid());
+        var result = await CreateValidator().ValidateAsync(Valid() with { EmployeeId = employeeId });
 
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(UpdateEmployee.Command.EmployeeId)
-            && e.ErrorMessage == BusinessErrorMessage.NotFound);
+        Assert.True(result.IsValid);
     }
 
     [Fact]

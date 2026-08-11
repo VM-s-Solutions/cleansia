@@ -2,6 +2,7 @@ package cz.cleansia.customer.core.network
 
 import cz.cleansia.core.network.IntValueEnumSerializer
 import cz.cleansia.customer.api.model.AppliedDiscountSource
+import cz.cleansia.customer.api.model.CancellationFeeTier
 import cz.cleansia.customer.api.model.ConsentType
 import cz.cleansia.customer.api.model.ContractStatus
 import cz.cleansia.customer.api.model.DisputeReason
@@ -36,6 +37,11 @@ val IntEnumSerializersModule = SerializersModule {
         "AppliedDiscountSource",
         { it.value },
         { raw -> AppliedDiscountSource.entries.firstOrNull { it.value == raw } },
+    ))
+    contextual(CancellationFeeTier::class, IntValueEnumSerializer(
+        "CancellationFeeTier",
+        { it.value },
+        { raw -> CancellationFeeTier.entries.firstOrNull { it.value == raw } },
     ))
     contextual(ConsentType::class, IntValueEnumSerializer(
         "ConsentType",

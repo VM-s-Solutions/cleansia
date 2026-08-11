@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class OrderPhotosViewModel: ViewModel {
-    @Published private(set) var state: UiState<GetOrderPhotosResponse> = .loading
+    @Published private(set) var state: UiState<OrderPhotos> = .loading
 
     private let orderId: String
     private let client: OrderClient

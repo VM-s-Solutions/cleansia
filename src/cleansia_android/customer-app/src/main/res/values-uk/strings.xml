@@ -28,6 +28,7 @@
     <string name="register_pw_number">Принаймні одна цифра</string>
     <string name="register_pw_match">Паролі збігаються</string>
     <string name="register_terms_and_conditions"><![CDATA[Я погоджуюся з <a href="cleansia://terms">Умовами використання</a> та <a href="cleansia://privacy">Політикою конфіденційності</a>]]></string>
+    <string name="register_social_terms_required">Щоб продовжити через Google, прийміть Умови використання та Політику конфіденційності.</string>
     <string name="register_submit">Створити обліковий запис</string>
     <string name="register_have_account">Вже маєте обліковий запис?</string>
     <string name="register_login_link">Увійти</string>
@@ -304,11 +305,18 @@
     <!-- Order cancel -->
     <string name="order_action_cancel">Скасувати замовлення</string>
     <string name="order_cancel_title">Скасувати це прибирання?</string>
-    <string name="order_cancel_fee_free">Безкоштовне скасування — ви отримаєте повне повернення.</string>
-    <string name="order_cancel_fee_oops">Безкоштовне скасування — ви забронювали менше 15 хвилин тому.</string>
-    <string name="order_cancel_fee_50">Комісія за скасування 50 %%. Орієнтовне повернення: %1$s.</string>
-    <string name="order_cancel_fee_100">Комісія за скасування 100 %%. Так близько до прибирання повернення неможливе.</string>
-    <string name="order_cancel_fee_estimate_note">Орієнтовно — точна сума підтвердиться після відправки.</string>
+    <string name="order_cancel_fee_not_accepted">Безкоштовне скасування — це бронювання ще ніхто з клінерів не взяв.</string>
+    <string name="order_cancel_fee_oops">Безкоштовне скасування — ви забронювали щойно.</string>
+    <string name="order_cancel_fee_outside_window">Безкоштовне скасування — ви скасовуєте завчасно.</string>
+    <string name="order_cancel_fee_partial">Клінер уже працює над цим замовленням, тож за скасування буде комісія.</string>
+    <string name="order_cancel_fee_last_minute">Це скасування в останню хвилину, тому комісія вища.</string>
+    <string name="order_cancel_fee_none">Комісії за скасування немає.</string>
+    <string name="order_cancel_fee_split">Комісія за скасування %1$s — вам повернемо %2$s.</string>
+    <string name="order_cancel_fee_checking">Перевіряємо, скільки коштує скасування цього бронювання…</string>
+    <string name="order_cancel_fee_unavailable">Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування.</string>
+    <string name="order_cancel_fee_retry">Спробувати ще раз</string>
+    <string name="order_cancel_fee_recheck_note">Це вартість на цю мить — ми перевіримо її ще раз, щойно ви підтвердите.</string>
+    <string name="order_cancel_express_waiver_forfeit">Скасування також витратить одне з експрес-замовлень, включених у ваше членство цього місяця.</string>
     <string name="order_cancel_fee_neutral">Ви впевнені, що хочете скасувати це бронювання?</string>
     <string name="order_cancel_reason_label">Причина (необов’язково)</string>
     <string name="order_cancel_reason_placeholder">Розкажіть, що змінилося…</string>
@@ -411,6 +419,9 @@
     <string name="profile_avatar_encode_failed">Не вдалося використати це зображення. Спробуйте інше фото.</string>
     <string name="profile_avatar_picker_unavailable_title">Немає засобу вибору фото</string>
     <string name="profile_avatar_picker_unavailable_message">На цьому пристрої немає програми для вибору фото.</string>
+    <string name="profile_avatar_upload_success">Фото профілю оновлено</string>
+    <string name="profile_avatar_remove_success">Фото профілю видалено</string>
+    <string name="profile_save_success">Профіль успішно збережено</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Збережені адреси</string>
@@ -551,7 +562,11 @@
     <string name="booking_arrival_window">Клінер прибуде протягом 1 години</string>
     <string name="booking_slot_unavailable">Недоступно</string>
     <string name="booking_slot_earliest">Найшвидше</string>
-    <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express" formatted="false">Експрес +20 %</string>
+    <string name="booking_slot_express_waived">Експрес · без доплати</string>
+    <string name="booking_express_waiver_available">Plus покриває 20%% експрес-доплати — %1$d залишилось цього календарного місяця.</string>
+    <string name="booking_express_waiver_used" formatted="false">Цього місяця скасування експрес-доплати більше не діє — експрес-слоти оплачуються з +20 % до наступного місяця.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Під час пробного періоду експрес-слоти оплачуються з +20 % — скасування доплати починається з першого оплаченого місяця.</string>
     <string name="booking_slot_select">Вибрати</string>
     <string name="booking_all_slots_booked">Усі слоти на цей день зайняті — виберіть інший день.</string>
 
@@ -662,6 +677,7 @@
     <string name="booking_summary_time">Час</string>
     <string name="booking_summary_subtotal">Проміжний підсумок</string>
     <string name="booking_summary_express_surcharge">Експрес-надбавка (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Експрес-слот — скасовано з Plus</string>
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>
@@ -726,7 +742,7 @@
     <string name="booking_success_t1_title">Бронювання отримано</string>
     <string name="booking_success_t1_desc">Щойно</string>
     <string name="booking_success_t2_title">Призначаємо клінера</string>
-    <string name="booking_success_t2_desc">Протягом 1 години</string>
+    <string name="booking_success_t2_desc">Повідомимо вас, щойно його знайдемо</string>
     <string name="booking_success_t3_title">Клінер підтверджений</string>
     <string name="booking_success_t3_desc">Тут з’явиться його профіль</string>
     <string name="booking_success_t4_title">День прибирання</string>
@@ -825,13 +841,16 @@
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
     <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
-    <string name="membership_perk_express_title">Безкоштовне експрес-оновлення</string>
-    <string name="membership_perk_express_desc">Одне безкоштовне бронювання у той самий день щомісяця, без надбавки.</string>
+    <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
+    <string name="membership_perk_express_desc" formatted="false">Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">знижка %1$d%%</string>
     <string name="membership_perk_pill_cancellation">скасування за %1$d год</string>
     <string name="membership_perk_pill_recurring">Регулярно</string>
+    <string name="membership_perk_pill_express">Експрес без доплати · %1$d залишилось</string>
+    <string name="membership_perk_pill_express_used">Експрес без доплати · не залишилось</string>
+    <string name="membership_perk_pill_express_trial">Експрес без доплати · після пробного</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -842,6 +861,7 @@
     <string name="membership_success_title">Ласкаво просимо до Plus!</string>
     <string name="membership_success_subtitle">Ваші переваги активні одразу. Ось що щойно відкрилося:</string>
     <string name="membership_success_perks_header">ВАШІ ПЕРЕВАГИ PLUS</string>
+    <string name="membership_success_perk_express">Експрес-замовлення без доплати — з першого оплаченого місяця</string>
     <string name="membership_success_cta_setup_recurring">Налаштувати регулярне прибирання</string>
     <string name="membership_success_cta_back_home">На головну</string>
     <string name="membership_active_status">Активний</string>
@@ -882,6 +902,11 @@
     <string name="recurring_bookings_day_at_time">%1$s о %2$s</string>
     <string name="recurring_bookings_empty_cta">Створити розклад</string>
     <string name="recurring_bookings_create_fab">Новий розклад</string>
+    <string name="recurring_plus_gate_title">Регулярні — це перевага Plus</string>
+    <string name="recurring_plus_gate_subtitle">Приєднайтеся до Cleansia Plus, щоб налаштувати щотижневі або раз на два тижні прибирання, які бронюються самі.</string>
+    <string name="recurring_plus_gate_cta">Спробувати Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus більше не активна</string>
+    <string name="recurring_lapsed_notice_body">Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Нове регулярне прибирання</string>
@@ -906,12 +931,13 @@
     <string name="recurring_create_address_add_new">Додати нову адресу</string>
     <string name="recurring_create_submit">Створити розклад</string>
     <string name="recurring_create_success">Регулярний розклад створено.</string>
-    <string name="recurring_create_failed">Не вдалося створити розклад. Спробуйте знову.</string>
     <string name="recurring_edit_title">Редагувати регулярне прибирання</string>
     <string name="recurring_edit_submit">Зберегти зміни</string>
     <string name="recurring_edit_success">Розклад оновлено.</string>
-    <string name="recurring_edit_failed">Не вдалося оновити розклад. Спробуйте знову.</string>
     <string name="recurring_edit_load_failed">Не вдалося завантажити цей розклад. Поверніться назад і спробуйте знову.</string>
+    <string name="recurring_edit_notice_title">Що зміниться після збереження</string>
+    <string name="recurring_edit_notice_what_changes">Прибирання, замовлені за цим розкладом надалі, використовуватимуть дані вище.</string>
+    <string name="recurring_edit_notice_what_stays">Прибирання, які вже є у вашому календарі, зберігають початковий час і ціну — змінити або скасувати їх можна окремо в Замовленнях.</string>
     <string name="recurring_freq_weekly_label">Щотижня</string>
     <string name="recurring_freq_biweekly_label">Кожні 2 тижні</string>
     <string name="recurring_freq_monthly_label">Щомісяця</string>
@@ -993,6 +1019,7 @@
     <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
     <string name="error_order_cancellation_window_closed">Період скасування вже закінчився.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
+    <string name="error_order_span_exceeds_maximum">Це замовлення охоплює забагато роботи для одного візиту. Будь ласка, приберіть частину послуг або пакетів чи замовте їх окремо.</string>
     <string name="error_order_selected_package_invalid">Один із вибраних пакетів більше не доступний.</string>
     <string name="error_order_selected_services_invalid">Одна з вибраних послуг більше не доступна.</string>
     <string name="error_order_not_found">Бронювання не знайдено.</string>
@@ -1001,6 +1028,7 @@
     <string name="error_order_time_conflict">Цей час конфліктує з іншим бронюванням.</string>
     <string name="error_order_total_price_not_match">Ціна змінилася. Оновіть і спробуйте знову.</string>
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
+    <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
     <string name="error_order_review_rating_invalid">Оцінка має бути від 1 до 5.</string>
@@ -1151,8 +1179,14 @@
     <string name="notification_channel_dispute_reply_name">Відповіді підтримки</string>
     <string name="notification_channel_dispute_reply_desc">Сповістимо вас, коли підтримка відповість на вашу скаргу.</string>
 
-    <string name="notification_order_confirmed_title">Клінера знайдено! 🎉</string>
+    <string name="notification_order_confirmed_title">Замовлення підтверджено ✅</string>
     <string name="notification_order_confirmed_body">Замовлення #%1$s підтверджено. Натисніть, щоб переглянути деталі.</string>
+    <string name="notification_cleaner_assigned_title">Клінера знайдено! 🎉</string>
+    <string name="notification_cleaner_assigned_body">До вашого замовлення #%1$s призначено клінера. Натисніть, щоб переглянути деталі.</string>
+    <string name="notification_order_starting_soon_title">Прибирання скоро почнеться</string>
+    <string name="notification_order_starting_soon_body">Ваше замовлення #%1$s почнеться приблизно за годину. Натисніть, щоб переглянути деталі.</string>
+    <string name="notification_order_preferred_offer_closed_title">Замовлення відкрите для всіх клінерів</string>
+    <string name="notification_order_preferred_offer_closed_body">Запит на обраного клінера для замовлення #%1$s завершено. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_order_on_the_way_title">Клінер у дорозі</string>
     <string name="notification_order_on_the_way_body">Ваш клінер прямує до замовлення #%1$s.</string>
     <string name="notification_order_in_progress_title">Прибирання почалося</string>
@@ -1206,6 +1240,7 @@
     <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
     <string name="error_address_mapbox_coords_required">Будь ласка, виберіть адресу з підказок.</string>
     <string name="error_auth_invalid_apple_token">Недійсний токен Apple</string>
+    <string name="error_auth_social_account_not_found">Ми не знайшли облікового запису для цього входу. Спочатку зареєструйтеся.</string>
     <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
@@ -1224,14 +1259,17 @@
     <string name="error_language_not_found">Мову не знайдено</string>
     <string name="error_language_not_supported">Ця мова не підтримується.</string>
     <string name="error_membership_already_active">У вас уже є активне членство.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Ваші експрес-замовлення, включені в членство, на цей місяць щойно вичерпано, тож безкоштовне експрес-оформлення на це замовлення вже не поширюється. Ви все одно можете замовити його за стандартною експрес-ціною.</string>
     <string name="error_membership_not_found">Членство не знайдено.</string>
     <string name="error_membership_plan_not_found">План членства не знайдено.</string>
     <string name="error_membership_swap_same_plan">У вас уже є цей план.</string>
     <string name="error_order_not_completed">Оцінити замовлення можна лише після завершення.</string>
     <string name="error_order_preferred_employee_not_eligible">Вибраний клінер недоступний для цього замовлення.</string>
+    <string name="error_order_preferred_employee_membership_required">Вибір улюбленого прибиральника — перевага Cleansia Plus.</string>
     <string name="error_order_total_price_positive">Загальна вартість повинна бути додатною</string>
     <string name="error_receipt_not_found">Квитанцію не знайдено</string>
     <string name="error_recurring_booking_ends_on_before_start">Дата завершення має бути після дати початку.</string>
+    <string name="error_recurring_booking_membership_required">Регулярні прибирання — перевага Cleansia Plus. Оформіть підписку, щоб налаштувати розклад.</string>
     <string name="error_recurring_booking_no_services_or_packages">Виберіть принаймні одну послугу або пакет.</string>
     <string name="error_recurring_booking_not_found">Регулярне прибирання не знайдено.</string>
     <string name="error_recurring_booking_not_owned_by_user">Це регулярне прибирання належить іншому обліковому запису.</string>

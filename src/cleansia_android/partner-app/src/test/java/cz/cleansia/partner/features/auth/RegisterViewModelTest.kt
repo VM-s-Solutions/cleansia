@@ -1,6 +1,8 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
+import cz.cleansia.core.consent.SignupConsentRepository
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -16,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,6 +43,7 @@ class RegisterViewModelTest {
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var appSettingsRepository: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
+    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var context: Context
 
     @Before
@@ -48,6 +52,7 @@ class RegisterViewModelTest {
         errorTranslator = mockk(relaxed = true)
         appSettingsRepository = mockk()
         snackbar = mockk(relaxed = true)
+        signupConsent = mockk(relaxed = true)
         context = mockk()
         every { context.getString(any()) } returns "validation message"
         // A System preference really is sitting in DataStore — that is the default —
@@ -60,6 +65,7 @@ class RegisterViewModelTest {
         errorTranslator,
         appSettingsRepository,
         snackbar,
+        signupConsent,
         context,
     )
 
@@ -113,5 +119,55 @@ class RegisterViewModelTest {
         coVerify(exactly = 1) {
             authRepository.register(any(), any(), any(), any(), language = "uk")
         }
+    }
+
+    /**
+     * The terms box is a hard blocker, not a hint. It is the reason the "unticked box
+     * records nothing" rule in [cz.cleansia.core.consent.SignupConsentRepository] can never
+     * fire from this screen — and the reason that rule cannot be the only thing pinning it.
+     */
+    @Test
+    fun `an unticked terms box does not register at all`() = runTest {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(true)
+
+        val vm = viewModel()
+        vm.fillValidForm()
+        vm.onAcceptTermsChange(false)
+        vm.register()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { authRepository.register(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { signupConsent.recordSignupTick(any(), any()) }
+        assertNotNull(vm.uiState.value.termsError)
+    }
+
+    @Test
+    fun `a successful registration records the tick against the submitted address`() = runTest {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(true)
+
+        val vm = viewModel()
+        vm.fillValidForm()
+        vm.register()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { signupConsent.recordSignupTick("ada@example.com", true) }
+    }
+
+    @Test
+    fun `a rejected registration records nothing`() = runTest {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(ApiError.BadRequest(message = "taken", errorKey = "user.existing_email"))
+
+        val vm = viewModel()
+        vm.fillValidForm()
+        vm.register()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { signupConsent.recordSignupTick(any(), any()) }
     }
 }

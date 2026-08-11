@@ -110,8 +110,9 @@ export function canTakeOrder(
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isPendingOrConfirmed = orderStatusValue === OrderStatus.Pending || orderStatusValue === OrderStatus.Confirmed;
-  return isPendingOrConfirmed && !isEmployeeAssigned(assignedEmployees, employeeId);
+  const isOfferable =
+    orderStatusValue === OrderStatus.New || orderStatusValue === OrderStatus.Confirmed;
+  return isOfferable && !isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canStartOrder(

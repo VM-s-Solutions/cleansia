@@ -26,6 +26,7 @@ export interface MembershipPlanCreateInput {
   freeCancellationWindowHours: number;
   trialPeriodDays: number;
   allowsExpressUpgrade: boolean;
+  expressUpgradesPerMonth: number;
 }
 
 export type MembershipPlanUpdateInput = Omit<
@@ -66,19 +67,19 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     if (this.saving()) return;
     this.saving.set(true);
 
-    const command = new CreateMembershipPlanCommand({
-      code: input.code.trim().toUpperCase(),
-      name: input.name.trim(),
-      // The wire value is an int (Monthly=1, Yearly=2); the generated string
-      // enum type is stale until the admin client is regenerated.
-      billingInterval: input.billingInterval as unknown as BillingInterval,
-      monthlyPriceCzk: input.monthlyPriceCzk,
-      stripePriceId: input.stripePriceId.trim(),
-      discountPercentage: input.discountPercentage,
-      freeCancellationWindowHours: input.freeCancellationWindowHours,
-      trialPeriodDays: input.trialPeriodDays,
-      allowsExpressUpgrade: input.allowsExpressUpgrade,
-    });
+    const command = new CreateMembershipPlanCommand();
+    command.code = input.code.trim().toUpperCase();
+    command.name = input.name.trim();
+    // The wire value is an int (Monthly=1, Yearly=2); the generated string
+    // enum type is stale until the admin client is regenerated.
+    command.billingInterval = input.billingInterval as unknown as BillingInterval;
+    command.monthlyPriceCzk = input.monthlyPriceCzk;
+    command.stripePriceId = input.stripePriceId.trim();
+    command.discountPercentage = input.discountPercentage;
+    command.freeCancellationWindowHours = input.freeCancellationWindowHours;
+    command.trialPeriodDays = input.trialPeriodDays;
+    command.allowsExpressUpgrade = input.allowsExpressUpgrade;
+    command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 
     this.membershipClient
       .create(command)
@@ -106,16 +107,16 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     if (this.saving()) return;
     this.saving.set(true);
 
-    const command = new UpdateMembershipPlanCommand({
-      membershipPlanId: id,
-      name: input.name.trim(),
-      monthlyPriceCzk: input.monthlyPriceCzk,
-      stripePriceId: input.stripePriceId.trim(),
-      discountPercentage: input.discountPercentage,
-      freeCancellationWindowHours: input.freeCancellationWindowHours,
-      trialPeriodDays: input.trialPeriodDays,
-      allowsExpressUpgrade: input.allowsExpressUpgrade,
-    });
+    const command = new UpdateMembershipPlanCommand();
+    command.membershipPlanId = id;
+    command.name = input.name.trim();
+    command.monthlyPriceCzk = input.monthlyPriceCzk;
+    command.stripePriceId = input.stripePriceId.trim();
+    command.discountPercentage = input.discountPercentage;
+    command.freeCancellationWindowHours = input.freeCancellationWindowHours;
+    command.trialPeriodDays = input.trialPeriodDays;
+    command.allowsExpressUpgrade = input.allowsExpressUpgrade;
+    command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 
     this.membershipClient
       .update(id, command)

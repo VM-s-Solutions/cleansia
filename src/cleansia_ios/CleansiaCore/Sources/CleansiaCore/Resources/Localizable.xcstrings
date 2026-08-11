@@ -701,6 +701,41 @@
         }
       }
     },
+    "error.auth.social_account_not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find an account for that sign-in. Please sign up first."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы не нашли аккаунт для этого входа. Сначала зарегистрируйтесь."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми не знайшли облікового запису для цього входу. Спочатку зареєструйтеся."
+          }
+        }
+      }
+    },
     "error.auth.too_many_attempts" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1156,6 +1191,40 @@
         }
       }
     },
+    "error.device.revoke_failed" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zařízení se nepodařilo odhlásit. Zkuste to prosím znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That device could not be signed out. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось отключить это устройство. Попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zariadenie sa nepodarilo odhlásiť. Skúste to prosím znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося від'єднати цей пристрій. Спробуйте ще раз."
+          }
+        }
+      }
+    },
     "error.dispute.already_exists" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1467,6 +1536,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Відсутні обов'язкові документи. Завантажте їх у профілі."
+          }
+        }
+      }
+    },
+    "error.employee.job_radius_out_of_range" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvolte vzdálenost mezi 1 a 500 km."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a distance between 1 and 500 km."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите расстояние от 1 до 500 км."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvoľte vzdialenosť medzi 1 a 500 km."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть відстань від 1 до 500 км."
           }
         }
       }
@@ -2481,6 +2585,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "У вас уже є активне членство."
+          }
+        }
+      }
+    },
+    "error.membership.express_waiver.no_longer_available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše expresní objednávky zahrnuté v členství jsou pro tento měsíc právě vyčerpané, takže se na tuto objednávku bezplatné expresní vyřízení už nevztahuje. Objednat ji můžete i tak, za standardní expresní cenu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your included express bookings for this month have just been used up, so this booking no longer gets the free express upgrade. You can still book it at the standard express price."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши экспресс-заказы, включённые в членство, на этот месяц только что исчерпаны, поэтому бесплатное экспресс-оформление к этому заказу больше не применяется. Вы всё равно можете оформить его по стандартной экспресс-цене."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše expresné objednávky zahrnuté v členstve sú na tento mesiac práve vyčerpané, takže sa na túto objednávku bezplatné expresné vybavenie už nevzťahuje. Objednať ju môžete aj tak, za štandardnú expresnú cenu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваші експрес-замовлення, включені в членство, на цей місяць щойно вичерпано, тож безкоштовне експрес-оформлення на це замовлення вже не поширюється. Ви все одно можете замовити його за стандартною експрес-ціною."
           }
         }
       }
@@ -3505,31 +3644,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pro tento termín nejsou k dispozici žádní uklízeči. Zvolte jiný čas."
+            "value" : "Tuto zakázku už převzal jiný uklízeč."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No cleaners are available for that slot. Please pick another time."
+            "value" : "Another cleaner has already taken this job."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На этот слот нет доступных клинеров. Выберите другое время."
+            "value" : "Этот заказ уже взял другой клинер."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas."
+            "value" : "Túto zákazku už prevzal iný upratovač."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На цей слот немає доступних клінерів. Виберіть інший час."
+            "value" : "Це замовлення вже взяв інший прибиральник."
           }
         }
       }
@@ -3674,6 +3813,41 @@
         }
       }
     },
+    "error.order.not_takeable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka již není k dispozici."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This job is no longer available."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ больше не доступен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka už nie je k dispozícii."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення більше не доступне."
+          }
+        }
+      }
+    },
     "error.order.note.content_required" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3705,6 +3879,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Текст нотатки обов'язковий."
+          }
+        }
+      }
+    },
+    "error.order.payment.already_paid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato objednávka už byla zaplacena."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order has already been paid."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ уже оплачен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto objednávka už bola zaplatená."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення вже оплачено."
           }
         }
       }
@@ -3775,6 +3984,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оплату за це замовлення ще не підтверджено."
+          }
+        }
+      }
+    },
+    "error.order.preferred_employee.membership_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Výběr oblíbeného uklízeče je výhoda Cleansia Plus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choosing your favourite cleaner is a Cleansia Plus benefit."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбор любимого уборщика — преимущество Cleansia Plus."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Výber obľúbeného upratovača je výhoda Cleansia Plus."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибір улюбленого прибиральника — перевага Cleansia Plus."
           }
         }
       }
@@ -3954,37 +4198,142 @@
         }
       }
     },
+    "error.order.span_exceeds_maximum" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato objednávka zahrnuje příliš mnoho práce na jednu návštěvu. Odeberte prosím některé služby nebo balíčky, případně je objednejte zvlášť."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ включает слишком много работы для одного визита. Пожалуйста, уберите часть услуг или пакетов либо закажите их отдельно."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення охоплює забагато роботи для одного візиту. Будь ласка, приберіть частину послуг або пакетів чи замовте їх окремо."
+          }
+        }
+      }
+    },
+    "error.order.take.already_cancelled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka je již zrušena."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order is already cancelled."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ уже отменён."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka je už zrušená."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення вже скасовано."
+          }
+        }
+      }
+    },
+    "error.order.take.already_completed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka je již dokončena."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order is already completed."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ уже выполнен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka je už dokončená."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення вже виконано."
+          }
+        }
+      }
+    },
     "error.order.time_conflict" : {
       "extractionState" : "stale",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tento čas koliduje s jinou rezervací."
+            "value" : "Tato zakázka se překrývá s jinou, kterou jste již přijali."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This time conflicts with another booking."
+            "value" : "This order conflicts with another you've already taken."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это время конфликтует с другим бронированием."
+            "value" : "Этот заказ пересекается с другим, который вы уже взяли."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tento čas koliduje s inou rezerváciou."
+            "value" : "Táto zákazka sa prekrýva s inou, ktorú ste už prijali."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цей час конфліктує з іншим бронюванням."
+            "value" : "Це замовлення перетинається з іншим, яке ви вже взяли."
           }
         }
       }
@@ -4065,31 +4414,66 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dosáhli jste týdenního limitu rezervací."
+            "value" : "Dosáhli jste týdenního limitu zakázek."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You've reached the weekly booking limit."
+            "value" : "You've reached your weekly order limit."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вы достигли еженедельного лимита бронирований."
+            "value" : "Вы достигли недельного лимита заказов."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dosiahli ste týždenný limit rezervácií."
+            "value" : "Dosiahli ste týždenný limit zákaziek."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ви досягли тижневого ліміту бронювань."
+            "value" : "Ви досягли тижневого ліміту замовлень."
+          }
+        }
+      }
+    },
+    "error.payout.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zatím jste nezadali své bankovní údaje. Doplňte je, abychom vám mohli poslat výplatu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven't added your bank details yet. Add them so we can pay you."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы ещё не добавили свои банковские реквизиты. Добавьте их, чтобы мы могли отправить вам выплату."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату."
           }
         }
       }
@@ -4230,6 +4614,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Дата завершення має бути після дати початку."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.membership_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opakované úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si předplatné aktivujte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярные уборки — преимущество Cleansia Plus. Оформите подписку, чтобы настроить расписание."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opakované upratovania sú výhodou Cleansia Plus — na ich nastavenie si aktivujte predplatné."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярні прибирання — перевага Cleansia Plus. Оформіть підписку, щоб налаштувати розклад."
           }
         }
       }
@@ -5416,6 +5835,565 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Має бути додатне число."
+          }
+        }
+      }
+    },
+    "error.validation.payout.account_number_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte číslo účtu — do této banky posíláme peníze podle čísla účtu a kódu banky, samotný IBAN nestačí."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your account number — for this bank we pay by account number and bank code, so an IBAN on its own isn't enough."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите номер счёта — в этот банк мы отправляем деньги по номеру счёта и коду банка, одного IBAN недостаточно."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte číslo účtu — do tejto banky posielame peniaze podľa čísla účtu a kódu banky, samotný IBAN nestačí."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть номер рахунку — до цього банку ми надсилаємо гроші за номером рахунку та кодом банку, самого лише IBAN недостатньо."
+          }
+        }
+      }
+    },
+    "error.validation.payout.country_not_supported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do banky v této zemi zatím výplaty posílat neumíme. Zkontrolujte zvolenou zemi banky, nebo se ozvěte podpoře a pomůžeme vám."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We can't send payouts to a bank in this country yet. Check the bank country you picked, or contact support and we'll help."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы пока не отправляем выплаты в банки этой страны. Проверьте выбранную страну банка или обратитесь в поддержку — мы поможем."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do banky v tejto krajine zatiaľ výplaty posielať nevieme. Skontrolujte zvolenú krajinu banky, alebo sa ozvite podpore a pomôžeme vám."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми поки не надсилаємо виплати в банки цієї країни. Перевірте обрану країну банку або зверніться до підтримки — ми допоможемо."
+          }
+        }
+      }
+    },
+    "error.validation.payout.iban_country_mismatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN patří do jiné země, než jakou jste u banky zvolili. Upravte jedno z toho, ať se shodují."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This IBAN belongs to a different country than the bank country you picked. Change one so they match."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот IBAN относится к другой стране, чем выбранная страна банка. Измените одно из них, чтобы они совпадали."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN patrí do inej krajiny, než akú ste pri banke zvolili. Upravte jedno z toho, aby sa zhodovali."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей IBAN належить іншій країні, ніж та, яку ви обрали для банку. Змініть одне з них, щоб вони збігалися."
+          }
+        }
+      }
+    },
+    "error.validation.payout.iban_mismatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN neodpovídá zadanému číslu účtu a kódu banky. Opravte to, co je špatně, nebo IBAN nechte prázdný a doplníme ho za vás."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This IBAN doesn't match the account number and bank code you entered. Fix whichever one is wrong, or clear the IBAN and we'll fill it in for you."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот IBAN не совпадает с введёнными номером счёта и кодом банка. Исправьте то, что неверно, или оставьте IBAN пустым — мы заполним его за вас."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN nezodpovedá zadanému číslu účtu a kódu banky. Opravte to, čo je nesprávne, alebo IBAN nechajte prázdny a doplníme ho za vás."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей IBAN не збігається з введеними номером рахунку та кодом банку. Виправте те, що неправильне, або залиште IBAN порожнім — ми заповнимо його за вас."
+          }
+        }
+      }
+    },
+    "error.validation.payout.invalid_account_number" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto číslo účtu se nám nepodařilo ověřit — skoro vždy jde o překlep. Zkontrolujte číslice podle výpisu z účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't verify this account number — that's almost always a typo. Check the digits against your bank statement."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить этот номер счёта — почти всегда это опечатка. Сверьте цифры с выпиской."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto číslo účtu sa nám nepodarilo overiť — takmer vždy ide o preklep. Skontrolujte číslice podľa výpisu z účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося перевірити цей номер рахунку — майже завжди це друкарська помилка. Звірте цифри з випискою."
+          }
+        }
+      }
+    },
+    "error.validation.payout.invalid_account_prefix" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Předčíslí se nám nepodařilo ověřit — je to krátké číslo před pomlčkou v čísle účtu. Zkontrolujte číslice, nebo ho nechte prázdné, pokud váš účet předčíslí nemá."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't verify the prefix — it's the short number before the dash in your account number. Check the digits, or leave it empty if your account doesn't have one."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить префикс — это короткое число перед дефисом в номере счёта. Проверьте цифры или оставьте поле пустым, если у вашего счёта нет префикса."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predčíslie sa nám nepodarilo overiť — je to krátke číslo pred pomlčkou v čísle účtu. Skontrolujte číslice, alebo ho nechajte prázdne, ak váš účet predčíslie nemá."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося перевірити префікс — це коротке число перед дефісом у номері рахунку. Перевірте цифри або залиште поле порожнім, якщо ваш рахунок не має префікса."
+          }
+        }
+      }
+    },
+    "error.validation.payout.invalid_bank_code" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte čtyřmístný kód banky — je to číslo za lomítkem v čísle účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the four-digit bank code — it's the number after the slash in your account number."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите четырёхзначный код банка — это число после косой черты в номере счёта."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte štvormiestny kód banky — je to číslo za lomkou v čísle účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть чотиризначний код банку — це число після скісної риски в номері рахунку."
+          }
+        }
+      }
+    },
+    "error.validation.payout.invalid_iban" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN není platný. Porovnejte ho s výpisem z účtu — obvykle jde o jeden špatný znak."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This IBAN isn't valid. Compare it with your bank statement — it's usually one wrong character."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот IBAN недействителен. Сверьте его с выпиской — обычно это один неверный символ."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento IBAN nie je platný. Porovnajte ho s výpisom z účtu — obvykle ide o jeden nesprávny znak."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей IBAN недійсний. Звірте його з випискою — зазвичай це один неправильний символ."
+          }
+        }
+      }
+    },
+    "error.validation.payout.invalid_swift" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento SWIFT/BIC patří do jiné země než vaše banka. Zkontrolujte ho podle výpisu z účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This SWIFT/BIC belongs to a different country than your bank. Check it on your bank statement."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот SWIFT/BIC относится к другой стране, чем ваш банк. Сверьте его с выпиской."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento SWIFT/BIC patrí do inej krajiny než vaša banka. Skontrolujte ho podľa výpisu z účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей SWIFT/BIC належить іншій країні, ніж ваш банк. Звірте його з випискою."
+          }
+        }
+      }
+    },
+    "error.validation.payout.looks_like_card" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tohle vypadá jako číslo platební karty. Zadejte místo něj číslo bankovního účtu — najdete ho na výpisu nebo v bankovní aplikaci."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That looks like a payment card number. Enter your bank account number instead — you'll find it on your bank statement or in your banking app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это похоже на номер платёжной карты. Введите вместо него номер банковского счёта — он указан в выписке или в банковском приложении."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto vyzerá ako číslo platobnej karty. Zadajte namiesto neho číslo bankového účtu — nájdete ho na výpise alebo v bankovej aplikácii."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це схоже на номер платіжної картки. Введіть натомість номер банківського рахунку — його вказано у виписці або в банківському застосунку."
+          }
+        }
+      }
+    },
+    "error.validation.payout.scheme_not_supported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tento typ účtu zatím výplaty posílat neumíme. Ozvěte se podpoře a pomůžeme vám to vyřešit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We can't pay out to this kind of account yet. Contact support and we'll help you sort it out."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы пока не отправляем выплаты на такой тип счёта. Обратитесь в поддержку — мы поможем это решить."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tento typ účtu zatiaľ výplaty posielať nevieme. Ozvite sa podpore a pomôžeme vám to vyriešiť."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми поки не надсилаємо виплати на такий тип рахунку. Зверніться до підтримки — ми допоможемо це вирішити."
+          }
+        }
+      }
+    },
+    "error.validation.payout.swift_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše banka je v jiné zemi, než ve které pracujete, takže potřebujeme i SWIFT/BIC. Najdete ho na výpisu z účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your bank is in a different country than where you work, so we need the SWIFT/BIC code too. You'll find it on your bank statement."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш банк в другой стране, чем та, где вы работаете, поэтому нам нужен ещё и SWIFT/BIC. Он указан в выписке."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša banka je v inej krajine, než v ktorej pracujete, takže potrebujeme aj SWIFT/BIC. Nájdete ho na výpise z účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш банк в іншій країні, ніж та, де ви працюєте, тому нам потрібен ще й SWIFT/BIC. Його вказано у виписці."
+          }
+        }
+      }
+    },
+    "error.validation.registration_number.invalid_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné IČO pro vybranou zemi."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid company registration number for the selected country."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите действительный регистрационный номер компании для выбранной страны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné IČO pre vybranú krajinu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть дійсний реєстраційний номер компанії для обраної країни."
+          }
+        }
+      }
+    },
+    "error.validation.vat_number.invalid_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné DIČ pro vybranou zemi."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid VAT number for the selected country."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите действительный номер НДС для выбранной страны."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné IČ DPH pre vybranú krajinu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть дійсний номер ПДВ для обраної країни."
+          }
+        }
+      }
+    },
+    "error.wire.contract_violation" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server odeslal neúplná data. Zkuste to prosím znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server sent incomplete data. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер прислал неполные данные. Попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server odoslal neúplné údaje. Skúste to prosím znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер надіслав неповні дані. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "live_activity.arrival" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příjezd"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrival"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прибытие"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Príchod"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прибуття"
           }
         }
       }

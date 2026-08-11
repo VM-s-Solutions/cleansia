@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Repeat
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.EntryPointAccessors
@@ -460,6 +462,7 @@ private fun PerkPill(perk: MembershipPerk, accent: androidx.compose.ui.graphics.
                 is MembershipPerk.Discount -> Icons.Outlined.LocalOffer
                 is MembershipPerk.FreeCancellation -> Icons.Outlined.Schedule
                 MembershipPerk.Recurring -> Icons.Outlined.Repeat
+                is MembershipPerk.Express -> Icons.Outlined.Bolt
             },
             contentDescription = null,
             tint = accent,
@@ -474,6 +477,13 @@ private fun PerkPill(perk: MembershipPerk, accent: androidx.compose.ui.graphics.
                     stringResource(R.string.membership_perk_pill_cancellation, perk.hours)
                 MembershipPerk.Recurring ->
                     stringResource(R.string.membership_perk_pill_recurring)
+                is MembershipPerk.Express -> when (perk.waiver.status) {
+                    ExpressWaiverStatus.Available ->
+                        stringResource(R.string.membership_perk_pill_express, perk.waiver.remaining)
+                    ExpressWaiverStatus.Trial ->
+                        stringResource(R.string.membership_perk_pill_express_trial)
+                    else -> stringResource(R.string.membership_perk_pill_express_used)
+                }
             },
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,

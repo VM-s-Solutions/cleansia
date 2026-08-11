@@ -70,7 +70,8 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             assert: (CleansiaDbContext _, BusinessResult result) =>
             {
                 Assert.False(result.IsSuccess);
-                Assert.Equal(BusinessErrorMessage.GdprDeletionAlreadyPending, result.Error!.Code);
+                Assert.Equal(BusinessErrorMessage.GdprDeletionAlreadyPending, result.Error!.Message);
+                Assert.Equal("userId", result.Error.Code);
                 return Task.CompletedTask;
             });
     }
@@ -95,7 +96,8 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             assert: (CleansiaDbContext _, BusinessResult result) =>
             {
                 Assert.False(result.IsSuccess);
-                Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, result.Error!.Code);
+                Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, result.Error!.Message);
+                Assert.Equal("userId", result.Error.Code);
                 return Task.CompletedTask;
             });
     }

@@ -61,27 +61,40 @@ When both query parameters are present, the lookup is triggered automatically on
 
 ## Order Status Display
 
-Each order displays a status timeline using PrimeNG's `Timeline` component. Status values use the `OrderStatus` enum:
+Each order displays a status timeline using PrimeNG's `Timeline` component. Status values use the
+`OrderStatus` enum, mapped by the shared `OrderStatusIconPipe` / `OrderStatusSeverityPipe`
+(`libs/shared/pipes/src/lib/order-status/`) — one source of truth across customer, partner and admin:
 
-| Status | Icon | Severity |
-|---|---|---|
-| `Pending` | `pi pi-clock` | `warn` |
-| `Confirmed` | `pi pi-check` | `info` |
-| `InProgress` | `pi pi-spin pi-spinner` | `info` |
-| `Completed` | `pi pi-check-circle` | `success` |
-| `Cancelled` | `pi pi-times-circle` | `danger` |
+| Status | Value | Icon | Severity |
+|---|---|---|---|
+| `New` | `0` | `pi pi-circle` (default arm) | `info` (default arm) |
+| `Pending` | `1` | `pi pi-clock` | `warn` |
+| `Confirmed` | `2` | `pi pi-check` | `info` |
+| `OnTheWay` | `3` | `pi pi-send` | `info` |
+| `InProgress` | `4` | `pi pi-spin pi-spinner` | `info` |
+| `Completed` | `5` | `pi pi-check-circle` | `success` |
+| `Cancelled` | `6` | `pi pi-times-circle` | `danger` |
+
+::: warning `New` is the status a freshly booked order actually has
+Both pipes handle `New` only through their `default` arm, and nothing in production ever writes
+`Pending` (ADR-0037 D5) — so the `pi pi-clock` / `warn` row is effectively dead while the state a
+customer sees right after booking falls through to the generic icon.
+:::
 
 ## Payment Status
 
-Payment status is shown alongside order status:
+Payment status is shown alongside order status. **This is the axis that carries "card payment
+initiated, waiting for the webhook"** — a card order sits at `OrderStatus.New` with
+`PaymentStatus.Pending` until Stripe confirms.
 
-| Payment Status | Severity |
-|---|---|
-| `Pending` | `warn` |
-| `Paid` | `success` |
-| `Failed` | `danger` |
-| `Refunded` | `info` |
-| `Disputed` | `danger` |
+| Payment Status | Value | Severity |
+|---|---|---|
+| `Pending` | `1` | `warn` |
+| `Paid` | `2` | `success` |
+| `Failed` | `3` | `danger` |
+| `Refunded` | `4` | `info` |
+| `Disputed` | `5` | `danger` |
+| `PartiallyRefunded` | `6` | — |
 
 ## Data Displayed
 

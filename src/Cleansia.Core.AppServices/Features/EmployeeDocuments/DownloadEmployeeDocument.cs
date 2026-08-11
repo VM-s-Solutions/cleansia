@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -57,7 +58,9 @@ public class DownloadEmployeeDocument
             return BusinessResult.Success(new Response(
                 FileBytes: fileBytes,
                 FileName: document.FileName,
-                ContentType: document.ContentType
+                // The recorded type is what the uploader claimed on every row written before the intake
+                // started sniffing, and it lands verbatim on this response's Content-Type header.
+                ContentType: SniffedContentType.ForDownload(fileBytes, UploadIntake.EmployeeDocument)
             ));
         }
     }

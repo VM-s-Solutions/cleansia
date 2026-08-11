@@ -63,6 +63,20 @@ object NotificationDeepLink {
         "order.on_the_way",
         "dispute.reply",
         "order.assignment_cancelled",
+        "order.assigned",
+        // Still the order detail even though the cleaner is off the job: the copy says the job
+        // moved, and the detail is where they can read which day just came off their schedule.
+        "order.assignment_revoked",
+        // The targeted offer stays on the DETAIL rather than moving to the pending-offers surface.
+        // The push announces on a recipient; the offers list is `hold > now`, so the two do not
+        // coincide. PreferredCleanerHoldResolver builds its recipient BEFORE the lead-time gate and
+        // then answers NotifyOnly(ShortLeadTime) below an eight-hour lead — a named cleaner with no
+        // hold at all — and PreferredOfferNotifier pushes on that recipient. Separately, the
+        // announcement a card order gets when its payment lands re-derives the recipient but never
+        // re-grants the hold, so a webhook arriving late announces a reservation that has already
+        // expired. Either way a link to the list would land on an empty screen, so the detail
+        // carries the disclosure and the decline and degrades to an ordinary job.
+        "order.preferred_offer",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Payroll payout — open the paid invoice; fall back to the Earnings
         // summary when the payload carries no invoiceId. Both are root

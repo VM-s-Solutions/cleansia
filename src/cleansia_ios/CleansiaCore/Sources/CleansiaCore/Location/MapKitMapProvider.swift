@@ -12,7 +12,7 @@ public struct MapKitMapProvider: MapProvider {
                 showsUserLocation: showsUserLocation,
                 annotationItems: [PickerAnnotation]()
             ) { annotation in
-                MapMarker(coordinate: annotation.coordinate)
+                MapMarker(coordinate: annotation.coordinate, tint: CleansiaMapMarker.tintColor)
             }
         )
     }
@@ -63,6 +63,7 @@ struct FullBleedOrderMap: UIViewRepresentable {
     }
 
     func apply(to mapView: MKMapView) {
+        mapView.delegate = CleansiaMapMarker.delegate
         mapView.setRegion(FullBleedMapGeometry.region(for: coordinate), animated: false)
 
         let pin = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)

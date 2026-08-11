@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SendSitewidePromoCommand } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
@@ -12,6 +11,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SitewidePushFormFacade } from './sitewide-push-form.facade';
+import { buildSendSitewidePromoCommand } from './sitewide-push-form.models';
 
 @Component({
   selector: 'cleansia-admin-sitewide-push-form',
@@ -92,7 +92,7 @@ export class SitewidePushFormComponent {
       return;
     }
 
-    const command = new SendSitewidePromoCommand(this.form.getRawValue());
+    const command = buildSendSitewidePromoCommand(this.form.getRawValue());
     this.facade.submit(command, () => this.form.reset());
   }
 }

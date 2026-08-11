@@ -75,7 +75,8 @@ public class CreateMembershipPlanHandlerTests
         var result = await CreateHandler().Handle(ValidCommand("plus_monthly"), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.MembershipPlanCodeAlreadyExists, result.Error!.Code);
+        Assert.Equal(BusinessErrorMessage.MembershipPlanCodeAlreadyExists, result.Error!.Message);
+        Assert.Equal(nameof(CreateMembershipPlan.Command.Code), result.Error.Code);
         _planRepository.Verify(r => r.Add(It.IsAny<MembershipPlan>()), Times.Never);
     }
 

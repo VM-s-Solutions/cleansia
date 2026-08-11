@@ -209,6 +209,31 @@ class RecurringBookingRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /**
+     * A 2xx that [RecurringBookingApi] emptied out (a required field arrived
+     * null) must not land on the SILENT Network channel - nothing toasted it,
+     * so the consuming ViewModel would render a failed write as a no-op.
+     */
+    @Test
+    fun update_given2xxWithEmptyBody_doesNotUseTheSilentNetworkChannel() = runTest {
+        coEvery { api.update(any()) } returns Response.success(null)
+
+        val result = newRepo().update(updateRequest())
+
+        val error = (result as ApiResult.Error).error
+        assertTrue("empty body must be surfaceable, was: $error", error !is ApiError.Network)
+    }
+
+    @Test
+    fun create_given2xxWithEmptyBody_doesNotUseTheSilentNetworkChannel() = runTest {
+        coEvery { api.create(any()) } returns Response.success(null)
+
+        val result = newRepo().create(createRequest())
+
+        val error = (result as ApiResult.Error).error
+        assertTrue("empty body must be surfaceable, was: $error", error !is ApiError.Network)
+    }
+
     // -- setActive() --
 
     @Test

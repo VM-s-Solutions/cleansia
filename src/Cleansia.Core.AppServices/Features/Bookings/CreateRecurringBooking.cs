@@ -22,12 +22,19 @@ public class CreateRecurringBooking
         IReadOnlyList<string> SelectedPackageIds,
         int PaymentType,
         DateTime StartsOn,
-        DateTime? EndsOn = null) : ICommand<RecurringBookingTemplateDto>;
+        DateTime? EndsOn = null,
+        string? PreferredEmployeeId = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        private readonly IOrderRepository _orderRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
+        public Validator(IOrderRepository orderRepository, IUserSessionProvider userSessionProvider)
         {
+            _orderRepository = orderRepository;
+            _userSessionProvider = userSessionProvider;
+
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
@@ -65,6 +72,33 @@ public class CreateRecurringBooking
                     .Must(c => c.EndsOn!.Value > c.StartsOn)
                     .WithMessage(BusinessErrorMessage.RecurringTemplateEndsOnBeforeStart);
             });
+
+            When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId), () =>
+            {
+                RuleFor(x => x)
+                    .MustAsync(PreferredEmployeeIsEligibleAsync)
+                    .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
+                    .WithName(nameof(Command.PreferredEmployeeId));
+            });
+        }
+
+        /// <summary>
+        /// The same gate the one-off path applies (<c>CreateOrder</c>, ADR-0036 D9): without it
+        /// <c>PreferredEmployeeId</c> is any employee id a client sends, and the hold would let a
+        /// customer withhold every occurrence from the board and hand it to a cleaner they name. It runs
+        /// ONCE, here — the relationship is monotone and this is the only gate needing the caller's
+        /// identity, while everything that can lapse is re-run per occurrence by the hold resolver, where
+        /// a "no" costs the perk and never the cleaning.
+        /// </summary>
+        private async Task<bool> PreferredEmployeeIsEligibleAsync(
+            Command command,
+            CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+
+            return !string.IsNullOrEmpty(userId)
+                && await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
+                    userId, command.PreferredEmployeeId!, cancellationToken);
         }
     }
 
@@ -111,7 +145,8 @@ public class CreateRecurringBooking
                 selectedPackageIds: command.SelectedPackageIds,
                 paymentType: (PaymentType)command.PaymentType,
                 startsOn: command.StartsOn,
-                endsOn: command.EndsOn);
+                endsOn: command.EndsOn,
+                preferredEmployeeId: command.PreferredEmployeeId);
 
             templateRepository.Add(template);
 
@@ -132,7 +167,8 @@ public class CreateRecurringBooking
                 StartsOn: template.StartsOn,
                 EndsOn: template.EndsOn,
                 LastMaterializedFor: template.LastMaterializedFor,
-                IsActive: template.IsActive));
+                IsActive: template.IsActive,
+                PreferredEmployeeId: template.PreferredEmployeeId));
         }
     }
 }

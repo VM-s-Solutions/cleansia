@@ -1,0 +1,1470 @@
+# ADR-0042 — The **C# enum declaration is the wire-enum authority**: the shared web declaration is machine-written from the generated clients **only when C# confirms them**, and the gate is a repo-root CI checker that fires on the **backend** commit — not inside the owner's regen
+
+> **Round 2 — the rebuild (2026-08-06).** Round 1 was **returned to its author** by the 2026-08-05 panel:
+> the diagnosis and the shape survived; both mechanism clauses of the old title were ruled *inverted, not
+> amendable* (`## Verdict — round 1` §V.1). This draft is that rebuild, written by a fourth instance who
+> neither authored, challenged nor ruled on round 1. **Everything above `## Round 1 — deliberation trail`
+> is new or re-verified against the working tree on 2026-08-06; the round-1 `## Challenge`, `## Defense`
+> and `## Verdict` are preserved below byte-for-byte** and are the record of how this draft got its
+> constraints.
+>
+> **The filename is round 1's slug and is deliberately NOT renamed here.** Three committed artifacts point
+> at it — `agents/architecture/decisions/generated-client-contract.md:6`,
+> `agents/backlog/questions/open.md:1250`, `agents/backlog/tickets/T-0557-…:54` — and creating a dangling
+> pointer is the exact defect §V.11 flagged in someone else's file. The rename is routed to the PM, to
+> happen in the **same commit** as acceptance (§9).
+
+- **Status:** `proposed` — **round 2, awaiting a fresh challenger and lead.** Never `accepted`. Nothing
+  may be built against it, no ticket may be opened or closed against it, and the §7 catalog edit does not
+  land, until a panel accepts it.
+- **Panel:** author r1 (2026-08-04) · challenger `challenges/0042-generation.md` (`4dea53ef`, 2026-08-05) ·
+  lead r1 (2026-08-05, a third instance) · **author r2 (2026-08-06, this draft, a fourth instance)**.
+- **Date:** 2026-08-04 (round 1) · **2026-08-06 (round 2 rebuild)**
+- **Answers:** **`Q-ENUM-01`** (`agents/backlog/questions/open.md:1225`) — *"Three generated clients each
+  emit their own `OrderStatus`/`PaymentStatus`. Which declaration is canonical, and should the per-app
+  copies stop being emitted?"*
+- **Supersedes:** — . **Extends ADR-0037 D7's cross-stack-parity shape** (a dependency-free Node checker
+  outside the Nx workspace, its own repo-root workflow, its self-test first) from one enum's *semantics*
+  to twelve enums' *declarations*. **Does not extend ADR-0031 D1** — round 1 did, and §V.1(b) showed the
+  analogy runs backwards on this defect class. ADR-0031 and ADR-0037 are untouched and stay `accepted`.
+- **Consumes:** ADR-0031 M1 (no regen entry point without the typecheck) and M2 (discovery derived from
+  the real config, never a glob or a list); ADR-0032 D2/D3 (a constraining catalog entry names an enforcer
+  and a tier; anti-vacuity); ADR-0037 D7 (the checker/workflow/self-test shape).
+- **Applies to:** a new `agents/tools/check-wire-enum-parity.mjs` + its self-test + an extracted
+  `agents/tools/lib/cs-enum.mjs` · a new `.github/workflows/wire-enum-parity.yml` ·
+  `src/Cleansia.App/package.json` regen scripts · `libs/shared/models` · `libs/shared/pipes` and the two
+  customer feature libs of §D6 (**read-only** — they gain coverage, not edits; §2). **No backend change,
+  no DTO change, no migration. The three generated clients are not edited and no `nswag-*.json` is
+  changed** (§D3). Android/iOS **generated** clients are structurally out of scope (§4 residue 2).
+- **Catalog edits bound to acceptance:** `agents/knowledge/patterns-frontend.md:783-859` (three surgical
+  changes to the paragraph beginning *"The fix, and the general rule: a wire enum a shared lib needs is
+  declared in `@cleansia/models`…"*), a `consistency.md` deviation entry, and one named Gate-4 item in
+  `quality-gates.md`. Literal text in §7; all three land with the implementing ticket, not before. **The routing test that sends this edit to an Architect + ADR is
+  `conventions.md:143-146` test 1 (it puts **five** shipped `export enum` declarations in violation) and
+  `:147-159` test 2 (it replaces a governing sentence).** The sweep test 1 demands is §2.
+
+> **One decision:** *what a wire-enum integer table in this repository is checked against.* It is checked
+> against the **C# declaration** — `Cleansia.Core.Domain` / `Cleansia.Core.AppServices`, the one place
+> each of these integers is written down once. Every other placement in this ADR follows from that single
+> choice: because the authority is a `.cs` file, the gate can fire on the commit that changes it, which is
+> a **backend** commit; because a `.cs` file lives above the Nx workspace root, the gate cannot be an Nx
+> task; and because the check no longer needs a running host, it stops being something only the owner can
+> run. The shared declaration's **bytes** still come out of the NSwag pipeline (the owner's first
+> sentence); C# is what may **falsify** them (the owner's second).
+
+---
+
+## 0 — The owner's ruling, quoted, and exactly what it settles
+
+> *"I think that there is a need to refactor and better to use the one that is generated from nswag.
+> Also consider using backend enums on frontend instead of generating your own"*
+
+**Settled, not re-litigable:**
+
+1. **The hand-written mirror goes.** `libs/shared/models/src/lib/models/order-status.models.ts` — the
+   file a previous agent typed by hand — is deleted. No successor is hand-typed.
+2. **The declaration a shared lib reads must come out of the NSwag pipeline**, and must be traceable to
+   `Cleansia.Core.Domain.Enums` without a human retyping it.
+
+**Not settled by the ruling, and therefore this ADR's actual work:** *how*, given that a `scope:shared`
+lib may not import any `scope:<app>` client (`patterns-frontend.md` §"Module boundaries"), and the fix
+that established that boundary retired 13 circular dependencies. "Just import the generated one" is the
+obvious version and it is the thing that cannot be done. §D1–§D6 are that answer.
+
+*(One thing the ruling's first sentence does **not** settle, and round 2 turns on it: "use the one
+generated from nswag" fixes where the shared declaration's **bytes** come from. It says nothing about what
+may **falsify** them, and the second sentence — "consider using backend enums on frontend" — is precisely
+about that. This draft reads the two as answering different questions rather than competing.)*
+
+---
+
+## 1 — Context, re-established against the tree on 2026-08-06 (round 1 had three false citations; every claim below was re-opened)
+
+### 1.1 — The incident, in the past tense — and what actually found it
+
+There **were** five declarations of `OrderStatus`/`PaymentStatus`. The fifth,
+`libs/core/services/src/lib/client/admin-client.ts`, was written by no `nswag-*.json`, exported by no
+barrel, imported by nothing, and compiled by no app build. ADR-0031 filed it as dead code. It was worse
+than that: it read `Pending=1 Confirmed=2 InProgress=3 Completed=4 Cancelled=5` against a live contract of
+`New=0 Pending=1 Confirmed=2 OnTheWay=3 InProgress=4 Completed=5 Cancelled=6`, so **every integer from 3
+up meant something else** — `3` renders *"In progress"* for a cleaner merely **on the way**, `4` renders
+*"Completed"* for a job **in progress** — and its `PaymentStatus` had no `PartiallyRefunded=6`. It was a
+fossil of a real renumbering: `New = 0` and `OnTheWay = 3` were inserted into
+`Cleansia.Core.Domain.Enums.OrderStatus` at some point in this repository's history.
+
+**It was deleted in `2d913b8b`** (re-verified 2026-08-06: `libs/core/services/**/client/**` matches
+nothing). Two things about *how* it was found are load-bearing for this ADR and were not in round 1:
+
+1. **A human found it by measuring five declarations against the C# source, and closed it with a `git
+   rm`.** No client-to-client comparison could have found it — by the only sound definition of "generated
+   client" (§D1.1, *"named by some `nswag-*.json` `output` key"*) that file was never a client. The one
+   incident this decision leans on is evidence for **C# as the authority**, not for comparing renderings
+   to each other.
+2. **`CLAUDE.md` never said what round 1 quoted.** `CLAUDE.md:34-35` applies *"NSwag-generated API
+   clients"* to `core/{partner,admin,customer}-services/` and labels `core/services/` **"(hand-written)"**.
+   Round 1 inherited the opposite claim verbatim from ADR-0031 residue #5(a) and re-asserted it under a
+   *"verified at HEAD"* header. **No owner step is owed.** The transferable lesson — *an inherited
+   citation is not a verified one* — is why every citation in this draft was re-opened rather than carried.
+
+### 1.1b — The class is bigger than round 1 measured, and two of its members are unreachable by any client-derived rule
+
+Round 1 counted the shared lib's mirrors. Sweeping every hand-written `export enum` in
+`src/Cleansia.App/libs` (excluding the three generated clients) against `src/**/*.cs` at HEAD finds
+**five** hand-typed wire-enum mirrors in three shapes:
+
+| # | Hand-written mirror | C# source | Rendered by a web client? | Reachable by a client-intersection rule? |
+|---|---|---|---|---|
+| 1 | `libs/shared/models/.../order-status.models.ts:19` `OrderStatus` | `Enums/OrderStatus.cs:6-28` | yes, all three | **yes** |
+| 2 | `libs/shared/models/.../order-status.models.ts:29` `PaymentStatus` | `Enums/PaymentStatus.cs:6-13` | yes, all three | **yes** |
+| 3 | `libs/shared/models/.../sort-types.models.ts:16` `SortDirection` | `Sorting/Common/SortDirection.cs:6-9` | yes, all three | **yes** — and it has **no parity spec of any kind**, and it is *older* than the guarded pair |
+| 4 | `libs/cleansia-customer-features/disputes/.../disputes.models.ts:12` `CustomerDisputeStatus` | `Enums/DisputeStatus.cs:6-13` | **admin only** — the customer client does not declare it | **no** — renamed, and outside the intersection |
+| 5 | `libs/cleansia-customer-features/recurring-bookings/.../recurring-bookings.models.ts:6` `RecurrenceFrequency` | `Bookings/RecurrenceFrequency.cs:7-12` | **no client emits it** — the C# enum carries no `[SwaggerEnumAsInt]` | **no** — there is nothing to derive from |
+
+All five agree with their C# source today (member-by-member, verified). Two facts change the shape of the
+decision:
+
+- **#4 carries its own confession** — *"Mirrors the backend DisputeStatus enum — the generated customer
+  client does not expose it"* (`disputes.models.ts:10-11`). A rule that matches on *name* cannot see it.
+- **#5 is a four-stack hand-mirror.** The same table is typed by hand in C#
+  (`Bookings/RecurrenceFrequency.cs:9-11`), TypeScript (`recurring-bookings.models.ts:7-9`), Swift
+  (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Recurring/Data/RecurringModels.swift:3-7`) and
+  Kotlin (`cz.cleansia.customer.core.recurring.RecurrenceFrequency`, used at
+  `customer-app/.../RecurringBookingsScreen.kt:221-226`). Its TS declaration says so in its own docstring:
+  *"Names + values must match the Kotlin enum on mobile and the C# enum on the backend."* **Nothing checks
+  that sentence.**
+
+**This is the sharpest argument for the authority chosen in §D1.** A client-derived rule closes rows 1–3
+and is *structurally incapable* of reaching rows 4–5, because neither has a client rendering to derive
+from. A C#-derived rule reaches all five with one mechanism.
+
+### 1.2 — It is a class of problem, not two enums
+
+Enum counts per client: partner **15**, customer **19**, admin **27**. Declared by **all three**:
+
+`AppliedDiscountSource` · `ConsentType` · `ContractStatus` · `EmployeeEntityType` ·
+`EmployeeInvoiceStatus` · **`OrderStatus`** · **`PaymentStatus`** · `PaymentType` ·
+`PayoutDetailsStatus` · `PayoutScheme` · `PhotoType` · `SortDirection`
+
+**12 backend enums × 3 clients = 36 generated declarations.** All 36 agree with each other **and with
+their C# source** today. Every one of them is a candidate for the next shared pipe, shared table-definition
+or shared status chip — `PhotoType`, `PaymentType` and `PayoutScheme` especially. Answering `Q-ENUM-01` for
+two enums and leaving the other ten would guarantee this question is asked again.
+
+**The property that makes a C#-derived rule mechanical, and it was checked rather than assumed
+(2026-08-06):** each of the twelve names resolves to **exactly one** `public enum` declaration across
+`src/**/*.cs`, and **every one of the twelve carries `[SwaggerEnumAsInt]`**. Two of them do **not** live
+under `Cleansia.Core.Domain/Enums/` — `SortDirection` is at `Core.Domain/Sorting/Common/SortDirection.cs:6`
+and `AppliedDiscountSource` at `Core.AppServices/Shared/DTOs/Enums/AppliedDiscountSource.cs:30` — which is
+why §D4's search space and CI trigger are *"every `.cs` under `src/`, minus the frontend tree"* rather than
+one folder. A hardcoded folder list would have missed two of twelve on day one.
+
+Enums declared by **some but not all** hosts (`DocumentStatus`/`DocumentType`/`PayPeriodStatus` on
+partner+admin; `LoyaltyTier`/`LoyaltyEarnSource`/`LoyaltyTransactionType`/`ReferralStatus` on
+customer+admin; `RefundReason`/`FiscalErrorKind`/`GdprRequestStatus`/`BillingInterval`/`EmailType`/
+`DisputeStatus`/`PromoCodeType`/`UserProfile` admin-only; `CancellationFeeTier`/`DisputeReason`/
+`MembershipStatus` customer-only) are **not** shared surface and §D2 deliberately does not emit them.
+
+### 1.3 — The four copies coexist only because of a TypeScript accident, and that accident is what hides drift
+
+TypeScript numeric enums are **nominal**. `OrderStatus` from `@cleansia/models` is *not* assignable to
+`OrderStatus` from `@cleansia/customer-services`, even member-for-member identical. The three shared
+pipes compile only because their parameter admits `number`:
+
+```ts
+// libs/shared/pipes/src/lib/order-status/order-status-icon.pipe.ts:13
+transform(status: OrderStatus | { value?: number } | number | null | undefined): string
+```
+
+and the call sites feed them a *client* enum through that arm —
+`order-detail.component.html:85` `[severity]="order()!.orderStatus | orderStatusSeverity"`, and 13 more
+across customer orders / track-order / order-lookup. `strictTemplates` is on, so these bindings **are**
+type-checked; they pass because `customer-client`'s `OrderStatus` is assignable to `number`.
+
+**Consequence, and it is the load-bearing one:** the shared enum is used as a **constant table**, never
+as a type. `case OrderStatus.Completed:` inside the pipe compares against the *integer* `5`. If that
+integer is ever wrong, **no compiler anywhere will say so** — the widening to `number` is precisely what
+makes the mismatch invisible. This is why *"declare it once by hand and add a parity spec"* is a detector
+and not a fix. *(Round 1 closed this sentence with "…and it is why the check has to be generation, not
+comparison." That inference does not follow and the living doc already struck it: generating the file from
+artifacts that are all renderings of one declaration leaves the integers just as unchecked. The premise is
+the valuable part; it argues for an **authority that can be wrong**, which is §D1.)*
+
+### 1.4 — The shipped detector: its two Nx holes are **CLOSED at HEAD** — and the two defects that remain are the ones this ADR is about
+
+**A correction to round 1 and to the round-1 verdict, carried because it changed under both of them.**
+Round 1 §1.4 argued the parity spec could not run on a regen commit, and Verdict §V.4 sharpened that with
+cache replay and then closed the recorded escape hatch by ruling `implicitDependencies` a project-graph
+cycle — concluding *"no Nx-hosted variant of this check works"* (RB-4). **The conclusion was reached
+against the wrong mechanism.** An Nx **`inputs`** declaration is a *hashing* statement, not a graph edge:
+the project graph is unchanged and no cycle forms. That was measured by another lane and the result is at
+HEAD:
+
+- `libs/shared/models/project.json:14-19` now declares
+  `"{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"` as an input of the `test` target.
+- The measurement is recorded at `patterns-frontend.md:801-805`: with the clients **undeclared**, a warm
+  `nx test models` **replayed a green over renumbered bytes** (`OnTheWay = 3` → `33` in
+  `partner-client.ts`); **declared**, the hash moves and the run is red, and `nx affected` for a
+  client-only diff selects `models` (12 projects → 63).
+- `patterns-frontend.md:818-822` states the distinction: *"An input is a hashing declaration, not a
+  dependency… `nx graph` still reports `models → types` and nothing else."*
+
+So **both** of the holes §1.4/§V.4 named — affected-selection and cache-replay — are closed, by one line,
+without a graph edge. **RB-4 must therefore be restated, and §8 restates it:** the ban on an Nx host is not
+general; it holds **only** for files an Nx input cannot name, i.e. files above the workspace root
+(`src/Cleansia.App`). That limb is untouched and is decisive here, because this ADR's authority is a `.cs`
+file. `offerability-parity.yml:8-14` states exactly that limb and states it first.
+
+*(Two further corrections, so nobody re-derives them: the cycle §V.4 cites —
+`models → partner-services → partner-stores → models` — no longer exists either. T-0455 removed the middle
+arrow; `libs/core/partner-services` imports **zero** `@cleansia/partner-stores` symbols at HEAD, verified
+2026-08-06, and T-0455's own §"Out-of-scope findings" records it. `patterns-frontend.md:820-822` still
+asserts that chain and is stale on it — routed in §9. The `implicitDependencies` rejection survives on the
+simpler ground that it is a graph edge and `inputs` is not, so it is the wrong instrument regardless.)*
+
+**What the shipped detector still cannot do — and these two are the whole remaining problem:**
+
+1. **It never reads the authority.** The catalog says so in its own words at
+   `patterns-frontend.md:852-856`: *"It detects exactly one thing: a generated client that disagrees with
+   the shared table. Four artifacts agreeing with each other says nothing about whether any of them matches
+   `Cleansia.Core.Domain.Enums` — a backend renumbering that has not been regenerated yet leaves all four
+   in perfect agreement and all four wrong."* That is RB-1 verbatim, written into the catalog by a lane
+   that had no stake in this ADR.
+2. **Its assertion is unsatisfiable the moment the three clients differ — a defect nobody has recorded.**
+   `order-status-enum-parity.spec.ts:62-72` asserts `parseGeneratedEnum(client, E)` **`toEqual`** the shared
+   table, **for each client independently**. After a *single-host* regen that picks up an appended member,
+   partner has 8 members and admin/customer have 7; no value of the shared table satisfies all three
+   assertions. Adding the member reddens admin+customer; omitting it reddens partner. The spec therefore
+   assumes the three clients move in lockstep — the assumption §V.2 demolished one level up — and it is red
+   either way on exactly the commit the owner would be making. It also covers **2** of the 12 enums, and
+   `SortDirection` (§1.1b row 3) has no spec at all.
+
+The three unconditional production builds are green through all of it, because a wrong **integer** is not
+a type error (§1.3).
+
+### 1.5 — How generation actually works here (the constraint the design must fit)
+
+```
+owner runs:  npm run generate-partner-client
+                └─ _nswag:partner  =  npx nswag run nswag-partner.json  &&  bash partner-client-formatter.sh
+                └─ npm run typecheck   (ADR-0031 D1 — ngc --noEmit over every app compilation unit)
+
+             npm run generate-clients  =  all three _nswag steps, then ONE typecheck
+```
+
+- **The owner runs generation. No agent does** (`CLAUDE.md` §"Manual Steps", `package.json:20-27`). Any
+  design must be something the owner can run **with the commands they already run** — and, more
+  importantly, **must not require running them.**
+- The three `nswag-*.json` files each name their single output at `"output"`
+  (`nswag-partner.json:39`, `nswag-admin.json:39`, `nswag-customer.json:39`). **That key is the only
+  authoritative statement of what a generated client is** — and it is what proved the fossil was not one.
+- **A post-generation step already exists and already rewrites the file**: the three
+  `*-client-formatter.sh` scripts `sed` the output (`PagedData_1OfOf…` renames, snake→camel). So adding
+  a derived artifact to this pipeline is an established shape, not a new one.
+- **The constraint round 1 accepted and this draft does not.** Round 1 read *"regen is owner-only"* as
+  *"therefore the check belongs inside the regen"*. The inputs a wire-enum check needs — the `.cs`
+  declarations and the committed `*-client.ts` files — are **both on disk at every commit**. No host runs,
+  no `dotnet`, no `nswag`, no owner. So the check, and the write, are things **any agent, any developer and
+  any CI job can perform at any time**, and the owner-only property attaches to *regenerating a client*,
+  not to *checking or deriving from one*. Everything expensive about round 1's placement followed from
+  conflating those two.
+
+---
+
+## Decision
+
+### D1 — The **C# enum declaration is the authority**; the clients are an independently-derived witness; a divergence is graded by **who can repair it**
+
+One tool, `agents/tools/check-wire-enum-parity.mjs`, owns both the check and the write. It answers one
+question — *do the C# declaration, the three generated clients and the shared table state the same
+name→integer bindings?* — and it grades what it finds.
+
+**D1.1 — Membership: which enums are on the shared surface.** Discovered from the `nswag-*.json` `output`
+keys, never from a filesystem glob or a hardcoded list (ADR-0031 M2). It reads every `nswag-*.json` under
+`src/Cleansia.App/`, takes `codeGenerators.openApiToTypeScriptClient.output`, treats **that set** as "the
+generated clients", parses each one's `export enum` blocks, and keeps the enums **all** of them declare.
+A config whose `output` file is absent is a hard `exit 1`, never a silent skip. *This is round 1's D1.1
+**unchanged** — the panel attacked it from both sides and it held (§V.8). It decides membership; only the
+value authority moved. It is also what makes "is this file a generated client?" mechanically decidable
+instead of a matter of opinion, which is the durable lesson of §1.1.*
+
+**D1.2 — Authority: where each member's integer is written down once.** For each enum in that set, the
+tool locates its `public enum <Name>` declaration across `src/**/*.cs` (excluding `src/Cleansia.App/**`).
+**Exactly one** declaration must be found, and it must carry **`[SwaggerEnumAsInt]`**. Zero, two, or a
+missing attribute is `exit 1` — never a fallback to the clients. The attribute check is a **tripwire, not
+a claim about NSwag's internals**: `[SwaggerEnumAsInt]` is what makes the wire rendering an integer
+rendering, so an intersecting enum that stops carrying it means the premise behind reading C# integers has
+broken, and the tool must stop rather than guess. *(This is the direct answer to round 1's own reason for
+rejecting Alternative C — "the wire rendering is a decision separable from the C# declaration". True; so
+the tool asserts the decision is still the one it assumes.)*
+
+**D1.3 — The grading, and why it is graded rather than binary.** RB-2 is right that the shared table must
+match what the **deployed** API emits, and that C# HEAD is not that. Neither are the clients — but the
+clients are strictly closer: they were generated *from a running host*, and their vintage is ≤ HEAD. So the
+grading follows **remediability**: hard-fail exactly the class whose repair needs nobody but the committer;
+ratchet exactly the class whose repair needs the owner.
+
+| Observation | Class | Verdict | Who repairs it |
+|---|---|---|---|
+| a name bound to **different integers** between C# and any client, or between two clients | `CONFLICT` | **P0 — exit 1, refuse to write** | whoever renumbered. A renumber is a wire break for already-installed mobile apps; there is no benign reading |
+| an **integer bound to different names** across those artifacts | `CONFLICT` | **P0** | same |
+| a name a client declares that **C# does not** | `ORPHAN` | **P0** | a removal/rename of a live wire value, or a client so old the name is gone |
+| an intersecting enum with 0 or ≥2 C# declarations, or without `[SwaggerEnumAsInt]` | `AUTHORITY` | **P0** | the backend commit that moved it |
+| a name **C# declares that some client lacks** | `PENDING-REGEN` | **P2 — ratcheted, not fatal** | **only the owner**, via `nswag-regen` |
+| a file **outside `libs/shared/`** importing an emitted wire enum from `@cleansia/models` | `SCOPE` | **P0** | the feature author — the fix is a one-line import change to that app's own client (§D2) |
+| zero configs / zero clients / zero enums / empty intersection / authority unread | `VACUOUS` | **P0** | whoever moved the tree out from under the tool |
+
+**`PENDING-REGEN` is the whole of RB-2, and it is the only class a hard failure would have converted into
+a merge blocker.** It is exactly what a pending owner-only regen looks like, and `quality-gates.md`
+§"After an NSwag regen, build **all three** apps before pushing" already binds a DTO change to one. It is carried by a **`--baseline` ratchet in the shipped house
+semantics** (`check-available-status-parity.mjs:58-72`): the recorded entry pins the *exact* divergent set,
+so it goes red if the gap grows **and** red if the gap is closed without deleting the entry. A backend
+developer who appends an enum member pastes one line the tool prints for them; the owner deletes it in the
+regen commit. **The ratchet is adopted, on the record, and it is the reason "the clients disagree with C#
+HEAD" is not a blanket failure.**
+
+**Why `PENDING-REGEN` never blocks the write, either.** The emitted table is the **member-wise
+intersection of the three clients** (§D2), so a member C# has and the clients do not is simply not in it.
+The committed shared file stays valid and re-derivable throughout the pending window. This is also what
+makes a **single-host regen a non-event** rather than round 1's outage (§V.2's second row): partner runs
+ahead, the intersection is unchanged, the file is unchanged, nothing exits 1, and the tool *names* admin
+and customer as behind. That is §V.5's reconciliation reached without collapsing anything: a
+client-to-client divergence is **evidence, reported as staleness** — never an error the owner's command
+halts on.
+
+**What this does NOT claim.** It does not claim a shared table can never disagree with the *deployed* API:
+if production runs a commit older than the clients, no artifact in this repository can see it. It claims
+the strictly weaker and checkable thing — **no two of {C#, the three clients, the shared table} may bind
+one name to two integers, on any commit** — and §4 says so in those words rather than in round 1's
+*"impossible to ship"*.
+
+### D2 — What the generated file contains, and what it replaces
+
+- **Location:** `libs/shared/models/src/lib/models/wire-enums.generated.ts` — inside the existing
+  `scope:shared` / `type:util` lib (`libs/shared/models/project.json`), which already has `test` and
+  `lint` targets. A new lib for one file would be worse.
+- **Content:** the intersection set. Today: `AppliedDiscountSource`, `ConsentType`, `ContractStatus`,
+  `EmployeeEntityType`, `EmployeeInvoiceStatus`, `OrderStatus`, `PaymentStatus`, `PaymentType`,
+  `PayoutDetailsStatus`, `PayoutScheme`, `PhotoType`, `SortDirection`. Not a hand-picked list — whatever
+  the three hosts all expose.
+- **Members: the member-wise intersection of the three clients** — every member all three currently
+  declare, at the integer C# assigns it (D1.3 guarantees those are the same number or the tool refused to
+  write). A member only some clients have is *reported* as `PENDING-REGEN`, never emitted.
+- **Emitted as `export enum`**, matching the clients, so the pipes' `switch` bodies are unchanged.
+- **Committed**, like the clients themselves, with a `DO NOT EDIT` header naming the tool, the three
+  source clients, and each enum's `.cs` authority path.
+- **Deleted by this change:** `order-status.models.ts` (the whole file), the `export enum SortDirection`
+  block in `sort-types.models.ts:16-19`, and `order-status-enum-parity.spec.ts` (§D4).
+- **`sort-types.models.ts` keeps `SortDefinition`/`ISortDefinition`** (hand-written convenience shapes
+  shared code constructs — a **DTO shape, not an integer table**, and therefore not this ADR's subject
+  even though the clients also emit a `SortDefinition`) and **imports** `SortDirection` from the generated
+  file for its `:12` default. It must **not re-export** it — `models/index.ts` exports both files, and a
+  re-export would be a duplicate export.
+- **`models/index.ts:3`** loses `'./order-status.models'` and gains `'./wire-enums.generated'`.
+
+**Why the intersection and not the union:** an enum only one host exposes is that host's contract. A
+shared lib with a claim on it is either not really shared, or the enum should be exposed by the other
+hosts — both are decisions, and neither should be made silently by a tool. If a host stops exposing an
+enum shared code uses, it drops out of the file and the shared consumer **fails to compile the next time
+the tool runs**, by name. That is the correct, loud failure. The tool also *prints* the non-intersecting
+names, so the next person who wants `RefundReason` in a shared lib learns it is admin-only **before**
+hand-typing a mirror.
+
+**One hazard round 1 did not name, and it is created by this decision.** Emitting twelve enums into
+`@cleansia/models` gives app code twelve new imports that compile but say the wrong thing: a customer
+feature reading `PhotoType` from `@cleansia/models` instead of `@cleansia/customer-services` is coding
+against "the intersection" rather than against its own host's contract. The integers are identical, so
+nothing breaks — which is exactly why it would spread. **The rule is: `scope:shared` code reads
+`@cleansia/models`; app code reads its own client.** The baseline is **zero** and was swept
+(2026-08-06): the only importers of a wire enum from `@cleansia/models` are the three shared pipes, and
+feature code already imports these symbols from its own client — e.g. `orders.facade.ts:5-13` takes
+`OrderStatus`, `SortDefinition` and `SortDirection` from `@cleansia/partner-services`. Because the
+baseline is zero and the rule is mechanically expressible, `conventions.md:237-242` makes a real gate
+**obligatory rather than optional**, so it is the `SCOPE` row of D1.3's table — the same tool, one extra
+pass over TypeScript imports of the names it just emitted, **not** a second mechanism and **not** an
+`@nx/enforce-module-boundaries` change (the import is `scope:*→scope:shared`, which is legal and must stay
+legal — `OrderFilter` at `orders.facade.ts:4` is exactly that import, correctly).
+
+### D3 — The three per-host clients **keep emitting their own copies**. NSwag's configuration is not changed. This is the deliberate part
+
+`Q-ENUM-01` asked whether the clients should stop emitting. **No**, on three independent grounds:
+
+1. **The multiplicity is the per-host seam, not the defect.** Five API hosts share Core + Infra + Config
+   but are **deployed and regenerated independently** (Partner :5000, Admin :5001, Customer :5003, plus
+   the two mobile hosts). Three clients from three specs is a *faithful* rendering of three contracts. If
+   all three imported one shared symbol, a client regenerated against a host that is a commit behind
+   would **claim** the current contract, and the divergence would become **structurally unobservable**.
+   Today it is observable — which is the only reason §1.1's fossil is legible at all. **Collapsing to one
+   declaration does not remove the drift; it removes the evidence of it.**
+2. **It is a change to an owner-run command that no agent can test.** `excludedTypeNames` +
+   `extensionCode` import-hoisting is plausible NSwag behaviour and it is **unverified in this repo**, and
+   unverifiable by anyone who is not the owner. Shipping an untested config change into the one command
+   the owner runs, whose failure mode is "your regen is broken and the agent that wrote it cannot
+   reproduce it", is a bad trade for an aesthetic gain.
+3. **It would make the generated client non-self-contained.** `partner-client.ts` would stop compiling
+   without `@cleansia/models`. The `scope:partner → scope:shared` edge is *legal*, but it inverts the
+   pipeline's shape: the derived artifact would become an input to the artifact it is derived from.
+
+**What is conceded, plainly:** this leaves **four** declarations (3 generated per-host + 1 generated
+shared), and the count is not the goal. The goal is that **none of them is typed by a human** and that
+**no two of them, or of them and the C# authority, may bind one name to two integers on any commit**
+(D1.3 for the rule, D4 for the gate). Round 1 wrote *"a disagreement between them is impossible to ship"*;
+that sentence is **struck** and does not appear anywhere in this draft, because a check that cannot fire
+cannot make anything impossible.
+
+**§V.5's tension, resolved rather than inherited.** D3 treats a client-to-client divergence as *evidence
+worth preserving*; round 1's D1 treated the same divergence as an *error worth halting on*. In one
+sentence: **a client-to-client divergence is evidence, and it is reported, never fatal** — it is graded
+`PENDING-REGEN` (D1.3) and its meaning is *"this host has not been regenerated since the backend moved"*,
+which is a true and useful statement about the world. What is fatal is a **conflict with the authority**,
+which is a different observation with a different cause. Round 1 could not draw that line because it had
+no authority to be in conflict with.
+
+**And it stays revisitable.** If a future NSwag upgrade makes `excludedTypeNames` + shared-import
+emission a supported, testable path, and if the per-host observability argument is answered, this is a
+superseding ADR — not a quiet config edit.
+
+### D4 — The gate is the tool itself, in **its own repo-root workflow**, triggered on the C# tree and the web tree; the Nx-hosted spec is **retired, not re-based**
+
+`.github/workflows/wire-enum-parity.yml`, in the shape this sprint standardized twice
+(`offerability-parity.yml`, `nx-project-registration.yml`) and for the reason those two state in their own
+headers:
+
+- **Checkout + `setup-node`, no `npm ci`** — the tool and its self-test are dependency-free `node:`
+  builtins.
+- **The self-test runs FIRST and unconditionally**, so the guard cannot rot into scaffolding: stub the
+  tool to `process.exit(0)` and this step goes red.
+- **Then the gate:** `node agents/tools/check-wire-enum-parity.mjs --baseline`. No `continue-on-error`.
+- **Triggers, on `pull_request: '*'` and `push: master`:** `src/**/*.cs` · `src/Cleansia.App/**` ·
+  the tool · its self-test · the shared parser · the workflow file. **`src/**/*.cs` is not padding** —
+  §V.1(b) established that this drift is *created by a backend commit*, and §1.2 established that two of
+  the twelve authorities live outside `Cleansia.Core.Domain/Enums/`. **The trigger set must be a superset
+  of the tool's search set; V2 verifies that as one statement.**
+
+**Why not an Nx task, now that the `inputs` mechanism is shown to work (§1.4).** Because the authority is
+a `.cs` file and **an Nx input cannot name a path above the workspace root** (`src/Cleansia.App`) — the
+one limb of RB-4 that survives the correction, stated first by `offerability-parity.yml:8-14` and repeated
+by `patterns-frontend.md:829-835`: *"When the file a spec reads lives **above** the workspace root … an Nx
+input cannot name it at all, and the house shape is the one `offerability-parity.yml` uses."* Living
+outside the workspace removes the cache hazard **by construction** rather than by configuration — a cache
+key can be regressed by an unrelated `nx.json` edit; not being cacheable cannot.
+
+**`order-status-enum-parity.spec.ts` is retired, and its `{workspaceRoot}` input glob with it.** This is
+the disposition that most deserves a challenger's attention, so the reasoning is explicit:
+
+- It is **strictly subsumed**: 2 enums vs 12, clients-vs-shared-table only, never the authority — its own
+  catalog paragraph says so (`patterns-frontend.md:852-856`).
+- It is **wrong in a state this design makes routine**: its per-client `toEqual` (`:62-72`) is
+  unsatisfiable whenever the three clients differ, which is precisely what a single-host regen produces
+  (§1.4 point 2). Keeping it would mean shipping a T1-CI gate that reddens on a correct commit.
+- Keeping it would be a **second parser and a second statement of one rule** (RB-5), and the two would
+  drift.
+- **The glob goes with it, in the same change.** The catalog's own rule is *"Write the input with the
+  guard, in the same change"* (`patterns-frontend.md:829`); the symmetric obligation is to remove it with
+  the guard, or it becomes dead configuration that reads as protective — the failure ADR-0031's withdrawn
+  M5 was struck for.
+- **What is kept from that lane, because it is the durable half:** the measurement and the general rule at
+  `patterns-frontend.md:793-827`. §7 leaves that prose standing and re-points only the `**Enforced by:**`
+  line and the paragraph that names the retired spec.
+
+**Tier (ADR-0032 D2, `conventions.md:229-242`).** `**Enforced by:** agents/tools/check-wire-enum-parity.mjs`
+(gate step in `.github/workflows/wire-enum-parity.yml`) — **`T1-CI`**. It is **earned, not declared**: the
+named enforcer sets the exit code of a job in a committed workflow, on the offending change, with no
+`continue-on-error`. `conventions.md:237-242` makes `T1-CI` *required* here — the rule is mechanically
+expressible and the baseline is **zero** (verified 2026-08-06 across all 12 enums × 3 clients × C#, plus
+the five hand-written mirrors of §1.1b). Round 1's `T1-CI at the regen` was not an available token and no
+token in this taxonomy fits a gate that blocks an owner-run local command; **this draft needs no such
+token, because it does not gate on an owner-run command at all** (§D5). *(Whether a red CI job also blocks
+a merge is `Q-CI-01`, open, owner — the same caveat every `T1-CI` in this repo carries.)*
+
+### D5 — The **writer** runs on demand, is chained into the regen for convenience only, and carries **no tier**
+
+`--write` is the same tool computing the same tables and emitting `wire-enums.generated.ts`. It needs no
+host, no `nswag`, no `dotnet` and no owner (§1.5), so **anyone can run it and CI can verify its output**.
+
+- **Chained** into the four regen entry points, after the formatter and **before** `npm run typecheck`, so
+  a regen that changes membership leaves the owner a self-consistent tree in one command:
+  `generate-partner-client = _nswag:partner && _gen:wire-enums && typecheck` (and the same for admin,
+  customer, and `generate-clients`). ADR-0031 M1's invariant gains a clause and loses nothing: **every
+  NSwag entry point still ends in the typecheck.** The step is `_`-prefixed per M1's convention.
+- **It exits non-zero only on `P0`** (D1.3) — a conflict with the authority, or its own anti-vacuity. It
+  **never** exits non-zero for `PENDING-REGEN`, so a single-host regen cannot be bricked by the state of
+  another host. A `P0` at that moment means somebody pushed past a red CI, and stopping is right.
+- **It carries no tier and is not the gate** (RB-6). It is a derivation step whose output D4 verifies.
+  Round 1's whole pincer — vacuous on `generate-clients`, harmful on a single-host regen — dissolves here
+  because **the regen-time step no longer renders a verdict.**
+
+### D6 — The hand-written mirrors a **client-derived rule cannot reach** are pinned to C# by the same tool: name-matched discovery, plus one explicit alias
+
+§1.1b rows 4–5 are the same defect with no client to derive from, and they are the reason the authority is
+worth having. The tool therefore also:
+
+1. **Sweeps every hand-written `export enum X` under `src/Cleansia.App/`** (excluding the files named by
+   the `nswag-*.json` `output` keys). If a C# `public enum X` exists, its members must agree — same D1.3
+   grading. No roster of files; discovery is by name. Today this reaches
+   `RecurrenceFrequency` (`recurring-bookings.models.ts:6` vs `Bookings/RecurrenceFrequency.cs:7`) and
+   fires on **zero** of the nine unrelated hand-written declarations in the workspace — no C# enum is
+   named `Role`, `CodeTypes` (declared twice, in `admin-stores` and `partner-stores`), `PhysicalPolicy`,
+   `LocalStorageKey`, or any of the four `routes.enum.ts` route enums (swept 2026-08-06). Those nine are
+   the must-NOT-fire corpus and §3 step 3 pins one of them.
+2. **Carries one explicit alias map** for a deliberate rename: `CustomerDisputeStatus → DisputeStatus`
+   (`disputes.models.ts:12`, whose own comment at `:10-11` states the mirror). An alias entry is a
+   **closed roster and is declared as one** in §7, per `conventions.md:246-250`: it does not catch the
+   *next* rename, and the reader must see that boundary. A rename with no alias entry is invisible — which
+   is precisely why the entry is cheaper than the alternative of forbidding renames.
+3. **Does not require `[SwaggerEnumAsInt]` for this class.** `RecurrenceFrequency` does not carry it and
+   is exposed on the wire as a bare `int` field, which is exactly why no client renders it. The attribute
+   tripwire (D1.2) applies only to enums in the client intersection, where it *is* the premise.
+
+**D6's sweep is the exact complement of D1.1's exclusion, and that is why it is not a bolt-on.** D1.1 says
+*"a file no `nswag-*.json` `output` key names is not a client"* — which is the only sound definition
+available and is also, by construction, blind to a file that **looks** like a client and is not. That is
+the file class §1.1's fossil belonged to, and it is why no client-to-client comparison could ever have
+found it (CH-G1's sharpest point). D6 sweeps precisely the set D1.1 excludes: hand-written `export enum`
+declarations under `src/Cleansia.App/`, minus the files the `output` keys name. Re-run against the fossil,
+`export enum OrderStatus { … InProgress = 3 … }` collides with `OrderStatus.cs`'s `OnTheWay = 3` and
+exits 1. **The two rules together leave no `export enum` in the web tree unexamined** — one is generated,
+the other is pinned, and membership of each set is decided mechanically rather than by opinion.
+
+**If the panel judges D6 a second decision, it splits cleanly and D1–D5 stand without it.** I include it
+because it is the same authority answering the same question about the same kind of artifact, because it
+closes the hole D1.1 must otherwise leave open, and because leaving it out means shipping a decision that
+closes three mirrors while a four-stack, entirely ungated one sits two directories away. **What D6 does
+not reach, and §4 residue 3 records:** the Swift and Kotlin halves of `RecurrenceFrequency`.
+
+---
+
+## 2 — The sweep (this is also the evidence `conventions.md:143-146` test 1 demands for the §7 catalog edit)
+
+**Who imports the symbols being retired.** Grepped at HEAD 2026-08-06 for
+`import {… OrderStatus | PaymentStatus | SortDirection …} from '@cleansia/models'` across
+`src/Cleansia.App`, and for every direct import of the two files:
+
+| Consumer | Imports | What the refactor does to it |
+|---|---|---|
+| `libs/shared/pipes/.../order-status-severity.pipe.ts:2` | `OrderStatus` from `@cleansia/models` | **nothing.** It reads the **barrel**, and the barrel keeps exporting the same symbol |
+| `libs/shared/pipes/.../order-status-icon.pipe.ts:2` | `OrderStatus` from `@cleansia/models` | **nothing** |
+| `libs/shared/pipes/.../payment-status-severity.pipe.ts:2` | `PaymentStatus` from `@cleansia/models` | **nothing** |
+| `libs/shared/models/.../sort.models.ts:2` | `SortDefinition, SortDirection` from `./sort-types.models` | **one import line moves.** `sort-types.models.ts` stops *declaring* `SortDirection` and starts *importing* it (§D2), so it no longer exports that symbol; `sort.models.ts:2` splits its import — `SortDefinition` from `./sort-types.models`, `SortDirection` from `./wire-enums.generated`. This is the one non-barrel consumer, and it is a compile error if missed |
+| `libs/shared/models/.../order-status-enum-parity.spec.ts:3` | both, from `./order-status.models` | **deleted** with the file it guards (§D4) |
+
+*(Round 1's table said these three pipes need an "import path" change. They do not — all three import the
+package barrel, not the file. The only file that imports `order-status.models.ts` directly is the spec
+being retired. Corrected here because a reviewer told to expect three edited pipes would look for a diff
+that should not exist.)*
+
+**Not affected** (they map integers to i18n keys and import no enum):
+`order-status-label.pipe.ts:1-3`, `payment-status-label.pipe.ts:1-3`.
+
+**Hand-written `export enum` declarations in the workspace, all of them, and their disposition.** This is
+the sweep test 1 requires — the catalog edit puts shipped code in violation, and here is exactly which:
+
+| Declaration | Disposition |
+|---|---|
+| `models/order-status.models.ts:19` `OrderStatus`, `:29` `PaymentStatus` | **deviation → generated** (§D2) |
+| `models/sort-types.models.ts:16` `SortDirection` | **deviation → generated** (§D2) |
+| `cleansia-customer-features/.../recurring-bookings.models.ts:6` `RecurrenceFrequency` | **deviation → pinned to C#** (§D6.1); stays hand-written (no client renders it), stops being unchecked |
+| `cleansia-customer-features/.../disputes.models.ts:12` `CustomerDisputeStatus` | **deviation → pinned to C# via the alias** (§D6.2) |
+| `core/services/.../routes.enum.ts:1,16,42,66`, `role.enum.ts:1`, `storage.enum.ts:1`, `auth/physical-policy.ts:7`, `data-access/{admin,partner}-stores/.../code-types.ts:1` | **not in violation** — no C# enum bears any of these names (swept), and none is a wire integer table |
+
+**Five deviations, all fixed by the implementing ticket, zero left open.** That is what makes the §7 tier
+`T1-CI` rather than `(gate pending: <ticket>)` (`conventions.md:237-242`).
+
+**Because `models/index.ts` re-exports the generated file under the same symbol names, every consumer
+outside `libs/shared/models` sees no change at all** — including the 14 template call sites of §1.3. This
+is deliberate: the refactor must be a *provenance* change, not an API change, or it cannot be reviewed for
+what it actually is. The one thing the compiler will not name is a **duplicate export**: `models/index.ts`
+exports both `sort-types.models` and `wire-enums.generated`, so `sort-types.models.ts` must **import**
+`SortDirection` and must not re-export it (§D2).
+
+---
+
+## 3 — The refactor, specified (**no production code is written by this ADR**; the ticket id is the PM's)
+
+**Order matters. Every step below is agent-runnable — none needs a regen, a running host or the owner.**
+That is the design's main practical dividend and it is what step 3 proves.
+
+1. **Extract `agents/tools/lib/cs-enum.mjs`** — one C# enum parser, used by the new tool **and** by
+   `check-available-status-parity.mjs`, whose `parseCanonical` currently owns a private copy
+   (`:143-165`). This is RB-5's literal answer and it is not bookkeeping: the existing regex
+   (`:153` `/^\s*([A-Z]\w*)\s*=\s*(\d+)\s*,?\s*$/`) is applied to `raw`, **not** to `decomment(raw)`, so a
+   member written `Confirmed = 2, // note` is silently dropped — and its anti-vacuity floor
+   (`:162`, `byName.size < 5`) would not catch losing one member of a seven-member enum. The extracted
+   parser decomments, and both tools' self-tests pin it. The refactor must be behaviour-preserving: the
+   eight surfaces of `offerability-parity.yml` stay green.
+2. **Add `agents/tools/check-wire-enum-parity.mjs`** per §D1/§D2/§D6 — modes `--write`, `--baseline`,
+   `--warn`, `--root=DIR`, matching the house CLI shape (`check-available-status-parity.mjs:37-43`).
+3. **Add `agents/tools/check-wire-enum-parity.test.mjs` and make it mutation-provable** (Gate 6.5,
+   the ADR-0031 V3 shape): fixtures built with `mkdtempSync(join(tmpdir(), …))` and driven through
+   `--root=` — **never in-repo**, per ADR-0031's dated closure §B and the shape at
+   `check-available-status-parity.test.mjs:42,61`. Minimum scenarios: *one C# integer changed → exit 1
+   naming the enum, the member, C#'s value and each client's*; *a member appended to C# only → `P2`
+   pending, exit 0 under `--baseline` when recorded, exit 1 when not*; *a recorded baseline entry whose
+   gap has been closed → exit 1 "stale"*; *a name in a client that C# lacks → exit 1*; *two C#
+   declarations of one name → exit 1*; *an intersecting enum without `[SwaggerEnumAsInt]` → exit 1*; *a
+   `nswag-*.json` whose `output` is missing → exit 1*; *zero clients / zero enums / empty intersection →
+   exit 1*; *a hand-written mirror disagreeing with its C# source → exit 1 (§D6)*; *a feature-lib file
+   importing an emitted enum from `@cleansia/models` → exit 1, and the same import from `libs/shared/**` →
+   exit 0 (the must-NOT-fire case)*; *`--write` over an agreeing fixture → the expected bytes*. Stub the
+   tool body to `process.exit(0)` and this suite goes red.
+4. **Add `.github/workflows/wire-enum-parity.yml`** per §D4 — self-test step first, gate step second,
+   no `continue-on-error`, triggers on both trees.
+5. **Run `--write` once and commit `wire-enums.generated.ts`.** Derived from the **already-committed**
+   clients and the `.cs` files, so no NSwag run and no backend.
+6. **Retire the hand-written declarations:** delete `order-status.models.ts`; delete the `SortDirection`
+   block from `sort-types.models.ts` and import it instead (**import, do not re-export** — §D2); split
+   `sort.models.ts:2`'s import accordingly (§2); update `models/index.ts:3`; delete
+   `order-status-enum-parity.spec.ts` **and** the `{workspaceRoot}` client glob at
+   `libs/shared/models/project.json:18` (§D4).
+7. **Chain the writer into `package.json`** per §D5 (`_gen:wire-enums`, between the formatter and
+   `typecheck`, in all four regen scripts).
+8. **`manual_steps`: none.** `nswag-regen` is **not** required — that is the point of step 5. No
+   `CLAUDE.md` edit is owed (§1.1 point 2). The **first** owner regen after this lands is the design's real
+   proof and should be reported in the ticket's `## Review`.
+9. **Catalog + process edits** — §7, all bound to this ADR reaching `accepted`: the three surgical
+   `patterns-frontend.md` changes (§7a), the `consistency.md` deviation entry that test 1 requires (§7b),
+   and Gate 4's named item **WE-1** in `quality-gates.md` (§7c). They land together or not at all — an
+   entry whose named enforcer does not exist is the failure ADR-0032 D2 exists to prevent.
+10. **No CRC card.** A build-time checker is not a role; nothing new *knows* anything.
+
+**Explicitly out of scope:** any NSwag config change (§D3); the Android/iOS **generated** clients and the
+Swift/Kotlin halves of `RecurrenceFrequency` (§4 residues 2–3); the non-intersecting enums; the `| number`
+widening in the pipes (§4 residue 1); DTO *shapes* such as `SortDefinition` (§D2) — this ADR governs
+name→integer tables only.
+
+---
+
+## 4 — Consequences
+
+**Cheaper / safer**
+
+- **Nothing about a wire enum is typed by a human, and the authority can be wrong.** The owner's ruling is
+  satisfied by construction; RB-1 is satisfied because the artifact the design trusts (`.cs`) is compared
+  against artifacts derived independently of it (the clients), rather than against copies of itself.
+- **No two of {C#, the three clients, the shared table} may bind one name to two integers, on any commit.**
+  Stated at exactly that width — see §D1.3's closing paragraph for what it deliberately does not claim.
+- **The gate fires on the commit that creates the drift.** A backend enum change reddens
+  `wire-enum-parity` on the backend PR — before a regen exists, before the frontend has heard of it.
+- **The class is closed, not two instances of it.** Twelve enums, five hand-written mirrors, three of
+  which no gate has ever looked at, and one of which is typed by hand on four stacks.
+- **A thirteenth enum, a fourth Angular app or a fourth host is covered the day its `nswag-*.json`
+  exists** — discovery is derived from the configs (ADR-0031 M2) and from `.cs` by name, never rostered.
+- **The per-host seam is preserved and no host's command depends on another host.** A customer feature
+  still cannot compile against the partner contract; a single-host regen never fails for a cross-host
+  reason (§D5).
+- **A frontend developer stops needing the owner to answer "is this integer right?"** The tool answers it
+  from files on disk, in about a second, with no install.
+
+**More expensive (accepted)**
+
+- **A backend developer who appends an enum member must paste one `PENDING-REGEN` line** the tool prints,
+  or regenerate. That is the price of RB-2's ratchet and it is charged to the person who created the debt,
+  in the PR that created it. The alternative postures are priced in §6 rows I and J.
+- **One more workflow** (~10 s: checkout, `setup-node`, two node scripts, no `npm ci`) running on every
+  backend PR. `src/**/*.cs` is a broad trigger by design — narrowing it to a folder list would have missed
+  two of twelve authorities today (§1.2).
+- **A committed `*.generated.ts` inside a hand-written lib** — a new shape here, mitigated by the
+  DO-NOT-EDIT header and by D4's committed-state check.
+- **One shipped T1-CI gate is retired and replaced** (§D4). Net enforcement strictly increases, but the
+  catalog's `**Enforced by:**` line and one `project.json` input move within days of landing — churn that
+  is real and is charged here rather than hidden.
+- **ADR-0031 M1 gains a clause**: every regen entry point ends in the writer **and** the typecheck.
+- **One extracted shared parser** used by two blocking tools — a new `agents/tools/lib/` directory, and a
+  behaviour-preserving edit to a gate that is currently green.
+
+**Accepted residues (named, not closed)**
+
+1. **The pipes keep `| number` in their signatures.** TS numeric enums are nominal across declarations
+   (§1.3), so the shared symbol will never be *assignable* to a client DTO field; removing the widening
+   would make every call site cast, which is worse. This is *why* an integer-level check is load-bearing —
+   no compiler does this job. Do not "fix" the widening without reading §1.3.
+2. **Mobile *generated* clients are out of scope, and the ground is structural rather than scheduling.**
+   They emit **nameless ordinal identity maps** — `case _0 = 0 … case _6 = 6`
+   (`src/cleansia_ios/CleansiaPartnerApi/Models/OrderStatus.swift:13-21`) and `@SerialName("0") _0(0) …`
+   (`src/cleansia_android/partner-app/build/generated/openapi/…/model/OrderStatus.kt:28-49`) — so **there
+   is no name→integer table on mobile to compare**, and the fossil's failure mode is impossible there. The
+   two artifacts also differ in kind: the iOS file is committed source, the Android file is a Gradle build
+   output re-derived from a committed spec. *(This replaces round 1's residue 3, which was wrong in both
+   directions: it claimed the 12 enums exist a third and fourth time on mobile, and that nothing compares
+   mobile to web.)*
+3. **The true cross-stack residue, and it is narrower and worse than round 1 framed it.**
+   `agents/tools/check-available-status-parity.mjs` already gates **`OrderStatus`** across eight web /
+   Android / iOS surfaces against the canonical C#, in its own repo-root workflow. **Nothing gates the
+   other eleven — on any stack — and this ADR closes that only for the web declarations.** The named,
+   measured instance that stays open is `RecurrenceFrequency`'s Swift
+   (`CleansiaCustomer/…/RecurringModels.swift:3-7`) and Kotlin
+   (`cz.cleansia.customer.core.recurring.RecurrenceFrequency`) halves: after §D6 the C# and TypeScript
+   halves are pinned and the mobile two are not. Extending to Swift/Kotlin *presentation and mapping* code
+   belongs to `check-available-status-parity.mjs` — that is what it already does — and is a ticket against
+   that tool, **not** a widening of this one. Named so the follow-up is the right follow-up.
+4. **The tool reads generated output for membership**, one hop further from the backend than the clients
+   are. Deliberate: the three web swagger documents are **not committed** and exist only while the hosts
+   run. The *values* no longer depend on that hop.
+5. **The deployed contract is unobservable from this repository.** If production runs a commit older than
+   the committed clients, nothing here can see it. `--baseline` records the known gap between HEAD and the
+   last regen; it cannot record the gap between the last regen and production.
+6. **A renamed mirror with no alias entry is invisible** (§D6.2). The alias map is a closed roster and §7
+   says so.
+
+---
+
+## 5 — Verification (how a reviewer verifies compliance)
+
+- **V1 — the authority can be wrong, and the tool proves it.** In a scratch tree (`--root=`), change one
+  integer in `src/Cleansia.Core.Domain/Enums/OrderStatus.cs`. The checker must **exit 1** naming the enum,
+  the member, C#'s value **and** each client's. If it exits 0, the design's central claim is false and
+  nothing else in this list matters. *(RB-1.)*
+- **V2 — the gate fires on a backend-only commit, and its trigger covers its search space.** Read
+  `.github/workflows/wire-enum-parity.yml`'s `paths`: they must include `src/**/*.cs`, and the set must be
+  a **superset** of the paths the tool reads. A change confined to `src/Cleansia.Core.AppServices/**` —
+  where `AppliedDiscountSource` lives — must select the workflow. *(RB-3. Cite the workflow's step
+  **names**, never line numbers — `generated-client-contract.md` §"cite stable anchors".)*
+- **V3 — the tier is earned, not declared.** The named enforcer appears in a committed workflow, sets that
+  job's exit code, carries no `continue-on-error`, and its self-test is the **first** step. Grep the
+  workflow. A `T1-CI` claim whose enforcer appears in zero workflow files is the `check-consistency.mjs`
+  failure (`nx-project-registration.yml:23-24`). *(ADR-0032 D2, `conventions.md:229-242`.)*
+- **V4 — discovery is derived twice over, never hardcoded.** (a) The client set comes from each
+  `nswag-*.json`'s `codeGenerators.openApiToTypeScriptClient.output`; delete one output file in a scratch
+  tree and the tool must **exit 1**, not report "2 clients read". (b) Each enum's `.cs` authority is
+  located by name across `src/**/*.cs`; delete one, or duplicate one, and the tool must **exit 1**.
+  *(ADR-0031 M2, applied to both authorities.)*
+- **V5 — anti-vacuity, all six conditions, and mutation-provable.** Zero configs; a missing `output`; zero
+  enums in a client; an empty intersection; an authority that could not be read **or that resolves to two
+  declarations**; and an intersecting enum without `[SwaggerEnumAsInt]` — each exits **1**. Verified by running the self-test, not by reading the code;
+  stubbing the tool body to `process.exit(0)` must redden it. *(ADR-0032 D3, RB-7.)*
+- **V6 — the ratchet is a ratchet, in both directions.** With a `PENDING-REGEN` entry recorded, the run is
+  green; widen the gap → red; close the gap without deleting the entry → red ("stale"). Match against
+  `check-available-status-parity.mjs:58-72` and `:446-473`. A baseline that only suppresses is not this.
+  *(RB-2.)*
+- **V7 — no hand-written wire enum survives.** Grep `export enum` across `src/Cleansia.App/libs` and
+  `apps`. Every name that also names a C# enum is either in `wire-enums.generated.ts` or covered by §D6
+  (directly or through the alias map). `order-status.models.ts` is **gone**; `sort-types.models.ts`
+  **imports** `SortDirection` and neither declares nor re-exports it. Cross-check against §2's table —
+  five deviations in, zero out. **And no file outside `libs/shared/` imports an emitted wire enum from
+  `@cleansia/models`** (the `SCOPE` row); the shared pipes still may, and must not be flagged.
+- **V8 — the committed generated file equals what `--write` would produce.** That is the CI run's own
+  `--check`; mutation-check it by editing one integer in `wire-enums.generated.ts` and re-running.
+- **V9 — nothing outside `libs/shared/models` changed shape.** The diff touches **no** `.html` file and
+  **no** pipe: all three import the barrel (§2). If a pipe or a template changed, the refactor did more
+  than it should.
+- **V10 — no generated client was edited and no NSwag config was changed.**
+  `nswag-{partner,admin,customer}.json` and the three `*-client.ts` under `libs/core/*-services/` are
+  byte-identical. And `offerability-parity.yml`'s eight surfaces are still green after step 1's parser
+  extraction.
+
+---
+
+## 6 — Alternatives considered
+
+**Axis 1 — what is the authority for the integers?**
+
+| # | Option | Disposition |
+|---|---|---|
+| **A** | **The C# declaration, with membership from the clients and a graded failure posture** | **CHOSEN (D1).** The only candidate that can *be wrong* relative to the artifacts it is compared with (RB-1); the only one that reaches §1.1b rows 4–5 at all; answers the owner's second sentence; and the technique is shipped and blocking today — `check-available-status-parity.mjs:134-165` parses a `.cs` file into a name→integer table with dependency-free Node, gated by `offerability-parity.yml`. Its cost is priced in §D1.3 and §6 rows I/J. |
+| **B** | **The three clients, compared to each other** (round 1) | **RETURNED, and not revived.** Three renderings of one C# declaration cannot disagree at one backend commit, so the check is vacuous on `generate-clients` and blind to all-three-stale — the repo's normal state between owner-only regens. Verdict §V.2. |
+| **C** | **A fourth artifact generated straight from the domain assembly** (reflection, or an enum-only host endpoint) | **REJECTED — and re-disposed against the shipped technique, not against reflection** (§V.10 item 4). Round 1 rejected C by pricing the two *expensive* implementations; the cheap one needs no `dotnet`, no assembly, no new owner command, and already runs in CI. What survives of C's objection is real and is **kept as a mechanism**: `[SwaggerEnumAsInt]` means the wire rendering is a decision separable from the declaration, so D1.2 makes the attribute a hard precondition rather than an assumption. What does **not** survive is emitting the *union* of domain enums into shared code — membership stays client-derived (D1.1/D2), so an enum the API does not expose can never reach `@cleansia/models`. |
+| **D** | **NSwag `excludedTypeNames` + `extensionCode`: the clients import one shared enum** | **REJECTED (D3), and it held under two independent attacks.** (i) It deletes the per-host drift signal, (ii) it rests on unverified NSwag behaviour inside a command **no agent can run**, (iii) it makes the generated client non-self-contained. Revisitable only by a superseding ADR. |
+| **E** | **A committed swagger document per host** | **REJECTED.** The three web swagger docs are not committed and exist only while the hosts run; committing them is a separate decision with its own regen story, and it would put a *second* derived artifact between the domain and the clients. |
+| **F** | **Keep the hand-written mirror; keep the parity spec** | **REJECTED — the owner ruled it out**, and independently: it is a detector whose own catalog paragraph concedes it never reads the authority (`patterns-frontend.md:852-856`), it covers 2 of 12 enums, and its per-client `toEqual` is unsatisfiable when the clients differ (§1.4). |
+| **G** | **`const` objects + union types instead of `export enum`** | **REJECTED, and the tempting reason is wrong.** It buys no assignability — an enum member type is not assignable to a numeric literal type either — so it does not remove the `\| number` widening (§4 residue 1). It only churns three `switch` bodies. |
+
+**Axis 2 — where does the check run, and how hard does it fail?**
+
+| # | Option | Disposition |
+|---|---|---|
+| **H** | **A dependency-free Node checker outside the Nx workspace + its own repo-root workflow + a self-test that runs first** | **CHOSEN (D4).** The shape this sprint standardized twice (`offerability-parity.yml`, `nx-project-registration.yml`); uncacheable by construction rather than by configuration; and the only host that can read a `.cs` file at all. Round 1 never considered it — Verdict §V.4 sustained that omission as an alternatives-table defect, and this row is the repair. |
+| **I** | **Hard-fail on any disagreement with C# HEAD** (the challenger's candidate, taken literally) | **REJECTED on the record.** The lead constructed this cost for the absent author and it stands: the shared table must match what the **deployed** API emits, and C# HEAD is not that — so a blanket failure turns an owner-only regen into a merge blocker for everyone (RB-2). D1.3 keeps the hard failure for the classes whose repair needs no owner, and ratchets the one that does. |
+| **J** | **Report `PENDING-REGEN` and exit 0** (no ratchet) | **REJECTED, and it was the close call.** Cheaper for the backend developer — no line to paste — but a regen debt nobody records is a regen debt nobody pays, and this repo's own answer to that tension is the exact-match `--baseline` (`check-available-status-parity.mjs:58-72`, whose comment spells out why: *"a baselined gap can only be closed deliberately"*). The cost is one printed line per enum append; §4 charges it. |
+| **K** | **Keep the check in an Nx jest target** (`nx test models`), now that the `inputs` glob makes it cache-correct | **REJECTED, on the one ground that survives the §1.4 correction:** an Nx input **cannot name a path above the workspace root**, so a `.cs`-reading check hosted there would replay a cached pass over a changed authority. Also RB-5: a second parser and a second statement of one rule. *(Round 1's Alternative E — `implicitDependencies` — is separately rejected: it **is** a graph edge where `inputs` is not, which makes it the wrong instrument whatever the graph currently looks like.)* |
+| **L** | **One unconditional `run:` line in `frontend-ci.yml`** beside the "Regen-drift guard self-test" step | **REJECTED as insufficient, not as wrong.** It is un-affected-gated and un-cached, and it was the cheapest available repair for round 1. But `frontend-ci.yml:12-17` scopes its `push: master` trigger to `src/Cleansia.App/**`, so it cannot see the **backend** commit — the commit that creates this drift (RB-3). Adding it *in addition to* H would be a second invocation of one script; not adopted. |
+| **M** | **A `check-consistency.mjs` line rule** | **REJECTED, and rejecting it is not "considering a CI gate."** That tool appears in **zero** workflow files (`nx-project-registration.yml:23-24` names it *"the counter-example, not the model"*) and can never set an exit code. |
+| **N** | **Only inside `npm run generate-*-client`** (round 1) | **RETURNED.** The regen is when this drift is *repaired*; it is created by a backend commit, so a gate only there leaves the whole creation→repair window unguarded, and no tier token in `conventions.md` fits it. The regen-time step survives as a **writer with no verdict and no tier** (D5). |
+| **O** | **Do nothing until a real drift incident** | **REJECTED — one already happened** (§1.1), and it is worth being precise about who would have caught it, because round 1 was not. D1.1 **definitionally excludes** the fossil (written by no `output` key ⇒ not a client), so the *client-derived* half of this design is as blind to it as round 1's was. **§D6's sweep is not**, and it is the complement of exactly that exclusion: the fossil was a hand-written `export enum OrderStatus` under `src/Cleansia.App/` not named by any `output` key, so it is swept, and its `InProgress = 3` collides with `OrderStatus.cs`'s `OnTheWay = 3` under D1.3 row 2 (*one integer, two names*). That is the strongest single argument for D6 and the reason it is not a bolt-on. |
+
+---
+
+## 7 — The catalog edits, bound to acceptance (literal text; they land with the implementing ticket, not before)
+
+**Routing (`conventions.md:138-182`).** Test 1 fires — five shipped `export enum` declarations become
+deviations (§2's table is the sweep it demands). Test 2 fires — a governing catalog sentence is replaced.
+So this is an Architect edit carried by an ADR, and it is a **law**, so it is priced (`conventions.md:217-242`).
+
+### 7a — `agents/knowledge/patterns-frontend.md`, §"Module boundaries…" — three surgical changes, not a rewrite
+
+The paragraph this ADR replaces has **moved and been substantially rewritten** since round 1 quoted it at
+`:657-667`; at HEAD it runs `:783-859`. Most of it is another lane's measured work on Nx `inputs` and
+**stays** — the edit is deliberately narrow.
+
+**(i) Replace the opening paragraph** (`:783-791`, beginning *"The fix, and the general rule: a wire enum
+a shared lib needs is declared in `@cleansia/models`, pinned to every generated client by an off-disk
+parity spec…"*) with:
+
+> **The fix, and the general rule: a wire enum a shared lib needs is GENERATED into `@cleansia/models`,
+> and its integers are checked against the C# declaration — never hand-written, and never validated only
+> against the clients (ADR-0042, answering `Q-ENUM-01`).** Shared code may not import any `*-services`
+> client, so the symbol must exist somewhere a `scope:shared` lib can read.
+> `agents/tools/check-wire-enum-parity.mjs` derives **membership** from the client files named by the
+> `nswag-*.json` `output` keys (the enums, and the members, all three declare), **confirms every one of
+> those integers against that enum's single `[SwaggerEnumAsInt]`-marked `public enum` under `src/**/*.cs`
+> and refuses to write if they disagree**, and emits
+> `libs/shared/models/src/lib/models/wire-enums.generated.ts`. **Import wire enums from `@cleansia/models`
+> in `scope:shared` code; import them from your own client in app code** — `@cleansia/customer-services`
+> for a customer feature, and so on. The integers are identical either way, which is exactly why the wrong
+> one spreads silently. **Never add a hand-written `export enum` for a table the backend already declares:**
+> if a client renders it, it is generated; if no client renders it (`RecurrenceFrequency`) or it is
+> deliberately renamed (`CustomerDisputeStatus`), it stays hand-written and is **pinned to its `.cs` source
+> by the same tool**. The three per-host clients keep emitting their own copies **deliberately** — they are
+> three contracts, and one shared symbol would let a client generated against a stale host *claim* the
+> current contract (ADR-0042 D3). The shared symbol is a **constant table, not a type**: TS numeric enums
+> are nominal across declarations, so a pipe takes `… | number` and **no compiler anywhere checks these
+> integers.**
+
+**(ii) Correct one stale sentence inside the kept block.** `:820-822` asserts that an
+`implicitDependencies` entry yields `models → partner-services → partner-stores → models`. That chain no
+longer exists — T-0455 removed the middle arrow and `libs/core/partner-services` imports zero
+`@cleansia/partner-stores` symbols at HEAD. Replace *"and yields `models → partner-services →
+partner-stores → models`: the same circular-dependency class whose repair created the `scope:shared`
+boundary that forces the shared copy to exist"* with:
+
+> and it is a **graph** edge where an input is not — which is the whole reason to prefer the input. (It
+> once also closed a cycle, `models → partner-services → partner-stores → models`; T-0455 removed the
+> middle arrow, so the cycle is gone and the argument no longer needs it.)
+
+**(iii) Replace the closing two blocks** (`:844-859`, the `**Enforced by:**` line and the *"It detects
+exactly one thing…"* paragraph) with:
+
+> **Enforced by:** `agents/tools/check-wire-enum-parity.mjs`, the gate step of
+> `.github/workflows/wire-enum-parity.yml` (self-test first, no `continue-on-error`, triggered on
+> `src/**/*.cs` **and** `src/Cleansia.App/**`) — **T1-CI**. It compares the C# declaration, the three
+> generated clients, the committed `wire-enums.generated.ts` and every hand-written `export enum` in the
+> web tree whose name matches a C# enum, and it fails an **app-code** import of a generated wire enum from
+> `@cleansia/models`. A conflict — one name bound to two integers, or one integer bound
+> to two names — is a hard failure anywhere it appears. **A member C# declares that a client has not picked
+> up yet is a pending owner-only regen, not a conflict:** it is reported and carried on the tool's
+> exact-match `--baseline` ratchet, which goes red if the gap widens *and* red if the gap is closed without
+> deleting the entry. **The alias map for deliberately renamed mirrors is a closed roster** — it holds
+> `CustomerDisputeStatus → DisputeStatus` today and it does not catch the next rename.
+>
+> **What no gate can tell you:** whether any of these matches the **deployed** API. Every artifact in this
+> repository is at HEAD or older; production is neither. That is why the rule is *"no two of them may
+> disagree"* rather than *"they are right"* (ADR-0042 §D1.3).
+
+### 7b — `agents/knowledge/consistency.md`, §"Judgment calls (where we did NOT just follow the majority)" — a new entry (test 1's obligation)
+
+> - **Wire-enum declarations (ADR-0042):** five hand-typed name→integer mirrors of backend enums existed
+>   across the web tree and the majority form — *"declare it by hand where you need it, and add a parity
+>   spec against the generated clients"* — is the one we **do not** canonicalize on. Four artifacts agreeing
+>   with each other says nothing about whether any matches `Cleansia.Core.Domain.Enums`. The canonical form
+>   is: **the `[SwaggerEnumAsInt]`-marked C# declaration is the authority; the shared table is generated;
+>   every remaining hand-written mirror is pinned to its `.cs` source by
+>   `agents/tools/check-wire-enum-parity.mjs`.** **Deviating forms:** a hand-written `export enum` in
+>   `libs/shared/models` for anything a client emits; a wire enum imported into **app** code from
+>   `@cleansia/models` rather than from that app's own client; a parity assertion that compares only
+>   generated artifacts to each other; a hand-written mirror under a **new** name with no alias entry.
+>   **Enforced by:** `agents/tools/check-wire-enum-parity.mjs` (`.github/workflows/wire-enum-parity.yml`) —
+>   **T1-CI** for the first three. The fourth — a mirror under a **new** name — is not mechanically
+>   expressible (an arbitrary rename has no witness), so per `conventions.md:238-240` it is **T3-HUMAN**:
+>   `quality-gates.md` Gate 4 (Architecture), named item **WE-1** — *"a new `export enum` in a web feature
+>   lib is declared, in the ticket's `## Review`, either a wire mirror (→ add an alias entry) or not a wire
+>   table."* The alias map is a **closed roster**: one entry today, and it does not catch the next rename.
+
+### 7c — `agents/process/quality-gates.md`, Gate 4 (Architecture) — one new named item
+
+> - **WE-1 (ADR-0042).** A ticket that adds an `export enum` anywhere under `src/Cleansia.App/` states in
+>   `## Review` whether it mirrors a backend enum. If it does and the name differs from the C# name, the
+>   ticket adds the alias entry to `agents/tools/check-wire-enum-parity.mjs` in the same change. A
+>   same-named mirror needs no declaration — the tool finds it.
+
+---
+
+## 8 — The seven return constraints, answered on the record (RB-1 … RB-7), and §V.10's checklist
+
+| # | Constraint (Verdict §V.9) | Where it is answered | Answer in one line |
+|---|---|---|---|
+| **RB-1** | The authority must be able to be wrong | §D1.1–§D1.2, V1 | The authority is `.cs`; it is compared with three artifacts derived from it by a different pipeline, so a disagreement is observable. V1 is the mutation that proves it. |
+| **RB-2** | Price the failure posture; use or reject the `--baseline` ratchet on the record | §D1.3, §6 rows I/J, V6 | **Adopted, and it is the only reason "clients disagree with C# HEAD" is not a merge blocker.** Failures are graded by *who can repair them*: hard-fail what the committer can fix, ratchet what only the owner can. The blanket-hard-fail candidate is rejected as row I. |
+| **RB-3** | The gate must go red in CI on the commit that creates the drift — a **backend** commit | §D4, V2 | A repo-root workflow triggered on `src/**/*.cs` **and** `src/Cleansia.App/**`; V2 verifies the trigger set is a superset of the search set. |
+| **RB-4** | The check may not be hosted in an Nx task (affected-gating / cache replay / graph cycle) | §1.4, §D4, §6 row K | **The premise is corrected and the conclusion is re-derived on the surviving limb.** `inputs` is a hashing statement, not a graph edge; both Nx holes are closed at HEAD and no cycle forms. The ban is not general — it holds because **an Nx input cannot name a path above the workspace root**, and this authority is a `.cs` file. |
+| **RB-5** | One parser per source | §3 step 1, §D4, V10 | `agents/tools/lib/cs-enum.mjs` is extracted and used by both tools; the retired jest spec removes the *second* client parser too. The extraction also fixes a real latent defect in the shipped parser (`:153` never decomments). |
+| **RB-6** | A kept regen-time step is early warning, carries no tier, and may not hard-fail a single-host regen for a cross-host reason | §D5 | It is a **writer with no verdict**. It exits non-zero only on a conflict with the authority or its own anti-vacuity — never on `PENDING-REGEN`, which is the only cross-host observation it can make. |
+| **RB-7** | Anti-vacuity survives and extends to "the authority itself was not read" | §D1.3 last row, §3 step 3, V5 | Six conditions, each a self-test scenario, including a `.cs` authority that is missing, duplicated, or unmarked. |
+
+**§V.10's eight checks:** (1) title and the One-decision box name the mechanism actually chosen — the C#
+authority, from which the placement follows. (2) *"a disagreement… impossible to ship"* is struck and
+replaced by §D1.3's bounded claim; §D3 says so explicitly. (3) RB-1…RB-7 above. (4) Alternative C is
+re-disposed against the shipped technique (row C), and the dependency-free-checker shape is row H with a
+real disposition. (5) §7's tier is `T1-CI`, earned by the thing that sets the exit code (V3 is how a
+reviewer confirms it) — except the one deviating form that is not mechanically expressible, which is
+`T3-HUMAN` against a **named** Gate-4 item the same change adds (§7c), because
+`conventions.md:238-240` says that is what an unmechanizable law costs. (6) §1.1 is in the past tense, the fossil-deletion is recorded as done, `MANUAL_STEP`
+and the `CLAUDE.md` residue are gone, §1.5's stale parenthetical is gone, and no ticket id is named.
+(7) §1.4 carries the cache half **and** the correction that both halves are now closed; residue 3 is
+rewritten; round 1's residue 2 and D4's body no longer contradict each other because the Nx-hosted
+backstop is retired rather than re-based. (8) §D4 states plainly what survives of the old D4: nothing —
+it is replaced, and the reasoning for replacing rather than re-basing is spelled out.
+
+---
+
+## 9 — Routed elsewhere (not done in this lane, and not this ADR's to do)
+
+- **The filename.** If accepted, rename to `0042-the-csharp-declaration-is-the-wire-enum-authority.md` **in
+  the same commit** that repoints `agents/architecture/decisions/generated-client-contract.md:6`,
+  `agents/backlog/questions/open.md:1250` and `agents/backlog/tickets/T-0557-…:54`. Renaming before that is
+  how §V.11's dangling-pointer defect happens again. **PM.**
+- **`agents/knowledge/patterns-frontend.md:820-822`'s cycle sentence is stale at HEAD** — an immediate
+  factual correction, independent of this ADR's fate, since it is now the second artifact asserting a chain
+  T-0455 removed. Literal text in §7a(ii). *(§V.11 routed the same paragraph's *previous* false sentence —
+  *"then fails `nx test models`"* — which the `inputs` lane has since made **true**. That half needs
+  nothing.)*
+- **`agents/backlog/questions/open.md` `Q-ENUM-01`** is already correct at HEAD and needs no edit until
+  this draft is ruled on. **PM.**
+- **The implementing ticket id.** The PM allocates. Two committed tickets record `T-0547` as reserved for
+  this refactor (`T-0548-…:262`, `T-0557-…:54`); this ADR does not rely on that and names no id.
+- **`conventions.md` / ADR-0032** — the taxonomy still has no token for *"a gate that blocks an owner-run
+  local command"*. This draft needs none (§D5 carries no tier), so the gap is untouched here; it remains
+  ADR-0032's panel's to close.
+- **Swift/Kotlin hand-written mirrors** (§4 residue 3) — a ticket against
+  `check-available-status-parity.mjs`, whose job that already is. **Not** a widening of this tool.
+
+---
+
+## 10 — Citation ledger: what I opened, and what I did **not** verify
+
+Round 1 carried three false citations, two of which commissioned work, and the panel's transferable lesson
+was *an inherited citation is not a verified one*. So: **every `file:line` above was opened in the working
+tree on 2026-08-06.** Nothing is inherited from round 1's text, from the challenge, or from the verdict
+without re-opening it — including the claims that turned out to be right.
+
+**Re-opened and confirmed** (a sample of the load-bearing ones): the five hand-written mirrors and their
+five `.cs` sources, member-by-member; all twelve intersecting enum names resolving to **exactly one**
+`public enum` each across `src/**/*.cs`, each carrying `[SwaggerEnumAsInt]`; the per-client enum counts
+(partner 15 / customer 19 / admin 27) and the 12-name intersection; `partner-client.ts:10712-10720` and
+`:11447-11451` against `OrderStatus.cs` and `PayoutScheme.cs`; `libs/shared/models/project.json:14-19`
+(the input glob is **shipped**); `order-status-enum-parity.spec.ts:12-16,62-72`; the three pipes' barrel
+imports; `orders.facade.ts:1-13`; `nx.json:4-16,33-35`; `package.json:5-27`; `frontend-ci.yml:12-17,79-87`;
+`offerability-parity.yml` (header, triggers, both steps); `nx-project-registration.yml` (header, both
+steps); `check-available-status-parity.mjs:37-43,58-72,134-165,446-473`;
+`check-available-status-parity.test.mjs:18,21,42,46,61` (the `os.tmpdir()` + `--root=` fixture idiom);
+`conventions.md:138-182,217-262`;
+`patterns-frontend.md:783-864`; `quality-gates.md` §"After an NSwag regen…"; `questions/open.md:1225-1289`;
+`CleansiaPartnerApi/Models/OrderStatus.swift:1-21`; `libs/core/partner-services` having **zero**
+`@cleansia/partner-stores` imports.
+
+**Corrections found while re-opening** (each already folded in above): round 1's `patterns-frontend.md`
+line range had moved by ~126 lines **and the paragraph had been rewritten**; the pipes need no import
+change; `patterns-frontend.md:820-822`'s cycle chain is stale; `check-available-status-parity.mjs:153`
+never decomments.
+
+**Not verified, and stated as such rather than assumed:**
+
+1. **That `[SwaggerEnumAsInt]` is what causes NSwag to emit an integer enum.** The correlation is perfect
+   across the 12 (+ `RecurrenceFrequency`, which lacks both the attribute and a client rendering), but the
+   causal claim needs a regen no agent may run. D1.2 is written as a tripwire for exactly this reason.
+2. **What `npx nswag run` returns on a partial or failed generation.** Still open from ADR-0031; the next
+   owner regen observes it for free.
+3. **The measurement behind the `inputs` correction** (`patterns-frontend.md:801-805`). I verified the
+   *artifact* at HEAD — the glob is in `project.json`, the catalog records the numbers — but I did not
+   re-run the cache experiment, and running it would mutate a client file. Carried as another lane's
+   measurement, labelled as such.
+4. **Anything about the deployed API.** §4 residue 5.
+
+---
+
+## Challenges pre-answered (author's anticipation — the panel writes in `## Challenge — round 2`)
+
+*(Precedent label: ADR-0024/0025/0026/0027/0031.)*
+
+| # | Expected challenge | Author's position |
+|---|---|---|
+| C1 | "The owner said *use the one generated from nswag*, and you have made C# the authority. You inverted the owner's own sentence." | The owner said both things, and the second is *"consider using backend enums on frontend instead of generating your own."* This draft satisfies the first **literally** — the emitted bytes are the clients' members, so the shared file is the NSwag output — and uses C# only to **falsify**. If C# and the clients agree, the two readings are the same file; they differ only in the failing case, and in the failing case the ruling's second sentence is the one that helps. Nothing here is escalated: §0 is untouched. |
+| C2 | "You are still keeping four declarations." | Count is not the metric and §D3 concedes it in those words. What changed from round 1 is that the claim attached to the count is now one a mechanism can deliver: *no two of them may bind one name to two integers, on any commit.* |
+| C3 | "A `.cs` regex parser is fragile. NSwag/Roslyn would be exact." | Conceded as a real cost, and it is why §3 step 1 extracts **one** parser with a self-test rather than a second private copy — and why the extraction fixes a live defect in the shipped one (`:153` misses a member with a trailing comment). Exactness via a `dotnet` build inside a checker is Alternative C's expensive limb: a backend build in a path-triggered workflow, which this repo has never had. The anti-vacuity exits (V5) are the compensating control: a parser that stops understanding the file **fails**, it does not pass quietly. |
+| C4 | "You are deleting a T1-CI gate that landed days ago." | Yes, and §D4 gives four reasons and §4 charges the churn. The decisive one is not subsumption, it is correctness: that spec's per-client `toEqual` is unsatisfiable the moment the three clients differ, which is what a single-host regen produces. Keeping it means keeping a gate that reddens on a correct commit. |
+| C5 | "`src/**/*.cs` triggers this workflow on every backend PR." | It does — checkout, `setup-node`, two dependency-free scripts, no `npm ci`. And it is not incidental: a backend commit is the commit that creates this drift (§V.1(b)). Narrowing to a folder list would have missed `SortDirection` and `AppliedDiscountSource` on day one (§1.2). |
+| C6 | "D6 is a second decision." | Possibly, and §D6 says so and says how it splits. The reason to keep it: D1.1 must define "client" by the `output` keys, which makes the client-derived half **structurally blind** to a client-shaped file that is not one — the exact file class §1.1's fossil belonged to. D6's sweep is the complement of that exclusion. Dropping D6 re-opens the hole CH-G1 identified. |
+| C7 | "The `--baseline` ratchet taxes every backend enum append." | One printed line, in the PR that created the debt. §6 row J is the un-ratcheted alternative, priced and rejected, and the ratchet's semantics are the shipped ones — exact-match in both directions, so it can only be retired deliberately. |
+| C8 | "Emit the union, not the intersection — shared code may want `RefundReason`." | An admin-only enum in a `scope:shared` lib means either the code is not shared or the enum should be on all three hosts. Both are decisions; the tool *prints* the non-intersecting names so the next person sees them before hand-typing a mirror. |
+| C9 | "A `*.generated.ts` inside a hand-written lib is a smell." | Conceded as a new shape; mitigated by the DO-NOT-EDIT header, V7 and V8. A new lib for one file costs a `project.json`, tags, a jest config and a barrel, and buys nothing. |
+| C10 | "You verified `[SwaggerEnumAsInt]` is on all twelve — but you never verified it is what makes NSwag emit an integer enum." | Correct, and §D1.2 says so: the attribute is a **tripwire, not a claim**. If an intersecting enum ever loses it, the tool stops rather than guessing. I cannot verify NSwag's behaviour without running the owner's command, and §D3(ii) is the same honesty about `excludedTypeNames`. |
+
+---
+
+## Challenge — round 2
+
+*(Awaiting a fresh challenger. Attack §D1's grading and §D6's scope first — those are where this draft
+spends its novelty. §D4's retirement of a just-landed T1-CI gate is the second place to press.)*
+
+## Defense — round 2
+
+*(Awaiting the challenge.)*
+
+## Verdict — round 2
+
+*(Awaiting the lead. The checklist is §V.10 below, plus §8's answers to RB-1 … RB-7.)*
+
+---
+
+# Round 1 — deliberation trail (2026-08-04 → 2026-08-05), preserved verbatim
+
+> **This is history, not the decision.** Round 1's draft body was replaced by the rebuild above on
+> 2026-08-06; the `## Challenge`, `## Defense` and `## Verdict` below are exactly as the round-1
+> challenger and lead wrote them and are **not edited**. Section references inside them (§1.1, §D1, §D4,
+> §3, §6, §7, residues 1–5) point at **round 1's** numbering, not the rebuild's — read them as the record
+> of why the rebuild is shaped this way, and use §8 above to map the constraints onto the current text.
+>
+> **Two claims below have since been overtaken by the tree and must not be acted on from here.** (a) CH-G3
+> and §V.4 describe `nx test models` as affected-gated *and* cache-replayable over the client files: **both
+> holes are closed at HEAD** by the `{workspaceRoot}` input glob at `libs/shared/models/project.json:14-19`,
+> and §V.4's `implicitDependencies` **cycle** no longer forms either (T-0455). §1.4 and §8 RB-4 carry the
+> correction; the limb that survives — *an Nx input cannot name a path above the workspace root* — is what
+> decides §D4. (b) §V.9 RB-4's blanket *"the check may not be hosted in an Nx task"* is therefore narrower
+> than written.
+
+## Challenge — round 1
+
+**Filed 2026-08-05 — `agents/backlog/adr/challenges/0042-generation.md` (`4dea53ef`).** One round on
+§D1/§D2 (placement + contents), §D3 (the three copies) and §D4/§7 (enforcement). §0 was out of scope and
+was not touched. Headline: *"the diagnosis is excellent and I could not break it; the mechanism does not
+survive, in four places."* Eight findings — **CH-G1** (the generator compares three renderings of one C#
+declaration, so it cannot fire on `generate-clients` and is blind to all-clients-stale), **CH-G2** (`T1-CI
+at the regen` is not a tier this catalog has), **CH-G3** (the backstop sits on a cached, affected-gated Nx
+jest target whose declared inputs exclude the files it reads), **CH-G4** (D1's `exit 1` contradicts D3's
+own observability argument and couples three hosts to one host's regen) — all four filed blocking; plus
+**CH-G5** (three citations do not hold at HEAD, two of which commission work), **CH-G6** (a taken ticket
+id), **CH-G7** (the mobile residue is wrong in both directions), **CH-G8** (shared parser + jest as a host).
+
+## Defense — round 1
+
+**Not filed.** The author did not respond before the panel convened. Under `process/deliberation.md` §5
+an undefended challenge stands; the lead nonetheless constructed and tested the strongest defense
+available from the ADR's own text for each blocking finding before sustaining it, and carried the one
+surviving half forward as a constraint on the replacement (`## Verdict` §V.0, §V.9 RB-2).
+
+## Verdict — round 1 — **RETURNED TO AUTHOR. The decision's shape survives; its central mechanism is inverted, not amended.** *(lead, 2026-08-05)*
+
+> **Operative state, so nobody has to infer it.** This ADR is **`proposed` and not buildable.**
+> **No ticket may be opened or closed against it.** §3 (the refactor spec) is **void as written** — its
+> steps 1, 2, 5 build the mechanism this verdict returns, step 4 contains a delete that is already done,
+> and step 6's `MANUAL_STEP` is **withdrawn** (§V.7). The §7 catalog edit **does not land**; the
+> paragraph it would replace stays in force *and is itself factually wrong in one sentence*, which is
+> routed as a separate, immediate correction (§V.11). The living doc
+> `agents/architecture/decisions/generated-client-contract.md` carries the same state and has had its
+> four known-false rows corrected in the same change as this verdict.
+>
+> **What is safe to reuse right now, unchanged:** §1.2, §1.3, §1.4 (the diagnosis), §D1.1 (discovery
+> from the `nswag-*.json` `output` keys), §D2's membership rule, §D3, and the `SortDirection` finding.
+> They survived both the challenger and me.
+
+### V.0 — Why not `accepted`, not `accepted with amendments`, not `rejected` — and a note on the empty Defense
+
+`accepted` is foreclosed. Four blocking findings, and the ADR's flagship claim — *"a disagreement
+between them is impossible to ship"* (§D3), *"a cross-host disagreement becomes unshippable"* (§4) —
+describes a check that **cannot fail on `generate-clients`**, the command the owner runs most, and that
+would **not have caught** the one incident the ADR cites as its justification. A control that certifies
+green on the defect class it was written for is the exact failure this panel format exists to catch.
+
+`accepted with amendments` is the verdict I looked hardest for and cannot reach. Amendments bolt onto a
+frozen artifact. What must change here is (i) the **title**, (ii) the **"One decision"** box, (iii) **D1**
+in both of its halves, (iv) **D4**'s host, (v) **§7**'s enforcement tier, and (vi) **§6**'s disposition of
+Alternative C. Title and the one-decision sentence are precisely what acceptance freezes; amending them
+after acceptance would need a superseding ADR within days of writing this one.
+
+`rejected` is wrong and would be expensive. §1.1–§1.5 is the best-evidenced context section this panel
+has read this sprint, §1.3 is a genuinely load-bearing insight (no compiler anywhere checks these
+integers), and D3 survived two independent attempts to break it. Rejecting would re-litigate all of that
+into the same answer.
+
+**On the empty `## Defense`.** The author did not defend, so under `process/deliberation.md` §"What
+'defended' means" every challenge would stand by default. I declined to rule that cheaply: for each
+blocking finding I constructed the strongest defense available from the ADR's own text and tested it.
+**One of those constructed defenses survived in part and is carried forward as a constraint on the
+replacement** (§V.9 RB-2) — it is a real cost in the challenger's preferred repair that the challenge
+does not price. The rest did not survive. Where I upheld a challenge I say what I tried; where the
+challenger over- or under-stated, I say so (§V.3, §V.4, §V.6).
+
+---
+
+### V.1 — Ruling 1: **the mechanism failure reaches the decision.** This is an inversion, not an amendment
+
+The panel asked me to be precise about the difference, so I will state the test I used:
+
+> **An amendment changes how a decision is carried out while the sentence that names the decision stays
+> true. An inversion is when the sentence that names the decision becomes false.**
+
+ADR-0042's naming sentence is its own §"One decision" box: *"where the shared, cross-app declaration of a
+wire enum comes from. It comes from a **generator that reads the NSwag output** and **runs inside
+`npm run generate-*-client`**."* Two claims. **Both become false under any repair that answers CH-G1.**
+
+**(a) The value authority flips.** The clients are three renderings of one C# declaration in an assembly
+every host shares — the ADR asserts that premise itself at D3.1. I verified the consequence rather than
+inheriting it: at one backend commit the three renderings cannot disagree, so `client_A ≠ client_B` is
+provable *only* when they were generated against different backend commits. The check is therefore a
+**staleness-skew detector**, not an enum-correctness detector, and the ADR's own §4/§D3 language claims
+the second. Under a repair, "the values come from the NSwag output" becomes "membership comes from the
+NSwag output; the integers come from `Cleansia.Core.Domain.Enums`" — the artifact that can be wrong stops
+being the authority. That is not a different implementation of the same sentence; it is a different
+sentence.
+
+**(b) The placement flips, and for a deeper reason than the challenger gives.** D1 closes with *"it is
+ADR-0031 D1's argument on a second surface — put the check where the defect is created."* **The ADR
+mis-identifies where this defect is created.** ADR-0031's defect (a regen breaks 122 call sites) is
+genuinely *created by the regen*, so guarding the regen is prevention. ADR-0042's defect — a shared
+integer table that disagrees with the domain, which is what the fossil was and what §1.1 argues from — is
+created by a **backend commit that changes an enum**. The regen is the moment that drift is **repaired**.
+Placing the only gate at the repair moment guards the one instant when the drift is already being fixed,
+and leaves the entire window between creation and repair unguarded *by construction* — a window that, in
+a repo where regen is owner-only and rare, is the normal state. So the ADR-0031 analogy, correctly
+applied, argues for the **opposite** placement here. That is an inversion of D1's own stated rationale,
+reached from D1's own premise.
+
+**What this does not mean.** It does not mean the ADR was wasted, and it does not mean "just do
+Alternative C". §0's owner ruling, §1.2–§1.5, D1.1, D2's membership rule and D3 all survive; the rebuild
+edits roughly the second half of the Decision section. It also means the rebuild moves *toward* the
+owner's own second sentence — *"consider using backend enums on frontend instead of generating your
+own"* — which §6 routed to Alternative C and rejected against a cost model this repo has already
+falsified (§V.9 RB-1). **I am not adopting the challenger's design.** §V.9 states what a replacement must
+satisfy; the author chooses the mechanism and a second panel checks it.
+
+---
+
+### V.2 — CH-G1 and CH-G4 are **one** structural defect, not two: the check is vacuous exactly where it is safe and harmful exactly where it fires. **SUSTAINED**
+
+Both are sustained. But the panel should record them as a single pincer, because that is what makes them
+unanswerable by tuning:
+
+| Path the owner runs | Does the agreement check fire? | Consequence |
+|---|---|---|
+| `generate-clients` (all three, one backend) | **Never** — three renderings of one declaration, generated in one command against one host set | The flagship command carries a check that cannot fail |
+| `generate-partner-client` (one host, backend moved) | **Yes** — partner is fresh, admin/customer are stale | `exit 1`; `&&` short-circuits, so the ADR-0031 typecheck never runs; the tree holds a fresh client and a stale shared file; the command cannot be made green without booting Admin `:5001` and Customer `:5003` |
+
+So every firing is a false alarm about the *enum* and a true statement about *staleness*, delivered as a
+hard stop in an owner-only command with no documented recovery — and every non-firing is unconditional.
+There is no tuning of thresholds that escapes this, because the two branches have opposite causes.
+
+I tried two defenses for the author here.
+
+- *"The owner normally runs `generate-clients`, so CH-G4's hazard is rare."* — This defeats itself: on
+  that path the check is provably vacuous. The defense trades the blocking finding for the other one.
+- *"Firing on skew is legitimate — a stale client is a real defect."* — It is. But then §4 and §D3 must
+  say **that**, not *"a cross-host disagreement becomes unshippable"*, and D1 must state the operator
+  procedure, because *"three of five hosts must be running to complete one host's regen"* is a coupling
+  through the build pipeline between hosts that `CLAUDE.md`'s per-audience seam exists to keep apart. D1's
+  reassurance — *"the owner's command surface does not change… nothing new to learn"* — is then false at
+  the level that matters: the names do not change, the preconditions do.
+
+**Ruling:** CH-G1 **sustained** (blocking). CH-G4 **sustained** (blocking), and reclassified as the second
+face of CH-G1 rather than an independent contradiction — see §V.5 for the part of CH-G4 that *is* about
+D3.
+
+---
+
+### V.3 — Ruling 2 (the tier): **`T1-CI at the regen` is not an available label. SUSTAINED — and the challenger's fallback is also wrong**
+
+`conventions.md:231` defines `T1-CI` as *"fails a CI job on the offending change."* The generator appears
+in no workflow file; it runs on the owner's machine before a commit exists. My own charter states the
+operative rule: *a mechanism that cannot fail a build is `T2-ADVISORY` however it is labelled.* The
+label is **not available**. CH-G2 is sustained, and its second leg is sustained too: `conventions.md:237-242`
+makes `T1-CI` **required** when the rule is mechanically expressible and the baseline is zero, and the
+challenger verified — as did I, spot-checking `OrderStatus` and `SortDirection` against
+`OrderStatus.cs` / `Sorting/Common/SortDirection.cs` — that the baseline **is** zero. So the ADR does not
+merely mislabel; it declares a tier it does not build while the conditions that mandate a real one hold.
+
+**Where the challenger is wrong, and it matters for what the author writes next.** CH-G2's remedy (a)
+offers *"`T2-ADVISORY` for the regen-time generator"*. That is **also** not an available label:
+`conventions.md:232` defines `T2-ADVISORY` as *"runs on demand, reports, **never sets the exit code**"*,
+and the whole point of D1.4 is that it exits 1 and breaks the owner's chain. A regen-time gate is
+**stronger than T2 on one path and absent everywhere else**, and this taxonomy has no token for it.
+
+**Ruling.** The §7 entry may not be published in any of the three forms so far proposed. Two honest exits
+exist, and the author picks one in the rebuild:
+
+1. **Build a CI leg that can go red** (§V.4), and let the `T1-CI` token be earned *by that leg*, with the
+   regen-time step described in prose as early warning and **carrying no tier of its own**. Given a zero
+   baseline, this is the exit `conventions.md:237-242` actually asks for.
+2. If the rebuild ships without a CI leg, the nearest honest token is **`(gate pending: <ticket>)`** naming
+   the CI ticket — not `T1-CI`, not `T2-ADVISORY` — and the entry says in-line that the regen-time step is
+   a local gate, not a CI one.
+
+**Routed, not ruled here:** the taxonomy's missing token for *"a gate that blocks an owner-run local
+command"* is a real gap that this ADR is the second artifact to trip over. Fixing it is an amendment to
+**ADR-0032**'s taxonomy and belongs to that ADR's own panel, not to a lead ruling on ADR-0042. Recorded so
+the next author does not invent a token again.
+
+---
+
+### V.4 — Ruling 3 (the cache hazard): **CONFIRMED, sharpened — and I have a verified finding that closes the escape hatch D4 records as available**
+
+I opened `src/Cleansia.App/nx.json` and `libs/shared/models/project.json` rather than inheriting the
+claim. Both hold: `namedInputs.default` is `["{projectRoot}/**/*", "sharedGlobals"]` with
+`"sharedGlobals": []`; `@nx/jest:jest` takes `["default", "^production", "{workspaceRoot}/jest.preset.js"]`;
+`models` declares `scope:shared`/`type:util`, a `test` and a `lint` target, and **no**
+`implicitDependencies`. The three client files are inputs to nothing that `nx test models` hashes.
+
+**Sharpening — the true statement is stronger than "cached".** These are two independent holes and they
+compose into a third:
+
+1. **Affected-gating** (§1.4's point): a client-only commit does not select `models`, so the spec does not
+   run.
+2. **Cache replay** (CH-G3's point): on any invocation that *does* select `models` without `models`' own
+   files changing — `nx run-many -t test`, a developer's local `nx test models` after pulling a regen, a
+   restored cache across branches — Nx replays a **PASS it computed over different client bytes**.
+3. **Therefore the spec is only ever genuinely executed when `libs/shared/models`' own files change.**
+   Which means D4's first bullet (someone hand-edited `wire-enums.generated.ts`) is covered, and D4's
+   second bullet (someone regenerated a client outside the wrapper) is **not merely unclaimed — it is
+   structurally unreachable**. The ADR's own residue 2 concedes exactly that case. D4's body and residue 2
+   contradict each other, and residue 2 is the true one.
+
+**The finding neither the author nor the challenger has, and it disposes of Alternative E properly.** D4
+records `implicitDependencies` as *"cheap, but needs its own verification"* and E rejects it as needing
+`enforce-module-boundaries` work. I verified it, and it is worse than unverified — **it is a project-graph
+cycle**:
+
+```
+models --(proposed implicitDependency)--> partner-services
+partner-services --> partner-stores      (libs/core/partner-services/.../loading.interceptor.ts imports '@cleansia/partner-stores')
+partner-stores   --> models              (libs/data-access/partner-stores/.../{user,order,loading,dashboard}.{state,actions}.ts import '@cleansia/models')
+```
+
+`tsconfig.base.json:182-186` maps all three aliases to three separate Nx projects. So adding the edge
+D4 records as available re-creates the **circular-dependency class whose repair (13 cycles) created the
+`scope:shared` boundary that forced a shared copy to exist in the first place**. The admin leg is the
+same shape via `admin-stores`.
+
+**Ruling.** CH-G3 **sustained** (blocking). The committed-state check must leave `nx test models`. No
+Nx-hosted variant rescues it: affected-gating and cache-replay each defeat it independently, and the one
+recorded workaround is a graph cycle. The two committed workflow headers
+(`.github/workflows/offerability-parity.yml`, `.github/workflows/nx-project-registration.yml`) name this
+hazard verbatim as the reason not to host a guard this way, and this ADR cites neither — that omission is
+sustained as an alternatives-table defect, not just a citation gap: **the shape this sprint standardized
+(a dependency-free Node checker outside the Nx workspace + its own repo-root workflow + a self-test that
+runs first) is never considered**, and Alternative F rejects the one mechanism this repo has already
+labelled *"the counter-example, not the model."* Rejecting F is correct and is not *considering* a CI
+gate.
+
+§1.4 must also gain the cache half. As written it teaches the next reader that "affected" is the whole
+problem, and the next guard gets hosted in an Nx project again.
+
+---
+
+### V.5 — Ruling 4 (the internal contradiction): **SUSTAINED, with a precision the challenger did not draw**
+
+It is not a *formal* contradiction — you can keep three files diffable and still fail a check over them.
+The defect is sharper and worse:
+
+> **D3 argues that a divergence between the clients is *information worth preserving*. D1 acts as though
+> the same divergence is an *error worth halting on*. The ADR assigns opposite normative status to one
+> observation and never notices it is doing so.**
+
+That is why "keep three copies so drift stays observable" and "`exit 1` inside the regen when they
+differ" cannot both be right *as stated*: if a host being a commit behind is a legitimate state of the
+world — and D3 ground (i) rests entirely on it being legitimate and legible — then halting the owner's
+single-host regen on it converts legitimate information into an outage (§V.2). Conversely if it is an
+error, D3's *"collapsing removes the evidence of the drift, not the drift"* loses its force, because an
+error that is always fatal at creation leaves no evidence to preserve.
+
+**Ruling.** Both cannot stand as written. **D3 survives; D1's response to divergence does not.** The
+rebuild reconciles them explicitly — it must say, in one sentence, what a client-to-client divergence
+*is* in this design (evidence, or defect) and then act consistently. Note the reconciliation the
+challenger observed and I confirm: under a C#-authority design, a single-host regen against a newer
+backend is **not a disagreement at all** — the shared file is rewritten from the domain and the two stale
+clients are *named as stale*, which is the true statement and preserves exactly the observability D3
+wants. That is one route, not the mandated one.
+
+---
+
+### V.6 — Ruling 5 (the other two clients): the ADR must **exclude them explicitly, on the true ground.** Residue 3 is wrong in both directions — verified myself
+
+The panel's framing — *"an enum contract holding on one of three clients is not a contract"* — is the
+right instinct and the wrong premise for **this** artifact, and I checked rather than reasoned:
+
+```swift
+// src/cleansia_ios/CleansiaPartnerApi/Models/OrderStatus.swift:13-21
+public enum OrderStatus: Int, Codable, CaseIterable { case _0 = 0 … case _6 = 6 }
+```
+```kotlin
+// src/cleansia_android/partner-app/build/generated/openapi/…/model/OrderStatus.kt:28-49
+enum class OrderStatus(val value: kotlin.Int) { @SerialName("0") _0(0) … @SerialName("6") _6(6); }
+```
+
+`_N = N` is an identity map with **no semantic content**. There is no name→integer table in the mobile
+generated clients, so the object this ADR governs — *a name bound to an integer* — **does not exist on
+mobile**, and the fossil's failure mode (a name bound to the wrong integer) is structurally impossible
+there. Residue 3's *"the same 12 enums exist a third and fourth time"* is false of the object under
+decision. And *"nothing compares them to the web ones"* is false too:
+`agents/tools/check-available-status-parity.mjs` already compares `OrderStatus` ordinals across eight
+surfaces including two Android and two iOS files, against the canonical C#, in its own repo-root
+workflow triggered on all four trees. CH-G7 is **sustained** (non-blocking, but it must be fixed before
+acceptance because it is the residue a future reader turns into a ticket, and that ticket would have
+nothing to compare).
+
+**Ruling — what the ADR must say.** Explicit exclusion, on the true ground, in three parts:
+
+1. **The web is the only stack whose generated client declares a name→integer table.** State that, with
+   the two citations above. That is *why* the generator's scope is the web, and it is a structural
+   reason rather than a scheduling one.
+2. **The equivalent mobile risk is a different artifact** — the hand-written presentation/action mapping
+   (`OrderStatusPresentation.kt`, `OrderPrimaryAction.swift`) — and it is **partially covered**:
+   `check-available-status-parity.mjs` gates `OrderStatus` there today and **nothing gates the other
+   eleven enums** on any stack. Say that in one sentence; it is the true residue and it is a legitimate
+   future ticket, unlike the one residue 3 currently invites.
+3. **The two artifacts differ in kind and the residue must not blur them:** the iOS file is committed
+   source; the Android file is a Gradle build output re-derived from the committed spec. Their drift
+   profiles are not the same.
+
+**And one constraint the rebuild inherits from this ruling** (§V.9 RB-5): if the replacement makes the C#
+declaration an authority, then the web tool and `check-available-status-parity.mjs` become two parsers
+reading the same `.cs` files. Two parsers over one source is a new drift surface of exactly the kind this
+ADR exists to close. The rebuild must state which tool owns C#-to-client parity, or justify the second
+parser.
+
+---
+
+### V.7 — CH-G5 / CH-G6: **sustained.** Three citations do not hold, and two of them commissioned work
+
+- **(a) The fifth client is already deleted.** I globbed
+  `src/Cleansia.App/libs/core/services/**/client/**` — **no files**. So **§D5 is a no-op**, §3 step 4's
+  delete is done, §V7's *"the only client-shaped file that changes"* is void, and Alternative H's *"has
+  been sitting in the tree"* must go to the past tense. The **argumentative** consequence is the one that
+  matters and the challenger is right about it: the single real incident this ADR leans on was found by a
+  human measuring five copies against the C# source and closed by a `git rm` — not by anything D1
+  proposes, and (per D1.1's own definitional exclusion of that file) not by anything D1 *could* propose.
+  §1.1 stays as evidence — the incident was real and it is the best argument in the document — but it must
+  be told in the past tense and it must stop implying that the mechanism under decision would have caught
+  it. **Alternative H's disposition is rewritten in the same pass.**
+- **(b) The `CLAUDE.md` claim is false at HEAD.** `CLAUDE.md:34-35` applies *"NSwag-generated API
+  clients"* to `core/{partner,admin,customer}-services/` and labels `core/services/` **"(hand-written)"**.
+  The map says the correct thing. **The `MANUAL_STEP` in §D5 and residue 5 in §4 are WITHDRAWN.** A
+  manual step that asks the owner to fix a correct line spends owner attention and teaches the next agent
+  that the map is untrustworthy. The claim was inherited verbatim from ADR-0031 residue #5(a) and
+  re-asserted here under a *"verified against the tree"* header — **an inherited citation is not a
+  verified one**, and that is the lesson the rebuild should carry, not the step.
+- **(c) The living-doc "correction" §1.5 offers has already landed** (`generated-client-contract.md`
+  invariant 10 / gap 4b, corrected 2026-08-04). The underlying fact the ADR states is right; only the
+  *"still says"* is stale. Drop the parenthetical.
+- **CH-G6 — ticket ids.** `T-0546` is taken (`agents/backlog/tickets/T-0546-four-customer-libs-cannot-run-jest.md`)
+  and is cited from committed CI (`.github/workflows/nx-project-registration.yml:6-7`). *"T-0545 was the
+  highest on disk"* is false — T-0546, T-0548, T-0549 exist. **The rebuild names no ticket id**; it says
+  "the PM allocates." I allocate none here.
+
+**Blocking, editorially: sustained.** Two of the three commissioned work that must not be done, and this
+is the third ADR this sprint whose *"verified in the working tree"* header carried a false citation. An
+artifact about to become immutable may not carry three.
+
+---
+
+### V.8 — What I attacked and could not break *(silence is not assent, and this is why the rebuild is cheap)*
+
+- **§1.3 — the shared enum is a constant table, not a type.** I re-read the three pipes' signatures and
+  the widening arm. The conclusion holds and it is the single most valuable sentence in the document: no
+  compiler anywhere checks these integers, which is why every "declare it once + add a parity spec" answer
+  is a detector rather than a fix. It is also why Alternative G is correctly rejected.
+- **§1.4's affected-gating** — verified independently (§V.4). Correct, and incomplete rather than wrong.
+- **§1.2's `SortDirection` finding** — a third hand-mirror, older than the guarded one and with no spec
+  at all. Real, and it is the best *un-argued* reason for this refactor.
+- **§D1.1 — discovery from the `nswag-*.json` `output` keys, hard-failing on a missing output.** This is
+  the part of D1 I would defend hardest and it survives the inversion **unchanged**: it decides
+  *membership*, and only the *value authority* moves. It is also what makes *"is this file a generated
+  client?"* mechanically decidable instead of a matter of opinion — which is the durable lesson from the
+  fossil.
+- **§D2's intersection-not-union rule, and "import, do not re-export".** Both correct; the second is not
+  pedantry (`sort-types.models.ts` needs the symbol in two places, and `models/index.ts` exports both
+  files).
+- **§D3 ground (i)** — I attacked this from the collapse side and could not break it. If all three clients
+  imported one symbol, a client regenerated against a host one commit behind would *claim* the current
+  contract and the skew would become structurally unobservable. **Nothing in this verdict argues for
+  Alternative B or for collapsing to one declaration.** D3 stands.
+- **§3.8 — no CRC card.** Correct. A build tool is not a role; nothing new knows anything.
+- **§0's owner ruling** — out of scope and untouched. The hand-written mirror still goes.
+
+---
+
+### V.9 — What a replacement must satisfy *(constraints, not a design — I do not invent the repair)*
+
+The challenger named a strong candidate (values from `Cleansia.Core.Domain/Enums/*.cs`, membership from
+the clients; the technique is shipped at `agents/tools/check-available-status-parity.mjs:134-165` and
+gated by `.github/workflows/offerability-parity.yml`). **I am not ratifying it.** Adopting and ratifying
+a repair in one pass is the move this panel exists to prevent, and the constructed defense in RB-2 shows
+the candidate is not free. The author designs; a second panel rules.
+
+- **RB-1 — the authority must be able to be wrong.** Whatever the shared file's integers are derived
+  from, the mechanism must be able to detect the case *"the shared table disagrees with what the backend
+  actually emits."* A comparison among artifacts that are all renderings of one declaration cannot do
+  this, on any path. If the rebuild keeps client-to-client comparison, it must state what that comparison
+  detects (*"three clients generated against different backend commits"*) and stop claiming more.
+- **RB-2 — price the failure posture, because the cheap repair is not free.** *(This is the surviving
+  half of the defense I constructed for the author; the challenge does not price it.)* The shared table
+  must match what the **deployed** API emits, and C# HEAD is not that. A hard failure on *"the clients
+  disagree with C# HEAD"* means **any backend enum change reddens CI until the owner runs an owner-only
+  command** — converting a `manual_step` into a merge blocker for everyone. Neither design pins to the
+  deployed contract; HEAD is nonetheless the repo's declared intent (`nswag-regen` is bound to a DTO
+  change by `quality-gates.md`). So the replacement must state its posture explicitly and defend it. The
+  house precedent for exactly this tension is the `--baseline` ratchet on
+  `check-available-status-parity.mjs`; using it, or rejecting it, is a decision the rebuild must make on
+  the record.
+- **RB-3 — the gate must be able to go red in CI, on the commit that creates the drift.** Per §V.1(b)
+  that commit is a **backend** commit, so the trigger must cover `src/Cleansia.Core.Domain/**` as well as
+  `src/Cleansia.App/**` if the C# source is an authority. `conventions.md:237-242` with a zero baseline
+  makes this obligatory, not optional (§V.3).
+- **RB-4 — the check may not be hosted in an Nx task.** Affected-gating, cache replay, and a project-graph
+  cycle in the one recorded workaround each defeat it independently (§V.4). If the rebuild proposes an
+  Nx host anyway, it must answer all three by name.
+- **RB-5 — one parser per source.** If C# becomes an authority, name which tool owns C#-to-client parity
+  rather than growing a second parser over `Cleansia.Core.Domain/Enums/*.cs` (§V.6).
+- **RB-6 — the regen-time step, if kept, is early warning and carries no tier.** It may not be the only
+  gate (RB-3) and it may not hard-fail a single-host regen for a cross-host reason without a documented
+  operator procedure (§V.2). "Report loudly and refuse to rewrite" is one shape; there are others.
+- **RB-7 — anti-vacuity survives and extends.** D1.7's exits are right and match house discipline. Add
+  the one the current design lacks: a run in which the authority itself was not read (zero C# enums
+  parsed, or zero clients discovered) is `exit 1`, not a pass.
+
+---
+
+### V.10 — What the second panel checks
+
+1. Title and the "One decision" box state the mechanism the rebuild actually chose (§V.1).
+2. §4 and §D3 no longer claim *"a disagreement… impossible to ship"* beyond what the mechanism detects.
+3. RB-1 … RB-7 each answered on the record, RB-2 with a stated failure posture.
+4. §6 re-disposes **Alternative C** against the shipped technique (`check-available-status-parity.mjs`),
+   not against assembly reflection or a new enum-only endpoint; and the alternatives table gains *"a
+   dependency-free Node checker outside the Nx workspace + a repo-root workflow + a self-test"* with a
+   real disposition.
+5. §7's entry carries an available tier token, earned by the thing that sets the exit code (§V.3).
+6. §1.1 in the past tense; Alternative H's disposition rewritten; §D5, its `MANUAL_STEP` and residue 5
+   deleted; §1.5's parenthetical deleted; no ticket id named (§V.7).
+7. §1.4 gains the cache half; residue 3 rewritten per §V.6; residue 2 and D4's body reconciled.
+8. Whatever survives of D4 states plainly which of its two bullets it actually covers.
+
+---
+
+### V.11 — Routed (outside this lane; I did not edit these)
+
+- **`agents/knowledge/patterns-frontend.md:657-667` is factually wrong at HEAD, independently of this
+  ADR's fate.** It states: *"A regen that renumbers a member then **fails `nx test models`** instead of
+  silently giving shared code a different contract."* §1.4 and §V.4 prove it does not — a regen-only
+  commit does not select `models`, and any selection without a `models` file change replays a cached
+  pass. Because the §7 replacement is bound to an acceptance that has not happened, that sentence stays in
+  force while being false. **This is a small, immediate factual correction, not a new decision**, and it
+  should be a ticket now rather than waiting on the rebuild. Proposed minimal edit: replace *"then fails
+  `nx test models`"* with *"then fails `nx test models` **only on a commit that also touches
+  `libs/shared/models`** — a regen-only commit does not select that project and Nx may replay a cached
+  pass over changed client bytes (ADR-0042 §1.4 + Verdict §V.4), so this spec is a backstop, not a gate"*,
+  and leave the `Q-ENUM-01` pointer, correcting it to say the answer is `proposed` and returned.
+- **`agents/backlog/questions/open.md` Q-ENUM-01 needs two corrections** (PM/author lane — I may not edit
+  it): (i) `:1231` points at `adr/0041-shared-wire-enums-…`, a filename that does not exist; `0041` is the
+  partner-agreements ADR, so a reader following it lands mid-panel on a different decision. (ii) `:1257-1258`
+  records **"Answer: the shared declaration is GENERATED from the NSwag output at regen time"** as settled
+  and instructs the PM to move the entry to `answered.md`. **That answer is the clause this panel
+  returned.** Until the rebuild clears a second panel the entry stays open, and the "PM: move to
+  answered.md" instruction must be struck. The owner's half (§0) remains settled and can be recorded as
+  such.
+- **`CLAUDE.md`** — no step is owed (§V.7(b)). The previously proposed `MANUAL_STEP` is withdrawn.
+- **Ticket ids** — none allocated by this verdict. The challenger round's id and the refactor's id are the
+  PM's; `T-0546` is taken.
+- **`conventions.md` / ADR-0032** — the missing tier token for a gate that blocks an owner-run local
+  command (§V.3). Belongs to ADR-0032's panel, not to this one.
+
+---
+
+**Consensus:** not reached. Four blocking findings sustained (CH-G1, CH-G2, CH-G3, CH-G4), one sustained
+editorially (CH-G5), two sustained non-blocking (CH-G6, CH-G7), and CH-G8 dissolves with §V.4. **Nothing
+is escalated to the owner** — every open point is an architect's mechanism choice, and §0's owner ruling
+is untouched and still binding. The author revises this draft; a second panel rules against §V.10.

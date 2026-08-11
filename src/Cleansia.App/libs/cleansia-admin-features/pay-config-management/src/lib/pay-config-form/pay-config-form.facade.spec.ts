@@ -153,4 +153,50 @@ describe('PayConfigFormFacade', () => {
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031) — and every member here is a pay rate,
+  // so one dropped silently pays a cleaner zero for it.
+  describe('command bodies on the wire', () => {
+    it('serializes a create with every rate and no employee override', () => {
+      createMock.mockReturnValue(of({ id: 'pc-1' }));
+
+      facade.createPayConfig(formData);
+
+      const command: CreatePayConfigCommand = createMock.mock.calls[0][0];
+      expect(command).toBeInstanceOf(CreatePayConfigCommand);
+      expect(command.toJSON()).toEqual({
+        employeeId: undefined,
+        serviceId: 'svc-1',
+        basePay: 500,
+        extraPerRoom: 50,
+        extraPerBathroom: 30,
+        distanceRatePerKm: 10,
+        minimumPay: 300,
+        maximumPay: 2000,
+        currencyId: 'cur-1',
+        description: 'Standard rate',
+        packageId: undefined,
+      });
+    });
+
+    it('serializes an update with the config id and every rate', () => {
+      updateMock.mockReturnValue(of({ id: 'pc-1' }));
+
+      facade.updatePayConfig('pc-1', formData);
+
+      const command: UpdatePayConfigCommand = updateMock.mock.calls[0][1];
+      expect(command).toBeInstanceOf(UpdatePayConfigCommand);
+      expect(command.toJSON()).toEqual({
+        payConfigId: 'pc-1',
+        basePay: 500,
+        extraPerRoom: 50,
+        extraPerBathroom: 30,
+        distanceRatePerKm: 10,
+        minimumPay: 300,
+        maximumPay: 2000,
+        description: 'Standard rate',
+      });
+    });
+  });
 });

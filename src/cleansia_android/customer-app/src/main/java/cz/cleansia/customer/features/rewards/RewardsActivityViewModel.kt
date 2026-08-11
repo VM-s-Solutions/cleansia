@@ -62,7 +62,7 @@ class RewardsActivityViewModel @Inject constructor(
                         _loaded.value = true
                     }
                     .onError { error ->
-                        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                        if (error !is ApiError.Network) snackbar.showError(error)
                     }
             } finally {
                 _loading.value = false
@@ -90,7 +90,7 @@ class RewardsActivityViewModel @Inject constructor(
                         _total.value = resp.total
                     }
                     .onError { error ->
-                        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                        if (error !is ApiError.Network) snackbar.showError(error)
                     }
             } finally {
                 _loadingMore.value = false

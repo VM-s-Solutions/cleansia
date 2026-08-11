@@ -50,9 +50,12 @@ public class AdminOverrideOrderStatus
         ILiveActivityProducer liveActivityProducer
     ) : ICommandHandler<Command, Response>
     {
-        // The forward-only lifecycle the override may walk. Cancelled is intentionally absent —
-        // cancellation is AdminCancelOrder (it carries the refund seam); the override is not a
-        // back-door into the terminal Cancelled state.
+        // The RANK array — not the set of legal targets. It must stay total over every status a row
+        // can currently HOLD, Pending included: drop a member and Array.IndexOf returns -1 for a row
+        // in that state, which satisfies `targetRank <= currentRank` for every target and inverts
+        // the forward-only guard into a licence to walk backwards. Cancelled is absent because no
+        // row reaches this code holding it (the terminal check above refuses first) and because
+        // cancellation is AdminCancelOrder's, which carries the refund seam.
         private static readonly OrderStatus[] Lifecycle =
         [
             OrderStatus.New,
@@ -93,12 +96,26 @@ public class AdminOverrideOrderStatus
                     BusinessErrorMessage.OrderAlreadyCancelled));
             }
 
-            var currentRank = Array.IndexOf(Lifecycle, currentStatus ?? OrderStatus.New);
+            // OrderStatus.Pending is dead (ADR-0037 D5) — the state it names lives on the payment
+            // axis (Card + PaymentStatus.Pending), which is what the live sweeps read. This generic
+            // writer is the only way a new Pending row could appear, so it is refused here rather
+            // than by removing the member from Lifecycle, which ranks legacy rows.
+            if (command.TargetStatus == OrderStatus.Pending)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.TargetStatus),
+                    BusinessErrorMessage.InvalidOrderStatusTransition));
+            }
+
+            var currentRank = Array.IndexOf(Lifecycle, currentStatus);
             var targetRank = Array.IndexOf(Lifecycle, command.TargetStatus);
 
             // A legal override is a strict forward move along the lifecycle. Same-state, backward,
             // and off-lifecycle targets (e.g. Cancelled) are ambiguous and never rewrite history.
-            if (targetRank < 0 || targetRank <= currentRank)
+            // An unrankable CURRENT status is refused too: unreachable while Lifecycle stays total,
+            // which is exactly why it is written down — the next OrderStatus member added and
+            // forgotten there would otherwise re-open the backwards move silently.
+            if (currentRank < 0 || targetRank < 0 || targetRank <= currentRank)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.TargetStatus),

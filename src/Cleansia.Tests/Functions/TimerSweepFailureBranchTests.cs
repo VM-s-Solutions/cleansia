@@ -49,6 +49,10 @@ public class TimerSweepFailureBranchTests
         _mediator
             .Setup(m => m.Send(It.IsAny<CleanupStalePendingOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<CleanupStalePendingOrders.Response>());
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<ReleaseOrphanedBenefitReservations.Response>());
 
         var handler = new CleanupStalePendingOrdersHandler(
             _mediator.Object, NullLogger<CleanupStalePendingOrdersHandler>.Instance);
@@ -101,6 +105,24 @@ public class TimerSweepFailureBranchTests
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
 
         Assert.Null(ex);
+    }
+
+    [Fact]
+    public async Task SendPreCleaningReminders_Failure_Result_Does_Not_Throw()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<SendPreCleaningReminders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<SendPreCleaningReminders.Response>());
+
+        var handler = new SendPreCleaningRemindersHandler(
+            _mediator.Object, NullLogger<SendPreCleaningRemindersHandler>.Instance);
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
+
+        Assert.Null(ex);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<SendPreCleaningReminders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

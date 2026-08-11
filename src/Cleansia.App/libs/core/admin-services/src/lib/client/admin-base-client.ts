@@ -50,7 +50,9 @@ import {
   IAdminServiceClient,
   IAdminUserClient,
   IApiClient,
+  IPayoutDetailsClient,
   ITypesClient,
+  PayoutDetailsClient,
   TypesClient,
 } from './admin-client';
 
@@ -79,6 +81,7 @@ interface IAdminClient {
   adminLoyaltyClient: IAdminLoyaltyClient;
   adminMarketingClient: IAdminMarketingClient;
   adminReferralClient: IAdminReferralClient;
+  payoutDetailsClient: IPayoutDetailsClient;
   // The kitchen-sink generated client — hosts service-city CRUD + any
   // future endpoints that don't have their own dedicated controller.
   apiClient: IApiClient;
@@ -181,6 +184,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminReferralClient: IAdminReferralClient = new AdminReferralClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  payoutDetailsClient: IPayoutDetailsClient = new PayoutDetailsClient(
     this.httpClient,
     this.apiBaseUrl
   );

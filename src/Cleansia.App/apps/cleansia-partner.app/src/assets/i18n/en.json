@@ -15,7 +15,7 @@
       "registration_number": "Registration Number (IČO)",
       "vat_number": "VAT Number (DIČ)",
       "legal_entity_name": "Legal Entity Name",
-      "iban": "IBAN",
+      "iban": "Bank details",
       "passport_id": "Passport ID",
       "nationality": "Nationality",
       "documents": "Documents"
@@ -158,7 +158,26 @@
       "review_notes": "Review Notes",
       "drop_files_here": "Drop files here",
       "or_click_to_browse": "or click to browse",
-      "select_document_type_error": "Please select a document type for each file before uploading."
+      "select_document_type_error": "Please select a document type for each file before uploading.",
+      "bank_country": "Bank country",
+      "bank_account_prefix": "Account prefix",
+      "bank_account_prefix_hint": "Optional — the short number before the dash, if your account has one.",
+      "bank_account_number": "Account Number",
+      "bank_account_number_hint": "The part before the slash, e.g. 5885638003.",
+      "bank_code": "Bank code",
+      "bank_code_hint": "The four digits after the slash, e.g. 5500.",
+      "iban_hint": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.",
+      "swift_code": "SWIFT Code",
+      "swift_code_hint": "Only needed when your bank is in a different country than the one you work in.",
+      "bank_name": "Bank Name",
+      "bank_account_holder": "Account holder",
+      "bank_account_holder_hint": "Optional — the name your bank has on the account, if it differs from yours.",
+      "job_radius": "Job alert distance",
+      "job_radius_explainer": "This changes only which new jobs we notify you about. The job board still lists every job in your country, and you can take any of them.",
+      "job_radius_limit": "Only notify me about nearby jobs",
+      "job_radius_off_hint": "We'll notify you about every new job in your country.",
+      "job_radius_distance": "Distance from home (km)",
+      "job_radius_distance_hint": "Between {{min}} and {{max}} km."
     },
     "dashboard": {
       "title": "Dashboard",
@@ -815,7 +834,12 @@
         "files_required": "Document upload is required.",
         "file_removed": "File removed successfully",
         "load_error": "Failed to load profile information. Please try again.",
-        "file_transformation_error": "Failed to process uploaded files. Please try again."
+        "file_transformation_error": "Failed to process uploaded files. Please try again.",
+        "bank_details_saved": "Bank details saved",
+        "bank_details_load_error": "We could not load your bank details. Please try again.",
+        "not_loaded": "Profile not loaded yet",
+        "job_radius_saved": "Job alert distance saved",
+        "job_radius_load_error": "We could not load your job alert distance. Please try again."
       },
       "documents": {
         "load_error": "Failed to load documents. Please try again.",
@@ -1003,6 +1027,7 @@
       "invalid_confirmation_code": "Invalid confirmation code",
       "invalid_google_token": "Invalid Google token",
       "invalid_apple_token": "Invalid Apple token",
+      "social_account_not_found": "No account matches that sign-in. Please register first.",
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
@@ -1031,12 +1056,32 @@
       "invalid_tax_id": "Invalid tax ID format",
       "invalid_iban": "Invalid IBAN format",
       "invalid_zip_code": "Invalid zip code format",
+      "registration_number": {
+        "invalid_format": "Invalid company registration number format for the selected country"
+      },
+      "vat_number": {
+        "invalid_format": "Invalid VAT number format for the selected country"
+      },
       "must_be_positive": "Value must be positive",
       "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
       "page_must_be_positive": "Page must be greater than 0",
       "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
       "invalid_contract_status": "Invalid contract status value",
+      "payout": {
+        "account_number_required": "Enter your account number",
+        "country_not_supported": "We cannot pay out to a bank in this country yet",
+        "iban_country_mismatch": "Your IBAN is from a different country than your bank. Check the IBAN, or change the bank country so the two match.",
+        "iban_mismatch": "Your IBAN does not match your account number and bank code. Check all three, or leave the IBAN empty and we will fill it in for you.",
+        "invalid_account_number": "We could not verify this account number — it is almost always a mistyped digit. Please compare it with your bank statement.",
+        "invalid_account_prefix": "We could not verify this account prefix — it is the part before the dash in your account number. Please check the digits, or leave it empty if your account has none.",
+        "invalid_bank_code": "Enter your 4-digit bank code",
+        "invalid_iban": "This is not a valid IBAN. Copy it from your bank statement or your banking app.",
+        "invalid_swift": "This SWIFT/BIC does not belong to your bank's country. Copy it from your bank statement or your banking app.",
+        "looks_like_card": "That looks like a payment card number. Enter your bank account number instead — you will find it on your bank statement or in your banking app.",
+        "scheme_not_supported": "We cannot pay out to this kind of account yet",
+        "swift_required": "Your bank is in a different country than the one you work in, so we also need your bank's SWIFT/BIC code."
+      },
       "file": {
         "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
         "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
@@ -1072,7 +1117,12 @@
       },
       "not_found": "Order not found",
       "already_assigned": "Order is already assigned",
-      "no_available_spots": "No available spots for this order",
+      "no_available_spots": "Another cleaner has already taken this job.",
+      "not_takeable": "This job is no longer available.",
+      "take": {
+        "already_cancelled": "This order is already cancelled.",
+        "already_completed": "This order is already completed."
+      },
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",
       "max_employees_exceeded": "Maximum number of employees exceeded",
@@ -1097,7 +1147,9 @@
       },
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "creation_failed": "Failed to create order",
-      "time_conflict": "This time conflicts with another booking on your schedule"
+      "time_conflict": "This time conflicts with another booking on your schedule",
+      "weekly_limit_reached": "You've reached your weekly order limit.",
+      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one."
     },
     "user": {
       "email_confirmed": "Email is already confirmed",
@@ -1117,7 +1169,8 @@
       "documents_missing": "Upload required documents",
       "not_approved": "Your account is not approved to work on orders",
       "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected"
+      "already_rejected": "Employee has already been rejected",
+      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range"
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -1170,7 +1223,11 @@
       "distance_rate_negative": "Distance rate cannot be negative",
       "minimum_pay_negative": "Minimum pay cannot be negative",
       "maximum_pay_negative": "Maximum pay cannot be negative",
-      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
+      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
+      "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay."
+    },
+    "payout": {
+      "not_found": "You have not added your payout details yet"
     },
     "file": {
       "content_type_doesnt_match": "File type does not match content",
@@ -1195,7 +1252,12 @@
       "not_existing_id": "Country with this ID does not exist",
       "not_found": "Country not found",
       "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use"
+      "in_use": "Cannot delete country because it is currently in use",
+      "not_serviced": "We do not operate in this country yet"
+    },
+    "gdpr": {
+      "consent_not_found": "We could not find that consent setting",
+      "consent_already_granted": "You have already granted this consent"
     },
     "company": {
       "not_found": "Company information not found",

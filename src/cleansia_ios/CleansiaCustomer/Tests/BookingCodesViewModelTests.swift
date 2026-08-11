@@ -4,6 +4,29 @@ import XCTest
 
 @MainActor
 final class BookingCodesViewModelTests: XCTestCase {
+    private static let languages = ["en", "cs", "sk", "uk", "ru"]
+
+    /// `PromoCode/Validate` and `Referral/Validate` answer HTTP **200** carrying a stringified enum, not
+    /// ProblemDetails, so `ApiErrorLocalizer` is never on this path and Core's `error.*` catalog is never
+    /// consulted. These keys are the only thing between a rejected code and a raw token in the sheet, and
+    /// `L10n.localized` echoes the key back when a locale is missing one.
+    private static let codeRefusalKeys = [
+        "booking_promo_code_error_not_found",
+        "booking_promo_code_error_inactive",
+        "booking_promo_code_error_expired",
+        "booking_promo_code_error_not_yet_valid",
+        "booking_promo_code_error_global_limit",
+        "booking_promo_code_error_used",
+        "booking_promo_code_error_min_order",
+        "booking_promo_code_error_currency",
+        "booking_promo_code_error_generic",
+        "error_referral_not_found",
+        "error_referral_self_referral",
+        "error_referral_already_referred",
+        "error_referral_inactive",
+        "error_referral_generic"
+    ]
+
     private func makeVM(
         extra: FakeExtraClient = FakeExtraClient(),
         promo: FakePromoCodeClient = FakePromoCodeClient(),
@@ -117,21 +140,103 @@ final class BookingCodesViewModelTests: XCTestCase {
         XCTAssertEqual(promo.callCount, 0)
     }
 
-    func testPromoSubtotalComesFromQuotedTotal() async {
-        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 2400, currencyCode: "CZK")))
-        let promo = FakePromoCodeClient()
-        let vm = makeVM(promo: promo, quote: quote)
+    /// No surcharge, no delta — the base is the whole quote and the answer is already stated against the
+    /// price it comes off. A fix that moves either number here has over-corrected.
+    func testWithoutAnExpressSurchargeThePromoSendsTheQuoteWholeAndKeepsTheAnswer() async {
+        let promo = FakePromoCodeClient(result: .success(PromoValidation(
+            isValid: true,
+            discountAmount: 240,
+            errorCode: nil
+        )))
+        let vm = await quotedVM(BookingQuote(totalPrice: 2400, currencyCode: "CZK"), promo: promo)
 
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertEqual(promo.lastSubtotal, 2400)
+        XCTAssertEqual(vm.promoState.discount, 240, accuracy: 0.0001)
+        XCTAssertEqual(
+            BookingPriceSummary.resolve(quote: vm.quoteState.quote, discount: vm.effectiveDiscount).total,
+            2160,
+            accuracy: 0.0001
+        )
+    }
+
+    /// `CreateOrder.Handler` previews the promo against `calc.TotalPrice - calc.ExpressSurchargeAmount`
+    /// and applies the surcharge afterwards, so the gross is a base the submit never reproduces: a
+    /// percentage previews a fifth too much and a minimum-order floor clears that the submit refuses.
+    func testAnExpressPromoValidatesAgainstThePreSurchargeSubtotal() async {
+        let promo = FakePromoCodeClient()
+        let vm = await quotedVM(expressQuote, promo: promo)
+
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertEqual(promo.lastSubtotal, 1000)
+    }
+
+    /// The validator answers on the pre-surcharge base while the price it comes off carries the
+    /// surcharge. Left as it arrives, the summary reads 1100 against a charged 1080.
+    func testAnExpressPromoDiscountIsRestatedAgainstThePriceItComesOff() async {
+        let promo = FakePromoCodeClient(result: .success(PromoValidation(
+            isValid: true,
+            discountAmount: 100,
+            errorCode: nil
+        )))
+        let vm = await quotedVM(expressQuote, promo: promo)
+
+        let outcome = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertEqual(outcome, .valid(discountAmount: 120))
+        XCTAssertEqual(vm.promoState.discount, 120, accuracy: 0.0001)
+        XCTAssertEqual(
+            BookingPriceSummary.resolve(quote: vm.quoteState.quote, discount: vm.effectiveDiscount).total,
+            1080,
+            accuracy: 0.0001
+        )
+    }
+
+    /// A membership waiver leaves an express hour charging no surcharge, so it is the plain case.
+    func testAWaivedExpressQuoteMovesNeitherTheBaseNorTheAnswer() async {
+        let promo = FakePromoCodeClient(result: .success(PromoValidation(
+            isValid: true,
+            discountAmount: 100,
+            errorCode: nil
+        )))
+        let waived = BookingQuote(
+            totalPrice: 1000,
+            currencyCode: "CZK",
+            expressSurchargeApplied: false,
+            expressSurchargeAmount: 0,
+            expressSurchargeWaivedByMembership: true
+        )
+        let vm = await quotedVM(waived, promo: promo)
+
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertEqual(promo.lastSubtotal, 1000)
+        XCTAssertEqual(vm.promoState.discount, 100, accuracy: 0.0001)
+    }
+
+    private var expressQuote: BookingQuote {
+        BookingQuote(
+            totalPrice: 1200,
+            currencyCode: "CZK",
+            expressSurchargeApplied: true,
+            expressSurchargeAmount: 200
+        )
+    }
+
+    /// A view model whose debounced quote has already landed, so `validatePromoCode` sees it.
+    private func quotedVM(_ quoted: BookingQuote, promo: FakePromoCodeClient) async -> BookingViewModel {
         let scheduler = TestScheduler.dispatch
-        let vmWithSched = BookingViewModel(
+        let vm = BookingViewModel(
             catalogClient: FakeCatalogClient(),
-            quoteClient: quote,
+            quoteClient: FakeQuoteClient(result: .success(quoted)),
             extraClient: FakeExtraClient(),
             promoClient: promo,
             referralClient: FakeReferralClient(),
             scheduler: scheduler.eraseToAnyScheduler()
         )
-        vmWithSched.update { var s = $0
+        vm.update { var s = $0
             s.selectedServiceIds = ["s-1"]
             return s
         }
@@ -139,10 +244,7 @@ final class BookingCodesViewModelTests: XCTestCase {
         for _ in 0 ..< 5 {
             await Task.yield()
         }
-
-        _ = await vmWithSched.validatePromoCode("WELCOME20")
-        XCTAssertEqual(promo.lastSubtotal, 2400)
-        _ = vm
+        return vm
     }
 
     func testClearPromoDropsStateAndPayload() async {
@@ -224,6 +326,34 @@ final class BookingCodesViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.referralState, .idle)
         XCTAssertEqual(vm.state.referralCode, "")
+    }
+
+    func testEveryCodeRefusalIsLocalizedInAllFiveLocales() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        var gaps: [String] = []
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            for key in Self.codeRefusalKeys {
+                let value = L10n.localized(key)
+                if value == key || value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    gaps.append("  • \(key) · \(language)")
+                }
+            }
+        }
+
+        XCTAssertTrue(
+            gaps.isEmpty,
+            "\(gaps.count) code refusals render the raw key:\n\(gaps.sorted().joined(separator: "\n"))"
+        )
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 
     func testApplyAddressPopulatesStreetCityZipAndCoords() {

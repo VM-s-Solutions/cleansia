@@ -1,4 +1,7 @@
-import { INotificationPreferencesDto } from '@cleansia/customer-services';
+import {
+  INotificationPreferencesDto,
+  UpdateNotificationPreferencesCommand,
+} from '@cleansia/customer-services';
 
 export type NotificationPreferenceField = keyof INotificationPreferencesDto;
 
@@ -71,6 +74,24 @@ export const NOTIFICATION_PREFERENCE_CATEGORIES: NotificationPreferenceCategory[
       icon: 'pi pi-refresh',
     },
   ];
+
+export function buildUpdateNotificationPreferencesCommand(
+  values: NotificationPreferencesValues
+): UpdateNotificationPreferencesCommand {
+  const command = new UpdateNotificationPreferencesCommand();
+  command.orderUpdates = values.orderUpdates;
+  command.cleanerOnTheWay = values.cleanerOnTheWay;
+  command.orderCompleted = values.orderCompleted;
+  command.orderCancelled = values.orderCancelled;
+  command.refundIssued = values.refundIssued;
+  command.membershipExpiring = values.membershipExpiring;
+  command.membershipCancelled = values.membershipCancelled;
+  command.tierUpgrade = values.tierUpgrade;
+  command.promo = values.promo;
+  command.disputeReply = values.disputeReply;
+  command.recurringScheduled = values.recurringScheduled;
+  return command;
+}
 
 export function toPreferencesValues(
   dto: INotificationPreferencesDto

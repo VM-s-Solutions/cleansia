@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.profile
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
@@ -10,6 +11,7 @@ import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.media.ImageCompressor
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
@@ -42,6 +44,21 @@ sealed interface AvatarDraft {
     data class Picked(val previewUri: Uri, val image: Base64Image) : AvatarDraft
 
     data object Removed : AvatarDraft
+}
+
+/**
+ * What to confirm once the server has accepted a save carrying this draft.
+ *
+ * A save confirms exactly once, and a photo message wins over the general one
+ * when there is a photo message: it is the more specific claim, about the change
+ * the user can actually see. Null for [AvatarDraft.Unchanged] hands the save back
+ * to that general confirmation.
+ */
+@StringRes
+private fun avatarSaveMessageRes(draft: AvatarDraft): Int? = when (draft) {
+    is AvatarDraft.Picked -> R.string.profile_avatar_upload_success
+    AvatarDraft.Removed -> R.string.profile_avatar_remove_success
+    AvatarDraft.Unchanged -> null
 }
 
 /**
@@ -128,8 +145,15 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    /**
+     * A removal is only meaningful against a photo the server actually holds. The
+     * options sheet also opens over a pick that has never been uploaded, and there
+     * the tap can only mean "drop what I just chose" — recording a removal instead
+     * would have the app report deleting a photo that never existed.
+     */
     fun removeAvatar() {
-        _avatarDraft.value = AvatarDraft.Removed
+        val hasSavedPhoto = userRepository.currentUser.value?.avatarFileName != null
+        _avatarDraft.value = if (hasSavedPhoto) AvatarDraft.Removed else AvatarDraft.Unchanged
     }
 
     /** Leaving the edit screen without saving must not carry the pick into the next visit. */
@@ -184,13 +208,16 @@ class ProfileViewModel @Inject constructor(
             )
             result
                 .onSuccess {
+                    snackbar.showSuccessKey(
+                        avatarSaveMessageRes(draft) ?: R.string.profile_save_success,
+                    )
                     _avatarDraft.value = AvatarDraft.Unchanged
                     _saveState.value = ActionState.Idle
                     onSaved()
                 }
                 .onError { error ->
-                    _saveState.value = ActionState.Error(error.getUserMessage())
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    _saveState.value = ActionState.Error(error.userMessage(appContext))
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }
@@ -227,8 +254,8 @@ class ProfileViewModel @Inject constructor(
                     onCompleted()
                 }
                 .onError { error ->
-                    _saveState.value = ActionState.Error(error.getUserMessage())
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    _saveState.value = ActionState.Error(error.userMessage(appContext))
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }

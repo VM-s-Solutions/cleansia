@@ -33,7 +33,7 @@ public static class WithdrawConsent
 
             if (consent is null)
                 return BusinessResult.Failure(new Error(
-                    BusinessErrorMessage.ConsentNotFound, "Consent not found"));
+                    nameof(Command.ConsentType), BusinessErrorMessage.ConsentNotFound));
 
             consent.Withdraw();
 

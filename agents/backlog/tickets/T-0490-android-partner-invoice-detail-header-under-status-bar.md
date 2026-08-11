@@ -1,11 +1,11 @@
 ---
 id: T-0490
 title: Android partner invoice detail — the back button is drawn under the status bar (no window inset)
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -105,6 +105,13 @@ It should run early regardless of what else is happening.
 - 2026-08-02 — **implemented (android)** on `fix/PR-B-android-nav-and-invoice-back` (shared with
   T-0479; disjoint files). Red→green recorded below. No second back button was added — the existing
   one now clears the system UI.
+- 2026-08-05 — **merged in `bd520b15` (#186) and independently re-verified by a second android
+  instance.** Deleting `Spacer(Modifier.height(statusBarTop))` reddens only *the header is pushed below
+  the status bar before the back arrow is drawn* (3 tests, 1 failed); restored byte-exact, md5
+  `f88167b8303caebd734ac7540c8a44fa` matching the one recorded here three days ago. **AC1/AC3 remain
+  open on screenshot evidence** (cutout device; bottom of screen). The AC4 follow-up — the one
+  genuinely uninset screen, `OnboardingScreen.kt:116-119`, whose status-bar strip holds the language
+  chooser and Skip on a new cleaner's first screen — **is still unfixed and still unfiled.**
 
 ## Review — android (2026-08-02)
 

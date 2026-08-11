@@ -28,6 +28,7 @@
     <string name="register_pw_number">At least one number</string>
     <string name="register_pw_match">Passwords match</string>
     <string name="register_terms_and_conditions"><![CDATA[I agree to the <a href="cleansia://terms">Terms of Service</a> and <a href="cleansia://privacy">Privacy Policy</a>]]></string>
+    <string name="register_social_terms_required">Accept the Terms of Service and Privacy Policy to continue with Google.</string>
     <string name="register_submit">Create account</string>
     <string name="register_have_account">Already have an account?</string>
     <string name="register_login_link">Log in</string>
@@ -307,11 +308,19 @@
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Cancel order</string>
     <string name="order_cancel_title">Cancel this cleaning?</string>
-    <string name="order_cancel_fee_free">Free cancellation — you\'ll get a full refund.</string>
-    <string name="order_cancel_fee_oops">Free cancellation — you booked less than 15 minutes ago.</string>
-    <string name="order_cancel_fee_50">50%% cancellation fee. Estimated refund: %1$s.</string>
-    <string name="order_cancel_fee_100">100%% cancellation fee. No refund is available this close to the cleaning.</string>
-    <string name="order_cancel_fee_estimate_note">Estimated — final amount confirmed after you submit.</string>
+    <!-- Fee card. One sentence per server tier; the money comes from the server too. -->
+    <string name="order_cancel_fee_not_accepted">Free cancellation — no cleaner has taken this booking yet.</string>
+    <string name="order_cancel_fee_oops">Free cancellation — you booked this only moments ago.</string>
+    <string name="order_cancel_fee_outside_window">Free cancellation — you\'re cancelling far enough ahead.</string>
+    <string name="order_cancel_fee_partial">A cleaner is already on this job, so cancelling now has a fee.</string>
+    <string name="order_cancel_fee_last_minute">This is a last-minute cancellation, so the fee is higher.</string>
+    <string name="order_cancel_fee_none">No cancellation fee.</string>
+    <string name="order_cancel_fee_split">Cancellation fee %1$s — you\'ll be refunded %2$s.</string>
+    <string name="order_cancel_fee_checking">Checking what cancelling this booking costs…</string>
+    <string name="order_cancel_fee_unavailable">We couldn\'t check the cancellation fee just now. You can still cancel — the amount is confirmed when you do.</string>
+    <string name="order_cancel_fee_retry">Try again</string>
+    <string name="order_cancel_fee_recheck_note">This is the cost right now — we check again the moment you confirm.</string>
+    <string name="order_cancel_express_waiver_forfeit">Cancelling also uses up one of your included express bookings for this month.</string>
     <string name="order_cancel_fee_neutral">Are you sure you want to cancel this booking?</string>
     <!-- Legacy free-text label (kept for backward-compat — no longer rendered). -->
     <string name="order_cancel_reason_label">Reason (optional)</string>
@@ -417,6 +426,9 @@
     <string name="profile_avatar_encode_failed">Couldn\'t use that image. Try another photo.</string>
     <string name="profile_avatar_picker_unavailable_title">No photo picker</string>
     <string name="profile_avatar_picker_unavailable_message">This device has no app that can pick a photo.</string>
+    <string name="profile_avatar_upload_success">Profile photo updated</string>
+    <string name="profile_avatar_remove_success">Profile photo removed</string>
+    <string name="profile_save_success">Profile saved successfully</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Saved addresses</string>
@@ -558,6 +570,10 @@
     <string name="booking_slot_unavailable">Unavailable</string>
     <string name="booking_slot_earliest">Earliest</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express_waived">Express · no surcharge</string>
+    <string name="booking_express_waiver_available">Plus covers the 20%% express surcharge — %1$d left this calendar month.</string>
+    <string name="booking_express_waiver_used" formatted="false">No express waivers left this month — express slots are charged at +20% until next month.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Express slots are charged at +20% during your trial — the waiver starts with your first paid month.</string>
     <string name="booking_slot_select">Select</string>
     <string name="booking_all_slots_booked">All slots booked for this day — try another date.</string>
 
@@ -675,6 +691,7 @@
     <string name="booking_summary_time">Time</string>
     <string name="booking_summary_subtotal">Subtotal</string>
     <string name="booking_summary_express_surcharge">Express surcharge (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Express slot — waived with Plus</string>
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
@@ -739,7 +756,7 @@
     <string name="booking_success_t1_title">Booking received</string>
     <string name="booking_success_t1_desc">Just now</string>
     <string name="booking_success_t2_title">Cleaner being assigned</string>
-    <string name="booking_success_t2_desc">Within 1 hour</string>
+    <string name="booking_success_t2_desc">We\'ll let you know as soon as we find one</string>
     <string name="booking_success_t3_title">Cleaner confirmed</string>
     <string name="booking_success_t3_desc">You\'ll see their profile here</string>
     <string name="booking_success_t4_title">Cleaning day</string>
@@ -840,14 +857,16 @@
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
     <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
-    <string name="membership_perk_express_title">Free express upgrade</string>
-    <string name="membership_perk_express_desc">One free same-day booking per month, no surcharge.</string>
+    <string name="membership_perk_express_title">Express bookings without the surcharge</string>
+    <string name="membership_perk_express_desc" formatted="false">We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
 
-    <!-- Perk pills on the active management card. No express pill: nothing in pricing reads
-         AllowsExpressUpgrade, so a member pays the standard express surcharge. -->
+    <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
     <string name="membership_perk_pill_cancellation">%1$dh free cancel</string>
     <string name="membership_perk_pill_recurring">Recurring</string>
+    <string name="membership_perk_pill_express">Express waived · %1$d left</string>
+    <string name="membership_perk_pill_express_used">Express waived · none left</string>
+    <string name="membership_perk_pill_express_trial">Express waived · after trial</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -859,6 +878,7 @@
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
     <string name="membership_success_perks_header">YOUR PLUS PERKS</string>
+    <string name="membership_success_perk_express">Express bookings with the surcharge waived — from your first paid month</string>
     <string name="membership_success_cta_setup_recurring">Set up a recurring cleaning</string>
     <string name="membership_success_cta_back_home">Back to home</string>
     <string name="membership_active_status">Active</string>
@@ -899,6 +919,11 @@
     <string name="recurring_bookings_day_at_time">%1$s at %2$s</string>
     <string name="recurring_bookings_empty_cta">Set one up</string>
     <string name="recurring_bookings_create_fab">New schedule</string>
+    <string name="recurring_plus_gate_title">Recurring is a Plus perk</string>
+    <string name="recurring_plus_gate_subtitle">Join Cleansia Plus to set up weekly or biweekly cleanings that book themselves.</string>
+    <string name="recurring_plus_gate_cta">Try Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus is no longer active</string>
+    <string name="recurring_lapsed_notice_body">These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule.</string>
 
     <!-- Recurring booking create form (PA14) -->
     <string name="recurring_create_title_blank">New recurring cleaning</string>
@@ -923,12 +948,13 @@
     <string name="recurring_create_address_add_new">Add new address</string>
     <string name="recurring_create_submit">Create schedule</string>
     <string name="recurring_create_success">Recurring schedule created.</string>
-    <string name="recurring_create_failed">Couldn\'t create the schedule. Try again.</string>
     <string name="recurring_edit_title">Edit recurring cleaning</string>
     <string name="recurring_edit_submit">Save changes</string>
     <string name="recurring_edit_success">Recurring schedule updated.</string>
-    <string name="recurring_edit_failed">Couldn\'t update the schedule. Try again.</string>
     <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
+    <string name="recurring_edit_notice_title">What saving this changes</string>
+    <string name="recurring_edit_notice_what_changes">Cleanings booked from this schedule from now on use the details above.</string>
+    <string name="recurring_edit_notice_what_stays">Cleanings already on your calendar keep their original time and price — change or cancel them individually from Orders.</string>
     <string name="recurring_freq_weekly_label">Every week</string>
     <string name="recurring_freq_biweekly_label">Every 2 weeks</string>
     <string name="recurring_freq_monthly_label">Every month</string>
@@ -1014,6 +1040,7 @@
     <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
+    <string name="error_order_span_exceeds_maximum">This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.</string>
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
     <string name="error_order_not_found">Booking not found.</string>
@@ -1022,6 +1049,7 @@
     <string name="error_order_time_conflict">This time conflicts with another booking.</string>
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
+    <string name="error_order_payment_already_paid">This order has already been paid.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_review_already_exists">You\'ve already reviewed this booking.</string>
     <string name="error_order_review_rating_invalid">Rating must be between 1 and 5.</string>
@@ -1180,8 +1208,14 @@
     <string name="notification_channel_dispute_reply_name">Support replies</string>
     <string name="notification_channel_dispute_reply_desc">Notifies you when support responds to your dispute.</string>
 
-    <string name="notification_order_confirmed_title">Cleaner found! 🎉</string>
+    <string name="notification_order_confirmed_title">Booking confirmed ✅</string>
     <string name="notification_order_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
+    <string name="notification_cleaner_assigned_title">Cleaner found! 🎉</string>
+    <string name="notification_cleaner_assigned_body">A cleaner is assigned to your booking #%1$s. Tap to see the details.</string>
+    <string name="notification_order_starting_soon_title">Cleaning starts soon</string>
+    <string name="notification_order_starting_soon_body">Your booking #%1$s starts in about an hour. Tap to see the details.</string>
+    <string name="notification_order_preferred_offer_closed_title">Your booking is open to all cleaners</string>
+    <string name="notification_order_preferred_offer_closed_body">The cleaner request for booking #%1$s has ended. Tap to see the details.</string>
     <string name="notification_order_on_the_way_title">Cleaner is on the way</string>
     <string name="notification_order_on_the_way_body">Your cleaner is heading to your booking #%1$s.</string>
     <string name="notification_order_in_progress_title">Cleaning in progress</string>
@@ -1235,6 +1269,7 @@
     <string name="error_device_not_found">This device is no longer registered.</string>
     <string name="error_address_mapbox_coords_required">Please select an address from the suggestions.</string>
     <string name="error_auth_invalid_apple_token">Invalid Apple token</string>
+    <string name="error_auth_social_account_not_found">We couldn\'t find an account for that sign-in. Please sign up first.</string>
     <string name="error_auth_too_many_attempts">Too many attempts with this code. Request a new code and try again.</string>
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_country_not_existing_id">Country not found</string>
@@ -1253,14 +1288,17 @@
     <string name="error_language_not_found">Language not found</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>
     <string name="error_membership_already_active">You already have an active membership.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Your included express bookings for this month have just been used up, so this booking no longer gets the free express upgrade. You can still book it at the standard express price.</string>
     <string name="error_membership_not_found">Membership not found.</string>
     <string name="error_membership_plan_not_found">Membership plan not found.</string>
     <string name="error_membership_swap_same_plan">You\'re already on this plan.</string>
     <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
+    <string name="error_order_preferred_employee_membership_required">Choosing your favourite cleaner is a Cleansia Plus benefit.</string>
     <string name="error_order_total_price_positive">Total price must be positive</string>
     <string name="error_receipt_not_found">Receipt not found</string>
     <string name="error_recurring_booking_ends_on_before_start">The end date must be after the start date.</string>
+    <string name="error_recurring_booking_membership_required">Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up.</string>
     <string name="error_recurring_booking_no_services_or_packages">Select at least one service or package.</string>
     <string name="error_recurring_booking_not_found">Recurring cleaning not found.</string>
     <string name="error_recurring_booking_not_owned_by_user">This recurring cleaning belongs to a different account.</string>

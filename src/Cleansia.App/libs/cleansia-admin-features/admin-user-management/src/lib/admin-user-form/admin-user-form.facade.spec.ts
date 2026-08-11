@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
+import {
+  AdminClient,
+  CreateAdminUserCommand,
+  LanguageListItem,
+  UpdateAdminUserCommand,
+} from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -151,5 +156,54 @@ describe('AdminUserFormFacade', () => {
     expect(snackbar.showError).toHaveBeenCalledWith(
       'errors.common.error_occurred'
     );
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes a create with the credentials and the profile fields', () => {
+      createMock.mockReturnValue(of({ id: 'usr-1' }));
+
+      facade.createUser(fullData);
+
+      const command: CreateAdminUserCommand = createMock.mock.calls[0][0];
+      expect(command).toBeInstanceOf(CreateAdminUserCommand);
+      expect(command.toJSON()).toEqual({
+        email: 'admin@cleansia.cz',
+        password: 'Heslo1234',
+        firstName: 'Jana',
+        lastName: 'Nováková',
+        phoneNumber: '+420777111222',
+        birthDate: '1990-05-15',
+        preferredLanguageCode: 'cs',
+      });
+    });
+
+    it('serializes an update with the user id and no password', () => {
+      updateMock.mockReturnValue(of({ id: 'usr-1' }));
+
+      facade.updateUser('usr-1', fullData);
+
+      const command: UpdateAdminUserCommand = updateMock.mock.calls[0][1];
+      expect(command).toBeInstanceOf(UpdateAdminUserCommand);
+      expect(command.toJSON()).toEqual({
+        userId: 'usr-1',
+        firstName: 'Jana',
+        lastName: 'Nováková',
+        phoneNumber: '+420777111222',
+        birthDate: '1990-05-15',
+        preferredLanguageCode: 'cs',
+      });
+    });
+
+    it('sends undefined rather than an empty string for a blank phone and language', () => {
+      createMock.mockReturnValue(of({ id: 'usr-1' }));
+
+      facade.createUser({ ...fullData, phoneNumber: '', preferredLanguageCode: '' });
+
+      const body = createMock.mock.calls[0][0].toJSON();
+      expect(body.phoneNumber).toBeUndefined();
+      expect(body.preferredLanguageCode).toBeUndefined();
+    });
   });
 });

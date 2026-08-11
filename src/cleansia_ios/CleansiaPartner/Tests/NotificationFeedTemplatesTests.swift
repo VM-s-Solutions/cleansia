@@ -34,6 +34,23 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertFalse(rendered.body.contains("%"))
     }
 
+    func testPreferredOfferRowRendersWithTheOrderNumber() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.preferred_offer",
+            args: ["orderNumber": "A-2201", "orderId": "ord-1"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.preferred_offer.title"))
+        XCTAssertTrue(rendered.body.contains("A-2201"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testPreferredOfferTapResolvesToTheOrderDetail() {
+        let destination = PartnerNotificationDeepLink.resolve(
+            eventKey: "order.preferred_offer", orderId: "ord-1"
+        )
+        XCTAssertEqual(destination, .order(orderId: "ord-1"))
+    }
+
     func testAssignmentCancelledTapResolvesToTheOrderDetail() {
         let destination = PartnerNotificationDeepLink.resolve(
             eventKey: "order.assignment_cancelled", orderId: "ord-1"

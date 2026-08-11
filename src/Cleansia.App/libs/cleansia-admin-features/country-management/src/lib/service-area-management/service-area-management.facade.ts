@@ -81,7 +81,8 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   }
 
   setCountryServiced(countryId: string, isServiced: boolean): void {
-    const body = new AdminCountryControllerSetCountryServicedRequest({ isServiced });
+    const body = new AdminCountryControllerSetCountryServicedRequest();
+    body.isServiced = isServiced;
     this.adminClient.adminCountryClient
       .serviced(countryId, body)
       .pipe(
@@ -115,11 +116,10 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   }
 
   createCity(countryId: string, name: string, zipPrefix: string | null): void {
-    const command = new CreateServiceCityCommand({
-      countryId,
-      name,
-      zipPrefix: zipPrefix ?? undefined,
-    });
+    const command = new CreateServiceCityCommand();
+    command.countryId = countryId;
+    command.name = name;
+    command.zipPrefix = zipPrefix ?? undefined;
     this.adminClient.apiClient
       .adminServiceCityPost(command)
       .pipe(
@@ -144,12 +144,11 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
     isActive: boolean,
     refreshCountryId?: string
   ): void {
-    const command = new UpdateServiceCityCommand({
-      id,
-      name,
-      zipPrefix: zipPrefix ?? undefined,
-      isActive,
-    });
+    const command = new UpdateServiceCityCommand();
+    command.id = id;
+    command.name = name;
+    command.zipPrefix = zipPrefix ?? undefined;
+    command.isActive = isActive;
     this.adminClient.apiClient
       .adminServiceCityPut(id, command)
       .pipe(

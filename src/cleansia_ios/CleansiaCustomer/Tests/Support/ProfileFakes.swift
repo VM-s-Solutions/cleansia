@@ -8,13 +8,17 @@ final class FakeGdprDeleteClient: GdprDeleteClient, @unchecked Sendable {
     var deleteResult: ApiResult<Void> = .success(())
     private(set) var deleteCallCount = 0
 
+    /// Run once, from inside the first in-flight call. It is how the re-entry test makes "while
+    /// submitting" a fact rather than a scheduling hope: the caller is provably suspended here, with
+    /// `.submitting` already published and nothing able to reset it, when the re-entry reaches the guard.
+    var whileInFlight: (@Sendable () async -> Void)?
+
     func deleteMyAccount() async -> ApiResult<Void> {
-        // Force a real suspension. The @MainActor VM sets .submitting synchronously before awaiting this,
-        // so yielding here lets a concurrent re-entry deterministically observe the in-flight state and be
-        // dropped by the guard. Without it the call can complete inline (no actor hop), letting the first
-        // delete finish and reset state before the second checks the guard — which flaked the reentry test.
-        await Task.yield()
         deleteCallCount += 1
+        if let whileInFlight {
+            self.whileInFlight = nil
+            await whileInFlight()
+        }
         return deleteResult
     }
 }

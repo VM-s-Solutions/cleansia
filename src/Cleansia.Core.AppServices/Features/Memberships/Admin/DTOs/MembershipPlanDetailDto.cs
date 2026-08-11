@@ -19,6 +19,7 @@ public record MembershipPlanDetailDto(
     int TrialPeriodDays,
     int FreeCancellationWindowHours,
     bool AllowsExpressUpgrade,
+    int ExpressUpgradesPerMonth,
     bool IsActive,
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn);

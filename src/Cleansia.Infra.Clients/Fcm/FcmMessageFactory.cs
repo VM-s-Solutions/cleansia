@@ -21,14 +21,19 @@ public static class FcmMessageFactory
     /// <c>push.&lt;event_key&gt;.title|body</c> from the app's own bundled catalog. A key absent
     /// here ships data-only (invisible on iOS) — drop-parity with Android's unknown-key behavior;
     /// <c>promo.new_sitewide</c> is structurally excluded (no fixed template anywhere). Add a key
-    /// ONLY after its loc-keys ship in BOTH iOS apps' main-bundle catalogs (client-first rule),
-    /// and keep arg names inside the closed {orderNumber, count} lock-screen allowlist (D3) —
+    /// ONLY after its loc-keys ship in BOTH iOS apps' main-bundle catalogs (client-first rule) —
+    /// enforced by <c>ApnsDisplayMapIosCatalogSyncTests</c>, which reads both <c>.xcstrings</c> off
+    /// disk — and keep arg names inside the closed {orderNumber, count} lock-screen allowlist (D3):
     /// internal ids and raw enum values must never render.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ApnsDisplayMap { get; } =
         new Dictionary<string, IReadOnlyList<string>>
         {
             [NotificationEventCatalog.OrderConfirmed] = OrderNumberArg,
+            [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
+            [NotificationEventCatalog.OrderStartingSoon] = OrderNumberArg,
+            [NotificationEventCatalog.OrderAssigned] = OrderNumberArg,
+            [NotificationEventCatalog.OrderAssignmentRevoked] = OrderNumberArg,
             [NotificationEventCatalog.OrderOnTheWay] = OrderNumberArg,
             [NotificationEventCatalog.OrderInProgress] = OrderNumberArg,
             [NotificationEventCatalog.OrderCompleted] = OrderNumberArg,
@@ -36,6 +41,8 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
+            [NotificationEventCatalog.PreferredOffer] = OrderNumberArg,
+            [NotificationEventCatalog.PreferredOfferClosed] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssignmentCancelled] = OrderNumberArg,
             [NotificationEventCatalog.InvoicePaid] = NoArgs,
             [NotificationEventCatalog.DisputeReply] = NoArgs,

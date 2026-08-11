@@ -485,6 +485,17 @@
     <string name="account_number">Account Number</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT Code</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Bank country</string>
+    <string name="bank_account_prefix">Account prefix</string>
+    <string name="bank_account_prefix_helper">Optional — the short number before the dash, if your account has one.</string>
+    <string name="bank_account_number_helper">The part before the slash, e.g. 5885638003.</string>
+    <string name="bank_code">Bank code</string>
+    <string name="bank_code_helper">The four digits after the slash, e.g. 5500.</string>
+    <string name="iban_helper">You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.</string>
+    <string name="swift_code_helper">Only needed when your bank is in a different country than the one you work in.</string>
+    <string name="bank_account_holder">Account holder</string>
+    <string name="bank_account_holder_helper">Optional — the name your bank has on the account, if it differs from yours.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Emergency Contact</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Profile not loaded yet</string>
-    <string name="error_iban_required">IBAN is required</string>
     <string name="error_name_required">Contact name is required</string>
     <string name="error_phone_required">Contact phone is required</string>
     <string name="error_pick_nationality">Pick your nationality</string>
@@ -885,6 +895,15 @@
         <item quantity="one">+%1$d extra</item>
         <item quantity="other">+%1$d extras</item>
     </plurals>
+    <plurals name="crew_size">
+        <item quantity="one">%1$d cleaner needed</item>
+        <item quantity="other">%1$d cleaners needed</item>
+    </plurals>
+    <plurals name="crew_spots_open">
+        <item quantity="one">%1$d spot open</item>
+        <item quantity="other">%1$d spots open</item>
+    </plurals>
+    <string name="crew_no_spots">No spots left</string>
     <string name="history">History</string>
     <string name="you_earn">you earn</string>
     <string name="distance_unknown">Location unknown</string>
@@ -1022,7 +1041,7 @@
     <string name="profile_fields_country">Country</string>
     <string name="profile_fields_registrationNumber">Registration number (IČO)</string>
     <string name="profile_fields_legalEntityName">Legal entity name</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Bank details</string>
     <string name="profile_fields_passportId">Passport / ID</string>
     <string name="profile_fields_nationality">Nationality</string>
 
@@ -1089,13 +1108,14 @@
 
     <!-- Order — lifecycle + assignment -->
     <string name="error_order_not_found">Order not found.</string>
-    <string name="error_order_already_cancelled">This order is already cancelled.</string>
-    <string name="error_order_already_completed">This order is already completed.</string>
+    <string name="error_order_take_already_cancelled">This order is already cancelled.</string>
+    <string name="error_order_take_already_completed">This order is already completed.</string>
     <string name="error_order_in_progress_cannot_cancel">This order is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Order is empty.</string>
     <string name="error_order_already_assigned">This order was just taken by another cleaner.</string>
-    <string name="error_order_no_available_spots">No spots available on this order.</string>
+    <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
+    <string name="error_order_not_takeable">This job is no longer available.</string>
     <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
     <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
     <string name="error_order_employee_already_assigned">You\'re already assigned to this order.</string>
@@ -1162,8 +1182,25 @@
     <string name="error_validation_invalid_tax_id">Please enter a valid tax ID.</string>
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
+    <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
+    <string name="error_validation_vat_number_invalid_format">Please enter a valid VAT number for the selected country.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
     <string name="error_validation_invalid_availability_format">Availability format is invalid.</string>
+
+    <!-- Payout / bank details -->
+    <string name="error_payout_not_found">You haven\'t added your bank details yet. Add them so we can pay you.</string>
+    <string name="error_validation_payout_country_not_supported">We can\'t send payouts to a bank in this country yet. Check the bank country you picked, or contact support and we\'ll help.</string>
+    <string name="error_validation_payout_scheme_not_supported">We can\'t pay out to this kind of account yet. Contact support and we\'ll help you sort it out.</string>
+    <string name="error_validation_payout_looks_like_card">That looks like a payment card number. Enter your bank account number instead — you\'ll find it on your bank statement or in your banking app.</string>
+    <string name="error_validation_payout_account_number_required">Enter your account number — for this bank we pay by account number and bank code, so an IBAN on its own isn\'t enough.</string>
+    <string name="error_validation_payout_invalid_account_number">We couldn\'t verify this account number — that\'s almost always a typo. Check the digits against your bank statement.</string>
+    <string name="error_validation_payout_invalid_account_prefix">We couldn\'t verify the prefix — it\'s the short number before the dash in your account number. Check the digits, or leave it empty if your account doesn\'t have one.</string>
+    <string name="error_validation_payout_invalid_bank_code">Enter the four-digit bank code — it\'s the number after the slash in your account number.</string>
+    <string name="error_validation_payout_invalid_iban">This IBAN isn\'t valid. Compare it with your bank statement — it\'s usually one wrong character.</string>
+    <string name="error_validation_payout_iban_country_mismatch">This IBAN belongs to a different country than the bank country you picked. Change one so they match.</string>
+    <string name="error_validation_payout_iban_mismatch">This IBAN doesn\'t match the account number and bank code you entered. Fix whichever one is wrong, or clear the IBAN and we\'ll fill it in for you.</string>
+    <string name="error_validation_payout_swift_required">Your bank is in a different country than where you work, so we need the SWIFT/BIC code too. You\'ll find it on your bank statement.</string>
+    <string name="error_validation_payout_invalid_swift">This SWIFT/BIC belongs to a different country than your bank. Check it on your bank statement.</string>
 
     <!-- Email -->
     <string name="error_email_sending_failed">Couldn\'t send email. Try again later.</string>
@@ -1211,8 +1248,14 @@
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
+    <string name="notification_order_assigned_title">New job on your schedule</string>
+    <string name="notification_order_assigned_body">You\'ve been assigned job #%1$s. Tap to see the details.</string>
+    <string name="notification_order_assignment_revoked_title">Job reassigned</string>
+    <string name="notification_order_assignment_revoked_body">Job #%1$s has been reassigned and is no longer on your schedule. Tap for details.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
     <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <string name="notification_preferred_offer_title">A customer asked for you</string>
+    <string name="notification_preferred_offer_body">Order %1$s — someone you\'ve cleaned for before requested you. Open it to take the job.</string>
     <!-- ── Your devices ── -->
     <string name="devices_title">Your devices</string>
     <string name="profile_devices_summary">Manage signed-in devices</string>
@@ -1267,4 +1310,40 @@
     <string name="invoice_view_period_pay">View period pay</string>
     <string name="photo_encode_failed">We couldn\'t process that photo. Please try another one.</string>
     <string name="document_read_failed">We couldn\'t read that file. Please try another one.</string>
+
+    <string name="job_radius_title">Job alert distance</string>
+    <string name="job_radius_summary_all_jobs">Jobs anywhere in your country</string>
+    <string name="job_radius_summary_within">Jobs within %1$d km of home</string>
+    <string name="job_radius_explainer">This changes only which new jobs we notify you about. The job board still lists every job in your country, and you can take any of them.</string>
+    <string name="job_radius_limit_label">Only notify me about nearby jobs</string>
+    <string name="job_radius_limit_off_hint">We\'ll notify you about every new job in your country.</string>
+    <string name="job_radius_value">%1$d km</string>
+    <string name="job_radius_prompt_title">Which new jobs should we tell you about?</string>
+    <string name="job_radius_prompt_body">Right now we notify you about every new job in your country. Pick a distance from home to hear only about the ones near you — the board still shows them all.</string>
+    <string name="job_radius_prompt_choose">Pick a distance</string>
+    <string name="job_radius_prompt_keep_all">Keep every job</string>
+    <string name="error_employee_job_radius_out_of_range">Choose a distance between 1 and 500 km.</string>
+    <!-- ── Reserved for you: a customer asked for this cleaner by name (ADR-0045) ── -->
+    <string name="offers_title">Reserved for you</string>
+    <string name="offers_subtitle">Jobs a customer asked you for. Confirm one and it is yours; decline and it goes back to everyone.</string>
+    <string name="offer_reserved_until_today">Yours until %1$s today</string>
+    <string name="offer_reserved_until_tomorrow">Yours until %1$s tomorrow</string>
+    <string name="offer_reserved_until_date">Yours until %1$s, %2$s</string>
+    <string name="offer_reserved_ended">This reservation has ended</string>
+    <string name="offer_confirm">Confirm</string>
+    <string name="offer_slide_to_confirm">Slide to confirm</string>
+    <string name="offer_confirming">Confirming\u2026</string>
+    <string name="offer_decline">Decline</string>
+    <string name="offer_decline_title">Release this job?</string>
+    <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>
+    <string name="offer_decline_cta">Release it</string>
+    <string name="offer_declined_toast">Released \u2014 the job is open to every cleaner now.</string>
+    <string name="offer_empty">Nothing is waiting for your answer right now.</string>
+    <string name="offer_blocked_title">We couldn\'t hand this job over</string>
+    <string name="offer_blocked_body">%1$s\n\nThat one is on us \u2014 we put your name on this job without checking, so nothing here counts against you.</string>
+    <string name="offer_release_failed_title">We couldn\'t release this job</string>
+    <string name="offer_release_failed_body">%1$s\n\nNothing was released \u2014 the job is exactly as it was, and you can try again in a moment.</string>
+    <string name="offers_card_title">A customer asked for you</string>
+    <string name="offers_card_more">+%1$d more</string>
+    <string name="offers_card_cta">See what\'s waiting</string>
 </resources>

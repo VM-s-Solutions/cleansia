@@ -28,6 +28,7 @@
     <string name="register_pw_number">Alespoň jedna číslice</string>
     <string name="register_pw_match">Hesla se shodují</string>
     <string name="register_terms_and_conditions"><![CDATA[Souhlasím s <a href="cleansia://terms">Podmínkami služby</a> a <a href="cleansia://privacy">Zásadami ochrany soukromí</a>]]></string>
+    <string name="register_social_terms_required">Pro pokračování přes Google potvrďte souhlas s Podmínkami služby a Zásadami ochrany soukromí.</string>
     <string name="register_submit">Vytvořit účet</string>
     <string name="register_have_account">Už máte účet?</string>
     <string name="register_login_link">Přihlásit se</string>
@@ -305,11 +306,18 @@
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Zrušit objednávku</string>
     <string name="order_cancel_title">Zrušit tento úklid?</string>
-    <string name="order_cancel_fee_free">Zrušení zdarma — získáte plnou náhradu.</string>
-    <string name="order_cancel_fee_oops">Zrušení zdarma — objednávku jste vytvořili před méně než 15 minutami.</string>
-    <string name="order_cancel_fee_50">Poplatek za zrušení 50 %%. Odhadovaná náhrada: %1$s.</string>
-    <string name="order_cancel_fee_100">Poplatek za zrušení 100 %%. Tak blízko k úklidu již není náhrada možná.</string>
-    <string name="order_cancel_fee_estimate_note">Odhad — konečná částka se potvrdí po odeslání.</string>
+    <string name="order_cancel_fee_not_accepted">Zrušení zdarma — tuto rezervaci zatím nepřevzal žádný uklízeč.</string>
+    <string name="order_cancel_fee_oops">Zrušení zdarma — objednali jste před malou chvílí.</string>
+    <string name="order_cancel_fee_outside_window">Zrušení zdarma — rušíte s dostatečným předstihem.</string>
+    <string name="order_cancel_fee_partial">Na této zakázce už pracuje uklízeč, takže je zrušení zpoplatněné.</string>
+    <string name="order_cancel_fee_last_minute">Toto je zrušení na poslední chvíli, poplatek je proto vyšší.</string>
+    <string name="order_cancel_fee_none">Žádný poplatek za zrušení.</string>
+    <string name="order_cancel_fee_split">Poplatek za zrušení %1$s — vrátíme vám %2$s.</string>
+    <string name="order_cancel_fee_checking">Zjišťujeme, kolik zrušení této rezervace stojí…</string>
+    <string name="order_cancel_fee_unavailable">Poplatek za zrušení se teď nepodařilo zjistit. Zrušit můžete i tak — částku potvrdíme při zrušení.</string>
+    <string name="order_cancel_fee_retry">Zkusit znovu</string>
+    <string name="order_cancel_fee_recheck_note">Toto je cena v tuto chvíli — při potvrzení ji ověříme znovu.</string>
+    <string name="order_cancel_express_waiver_forfeit">Zrušením také vyčerpáte jednu z expresních objednávek zahrnutých ve vašem členství pro tento měsíc.</string>
     <string name="order_cancel_fee_neutral">Opravdu chcete tuto rezervaci zrušit?</string>
     <!-- Legacy free-text label (zachováno kvůli zpětné kompatibilitě). -->
     <string name="order_cancel_reason_label">Důvod (nepovinný)</string>
@@ -414,6 +422,9 @@
     <string name="profile_avatar_encode_failed">Tento obrázek se nepodařilo použít. Zkuste jinou fotku.</string>
     <string name="profile_avatar_picker_unavailable_title">Žádný výběr fotek</string>
     <string name="profile_avatar_picker_unavailable_message">V tomto zařízení není žádná aplikace pro výběr fotky.</string>
+    <string name="profile_avatar_upload_success">Profilová fotka byla aktualizována</string>
+    <string name="profile_avatar_remove_success">Profilová fotka byla odstraněna</string>
+    <string name="profile_save_success">Profil úspěšně uložen</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Uložené adresy</string>
@@ -554,7 +565,11 @@
     <string name="booking_arrival_window">Uklízeč přijde do 1 hodiny</string>
     <string name="booking_slot_unavailable">Obsazeno</string>
     <string name="booking_slot_earliest">Nejdříve</string>
-    <string name="booking_slot_express" formatted="false">Express +20%</string>
+    <string name="booking_slot_express" formatted="false">Expres +20 %</string>
+    <string name="booking_slot_express_waived">Expres · bez příplatku</string>
+    <string name="booking_express_waiver_available">Plus pokrývá 20%% expresní příplatek — %1$d zbývá tento kalendářní měsíc.</string>
+    <string name="booking_express_waiver_used" formatted="false">Tento měsíc už nezbývá žádné odpuštění expresního příplatku — expresní termíny se účtují s +20 % až do příštího měsíce.</string>
+    <string name="booking_express_waiver_trial" formatted="false">Během zkušební doby se expresní termíny účtují s +20 % — odpuštění začíná prvním placeným měsícem.</string>
     <string name="booking_slot_select">Vybrat</string>
     <string name="booking_all_slots_booked">Pro tento den jsou všechny termíny obsazené — vyberte jiný den.</string>
 
@@ -665,6 +680,7 @@
     <string name="booking_summary_time">Čas</string>
     <string name="booking_summary_subtotal">Mezisoučet</string>
     <string name="booking_summary_express_surcharge">Expresní příplatek (+20%)</string>
+    <string name="booking_summary_express_surcharge_waived">Expresní termín — odpuštěno s Plus</string>
     <string name="booking_summary_promo_discount">Slevový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Sleva Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Věrnostní sleva</string>
@@ -729,7 +745,7 @@
     <string name="booking_success_t1_title">Rezervace přijata</string>
     <string name="booking_success_t1_desc">Právě teď</string>
     <string name="booking_success_t2_title">Přidělujeme uklízeče</string>
-    <string name="booking_success_t2_desc">Do 1 hodiny</string>
+    <string name="booking_success_t2_desc">Dáme vám vědět, jakmile ho najdeme</string>
     <string name="booking_success_t3_title">Uklízeč potvrzen</string>
     <string name="booking_success_t3_desc">Zde uvidíte jeho profil</string>
     <string name="booking_success_t4_title">Den úklidu</string>
@@ -828,13 +844,16 @@
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
-    <string name="membership_perk_express_title">Expresní upgrade zdarma</string>
-    <string name="membership_perk_express_desc">Jedna bezplatná objednávka v den objednání měsíčně, bez příplatku.</string>
+    <string name="membership_perk_express_title">Expresní termíny bez příplatku</string>
+    <string name="membership_perk_express_desc" formatted="false">Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">sleva %1$d %%</string>
     <string name="membership_perk_pill_cancellation">zrušení %1$d h zdarma</string>
     <string name="membership_perk_pill_recurring">Pravidelně</string>
+    <string name="membership_perk_pill_express">Expres odpuštěn · zbývá %1$d</string>
+    <string name="membership_perk_pill_express_used">Expres odpuštěn · nic nezbývá</string>
+    <string name="membership_perk_pill_express_trial">Expres odpuštěn · po zkušební době</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -845,6 +864,7 @@
     <string name="membership_success_title">Vítejte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody jsou hned aktivní. Tady je, co jste právě odemkli:</string>
     <string name="membership_success_perks_header">VAŠE VÝHODY PLUS</string>
+    <string name="membership_success_perk_express">Expresní termíny bez příplatku — od prvního placeného měsíce</string>
     <string name="membership_success_cta_setup_recurring">Nastavit pravidelný úklid</string>
     <string name="membership_success_cta_back_home">Zpět na hlavní</string>
     <string name="membership_active_status">Aktivní</string>
@@ -885,6 +905,11 @@
     <string name="recurring_bookings_day_at_time">%1$s v %2$s</string>
     <string name="recurring_bookings_empty_cta">Vytvořit rozvrh</string>
     <string name="recurring_bookings_create_fab">Nový rozvrh</string>
+    <string name="recurring_plus_gate_title">Opakování je výhoda Plus</string>
+    <string name="recurring_plus_gate_subtitle">Připojte se k Cleansia Plus a nastavte si týdenní nebo čtrnáctidenní úklidy, které se objednají samy.</string>
+    <string name="recurring_plus_gate_cta">Vyzkoušet Cleansia Plus</string>
+    <string name="recurring_lapsed_notice_title">Cleansia Plus už není aktivní</string>
+    <string name="recurring_lapsed_notice_body">Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Nový opakovaný úklid</string>
@@ -909,12 +934,13 @@
     <string name="recurring_create_address_add_new">Přidat novou adresu</string>
     <string name="recurring_create_submit">Vytvořit rozvrh</string>
     <string name="recurring_create_success">Opakovaný rozvrh vytvořen.</string>
-    <string name="recurring_create_failed">Rozvrh se nepodařilo vytvořit. Zkuste to znovu.</string>
     <string name="recurring_edit_title">Upravit opakovaný úklid</string>
     <string name="recurring_edit_submit">Uložit změny</string>
     <string name="recurring_edit_success">Rozvrh byl aktualizován.</string>
-    <string name="recurring_edit_failed">Rozvrh se nepodařilo upravit. Zkuste to znovu.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh se nepodařilo načíst. Vraťte se zpět a zkuste to znovu.</string>
+    <string name="recurring_edit_notice_title">Co se uložením změní</string>
+    <string name="recurring_edit_notice_what_changes">Úklidy nově objednané z tohoto rozvrhu se budou řídit údaji výše.</string>
+    <string name="recurring_edit_notice_what_stays">Úklidy, které už máte v kalendáři, si ponechají původní čas i cenu — změnit nebo zrušit je můžete jednotlivě v Objednávkách.</string>
     <string name="recurring_freq_weekly_label">Každý týden</string>
     <string name="recurring_freq_biweekly_label">Každé 2 týdny</string>
     <string name="recurring_freq_monthly_label">Každý měsíc</string>
@@ -996,6 +1022,7 @@
     <string name="error_order_in_progress_cannot_cancel">Rezervace probíhá a nelze ji zrušit.</string>
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení již uplynula.</string>
     <string name="error_order_empty">Objednávka je prázdná. Přidejte prosím alespoň jednu službu.</string>
+    <string name="error_order_span_exceeds_maximum">Tato objednávka zahrnuje příliš mnoho práce na jednu návštěvu. Odeberte prosím některé služby nebo balíčky, případně je objednejte zvlášť.</string>
     <string name="error_order_selected_package_invalid">Jeden z vybraných balíčků již není dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služeb již není dostupná.</string>
     <string name="error_order_not_found">Rezervace nenalezena.</string>
@@ -1004,6 +1031,7 @@
     <string name="error_order_time_conflict">Tento čas koliduje s jinou rezervací.</string>
     <string name="error_order_total_price_not_match">Cena se změnila. Obnovte prosím a zkuste znovu.</string>
     <string name="error_order_payment_gateway_unavailable">Platební služba je dočasně nedostupná.</string>
+    <string name="error_order_payment_already_paid">Tato objednávka už byla zaplacena.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_review_already_exists">Tuto rezervaci jste již hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnocení musí být mezi 1 a 5.</string>
@@ -1154,8 +1182,14 @@
     <string name="notification_channel_dispute_reply_name">Odpovědi podpory</string>
     <string name="notification_channel_dispute_reply_desc">Upozorní vás, když podpora odpoví na vaši reklamaci.</string>
 
-    <string name="notification_order_confirmed_title">Uklízeč nalezen! 🎉</string>
+    <string name="notification_order_confirmed_title">Rezervace potvrzena ✅</string>
     <string name="notification_order_confirmed_body">Vaše rezervace #%1$s je potvrzena. Klepněte pro zobrazení detailů.</string>
+    <string name="notification_cleaner_assigned_title">Uklízeč nalezen! 🎉</string>
+    <string name="notification_cleaner_assigned_body">K vaší rezervaci #%1$s je přiřazen uklízeč. Klepněte pro zobrazení detailů.</string>
+    <string name="notification_order_starting_soon_title">Úklid brzy začíná</string>
+    <string name="notification_order_starting_soon_body">Vaše rezervace #%1$s začíná přibližně za hodinu. Klepněte pro zobrazení detailů.</string>
+    <string name="notification_order_preferred_offer_closed_title">Rezervace je otevřená všem uklízečům</string>
+    <string name="notification_order_preferred_offer_closed_body">Žádost o vybraného uklízeče u rezervace #%1$s skončila. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_on_the_way_title">Uklízeč je na cestě</string>
     <string name="notification_order_on_the_way_body">Váš uklízeč míří k rezervaci #%1$s.</string>
     <string name="notification_order_in_progress_title">Úklid probíhá</string>
@@ -1209,6 +1243,7 @@
     <string name="error_device_not_found">Toto zařízení už není registrované.</string>
     <string name="error_address_mapbox_coords_required">Vyberte prosím adresu z našeptávače.</string>
     <string name="error_auth_invalid_apple_token">Neplatný Apple token</string>
+    <string name="error_auth_social_account_not_found">K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte.</string>
     <string name="error_auth_too_many_attempts">Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.</string>
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
@@ -1227,14 +1262,17 @@
     <string name="error_language_not_found">Jazyk nenalezen</string>
     <string name="error_language_not_supported">Tento jazyk není podporován.</string>
     <string name="error_membership_already_active">Již máte aktivní členství.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Vaše expresní objednávky zahrnuté v členství jsou pro tento měsíc právě vyčerpané, takže se na tuto objednávku bezplatné expresní vyřízení už nevztahuje. Objednat ji můžete i tak, za standardní expresní cenu.</string>
     <string name="error_membership_not_found">Členství nenalezeno.</string>
     <string name="error_membership_plan_not_found">Plán členství nebyl nalezen.</string>
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>
     <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
+    <string name="error_order_preferred_employee_membership_required">Výběr oblíbeného uklízeče je výhoda Cleansia Plus.</string>
     <string name="error_order_total_price_positive">Celková cena musí být kladná</string>
     <string name="error_receipt_not_found">Potvrzení nenalezeno</string>
     <string name="error_recurring_booking_ends_on_before_start">Datum ukončení musí být po datu zahájení.</string>
+    <string name="error_recurring_booking_membership_required">Pravidelné úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si aktivujte předplatné.</string>
     <string name="error_recurring_booking_no_services_or_packages">Vyberte alespoň jednu službu nebo balíček.</string>
     <string name="error_recurring_booking_not_found">Pravidelný úklid nenalezen.</string>
     <string name="error_recurring_booking_not_owned_by_user">Tento pravidelný úklid patří k jinému účtu.</string>

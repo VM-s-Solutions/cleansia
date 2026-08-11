@@ -19,6 +19,15 @@ public struct AuthTokens: Equatable, Sendable, Codable {
         self.refreshTokenExpiresAt = refreshTokenExpiresAt
     }
 
+    /// What a login presents to prove this handset already held a session, so a locked-out account
+    /// can still be reached from its own device. Blank normalizes to nil: the server field is
+    /// optional and absent means "no previous session", where an empty string is a value that
+    /// matches nothing and so reads as a failed attempt. `AuthApiClient.persist` can store an empty
+    /// refresh token when a response omits one, so blank is reachable for both apps.
+    public var trustedDeviceToken: String? {
+        refreshToken.isBlank ? nil : refreshToken
+    }
+
     public func isAccessExpired(now: Date = Date()) -> Bool {
         now >= accessTokenExpiresAt
     }

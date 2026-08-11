@@ -723,6 +723,46 @@ VALUES
    3499.00,
    '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами"}}');
 
+-- 9. EMPLOYEE PAY CONFIGS
+-- Every catalogue entry gets the PLATFORM-WIDE row (EmployeeId NULL). This is not optional data: an
+-- entry with no platform-wide config quotes NOTHING on every cleaner's board at once, so the booking
+-- wizard withholds it, no order may carry it, and no cleaner may be approved while one exists. A
+-- per-employee override is not a substitute — it answers for one cleaner and leaves the rest blank.
+--
+-- Derived from the Services/Packages rows rather than listed by name, so adding a catalogue entry
+-- above cannot leave a hole here. The rate is the JUNIOR template's multiplier (0.5), the same number
+-- BulkCreateEmployeePayConfigs uses for that grade — a starting point the admin tunes per entry or
+-- per cleaner, not a pricing decision made in a seed file.
+INSERT INTO public."EmployeePayConfigs" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "EmployeeId", "ServiceId", "PackageId",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "Description", "CurrencyId", "MinimumPay", "MaximumPay"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL, NULL, s."Id", NULL,
+       ROUND(s."BasePrice" * 0.5, 2), ROUND(s."PerRoomPrice" * 0.5, 2), 0, 0,
+       'Platform-wide default (junior template)',
+       (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+       0, 0
+FROM public."Services" s;
+
+INSERT INTO public."EmployeePayConfigs" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "EmployeeId", "ServiceId", "PackageId",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "Description", "CurrencyId", "MinimumPay", "MaximumPay"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL, NULL, NULL, p."Id",
+       ROUND(p."Price" * 0.5, 2), 0, 0, 0,
+       'Platform-wide default (junior template)',
+       (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+       0, 0
+FROM public."Packages" p;
+
 -- 12. ORDERS AND RELATED DATA
 -- First insert package services relationships
 INSERT INTO public."PackageServices" (
@@ -808,78 +848,97 @@ VALUES
 -- ============================================================
 -- COUNTRY INVOICE CONFIGS
 -- ============================================================
+-- "LegalDisclaimerTemplate" is deliberately absent from this INSERT: every row starts with NO legal
+-- notice and LegalDisclaimerReviewStatus = 0 (NotReviewed), so the invoice prints the platform's
+-- generic English fallback. Only the UPDATE at the bottom of this section fills one in.
+-- The review status is written EXPLICITLY: the column is NOT NULL and carries no database default, so
+-- omitting it aborts the whole seed transaction with 23502 and a fresh database comes up empty.
 INSERT INTO public."CountryInvoiceConfigs" (
   "Id", "IsActive", "CountryId", "VatRequired", "VatRate",
   "DigitalSignatureRequired", "EInvoiceFormat",
-  "AdditionalFieldsJson", "LegalDisclaimerTemplate"
+  "AdditionalFieldsJson", "LegalDisclaimerReviewStatus"
 )
 VALUES
   -- Czech Republic - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-   true, 0.21, false, 'PDF', NULL,
-   'This invoice is issued in accordance with Czech law. Payment terms: 14 days from issue date.'),
+   true, 0.21, false, 'PDF', NULL, 0),
 
   -- Germany - VAT 19%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
    true, 0.19, false, 'PDF',
-   '{"TaxNumber": "required", "UStIdNr": "optional"}',
-   'Rechnung gemäß deutschem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+   '{"TaxNumber": "required", "UStIdNr": "optional"}', 0),
 
   -- Austria - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL,
-   'Rechnung gemäß österreichischem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+   true, 0.20, false, 'PDF', NULL, 0),
 
   -- Poland - VAT 23%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
    true, 0.23, false, 'PDF',
-   '{"NIP": "required"}',
-   'Faktura wystawiona zgodnie z polskim prawem podatkowym. Termin płatności: 14 dni od daty wystawienia.'),
+   '{"NIP": "required"}', 0),
 
   -- Slovakia - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL,
-   'Faktúra vystavená v súlade so slovenským právom. Splatnosť: 14 dní odo dňa vystavenia.'),
+   true, 0.20, false, 'PDF', NULL, 0),
 
   -- United States - No VAT
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
    false, 0.00, false, 'PDF',
-   '{"EIN": "optional", "StateTaxId": "optional"}',
-   'Invoice issued in accordance with US law. Payment terms: 14 days from invoice date.'),
+   '{"EIN": "optional", "StateTaxId": "optional"}', 0),
 
   -- United Kingdom - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"VATNumber": "required"}',
-   'Invoice issued in accordance with UK law. Payment terms: 14 days from invoice date.'),
+   '{"VATNumber": "required"}', 0),
 
   -- France - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"SIRET": "required"}',
-   'Facture émise conformément à la loi française. Conditions de paiement: 14 jours à compter de la date d''émission.'),
+   '{"SIRET": "required"}', 0),
 
   -- Italy - VAT 22%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
    true, 0.22, false, 'PDF+XML',
-   '{"CodiceFiscale": "required", "PartitaIVA": "required"}',
-   'Fattura emessa in conformità alla legge italiana. Condizioni di pagamento: 14 giorni dalla data di emissione.'),
+   '{"CodiceFiscale": "required", "PartitaIVA": "required"}', 0),
 
   -- Spain - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
    true, 0.21, false, 'PDF',
-   '{"NIF": "required"}',
-   'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
+   '{"NIF": "required"}', 0);
+
+-- Konstantní symbol — the PAYER's payment-type code on a Czech bank transfer (0308 = non-cash payment
+-- for goods and services), which is why it is configured here and not on a cleaner's bank record.
+-- Countries whose payment system has no such code stay NULL and the field is omitted from the invoice.
+-- SK is deliberately left NULL: T-0508 AC11 scopes the invoice work to CZ, and printing a guessed
+-- symbol is worse than printing none.
+UPDATE public."CountryInvoiceConfigs" SET "ConstantSymbol" = '0308'
+WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1);
+
+-- The ONE legal notice this platform is entitled to print. The sentence is verbatim from the real
+-- Czech invoice the owner issues, so its provenance is the business itself (LegalDisclaimerReviewStatus
+-- = 1, BusinessSupplied) — not a lawyer, which is why it is 1 and not 2 (CounselReviewed).
+--
+-- Every other country is left NotReviewed ON PURPOSE. The rows that used to sit here asserted things
+-- about German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish law that nobody with
+-- standing ever checked, and one asserted Czech law in English under a Czech heading. A notice
+-- reviewed for one jurisdiction is not a notice for another and a translation of it is not the same
+-- artifact, so these stay empty until the owner's lawyer supplies each one, and the invoice prints the
+-- generic English fallback in the meantime.
+UPDATE public."CountryInvoiceConfigs" SET
+  "LegalDisclaimerTemplate" = 'Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře Vám můžeme účtovat zákonný úrok z prodlení.',
+  "LegalDisclaimerLanguageCode" = 'cs',
+  "LegalDisclaimerReviewStatus" = 1
+WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1);
 
 -- ============================================================
 -- COUNTRY CONFIGURATIONS
@@ -893,7 +952,7 @@ INSERT INTO public."CountryConfigurations" (
   "TaxIdLabel", "TaxIdFormat",
   "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
   "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
-  "DefaultPaymentGateway"
+  "DefaultPaymentGateway", "PayoutScheme"
 )
 VALUES
   -- Czech Republic — IČO (company ID) mandatory, DIČ (VAT ID) optional
@@ -903,7 +962,7 @@ VALUES
    0.21, 0.15, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
-   'Stripe'),
+   'Stripe', 1),
 
   -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -912,7 +971,7 @@ VALUES
    0.20, 0.10, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'IČ DPH', '^SK\d{10}$', false,
-   'Stripe'),
+   'Stripe', 1),
 
   -- Poland — NIP mandatory, EU VAT optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -921,7 +980,7 @@ VALUES
    0.23, 0.08, 'NIP', '^\d{10}$',
    'NIP', '^\d{10}$', true,
    'VAT UE', '^PL\d{10}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Germany — Steuernummer mandatory, USt-IdNr optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -930,7 +989,7 @@ VALUES
    0.19, 0.07, 'Steuernummer', '^\d{10,13}$',
    'Steuernummer', '^\d{10,13}$', true,
    'USt-IdNr', '^DE\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Austria — Firmenbuchnummer mandatory, UID (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -939,7 +998,7 @@ VALUES
    0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$',
    'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
    'UID-Nummer', '^ATU\d{8}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- United Kingdom — UTR mandatory, VAT number optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -948,7 +1007,7 @@ VALUES
    0.20, 0.05, 'UTR', '^\d{10}$',
    'UTR', '^\d{10}$', true,
    'VAT Number', '^GB\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- France — SIRET mandatory, TVA intracommunautaire optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -957,7 +1016,7 @@ VALUES
    0.20, 0.055, 'SIRET', '^\d{14}$',
    'SIRET', '^\d{14}$', true,
    'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Italy — Codice Fiscale mandatory, Partita IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -966,7 +1025,7 @@ VALUES
    0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
    'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
    'Partita IVA', '^IT\d{11}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Spain — NIF mandatory, NIF-IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -975,7 +1034,7 @@ VALUES
    0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
    'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
    'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- United States — EIN mandatory, no separate VAT
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -984,7 +1043,7 @@ VALUES
    0.00, NULL, 'EIN', '^\d{2}-\d{7}$',
    'EIN', '^\d{2}-\d{7}$', true,
    NULL, NULL, false,
-   'Stripe');
+   'Stripe', NULL);
 
 -- ============================================================
 -- FEATURE FLAGS
@@ -1662,11 +1721,13 @@ INSERT INTO public."MembershipPlans" (
     "DeactivatedBy", "DeactivatedOn", "TenantId",
     "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)', 199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r',
     5.00, 4, true,
+    1,
     1, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
 
@@ -1676,11 +1737,13 @@ INSERT INTO public."MembershipPlans" (
     "DeactivatedBy", "DeactivatedOn", "TenantId",
     "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
     'PLUS_YEARLY', 'Cleansia Plus (Annual)', 2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF',
     5.00, 4, true,
+    1,
     2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
 

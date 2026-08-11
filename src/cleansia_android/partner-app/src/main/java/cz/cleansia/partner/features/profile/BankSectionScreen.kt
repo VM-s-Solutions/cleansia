@@ -7,6 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -46,12 +47,81 @@ fun BankSectionScreen(
         }),
     ) {
         val form = (uiState as? BankSectionUiState.Loaded)?.form ?: BankForm()
+        val countryOptions = form.countries.map { country ->
+            country.id.orEmpty() to (country.name ?: country.isoCode ?: country.id.orEmpty())
+        }
+
         FormSectionCard(title = stringResource(R.string.bank_details)) {
+            PickerDropdown(
+                selectedId = form.bankCountryId,
+                options = countryOptions,
+                onSelected = viewModel::onBankCountrySelected,
+                label = stringResource(R.string.bank_country),
+                enabled = !saving,
+                searchable = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.accountPrefix,
+                onValueChange = viewModel::onAccountPrefixChange,
+                label = stringResource(R.string.bank_account_prefix),
+                helper = stringResource(R.string.bank_account_prefix_helper),
+                keyboardType = KeyboardType.Number,
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.accountNumber,
+                onValueChange = viewModel::onAccountNumberChange,
+                label = stringResource(R.string.account_number),
+                helper = stringResource(R.string.bank_account_number_helper),
+                keyboardType = KeyboardType.Number,
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.bankCode,
+                onValueChange = viewModel::onBankCodeChange,
+                label = stringResource(R.string.bank_code),
+                helper = stringResource(R.string.bank_code_helper),
+                keyboardType = KeyboardType.Number,
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
             CleansiaTextField(
                 value = form.iban,
                 onValueChange = viewModel::onIbanChange,
                 label = stringResource(R.string.iban),
-                errorText = form.ibanError,
+                helper = stringResource(R.string.iban_helper),
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.swift,
+                onValueChange = viewModel::onSwiftChange,
+                label = stringResource(R.string.swift_code),
+                helper = stringResource(R.string.swift_code_helper),
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.bankName,
+                onValueChange = viewModel::onBankNameChange,
+                label = stringResource(R.string.bank_name),
+                enabled = !saving,
+                transparentContainer = true,
+            )
+            Spacer(Modifier.height(Spacing.XS))
+            CleansiaTextField(
+                value = form.holderName,
+                onValueChange = viewModel::onHolderNameChange,
+                label = stringResource(R.string.bank_account_holder),
+                helper = stringResource(R.string.bank_account_holder_helper),
                 enabled = !saving,
                 transparentContainer = true,
             )
@@ -64,7 +134,7 @@ fun BankSectionScreen(
             text = stringResource(R.string.save),
             onClick = { viewModel.save() },
             loading = saving,
-            enabled = form.iban.isNotBlank() && !saving,
+            enabled = form.canSubmit && !saving,
         )
     }
 }

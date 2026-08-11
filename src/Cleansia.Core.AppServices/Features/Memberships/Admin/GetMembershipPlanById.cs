@@ -25,7 +25,7 @@ public class GetMembershipPlanById
             if (plan == null)
             {
                 return BusinessResult.Failure<MembershipPlanDetailDto>(
-                    new Error(BusinessErrorMessage.MembershipPlanNotFound, BusinessErrorMessage.MembershipPlanNotFound));
+                    new Error(nameof(request.MembershipPlanId), BusinessErrorMessage.MembershipPlanNotFound));
             }
 
             return BusinessResult.Success(plan.MapToDetailDto());

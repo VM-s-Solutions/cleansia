@@ -9,6 +9,8 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
@@ -69,10 +71,21 @@ class OrderRepository @Inject constructor(
     private val pageSize = 20
 
     /**
+     * Rows the server has SENT so far — the offset of the next page and the term the stop condition
+     * compares against [totalRecords]. Not `orders.size`: the page mapper drops an unidentifiable
+     * row, so every drop would otherwise re-request the survivors and hold `size >= total` false
+     * forever, which is a list that keeps asking for pages it already has.
+     */
+    private var receivedSoFar = 0
+
+    /** A page the server answered with no rows at all ends paging; the counter alone cannot. */
+    private var exhausted = false
+
+    /**
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
      */
-    suspend fun refresh(): ApiResult<Unit> {
+    suspend fun refresh(): ApiResult<Unit> = wireResult {
         if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
@@ -81,8 +94,10 @@ class OrderRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.requiredBody()
             _orders.value = body.data
+            receivedSoFar = body.receivedCount
+            exhausted = body.receivedCount == 0
             // Backend PagedData wrapper exposes total under `total`; expose it as
             // totalRecords in the repo API to keep consumers agnostic of the wire name.
             _totalRecords.value = body.total
@@ -99,16 +114,18 @@ class OrderRepository @Inject constructor(
      * [totalRecords]. Silent on failure — the caller ignores the
      * [ApiResult.Error] and the user can trigger another load by scrolling again.
      */
-    suspend fun loadNextPage(): ApiResult<Unit> {
+    suspend fun loadNextPage(): ApiResult<Unit> = wireResult {
         if (_loadingMore.value) return ApiResult.Success(Unit)
-        if (_orders.value.size >= _totalRecords.value) return ApiResult.Success(Unit) // nothing more to load
+        if (exhausted || receivedSoFar >= _totalRecords.value) return ApiResult.Success(Unit)
         _loadingMore.value = true
         try {
-            val resp = networkCall { api.getMyOrders(offset = _orders.value.size, limit = pageSize) }
+            val resp = networkCall { api.getMyOrders(offset = receivedSoFar, limit = pageSize) }
                 ?: return networkError()
             if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.requiredBody()
             _orders.value = _orders.value + body.data
+            receivedSoFar += body.receivedCount
+            exhausted = body.receivedCount == 0
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
         } finally {
@@ -117,25 +134,39 @@ class OrderRepository @Inject constructor(
     }
 
     /** Fetch a single order's detail. */
-    suspend fun getById(id: String): ApiResult<OrderDetailDto> {
+    suspend fun getById(id: String): ApiResult<OrderDetailDto> = wireResult {
         val resp = networkCall { api.getById(id) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
      * Cancel an order. Returns the parsed response (fee rate / refund details)
      * on success.
      */
-    suspend fun cancel(orderId: String, reason: String?): ApiResult<CancelOrderResponse> {
+    suspend fun cancel(orderId: String, reason: String?): ApiResult<CancelOrderResponse> = wireResult {
         val resp = networkCall { api.cancel(CancelOrderRequest(orderId = orderId, reason = reason)) }
             ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
+    }
+
+    /**
+     * What cancelling this order would cost, asked before the customer commits.
+     * A pure read: opening and closing the sheet spends nothing. The answer is
+     * only true for the instant it was computed, so callers re-ask rather than
+     * cache it.
+     */
+    suspend fun getCancellationPreview(orderId: String): ApiResult<CancellationFeePreviewDto> = wireResult {
+        val resp = networkCall { api.getCancellationPreview(orderId) } ?: return networkError()
+        if (!resp.isSuccessful) {
+            return httpError(resp.errorBody(), resp.code())
+        }
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -144,25 +175,25 @@ class OrderRepository @Inject constructor(
      * should refetch + show success. Card response carries the Stripe
      * PaymentIntent fields the mobile PaymentSheet needs.
      */
-    suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> {
+    suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> = wireResult {
         val resp = networkCall {
             api.confirmRecurring(ConfirmRecurringOrderRequest(orderId = orderId))
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /** Submit (or update) a review on a completed order. Returns the persisted review on success. */
-    suspend fun submitReview(orderId: String, rating: Int, comment: String?): ApiResult<OrderReviewDto> {
+    suspend fun submitReview(orderId: String, rating: Int, comment: String?): ApiResult<OrderReviewDto> = wireResult {
         val resp = networkCall {
             api.submitReview(SubmitReviewRequest(orderId = orderId, rating = rating, comment = comment))
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -198,12 +229,12 @@ class OrderRepository @Inject constructor(
     }
 
     /** Fetch the before/after photos for an order. Fetcher pattern — mirrors [getById]. */
-    suspend fun getPhotos(orderId: String): ApiResult<OrderPhotosResponse> {
+    suspend fun getPhotos(orderId: String): ApiResult<OrderPhotosResponse> = wireResult {
         val resp = networkCall { api.getPhotos(orderId) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -213,7 +244,7 @@ class OrderRepository @Inject constructor(
      * shows an empty state so the booking proceeds without a preference
      * (backend matching algorithm picks normally).
      */
-    suspend fun getMyServingCleaners(): ApiResult<List<ServingCleanerDto>> {
+    suspend fun getMyServingCleaners(): ApiResult<List<ServingCleanerDto>> = wireResult {
         val resp = networkCall { api.getMyServingCleaners() } ?: return networkError()
         if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
         return ApiResult.Success(resp.body().orEmpty())
@@ -241,6 +272,8 @@ class OrderRepository @Inject constructor(
     override suspend fun clear() {
         _orders.value = emptyList()
         _totalRecords.value = 0
+        receivedSoFar = 0
+        exhausted = false
         _loaded.value = false
         staleness.reset()
     }

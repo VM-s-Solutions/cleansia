@@ -24,10 +24,12 @@ struct LiveCatalogClient: CatalogClient {
         case let (_, .failure(error)):
             return .failure(error)
         case let (.success(serviceItems), .success(packageItems)):
-            return .success(Catalog(
-                services: serviceItems.compactMap(\.toDomain),
-                packages: packageItems.compactMap(\.toDomain)
-            ))
+            return await apiResult {
+                try Catalog(
+                    services: serviceItems.map(CatalogService.init),
+                    packages: packageItems.map(CatalogPackage.init)
+                )
+            }
         }
     }
 }
@@ -44,52 +46,48 @@ private extension [String: Translation] {
     }
 }
 
-private extension CategoryDto {
-    var toDomain: CatalogCategory? {
-        guard let id, let slug, let name else { return nil }
-        return CatalogCategory(
-            id: id,
-            slug: slug,
-            name: name,
-            description: description,
-            displayOrder: displayOrder ?? 0,
-            translations: translations?.toDomain ?? [:]
-        )
+/// **Refuse the page.** Two reasons compose here and either alone would decide it. The rows are
+/// alternatives to each other — a missing service is a different booking, not a shorter list — and
+/// each card renders its own "from X", so a coerced `0` quotes a price the customer will not be
+/// charged: the server prices the order again on `Create`, and the difference surfaces after they
+/// have committed. Dropping the row hides a service that exists; keeping it at zero misquotes one.
+extension CatalogCategory {
+    init(_ dto: CategoryDto) throws {
+        id = try dto.id.requireNonBlank("id")
+        slug = try dto.slug.requireNonBlank("slug")
+        name = try dto.name.requireNonBlank("name")
+        description = dto.description
+        displayOrder = try dto.displayOrder.require("displayOrder")
+        translations = dto.translations?.toDomain ?? [:]
     }
 }
 
-private extension ServiceListItem {
-    var toDomain: CatalogService? {
-        guard let id, let name, let category = category?.toDomain else { return nil }
-        return CatalogService(
-            id: id,
-            name: name,
-            description: description,
-            basePrice: basePrice ?? 0,
-            perRoomPrice: perRoomPrice ?? 0,
-            category: category,
-            translations: translations?.toDomain ?? [:]
-        )
+extension CatalogService {
+    init(_ dto: ServiceListItem) throws {
+        id = try dto.id.requireNonBlank("id")
+        name = try dto.name.requireNonBlank("name")
+        description = dto.description
+        basePrice = try dto.basePrice.require("basePrice")
+        perRoomPrice = try dto.perRoomPrice.require("perRoomPrice")
+        category = try CatalogCategory(dto.category.require("category"))
+        translations = dto.translations?.toDomain ?? [:]
     }
 }
 
-private extension PackageServiceSummary {
-    var toDomain: CatalogPackageServiceSummary? {
-        guard let name else { return nil }
-        return CatalogPackageServiceSummary(name: name, translations: translations?.toDomain ?? [:])
+extension CatalogPackageServiceSummary {
+    init(_ dto: PackageServiceSummary) throws {
+        name = try dto.name.requireNonBlank("name")
+        translations = dto.translations?.toDomain ?? [:]
     }
 }
 
-private extension PackageListItem {
-    var toDomain: CatalogPackage? {
-        guard let id, let name else { return nil }
-        return CatalogPackage(
-            id: id,
-            name: name,
-            description: description,
-            price: price ?? 0,
-            translations: translations?.toDomain ?? [:],
-            includedServices: includedServices?.compactMap(\.toDomain) ?? []
-        )
+extension CatalogPackage {
+    init(_ dto: PackageListItem) throws {
+        id = try dto.id.requireNonBlank("id")
+        name = try dto.name.requireNonBlank("name")
+        description = dto.description
+        price = try dto.price.require("price")
+        translations = dto.translations?.toDomain ?? [:]
+        includedServices = try (dto.includedServices ?? []).map(CatalogPackageServiceSummary.init)
     }
 }

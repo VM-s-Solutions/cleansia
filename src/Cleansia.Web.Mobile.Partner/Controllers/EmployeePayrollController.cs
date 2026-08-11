@@ -1,3 +1,4 @@
+using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
@@ -11,6 +12,7 @@ namespace Cleansia.Web.Mobile.Partner.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[RequireCompleteProfile]
 public class EmployeePayrollController(IMediator mediator) : MobileApiController(mediator)
 {
     [HttpGet("GetPagedInvoices")]

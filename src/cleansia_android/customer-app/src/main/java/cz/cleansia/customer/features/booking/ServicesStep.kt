@@ -103,30 +103,44 @@ private fun accentForIndex(idx: Int): PackageAccent = when (idx % 3) {
 }
 
 /**
- * Pick the best-fit translated name for the current active app locale, falling
- * back to the default [name] when the backend didn't send that language.
- * Active locale is read from the Configuration (per-app locale applies here),
- * so we don't need to reach into AppSettingsRepository just for a string lookup.
+ * The catalog arrives in one language with a per-language [TranslationDto] map
+ * beside it, so every render of a service, package or category name goes through
+ * here. Split from the `@Composable` wrapper below so the fallback chain is
+ * assertable without a composition.
+ */
+internal fun pickTranslatedName(
+    translations: Map<String, cz.cleansia.customer.core.catalog.TranslationDto>?,
+    lang: String?,
+    fallback: String,
+): String {
+    if (lang.isNullOrBlank() || translations.isNullOrEmpty()) return fallback
+    return translations[lang]?.name ?: fallback
+}
+
+internal fun pickTranslatedDescription(
+    translations: Map<String, cz.cleansia.customer.core.catalog.TranslationDto>?,
+    lang: String?,
+    fallback: String?,
+): String? {
+    if (lang.isNullOrBlank() || translations.isNullOrEmpty()) return fallback
+    return translations[lang]?.description ?: fallback
+}
+
+/**
+ * Active locale comes from the Configuration, which honours a per-app language
+ * override, so the catalog follows the app's language rather than the device's.
  */
 @Composable
 internal fun localizedName(
     translations: Map<String, cz.cleansia.customer.core.catalog.TranslationDto>?,
     fallback: String,
-): String {
-    val lang = LocalConfiguration.current.locales.get(0)?.language
-    if (lang.isNullOrBlank() || translations.isNullOrEmpty()) return fallback
-    return translations[lang]?.name ?: fallback
-}
+): String = pickTranslatedName(translations, LocalConfiguration.current.locales.get(0)?.language, fallback)
 
 @Composable
 internal fun localizedDescription(
     translations: Map<String, cz.cleansia.customer.core.catalog.TranslationDto>?,
     fallback: String?,
-): String? {
-    val lang = LocalConfiguration.current.locales.get(0)?.language
-    if (lang.isNullOrBlank() || translations.isNullOrEmpty()) return fallback
-    return translations[lang]?.description ?: fallback
-}
+): String? = pickTranslatedDescription(translations, LocalConfiguration.current.locales.get(0)?.language, fallback)
 
 @Composable
 fun ServicesStep(

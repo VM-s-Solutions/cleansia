@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
  *    committing.
  *  - Social-proof tile right under the hero ("Members typically save…").
  *  - Perks rendered as tiles with bigger icons; ordered economic-value first
- *    (discount → cancellation → favorite cleaner → recurring → express upgrade).
+ *    (discount → cancellation → favorite cleaner → recurring → express waiver).
  *  - Sticky bottom CTA on a contrasting bg with verb-led label
  *    ("Start free trial") + fine-print renewal terms.
  *
@@ -299,7 +299,7 @@ private fun HeroBlock(
     // honest and frames the "2030 Kč once" commitment up front).
     // Monthly: lead with the per-month price as before.
     val isAnnual = selectedPlan?.billingInterval == 2
-    val regularPrice = selectedPlan?.price ?: 0.0
+    val regularPrice = selectedPlan?.price
     val regularPriceLabelRes = if (isAnnual) {
         R.string.membership_plan_per_year
     } else {
@@ -716,7 +716,13 @@ private fun buildDisclosure(plan: cz.cleansia.customer.core.memberships.Membersh
  * number (199 Kč rather than 199.00 Kč) — matches the rest of the app's
  * money-display convention.
  */
-private fun formatPriceCzk(amount: Double): String {
+/**
+ * Null is "no plan is selected", which is only reachable before the plans load or after the API
+ * refuses them; it is never a plan whose price the wire dropped, because [MembershipPlanDto] refuses
+ * those. Rendering the em dash keeps the screen from quoting a subscription at nothing.
+ */
+private fun formatPriceCzk(amount: Double?): String {
+    if (amount == null) return "\u2014"
     val rounded = if (amount % 1.0 == 0.0) amount.toInt().toString() else "%.2f".format(amount)
     return "$rounded Kč"
 }

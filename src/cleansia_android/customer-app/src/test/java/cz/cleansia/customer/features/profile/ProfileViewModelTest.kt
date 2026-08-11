@@ -153,7 +153,7 @@ class ProfileViewModelTest {
         assertFalse(saved)
         assertTrue(vm.saveState.value is ActionState.Error)
         assertEquals("save failed", (vm.saveState.value as ActionState.Error).message)
-        verify { snackbar.showError("save failed") }
+        verify { snackbar.showError(match<ApiError> { it.getUserMessage() == "save failed" }) }
     }
 
     @Test
@@ -338,6 +338,7 @@ class ProfileViewModelTest {
 
     @Test
     fun `removeAvatar makes the next save ask for removal without an image`() = runTest {
+        currentUser.value = userWithPhoto
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
         } returns ApiResult.Success(Unit)
@@ -416,6 +417,7 @@ class ProfileViewModelTest {
 
     @Test
     fun `a successful save clears the draft so the next save is a no-op for the avatar`() = runTest {
+        currentUser.value = userWithPhoto
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
         } returns ApiResult.Success(Unit)
@@ -441,6 +443,129 @@ class ProfileViewModelTest {
         advanceUntilIdle()
 
         assertTrue(vm.avatarDraft.value is AvatarDraft.Picked)
+    }
+
+    @Test
+    fun `a successful save of a picked photo confirms the upload and nothing else`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_avatar_upload_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_save_success) }
+    }
+
+    @Test
+    fun `a successful save of a removal confirms the removal and nothing else`() = runTest {
+        currentUser.value = userWithPhoto
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.removeAvatar()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_upload_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_save_success) }
+    }
+
+    @Test
+    fun `a save that leaves the avatar alone confirms the profile save`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_save_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_upload_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
+    }
+
+    /** A rejected save changed nothing, so there is nothing to confirm. */
+    @Test
+    fun `a failed save confirms nothing`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Error(ApiError.Server(statusCode = 500, message = "save failed"))
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+    }
+
+    /** Nothing has reached the server until the user saves, so neither may confirm. */
+    @Test
+    fun `picking and removing confirm nothing on their own`() = runTest {
+        currentUser.value = userWithPhoto
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.removeAvatar()
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+    }
+
+    /**
+     * Remove is reachable over a pick that has never been uploaded — the options
+     * sheet opens on the local preview. The server holds nothing to delete there,
+     * so the tap can only mean "drop what I just chose".
+     */
+    @Test
+    fun `removing with no saved photo discards the pick instead of recording a removal`() = runTest {
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+
+        vm.removeAvatar()
+
+        assertEquals(AvatarDraft.Unchanged, vm.avatarDraft.value)
+    }
+
+    @Test
+    fun `a save after discarding an unsaved pick asks for no removal and claims none`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.pickAvatar(pickedUri)
+        advanceUntilIdle()
+        vm.removeAvatar()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser(
+                firstName = "Ann",
+                lastName = "Brown",
+                phoneNumber = null,
+                birthDate = null,
+                languageCode = "en",
+                photo = null,
+                removePhoto = false,
+            )
+        }
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.profile_save_success) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.profile_avatar_remove_success) }
     }
 
     @Test

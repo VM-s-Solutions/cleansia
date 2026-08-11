@@ -1,6 +1,5 @@
 package cz.cleansia.core.ui.theme
 
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -21,23 +20,7 @@ class CleansiaTypographyTest {
 
     private val brandFamilies: Set<FontFamily?> = setOf(Poppins, Nunito)
 
-    private val allSlots: List<Pair<String, TextStyle>> = listOf(
-        "displayLarge" to CleansiaTypography.displayLarge,
-        "displayMedium" to CleansiaTypography.displayMedium,
-        "displaySmall" to CleansiaTypography.displaySmall,
-        "headlineLarge" to CleansiaTypography.headlineLarge,
-        "headlineMedium" to CleansiaTypography.headlineMedium,
-        "headlineSmall" to CleansiaTypography.headlineSmall,
-        "titleLarge" to CleansiaTypography.titleLarge,
-        "titleMedium" to CleansiaTypography.titleMedium,
-        "titleSmall" to CleansiaTypography.titleSmall,
-        "bodyLarge" to CleansiaTypography.bodyLarge,
-        "bodyMedium" to CleansiaTypography.bodyMedium,
-        "bodySmall" to CleansiaTypography.bodySmall,
-        "labelLarge" to CleansiaTypography.labelLarge,
-        "labelMedium" to CleansiaTypography.labelMedium,
-        "labelSmall" to CleansiaTypography.labelSmall,
-    )
+    private val allSlots = BundledFontFiles.typeScaleSlots(CleansiaTypography)
 
     /**
      * Call-site pin for partner `OnboardingScreen.kt` (the hero title).

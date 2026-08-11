@@ -89,9 +89,9 @@ extension DisputeListItem {
 }
 
 extension DisputeDetails {
-    func toDetail() -> DisputeDetail? {
+    func toDetail() throws -> DisputeDetail? {
         guard let id, !id.isEmpty else { return nil }
-        return DisputeDetail(
+        return try DisputeDetail(
             id: id,
             displayOrderNumber: displayOrderNumber,
             reasonName: reason?.name,
@@ -99,18 +99,25 @@ extension DisputeDetails {
             statusName: status?.name,
             statusValue: status?.value,
             createdOn: createdOn,
-            messages: (messages ?? []).enumerated().compactMap { $1.toMessage(fallbackId: $0) },
+            messages: (messages ?? []).enumerated().map { try $1.toMessage(fallbackId: $0) },
             evidence: (evidence ?? []).compactMap { $0.toEvidence() }
         )
     }
 }
 
 extension DisputeMessageDto {
-    func toMessage(fallbackId: Int) -> DisputeMessage {
-        DisputeMessage(
+    /// **Refuse the thread.** `isStaffMessage` is which side of the conversation a bubble is drawn
+    /// on, and `false` is a claim: coerced, a reply from support is attributed to the customer, who
+    /// then reads their own dispute as one nobody answered.
+    ///
+    /// The id keeps its positional fallback. It is a `ForEach` key and nothing else — no mutation
+    /// addresses a message — so a synthesized one identifies a row on screen rather than a row on
+    /// the server.
+    func toMessage(fallbackId: Int) throws -> DisputeMessage {
+        try DisputeMessage(
             id: id ?? "message-\(fallbackId)",
             body: message,
-            isStaffMessage: isStaffMessage ?? false,
+            isStaffMessage: isStaffMessage.require("isStaffMessage"),
             createdOn: createdOn
         )
     }

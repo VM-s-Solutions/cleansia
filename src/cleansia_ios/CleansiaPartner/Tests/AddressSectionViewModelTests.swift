@@ -55,6 +55,46 @@ final class AddressSectionViewModelTests: XCTestCase {
         XCTAssertTrue(vm.canSave)
     }
 
+    func testLoadFailureSetsErrorAndSnackbars() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        guard case .error = vm.state else { return XCTFail("a failed read must not open an empty form") }
+        XCTAssertNotNil(snackbar.current)
+    }
+
+    /// The employee id and the pick both survive a failed reload, so nothing else stops the command
+    /// from going out — over a profile we could not read.
+    func testAFailedReloadRefusesToSaveTheStalePick() async {
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "cz-id", isoCode: "CZE", name: "Czechia")
+        ])
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress())
+
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        await vm.load()
+        await vm.save()
+
+        XCTAssertNil(client.addressCommand)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    func testRetryingAFailedLoadRecoversTheAddress() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", street: "Vinohradská 12", city: "Praha"))
+        await vm.load()
+
+        guard case .loaded = vm.state else { return XCTFail("retry left the section in the error state") }
+        XCTAssertEqual(vm.summaryLine1, "Vinohradská 12")
+    }
+
     func testApplyPickUpdatesSummary() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         let vm = makeVM()

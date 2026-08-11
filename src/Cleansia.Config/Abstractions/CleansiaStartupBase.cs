@@ -22,6 +22,19 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
 
     protected abstract Type RequestLoggingMiddlewareType { get; }
 
+    /// <summary>
+    /// Bytes of a buffered request body kept in memory before it spills to a temp file. This is the
+    /// framework default, restated so the pair below reads as one decision rather than one override.
+    /// </summary>
+    public const int RequestBufferThresholdBytes = 30 * 1024;
+
+    /// <summary>
+    /// Ceiling on what a single buffered request body may occupy, memory plus temp file. Left implicit
+    /// the spill is bounded only by free disk. Sits above Kestrel's 30,000,000-byte default so Kestrel
+    /// still refuses first and nothing that works today begins to fail.
+    /// </summary>
+    public const long RequestBufferLimitBytes = 32L * 1024 * 1024;
+
     protected abstract void AddProjectServices(IServiceCollection services);
 
     // Swagger fail-closed allow-list. The old gate (`!env.IsProduction()`)
@@ -135,7 +148,7 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
 
         app.Use((context, next) =>
         {
-            context.Request.EnableBuffering();
+            context.Request.EnableBuffering(RequestBufferThresholdBytes, RequestBufferLimitBytes);
             return next();
         });
 

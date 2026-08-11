@@ -19,7 +19,7 @@ struct CleansiaCustomerApp: App {
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
         _preferences = StateObject(wrappedValue: CustomerPreferencesModel(
             settings: container.appSettings,
-            languageSync: LiveLanguagePreferenceSync(repository: container.userProfileRepository)
+            languageSync: container.languageSync
         ))
         self.container = container
     }
@@ -43,6 +43,7 @@ struct CleansiaCustomerApp: App {
                         badge?.notePushReceived(eventKey: eventKey)
                     }
                     container.startPush()
+                    container.startLanguageReconcile()
                     // The registration-token delegate misses cached tokens; pull it
                     // explicitly and let it retry as the APNs token settles.
                     appDelegate.requestFcmToken()

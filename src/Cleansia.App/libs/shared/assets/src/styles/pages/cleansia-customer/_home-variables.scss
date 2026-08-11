@@ -1,6 +1,7 @@
 // ===================================
 // Cleansia Landing Page — Design Tokens
 // ===================================
+@forward '../../common/typography';
 
 $primary: #0284c7;
 $primary-dark: #0369a1;
@@ -26,7 +27,3 @@ $radius: 0.75rem;
 $radius-lg: 1rem;
 $radius-xl: 1rem;
 $max-width: 1200px;
-
-// --- Fonts ---
-$font-heading: 'Poppins', sans-serif;
-$font-body: 'Nunito', sans-serif;

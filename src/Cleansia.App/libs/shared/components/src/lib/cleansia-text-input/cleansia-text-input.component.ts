@@ -1,5 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, forwardRef, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  forwardRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -44,9 +54,21 @@ export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
 
   innerValue = '';
 
+  private readonly hostRef = inject(ElementRef<HTMLElement>);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   override writeValue(value: any): void {
     this.innerValue = value ?? '';
+
+    // The `[value]` binding only writes the DOM when the expression differs from
+    // what Angular last wrote, not from what the element holds — so a model that
+    // rejects the character just typed (a digits-only normalizer) leaves that
+    // character on screen. Push it, the way DefaultValueAccessor does.
+    const input: HTMLInputElement | null =
+      this.hostRef.nativeElement.querySelector('input');
+    if (input && input.value !== this.innerValue) {
+      input.value = this.innerValue;
+    }
   }
 
   handleChange(event: Event): void {

@@ -83,7 +83,10 @@ public class BlobContainerClient : IBlobContainerClient
 
     public Uri GetBlobUri(string blobName) => _container.GetBlobClient(blobName).Uri;
 
-    public Uri GenerateSasUri(string blobName, TimeSpan expiry)
+    public Uri GenerateSasUri(string blobName, TimeSpan expiry) =>
+        GenerateSasUri(blobName, expiry, ServedContentType.Opaque);
+
+    public Uri GenerateSasUri(string blobName, TimeSpan expiry, ServedContentType servedAs)
     {
         var blobClient = _container.GetBlobClient(blobName);
 
@@ -92,7 +95,18 @@ public class BlobContainerClient : IBlobContainerClient
             BlobContainerName = _container.Name,
             BlobName = blobName,
             Resource = "b",
-            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry)
+            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry),
+
+            // rsct / rscc: response headers the storage service returns for THIS token, overriding
+            // whatever the blob was stored with. That is what lets the fix reach blobs already written —
+            // every one of them carries application/octet-stream because the upload never set
+            // BlobHttpHeaders, and re-uploading them all was the alternative.
+            ContentType = servedAs.Value,
+
+            // Never `public`. These blobs are private and reachable only through a signed URL, so a
+            // shared cache holding one would outlive the signature that authorised it. Set here, on the
+            // one mint, rather than per call site: a caller cannot forget what it never passes.
+            CacheControl = "private, max-age=3600",
         };
         sasBuilder.SetPermissions(BlobSasPermissions.Read);
 

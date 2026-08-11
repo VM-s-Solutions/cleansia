@@ -27,6 +27,14 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 | **Application Insights** | Basic | Basic |
 | **Container Registry** | Basic | Basic |
 
+::: warning The SSR host still sends nothing, and App Insights volume changed in August 2026
+The connection string is injected into all seven hosts. The five APIs began exporting to it at T-0500
+(they had been silently exporting nowhere); the Functions host always did; the **customer SSR host is
+Node and reads it in no environment**. Read [Observability](#observability) before using this row to
+reason about monitoring coverage or App Insights cost — the cost side of this row is now six producers,
+not one.
+:::
+
 ::: tip Cost Optimization
 The DEV environment uses burstable and basic tiers everywhere. The biggest cost difference is the PostgreSQL server — Burstable B1ms (~$13/mo) vs General Purpose D2s_v3 (~$130/mo).
 :::
@@ -53,7 +61,7 @@ Key Vault
 | `Stripe--SecretKey` | Customer API | Stripe payment processing |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
-| `Sentry--Dsn` | All APIs, Functions | Error tracking |
+| `Sentry--Dsn` | The five APIs (not Functions) | Error tracking — **empty on DEV, so Sentry is off**. See [Observability](#observability) |
 | `Storage--ConnectionString` | All APIs, Functions | Azure Blob/Queue Storage |
 | `Fiscal--CzechEet2--ApiKey` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET fiscal API key |
 | `Fiscal--CzechEet2--CertificatePassword` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET certificate password |
@@ -250,52 +258,230 @@ public class EmailService(ISendGridClient client) : IEmailService
 }
 ```
 
-### Sentry
+## Observability
 
-Used for error tracking and performance monitoring across all APIs and Functions.
+::: tip What changed, and what did not (T-0500)
+The five API hosts now export their OpenTelemetry pipeline — **logs, exceptions, requests and
+metrics** — to Application Insights. Before T-0500 they exported nothing: the exporter existed but hung
+off an `AddServiceDefaults` overload no host calls, so seven hosts were handed a connection string and
+exactly one read it.
+
+**This takes effect on the next deploy**, not on merge. Until `Deploy to DEV` has run against a commit
+containing the fix, everything below describes the intended state and the "what you can see today"
+answer is still platform metrics only.
+
+**Sentry is unchanged and still off.** It is wired into the five API hosts, its DSN is empty in every
+committed configuration file, and DEV is deployed with it empty. That is now a *supported* posture
+rather than a blind one — see [Sentry](#sentry) for what it would still add.
+:::
+
+### Who sends what
+
+| Host | Application Insights | Sentry |
+|---|---|---|
+| Partner API | **yes** — logs, exceptions, requests, metrics | wired, DSN empty |
+| Admin API | **yes** | wired, DSN empty |
+| Customer API | **yes** | wired, DSN empty |
+| Partner Mobile API | **yes** | wired, DSN empty |
+| Customer Mobile API | **yes** | wired, DSN empty |
+| Customer SSR (Node) | no — connection string injected, no client in the app | not wired |
+| Azure Functions | **yes** — via the Application Insights worker SDK, not OpenTelemetry | not wired |
+
+### How the APIs reach App Insights
+
+`Cleansia.ServiceDefaults/Extensions.cs` carries **two** `AddServiceDefaults` overloads, and both now
+funnel their exporter registration through one private `AddTelemetryExporters(IServiceCollection,
+IConfiguration)`:
+
+| Overload | Called by |
+|---|---|
+| `AddServiceDefaults(IHostApplicationBuilder)` | nothing today — the stock Aspire shape, kept for a future minimal-hosting host |
+| `AddServiceDefaults(IServiceCollection, IConfiguration, IHostEnvironment)` | all five APIs |
+
+All five APIs use the Startup-class pattern: `Program.cs:17` calls `UseStartup<Startup>()`, each
+`Startup` derives from `CleansiaStartupBase`, and `CleansiaStartupBase.cs:138` calls the
+`IServiceCollection` overload. **That asymmetry is the whole history of this section** — the exporter
+was added to the other overload in July 2026 under a commit message announcing that every API host now
+shipped telemetry, and it shipped none. `Cleansia.Tests/Configuration/AppInsightsExporterWiringTests.cs`
+pins the chain end to end, including through the real `CleansiaStartupBase`, because a test that only
+called the extension method directly would have been green throughout.
+
+Registration is guarded on `APPLICATIONINSIGHTS_CONNECTION_STRING` being non-empty, so a laptop and the
+test hosts register no exporter at all. The OTLP exporter is still registered separately when
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set — that is the local Aspire dashboard
+(`Cleansia.AppHost/Properties/launchSettings.json:11`) and no Azure app setting sets it.
+
+There is no codeless agent anywhere: `ApplicationInsightsAgent_EXTENSION_VERSION` is set on no host in
+`deploy/`. That is why the SSR host sends nothing — it is Node, ships no telemetry package, and has no
+agent to fall back on.
+
+### What an operator can see
+
+Two independent layers, and the distinction matters during an incident: **platform metrics** are
+emitted by Azure itself and need no instrumentation, so they were the entire diagnostic surface before
+T-0500 and are unaffected by any application change. The alert set is gated on `alertEmail` being
+non-empty (`main.bicep:793`); `deploy/bicep/weu.dev.bicepparam:45` sets it, so these are live on DEV and
+mail the ops Action Group.
+
+| Signal | Source | Dev threshold |
+|---|---|---|
+| HTTP 5xx count per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:81`) | > 25 in 15 min, severity 3 |
+| Average response time per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:154`) | > 2 s over 15 min |
+| Functions host health probe | `HealthCheckStatus` platform metric (`alerts.bicep:121`) | < 100% healthy |
+| Postgres failed connections / CPU / storage | `Microsoft.DBforPostgreSQL` platform metrics (`alerts.bicep:259`) | > 10 failures; > 90% CPU; > 85% storage |
+| Poison-queue arrivals | queue diagnostic settings → Log Analytics scheduled query (`queueAlerts.bicep`) | any `PutMessage` into a `*-poison` queue |
+| Server exceptions | App Insights `exceptions/count` (`alerts.bicep:194`) | > 25 in 15 min — **now genuinely covers the five APIs + Functions**, as that file always claimed |
+
+**Alerting still tells you almost nothing about a single failure.** Every threshold above is a
+*volume* threshold: on DEV one 500 does not reach any of them (the 5xx alert takes 26 in 15 minutes).
+What changed at T-0500 is not who gets emailed — it is that the failure is now **recorded**, so there
+is something to look at once you know to look. Being *told* about a first occurrence is the gap
+[Sentry](#sentry) would fill.
+
+### Reading API telemetry
+
+The five APIs write structured logs through `ILogger`, enriched with tenant and user context by
+`RequestLoggingMiddleware`:
 
 ```csharp
-builder.WebHost.UseSentry(options =>
-{
-    options.Dsn = builder.Configuration["Sentry:Dsn"];
-    options.TracesSampleRate = 0.2;  // 20% of transactions
-    options.Environment = builder.Environment.EnvironmentName;
-});
-```
-
-## Application Insights
-
-All APIs and Functions send telemetry to Application Insights for monitoring, logging, and alerting.
-
-### Key Metrics Monitored
-
-| Metric | Alert Threshold |
-|--------|----------------|
-| Response time (P95) | > 2 seconds |
-| Failed requests (5xx) | > 1% of total |
-| Poison queue depth | > 0 messages |
-| Database connection failures | Any occurrence |
-| Function execution failures | > 3 in 15 minutes |
-
-### Logging
-
-All APIs use structured logging via `ILogger` which flows to Application Insights:
-
-```csharp
-// Logs are enriched with tenant and user context
-// by the RequestLoggingMiddleware (see Backend docs)
 logger.LogInformation(
     "Order {OrderId} created for customer {CustomerId} with total {Total} {Currency}",
     order.Id, order.CustomerId, order.TotalPrice, order.Currency.Code);
 ```
 
-::: tip Log Queries
-Use Kusto Query Language (KQL) in Application Insights to query logs:
+These reach App Insights through the OpenTelemetry logging provider that the Azure Monitor distro
+registers, so an unhandled exception's stack trace lands in `exceptions` and its log record in
+`traces`, correlated to the failing request by `operation_Id`:
+
 ```kql
-requests
+exceptions
 | where timestamp > ago(1h)
-| where resultCode >= 500
-| summarize count() by cloud_RoleName, bin(timestamp, 5m)
-| render timechart
+| project timestamp, cloud_RoleName, problemId, outerMessage, operation_Id
+| join kind=leftouter (requests | project operation_Id, name, resultCode, url) on operation_Id
 ```
+
+`cloud_RoleName` is the host's application name, which is how the five APIs and the Functions host are
+told apart in one query.
+
+::: warning What the deployed log level actually admits
+No `ASPNETCORE_ENVIRONMENT` is set on any host in `deploy/`, so every deployed host runs as
+**`Production`** and binds `appsettings.Production.json`: `Logging:LogLevel:Default = Warning`, with
+`Microsoft.AspNetCore` and `Microsoft.EntityFrameworkCore` also at `Warning`.
+
+That is load-bearing in both directions. **Warning and above ships** — which includes every
+`LogError`, and the framework's own `ExceptionHandlerMiddleware` record of an unhandled exception. And
+**Information does not** — which is why `RequestLoggingMiddleware`'s request/response body slices, and
+the caller PII they can carry, do not leave the process at all. Lowering `Default` to `Information` on
+a deployed host would send both the volume and that PII to App Insights.
 :::
+
+`deploy/bicep/modules/appService.bicep` still configures no `Microsoft.Insights/diagnosticSettings` for
+the App Services, so the container's raw **stdout** is still not in Log Analytics. Live tailing remains
+the way to watch a boot failure — a crash before the OTel pipeline starts is reported by nothing else:
+
+```bash
+az webapp log tail --name api-cleansia-partner-weu-dev --resource-group rg-cleansia-weu-dev
+```
+
+::: tip Functions telemetry has its own sampling posture
+The Functions host uses the Application Insights worker SDK, not OpenTelemetry, and is tuned by
+`src/Cleansia.Functions/host.json` (T-0499): adaptive sampling at 5 items/second with `Exception`
+excluded, and `logLevel.default` raised to `Warning`. The APIs do **not** share those settings — see
+[Volume and cost](#volume-and-cost).
+:::
+
+### Volume and cost
+
+The APIs export at the Azure Monitor distro's defaults: **no SDK-side sampling** (`SamplingRatio` 1.0),
+Live Metrics on, no per-route filtering. That is a deliberate choice for the environment that exists,
+and it is the opposite of the Functions posture for a reason:
+
+- **Sampling protects against traffic, and DEV has none.** Real DEV traffic is the owner's phone and a
+  demo. Dropping 80% of a handful of requests means the one request that failed is most likely the one
+  discarded — blindness bought for a rounding error. The Functions host samples because 14 queue
+  listeners poll continuously whether or not anyone is using the system.
+- **Logs are self-limiting.** At `Warning` an idle healthy host emits almost nothing; volume appears
+  only when something is wrong, which is when you want to pay for it.
+- **The two cost brakes that do exist are deploy-time, and neither was touched.** The Log Analytics
+  workspace carries `dailyQuotaGb` (dev 1 GB, prod 5 GB) and the component carries `SamplingPercentage`
+  (dev 100, prod 50) — both in `deploy/bicep/modules/appInsights.bicep`. **Do not add an SDK
+  `SamplingRatio` in prod without accounting for the component's 50%: they compound**, and 0.2 × 50%
+  keeps one trace in ten.
+- **The daily cap is a breaker, not a budget.** When it trips, ingestion stops until the next UTC day —
+  including exceptions. Blowing the cap on routine telemetry therefore blinds the signal this whole
+  section exists for.
+
+Two known noise sources were left alone rather than fixed here, both measured:
+
+- **Health probes dominate DEV request volume.** App Service polls `/health` on six sites, and
+  `/health` runs the readiness checks — a Postgres query *and* an Azure Blob `ExistsAsync`
+  (`ReadinessHealthChecks.cs`) — so each probe emits a request span *and* an HttpClient dependency span.
+- **Filtering them at the instrumentation is the wrong tool.** Measured directly: an
+  `AspNetCoreTraceInstrumentationOptions.Filter` that drops `/health` removes the server span but the
+  HttpClient dependency span underneath it is still exported, now parented to a span that was never
+  sent. That trades one noisy record for one orphaned record. The correct fix is a sampler (or not
+  making a storage round trip on every probe) and belongs to a cost ticket, not this one.
+
+### Sentry
+
+Sentry is wired into the five API hosts only — the Functions host does not use it. `Program.cs:16` on
+each API calls `UseSentryMonitoring()` (`Cleansia.ServiceDefaults/Extensions.cs:85-112`), which reads
+`Sentry:Dsn` and **leaves the SDK uninitialized when that value is absent or blank**:
+
+```csharp
+webBuilder.UseSentry((context, options) =>
+{
+    var dsn = context.Configuration["Sentry:Dsn"];
+    if (string.IsNullOrWhiteSpace(dsn))
+    {
+        // Empty DSN is treated as "disabled" — the SDK rejects a blank DSN and would fail startup.
+        options.Dsn = string.Empty;
+        options.AutoSessionTracking = false;
+        return;
+    }
+
+    options.Dsn = dsn;
+    options.SendDefaultPii = false;
+    options.AttachStacktrace = true;
+    options.AutoSessionTracking = true;
+    options.TracesSampleRate = 0.2;
+    options.UseOpenTelemetry();
+    options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
+});
+```
+
+The empty-DSN branch is deliberate, not a bug — it is what keeps a host with no DSN from failing to
+boot. `TracesSampleRate` and `SendDefaultPii` are fixed in code, not read from configuration.
+
+Every committed `appsettings*.json` sets `"Dsn": ""`. In Azure the value arrives from Key Vault,
+populated by CI from the `SENTRY_DSN` GitHub secret — and the DEV runbook instructs that it be left
+empty. **Turning Sentry on is a secret value, not a code change.**
+
+#### Is Sentry redundant now that App Insights works?
+
+**No — the two answer different questions, and the one Sentry answers is the one nobody else does.**
+App Insights *records*; its alerting is metric-threshold based (`> 25 exceptions in 15 minutes`), so a
+first-ever `NullReferenceException` on a demo is captured and nobody is told. Sentry's default unit is
+the **issue**: first-seen, regression-after-release, deduplicated and grouped, with a notification on
+occurrence one. It also carries release health and a far better stack-trace reader.
+
+So they are complementary, and the honest split is *App Insights is the record, Sentry is the pager*.
+
+What the owner would have to do to turn it on, in order:
+
+1. Create a Sentry project (free tier: 5k errors/month, enough for DEV) and set the `SENTRY_DSN` secret
+   in the `dev-weu` GitHub Environment. CI writes it to Key Vault on the next deploy; no code change.
+2. Know the blast radius before doing it. `TracesSampleRate = 0.2` also sends 20% of *transactions*,
+   not just errors, and `AutoSessionTracking = true` sends a session per request-ish unit — those, not
+   the errors, are what consume a free tier.
+3. `SendDefaultPii = false` is already set and must stay. Together with the deployed `Warning` log
+   level (which keeps the `RequestLoggingMiddleware` Information records — and the caller email, name,
+   phone and birth date they can contain — out of the breadcrumb trail entirely) that is what keeps a
+   third-party error tracker from becoming a PII export. **Lowering the deployed log level and enabling
+   Sentry are individually fine and jointly not**; sprint 14's T-0457 is the ticket that owns that PII.
+
+Two smaller things worth fixing when someone next touches this, neither done here because both are
+inert while the DSN is empty: `appsettings.Production.json` hardcodes `Sentry:Environment =
+"production"`, so DEV errors would arrive tagged as production; and `TracesSampleRate` /
+`SendDefaultPii` are fixed in code rather than read from configuration, so there is no way to tune the
+sample rate per environment without a redeploy.

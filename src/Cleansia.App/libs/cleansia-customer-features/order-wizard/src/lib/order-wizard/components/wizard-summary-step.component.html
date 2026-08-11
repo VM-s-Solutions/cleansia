@@ -128,6 +128,8 @@
       </div>
     }
 
+    <cleansia-wizard-preferred-cleaner [facade]="facade" />
+
     <!-- Promo row — Wolt-style. Tap to open dialog → enter code → Apply
          hits backend once → Done locks it in. The clear-X strips the
          applied state without reopening the dialog. -->
@@ -217,6 +219,14 @@
             </span>
           </div>
         }
+        @if (facade.expressSurchargeWaived()) {
+          <div class="order-wizard__summary-row order-wizard__summary-row--discount">
+            <span>{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
+            <span class="order-wizard__summary-row-price order-wizard__summary-row-price--discount">
+              {{ formatPriceFn(0) }}
+            </span>
+          </div>
+        }
         @if (showTierFloorHint()) {
           <div class="order-wizard__summary-row order-wizard__summary-row--hint">
             <span>{{ 'pages.order.summary.tier_discount_min_not_met' | translate: { amount: tierFloorAmount() } }}</span>
@@ -238,7 +248,7 @@
           <i class="pi pi-clock"></i>
         </div>
         <h3>{{ 'pages.order.cancel_policy_title' | translate }}</h3>
-        @if (plusFreeHours(); as plusH) {
+        @if (facade.plusFreeCancellationHours(); as plusH) {
           <span class="order-wizard__plus-badge">{{ 'pages.membership.plus_badge' | translate }}</span>
         }
       </div>
@@ -248,7 +258,7 @@
           <strong class="order-wizard__cancel-policy-free">{{ 'pages.order.cancel_policy_tier1_value' | translate }}</strong>
         </div>
         <div class="order-wizard__cancel-policy-row">
-          @if (plusFreeHours(); as plusH) {
+          @if (facade.plusFreeCancellationHours(); as plusH) {
             <span>{{ 'pages.order.cancel_policy_tier2_when_plus' | translate: { hours: plusH } }}</span>
           } @else {
             <span>{{ 'pages.order.cancel_policy_tier2_when' | translate }}</span>

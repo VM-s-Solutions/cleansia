@@ -286,6 +286,14 @@ var ssrSiteName = 'web-cleansia-customer-${region}-${env}'
 
 // ---------------------------------------------------------------------------------------------------
 // Foundation: observability, secret store, storage, registry, database.
+//
+// appInsights.bicep ships the component AND its Log Analytics workspace because there is no shape in
+// which it ships one of them: Application Insights is workspace-based only (classic components are
+// retired, and a component declared without WorkspaceResourceId gets a workspace auto-provisioned
+// beside it), so "keep App Insights, drop the workspace" is not a configuration that exists. The cost
+// lever is that module's sampling + daily-cap knobs, not the resource list. Error telemetry does not
+// depend on any of it: Sentry (Sentry__Dsn) covers the five API hosts and, since ac2243d2, the
+// Functions worker, on its own unsampled path. The SSR (Node) host ships to neither — filed, not fixed.
 // ---------------------------------------------------------------------------------------------------
 
 module appInsights 'modules/appInsights.bicep' = {
@@ -466,6 +474,11 @@ var apiBaseSettings = union({
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: mapboxTokenKvRef
+  // Read by Cleansia.ServiceDefaults `AddTelemetryExporters`, which registers the Azure Monitor OTel
+  // exporter only when this is non-empty. It was inert on every API host until T-0500: the exporter
+  // existed but hung off an AddServiceDefaults overload no host calls, so the value arrived and nothing
+  // read it. Deleting it silently disables the App Insights export — the registration is skipped, not
+  // failed — leaving Sentry as these hosts' sole error path. It is not decoration.
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
   // ADR-0003 D3: the app refuses to boot in non-Development unless it's told which proxy network to
   // trust for X-Forwarded-For. Behind App Service the only hop is the App Service front end, which
@@ -662,6 +675,13 @@ module ssr 'modules/appService.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
     appSettings: {
+      // DEAD CONFIG on this host, deliberately kept — unlike the five .NET APIs, nothing here reads it.
+      // The SSR app is Node and ships no telemetry client, and the App Service Node auto-instrumentation
+      // agent is off (it needs ApplicationInsightsAgent_EXTENSION_VERSION, which no host sets). So this
+      // site is the one place the setting still means nothing, and it costs no ingestion for the same
+      // reason. Turning it on is an owner decision, not a template one: either add the
+      // `applicationinsights` npm package to apps/cleansia.app/server.ts or set the agent app setting
+      // here (T-0500).
       APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
       // server.ts fronts Mapbox forward-geocoding at /api/mapbox/geocode so the token never reaches
       // the browser (the Mapbox REST API authenticates ONLY via an `access_token` query parameter,
@@ -730,6 +750,12 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
+    // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
+    // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
+    // and FunctionInvocationErrorMiddleware depend on. It is a SECOND, unsampled path alongside the
+    // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
+    // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
+    // while leaving only threshold alerts. Populate it.
     extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
@@ -782,12 +808,12 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Alerting (ADR-0015 D2/D3) — Action Group + metric alerts over the six web hosts, the App Insights
-// component, and Postgres. Deployed only when an alert email is supplied (dev today; prod wires its
-// own address when it goes live). Scopes are passed as deploy-time NAMES — the module rebuilds the
-// resource ids itself, because module outputs cannot feed its per-site for-loop (BCP182) — hence the
-// explicit dependsOn so the alerts never race the resources they watch. The postgres/appInsights
-// names MIRROR the owning modules' naming (postgres.bicep / appInsights.bicep).
+// Alerting (ADR-0015 D2/D3) — Action Group + metric alerts over the six web hosts, the Functions
+// host's health probe, the App Insights component, and Postgres. Deployed only when an alert email is
+// supplied (dev today; prod wires its own address when it goes live). Scopes are passed as deploy-time
+// NAMES — the module rebuilds the resource ids itself, because module outputs cannot feed its per-site
+// for-loop (BCP182) — hence the explicit dependsOn so the alerts never race the resources they watch.
+// The postgres/appInsights names MIRROR the owning modules' naming (postgres.bicep / appInsights.bicep).
 // ---------------------------------------------------------------------------------------------------
 
 module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
@@ -813,7 +839,10 @@ module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
 
 // Poison-queue alerting (T-0360) — the deferred half of alerts.bicep: queue diagnostic settings into
 // the workspace + the scheduled-query rule over them, attached to the exported Action Group. Same
-// gate as alerts (no alert email = no alerting at all).
+// gate as alerts (no alert email = no alerting at all). It is the reason the workspace is not
+// negotiable independently of the component: a *-poison PutMessage has no metric form to alert on
+// (QueueMessageCount is account-wide, undimensioned and hourly), so without this the only trace of a
+// message the runtime gave up on is the durable DeadLetter row — a pull, not a page.
 module queueAlerts 'modules/queueAlerts.bicep' = if (!empty(alertEmail)) {
   name: 'queueAlerts'
   params: {

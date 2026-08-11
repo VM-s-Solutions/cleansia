@@ -13,7 +13,7 @@ public static class OrderMappers
 {
     public static OrderStatus GetCurrentOrderStatus(this Order order)
     {
-        return order.CurrentStatus!.Value;
+        return order.CurrentStatus;
     }
 
     /// <summary>
@@ -51,13 +51,7 @@ public static class OrderMappers
             o.MembershipDiscountAmount,
             o.PromoDiscountAmount,
             o.EstimatedTime,
-            // Persisted current status; a pre-backfill NULL column falls back to the
-            // authoritative latest-history subquery (same rule: CreatedOn desc, Sequence desc).
-            o.CurrentStatus ?? o.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .ThenByDescending(s => s.Sequence)
-                .Select(s => (OrderStatus?)s.Status)
-                .FirstOrDefault(),
+            o.CurrentStatus,
             o.ConfirmationCode,
             o.CurrencyId,
             new OrderListCurrencyRow(
@@ -122,7 +116,7 @@ public static class OrderMappers
             MembershipDiscountAmount: row.MembershipDiscountAmount,
             PromoDiscountAmount: row.PromoDiscountAmount,
             EstimatedTime: row.EstimatedTime,
-            OrderStatus: row.OrderStatus!.Value.MapToCode(),
+            OrderStatus: row.OrderStatus.MapToCode(),
             ConfirmationCode: row.ConfirmationCode,
             SelectedPackages: row.SelectedPackages.Select(p => new PackageListItem(
                 Id: p.Id,
@@ -224,7 +218,9 @@ public static class OrderMappers
         decimal? estimatedCleanerPay = null,
         bool isAssignedToCurrentUser = false,
         bool hasAfterPhotos = false,
-        bool isCustomerCaller = false)
+        bool isCustomerCaller = false,
+        bool? expressWaiverForfeitedOnCancel = null,
+        PreferredOfferDetails? preferredOffer = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -234,6 +230,7 @@ public static class OrderMappers
             CustomerEmail: order.CustomerEmail,
             CustomerPhone: order.CustomerPhone,
             Address: order.CustomerAddress.MapToOrderAddress(),
+            CustomerAddressApproximate: BuildApproximateAddress(order.CustomerAddress),
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
             Extras: order.Extras.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
@@ -263,15 +260,35 @@ public static class OrderMappers
             CreatedOn: order.CreatedOn,
             UpdatedOn: order.UpdatedOn,
             AssignedEmployees: order.AssignedEmployees.Select(ae => ae.MapToAssignedEmployeeDto(isCustomerCaller)),
+            RequiredEmployees: order.RequiredEmployees,
+            MaxEmployees: order.MaxEmployees,
+            AvailableSpots: order.AvailableSpots,
+            AssignedEmployeesCount: order.AssignedEmployees.Count,
+            HasAvailableSpots: order.HasAvailableSpots,
             ReceiptNumber: order.Receipt?.ReceiptNumber,
             OrderNotes: order.OrderNotes.Select(n => n.MapToDto()),
             OrderIssues: order.OrderIssues.Select(i => i.MapToDto()),
             Review: order.Reviews.FirstOrDefault()?.MapToDto(),
             EstimatedCleanerPay: estimatedCleanerPay,
             IsAssignedToCurrentUser: isAssignedToCurrentUser,
-            HasAfterPhotos: hasAfterPhotos
+            HasAfterPhotos: hasAfterPhotos,
+            ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
+            PreferredOffer: preferredOffer
         );
     }
+
+    public static PendingOfferItem MapToDto(this PendingOfferRow row) =>
+        new(
+            Id: row.Id,
+            DisplayOrderNumber: row.DisplayOrderNumber,
+            CleaningDateTime: row.CleaningDateTime,
+            EstimatedTime: row.EstimatedTime,
+            RespondByUtc: row.RespondByUtc,
+            CustomerAddressApproximate: BuildApproximateAddress(row.City, row.ZipCode),
+            Rooms: row.Rooms,
+            Bathrooms: row.Bathrooms,
+            TotalPrice: row.TotalPrice,
+            CurrencyCode: row.CurrencyCode);
 
     public static OrderNoteDto MapToDto(this OrderNote note)
     {
@@ -364,6 +381,9 @@ public static class OrderMappers
         };
     }
 
+    private static string BuildApproximateAddress(Address? address) =>
+        address == null ? string.Empty : BuildApproximateAddress(address.City, address.ZipCode);
+
     /// <summary>
     /// Coarse location string safe to show to cleaners *before* they accept
     /// the order — no street name, no house number. Mirrors how Wolt/Bolt
@@ -380,11 +400,13 @@ public static class OrderMappers
     /// already identifies the broad district (whole Praha 4); leaving the
     /// last two digits would narrow it to a specific street group, which
     /// defeats the privacy intent.
+    ///
+    /// <para>This is the pre-acceptance ceiling for EVERY cleaner-facing surface, which is why it is
+    /// public rather than a mapper-local helper: <c>OrderListItem</c>, <c>OrderItem</c>,
+    /// <c>PendingOfferItem</c> and the dashboard's available-jobs preview all read it. A second
+    /// spelling of "city + partial postcode" is how the ceiling stops being one decision.</para>
     /// </summary>
-    private static string BuildApproximateAddress(Address? address) =>
-        address == null ? string.Empty : BuildApproximateAddress(address.City, address.ZipCode);
-
-    private static string BuildApproximateAddress(string? rawCity, string? rawZipCode)
+    public static string BuildApproximateAddress(string? rawCity, string? rawZipCode)
     {
         var city = rawCity?.Trim();
         if (string.IsNullOrEmpty(city)) return string.Empty;

@@ -164,4 +164,191 @@ the working copies. Adding a font to an iOS target normally means an `UIAppFonts
   fixes the mobile hero and feeds the answer.
 
 ## Review
-<!-- architect panel verdict + AC4's triage table + AC5's licence + AC6's sha1s go here -->
+
+<!-- architect panel verdict goes here -->
+
+### Android lane — implemented 2026-08-07 (android)
+
+Built under the owner's outcome ruling ("until a user can read the text and no problems occur"):
+legible Cyrillic via a fallback to the already-bundled Nunito. **No font binary was added, replaced,
+re-subset or regenerated**, so AC5 (licence) and AC6 (binary parity) are **not engaged** — the six
+sha1s below are unchanged from the ticket's own record.
+
+**Mechanism: `AndroidFont` + `Typeface.CustomFallbackBuilder`** (`core/…/ui/theme/GlyphFallbackFont.kt`).
+`Poppins` stays one `FontFamily`; each of its three entries is now a `GlyphFallbackFont` naming a
+Poppins primary and its Nunito counterpart. Every existing `fontFamily = Poppins` call site is
+unchanged.
+
+**AC3 option (a) is confirmed non-viable — this is the finding the panel was told to press on.**
+A second `Font(...)` inside the family gives **per-run** behaviour, never per-glyph. Established by
+reading the shipped `compose-ui-text 1.7.8` bytecode (`ui-text-release.aar`, BOM `2025.02.00`), not
+from docs:
+
+- `FontMatcher.matchFont(FontListFontFamily, FontWeight, FontStyle) → List<Font>` delegates to
+  `filterByClosestWeight(...)`. Weight and style are its only inputs; no cmap/coverage is read.
+- `FontListFontFamilyTypefaceAdapterKt.firstImmediatelyAvailable(...)` walks that list and returns on
+  the **first font that loads** (`PlatformFontLoader.loadBlocking`; the failure path throws
+  `"Unable to load font"`). The list is a *load-failure* fallback, not a coverage fallback.
+- `TypefaceResult.Immutable` holds **one** `Object`. One (family, weight, style) resolves to exactly
+  one `android.graphics.Typeface` for the whole run, so a Latin heading containing one Russian word
+  would flip **entirely** to the fallback face.
+
+Per-glyph substitution lives one level down, in the platform typeface's own family chain.
+`Typeface.CustomFallbackBuilder` (API 29+) is the only app-level way to write that chain; Minikin
+then itemizes **per glyph** across [Poppins → Nunito → system sans-serif] — the default system
+fallback is retained, so emoji/CJK behaviour is unchanged. Compose reaches it because
+`AndroidFontLoader.loadBlocking` dispatches `AndroidFont` to `font.typefaceLoader.loadBlocking(context, font)`
+(verified in the same bytecode), which is public API and keeps `Poppins` a top-level `val`.
+
+Also rejected: an **XML `<font-family>` resource** — `Typeface.createFromResources` folds every
+`<font>` entry into **one** native family whose coverage is computed from a single representative
+face, then appends only the *system* fallback; and a **per-locale family swap**, which is per-run by
+construction and is AC3 option (b).
+
+**Known limit — API 26–28 (minSdk is 26).** `CustomFallbackBuilder` is API 29. Below it the primary
+loads exactly as today and uncovered glyphs still come from the system face: readable (Roboto has
+full Cyrillic), off-brand, **unchanged from before** — no regression, no crash. The API-gated code is
+in its own methods so ART's per-method verifier never touches them on older devices; R8 additionally
+outlines them (`GlyphFallbackTypefaceLoader$$InternalSyntheticApiModelOutline$*` in
+`mapping/release/usage.txt`). Closing the 26–28 gap requires a merged binary — out of scope here and
+owner-gated by Q-BRAND-01.
+
+**AC4 triage — the ticket's slot list was wrong and is re-derived.** The ticket names 6 hard-coded
+call sites; there are **36**, in 24 files (4 in `:core`, 32 in `customer-app`, 0 in `partner-app`),
+plus the 6 type-scale slots — 42 occurrences of `fontFamily = Poppins`. Two of the six line numbers
+it gives have moved (`ProfileTab.kt:437 → :451`, `EditProfileScreen.kt:215 → :272`, and that file has
+a second site at `:120`). **All 42 are fixed, none are deferred, and no call site was edited** —
+every one reads the `Poppins` val.
+
+| Surface | Count | Status |
+|---|---|---|
+| Type-scale slots `displayLarge/Medium/Small`, `headlineLarge/Medium/Small` (`Type.kt:44,48,56,60,64,68`) | 6 | fixed via `Poppins` |
+| `:core` call sites — `CleansiaErrorState.kt:73`, `CodeInput.kt:97`, `WordmarkSplash.kt:87,135` | 4 | fixed via `Poppins` |
+| `customer-app` call sites — `AddressManagerScreen.kt:254,849`, `BookingBottomSheet.kt:487`, `CleansiaBrandWordmark.kt:38`, `DeleteAccountScreen.kt:95`, `DevicesScreen.kt:119`, `DisputeDetailScreen.kt:218,373,836`, `DisputesListScreen.kt:108,372`, `EditProfileScreen.kt:120,272`, `HelpSupportScreen.kt:77`, `HomeTab.kt:661,1271`, `LanguageScreen.kt:79`, `NotificationsScreen.kt:93`, `OrderDetailHeroAndAddress.kt:70,83`, `OrderPhotosScreen.kt:87,146`, `OrdersTab.kt:159,645`, `AppearanceScreen.kt:82`, `ProfileOnboardingScreen.kt:176`, `ProfileTab.kt:451`, `RewardsActivityScreen.kt:84`, `RewardsTab.kt:181,335,353`, `SecurityScreen.kt:74` | 32 | fixed via `Poppins` |
+| `partner-app` | 0 | none exist |
+| `FontFamily.Monospace` — `RewardsTab.kt:901`, `InvoiceDetailScreen.kt:568` | 2 | out of scope: a system generic, already Cyrillic-capable via the system chain |
+
+**The shared-file-lane hazard the ticket warns about does not arise.** The fix is confined to `:core`
+(`Type.kt`, the new `GlyphFallbackFont.kt`, `build.gradle.kts`, tests). `ProfileTab.kt` and
+`EditProfileScreen.kt` are **not touched**, so T-0472 no longer needs to sequence after T-0448/T-0453.
+
+**AC1 evidence is executable, so leg 1 applies, not leg 3.** The profile hero (`ProfileTab.kt:305`,
+`headlineSmall`) is covered by the type-scale sweep; a resolved-typeface assertion is impossible
+off-device, so what is asserted is the data the renderer is handed plus the coverage premise.
+
+**AC7 / Gate 0.5.** `--rerun-tasks`, `EXIT` captured before any pipe, counts from the JUnit XML,
+`testDebugUnitTest` executed (not `UP-TO-DATE`/`FROM-CACHE`) in all three modules.
+`:core` **165 → 171** (+3 `BundledFontCoverageTest`, +3 `CyrillicFallbackTest`; `CleansiaTypographyTest`
+stays 4 — its hand-listed 15-slot roster was replaced by the same reflection the new sweep uses).
+`:partner-app` **237 → 237**, `:customer-app` **571 → 571**. `assembleDebug` green for both apps;
+`minifyReleaseWithR8` green for both, and `mapping/release/resources.txt` shows all six fonts
+`reachable=true` under `isShrinkResources`.
+
+**Leg 5 — bundle size: 0 bytes.** No font added; the fallback reuses `nunito_*`, already packaged.
+
+**A real gap found and closed:** `:core:testDebugUnitTest` did not treat `core/src/main/res/font/**`
+as an input, so a swapped TTF left the task cacheable — the first attempt at mutation M5 came back
+`FROM-CACHE` and reported a stale green. `core/build.gradle.kts` now declares the font tree as a test
+input, the same way it already declares the apps' `strings.xml` for `ConsentCatalogTest`.
+
+**Mutation table** — one at a time, restored byte-exact and confirmed with `shasum -c`:
+
+| # | Mutation | Test turned red |
+|---|---|---|
+| M1 | `Poppins` back to plain `Font(...)` entries | `CyrillicFallbackTest` sweep **and** Poppins-composition |
+| M2 | chain reversed (Nunito primary, Poppins fallback) | Poppins-composition — *"the Poppins family draws nunito_regular.ttf"* |
+| M3 | fallback repointed at `poppins_bold` | sweep **and** Poppins-composition |
+| M4 | `titleLarge` moved to a bare `FontFamily(Font(poppins_bold))` | sweep names `titleLarge` — proves it is reflection, not a roster of the six known slots |
+| M5 | `poppins_semibold.ttf` ← `nunito_semibold` bytes | `BundledFontCoverageTest` Poppins premise (**only after the input fix**; before it, `FROM-CACHE`) |
+| M6 | `nunito_bold.ttf` ← `poppins_bold` bytes | Nunito premise, Nunito-composition, Poppins-composition, sweep |
+| M7 | Poppins Bold falls back to `nunito_regular` | Poppins-composition — weight drift |
+| M8 | `poppins_medium` declared `SemiBold` to Compose | Poppins-composition — OS/2 mismatch |
+| M9 | a seventh face added to `res/font` | corpus guard + Nunito premise |
+| M10 | `Nunito` family repointed at `poppins_medium` | Nunito-composition + sweep |
+| M11 | `poppins_bold.ttf` truncated | corpus guard + the Latin positive control (as an error) |
+
+No test survived every mutation, so none was deleted. The Latin positive control exists because
+*"Poppins covers 0 of 98"* passes vacuously if the cmap parser returns nothing (M11 is its killer).
+
+**AC6 sha1s — unchanged, binaries untouched:**
+`poppins_semibold 622ca6ccbe2f22c5611dffa016b745bd26be154c`,
+`poppins_medium e837165aedb031ea74872c5983a3217d1c190a1a`,
+`poppins_bold 45e4d582cbb4dab2bbad3f624fad9ae567c66547`,
+`nunito_regular 00939200fea0402ab0105297ff0f9f283f483bef`,
+`nunito_semibold a05cc583b9700378985c83a8027c9c5927bd6506`,
+`nunito_bold d242cf397381e5e57bbc2a653fbc6f714ee294fc`.
+The PM's coverage table is reproduced exactly (0/98 and 471 total for all three Poppins; 98/98 and
+938 for all three Nunito) and is now asserted in CI.
+
+**Parity note for the iOS lane (AC2).** Reproduce this surface, not this API: `Poppins` remains one
+family of three weights; the pairing is medium→nunito_regular, semibold→nunito_semibold,
+bold→nunito_bold; substitution must be **per glyph**, the brand face must win for Latin, and the
+system fallback must stay last in the chain. Nothing is added to `UIAppFonts` — Nunito is already
+registered — so no `Info.plist` / `project.yml` edit is needed and the owner's Stripe key is not at
+risk. Zero call sites change on either platform.
+
+**Catalog-edit routing — routed to the Architect, not taken inline.** Candidate entry: *"per-glyph
+font fallback on Android is `AndroidFont` + `Typeface.CustomFallbackBuilder`; a second `Font` in a
+Compose `FontFamily` is weight matching, not coverage fallback."*
+- Test 1 (code in violation): **does not fire.** Sweep run: `grep -rn "FontFamily(" --include="*.kt"`
+  across `src/cleansia_android` excluding `build/` — **zero** family constructions outside `Type.kt`;
+  the only other hits are two `FontFamily.Monospace` system generics. Zero baseline.
+- Test 2 (narrowing): searched `patterns-mobile.md`, `consistency.md`, `conventions.md` for
+  `font`, `Font`, `FontFamily`, `fallback`, `Typography`, `Poppins`, `Nunito`. The only candidate is
+  `patterns-mobile.md:250-253`: *"Colors/typography via `MaterialTheme.colorScheme.*` /
+  `MaterialTheme.typography.*` inside `CleansiaTheme` (which applies `CleansiaTypography`). Never
+  style raw components one-off."* **Both readings recorded** per conventions' unresolved-"governs"
+  instruction: (a) it governs only how a *call site obtains* type, and is silent on what a family
+  *contains* → floor, inline; (b) it governs the theme's typography wholesale, so a rule about family
+  composition carves out of it → narrowing, Architect. Unresolved either way, because —
+- **AC3 of this ticket reserves the mechanism ruling to an architect panel with an ADR.** Writing the
+  canonical form into the catalog would be ratifying exactly that ruling. So the entry is **not**
+  written inline; the drafted text plus the bytecode evidence above is handed to the panel. If
+  ratified it prices as **`T1-CI`** — enforcer `core/src/test/…/ui/theme/CyrillicFallbackTest.kt` +
+  `BundledFontCoverageTest.kt`, which `android-ci.yml`'s *"Unit tests (all modules)"* step runs on
+  every PR; baseline is zero and the rule is mechanically expressible, which is exactly when `T1-CI`
+  is required.
+
+### iOS half — 2026-08-07
+
+**iOS is the opposite of Android and the ticket's framing is wrong for it.** CoreText itemizes per
+glyph natively, so Cyrillic was *already* being drawn — by **Helvetica**. The iOS defect is
+**off-brand, not unreadable**. Established on the iOS 16.4 simulator (the deployment floor) by four
+probes, not from documentation: run-level itemization, an `ImageRenderer` ink-count identity
+(mixed = Poppins-Latin + Nunito-Cyrillic, and mixed ≠ all-Nunito), and a hosted `UIHostingController`
+app driven with `simctl ui content_size` — the last of them compiled against the shipped design-system
+sources.
+
+**The cheap fix would have caused a universal accessibility regression.** `Font.custom(_:size:)`
+scales with Dynamic Type but cannot carry a cascade; `Font(ctFont)` carries a cascade but is
+**fixed size**. Measured `large` → `accessibility-XXXL`: custom 98.3 → 278.3, `Font(ctFont)` **98.0,
+no change event, body never re-ran** — so a computed `static var` + `UIFontMetrics` does not rescue it.
+Dropping a cascade into the font helper would have frozen every Poppins heading at nominal size while
+all Nunito body text kept growing, to fix a cosmetic defect. There is no Dynamic Type clamp in the
+tree, so that scaling is live.
+
+Also tested and **closed**: `CTFontManagerRegisterFontDescriptors` with the cascade baked into the
+registered descriptor registers cleanly but CoreText **drops the attribute** (cascade count `-1`).
+
+**Shipped instead:** a `ViewModifier` reading `@Environment(\.dynamicTypeSize)` so the *view* owns the
+dependency and rebuilds the cascaded `CTFont`. The scale curve is
+`round(UIFontMetrics.default.scaledValue(...))`, derived by matching implied point sizes and then
+confirmed at all 12 `DynamicTypeSize` values.
+
+**Slot list corrections (iOS):** 5 type-scale slots, not 6 — iOS has **no `displaySmall`**. 5
+hard-coded call sites, not 6, and none of the Android paths exist here. 45 slot call sites, four of
+which pass the style **as a value** rather than to `.font(...)`. Total surface **50 sites in 39
+files**. `displayLarge` has zero callers. Android's `CleansiaErrorState` Poppins site has no iOS
+counterpart. Both divergences pre-existing and out of scope.
+
+Unlike Android, call sites **had** to change — the modifier must be at the call site to read the
+environment. Made compiler-enforced rather than lint-enforced: the five slots are typed
+`CleansiaTextStyle`, so `.font(CleansiaTypography.headlineSmall)` **fails to compile**. Exactly one
+`.custom(` call remains in the tree, guarded so an un-cascaded Poppins is unreachable through the API.
+
+**The Android stale-green hazard has no counterpart here** — verified, not assumed: swapping a TTF's
+bytes turned 11 tests red on the first run.
+
+No font binary added, replaced or re-subset; the 12 files still reduce to the same **6** distinct
+sha1s as Android. No `Info.plist` or `project.yml` edit was needed — Nunito is already registered in
+both apps.

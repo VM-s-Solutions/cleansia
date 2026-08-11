@@ -18,6 +18,7 @@ namespace Cleansia.Tests.Features.Employees;
 public class OnboardingConsentTests
 {
     private const string EmployeeId = "emp-1";
+    private const string UserEmail = "cleaner@cleansia.cz";
     private const string Ip = "203.0.113.9";
     private const string DeviceLabel = "Chrome/Windows";
 
@@ -33,14 +34,14 @@ public class OnboardingConsentTests
 
     public OnboardingConsentTests()
     {
-        var user = User.CreateWithPassword("cleaner@cleansia.cz", "Password1", "First", "Last");
+        var user = User.CreateWithPassword(UserEmail, "Password1", "First", "Last");
         _employee = Employee.CreateWithUser(user);
         _employee.Id = EmployeeId;
 
         _employeeRepository
-            .Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_employee);
-        _session.Setup(s => s.GetUserEmail()).Returns("cleaner@cleansia.cz");
+        _session.Setup(s => s.GetUserEmail()).Returns(UserEmail);
         _requestMetadata.SetupGet(m => m.IpAddress).Returns(Ip);
         _requestMetadata.SetupGet(m => m.DeviceLabel).Returns(DeviceLabel);
     }
@@ -70,7 +71,6 @@ public class OnboardingConsentTests
         RegistrationNumber: "12345678",
         VatNumber: null,
         LegalEntityName: null,
-        Iban: "CZ6508000000192000145399",
         EmergencyName: null,
         EmergencyPhone: null,
         Consent: true);

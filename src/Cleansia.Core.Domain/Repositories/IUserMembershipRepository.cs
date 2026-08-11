@@ -35,4 +35,19 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// never tracked, e.g. created out-of-band in Stripe Dashboard).
     /// </summary>
     Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Has this user ever started a free trial, on any enrolment? The once-per-customer trial rule
+    /// (owner ruling 2026-08-03) needs an answer that SURVIVES re-subscription, and a re-subscribe
+    /// creates a new <see cref="UserMembership"/> row — so the fact cannot live on the current row. It
+    /// lives in the user's row HISTORY: any row, any status, carrying a non-null
+    /// <see cref="UserMembership.TrialEndsAtUtc"/>. Cancelled and expired rows are exactly the ones that
+    /// matter here, and deactivated rows count too: soft-deleting a row does not un-grant the trial it
+    /// recorded (the deliberate S10 exception).
+    ///
+    /// <para>Tenant-scoped: both callers are authenticated request paths. A background/webhook caller
+    /// would get "no trial ever" for every tenanted row and hand out a second trial — if one is ever
+    /// needed, it gets its own named IgnoringTenant variant rather than this one widening (S8).</para>
+    /// </summary>
+    Task<bool> HasEverStartedTrialAsync(string userId, CancellationToken cancellationToken);
 }

@@ -30,8 +30,8 @@ features:
     details: Back-office SPA for administrators — user management, orders, services, and reporting.
     link: /admin-app/overview
   - icon: 📱
-    title: Mobile App
-    details: Android partner app (Kotlin/Jetpack Compose) — order handling, photos, timer, and invoices.
+    title: Mobile Apps
+    details: Native Android (Kotlin/Jetpack Compose) and iOS (Swift/SwiftUI) — a partner and a customer app on each platform.
     link: /mobile-app/overview
   - icon: 🚀
     title: Deployment

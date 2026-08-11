@@ -49,13 +49,17 @@ export class GdprFacade extends UnsubscribeControlDirective {
     // Backend now exposes Grant and Withdraw as separate endpoints. IP +
     // user-agent are populated server-side from the request (legal-audit
     // integrity), so we don't pass them here.
-    const request$ = granted
-      ? this.customerClient.gdprClient.consentsPost(
-          new GrantConsentCommand({ consentType })
-        )
-      : this.customerClient.consentsClient.withdraw(
-          new WithdrawConsentCommand({ consentType })
-        );
+    let request$;
+
+    if (granted) {
+      const command = new GrantConsentCommand();
+      command.consentType = consentType;
+      request$ = this.customerClient.gdprClient.consentsPost(command);
+    } else {
+      const command = new WithdrawConsentCommand();
+      command.consentType = consentType;
+      request$ = this.customerClient.consentsClient.withdraw(command);
+    }
 
     request$
       .pipe(takeUntil(this.destroyed$))

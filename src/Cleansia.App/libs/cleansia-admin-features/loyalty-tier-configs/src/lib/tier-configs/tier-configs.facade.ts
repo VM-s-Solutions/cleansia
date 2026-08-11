@@ -73,13 +73,12 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
   update(id: string, input: TierConfigUpdateInput, onSuccess?: () => void): void {
     this.saving.set(true);
 
-    const command = new UpdateTierConfigCommand({
-      tierConfigId: id,
-      lifetimePointsThreshold: input.lifetimePointsThreshold,
-      discountPercent: input.discountPercentUi / 100,
-      minimumOrderAmountForDiscount: input.minimumOrderAmountForDiscount,
-      perksJson: input.perksJson,
-    });
+    const command = new UpdateTierConfigCommand();
+    command.tierConfigId = id;
+    command.lifetimePointsThreshold = input.lifetimePointsThreshold;
+    command.discountPercent = input.discountPercentUi / 100;
+    command.minimumOrderAmountForDiscount = input.minimumOrderAmountForDiscount;
+    command.perksJson = input.perksJson;
 
     this.adminClient.adminLoyaltyTierClient
       .update(id, command)
@@ -110,12 +109,11 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
   ): void {
     this.previewing.set(true);
 
-    const query = new PreviewTierThresholdImpactQuery({
-      bronzeThreshold,
-      silverThreshold,
-      goldThreshold,
-      platinumThreshold,
-    });
+    const query = new PreviewTierThresholdImpactQuery();
+    query.bronzeThreshold = bronzeThreshold;
+    query.silverThreshold = silverThreshold;
+    query.goldThreshold = goldThreshold;
+    query.platinumThreshold = platinumThreshold;
 
     this.adminClient.adminLoyaltyTierClient
       .previewThresholdImpact(query)
@@ -170,13 +168,12 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       .pipe(
         concatMap((t) => {
           const newThreshold = proposedThresholds[t.tier];
-          const command = new UpdateTierConfigCommand({
-            tierConfigId: t.id,
-            lifetimePointsThreshold: newThreshold,
-            discountPercent: t.discountPercent,
-            minimumOrderAmountForDiscount: t.minimumOrderAmountForDiscount,
-            perksJson: t.perksJson,
-          });
+          const command = new UpdateTierConfigCommand();
+          command.tierConfigId = t.id;
+          command.lifetimePointsThreshold = newThreshold;
+          command.discountPercent = t.discountPercent;
+          command.minimumOrderAmountForDiscount = t.minimumOrderAmountForDiscount;
+          command.perksJson = t.perksJson;
           return this.adminClient.adminLoyaltyTierClient
             .update(t.id!, command)
             .pipe(catchError(() => of(null)));

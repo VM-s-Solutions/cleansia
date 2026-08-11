@@ -156,19 +156,41 @@
           <div class="cleansia-register__divider">
             <span>{{ 'auth.login.or' | translate }}</span>
           </div>
-        }
-        @if (isGoogleSignInConfigured) {
-          <div class="cleansia-register__google-btn" #googleBtn></div>
-        }
-        @if (isAppleSignInConfigured) {
-          <cleansia-button
-            [style]="'basic-button'"
-            [outlined]="true"
-            [severity]="'secondary'"
-            [icon]="'pi pi-apple'"
-            [title]="'auth.login.apple' | translate"
-            (clickFn)="signUpWithApple()"
-          />
+          <div class="cleansia-register__social">
+            <div
+              class="cleansia-register__social-providers"
+              [class.cleansia-register__social-providers--locked]="!facade.termsAccepted()"
+              [attr.inert]="facade.termsAccepted() ? null : ''"
+            >
+              @if (isGoogleSignInConfigured) {
+                <div class="cleansia-register__google-btn" #googleBtn></div>
+              }
+              @if (isAppleSignInConfigured) {
+                <cleansia-button
+                  [style]="'basic-button'"
+                  [outlined]="true"
+                  [severity]="'secondary'"
+                  [icon]="'pi pi-apple'"
+                  [title]="'auth.login.apple' | translate"
+                  [disabled]="!facade.termsAccepted()"
+                  (clickFn)="signUpWithApple()"
+                />
+              }
+            </div>
+            @if (!facade.termsAccepted()) {
+              <div
+                class="cleansia-register__social-lock"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'auth.register.social_terms_required' | translate"
+                (click)="facade.socialSignUpBlocked()"
+                (keydown.enter)="facade.socialSignUpBlocked()"
+              ></div>
+              <div class="cleansia-register__social-note">
+                {{ 'auth.register.social_terms_required' | translate }}
+              </div>
+            }
+          </div>
         }
         <div>
           <span tabindex="-1">

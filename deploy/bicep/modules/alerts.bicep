@@ -1,9 +1,9 @@
 // Alerting (ADR-0015 D2/D3) — the Action Group + plain ARM metric alerts that make the telemetry
-// actually page someone: per-site Http5xx + latency over the six web hosts, an App Insights
-// exceptions spike (covers the APIs + Functions), and the Postgres health trio. Scopes are built
-// from resource NAMES passed by main.bicep — deploy-time strings, never module outputs, because
-// the per-site for-loop needs a deploy-time array (BCP182); main.bicep carries the explicit
-// dependsOn so the alerts never race the resources they watch.
+// actually page someone: per-site Http5xx + latency over the six web hosts, the Functions host's
+// health probe, an App Insights exceptions spike (covers the APIs + Functions), and the Postgres
+// health trio. Scopes are built from resource NAMES passed by main.bicep — deploy-time strings,
+// never module outputs, because the per-site for-loop needs a deploy-time array (BCP182);
+// main.bicep carries the explicit dependsOn so the alerts never race the resources they watch.
 //
 // Env gating: dev = severity 3 + wide windows (owner-inbox noise floor); prod = severity 1-2 +
 // tight windows (paging). Poison-queue depth is NOT here — queue signals need diagnostic settings
@@ -188,7 +188,16 @@ resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
 
 // ---------------------------------------------------------------------------------------------------
 // App Insights exceptions spike — ONE alert over the shared component, so it covers server-side
-// exceptions from all five APIs, the SSR, and the Functions host in a single signal.
+// exceptions from every host that PRODUCES to that component: the five APIs (since T-0500) and the
+// Functions host. It has never covered the SSR — that host is Node and reads the connection string in
+// no environment — and between the exporter landing and T-0500 it covered Functions alone while this
+// comment claimed otherwise. A host absent from App Insights cannot move this metric, so widening the
+// claim without widening the producer set is how the alert reads as coverage it does not have.
+//
+// exceptions/count is a LOG-BASED metric (AppExceptions | summarize sum(itemCount)), so it is coupled
+// to appInsights.bicep's samplingPercentage: sampling leaves the count unbiased but resolvable only in
+// steps of 1/sampling. At dev's 10 that is steps of 10 against the 25 below; at prod's 50, steps of 2
+// against 10. Lower either sampling value and this threshold stops meaning what it says.
 // ---------------------------------------------------------------------------------------------------
 
 resource exceptionsAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
@@ -196,7 +205,7 @@ resource exceptionsAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   location: 'global'
   tags: tags
   properties: {
-    description: 'Server exceptions across the APIs/SSR/Functions exceeded ${exceptionsThreshold} in ${windowSize}.'
+    description: 'Server exceptions across the five APIs and the Functions host exceeded ${exceptionsThreshold} in ${windowSize}.'
     severity: exceptionsSeverity
     enabled: true
     scopes: [resourceId('Microsoft.Insights/components', appInsightsName)]

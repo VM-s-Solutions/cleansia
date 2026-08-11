@@ -1,18 +1,29 @@
 package cz.cleansia.partner.features.orders
 
+import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.freshness.Staleness
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.core.settings.LiveLanguagePreferenceSync
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
+import cz.cleansia.partner.data.user.CurrentUser
+import cz.cleansia.partner.data.user.UserRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -22,6 +33,12 @@ import org.junit.Test
  * while they wait. It persists through the same store as the intro and the
  * profile picker — the display preference and the confirmation-email language
  * must not drift onto separate keys.
+ *
+ * A cleaner on this screen HAS a session — they just have no approval — so the push must go out.
+ * `[RequireCompleteProfile]` gates the mobile partner host's Order, Dashboard and EmployeePayroll
+ * controllers; `UserController`, which serves this push, is deliberately not among them, for the same
+ * reason `EmployeeController` is not: it is what an unapproved cleaner needs in order to stop being
+ * one.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class RegistrationLockLanguageTest {
@@ -33,8 +50,24 @@ class RegistrationLockLanguageTest {
     private val authRepository: AuthRepository = mockk(relaxed = true)
     private val errorTranslator: ApiErrorTranslator = mockk(relaxed = true)
     private val appSettingsRepository: AppSettingsRepository = mockk(relaxed = true)
+    private val userRepository: UserRepository = mockk(relaxed = true)
+    private val tokenStore: TokenStore = mockk(relaxed = true)
 
-    private fun viewModel(): RegistrationLockViewModel {
+    @Before
+    fun setUp() {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "uk"
+        every { tokenStore.current() } returns TokenStore.Tokens(
+            accessToken = "access",
+            accessTokenExpiresAt = Long.MAX_VALUE,
+            refreshToken = "refresh",
+            refreshTokenExpiresAt = Long.MAX_VALUE,
+        )
+        coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(unapprovedCleaner())
+        coEvery { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(Unit)
+    }
+
+    private fun TestScope.viewModel(): RegistrationLockViewModel {
         // Fresh watermark → init's silent-stale path is a true no-op, so the
         // test never has to stand up the status-fetch machinery.
         every { profileRepository.getRegistrationStatusStaleness() } returns
@@ -44,6 +77,7 @@ class RegistrationLockLanguageTest {
             authRepository = authRepository,
             errorTranslator = errorTranslator,
             appSettingsRepository = appSettingsRepository,
+            languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()),
         )
     }
 
@@ -54,4 +88,38 @@ class RegistrationLockLanguageTest {
 
         coVerify(exactly = 1) { appSettingsRepository.setLanguage(LanguagePreference.Ukrainian) }
     }
+
+    /**
+     * The half-filled profile is the point: this cleaner has no phone and no birth date yet, and both
+     * are fields the handler preserves when the client has nothing to say about them. Dropping the
+     * push for them would leave the one population that lives on this screen unsynced.
+     */
+    @Test
+    fun `an unapproved cleaner's choice still reaches the server`() = runTest {
+        viewModel().setLanguage(LanguagePreference.Ukrainian)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser(
+                firstName = "Ondrej",
+                lastName = "Novak",
+                phoneNumber = "",
+                birthDate = null,
+                languageCode = "uk",
+            )
+        }
+    }
+
+    /** Stands in for the injected `@ApplicationScope`, on the scheduler `advanceUntilIdle` drives. */
+    private fun TestScope.syncScope() =
+        CoroutineScope(StandardTestDispatcher(testScheduler) + SupervisorJob())
+
+    private fun unapprovedCleaner() = CurrentUser(
+        email = "ondrej@example.com",
+        firstName = "Ondrej",
+        lastName = "Novak",
+        phoneNumber = null,
+        birthDate = null,
+        preferredLanguageCode = "en",
+    )
 }

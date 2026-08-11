@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class PeriodPayViewModel: ViewModel {
-    @Published private(set) var state: UiState<PeriodPaySummaryDto> = .loading
+    @Published private(set) var state: UiState<PeriodPaySummary> = .loading
 
     let currencyCode: String?
 
@@ -27,11 +27,18 @@ final class PeriodPayViewModel: ViewModel {
     func load() async {
         state = .loading
 
-        // E1/E2: resolve the caller's OWN employeeId server-side and pass only
-        // that. A nil/unresolvable id never hits GetPeriodPays — no foreign-id
-        // echo, no network call.
-        guard case let .success(employeeId) = await client.currentEmployeeId() else {
-            state = .error(ApiError(code: "payroll.employee_id_missing"))
+        // E1/E2: resolve the caller's OWN employeeId server-side and pass only that. A
+        // nil/unresolvable id never hits GetPeriodPays — no foreign-id echo, no network call.
+        // The refusal is carried, never replaced: an expired session and a wire the server broke
+        // are different failures, and substituting one guess for both reported the wrong subsystem
+        // for every one of them.
+        let employeeId: String
+        switch await client.currentEmployeeId() {
+        case let .success(id):
+            employeeId = id
+        case let .failure(error):
+            snackbar.showApiError(error)
+            state = .error(error)
             return
         }
 

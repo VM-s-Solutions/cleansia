@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +43,8 @@ public class AdminReassignOrder
     public class Handler(
         IOrderRepository orderRepository,
         IEmployeeRepository employeeRepository,
-        IUserSessionProvider userSessionProvider
+        IUserSessionProvider userSessionProvider,
+        INotificationProducer notificationProducer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -74,6 +77,7 @@ public class AdminReassignOrder
                     BusinessErrorMessage.EmployeeAlreadyAssignedToOrder));
             }
 
+            Employee? removed = null;
             if (!string.IsNullOrEmpty(command.FromEmployeeId))
             {
                 if (order.AssignedEmployees.All(oe => oe.EmployeeId != command.FromEmployeeId))
@@ -83,6 +87,9 @@ public class AdminReassignOrder
                         BusinessErrorMessage.EmployeeNotAssignedToOrder));
                 }
 
+                // Read by id rather than off the assignment's navigation: this handler's query does not
+                // include Employee, and a null navigation would silently drop the notice.
+                removed = await employeeRepository.GetByIdAsync(command.FromEmployeeId, cancellationToken);
                 order.UnassignEmployee(command.FromEmployeeId);
             }
 
@@ -96,6 +103,18 @@ public class AdminReassignOrder
             }
 
             order.AddAssignedEmployee(OrderEmployee.Create(order, target));
+
+            await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
+                order, notificationProducer, cancellationToken);
+
+            await OrderAssignmentChangeNotifier.NotifyCleanerOfAssignmentAsync(
+                order, target, notificationProducer, cancellationToken);
+
+            if (removed is not null)
+            {
+                await OrderAssignmentChangeNotifier.NotifyCleanerOfRevocationAsync(
+                    order, removed, notificationProducer, cancellationToken);
+            }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

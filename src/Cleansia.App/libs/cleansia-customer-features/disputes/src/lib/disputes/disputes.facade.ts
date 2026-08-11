@@ -178,8 +178,14 @@ export class DisputesFacade extends UnsubscribeControlDirective {
   ): void {
     if (this.creatingDispute()) return;
     this.creatingDispute.set(true);
+
+    const command = new CreateDisputeCommand();
+    command.orderId = orderId;
+    command.reason = reason;
+    command.description = description;
+
     this.customerClient.disputeClient
-      .create(new CreateDisputeCommand({ orderId, reason, description }))
+      .create(command)
       .pipe(
         takeUntil(this.destroyed$),
         map(() => true),
@@ -198,14 +204,14 @@ export class DisputesFacade extends UnsubscribeControlDirective {
 
   sendMessage(disputeId: string, message: string, onSuccess: () => void): void {
     this.sendingMessage.set(true);
+
+    const command = new AddDisputeMessageCommand();
+    command.disputeId = disputeId;
+    command.message = message;
+    command.isStaffMessage = false;
+
     this.customerClient.disputeClient
-      .addMessage(
-        new AddDisputeMessageCommand({
-          disputeId,
-          message,
-          isStaffMessage: false,
-        })
-      )
+      .addMessage(command)
       .pipe(
         takeUntil(this.destroyed$),
         map(() => true),

@@ -70,14 +70,24 @@ class ReferralRepositoryTest {
 
     private fun newRepo() = ReferralRepository(api, appContext)
 
+    private fun account(acceptedCount: Int = 3) = ReferralAccountDto(
+        code = "ABC123",
+        timesUsed = 4,
+        qualifiedCount = 2,
+        acceptedCount = acceptedCount,
+        pointsPerReferral = 200,
+    )
+
     // ── refresh() ──
 
     @Test
     fun refresh_givenSuccess_cachesAccountAndReferralsAndReturnsSuccess() = runTest {
-        val account = ReferralAccountDto(code = "ABC123", acceptedCount = 2)
+        val account = account(acceptedCount = 2)
         val referrals = ReferralListResponseDto(
+            pageNumber = 1,
+            pageSize = 20,
             total = 1,
-            data = listOf(ReferralListItemDto(id = "r1", status = 1)),
+            data = listOf(ReferralListItemDto(id = "r1", status = 2)),
         )
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(referrals)
@@ -130,7 +140,7 @@ class ReferralRepositoryTest {
     fun refresh_whenAccountSucceedsButReferralsFail_stillSucceedsWithEmptyList() = runTest {
         // Referrals-page errors are swallowed inside refresh — a list failure must
         // not fail the whole refresh (the stats row falls back to account counters).
-        val account = ReferralAccountDto(code = "ABC123")
+        val account = account()
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } throws java.io.IOException("boom")
 
@@ -141,6 +151,25 @@ class ReferralRepositoryTest {
         assertEquals(account, repo.account.value)
         assertEquals(emptyList<ReferralListItemDto>(), repo.referrals.value)
         assertEquals(true, repo.loaded.value)
+    }
+
+    /**
+     * The other half of the same ruling, and the half that was wrong: a TRANSPORT failure degrades
+     * (above), but a 2xx whose body the mapper refused used to be swallowed by `?.let` and reported
+     * as Success. On a first load "leave the list as-is" IS the empty list, so the breakdown read
+     * "you have invited nobody" directly under counters from `GetMy` saying otherwise.
+     */
+    @Test
+    fun refresh_whenTheReferralsPageIsRefused_failsRatherThanReportingNobodyInvited() = runTest {
+        coEvery { api.getMy() } returns Response.success(account())
+        coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(null)
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertEquals(emptyList<ReferralListItemDto>(), repo.referrals.value)
+        assertEquals(false, repo.loaded.value)
     }
 
     // ── validate() ──
@@ -185,10 +214,12 @@ class ReferralRepositoryTest {
 
     @Test
     fun clear_resetsAccountReferralsAndLoaded() = runTest {
-        val account = ReferralAccountDto(code = "ABC123")
+        val account = account()
         val referrals = ReferralListResponseDto(
+            pageNumber = 1,
+            pageSize = 20,
             total = 1,
-            data = listOf(ReferralListItemDto(id = "r1")),
+            data = listOf(ReferralListItemDto(id = "r1", status = 2)),
         )
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(referrals)

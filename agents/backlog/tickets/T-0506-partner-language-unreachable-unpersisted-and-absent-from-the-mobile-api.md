@@ -1,11 +1,11 @@
 ---
 id: T-0506
 title: Partner language — the onboarding route renders EmptyView(), no client persists it, and the endpoint has zero consumers
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: [T-0504]
 blocks: []
 stories: []
@@ -120,5 +120,67 @@ reviewer each.
   the PM and is not in the investigation:** a navigation route wired to `EmptyView()` is invisible to
   the compiler, the suites and lint, so if it happened once it can have happened elsewhere and nothing
   in this repo would say so.
+- 2026-08-05 — **AC1 re-established by backend. Three of the four failures are fixed; the fourth is
+  still live but has MOVED — it is now a client gap, not a server one.** There is a home
+  (`User.PreferredLanguageCode`) and it is wired end to end, so **no `ef-migration` is needed**. AC4
+  was true in code and pinned by nothing; that pin is now written and mutation-proved. The remaining
+  work is one call per partner client and this ticket is no longer `owner: backend`. See `## Review`.
 
 ## Review
+
+### AC1 — all four re-established. Three fixed in `2012b014` (#189); the fourth moved.
+
+| # | Claim | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Mobile onboarding route renders `EmptyView()` | **FIXED** | iOS: the `.language` route now pushes `LanguagePickerView`, pinned by `CleansiaPartner/Tests/RegistrationLockLanguageAccessTests.swift` (which records that it was `EmptyView()` "for a full release and nothing went red"). Android: the chooser is in the intro header and the registration-lock chain |
+| 2 | **No client persists language at all** | **STILL TRUE post-signup — on all three partner clients** | The shared web switcher writes `localStorage` + a cookie only (`cleansia-language-switcher.component.ts:70-78`; same in `translation-loader.service.ts:33-34`) and no web app calls `updateCurrentUser`. Partner iOS/Android likewise never call it — the only `updateCurrentUser` caller in either mobile tree is the **customer** iOS app (`CleansiaCustomer/.../UserProfileClient.swift:85-89`) |
+| 3 | The endpoint has **zero consumers** | **FIXED server-side** | `UpdateCurrentUser` now carries `LanguageCode` (`UpdateCurrentUser.cs:122`), validates it against `Languages` (`:69-72`) and persists it (`:212-215`). Routed on all four partner-reachable hosts |
+| 4 | Absent from the **mobile partner API** | **FIXED** | `Cleansia.Web.Mobile.Partner/Controllers/UserController.cs:27-36`, added by `2012b014`; proved end to end against real Postgres by `Cleansia.HostTests/Tests/PartnerMobileUpdateCurrentUserTests.cs` (7/7 green) |
+
+**Consequence of #2:** the ticket's headline — *pay-period emails frozen in the day-one language* —
+**still holds**, but for a different reason than filed. The server can store the change; nothing on a
+partner client ever sends it. `RegisterEmployee` stamps the signup choice
+(`RegisterEmployee.cs:76` → `User.CreateWithPassword(..., command.Language)`), and after that the
+value never moves.
+
+### There is a home — no schema work
+`User.PreferredLanguageCode` (`User.cs:95`), FK onto `Languages.Code`, writer
+`User.UpdateLanguagePreference` (`:390-394`). **No `ef-migration` needed; none requested.**
+
+### AC4 — was true in code, enforced by nothing. Now pinned.
+Both producers already read the stored value —
+`PayPeriodBackgroundService.cs:230` and `PeriodReminderBackgroundService.cs:104`, both
+`employee.User.PreferredLanguageCode ?? Constants.Language.English` — and both thread it into
+`IEmailService`, which selects the `EmailTemplateTranslation` row by language. All five locales are
+seeded for both types (`insert_seed_data.sql`: EmailType 4 and 5 carry 18 keys × `en/cs/sk/uk/ru`).
+
+Nothing went red if that read were deleted, and the same file already shows the decay:
+`PayPeriodBackgroundService.GenerateInvoicePdfAsync` takes a `languageCode` parameter (`:384`) and
+**never reads it** — the PDF's language is chosen from the country (`:417-418`). *(That one is
+deliberate per the invoice-jurisdiction rule and belongs to T-0522; recorded, not touched.)*
+
+New: `Cleansia.Tests/Services/PayPeriodEmailLanguageTests.cs` — 3 facts. The preference is **not**
+hand-assigned; it is written by running the real `UpdateCurrentUser.Handler`, so the assertion spans
+submitted → stored → read back by the producer.
+
+### AC6 — the `EmptyView()` sweep (listed, not fixed)
+No further `EmptyView()` sits on a **navigation route**. The 18 remaining occurrences in the iOS trees
+are all `@ViewBuilder` defaults or conditional-branch no-ops (`SectionScaffold.swift:17`,
+`ProfileView.swift:148`, `OrdersListView.swift:189`, `OrderDetailView.swift:141`,
+`StickyActionFooter.swift:72`, `BankSectionView.swift:187,194`, `DocumentsSectionView.swift:32`,
+`NotesAndIssuesSection.swift:85`, `InvoiceDetailView.swift:55`, `RegistrationLockView.swift:161`,
+`AppleIDButton.swift:47`, `BookingSuccessView.swift:103`, `ConfirmStepComponents.swift:157`,
+`WhenWhereStep.swift:127,264`, `CustomerShellView.swift:332`). The only route-resolved one was the
+`.language` case, now fixed. **Verdict: none.**
+
+### AC7 / AC8
+Default is the signup choice, `?? "en"` at three layers: `User.CreateWithPassword`/`WithGoogle`/
+`WithApple` (`User.cs:138,154,166`) and again in both producers. No existing cleaner has a NULL
+preference unless anonymized. The five languages are exactly `en/cs/sk/uk/ru`
+(`insert_seed_data.sql:64-68`).
+
+### Remaining work — reassign
+One call per partner client on language change: `UpdateCurrentUser` with `languageCode`
+(the customer iOS `LanguagePreferenceSync` is the working precedent). **`owner` should move off
+`backend`**; AC2/AC3/AC5 belong to `frontend` + `android` + `ios`. **AC5 does not fire** — the field
+is already on the contract on every host, so no `nswag-regen` / `mobile-spec-redump` is owed.

@@ -1,5 +1,7 @@
 // Services Catalog Page — BEM structured
 // Design tokens matching home page
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-dark: #0369a1;
 $primary-darker: #075985;
@@ -10,7 +12,6 @@ $primary-accent: #38bdf8;
 $text-dark: #0f172a;
 $green: #16a34a;
 $max-width: 1200px;
-$font-heading: 'Poppins', sans-serif;
 
 .services-catalog {
   max-width: $max-width;

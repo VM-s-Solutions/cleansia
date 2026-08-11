@@ -1,10 +1,12 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CreateMembershipCheckoutSessionCommand,
   CustomerClient,
+  ExpressWaiverStatus,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  resolveExpressWaiverStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
@@ -39,6 +41,26 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   // Subscribe state
   submitting = signal(false);
 
+  // Express-surcharge waiver. `expressUpgradesRemaining` is 0 both for an exhausted member and
+  // for one still inside the trial, so the state is resolved once against the load instant
+  // rather than re-derived per render.
+  expressWaiverStatus = signal<ExpressWaiverStatus>('none');
+  readonly expressUpgradesRemaining = computed(
+    () => this.membership()?.expressUpgradesRemaining ?? 0,
+  );
+  readonly expressWaiverAdvertised = computed(
+    () => this.expressWaiverStatus() !== 'none',
+  );
+  readonly expressWaiverAvailable = computed(
+    () => this.expressWaiverStatus() === 'available',
+  );
+  readonly expressWaiverExhausted = computed(
+    () => this.expressWaiverStatus() === 'exhausted',
+  );
+  readonly expressWaiverPendingTrial = computed(
+    () => this.expressWaiverStatus() === 'trial',
+  );
+
   /** Refresh /membership/mine and update the loading flag. */
   refresh(onError?: () => void): void {
     this.loading.set(true);
@@ -48,6 +70,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (response) => {
           this.membership.set(response);
+          this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, new Date()));
           this.loading.set(false);
         },
         error: (err) => {
@@ -100,9 +123,9 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    */
   swapPlan(planCode: string): void {
     this.switching.set(true);
-    const command = new SwapMembershipPlanCommand({
-      newPlanCode: planCode,
-    });
+    const command = new SwapMembershipPlanCommand();
+    command.newPlanCode = planCode;
+
     this.client
       .swapPlan(command)
       .pipe(takeUntil(this.destroyed$))
@@ -132,11 +155,10 @@ export class MembershipFacade extends UnsubscribeControlDirective {
     if (this.submitting()) return;
     this.submitting.set(true);
 
-    const command = new CreateMembershipCheckoutSessionCommand({
-      planCode,
-      successUrl,
-      cancelUrl,
-    });
+    const command = new CreateMembershipCheckoutSessionCommand();
+    command.planCode = planCode;
+    command.successUrl = successUrl;
+    command.cancelUrl = cancelUrl;
 
     this.client
       .createCheckoutSession(command)

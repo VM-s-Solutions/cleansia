@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { PaymentStatus } from '@cleansia/partner-services';
+import { PaymentStatus } from '@cleansia/models';
 
 /**
  * Maps a `PaymentStatus` to the PrimeNG `<p-tag>` severity token. See

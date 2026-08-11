@@ -150,6 +150,58 @@ extension L10n {
             localized("profile_iban")
         }
 
+        static var ibanHelper: String {
+            localized("iban_helper")
+        }
+
+        static var bankCountry: String {
+            localized("bank_country")
+        }
+
+        static var bankAccountPrefix: String {
+            localized("bank_account_prefix")
+        }
+
+        static var bankAccountPrefixHelper: String {
+            localized("bank_account_prefix_helper")
+        }
+
+        static var accountNumber: String {
+            localized("account_number")
+        }
+
+        static var bankAccountNumberHelper: String {
+            localized("bank_account_number_helper")
+        }
+
+        static var bankCode: String {
+            localized("bank_code")
+        }
+
+        static var bankCodeHelper: String {
+            localized("bank_code_helper")
+        }
+
+        static var swiftCode: String {
+            localized("swift_code")
+        }
+
+        static var swiftCodeHelper: String {
+            localized("swift_code_helper")
+        }
+
+        static var bankName: String {
+            localized("bank_name")
+        }
+
+        static var bankAccountHolder: String {
+            localized("bank_account_holder")
+        }
+
+        static var bankAccountHolderHelper: String {
+            localized("bank_account_holder_helper")
+        }
+
         static var emergencyName: String {
             localized("profile_emergency_name")
         }
@@ -360,10 +412,6 @@ extension L10n {
 
         static var errorProfileNotLoaded: String {
             localized("profile_error_not_loaded")
-        }
-
-        static var errorIbanRequired: String {
-            localized("profile_error_iban_required")
         }
 
         static var errorEmergencyNameRequired: String {

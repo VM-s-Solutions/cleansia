@@ -1,11 +1,11 @@
 ---
 id: T-0477
 title: Android recurring wizard renders service and package names in the catalog's raw language
-status: draft
+status: done
 size: S
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -108,5 +108,61 @@ and it is routed to **T-0481**, the parity audit — not smuggled into a localiz
   reference implementation were all PM-verified at `0e4ede1b`. **The report ("no translations") is
   materially wrong about the cause and right about the symptom** — the chrome is fully translated;
   the catalog text is not.
+- 2026-08-05 — **the three call sites were ALREADY FIXED in `2012b014`** (the owner's-remark-list PR),
+  which never updated this ticket. AC1/AC2/AC3 verified as shipped; **AC4 was the real gap** — there
+  was no test over the resolution at all. Closed here.
 
-## Review
+## Review — android (2026-08-05)
+
+**Gate 0: the code fix already shipped; the test did not.** `CreateRecurringScreen.kt:990,994,1011`
+already read `localizedName(...)`, landed by `2012b014`. The screen also moved package —
+`features/recurring/`, not `features/booking/` as the ticket's paths say. What was missing was AC4:
+no test anywhere referenced the resolution, so the fix was one careless edit from silently reverting.
+
+**AC1/AC2 — the helper, named.** `localizedName` / `localizedDescription`
+(`customer-app/.../features/booking/ServicesStep.kt:133-143`) is the app's one way, with **24 call
+sites** across booking, home, orders, order-detail and this wizard. No fourth copy was written.
+
+**AC3 — the language source is the APP's, and here is the chain.** `AppLocale.kt:45,66` (`:core`)
+calls `AppCompatDelegate.setApplicationLocales`, which rewrites the Configuration; the helper reads
+`LocalConfiguration.current.locales.get(0)?.language`. `AppSettingsRepository.kt:47-52` records the
+same reasoning for the email-language path — read the configuration, not
+`AppCompatDelegate.getApplicationLocales()`, so there is one source of truth right after a switch.
+
+**AC4 — the test, and the one change to production code.** The pure part of the resolver is now
+`pickTranslatedName` / `pickTranslatedDescription` (same file, `:111-127`), taking `lang` as a
+parameter; the two `@Composable`s are one-line delegates. That is the only production edit in this
+ticket, and it exists so the fallback chain is assertable without a composition — the catalog's own
+"hoist the decision into a value type the screen and a test can both name" rule.
+`RecurringCatalogLocalizationTest` (4 tests) covers the two-language fixture, independent
+name/description fallback, and a **call-shape** pin on the three wizard sites. The pin asserts whole
+call expressions (`localizedName(pkg.translations, pkg.name)`) rather than the symbol, because a bare
+`localizedName` substring is satisfied by the import line alone.
+
+**AC5 — the sweep, bounded, NOT fixed.** No further catalog-name renders bypass the helper. The sweep
+did surface a **different** defect class, recorded for a follow-up ticket: `CodeDto.name`
+(`core/user/UserDto.kt:20-25`) is a server-supplied English enum name with **no** translations map
+beside it, rendered raw at `features/disputes/DisputeDetailScreen.kt:428,433` and
+`features/disputes/DisputesListScreen.kt:274,280`. Dispute reason and status therefore read English in
+cs/sk/uk/ru. It is not fixable by this ticket's mechanism — there is nothing to look up — it needs an
+ordinal→`stringResource` map, which is exactly the shape `patterns-mobile.md:551-561` prescribes and
+which the order-status surfaces already use (`OrderDetailTimelineAndReview.kt:80` degrades to `.name`
+only when its `labelRes` map misses, so it is the mild form of the same thing).
+`core/servicearea/CustomerServiceAreaDataSource.kt:46,66` is a DTO mapping of city names, not a render
+— refuted, not omitted.
+
+**AC6 (Gate 0.5) — un-cached.** `:customer-app` compile + `testDebugUnitTest`, `--rerun-tasks
+--no-build-cache`: **BUILD SUCCESSFUL, exit 0, 53 actionable tasks: 53 executed**, zero `FROM-CACHE`
+(the only `UP-TO-DATE` lines are the actionless `pre*Build` anchors). **508 tests / 57 classes / 0
+failures / 0 skipped**, read from the JUnit XML — the 503/55 baseline plus this ticket's 4 tests and
+the string ticket's 1. Two named mutations, each reddening exactly one test:
+`translations[lang]?.name ?: fallback` → `fallback` reddens *the active language wins over the
+catalog's own language*; reverting the package call site to `pkg.name` reddens *the wizard's what-step
+renders every catalog name through the resolver*. Both restored byte-exact by md5
+(`c21a94e9b197da733510c9afacb307d4` ServicesStep.kt, `3b2f00722163f35702789343fd8adb99`
+CreateRecurringScreen.kt — identical before and after; `git status` shows CreateRecurringScreen.kt
+unmodified). `check-consistency.mjs` → **22 violations = the master baseline of 22**, none in a
+touched file. Every touched file `utf-8`, no BOM.
+
+**Not verified:** the AC1 `cs`/`ru` screenshot. There is no emulator or device in this environment and
+nothing rendered was observed.

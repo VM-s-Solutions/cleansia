@@ -61,7 +61,7 @@ public class ForceQualifyReferral
             if (referral!.Status != ReferralStatus.Accepted)
             {
                 return BusinessResult.Failure<Response>(
-                    new Error(BusinessErrorMessage.ReferralNotAccepted, BusinessErrorMessage.ReferralNotAccepted));
+                    new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotAccepted));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;

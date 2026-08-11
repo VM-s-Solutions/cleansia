@@ -57,14 +57,13 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
     this.resendCodeTimeout.set(RESEND_CODE_COOLDOWN_SECONDS);
     this.loading.set(true);
 
+    const command = new RequestPasswordChangeCommand();
+    command.email = email;
+    command.language =
+      this.translate.currentLang || this.translate.getDefaultLang();
+
     this.customerClient.userClient
-      .requestPasswordChange(
-        new RequestPasswordChangeCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .requestPasswordChange(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError((err) => {
@@ -97,10 +96,13 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
     const email = this.emailFormGroup.value.email;
     this.loading.set(true);
 
+    const command = new ChangePasswordCommand();
+    command.email = email;
+    command.code = code;
+    command.newPassword = password;
+
     this.customerClient.userClient
-      .changePassword(
-        new ChangePasswordCommand({ email, code, newPassword: password })
-      )
+      .changePassword(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError((err) => {

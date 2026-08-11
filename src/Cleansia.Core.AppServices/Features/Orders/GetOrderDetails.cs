@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -37,7 +38,10 @@ public class GetOrderDetails
         IUserSessionProvider userSessionProvider,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        IOrderPhotoRepository orderPhotoRepository) : IQueryHandler<Query, OrderItem>
+        IOrderPhotoRepository orderPhotoRepository,
+        IEmployeeRepository employeeRepository,
+        IExpressWaiverConsumer expressWaiverConsumer,
+        IUserMembershipRepository userMembershipRepository) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -47,6 +51,11 @@ public class GetOrderDetails
                 return BusinessResult.Failure<OrderItem>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
             }
+
+            // Browse admits a cleaner to an order they have not taken so they can judge it; only the
+            // strict gate entitles a caller to the customer. Read from the same seam that granted
+            // access rather than re-deriving "assigned or owner" here, so the two cannot disagree.
+            var isEntitledToCustomerData = await orderAccessService.CanAccessOrderAsync(order, cancellationToken);
 
             // Photos count is cheap to look up and lets the partner
             // mobile gate the Complete slide client-side. Same query
@@ -107,11 +116,69 @@ public class GetOrderDetails
                 }
             }
 
-            return BusinessResult.Success(order.MapToDetail(
+            // Customer-only: a cleaner must never see a customer's entitlements. Null for every other
+            // caller, which the clients render as "no marking".
+            var isCustomerCaller = orderAccessService.IsCustomerCaller();
+            bool? expressWaiverForfeitedOnCancel = isCustomerCaller
+                ? await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
+                    order.Id, order.AssignedEmployees.Count > 0, cancellationToken)
+                : null;
+
+            var detail = order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
                 hasAfterPhotos,
-                orderAccessService.IsCustomerCaller()));
+                isCustomerCaller,
+                expressWaiverForfeitedOnCancel,
+                isCustomerCaller
+                    ? await ResolvePreferredOfferAsync(order, DateTime.UtcNow, cancellationToken)
+                    : null);
+
+            return BusinessResult.Success(isEntitledToCustomerData
+                ? detail
+                : detail.RedactForBrowsingCleaner());
+        }
+
+        /// <summary>
+        /// ADR-0045 D7.2. Customer-only by its one call site: a cleaner must never learn that an order
+        /// is reserved for somebody else, and nobody is ever told they were passed over.
+        ///
+        /// <para>ADR-0049 — and null once the block's sentence has stopped being true of this booking.
+        /// The whole block goes rather than a fifth state, so no client is left holding a value it has
+        /// to be told to render as nothing.</para>
+        /// </summary>
+        private async Task<PreferredOfferDetails?> ResolvePreferredOfferAsync(
+            Order order, DateTime nowUtc, CancellationToken cancellationToken)
+        {
+            var beneficiaryIsAssigned = !string.IsNullOrEmpty(order.PreferredEmployeeId)
+                && order.AssignedEmployees.Any(ae => ae.EmployeeId == order.PreferredEmployeeId);
+
+            var state = PreferredOffer.StateOf(
+                order.PreferredEmployeeId, order.PreferredHoldUntilUtc, beneficiaryIsAssigned, nowUtc);
+
+            if (!PreferredOffer.IsDisclosable(state, order.CurrentStatus, order.AvailableSpots))
+            {
+                return null;
+            }
+
+            var cleanerName = string.IsNullOrEmpty(order.PreferredEmployeeId)
+                ? null
+                : await employeeRepository.GetQueryable()
+                    .AsNoTracking()
+                    .Where(e => e.Id == order.PreferredEmployeeId && e.User != null)
+                    .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
+                    .FirstOrDefaultAsync(cancellationToken);
+
+            var callerHasActiveMembership = await PreferredOfferExit.CallerHasActiveMembershipAsync(
+                userSessionProvider, userMembershipRepository, cancellationToken);
+
+            return new PreferredOfferDetails(
+                State: state,
+                CleanerName: cleanerName,
+                RespondByUtc: state == PreferredOfferState.AwaitingConfirmation
+                    ? order.PreferredHoldUntilUtc
+                    : null,
+                CanChooseAnother: PreferredOfferExit.IsOpen(order, callerHasActiveMembership, nowUtc));
         }
     }
 }

@@ -223,7 +223,7 @@ struct SectionHeader: View {
 
     var body: some View {
         Text(text)
-            .font(CleansiaTypography.headlineSmall)
+            .cleansiaFont(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
     }
 }

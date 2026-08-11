@@ -1,10 +1,19 @@
-import { BlobFileDto } from '@cleansia/customer-services';
+import {
+  AddSavedAddressCommand,
+  BlobFileDto,
+  ChangePasswordCommand,
+  UpdateSavedAddressCommand,
+} from '@cleansia/customer-services';
 import {
   AVATAR_ALLOWED_CONTENT_TYPES,
   AVATAR_MAX_SIZE_BYTES,
   ProfileDetails,
+  SavedAddressFields,
+  buildAddSavedAddressCommand,
   buildAvatarBlobFile,
+  buildChangePasswordCommand,
   buildUpdateCurrentUserCommand,
+  buildUpdateSavedAddressCommand,
   validateAvatarFile,
 } from './profile.models';
 
@@ -35,6 +44,25 @@ describe('validateAvatarFile', () => {
       errorKey: 'pages.profile.avatar.invalid_type',
     });
   });
+
+  it('rejects svg — it is script-capable and the platform will not serve it as an image', () => {
+    expect(validateAvatarFile(fakeFile('image/svg+xml', 1024))).toEqual({
+      valid: false,
+      errorKey: 'pages.profile.avatar.invalid_type',
+    });
+  });
+
+  // The backend would store these, but ServedContentType can only hand them back as
+  // octet-stream and no desktop browser renders a tiff — the avatar would never appear.
+  it.each(['image/bmp', 'image/tiff'])(
+    'rejects %s rather than accepting an upload that can never render',
+    (contentType) => {
+      expect(validateAvatarFile(fakeFile(contentType, 1024))).toEqual({
+        valid: false,
+        errorKey: 'pages.profile.avatar.invalid_type',
+      });
+    }
+  );
 
   it('rejects a file above the size limit with a translated key', () => {
     expect(
@@ -116,5 +144,62 @@ describe('buildUpdateCurrentUserCommand', () => {
 
     expect(cmd.photo).toBeUndefined();
     expect(cmd.removePhoto).toBe(true);
+  });
+});
+
+// Every member of a generated command is optional, so a dropped assignment type-checks.
+// These pin the serialized body instead (ADR-0031).
+describe('command bodies on the wire', () => {
+  const addressFields: SavedAddressFields = {
+    label: 'Home',
+    street: 'Vodickova 12',
+    city: 'Praha',
+    zipCode: '11000',
+    countryId: 'cz',
+    latitude: 50.08,
+    longitude: 14.42,
+  };
+
+  it('serializes a password change with the email, a blank code and the new password', () => {
+    const command = buildChangePasswordCommand('ada@example.com', 'Heslo1234');
+
+    expect(command).toBeInstanceOf(ChangePasswordCommand);
+    expect(command.toJSON()).toEqual({
+      email: 'ada@example.com',
+      code: '',
+      newPassword: 'Heslo1234',
+    });
+  });
+
+  it('serializes a new saved address with its coordinates and the default flag', () => {
+    const command = buildAddSavedAddressCommand(addressFields, true);
+
+    expect(command).toBeInstanceOf(AddSavedAddressCommand);
+    expect(command.toJSON()).toEqual({
+      label: 'Home',
+      street: 'Vodickova 12',
+      city: 'Praha',
+      zipCode: '11000',
+      countryId: 'cz',
+      latitude: 50.08,
+      longitude: 14.42,
+      setAsDefault: true,
+    });
+  });
+
+  it('serializes an edited saved address with its id and no default flag', () => {
+    const command = buildUpdateSavedAddressCommand('addr-1', addressFields);
+
+    expect(command).toBeInstanceOf(UpdateSavedAddressCommand);
+    expect(command.toJSON()).toEqual({
+      savedAddressId: 'addr-1',
+      label: 'Home',
+      street: 'Vodickova 12',
+      city: 'Praha',
+      zipCode: '11000',
+      countryId: 'cz',
+      latitude: 50.08,
+      longitude: 14.42,
+    });
   });
 });

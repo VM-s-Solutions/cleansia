@@ -11,7 +11,6 @@ final class MembershipViewModel: ViewModel {
     private let repository: MembershipRepository
     private let snackbar: SnackbarController
     private let isCardPaymentAvailable: Bool
-    private var cancellables: Set<AnyCancellable> = []
 
     private var subscribeIdempotencyToken: String?
 
@@ -24,16 +23,22 @@ final class MembershipViewModel: ViewModel {
         self.snackbar = snackbar
         self.isCardPaymentAvailable = isCardPaymentAvailable
         super.init()
-        current = repository.current
-        plans = repository.plans
-        repository.$current.assign(to: \.current, on: self).store(in: &cancellables)
-        repository.$plans.assign(to: \.plans, on: self).store(in: &cancellables)
+        repository.$current.assign(to: &$current)
+        repository.$plans.assign(to: &$plans)
     }
 
     /// Fail-closed gate: the Subscribe CTA is hidden AND the
     /// subscribe branch is unreachable when the publishable key is empty.
     var canSubscribe: Bool {
         isCardPaymentAvailable
+    }
+
+    var expressWaiverStatus: ExpressWaiverStatus {
+        ExpressWaiverStatus.resolve(current)
+    }
+
+    var expressWaiverAdvertised: Bool {
+        expressWaiverStatus.isAdvertised
     }
 
     func load() async {

@@ -3,6 +3,7 @@ package cz.cleansia.partner.data.auth
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.partner.api.client.AuthApi
 import cz.cleansia.partner.api.client.EmployeeApi
 import cz.cleansia.partner.api.model.ConfirmUserEmailCommand
@@ -16,7 +17,9 @@ import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.AuthenticatedAuthApi
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.required
 import cz.cleansia.core.network.safeApiCall
+import cz.cleansia.core.network.wireResult
 import cz.cleansia.core.notifications.PushTokenRepository
 import kotlinx.serialization.json.Json
 import java.time.Instant
@@ -80,16 +83,28 @@ class AuthRepositoryImpl @Inject constructor(
     private val json: Json,
     private val pushTokenRepository: PushTokenRepository,
     private val sessionScopedCaches: Provider<Set<@JvmSuppressWildcards SessionScopedCache>>,
+    /**
+     * Lazy for the same reason as [authenticatedAuthApi]: it reaches the GDPR endpoints
+     * through the authenticated Retrofit, whose graph owns
+     * [cz.cleansia.core.auth.AuthAuthenticator].
+     */
+    private val signupConsent: Provider<SignupConsentRepository>,
 ) : AuthRepository {
 
     override suspend fun login(
         email: String,
         password: String,
         rememberMe: Boolean,
-    ): ApiResult<LoginOutcome> {
+    ): ApiResult<LoginOutcome> = wireResult {
+        val trustedDeviceToken = tokenStore.current()?.trustedDeviceToken
         val result = safeApiCall(json) {
             authApi.authLogin(
-                MobilePartnerLoginCommand(email = email, password = password, rememberMe = rememberMe),
+                MobilePartnerLoginCommand(
+                    email = email,
+                    password = password,
+                    rememberMe = rememberMe,
+                    trustedDeviceToken = trustedDeviceToken,
+                ),
             )
         }
 
@@ -112,6 +127,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
+        deliverSignupConsent(body)
 
         // Unconfirmed email → caller routes to ConfirmEmailScreen. The
         // backend issues a token in this case so resendConfirmation can be
@@ -153,7 +169,7 @@ class AuthRepositoryImpl @Inject constructor(
         return response.map { it ?: false }
     }
 
-    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> {
+    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> = wireResult {
         val result = safeApiCall(json) {
             authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code, email = email))
         }
@@ -169,6 +185,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
+        deliverSignupConsent(body)
 
         // Same hydration login does — and the ONLY chance this session gets.
         // A cleaner who registers and confirms on the same device never runs
@@ -233,6 +250,16 @@ class AuthRepositoryImpl @Inject constructor(
         sessionScopedCaches.get().forEach { it.clear() }
     }
 
+    /**
+     * The signup tick predates any session, and the token response is the first point at
+     * which the SERVER names the account it belongs to — hence `body.email` and never the
+     * address the sign-in form carried. Best-effort inside, and it returns before any
+     * network call when nothing is parked, which is every sign-in but the first.
+     */
+    private suspend fun deliverSignupConsent(body: JwtTokenResponse) {
+        signupConsent.get().deliverFor(body.email)
+    }
+
     private fun persistTokens(body: JwtTokenResponse) {
         val access = body.token ?: return
         val refresh = body.refreshToken.orEmpty()
@@ -275,7 +302,7 @@ class AuthRepositoryImpl @Inject constructor(
                 email = body.email ?: fallbackEmail,
                 employeeId = employee.id,
                 isEmailConfirmed = true,
-                hasAdminAccess = body.hasAdminAccess ?: false,
+                hasAdminAccess = body.hasAdminAccess.required("hasAdminAccess"),
                 firstName = employee.firstName,
                 lastName = employee.lastName,
                 role = body.role,
@@ -283,6 +310,13 @@ class AuthRepositoryImpl @Inject constructor(
         )
     }
 
+    /**
+     * `isEmailConfirmed` and `hasAdminAccess` are both non-nullable `bool` on `JwtTokenResponse`, and
+     * the old `?: false` fell the wrong way on each: it locks a confirmed cleaner into the
+     * confirm-email screen, and it contradicts the server's own `HasAdminAccess = true` default.
+     * Failing closed is the safe direction, but it is not the same as knowing the value — the
+     * refusal names the field instead, and [wireResult] on the two session-minting paths carries it.
+     */
     private suspend fun persistProfile(body: JwtTokenResponse, fallbackEmail: String) {
         val existing = userProfileStore.current()
         userProfileStore.save(
@@ -290,8 +324,8 @@ class AuthRepositoryImpl @Inject constructor(
                 userId = body.userId ?: existing?.userId.orEmpty(),
                 email = body.email ?: fallbackEmail,
                 employeeId = existing?.employeeId,
-                isEmailConfirmed = body.isEmailConfirmed ?: existing?.isEmailConfirmed ?: false,
-                hasAdminAccess = body.hasAdminAccess ?: existing?.hasAdminAccess ?: false,
+                isEmailConfirmed = body.isEmailConfirmed.required("isEmailConfirmed"),
+                hasAdminAccess = body.hasAdminAccess.required("hasAdminAccess"),
                 firstName = existing?.firstName,
                 lastName = existing?.lastName,
                 role = body.role ?: existing?.role,

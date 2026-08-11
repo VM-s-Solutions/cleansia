@@ -105,6 +105,16 @@ public class MembershipPlan : Auditable
     public bool AllowsExpressUpgrade { get; private set; }
 
     /// <summary>
+    /// ADR-0035 D2.1 — how many express waivers this plan grants per calendar month. Mirrors
+    /// <see cref="FreeCancellationWindowHours"/> in role: the benefit's number belongs on the plan, next
+    /// to the benefit it meters, where an admin can change it without a deploy and a second tier can
+    /// differ. <c>0</c> means no waiver (fail-closed), the same semantic the cancellation window uses;
+    /// "unlimited" is deliberately not expressible, so a seeding mistake cannot become an unbounded perk.
+    /// Ignored entirely when <see cref="AllowsExpressUpgrade"/> is false.
+    /// </summary>
+    public int ExpressUpgradesPerMonth { get; private set; }
+
+    /// <summary>
     /// Soft-delete flag. Inactive plans aren't offered to new subscribers but
     /// existing <see cref="UserMembership"/> rows referencing them keep working
     /// until they cancel — Stripe is the source of truth for active subscriptions.
@@ -130,7 +140,8 @@ public class MembershipPlan : Auditable
         int freeCancellationWindowHours,
         bool allowsExpressUpgrade,
         BillingInterval billingInterval = BillingInterval.Monthly,
-        int trialPeriodDays = 0)
+        int trialPeriodDays = 0,
+        int expressUpgradesPerMonth = 0)
         => new()
         {
             Code = code.ToUpperInvariant(),
@@ -142,6 +153,7 @@ public class MembershipPlan : Auditable
             AllowsExpressUpgrade = allowsExpressUpgrade,
             BillingInterval = billingInterval,
             TrialPeriodDays = trialPeriodDays,
+            ExpressUpgradesPerMonth = expressUpgradesPerMonth,
         };
 
     public MembershipPlan UpdateName(string name)
@@ -166,11 +178,13 @@ public class MembershipPlan : Auditable
     public MembershipPlan UpdateBenefits(
         decimal discountPercentage,
         int freeCancellationWindowHours,
-        bool allowsExpressUpgrade)
+        bool allowsExpressUpgrade,
+        int expressUpgradesPerMonth)
     {
         DiscountPercentage = discountPercentage;
         FreeCancellationWindowHours = freeCancellationWindowHours;
         AllowsExpressUpgrade = allowsExpressUpgrade;
+        ExpressUpgradesPerMonth = expressUpgradesPerMonth;
         return this;
     }
 

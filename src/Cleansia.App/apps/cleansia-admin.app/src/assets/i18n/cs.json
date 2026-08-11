@@ -486,7 +486,42 @@
       "grade_quick_fill": "Rychlé vyplnění",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Platební údaje",
+        "none": "U tohoto zaměstnance nejsou uloženy žádné platební údaje.",
+        "load_error": "Platební údaje se nepodařilo načíst.",
+        "retry": "Zkusit znovu",
+        "masked_account": "Účet",
+        "bank_name": "Banka",
+        "bank_country": "Země banky",
+        "scheme": "Typ platby",
+        "status": "Stav",
+        "confirmed_at": "Naposledy ověřeno",
+        "last_revealed_at": "Naposledy zobrazeno",
+        "never_revealed": "Nikdy nezobrazeno",
+        "reveal_count": "Počet zobrazení",
+        "reveal": "Zobrazit úplné údaje",
+        "hide": "Skrýt úplné údaje",
+        "reveal_recorded_notice": "Zobrazení úplných údajů o účtu se zaznamenává k vašemu administrátorskému účtu včetně času. Zobrazujte je jen tehdy, když je potřebujete k provedení platby.",
+        "account_prefix": "Předčíslí účtu",
+        "account_number": "Číslo účtu",
+        "bank_code": "Kód banky",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Majitel účtu",
+        "schemes": {
+          "czsk_domestic_with_iban": "Český/slovenský tuzemský účet",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Účet u platebního poskytovatele",
+          "unknown": "Neznámý typ"
+        },
+        "statuses": {
+          "provided": "Zadáno",
+          "needs_reconfirmation": "Vyžaduje potvrzení",
+          "unknown": "Neznámý"
+        }
+      }
     },
     "order_management": {
       "title": "Správa objednávek",
@@ -778,6 +813,7 @@
       "actions": {
         "approve": "Schválit fakturu",
         "mark_paid": "Označit jako zaplacenou",
+        "assign_variable_symbol": "Přiřadit variabilní symbol",
         "cancel": "Zrušit fakturu",
         "download": "Stáhnout PDF",
         "regenerate_pdf": "Přegenerovat PDF"
@@ -806,12 +842,19 @@
         "reason_label": "Důvod zrušení",
         "reason_placeholder": "Zadejte důvod zrušení..."
       },
+      "assign_variable_symbol_confirm": {
+        "title": "Přiřadit variabilní symbol?",
+        "message": "Tímto faktuře přidělíte variabilní symbol a přegenerujete její PDF. Číslo už nelze změnit, znovu použít ani přidělit jiné faktuře.",
+        "yes": "Přiřadit"
+      },
       "messages": {
         "load_error": "Nepodařilo se načíst detail faktury",
         "approve_success": "Faktura byla úspěšně schválena",
         "approve_error": "Nepodařilo se schválit fakturu",
         "mark_paid_success": "Faktura byla úspěšně označena jako zaplacená",
         "mark_paid_error": "Nepodařilo se označit fakturu jako zaplacenou",
+        "assign_variable_symbol_success": "Variabilní symbol {{variableSymbol}} byl přiřazen a PDF faktury přegenerováno.",
+        "assign_variable_symbol_pdf_stale": "Variabilní symbol {{variableSymbol}} byl přiřazen, ale PDF faktury se nepodařilo přegenerovat. Použijte Přegenerovat PDF.",
         "cancel_success": "Faktura byla úspěšně zrušena",
         "cancel_error": "Nepodařilo se zrušit fakturu",
         "download_error": "Nepodařilo se stáhnout fakturu",
@@ -1958,7 +2001,9 @@
           "discount": "Sleva (%)",
           "trial_days": "Zkušební období (dny)",
           "free_cancel_window": "Lhůta pro bezplatné storno (hodiny)",
-          "express_upgrade": "Umožňuje expresní upgrade"
+          "express_upgrade": "Umožňuje expresní upgrade",
+          "express_upgrades_per_month": "Zahrnuté expresní upgrady za měsíc",
+          "express_upgrades_per_month_help": "Kolik expresních rezervací dostane člen každý měsíc bez expresního příplatku. Nula znamená žádné."
         },
         "validation": {
           "code_invalid": "2–50 znaků: písmena, číslice nebo podtržítka.",
@@ -1966,7 +2011,8 @@
           "stripe_price_id_required": "Stripe Price id je povinné.",
           "discount_range": "Sleva musí být mezi 0 a 100.",
           "trial_negative": "Počet zkušebních dnů musí být nula nebo vyšší.",
-          "window_negative": "Lhůta musí být nula nebo vyšší."
+          "window_negative": "Lhůta musí být nula nebo vyšší.",
+          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší."
         },
         "submit_create": "Vytvořit plán",
         "submit_update": "Uložit změny",
@@ -2546,7 +2592,8 @@
       "profile_incomplete": "Profil zaměstnance je nekompletní",
       "documents_missing": "Chybí požadované dokumenty",
       "already_approved": "Zaměstnanec již byl schválen",
-      "already_rejected": "Zaměstnanec již byl zamítnut"
+      "already_rejected": "Zaměstnanec již byl zamítnut",
+      "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte."
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",
@@ -2565,7 +2612,13 @@
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "template_not_found": "Šablona faktury nenalezena",
         "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
-        "already_cancelled": "Faktura již byla zrušena"
+        "already_cancelled": "Faktura již byla zrušena",
+        "already_paid": "Faktura již byla označena jako zaplacená",
+        "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
+        "reference_unavailable": "Tento variabilní symbol se již používá. Zkuste to prosím znovu.",
+        "reference_missing": "Před zaznamenáním platby přiřaďte variabilní symbol.",
+        "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
+        "reference_already_assigned": "Tato faktura již variabilní symbol má."
       },
       "unpaid_invoices_exist": "Existují nezaplacené faktury",
       "pay": {
@@ -2585,7 +2638,8 @@
       "invalid_duration": "Neplatná délka platebního období",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "not_closed": "Platební období není uzavřeno"
+      "not_closed": "Platební období není uzavřeno",
+      "already_paid": "Platební období již bylo zaplaceno"
     },
     "pay_config": {
       "service_or_package_required": "Je vyžadována buď služba nebo balíček",
@@ -2599,7 +2653,11 @@
       "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "minimum_pay_negative": "Minimální mzda nemůže být záporná",
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
-      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda"
+      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
+      "last_for_live_catalogue_entry": "Toto je poslední nastavení odměny pro službu nebo balíček, které se stále používají. Jeho odstraněním by u zakázek zmizela odhadovaná odměna."
+    },
+    "payout": {
+      "not_found": "Tento zaměstnanec nemá uložené platební údaje"
     },
     "file": {
       "content_type_doesnt_match": "Typ obsahu souboru neodpovídá",
@@ -2624,7 +2682,9 @@
       "not_existing_id": "Země nenalezena",
       "not_found": "Země nenalezena",
       "iso_code_already_exists": "Země s tímto ISO kódem již existuje",
-      "in_use": "Zemi nelze smazat, protože je aktuálně používána"
+      "in_use": "Zemi nelze smazat, protože je aktuálně používána",
+      "not_serviced": "V této zemi nepůsobíme.",
+      "required": "Země je povinná."
     },
     "company": {
       "not_found": "Informace o společnosti nenalezeny",
@@ -2635,7 +2695,10 @@
       "not_found": "Spor nenalezen",
       "already_exists": "Spor pro tuto objednávku již existuje",
       "invalid_refund_amount": "Neplatná částka vrácení peněz",
-      "max_length_exceeded": "Překročena maximální délka"
+      "max_length_exceeded": "Překročena maximální délka",
+      "not_owned_by_user": "Tento spor patří jinému uživateli.",
+      "already_resolved": "Tento spor již byl vyřešen a nelze jej změnit.",
+      "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena."
     },
     "admin_user": {
       "not_found": "Administrátor nenalezen",
@@ -2660,13 +2723,28 @@
       "page_must_be_positive": "Stránka musí být větší než 0",
       "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
       "page_size_exceeded": "Velikost stránky nesmí překročit 100",
-      "invalid_contract_status": "Neplatná hodnota stavu smlouvy"
+      "invalid_contract_status": "Neplatná hodnota stavu smlouvy",
+      "payout": {
+        "account_number_required": "Zadejte číslo účtu",
+        "country_not_supported": "Výplaty do banky v této zemi zatím nejsou podporovány",
+        "iban_country_mismatch": "IBAN je z jiné země než banka. Zkontrolujte IBAN, nebo změňte zemi banky tak, aby souhlasily.",
+        "iban_mismatch": "IBAN neodpovídá číslu účtu a kódu banky. Zkontrolujte všechny tři údaje, nebo IBAN vymažte a odvodí se z nich.",
+        "invalid_account_number": "Číslo účtu se nepodařilo ověřit — téměř vždy jde o překlep v číslici. Zkontrolujte ho podle bankovních údajů zaměstnance.",
+        "invalid_account_prefix": "Předčíslí účtu se nepodařilo ověřit — je to část před pomlčkou v čísle účtu. Zkontrolujte číslice, nebo pole vymažte, pokud účet předčíslí nemá.",
+        "invalid_bank_code": "Zadejte čtyřmístný kód banky",
+        "invalid_iban": "Toto není platný IBAN",
+        "invalid_swift": "SWIFT/BIC nepatří do země banky",
+        "looks_like_card": "Vypadá to jako číslo platební karty. Zadejte místo toho číslo bankovního účtu.",
+        "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
+        "swift_required": "Banka je v jiné zemi, než ve které zaměstnanec pracuje, proto je nutný také SWIFT/BIC kód banky."
+      }
     },
     "service": {
       "not_found": "Služba nenalezena",
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
       "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
-      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk"
+      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk",
+      "category_not_found": "Kategorie služby nebyla nalezena."
     },
     "package": {
       "not_found": "Balíček nenalezen",
@@ -2707,6 +2785,51 @@
       "country_not_serviced": "V této zemi zatím nepůsobíme.",
       "country_required": "Vyberte zemi.",
       "city_not_serviced": "V tomto městě zatím nepůsobíme."
+    },
+    "audit": {
+      "not_found": "Záznam auditu nebyl nalezen."
+    },
+    "feature_flag": {
+      "already_exists": "Přepínač funkce s tímto názvem a rozsahem již existuje.",
+      "not_found": "Přepínač funkce nebyl nalezen."
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "Tento počet bodů překračuje limit povolený pro ruční úpravu.",
+      "reason_required": "Pro ruční úpravu bodů je vyžadován důvod.",
+      "tier_config_not_found": "Nastavení věrnostní úrovně nebylo nalezeno.",
+      "tier_perks_json_invalid": "Výhody úrovně musí být platný JSON."
+    },
+    "promo": {
+      "amount_must_be_positive": "Výše slevy musí být větší než nula.",
+      "code_already_exists": "Slevový kód s tímto kódem již existuje.",
+      "code_invalid_format": "Formát slevového kódu není platný.",
+      "not_found": "Slevový kód nebyl nalezen.",
+      "percent_out_of_range": "Procento slevy je mimo povolený rozsah.",
+      "validity_range_invalid": "Datum platnosti od nesmí být pozdější než datum platnosti do."
+    },
+    "service_city": {
+      "already_exists": "Toto město už je v seznamu obsluhovaných měst.",
+      "not_found": "Obsluhované město nebylo nalezeno."
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "Plán s tímto kódem již existuje.",
+        "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
+        "not_found": "Plán členství nebyl nalezen."
+      }
+    },
+    "referral": {
+      "not_accepted": "Doporučení není ve stavu „přijaté“.",
+      "not_found": "Doporučení nebylo nalezeno.",
+      "not_qualified": "Doporučení není ve stavu „uznané“.",
+      "reason_required": "Je vyžadován důvod."
+    },
+    "refund": {
+      "line_invalid": "Jedna z vybraných položek není součástí této objednávky.",
+      "lines_required": "Vyberte alespoň jednu službu nebo balíček k vrácení.",
+      "nothing_refundable": "Na této objednávce již není co vrátit.",
+      "order_not_refundable": "Tuto objednávku nelze vrátit.",
+      "override_reason_required": "Pro vrácení mimo povolenou lhůtu je vyžadováno odůvodnění."
     }
   },
   "cookies": {

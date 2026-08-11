@@ -11,9 +11,12 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// Unit tests for <see cref="OrderPromoApplier"/> — the promo preview/apply collaborator extracted from
 /// <c>CreateOrder.Handler</c>. Covers every guard the collaborator owns (no code / no user / failed
-/// preview yield no discount; zero-discount / no-code / no-user skip apply) and the best-effort
-/// logged-and-swallowed apply semantics, so the extraction carries the same behavior the handler
-/// characterization suite pins.
+/// preview yield no discount; an order the promo did not price, or no code / no user, skip apply) and
+/// the best-effort logged-and-swallowed apply semantics.
+///
+/// ADR-0038 §D5.1 moved the apply gate off the PREVIEW and onto the PERSISTED order, and swapped the
+/// re-grossed <c>order.TotalPrice + preview.DiscountAmount</c> subtotal for the handler's own
+/// <c>rawSubtotal</c>. The two tests that pinned the old shape were updated, not deleted.
 /// </summary>
 public class OrderPromoApplierTests
 {
@@ -27,13 +30,18 @@ public class OrderPromoApplierTests
     private OrderPromoApplier CreateApplier() =>
         new(_promoCodeService.Object, NullLogger<OrderPromoApplier>.Instance);
 
-    private static Order BuildOrder(decimal totalPrice = 900m) =>
+    private static Order BuildOrder(
+        decimal totalPrice = 900m,
+        decimal? promoDiscountAmount = 100m,
+        string? promoCodeId = PromoCodeId) =>
         OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
         {
             Id = "order-1",
             UserId = UserId,
             TotalPrice = totalPrice,
             CustomerAddress = AddressMockFactory.Generate(),
+            PromoDiscountAmount = promoDiscountAmount,
+            PromoCodeId = promoCodeId,
         });
 
     [Fact]
@@ -92,13 +100,33 @@ public class OrderPromoApplierTests
         Assert.Equal(PromoCodeId, result.PromoCodeId);
     }
 
+    // ADR-0038 §D5.1 — OrderFactory.ResolveLoy003Discount discards the promo when membership+tier is
+    // larger, and persists the order with PromoCodeId/PromoDiscountAmount null. Recording a redemption
+    // there would burn the customer's one-shot code for a discount they never received. This test
+    // replaces the old zero-PREVIEW gate assertion: the preview here is positive and irrelevant.
     [Fact]
-    public async Task Apply_ZeroDiscount_DoesNotCallService()
+    public async Task Apply_OrderPricedByMembershipNotPromo_DoesNotCallService()
     {
         var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
+        var order = BuildOrder(promoDiscountAmount: null, promoCodeId: null);
 
         await CreateApplier().ApplyAsync(
-            command, UserId, BuildOrder(), OrderPromoPreview.None, CurrencyId, CancellationToken.None);
+            command, UserId, order, 1000m, CurrencyId, CancellationToken.None);
+
+        _promoCodeService.Verify(
+            s => s.ApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<decimal>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Apply_OrderCarriesCodeButZeroDiscount_DoesNotCallService()
+    {
+        var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
+        var order = BuildOrder(promoDiscountAmount: 0m, promoCodeId: PromoCodeId);
+
+        await CreateApplier().ApplyAsync(
+            command, UserId, order, 1000m, CurrencyId, CancellationToken.None);
 
         _promoCodeService.Verify(
             s => s.ApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -112,7 +140,7 @@ public class OrderPromoApplierTests
         var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
 
         await CreateApplier().ApplyAsync(
-            command, string.Empty, BuildOrder(), new OrderPromoPreview(100m, PromoCodeId), CurrencyId, CancellationToken.None);
+            command, string.Empty, BuildOrder(), 1000m, CurrencyId, CancellationToken.None);
 
         _promoCodeService.Verify(
             s => s.ApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -121,20 +149,46 @@ public class OrderPromoApplierTests
     }
 
     [Fact]
-    public async Task Apply_PositiveDiscount_CallsServiceWithReGrossedSubtotal()
+    public async Task Apply_OrderPricedByPromo_CallsServiceWithRawSubtotal()
     {
         _promoCodeService
             .Setup(s => s.ApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<decimal>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PromoCodeApplyResult(true, 100m, PromoCodeId, null));
         var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
-        var order = BuildOrder(totalPrice: 900m);
+        var order = BuildOrder(totalPrice: 900m, promoDiscountAmount: 100m);
 
         await CreateApplier().ApplyAsync(
-            command, UserId, order, new OrderPromoPreview(100m, PromoCodeId), CurrencyId, CancellationToken.None);
+            command, UserId, order, 1000m, CurrencyId, CancellationToken.None);
 
         _promoCodeService.Verify(
-            s => s.ApplyAsync(PromoCode, UserId, order.Id, order.TotalPrice + 100m, CurrencyId, It.IsAny<CancellationToken>()),
+            s => s.ApplyAsync(PromoCode, UserId, order.Id, 1000m, CurrencyId, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    // ADR-0038 §D5.1 — on an EXPRESS order the surcharge is applied AFTER the discount
+    // (OrderFactory: ApplyExpressSurcharge(rawSubtotal - applied)), so the old
+    // `order.TotalPrice + preview.DiscountAmount` re-gross does not reconstruct the subtotal and the
+    // recorded AppliedDiscount would be computed off an inflated base. 1000 raw − 100 promo = 900,
+    // × (1 + 20% express) = 1080; the old expression would have passed 1180.
+    [Fact]
+    public async Task Apply_ExpressOrder_PassesRawSubtotal_NotTheReGrossedTotal()
+    {
+        _promoCodeService
+            .Setup(s => s.ApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<decimal>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PromoCodeApplyResult(true, 100m, PromoCodeId, null));
+        var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
+        const decimal rawSubtotal = 1000m;
+        var expressTotal = BookingPolicy.ApplyExpressSurcharge(rawSubtotal - 100m, surchargeApplies: true);
+        var order = BuildOrder(totalPrice: expressTotal, promoDiscountAmount: 100m);
+
+        await CreateApplier().ApplyAsync(
+            command, UserId, order, rawSubtotal, CurrencyId, CancellationToken.None);
+
+        Assert.NotEqual(rawSubtotal, order.TotalPrice + 100m);
+        _promoCodeService.Verify(
+            s => s.ApplyAsync(PromoCode, UserId, order.Id, rawSubtotal, CurrencyId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -148,7 +202,7 @@ public class OrderPromoApplierTests
         var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
 
         var ex = await Record.ExceptionAsync(() => CreateApplier().ApplyAsync(
-            command, UserId, BuildOrder(), new OrderPromoPreview(100m, PromoCodeId), CurrencyId, CancellationToken.None));
+            command, UserId, BuildOrder(), 1000m, CurrencyId, CancellationToken.None));
 
         Assert.Null(ex);
     }

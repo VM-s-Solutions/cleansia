@@ -30,6 +30,7 @@ import cz.cleansia.core.snackbar.GlobalSnackbarHost
 import cz.cleansia.partner.core.notifications.NotificationDeepLink
 import cz.cleansia.partner.core.settings.AppSettings
 import cz.cleansia.partner.core.settings.AppSettingsRepository
+import cz.cleansia.partner.core.settings.LanguageSessionObserver
 import cz.cleansia.partner.core.settings.ThemePreference
 import cz.cleansia.partner.navigation.NavRoute
 import cz.cleansia.partner.navigation.PartnerNavHost
@@ -60,6 +61,12 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var pushTokenSessionObserver: PushTokenSessionObserver
 
     /**
+     * Re-states the cleaner's chosen language once a sign-in produces a session, so a push the
+     * pickers lost to a dead connection stops waiting for the next visit to a picker.
+     */
+    @Inject lateinit var languageSessionObserver: LanguageSessionObserver
+
+    /**
      * Notification-tap deep link in typed-route form. Set from the launching
      * intent in [onCreate] (cold start) and from [onNewIntent] (running app);
      * consumed by a LaunchedEffect that navigates and clears. Held on the
@@ -82,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         // registered on every cold start with an existing session, not
         // only on the discrete login/rotation events.
         pushTokenSessionObserver.attach(lifecycleScope)
+        languageSessionObserver.attach(lifecycleScope)
         setContent {
             val settings by settingsRepository.settings
                 .collectAsStateWithLifecycle(initialValue = AppSettings())

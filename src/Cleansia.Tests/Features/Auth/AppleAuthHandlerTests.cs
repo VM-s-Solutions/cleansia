@@ -72,8 +72,11 @@ public class AppleAuthHandlerTests
             _hostAudience,
             new CapturingLogger<AppleAuth.Handler>(_logEntries))!;
 
-    private static AppleAuth.Command Command() =>
-        new(IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "First", LastName: "Last");
+    // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
+    // screen sends no tick and its tests pass termsAccepted: false explicitly.
+    private static AppleAuth.Command Command(bool termsAccepted = true) =>
+        new(IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "First", LastName: "Last",
+            TermsAccepted: termsAccepted);
 
     private static User BlankNameAppleUser(string firstName, string lastName, string? email = null)
     {
@@ -395,7 +398,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Janet", LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Janet", LastName: null, TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -423,7 +426,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null, TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -451,7 +454,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null, TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -476,7 +479,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null, TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -503,7 +506,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane", LastName: "Doe");
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane", LastName: "Doe", TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -712,7 +715,7 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane Doe", LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane Doe", LastName: null, TermsAccepted: true);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -773,7 +776,8 @@ public class AppleAuthHandlerTests
                 IdentityToken: "any-token",
                 RawNonce: "any-raw-nonce",
                 FirstName: suppliedFirst,
-                LastName: suppliedLast),
+                LastName: suppliedLast,
+                TermsAccepted: true),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -904,6 +908,75 @@ public class AppleAuthHandlerTests
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // The sign-in screen carries no terms tick, so it sends none — and a returning user must not be asked
+    // to re-accept the terms they accepted when the account was created.
+    [Fact]
+    public async Task Existing_Account_Signs_In_Without_The_Signup_Tick()
+    {
+        var existing = BlankNameAppleUser("Jane", "Doe", "jane.doe@example.com");
+        existing.LinkAppleId("sub-returning");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-returning", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("sub-returning", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // The hole this closes: a brand-new visitor tapping the sign-in screen's Apple button used to get an
+    // account provisioned around them with no consent record at all.
+    [Fact]
+    public async Task Unknown_Identity_Without_The_Signup_Tick_Is_Refused_And_Creates_Nothing()
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-brand-new", "brand-new@example.com", EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(Command(termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.SocialAccountNotFound, result.Error!.Message);
+        Assert.Equal(nameof(AppleAuth.Command.TermsAccepted), result.Error!.Code);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // The other half: the signup screen gates its Apple button on the tick and sends it, so that path
+    // still brings an account into existence.
+    [Fact]
+    public async Task Unknown_Identity_With_The_Signup_Tick_Still_Provisions()
+    {
+        const string verifiedEmail = "signing-up@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-signup", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(Command(termsAccepted: true), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == verifiedEmail)), Times.Once);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 
     private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>

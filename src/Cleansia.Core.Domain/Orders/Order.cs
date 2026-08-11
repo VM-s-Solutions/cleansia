@@ -113,9 +113,28 @@ public class Order : Auditable, ITenantEntity
 
     private const int StandardWorkUnitMinutes = 120;
 
+    /// <summary>
+    /// The longest span a single booking is ASSUMED to occupy. It exists only as a query floor: the
+    /// overlap scan starts at <c>windowStart - MaxOrderSpanHours</c> instead of at the beginning of
+    /// time, because the predicate's lower side is a per-row interval computation and only the upper
+    /// bound is sargable. It may only ever be too generous — too generous costs a wider range scan of a
+    /// near-empty band, too tight makes an overlapping order invisible ON THE BOOKING WRITE GATE, which
+    /// is a double booking.
+    ///
+    /// <para><b>Assumed, not enforced.</b> <see cref="EstimatedTime"/> is an unbounded sum over the
+    /// selected services and packages: nothing caps a service's estimate (the catalog validators only
+    /// require it be non-negative) and nothing caps how many items one order may select. The shipped
+    /// catalog's maximum producible span is 3495 min (58.25 h) — every service plus every package on
+    /// one order — so 7 days holds it with ~3x headroom, but the bound is a policy number, not an
+    /// invariant. Falsify it in one line: <c>SELECT MAX("EstimatedTime") FROM "Orders"</c> must stay
+    /// well under <c>MaxOrderSpanHours * 60</c>. When it stops holding, the durable fix is a validated
+    /// span cap on the order write path or a persisted appointment-end column (ADR-0039 A15) — NOT a
+    /// bigger number here.</para>
+    /// </summary>
+    public const int MaxOrderSpanHours = 168;
+
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
-    public bool IsFullyAssigned => _assignedEmployees.Count >= RequiredEmployees;
 
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
@@ -215,15 +234,62 @@ public class Order : Auditable, ITenantEntity
     public string? MembershipPlanIdAtPurchase { get; private set; }
 
     /// <summary>
-    /// Customer-requested cleaner. The matching algorithm boosts this employee's
-    /// score so they're more likely to be offered the order, but it's not a
-    /// guarantee — if they decline or are busy, the order falls back to normal
-    /// matching. Not exposed to the cleaner side (avoids "they didn't pick me"
-    /// awkwardness). Future Cleansia Plus perk; today the field exists but no
-    /// UI sets it.
+    /// Customer-requested cleaner — what the customer ASKED for. Whether the platform could act on it
+    /// is <see cref="PreferredHoldUntilUtc"/>, a separate column with a separate lifetime, so that
+    /// "we stored your preference and could not act on it" stays expressible. There is no matching
+    /// algorithm and no score: dispatch is first-come-first-served off a pull board, and the only thing
+    /// this field buys is a bounded head start on the order's first seat (ADR-0036).
+    /// Nulled by <see cref="AnonymizeCustomerData"/>. Never exposed on a partner-facing DTO — the
+    /// chosen cleaner is told they were chosen, and nobody is ever told they were passed over.
     /// </summary>
     [MaxLength(26)]
     public string? PreferredEmployeeId { get; private set; }
+
+    /// <summary>
+    /// ADR-0036 — until this instant the order is offered to <see cref="PreferredEmployeeId"/> alone.
+    /// An absolute deadline, never a duration: set once at creation through
+    /// <see cref="GrantPreferredHold"/>, never recomputed, so tuning the policy cannot re-time orders
+    /// that already exist, and expiry is <c>now &gt;= deadline</c> in a WHERE clause with no sweep, no
+    /// timer and no status transition. The failure mode of a job-driven expiry is <i>an order stuck
+    /// held</i>; the failure mode of a clock comparison is that the clock is wrong.
+    ///
+    /// <para><c>null</c> = no hold, ever — which is what makes every row without one unaffected by
+    /// construction, with no backfill.</para>
+    ///
+    /// <para>Predicates key on the DEADLINE, never on <see cref="PreferredEmployeeId"/>: keying on the
+    /// beneficiary would switch behaviour on retroactively for every order that ever carried a
+    /// preference. And the reverse pair — a deadline with nobody able to act on it — is closed at both
+    /// ends: unwritable here, and treated as no hold by the visibility rule's null-beneficiary disjunct.</para>
+    /// </summary>
+    public DateTime? PreferredHoldUntilUtc { get; private set; }
+
+    /// <summary>
+    /// ADR-0045 D5.3 — how many preferred-cleaner reservations this order has ever carried. The
+    /// booking's own choice is round 1 and the customer's single re-offer is round 2;
+    /// <see cref="GrantPreferredHold"/> is the sole writer and increments once per grant, which is what
+    /// makes <c>Round &lt; max</c> admit exactly two.
+    ///
+    /// <para>A COUNT is required because the window formula does not terminate: it recomputes off the
+    /// current lead time, so each round is ~90% of the previous one and reaching the eight-hour floor
+    /// from a seven-day booking takes about thirty rounds. A lead-time floor is not a loop bound.</para>
+    ///
+    /// <para>It counts ROUNDS, not declines, and it is per-order — it can never answer a question about
+    /// a cleaner (ADR-0045 D13).</para>
+    /// </summary>
+    public int PreferredOfferRound { get; private set; }
+
+    /// <summary>
+    /// ADR-0045 D6 — when the customer was told this reservation ended without a confirmation. The
+    /// receipt exists so the 5-minute lapse sweep does not prompt twice, and it is a separate column
+    /// rather than a cleared hold pair because <c>NewJobsDigestService.ApplyFreshness</c> reads that
+    /// pair to decide a lapsed order is NEW AGAIN to every other cleaner — nulling it would drop the
+    /// order out of the notification channel permanently. Precedent:
+    /// <see cref="RecurringReminderSentAt"/>.
+    ///
+    /// <para>Per RESERVATION, not per order: <see cref="GrantPreferredHold"/> clears it, so a second
+    /// round's lapse is announced too.</para>
+    /// </summary>
+    public DateTime? PreferredOfferLapseNotifiedAt { get; private set; }
 
     /// <summary>
     /// FK back to the <see cref="Bookings.RecurringBookingTemplate"/> that spawned
@@ -242,6 +308,15 @@ public class Order : Auditable, ITenantEntity
     /// </summary>
     public DateTime? RecurringReminderSentAt { get; private set; }
 
+    /// <summary>
+    /// Timestamp when the "your cleaning starts in about an hour" push was dispatched for this one-off
+    /// order. Null until the pre-cleaning sweep fires; never cleared. Disjoint from
+    /// <see cref="RecurringReminderSentAt"/> in both population and meaning — that one is the 24h-ahead
+    /// CONFIRM prompt on a recurring occurrence, this one is the T-1h notice the booking-confirmation
+    /// screen promises.
+    /// </summary>
+    public DateTime? PreCleaningReminderSentAt { get; private set; }
+
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
 
@@ -254,20 +329,20 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
-    // Persisted denormalization of the latest OrderStatusHistory row, maintained in AddOrderStatus
-    // (the single append seam). OrderStatusHistory stays the authoritative audit trail.
-    private OrderStatus? _currentStatus;
-
-    // The ONE way to read current status in memory. CreatedOn is the primary (human-meaningful) sort;
-    // Sequence is the deterministic tiebreaker for same-tick transitions the ULID Id can't provide
-    // (Ulid.NewUlid() is not monotonic within a millisecond). Falls back to deriving from the loaded
-    // history for rows written before the CurrentStatus column was backfilled.
-    public OrderStatus? CurrentStatus =>
-        _currentStatus
-        ?? _orderStatusHistory
-            .OrderByDescending(s => s.CreatedOn)
-            .ThenByDescending(s => s.Sequence)
-            .FirstOrDefault()?.Status;
+    /// <summary>
+    /// Persisted denormalization of the latest <see cref="OrderStatusHistory"/> row, written ONLY by
+    /// <see cref="AddOrderStatus"/> (the single append seam); the history stays the authoritative audit
+    /// trail. CreatedOn is the primary (human-meaningful) sort and Sequence the deterministic tiebreaker
+    /// for same-tick transitions the ULID id cannot provide.
+    ///
+    /// <para><b>Non-nullable, and there is no history fallback.</b> A brand-new aggregate is
+    /// <see cref="OrderStatus.New"/> — which is what it is — and the single production creation path
+    /// appends the <c>New</c> track before the row is staged, so no persisted order can lack a status.
+    /// Making the column NOT NULL is what lets every filter drop the <c>!= null</c> conjunct that was
+    /// pushing the status term inside an OR and stopping PostgreSQL from using the leading column of
+    /// IX_Orders_CurrentStatus_CleaningDateTime.</para>
+    /// </summary>
+    public OrderStatus CurrentStatus { get; private set; }
 
     private ICollection<OrderEmployee> _assignedEmployees = [];
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
@@ -321,10 +396,11 @@ public class Order : Auditable, ITenantEntity
         // How to get in ("key under the mat", "gate code 4455"). Separate from
         // specialInstructions because the two answer different questions, and
         // because keeping them apart leaves room to release them on different
-        // terms later. NOTE: there is no such gate today — OrderMappers maps
-        // this unconditionally and every partner/admin surface renders it at
-        // any status, exactly like specialInstructions. Treat it as no more
-        // protected than the rest of the order until that changes.
+        // terms later. That room is now used: OrderPiiRedaction blanks this —
+        // with the address, the phone and the confirmation code — for a cleaner
+        // the order does not belong to, so a browsing cleaner reads the job's
+        // scope and not the customer's door code. An ENTITLED reader (the
+        // customer, an assigned cleaner, an admin) still gets it at any status.
         string? accessInstructions = null) => new()
         {
             CustomerName = customerName,
@@ -371,9 +447,115 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// Stamp the instant the pre-cleaning reminder was dispatched. First stamp wins, so a re-entrant
+    /// sweep cannot move it forward and re-open the order to a second reminder.
+    /// </summary>
+    public Order MarkPreCleaningReminderSent(DateTime sentAtUtc)
+    {
+        PreCleaningReminderSentAt ??= sentAtUtc;
+        return this;
+    }
+
     public Order AddSelectedPackages(IEnumerable<OrderPackage> selectedPackages)
     {
         _selectedPackages = selectedPackages.ToList();
+        return this;
+    }
+
+    /// <summary>
+    /// ADR-0036 — the ONLY writer of the (<see cref="PreferredEmployeeId"/>,
+    /// <see cref="PreferredHoldUntilUtc"/>) pair, and ADR-0045 D5.3's only writer of
+    /// <see cref="PreferredOfferRound"/>. Writing both halves of the pair together is what makes a
+    /// deadline with no beneficiary — an order nobody may take and no actor may release — unreachable:
+    /// a safety property defended by a reviewer remembering to null the companion field is not a
+    /// safety property.
+    ///
+    /// <para>ADR-0045 D5.1 widened this from "set once, at creation" to re-callable, and the structural
+    /// invariants it keeps are below. The one that can actually fail is <b>no live reservation for
+    /// someone else</b>, and it is phrased on the HOLD rather than on the preference column:
+    /// <see cref="Create"/> writes <see cref="PreferredEmployeeId"/> independently of any hold, so an
+    /// invariant on the preference would refuse re-offers that never held anything and permit ones that
+    /// do.</para>
+    ///
+    /// <para><paramref name="maxRounds"/> is a platform policy number the application layer owns
+    /// (<c>BookingPolicy.MaxPreferredOfferRounds</c>) — this entity stays policy-ignorant, the same way
+    /// <see cref="CalculateRequiredEmployees"/> takes the spare-seat count.</para>
+    /// </summary>
+    public Order GrantPreferredHold(
+        string preferredEmployeeId, DateTime untilUtc, DateTime nowUtc, int maxRounds)
+    {
+        if (string.IsNullOrWhiteSpace(preferredEmployeeId))
+        {
+            throw new ArgumentException(
+                "A preferred hold requires a beneficiary who can act on it.", nameof(preferredEmployeeId));
+        }
+
+        if (untilUtc <= nowUtc)
+        {
+            throw new ArgumentException(
+                "A preferred hold must end in the future; a zero-length reservation burns a round and "
+                + "withholds nothing.",
+                nameof(untilUtc));
+        }
+
+        if (_assignedEmployees.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "An order that already has a cleaner has no reservation to grant.");
+        }
+
+        if (PreferredHoldUntilUtc > nowUtc && PreferredEmployeeId != preferredEmployeeId)
+        {
+            throw new InvalidOperationException(
+                "A live reservation belongs to another cleaner who was told the job was theirs.");
+        }
+
+        if (PreferredOfferRound >= maxRounds)
+        {
+            throw new InvalidOperationException(
+                $"This order has already carried {PreferredOfferRound} preferred-cleaner reservations.");
+        }
+
+        PreferredEmployeeId = preferredEmployeeId;
+        PreferredHoldUntilUtc = untilUtc;
+        PreferredOfferRound++;
+        PreferredOfferLapseNotifiedAt = null;
+        return this;
+    }
+
+    /// <summary>
+    /// ADR-0045 D6.4 / D1.1 — the cleaner passes: the reservation ends now. One write, and the
+    /// beneficiary stays on the row so the customer's re-offer can refuse the same person without
+    /// anybody being told who it was. Never moves the deadline forward, so a second decline racing the
+    /// lapse sweep cannot re-open a reservation the clock already closed.
+    /// </summary>
+    public Order EndPreferredHold(DateTime endedAtUtc)
+    {
+        if (PreferredHoldUntilUtc > endedAtUtc)
+        {
+            PreferredHoldUntilUtc = endedAtUtc;
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the instant the customer was told this reservation closed. First stamp wins, so a
+    /// re-entrant sweep cannot prompt twice; <see cref="GrantPreferredHold"/> clears it because the
+    /// receipt belongs to the reservation, not to the order.
+    /// </summary>
+    public Order MarkPreferredOfferLapseNotified(DateTime notifiedAtUtc)
+    {
+        PreferredOfferLapseNotifiedAt ??= notifiedAtUtc;
+        return this;
+    }
+
+    /// <summary>Drops both halves together — anonymization, and any future path that returns the order to the board.</summary>
+    public Order ClearPreferredHold()
+    {
+        PreferredEmployeeId = null;
+        PreferredHoldUntilUtc = null;
         return this;
     }
 
@@ -385,7 +567,7 @@ public class Order : Auditable, ITenantEntity
         // Recompute (rather than blindly take the appended status) so the persisted value is by
         // construction the same rule as the audit trail — a track appended with a backdated
         // CreatedOn (seeds, tests) correctly does NOT become current.
-        _currentStatus = _orderStatusHistory
+        CurrentStatus = _orderStatusHistory
             .OrderByDescending(s => s.CreatedOn)
             .ThenByDescending(s => s.Sequence)
             .First().Status;
@@ -506,17 +688,20 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
-    public Order CalculateRequiredEmployees()
+    /// <summary>
+    /// Derives the crew the booked work needs and the seat cap that follows from it.
+    /// <paramref name="spareSeats"/> is a platform policy number the application layer owns
+    /// (<c>BookingPolicy.SpareSeatsPerOrder</c>) — this entity stays policy-ignorant, the same way
+    /// <see cref="Cancel"/> takes an already-computed fee rate.
+    /// </summary>
+    public Order CalculateRequiredEmployees(int spareSeats)
     {
-        if (EstimatedTime <= 0)
-        {
-            RequiredEmployees = 1;
-            MaxEmployees = 1;
-            return this;
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(spareSeats);
 
-        RequiredEmployees = (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
-        MaxEmployees = RequiredEmployees + 1;
+        RequiredEmployees = EstimatedTime <= 0
+            ? 1
+            : (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
+        MaxEmployees = RequiredEmployees + spareSeats;
 
         return this;
     }
@@ -618,7 +803,7 @@ public class Order : Auditable, ITenantEntity
         UserId = null;
         PromoCodeId = null;
         MembershipPlanIdAtPurchase = null;
-        PreferredEmployeeId = null;
+        ClearPreferredHold();
         RecurringTemplateId = null;
         Notes = null;
         SpecialInstructions = null;

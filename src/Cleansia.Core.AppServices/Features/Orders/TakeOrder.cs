@@ -4,7 +4,6 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -35,17 +34,28 @@ public class TakeOrder
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
 
-            RuleFor(x => x.OrderId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_orderRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.OrderNotFound)
-                .MustAsync(HasAvailableSpotsAsync)
-                .WithMessage(BusinessErrorMessage.NoAvailableSpots);
-
+            // ONE ordered chain, deliberately (ADR-0037 D6). Cascade.Stop is rule-LEVEL and
+            // FluentValidation's class-level default is Continue, so a second chain here would run
+            // regardless of this one's verdict: the caller would get a semicolon-joined composite no
+            // client can resolve, and — because ADR-0036 folds the preferred-cleaner hold into the
+            // existence rule — a HELD order and a MISSING one would answer with different error
+            // counts, making existence inferable from the pairing. Order matters: existence (with
+            // the hold) before offerability, offerability before seats, because a Cancelled order
+            // with a free seat should say the job is gone, not that it is full.
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .Must(command => !string.IsNullOrWhiteSpace(command.OrderId))
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(ExistsAndIsOpenToCallerAsync)
+                .WithMessage(BusinessErrorMessage.OrderNotFound)
+                .MustAsync(NotCancelledAsync)
+                .WithMessage(BusinessErrorMessage.TakeOrderAlreadyCancelled)
+                .MustAsync(NotCompletedAsync)
+                .WithMessage(BusinessErrorMessage.TakeOrderAlreadyCompleted)
+                .MustAsync(IsOfferableAsync)
+                .WithMessage(BusinessErrorMessage.OrderNotTakeable)
+                .MustAsync(HasAvailableSpotsAsync)
+                .WithMessage(BusinessErrorMessage.NoAvailableSpots)
                 .MustAsync(CallerIsEmployeeAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotFound)
                 .MustAsync(HasCompletedProfileAsync)
@@ -60,12 +70,68 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.TimeConflict);
         }
 
-        private async Task<bool> HasAvailableSpotsAsync(string orderId, CancellationToken cancellationToken)
+        /// <summary>
+        /// Existence AND the ADR-0036 preferred-cleaner hold, in ONE query answering with ONE error:
+        /// a held order has to be indistinguishable from a missing one, or the exclusivity — and with
+        /// it the fact that some other cleaner was named — is inferable from the refusal. Appended as
+        /// its own rule after the seat check instead, a FULL held order would answer
+        /// <see cref="BusinessErrorMessage.NoAvailableSpots"/>, which is the disagreement this
+        /// placement exists to prevent. The employee is server-derived from the caller, never a
+        /// command field; a caller with no employee id is nobody's beneficiary and is held out.
+        /// </summary>
+        private async Task<bool> ExistsAndIsOpenToCallerAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+
+            return await _orderRepository
+                .GetQueryable()
+                .Where(OrderVisibility.NotHeldFrom(employeeId, DateTime.UtcNow))
+                .AnyAsync(o => o.Id == command.OrderId, cancellationToken);
+        }
+
+        private async Task<bool> NotCancelledAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe?.CurrentStatus != OrderStatus.Cancelled;
+        }
+
+        private async Task<bool> NotCompletedAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe?.CurrentStatus != OrderStatus.Completed;
+        }
+
+        private async Task<bool> IsOfferableAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe is not null && OrderAvailability.IsOfferable(
+                probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId);
+        }
+
+        /// <summary>The four columns <see cref="OrderAvailability"/> reads.</summary>
+        private Task<OfferabilityProbe?> LoadOfferabilityProbeAsync(string orderId, CancellationToken cancellationToken) =>
+            _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == orderId)
+                .Select(o => new OfferabilityProbe(
+                    o.CurrentStatus,
+                    o.PaymentType,
+                    o.PaymentStatus,
+                    o.RecurringTemplateId))
+                .FirstOrDefaultAsync(cancellationToken)!;
+
+        private sealed record OfferabilityProbe(
+            OrderStatus CurrentStatus,
+            PaymentType PaymentType,
+            PaymentStatus PaymentStatus,
+            string? RecurringTemplateId);
+
+        private async Task<bool> HasAvailableSpotsAsync(Command command, CancellationToken cancellationToken)
         {
             var order = await _orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.HasAvailableSpots ?? false;
         }
@@ -184,31 +250,33 @@ public class TakeOrder
 
             var employee = await employeeRepository.GetByIdAsync(employeeId!, cancellationToken);
 
-            var orderEmployee = OrderEmployee.Create(order!, employee!);
-            order!.AddAssignedEmployee(orderEmployee);
+            // The validator's seat check and this load are two unlocked reads, so the loser of two
+            // cleaners tapping the same single-seat job can arrive here with the seat already gone.
+            // AddAssignedEmployee THROWS on that, which reaches the cleaner as a 500 instead of "this
+            // job has been taken" — the refusal has to be a result. Seats have no spare since
+            // BookingPolicy.SpareSeatsPerOrder went to 0, so the window is hit routinely.
+            if (!order!.HasAvailableSpots)
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
+
+            var orderEmployee = OrderEmployee.Create(order, employee!);
+            order.AddAssignedEmployee(orderEmployee);
 
             var statusChanged = false;
             var currentStatus = order.GetCurrentOrderStatus();
-            if (currentStatus is OrderStatus.New or OrderStatus.Pending)
+            if (currentStatus is OrderStatus.New)
             {
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
                 statusChanged = true;
             }
 
-            if (statusChanged && !string.IsNullOrEmpty(order.UserId))
-            {
-                await notificationProducer.NotifyAsync(
-                    order.UserId,
-                    NotificationEventCatalog.OrderConfirmed,
-                    new Dictionary<string, string>
-                    {
-                        ["orderId"] = order.Id,
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                    },
-                    order.TenantId,
-                    order.Id,
-                    cancellationToken);
-            }
+            await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
+                order, notificationProducer, cancellationToken);
+
+            await EndReservationsThisCommitmentCannotHonourAsync(
+                order, employeeId!, DateTime.UtcNow, cancellationToken);
 
             if (statusChanged && !string.IsNullOrEmpty(order.CustomerEmail))
             {
@@ -225,6 +293,34 @@ public class TakeOrder
             }
 
             return BusinessResult.Success(new Response(order.Id, employeeId!));
+        }
+
+        /// <summary>
+        /// ADR-0045 D1.1 — taking a conflicting job IS a decline. Nothing re-checks the beneficiary's
+        /// slot between the grant and the confirmation, deliberately; the only way they can become busy
+        /// is by committing to something else, and this is that moment. Left alone, the customer would
+        /// keep being told someone is considering their booking who provably cannot confirm it, for up
+        /// to twelve hours.
+        ///
+        /// <para>The order just taken is excluded: the beneficiary CONFIRMED it, so it earns
+        /// <c>order.cleaner_assigned</c> and never also the closure message — AC4's "never both".</para>
+        /// </summary>
+        private async Task EndReservationsThisCommitmentCannotHonourAsync(
+            Order takenOrder, string employeeId, DateTime nowUtc, CancellationToken cancellationToken)
+        {
+            var stranded = await orderRepository.GetLiveReservationsForBeneficiaryInWindowAsync(
+                employeeId,
+                takenOrder.CleaningDateTime,
+                takenOrder.CleaningDateTime.AddMinutes(takenOrder.EstimatedTime),
+                nowUtc,
+                cancellationToken);
+
+            foreach (var reserved in stranded.Where(o => o.Id != takenOrder.Id))
+            {
+                reserved.EndPreferredHold(nowUtc);
+                await PreferredOfferClosedNotifier.NotifyPreferredOfferClosedAsync(
+                    reserved, notificationProducer, nowUtc, cancellationToken);
+            }
         }
     }
 }

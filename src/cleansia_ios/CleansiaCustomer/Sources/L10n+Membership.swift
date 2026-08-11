@@ -110,6 +110,10 @@ extension L10n {
             localized("membership_perk_express_desc")
         }
 
+        static var successPerkExpress: String {
+            localized("membership_success_perk_express")
+        }
+
         static var inactiveBadge: String {
             localized("membership_inactive_badge")
         }
@@ -156,6 +160,18 @@ extension L10n {
 
         static var perkPillRecurring: String {
             localized("membership_perk_pill_recurring")
+        }
+
+        static func perkPillExpress(_ remaining: Int) -> String {
+            format("membership_perk_pill_express", remaining)
+        }
+
+        static var perkPillExpressUsed: String {
+            localized("membership_perk_pill_express_used")
+        }
+
+        static var perkPillExpressTrial: String {
+            localized("membership_perk_pill_express_trial")
         }
 
         static var statusActiveBadge: String {

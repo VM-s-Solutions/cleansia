@@ -303,6 +303,8 @@ object NetworkModule {
     @Provides @Singleton fun provideCountryApi(@AuthRetrofit r: Retrofit): CountryApi = r.create(CountryApi::class.java)
     @Provides @Singleton fun provideServiceCityApi(@AuthRetrofit r: Retrofit): cz.cleansia.partner.api.client.ServiceCityApi =
         r.create(cz.cleansia.partner.api.client.ServiceCityApi::class.java)
+    @Provides @Singleton fun provideUserApi(@AuthRetrofit r: Retrofit): cz.cleansia.partner.api.client.UserApi =
+        r.create(cz.cleansia.partner.api.client.UserApi::class.java)
 
     private fun String.ensureTrailingSlash(): String = if (endsWith("/")) this else "$this/"
 }

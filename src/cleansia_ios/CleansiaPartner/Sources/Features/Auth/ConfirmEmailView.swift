@@ -83,7 +83,7 @@ private struct ConfirmEmailContent: View {
                     Spacer().frame(height: Spacing.l)
 
                     Text(L10n.ConfirmEmail.title)
-                        .font(CleansiaTypography.displayMedium)
+                        .cleansiaFont(CleansiaTypography.displayMedium)
                         .foregroundColor(CleansiaColors.onBackground)
                         .multilineTextAlignment(.center)
 

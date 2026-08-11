@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Features.Packages.DTOs;
+﻿using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Features.Packages.DTOs;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
@@ -10,7 +12,10 @@ public class GetPackageOverview
 {
     public record Request : IRequest<IEnumerable<PackageListItem>>;
 
-    public class Handler(IPackageRepository packageRepository) : IRequestHandler<Request, IEnumerable<PackageListItem>>
+    public class Handler(
+        IPackageRepository packageRepository,
+        IEmployeePayConfigRepository payConfigRepository)
+        : IRequestHandler<Request, IEnumerable<PackageListItem>>
     {
         public async Task<IEnumerable<PackageListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -23,7 +28,20 @@ public class GetPackageOverview
                     .ThenInclude(ps => ps.Service)
                 .ToListAsync(cancellationToken);
 
-            return packages.Select(package => package.MapToDto());
+            // Bookable is IsActive AND quotable — see GetServiceOverview for the reasoning.
+            var unquotable = (await PayCoverageLookup.FindGapsAsync(
+                    payConfigRepository,
+                    packages
+                        .Select(p => new PayCoverageTarget(PayCoverageTargetKind.Package, p.Id, p.Name))
+                        .ToList(),
+                    employeeId: null,
+                    cancellationToken))
+                .Select(gap => gap.Id)
+                .ToHashSet();
+
+            return packages
+                .Where(package => !unquotable.Contains(package.Id))
+                .Select(package => package.MapToDto());
         }
     }
 }

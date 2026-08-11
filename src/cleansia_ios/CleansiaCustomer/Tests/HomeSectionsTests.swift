@@ -84,32 +84,28 @@ final class HomeSectionsTests: XCTestCase {
 
     func testMostRecentCompletedIsTheFirstCompletedInRepoOrder() {
         let orders = [
-            OrderFixtures.listItem(id: "o1", statusValue: 2),
-            OrderFixtures.listItem(id: "o2", statusValue: 5),
-            OrderFixtures.listItem(id: "o3", statusValue: 5)
+            OrderFixtures.summary(id: "o1", statusValue: 2),
+            OrderFixtures.summary(id: "o2", statusValue: 5),
+            OrderFixtures.summary(id: "o3", statusValue: 5)
         ]
         XCTAssertEqual(HomeSections.mostRecentCompleted(orders)?.id, "o2")
-        XCTAssertNil(HomeSections.mostRecentCompleted([OrderFixtures.listItem(id: "o1", statusValue: 3)]))
+        XCTAssertNil(HomeSections.mostRecentCompleted([OrderFixtures.summary(id: "o1", statusValue: 3)]))
     }
 
     // MARK: - recentForDisplay (HomeTab.kt:177-181 — cleaningDateTime desc, nils last, top 3)
 
     func testRecentForDisplaySortsByCleaningDateDescendingWithNilsLast() {
-        var older = OrderFixtures.listItem(id: "old", statusValue: 5)
-        older.cleaningDateTime = Date(timeIntervalSince1970: 1000)
-        var newer = OrderFixtures.listItem(id: "new", statusValue: 5)
-        newer.cleaningDateTime = Date(timeIntervalSince1970: 2000)
-        let dateless = OrderFixtures.listItem(id: "none", statusValue: 5)
+        let older = OrderFixtures.summary(id: "old", cleaningDateTime: Date(timeIntervalSince1970: 1000))
+        let newer = OrderFixtures.summary(id: "new", cleaningDateTime: Date(timeIntervalSince1970: 2000))
+        let dateless = OrderFixtures.summary(id: "none")
 
         let sorted = HomeSections.recentForDisplay([dateless, older, newer])
         XCTAssertEqual(sorted.map(\.id), ["new", "old", "none"])
     }
 
     func testRecentForDisplayTakesThree() {
-        let orders = (1 ... 5).map { index -> OrderListItem in
-            var order = OrderFixtures.listItem(id: "o\(index)", statusValue: 5)
-            order.cleaningDateTime = Date(timeIntervalSince1970: Double(index))
-            return order
+        let orders = (1 ... 5).map { index in
+            OrderFixtures.summary(id: "o\(index)", cleaningDateTime: Date(timeIntervalSince1970: Double(index)))
         }
         XCTAssertEqual(HomeSections.recentForDisplay(orders).count, 3)
     }
@@ -117,7 +113,7 @@ final class HomeSectionsTests: XCTestCase {
     // MARK: - showRecent (HomeTab.kt:185)
 
     func testShowRecentGates() {
-        let some = [OrderFixtures.listItem(id: "o1", statusValue: 5)]
+        let some = [OrderFixtures.summary(id: "o1", statusValue: 5)]
         XCTAssertFalse(HomeSections.showRecent(recent: [], ordersLoaded: true, ordersLoading: false))
         XCTAssertTrue(HomeSections.showRecent(recent: some, ordersLoaded: true, ordersLoading: true))
         XCTAssertTrue(HomeSections.showRecent(recent: some, ordersLoaded: false, ordersLoading: false))
@@ -152,9 +148,10 @@ final class HomeSectionsTests: XCTestCase {
     // MARK: - recentBookingTitle (HomeTab.kt:971-978 — services first, then packages, "+ N more")
 
     func testRecentBookingTitleAppendsTheLocalizedMoreSuffix() {
-        var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
-        order.selectedServices = [ServiceListItem(id: "s1", name: "Deep clean")]
-        order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
+        let order = OrderFixtures.summary(
+            services: [CustomerOrderLineName(name: "Deep clean", translations: nil)],
+            packages: [CustomerOrderLineName(name: "Move-out", translations: nil)]
+        )
         XCTAssertEqual(
             HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"),
             "Deep clean \(L10n.Orders.servicesMore(1))"
@@ -162,21 +159,25 @@ final class HomeSectionsTests: XCTestCase {
     }
 
     func testRecentBookingTitleSkipsBlankNamesAndFallsBack() {
-        var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
-        order.selectedServices = [ServiceListItem(id: "s1", name: " ")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Cleaning")
+        let blank = CustomerOrderLineName(name: " ", translations: nil)
+        let noNames = OrderFixtures.summary(services: [blank])
+        XCTAssertEqual(HomeSections.recentBookingTitle(noNames, fallback: "Cleaning", languageCode: "en"), "Cleaning")
 
-        order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Move-out")
+        let withPackage = OrderFixtures.summary(
+            services: [blank],
+            packages: [CustomerOrderLineName(name: "Move-out", translations: nil)]
+        )
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(withPackage, fallback: "Cleaning", languageCode: "en"),
+            "Move-out"
+        )
     }
 
     func testRecentBookingTitleLocalizesLineNamesToTheAppLanguageWithFallback() {
-        var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
-        order.selectedServices = [ServiceListItem(
-            id: "s1",
+        let order = OrderFixtures.summary(services: [CustomerOrderLineName(
             name: "Deep clean",
             translations: ["ru": Translation(name: "Глубокая уборка"), "cs": Translation(name: "Hloubkový úklid")]
-        )]
+        )])
         XCTAssertEqual(
             HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "ru"),
             "Глубокая уборка"
@@ -192,20 +193,18 @@ final class HomeSectionsTests: XCTestCase {
     // MARK: - statusChipLabel (HomeTab.kt:1021-1023 — mapped label, else wire name, else hidden)
 
     func testStatusChipLabelMapsKnownStatuses() {
-        let order = OrderFixtures.listItem(id: "o1", statusValue: 5)
+        let order = OrderFixtures.summary(id: "o1", statusValue: 5)
         XCTAssertEqual(HomeSections.statusChipLabel(order), L10n.Orders.statusLabel(._5))
     }
 
     func testStatusChipLabelFallsBackToTheWireNameThenHides() {
-        var order = OrderFixtures.listItem(id: "o1", statusValue: 99)
-        order.orderStatus = Code(type: "OrderStatus", name: "Archived", value: 99)
-        XCTAssertEqual(HomeSections.statusChipLabel(order), "Archived")
+        let named = OrderFixtures.summary(statusCode: Code(type: "OrderStatus", name: "Archived", value: 99))
+        XCTAssertEqual(HomeSections.statusChipLabel(named), "Archived")
 
-        order.orderStatus = Code(type: "OrderStatus", name: " ", value: 99)
-        XCTAssertNil(HomeSections.statusChipLabel(order))
+        let blank = OrderFixtures.summary(statusCode: Code(type: "OrderStatus", name: " ", value: 99))
+        XCTAssertNil(HomeSections.statusChipLabel(blank))
 
-        order.orderStatus = nil
-        XCTAssertNil(HomeSections.statusChipLabel(order))
+        XCTAssertNil(HomeSections.statusChipLabel(OrderFixtures.summary(statusCode: nil)))
     }
 
     // MARK: - orderAgainWhen (HomeTab.kt:684-692 — "MMM d", nil-safe)

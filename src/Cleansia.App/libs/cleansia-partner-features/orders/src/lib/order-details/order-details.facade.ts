@@ -46,6 +46,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly currentEmployeeId = signal<string | null>(null);
+  readonly takeInFlight = signal(false);
 
   loadOrderDetails(orderId: string): void {
     if (!orderId?.trim()) {
@@ -159,8 +160,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
 
+    const command = new StartOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .startOrder(new StartOrderCommand({ orderId }))
+      .startOrder(command)
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {
@@ -184,22 +188,34 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    if (this.takeInFlight()) {
+      return;
+    }
+
+    this.takeInFlight.set(true);
     this.loading.set(true);
 
+    const command = new TakeOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .takeOrder(new TakeOrderCommand({ orderId }))
+      .takeOrder(command)
       .pipe(
         takeUntil(this.destroyed$),
-        tap(() => {
+        catchError(() => of(null)),
+        finalize(() => this.takeInFlight.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );
-          this.loadOrderDetails(orderId);
-        }),
-        catchError(() => of(null)),
-        finalize(() => this.loading.set(false))
-      )
-      .subscribe();
+        }
+        // Re-read on refusal as well as on success so the button reflects the
+        // server instead of staying armed for another click. The re-read owns
+        // `loading` from here, keeping the spinner unbroken.
+        this.loadOrderDetails(orderId);
+      });
   }
 
   reset(): void {
@@ -300,11 +316,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ReportIssueDialogResult) => {
       if (result) {
         this.loading.set(true);
+
+        const command = new ReportOrderIssueCommand();
+        command.orderId = order.id;
+        command.description = result.description;
+
         this.partnerClient.orderClient
-          .reportIssue(new ReportOrderIssueCommand({
-            orderId: order.id,
-            description: result.description,
-          }))
+          .reportIssue(command)
           .pipe(
             takeUntil(this.destroyed$),
             tap(() => {
@@ -353,11 +371,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: AddNoteDialogResult) => {
       if (result) {
         this.loading.set(true);
+
+        const command = new AddOrderNoteCommand();
+        command.orderId = order.id;
+        command.content = result.content;
+
         this.partnerClient.orderClient
-          .addNote(new AddOrderNoteCommand({
-            orderId: order.id,
-            content: result.content,
-          }))
+          .addNote(command)
           .pipe(
             takeUntil(this.destroyed$),
             tap(() => {
@@ -438,8 +458,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
 
+    const command = new MarkCashCollectedCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .markCashCollected(new MarkCashCollectedCommand({ orderId }))
+      .markCashCollected(command)
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {

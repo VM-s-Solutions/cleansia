@@ -22,6 +22,13 @@ public class UpdateEmployee
 {
     public class Validator : AbstractValidator<Command>
     {
+        /// <summary>
+        /// The same cap as <c>SaveMyDocuments</c>, which writes the same container and the same table:
+        /// the per-document size bound bounds one item, and the host body limit buys thousands of small
+        /// ones, each a blob upload and a row.
+        /// </summary>
+        private const int MaxDocumentsPerRequest = 10;
+
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly ITaxIdValidator _taxIdValidator;
@@ -37,14 +44,8 @@ public class UpdateEmployee
             _taxIdValidator = taxIdValidator ?? throw new ArgumentNullException(nameof(taxIdValidator));
 
             RuleFor(c => c)
-                .MustAsync(AllowedToUpdateEmployee)
+                .MustAsync(CallerIsAnEmployee)
                 .WithMessage(BusinessErrorMessage.NotAllowedToUpdateEmployee);
-
-            RuleFor(c => c.EmployeeId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.NotFound);
 
             RuleFor(c => c.FirstName).ValidateFirstName();
             RuleFor(c => c.LastName).ValidateLastName();
@@ -100,7 +101,7 @@ public class UpdateEmployee
                         command.CountryId, command.EntityType, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.registration_number.invalid_format");
+                .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
 
             RuleFor(c => c.VatNumber)
                 .MaximumLength(50)
@@ -114,7 +115,7 @@ public class UpdateEmployee
                         command.CountryId, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage("validation.vat_number.invalid_format")
+                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
 
             RuleFor(c => c.LegalEntityName)
@@ -124,9 +125,6 @@ public class UpdateEmployee
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
 
-            RuleFor(c => c.Iban)
-                .ValidateIban();
-
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()
                 .When(c => !string.IsNullOrWhiteSpace(c.EmergencyName));
@@ -135,9 +133,23 @@ public class UpdateEmployee
                 .Equal(true)
                 .WithMessage(BusinessErrorMessage.Required);
 
+            RuleFor(c => c.Documents)
+                .Must(documents => documents is null || documents.Count <= MaxDocumentsPerRequest)
+                .WithMessage(BusinessErrorMessage.FileCountExceeded);
+
             RuleForEach(c => c.Documents)
-                .SetValidator(new FileValidator()!)
-                .When(command => command.Documents?.Any() == true);
+                .Cascade(CascadeMode.Stop)
+                // FluentValidation skips a child validator for a null element, so without this a
+                // `[null]` entry reaches the handler and is dereferenced.
+                .NotNull().WithMessage(BusinessErrorMessage.Required)
+                .SetValidator(new DocumentFileValidator())
+                .ChildRules(document => document.RuleFor(file => file.FileName)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty().WithMessage(BusinessErrorMessage.Required)
+                    .MaximumLength(255).WithMessage(BusinessErrorMessage.MaxLength))
+                // Without this the per-item rules still sniff and decode every item of a list already
+                // refused for being too long, which is the cost the count cap exists to refuse.
+                .When(command => command.Documents?.Count <= MaxDocumentsPerRequest);
 
             RuleFor(c => c.Availability)
                 .Must(BeValidAvailability)
@@ -178,17 +190,21 @@ public class UpdateEmployee
             return true;
         }
 
-        private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
+        // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
+        // to get wrong. What survives is the precondition the handler dereferences.
+        private async Task<bool> CallerIsAnEmployee(Command command, CancellationToken cancellationToken)
         {
-            var currentUserEmail = _userSessionProvider.GetUserEmail();
-            var employee = await _employeeRepository.GetByUserEmailAsync(currentUserEmail ?? string.Empty, cancellationToken);
-            return employee?.Id == command.EmployeeId;
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            return employee is not null;
         }
-
     }
 
     public record Command(
-        string EmployeeId,
+        // [OWN-DATA] (S1): inert. The record written is always the JWT caller's; this stays on the wire
+        // only so the shipped clients keep serializing unchanged. Nullable is load-bearing — a
+        // non-nullable reference member makes MVC reject an ABSENT id before MediatR is reached.
+        string? EmployeeId,
         string FirstName,
         string LastName,
         DateOnly BirthDate,
@@ -204,7 +220,6 @@ public class UpdateEmployee
         string RegistrationNumber,
         string? VatNumber,
         string? LegalEntityName,
-        string Iban,
         string? EmergencyName,
         string? EmergencyPhone,
         bool Consent,
@@ -225,19 +240,27 @@ public class UpdateEmployee
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-            var address = CreateOrUpdateAddress(employee!, command);
+            var employee = await employeeRepository.GetByUserEmailAsync(
+                userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            if (employee is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(BusinessErrorMessage.EmployeeNotFound), BusinessErrorMessage.EmployeeNotFound));
+            }
+
+            var address = CreateOrUpdateAddress(employee, command);
             await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
-            await UploadDocuments(employee!, command, cancellationToken);
+            await UploadDocuments(employee, command, cancellationToken);
             var availability = ConvertAvailability(command.Availability);
 
-            UpdateEmployeeDetails(employee!, command, address, availability);
+            UpdateEmployeeDetails(employee, command, address, availability);
 
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
             // profile it belongs to. Re-saving an already-consented profile is a no-op.
-            await consentService.TryGrantAsync(employee!.UserId, ConsentType.DataProcessing, cancellationToken);
+            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, cancellationToken);
 
             return BusinessResult.Success(new Response(employee.Id));
         }
@@ -262,20 +285,15 @@ public class UpdateEmployee
 
             foreach (var document in command.Documents)
             {
-                if (string.IsNullOrWhiteSpace(document.Base64Content))
-                {
-                    continue;
-                }
-
                 var uniqueFileName = $"{Guid.NewGuid()}_{document.FileName}";
                 var fullFilePath = $"{employeeDocumentsPath}/{uniqueFileName}";
-                var contentType = document.ContentType ?? "application/octet-stream";
+                var contentType = SniffedContentType.FromContent(document.Base64Content, UploadIntake.EmployeeDocument)!;
 
-                await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content.ExtractBase64Data()));
+                await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content!.ExtractBase64Data()));
                 var fileSizeBytes = stream.Length;
 
                 var metadata = MetadataExtensions.CreateDocumentMetadata(
-                    document.FileName ?? "unknown",
+                    document.FileName,
                     contentType,
                     employee.UserId);
 
@@ -283,7 +301,7 @@ public class UpdateEmployee
 
                 var employeeDocument = EmployeeDocument.Create(
                     employee.Id,
-                    document.FileName ?? uniqueFileName,
+                    document.FileName,
                     fullFilePath,
                     contentType,
                     fileSizeBytes,
@@ -333,7 +351,6 @@ public class UpdateEmployee
                 command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,
-                command.Iban,
                 address,
                 availability,
                 command.EmergencyName,

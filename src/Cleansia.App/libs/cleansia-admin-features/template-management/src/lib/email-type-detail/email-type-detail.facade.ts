@@ -70,10 +70,9 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   ): void {
     this.saving.set(true);
 
-    const command = new UpdateEmailTemplateCommand({
-      emailTemplateId: templateId,
-      value: value,
-    });
+    const command = new UpdateEmailTemplateCommand();
+    command.emailTemplateId = templateId;
+    command.value = value;
 
     this.adminClient.adminEmailTemplateClient
       .update(templateId, command)
@@ -103,11 +102,10 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   ): void {
     this.sendingTestEmail.set(true);
 
-    const command = new SendTestEmailByTypeCommand({
-      emailType: emailType,
-      languageCode: languageCode,
-      recipientEmail: recipientEmail,
-    });
+    const command = new SendTestEmailByTypeCommand();
+    command.emailType = emailType;
+    command.languageCode = languageCode;
+    command.recipientEmail = recipientEmail;
 
     this.adminClient.emailTemplateTypesClient
       .sendTest(emailType, command)
@@ -139,12 +137,11 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   ): void {
     this.creating.set(true);
 
-    const command = new CreateEmailTemplateTranslationCommand({
-      emailType: emailType,
-      languageId: languageId,
-      key: key,
-      value: value,
-    });
+    const command = new CreateEmailTemplateTranslationCommand();
+    command.emailType = emailType;
+    command.languageId = languageId;
+    command.key = key;
+    command.value = value;
 
     this.adminClient.adminEmailTemplateClient
       .create(command)

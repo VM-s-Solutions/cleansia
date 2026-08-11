@@ -52,12 +52,11 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
   createCurrency(data: CurrencyFormData): void {
     this.saving.set(true);
 
-    const command = new CreateCurrencyCommand({
-      code: data.code,
-      symbol: data.symbol,
-      name: data.name,
-      exchangeRate: data.exchangeRate,
-    });
+    const command = new CreateCurrencyCommand();
+    command.code = data.code;
+    command.symbol = data.symbol;
+    command.name = data.name;
+    command.exchangeRate = data.exchangeRate;
 
     this.adminClient.adminCurrencyClient
       .create(command)
@@ -79,13 +78,12 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
   updateCurrency(currencyId: string, data: CurrencyFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateCurrencyCommand({
-      currencyId: currencyId,
-      code: data.code,
-      symbol: data.symbol,
-      name: data.name,
-      exchangeRate: data.exchangeRate,
-    });
+    const command = new UpdateCurrencyCommand();
+    command.currencyId = currencyId;
+    command.code = data.code;
+    command.symbol = data.symbol;
+    command.name = data.name;
+    command.exchangeRate = data.exchangeRate;
 
     this.adminClient.adminCurrencyClient
       .update(currencyId, command)

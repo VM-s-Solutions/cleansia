@@ -49,6 +49,27 @@ final class AppSettingsStoreExtensionTests: XCTestCase {
         XCTAssertEqual(store.languageTag, "uk")
     }
 
+    func testAnAnsweredPromptPersistsPerUserAndPerPrompt() {
+        let store = makeStore(locale: "en")
+        XCTAssertFalse(store.hasAnsweredPrompt("job_radius", userId: "emp-1"))
+
+        store.markPromptAnswered("job_radius", userId: "emp-1")
+
+        XCTAssertTrue(makeStore(locale: "en").hasAnsweredPrompt("job_radius", userId: "emp-1"))
+        XCTAssertFalse(store.hasAnsweredPrompt("job_radius", userId: "emp-2"))
+        XCTAssertFalse(store.hasAnsweredPrompt("other_prompt", userId: "emp-1"))
+    }
+
+    /// Two per-user one-shots on the same device must not answer each other.
+    func testAnAnsweredPromptIsNotTheOnboardingFlag() {
+        let store = makeStore(locale: "en")
+
+        store.markPromptAnswered("job_radius", userId: "emp-1")
+
+        XCTAssertFalse(store.hasSeenOnboarding(userId: "emp-1"))
+        XCTAssertFalse(store.hasSeenOnboarding)
+    }
+
     func testThemeDefaultsToSystemAndPersistsEachCase() {
         let store = makeStore(locale: "en")
         XCTAssertEqual(store.theme, .system)

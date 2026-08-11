@@ -42,6 +42,7 @@ import { ToastModule } from 'primeng/toast';
 import { EmployeeDetailFacade } from './employee-detail.facade';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 import { EmployeeDocumentsSectionComponent } from './employee-documents-section.component';
+import { EmployeePayoutSectionComponent } from './employee-payout-section.component';
 
 @Component({
   selector: 'cleansia-admin-employee-detail',
@@ -66,6 +67,7 @@ import { EmployeeDocumentsSectionComponent } from './employee-documents-section.
     DialogModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
+    EmployeePayoutSectionComponent,
     CleansiaPermissionDirective,
   ],
   templateUrl: './employee-detail.component.html',
@@ -117,7 +119,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     registrationNumber: new FormControl<string | null>(null),
     vatNumber: new FormControl<string | null>(null),
     legalEntityName: new FormControl<string | null>(null),
-    iban: new FormControl<string | null>(null),
     // emergency contact
     emergencyContactName: new FormControl<string | null>(null),
     emergencyContactPhone: new FormControl<string | null>(null),
@@ -378,7 +379,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       registrationNumber: employee.registrationNumber ?? null,
       vatNumber: employee.vatNumber ?? null,
       legalEntityName: employee.legalEntityName ?? null,
-      iban: employee.iban ?? null,
       emergencyContactName: employee.emergencyContactName ?? null,
       emergencyContactPhone: employee.emergencyContactPhone ?? null,
     });

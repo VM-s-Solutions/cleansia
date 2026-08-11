@@ -34,7 +34,7 @@ struct RecurringBookingsScreen: View {
             .background(CleansiaColors.background.ignoresSafeArea())
             .task { await vm.load() }
             .overlay(alignment: .bottom) {
-                if vm.isPlusMember, !vm.templates.isEmpty {
+                if vm.affordances.showCreateAction {
                     CleansiaPrimaryButton(L10n.Recurring.createFab, leadingIcon: "plus", action: onCreateNew)
                         .padding(Spacing.ml)
                 }
@@ -44,31 +44,25 @@ struct RecurringBookingsScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if !vm.isPlusMember {
+        if vm.affordances.showPlusUpsell {
             PlusGate(onSubscribe: onSubscribePlus)
         } else if vm.templates.isEmpty {
             RecurringEmptyState(onCreateNew: onCreateNew)
         } else {
-            ScrollView {
-                VStack(spacing: Spacing.m) {
-                    ForEach(vm.templates) { template in
-                        TemplateCard(
-                            template: template,
-                            isMutating: vm.mutatingId == template.id,
-                            onEdit: { onEdit(template) },
-                            onToggle: {
-                                Task {
-                                    await vm.toggleActive(templateId: template.id, currentlyActive: template.isActive)
-                                }
-                            },
-                            onDelete: { pendingDeleteId = template.id }
-                        )
+            TemplateList(
+                templates: vm.templates,
+                mutatingId: vm.mutatingId,
+                showLapsedNotice: vm.affordances.showLapsedNotice,
+                showEdit: vm.affordances.showEdit,
+                onEdit: onEdit,
+                onToggle: { template in
+                    Task {
+                        await vm.toggleActive(templateId: template.id, currentlyActive: template.isActive)
                     }
-                    Color.clear.frame(height: Spacing.xxl)
-                }
-                .padding(.horizontal, Spacing.ml)
-                .padding(.top, Spacing.m)
-            }
+                },
+                onDelete: { pendingDeleteId = $0.id },
+                onSubscribe: onSubscribePlus
+            )
             .refreshable { await vm.load() }
         }
     }
@@ -94,6 +88,64 @@ struct RecurringBookingsScreen: View {
     }
 }
 
+private struct TemplateList: View {
+    let templates: [RecurringTemplate]
+    let mutatingId: String?
+    let showLapsedNotice: Bool
+    let showEdit: Bool
+    let onEdit: (RecurringTemplate) -> Void
+    let onToggle: (RecurringTemplate) -> Void
+    let onDelete: (RecurringTemplate) -> Void
+    let onSubscribe: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Spacing.m) {
+                if showLapsedNotice {
+                    LapsedPlusNotice(onSubscribe: onSubscribe)
+                }
+                ForEach(templates) { template in
+                    TemplateCard(
+                        template: template,
+                        isMutating: mutatingId == template.id,
+                        showEdit: showEdit,
+                        onEdit: { onEdit(template) },
+                        onToggle: { onToggle(template) },
+                        onDelete: { onDelete(template) }
+                    )
+                }
+                Color.clear.frame(height: Spacing.xxl)
+            }
+            .padding(.horizontal, Spacing.ml)
+            .padding(.top, Spacing.m)
+        }
+    }
+}
+
+/// The disclosure a lapsed subscriber is owed: the schedules below keep running and keep
+/// being booked at the full non-member price, and every card's pause and delete still work.
+private struct LapsedPlusNotice: View {
+    let onSubscribe: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            Text(L10n.Recurring.lapsedNoticeTitle)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Recurring.lapsedNoticeBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            CleansiaTextLink(L10n.Recurring.plusGateCta, action: onSubscribe)
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.surfaceVariant, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+}
+
+/// What a customer without Plus gets *instead of* the create affordance. It replaces the
+/// empty state only — a customer who already has schedules gets `LapsedPlusNotice` above
+/// the live list, never in place of it.
 private struct PlusGate: View {
     let onSubscribe: () -> Void
 
@@ -149,6 +201,7 @@ private struct TemplateCard: View {
     @Environment(\.locale) private var locale
     let template: RecurringTemplate
     let isMutating: Bool
+    let showEdit: Bool
     let onEdit: () -> Void
     let onToggle: () -> Void
     let onDelete: () -> Void
@@ -183,13 +236,15 @@ private struct TemplateCard: View {
             // A flow, not an HStack: three labelled actions in cs/sk/uk/ru overflow a 375pt card and
             // would otherwise truncate rather than wrap.
             ChipFlow(spacing: Spacing.m) {
-                CardAction(
-                    label: L10n.Recurring.edit,
-                    systemImage: "square.and.pencil",
-                    tint: CleansiaColors.primary,
-                    disabled: isMutating,
-                    action: onEdit
-                )
+                if showEdit {
+                    CardAction(
+                        label: L10n.Recurring.edit,
+                        systemImage: "square.and.pencil",
+                        tint: CleansiaColors.primary,
+                        disabled: isMutating,
+                        action: onEdit
+                    )
+                }
                 CardAction(
                     label: template.isActive ? L10n.Recurring.pause : L10n.Recurring.resume,
                     systemImage: template.isActive ? "pause.circle" : "play.circle",

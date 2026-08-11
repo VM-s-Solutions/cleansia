@@ -58,17 +58,33 @@ Authenticated users can save addresses to localStorage (`cleansia_saved_addresse
 
 ### Step 2: Date & Time
 
-The customer picks a cleaning date and time slot.
+The customer picks a cleaning date and a **1-hour arrival window**. Scheduling is still on a 30-min
+grid internally; the window's start is the target start.
 
 **Date selection:**
 - Minimum date: today (if time slots remain) or tomorrow
 - Uses PrimeNG `DatePicker`
 
-**Time selection:**
-- 30-minute slots from 07:00 to 20:00
-- If today is selected, past time slots are filtered out
-- Default: `09:00`
-- If the selected time becomes unavailable (e.g., date changes to today), it auto-resets to the first available slot
+**Time selection** — the constants mirror `BookingPolicy` on the backend and must be kept in sync
+(`order-wizard.models.ts:136-147`):
+
+| Constant | Value |
+|---|---|
+| `WINDOW_DURATION_MINUTES` | 60 |
+| `FIRST_WINDOW_HOUR` / `LAST_WINDOW_HOUR` | 8 / 20 (inclusive start, exclusive end → 12 windows) |
+| `EXPRESS_LEAD_TIME_HOURS` | 2 — below this, nothing is bookable |
+| `STANDARD_LEAD_TIME_HOURS` | 4 — between 2 and 4 h, the slot is bookable **with surcharge** |
+
+Each option is annotated `available` | `express` | `unavailable` by `filterTimeOptionsForToday`.
+Only the arrival time is shown ("10:00"), never the window range — a job can run longer than an hour
+and "10:00 – 11:00" reads as an end time.
+
+::: tip Express is a slot property, not a member property
+The backend's `ExpressWaiverResolver` answers `inExpressWindow` for everyone, guests included, so the
+UI can distinguish "express, charged" from "not an express slot at all". A Cleansia Plus plan may
+waive the surcharge, metered per **calendar month** — the quote response carries how many waivers
+remain.
+:::
 
 ### Step 3: Payment Method
 
@@ -87,38 +103,28 @@ A summary of the entire order is displayed. The customer can navigate back to an
 
 ## Price Calculation
 
-Price is computed reactively via a `computed()` signal in the facade:
-
-```typescript
-totalPrice = computed(() => {
-  let total = 0;
-  // Services: basePrice + perRoomPrice * (rooms + bathrooms)
-  for (const id of data.selectedServiceIds) {
-    const svc = allServices.find(s => s.id === id);
-    if (svc) {
-      total += svc.basePrice + svc.perRoomPrice * (data.rooms + data.bathrooms);
-    }
-  }
-  // Packages: flat price
-  for (const id of data.selectedPackageIds) {
-    const pkg = allPackages.find(p => p.id === id);
-    if (pkg) {
-      total += pkg.price;
-    }
-  }
-  return total;
-});
-```
-
-::: info Pricing Formula
-**Service price** = `basePrice + perRoomPrice * (rooms + bathrooms)`
-
-**Package price** = flat `price` (not affected by rooms/bathrooms)
-
-**Total** = sum of all selected service prices + sum of all selected package prices
+::: danger The client does not compute the price
+`OrderPricingFacade` (`order-pricing.facade.ts`) debounces the pricing-relevant wizard inputs and
+calls **`POST /api/Order/Quote`**, then renders the server's totals verbatim. The wizard no longer
+sums `basePrice + perRoomPrice * (rooms + bathrooms)` locally — an earlier version of this page
+documented that local sum, and reimplementing it client-side produces a total the server will reject
+with `order.total_price.not_match` at submit.
 :::
 
-Prices are formatted in CZK using `Intl.NumberFormat('cs-CZ')`.
+The quoted total already folds in everything the server applies, in this order:
+
+1. Raw subtotal over selected services, packages and extras.
+2. **Cleansia Plus + loyalty tier discounts, additive**, capped at 12 % of the raw subtotal and
+   pro-rated when the cap bites.
+3. **A promo code replaces that combined amount if larger** — it never stacks.
+4. **Express surcharge (+20 %)** on the *discounted* subtotal, when the chosen slot is 2–4 h out and
+   the customer has no membership express-upgrade waiver left this calendar month.
+
+Never re-apply a percentage on top of the quoted number. `QuoteOrder` and `OrderFactory` run the same
+ordering precisely so the quote the customer saw and the price they are charged cannot drift.
+
+Prices are formatted using the order's currency code with `Intl.NumberFormat`, locale derived from the
+active translation language.
 
 ## Order Submission
 

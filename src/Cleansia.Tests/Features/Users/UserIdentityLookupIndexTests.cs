@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -148,6 +149,21 @@ public sealed class UserIdentityLookupIndexTests
             + "the second same-tenant same-email insert must raise a unique violation. The "
             + "ExistsWithEmailAsync app pre-check stays as a fast-path UX message, but it is NOT the "
             + "constraint.");
+    }
+
+    // The four User-creating writers map this index's 23505 to a business error by NAME (ADR-0050 D2),
+    // and AppServices cannot reference the entity configuration that decides that name. This assertion
+    // is the only thing coupling the two: without it a rename turns every mapped duplicate-email
+    // refusal back into a 500, silently.
+    [Fact]
+    public void Email_UniqueIndex_Name_Matches_The_Constant_The_Writers_Map_On()
+    {
+        var user = GetUserEntityType();
+
+        var index = user.GetIndexes()
+            .Single(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)));
+
+        Assert.Equal(DbConstraintNames.UsersTenantIdEmailUnique, index.GetDatabaseName());
     }
 
     /// <summary>Mirrors the membership index tests' tenant provider (null ⇒ anonymous / no JWT).</summary>

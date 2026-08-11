@@ -1,15 +1,15 @@
 ---
 id: T-0459
 title: Apply the image sanitizer to the order-photo and dispute-evidence upload pipelines
-status: draft
+status: in_review
 size: M
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-06
 depends_on: [T-0458]
 blocks: []
 stories: []
-adrs: []
+adrs: [0043]
 layers: [backend]
 security_touching: true
 manual_steps: []
@@ -115,6 +115,153 @@ policy from inside this ticket.
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0446 security gate, finding SEC-3; split from T-0458 so neither ticket is an `L`)
 - 2026-07-30 — **not `ready`**: `depends_on: [T-0458]` unsatisfied — the policy and the seam do not exist yet.
+- 2026-08-06 — **implemented** (backend). ADR-0043 is the binding spec and it overturns four things this
+  ticket's body still says — read `## Review` §"Where the ADR overrode this ticket" before reviewing
+  against the ACs above. `depends_on: [T-0458]` is **not** satisfied and was **not** a gate: ADR-0043
+  §Verdict §F rules the only gate on this ticket is the ADR's own acceptance, which landed the same day.
+  There is no sanitizer and no seam to mirror; the ADR refuses both (D1).
 
 ## Review
-<!-- reviewer + security verdicts here; AC2 must name all three mutation-proving tests -->
+
+### Where the ADR overrode this ticket (ADR-0043 wins on every one of these)
+
+| This ticket says | ADR-0043 says | What shipped |
+|---|---|---|
+| Mirror T-0458's `IImageSanitizer` seam and its avatar pilot | **D1** — no such abstraction; one helper per format | Three format walkers + one dispatcher, no interface, no DI registration |
+| A sanitizer (re-encode implied) | **D2** — container rewrite only; nothing decodes | Segment/chunk walks; no package added |
+| **AC3** — enforce size/dimension caps with a new error key and `errors.*` translations | Caps already shipped (`BlobFileSize`, the count caps); the namespace is `api.*`, not `errors.*` | **No new `BusinessErrorMessage` key, so no i18n work is owed by this ticket.** Nothing to translate in any locale on any app |
+| **AC5** — orientation verified on a real phone photo | **D2.1** — the branch that matters is the malformed one, and production will barely exercise it; it carries a **synthetic-corpus** burden | 20 orientation cases, both TIFF byte orders, asserted on emitted bytes |
+| **AC6** — measure the batch cost | Same, and ADR-0043 marks it ⚠ not measured, owed on the 30-item batch | Measured, below |
+
+### AC1 / AC2 — the three mutation-proving tests, named
+
+Each reads **the bytes handed to the blob client** (a `Callback` on `IBlobContainerClient.UploadAsync`
+that copies the stream), never that a helper was called. Each goes red when **its own** call site stops
+scrubbing, and no other pipeline's test moves:
+
+| Pipeline | Test | Mutation that kills it | Other pipelines' tests when it fires |
+|---|---|---|---|
+| `UploadDisputeEvidence` | `UploadDisputeEvidenceMetadataScrubTests.A_Photograph_Submitted_As_Evidence_Reaches_Storage_Without_Its_Coordinates` | M15 — drop the scrub call in `UploadDisputeEvidence.cs` | green |
+| `UploadOrderPhoto` | `UploadOrderPhotoMetadataScrubTests.A_Job_Site_Photograph_Reaches_Storage_Without_Its_Coordinates_Or_Its_Camera` | M16 — drop the scrub call in `UploadOrderPhoto.cs` | green |
+| `SaveOrderPhotos` | `SaveOrderPhotosMetadataScrubTests.A_Job_Site_Photograph_Reaches_Storage_Without_Its_Coordinates_Or_Its_Camera` | M17 — drop the scrub call in `SaveOrderPhotos.cs` | green |
+
+27 mutations were applied one at a time and restored byte-exact (`shasum` verified against a baseline
+taken before the run; both harness logs end with a per-file restore check). **All 27 killed.** One
+(**M5**, "repair a garbage segment length instead of refusing") **survived the first run** — the fixture
+carried a payload behind the bad length, so a repaired walk simply refused one segment later and the test
+could not tell repair from refusal. The fixture was replaced with a payload-less `APP1`, and M5 dies.
+Recorded rather than quietly fixed: that test was passing for the wrong reason for one run.
+
+### AC4 — regression, and what the recorded `contentType` does
+
+No content type moves. The scrub is not a re-encode, so the recorded type still describes the stored
+bytes: `UploadOrderPhoto` and `UploadDisputeEvidence` derive theirs from `SniffedContentType` over the
+**pre-scrub** bytes and the scrub cannot change a container's format; `SaveOrderPhotos` keeps
+`DetermineContentType` untouched (it is the sibling lane's, not this ticket's). `OrderPhoto.FileSizeBytes`
+**does** move — it now records the stored length, pinned by
+`UploadOrderPhotoMetadataScrubTests.The_Recorded_Size_Is_The_Size_Of_What_Was_Stored`.
+
+### AC6 — the batch cost, measured
+
+Release build, one thread, a temporary probe deleted after the reading was taken:
+
+- **30 × 4 MiB** (this ticket's shape): **32.5 ms**, **120 MiB** allocated — one output array per photo,
+  exactly 1× the input. No amplification, which is the property a decoder would not have.
+- **30 × 700 KiB** (≈21 MiB, the request ceiling `request-intake-limits.md` actually allows — the
+  120 MiB batch above is not reachable through Kestrel): **4.7 ms**.
+
+Negligible against a request that already base64-decodes and uploads the same bytes. No background job
+is needed and ADR-0043 does not need re-opening on cost.
+
+### Two things a reviewer will ask about, answered here
+
+- **`ScrubbedImage.Scrubbed` has no production reader.** It is the report ADR-0043 D2.2 requires (*"passed
+  through untouched and **reported** as not scrubbed, never as scrubbed"*) and compliance check 6 asserts
+  it. No call site branches on it because none of the three has a policy to apply to a *not scrubbed*
+  outcome: refusing the upload would be a new `BusinessErrorMessage` key and a five-locale i18n change
+  that the ADR does not authorize, and a PDF on the dispute path is a **legitimate** not-scrubbed result
+  (D8). Reported by the type, asserted by
+  `ImageMetadataDispatchTests.An_Unidentified_Payload_Passes_Through_Untouched_And_Says_So`.
+- **`ImageMetadata` and `ScrubbedImage` are `public` where `SniffedContentType` and `BlobFileSize` are
+  `internal`.** The repo declares no `InternalsVisibleTo` (two tests say so in writing), and the
+  validators' internals are reachable from tests through the public validators that use them — a
+  hand-rolled container walker has no such public front door. D2.1's corpus burden is 63 fuzz-style
+  cases; routing them through a MediatR handler and five mocks apiece would obscure what is being
+  tested. The three per-format walkers stay `internal`.
+- **The directory is `Common/Media/`, not `Common/Artifacts/`.** `.gitignore:108` carries `artifacts/`,
+  and `core.ignorecase=true` on macOS, so the first name made all fifteen new files invisible to
+  `git status` — a build that compiles locally and not for anyone else. Worth knowing before the next
+  person names a folder after this ADR's vocabulary.
+
+### AC7 — the three suites, with every delta accounted for
+
+| Suite | Baseline | Final | Delta |
+|---|---|---|---|
+| `Cleansia.Tests` | 3235 | **3320** ✅ | **+81 this ticket** (63 walker/dispatcher + 18 call-site) **+4 the sibling lane's `BusinessErrorSlotContractTests`**. The +81 is a TRX diff against a detached worktree at HEAD, not a hand count: 85 rows added, **0 removed** |
+| `Cleansia.IntegrationTests` | 147 | **147** ✅ | 0 |
+| `Cleansia.HostTests` | 135 | **138** ✅ | **+3, none of them this ticket's** — the sibling lane's untracked `Tests/ConsentErrorWireContractTests.cs`. Measured at 135 from this lane before that file appeared |
+
+`dotnet build Cleansia.Api.sln` succeeds. Nothing was DEFERRED-TO-CI; all three suites ran locally.
+
+### Catalog-edit routing (ADR-0033) — **no catalog edit made**, and why
+
+- **Test 1 (does it put shipped code in violation?)** — it would. Sweep run: the 14 rows of
+  `UploadIntakeRosterTests.cs:39-55`. A general sentence of the form *"an image whose audience is not its
+  uploader is scrubbed at intake"* reaches `SaveMyDocuments` / `UpdateEmployee`, which accept
+  `image/jpeg` and `image/png` (`SniffedContentType.cs:96-103`) for a **staff** audience and do not
+  scrub. ADR-0043 D8 excludes employee documents on a **PDF/OOXML mechanism** argument that does not
+  cover their image formats. That is a real open edge; it is **not** this ticket's to rule.
+- **Test 2 (does it narrow open latitude?)** — searched `agents/knowledge/patterns-backend.md` for
+  `metadata` and `scrub`. `:1284-1322` governs the *type* half of an intake and its callout at
+  `:1306-1311` already states the bytes-in-hand rule for the scrub by reference. The *content* half is
+  assigned by ADR-0043 D7 to **T-0460**, which is the sole writer of `security-rules.md`.
+- **Routing:** test 1 fires → not mine to ratify. Nothing was added to `agents/knowledge/*`. The
+  enforcer ADR-0043 D7 tiers `(gate pending: T-0459)` — *"per-pipeline tests reading metadata back out of
+  the bytes handed to the blob client"* — now exists and is `T1-CI` (`Cleansia.Tests`,
+  `backend-ci.yml:69-71`); **T-0460 writes the entry that claims it.**
+
+### Not done, deliberately
+
+- **The intake roster is untouched.** D6's `audience` / `scrub` columns are `(gate pending: T-0458)`, and
+  this change alters no route's *guarding rule*, which is what the existing annotation states. ⚠️ Note
+  for whoever does add them: `UploadIntakeRosterTests.cs:66-68` asserts `entry.Split(" — ")[0]` and
+  **nothing reads index 1** — the annotation is enforced by nothing today.
+- **Backfill** — out of scope per this ticket and ADR-0043 D9. Blobs written before this lands keep their
+  metadata and **the read path cannot fix them** (a SAS hands the client the stored bytes). Still open.
+- **`agents/architecture/decisions/user-uploaded-artifacts.md` §2 is now stale in two cells** — the
+  "Metadata scrubbed" column reads `no` for both order-photo rows and for dispute evidence. Left for the
+  architect rather than edited from this lane.
+
+### ⚠️ Shared-tree contamination — for the PM, not fixed from this lane
+
+A **sibling lane wrote into this working tree while this ticket ran**, and it cost two full test passes
+before it was identified. Recorded so the next reader does not re-derive it:
+
+- Files that appeared/changed under this lane, none of them touched here:
+  `Features/Referrals/Admin/{ForceQualifyReferral,ReverseReferral}.cs`,
+  `Features/Memberships/Admin/CreateMembershipPlan.cs`, their three test classes, the new
+  `Cleansia.Tests/Common/BusinessErrorSlotContractTests.cs`, plus GDPR / promo-code / payroll files and
+  two ADR documents.
+- **Symptom:** two consecutive full unit runs failed 3–4 tests in `ForceQualifyReferralHandlerTests`,
+  `ReverseReferralHandlerTests` and `CreateMembershipPlanHandlerTests` with `Assert.Equal … Strings
+  differ at pos 0` — the shape of a half-applied `new Error(code, message)` slot swap, which is exactly
+  what that lane's new `BusinessErrorSlotContractTests` polices. Six later full runs are green.
+- **Nothing was reverted, stashed or checked out** (`agents/process/shared-file-lanes.md`). The seven
+  files this ticket owns were `shasum`-verified unchanged by that lane afterwards.
+- **It moves the reported unit count.** `BusinessErrorSlotContractTests` is four `[Fact]`s that did not
+  exist at `7a350159`, so the suite total is `3235 + 81 (this ticket) + 4 (that lane) = 3320`. The +81 is
+  established by a TRX diff against a detached worktree at HEAD, not by counting by hand.
+
+### Owner/PM notes
+
+- **`manual_steps: []` is correct** — no schema change (no EF migration) and no DTO or endpoint change
+  (no NSwag regen). Command and Response records are byte-identical to before.
+- **No `BusinessErrorMessage` key was added**, so no `api.*` translation is owed in any of the five
+  locales on any app. The scrub never rejects: an unidentifiable payload is stored as sent and reported
+  *not scrubbed*.
+- **D10 (web clients re-encode on pick) is still owed and still ships independently.** ADR-0043 is
+  explicit that it must not be sequenced behind this work: for order photos it is what removes the live
+  volume, and this ticket is what makes it durable. It is not a control at all on dispute evidence.
+
+<!-- reviewer + security verdicts below -->
+

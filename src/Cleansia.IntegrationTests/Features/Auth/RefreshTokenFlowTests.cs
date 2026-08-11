@@ -324,7 +324,7 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 Assert.Equal("password_changed", revoked.RevokedReason);
                 Assert.NotNull(revoked.RevokedAt);
                 Assert.Equal("rotated", spared.RevokedReason);
-                Assert.Single(tokens.Where(t => t.IsAlive));
+                Assert.Single(tokens, t => t.IsAlive);
             });
     }
 

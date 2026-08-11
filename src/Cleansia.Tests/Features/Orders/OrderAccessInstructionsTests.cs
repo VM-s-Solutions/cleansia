@@ -44,11 +44,14 @@ public class OrderAccessInstructionsTests
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            PayConfigRepositoryDouble.Holding(),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,
             _loyaltyService.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            NoPreferredCleanerHold.Resolver,
+            Mock.Of<INotificationProducer>());
 
     /// <summary>
     /// Anonymous (no user id) keeps the factory off the loyalty/membership
@@ -70,6 +73,8 @@ public class OrderAccessInstructionsTests
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             RawSubtotal: 1500m,
+            NowUtc: DateTime.UtcNow,
+            ReservedExpressWaiver: null,
             AccessInstructions: accessInstructions);
 
     [Fact]
@@ -130,7 +135,9 @@ public class OrderAccessInstructionsTests
             Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
-            RawSubtotal: 1500m);
+            RawSubtotal: 1500m,
+            NowUtc: DateTime.UtcNow,
+            ReservedExpressWaiver: null);
 
         var order = await CreateFactory().CreateAsync(input, CancellationToken.None);
 

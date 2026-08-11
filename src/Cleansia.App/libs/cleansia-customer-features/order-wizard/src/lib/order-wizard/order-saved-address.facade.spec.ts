@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { AddressDto } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
-import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData } from './order-wizard.models';
+import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
 
 describe('OrderSavedAddressFacade', () => {
   let facade: OrderSavedAddressFacade;
@@ -77,7 +77,7 @@ describe('OrderSavedAddressFacade', () => {
       patched = [];
 
       facade.updateAddressFromForm(
-        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
       );
 
       expect(facade.selectedSavedAddressId()).toBeNull();
@@ -112,7 +112,7 @@ describe('OrderSavedAddressFacade', () => {
     it('returns false and skips the store when coordinates are missing', async () => {
       formData = {
         ...formData,
-        address: new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        address: createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
         addressLatitude: null,
         addressLongitude: null,
       };

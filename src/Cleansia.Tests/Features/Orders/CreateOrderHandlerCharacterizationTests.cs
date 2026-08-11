@@ -12,6 +12,7 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Tests.Common;
 using Moq;
 using StripeException = Stripe.StripeException;
 
@@ -38,6 +39,7 @@ public class CreateOrderHandlerCharacterizationTests
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
     private readonly Mock<IStripeClient> _stripeClient = new();
     private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<IPromoCodeService> _promoCodeService = new();
     private readonly Mock<IReferralService> _referralService = new();
     private readonly Mock<IReferralRepository> _referralRepository = new();
@@ -74,6 +76,8 @@ public class CreateOrderHandlerCharacterizationTests
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
 
@@ -116,7 +120,8 @@ public class CreateOrderHandlerCharacterizationTests
                 _stripeClientFactory.Object,
                 _pending.Object,
                 new OrderChannelProvider(channel),
-                NullLogger<OrderPaymentDispatcher>.Instance));
+                NullLogger<OrderPaymentDispatcher>.Instance),
+            _expressWaiverConsumer.Object);
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
     {

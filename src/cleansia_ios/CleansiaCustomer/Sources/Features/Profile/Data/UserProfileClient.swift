@@ -6,9 +6,12 @@ import Foundation
 /// on every upload — so it is the image's identity and its cache key. `blobURL` is a SAS link that is
 /// re-signed on every fetch and expires within the hour: it is a credential, never persisted and
 /// never used to key anything.
+///
+/// The URL is optional because it is only how the image is fetched, never whether it exists: a fetch
+/// that returns the name without a signature still describes a photo the account holds and can delete.
 struct ProfilePhoto: Equatable {
     let fileName: String
-    let blobURL: URL
+    let blobURL: URL?
 }
 
 struct ProfilePhotoUpload: Equatable {
@@ -95,7 +98,7 @@ extension UpdateCurrentUserCommand {
             firstName: update.firstName,
             lastName: update.lastName,
             phoneNumber: update.phoneNumber?.nilIfBlank,
-            birthDate: OpenAPIDateWithoutTime(wrappedDate: update.birthDate),
+            birthDate: OpenAPIDateWithoutTime(day: update.birthDate),
             photo: update.photo.map(BlobFileDto.init),
             languageCode: update.languageCode,
             removePhoto: update.removePhoto
@@ -113,21 +116,28 @@ extension BlobFileDto {
     }
 }
 
+/// **Refuse.** The identity fields feed the edit form, which posts them back, so a coerced `""`
+/// does not render as an empty label — it is what overwrites the name on the account the next time
+/// the customer saves. `totalSavings` is money the hero states outright, and `isEmailConfirmed` is a
+/// verification claim that `false` makes for the server.
+///
+/// `phoneNumber`, `birthDate`, `savingsCurrencyCode` and the photo are nullable by design and stay
+/// so — every one of them has a rendered absence.
 extension MyProfileDto {
-    func toDomain(id: String) -> CurrentUserProfile {
-        CurrentUserProfile(
+    func toDomain(id: String) throws -> CurrentUserProfile {
+        try CurrentUserProfile(
             id: id,
-            email: email ?? "",
-            firstName: firstName ?? "",
-            lastName: lastName ?? "",
+            email: email.requireNonBlank("email"),
+            firstName: firstName.requireNonBlank("firstName"),
+            lastName: lastName.requireNonBlank("lastName"),
             phoneNumber: phoneNumber,
             birthDate: birthDate?.wrappedDate,
             preferredLanguageCode: preferredLanguageCode,
-            isEmailConfirmed: isEmailConfirmed ?? false,
+            isEmailConfirmed: isEmailConfirmed.require("isEmailConfirmed"),
             profilePhoto: profilePhoto?.toDomain(),
             memberSince: memberSince,
-            totalBookings: totalBookings ?? 0,
-            totalSavings: totalSavings ?? 0,
+            totalBookings: totalBookings.require("totalBookings"),
+            totalSavings: totalSavings.require("totalSavings"),
             savingsCurrencyCode: savingsCurrencyCode
         )
     }
@@ -135,12 +145,8 @@ extension MyProfileDto {
 
 extension BlobFileDto {
     func toDomain() -> ProfilePhoto? {
-        guard let fileName = fileName?.nilIfBlank,
-              let blobURL = blobUrl?.nilIfBlank.flatMap(URL.init(string:))
-        else {
-            return nil
-        }
-        return ProfilePhoto(fileName: fileName, blobURL: blobURL)
+        guard let fileName = fileName?.nilIfBlank else { return nil }
+        return ProfilePhoto(fileName: fileName, blobURL: blobUrl?.nilIfBlank.flatMap(URL.init(string:)))
     }
 }
 

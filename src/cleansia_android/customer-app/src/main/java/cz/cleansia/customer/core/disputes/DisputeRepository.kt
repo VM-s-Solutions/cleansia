@@ -8,6 +8,8 @@ import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -69,6 +71,17 @@ class DisputeRepository @Inject constructor(
     private val pageSize = 20
 
     /**
+     * Rows the server has SENT so far — the offset of the next page and the term the stop condition
+     * compares against [totalRecords]. Not `disputes.size`: the page mapper drops an unidentifiable
+     * row, so every drop would otherwise re-request the survivors and hold `size >= total` false
+     * forever, which is a list that keeps asking for pages it already has.
+     */
+    private var receivedSoFar = 0
+
+    /** A page the server answered with no rows at all ends paging; the counter alone cannot. */
+    private var exhausted = false
+
+    /**
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
      */
@@ -80,8 +93,10 @@ class DisputeRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.requiredBody()
             _disputes.value = body.data
+            receivedSoFar = body.receivedCount
+            exhausted = body.receivedCount == 0
             _totalRecords.value = body.total
             _loaded.value = true
             return ApiResult.Success(Unit)
@@ -97,16 +112,18 @@ class DisputeRepository @Inject constructor(
      */
     suspend fun loadNextPage(): ApiResult<Unit> {
         if (_loadingMore.value) return ApiResult.Success(Unit)
-        if (_disputes.value.size >= _totalRecords.value) return ApiResult.Success(Unit)
+        if (exhausted || receivedSoFar >= _totalRecords.value) return ApiResult.Success(Unit)
         _loadingMore.value = true
         try {
-            val resp = networkCall { api.getPaged(offset = _disputes.value.size, limit = pageSize) }
+            val resp = networkCall { api.getPaged(offset = receivedSoFar, limit = pageSize) }
                 ?: return networkError()
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.requiredBody()
             _disputes.value = _disputes.value + body.data
+            receivedSoFar += body.receivedCount
+            exhausted = body.receivedCount == 0
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
         } finally {
@@ -120,7 +137,7 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -136,7 +153,7 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -176,11 +193,12 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
@@ -197,6 +215,8 @@ class DisputeRepository @Inject constructor(
     override suspend fun clear() {
         _disputes.value = emptyList()
         _totalRecords.value = 0
+        receivedSoFar = 0
+        exhausted = false
         _loaded.value = false
     }
 }

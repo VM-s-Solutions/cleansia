@@ -1,4 +1,6 @@
 // Track Order Page — BEM structured
+@use '../../common/typography' as *;
+
 $primary: #0284c7;
 $primary-dark: #0369a1;
 $primary-lighter: #f0f9ff;
@@ -12,7 +14,6 @@ $bg-alt: #f8fafc;
 $white: #ffffff;
 $green: #16a34a;
 $max-width: 800px;
-$font-heading: 'Poppins', sans-serif;
 
 .track-order {
   max-width: $max-width;

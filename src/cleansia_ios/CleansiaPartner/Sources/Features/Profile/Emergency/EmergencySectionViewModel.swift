@@ -40,7 +40,7 @@ final class EmergencySectionViewModel: ViewModel {
     }
 
     func save() async {
-        guard !action.isSubmitting else { return }
+        guard case .loaded = state, !action.isSubmitting else { return }
         nameError = nil
         phoneError = nil
 

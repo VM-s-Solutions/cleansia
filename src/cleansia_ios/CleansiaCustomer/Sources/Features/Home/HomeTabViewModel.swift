@@ -11,7 +11,7 @@ import Foundation
 /// `CatalogRepository` singleton, so Home and the booking sheet read one cache.
 @MainActor
 final class HomeTabViewModel: ViewModel {
-    @Published private(set) var recentOrders: [OrderListItem] = []
+    @Published private(set) var recentOrders: [CustomerOrderSummary] = []
     @Published private(set) var ordersLoaded = false
     @Published private(set) var ordersLoading = false
     @Published private(set) var recurringTemplates: [RecurringTemplate] = []
@@ -86,15 +86,17 @@ final class HomeTabViewModel: ViewModel {
         HomeSections.activeRecurring(recurringTemplates)
     }
 
+    /// No membership term: a lapsed membership does not stop a schedule, and hiding a
+    /// running schedule from the customer paying for it hides the way to stop it.
     var showRecurringSection: Bool {
-        isPlus && !activeRecurring.isEmpty
+        !activeRecurring.isEmpty
     }
 
-    var mostRecentCompleted: OrderListItem? {
+    var mostRecentCompleted: CustomerOrderSummary? {
         HomeSections.mostRecentCompleted(recentOrders)
     }
 
-    var recentForDisplay: [OrderListItem] {
+    var recentForDisplay: [CustomerOrderSummary] {
         HomeSections.recentForDisplay(recentOrders)
     }
 
@@ -174,12 +176,13 @@ final class HomeTabViewModel: ViewModel {
         }
     }
 
-    /// The `LaunchedEffect(isPlus) { if (isPlus) recurringRepo.refresh() }`
-    /// parity (`HomeTab.kt:160-162`) — errors stay silent, as on Android.
-    /// Skips when the shell prefetch already landed the templates — this pass only
-    /// backfills a failed/raced prefetch, else a Plus user double-fetches at entry.
-    func refreshRecurringIfPlus(_ isPlus: Bool) async {
-        guard isPlus, !recurringRepository.loaded else { return }
+    /// The `LaunchedEffect(Unit) { recurringRepo.refresh() }` parity
+    /// (`HomeTab.kt:160-162`) — errors stay silent, as on Android. Skips when the shell
+    /// prefetch already landed the templates — this pass only backfills a failed/raced
+    /// prefetch. Not gated on membership: a lapsed member's schedules keep generating,
+    /// and an unfetched list is a section that cannot appear.
+    func refreshRecurring() async {
+        guard !recurringRepository.loaded else { return }
         await recurringRepository.refresh()
     }
 

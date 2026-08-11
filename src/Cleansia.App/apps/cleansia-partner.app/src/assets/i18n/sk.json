@@ -15,7 +15,7 @@
       "registration_number": "IČO",
       "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
-      "iban": "IBAN",
+      "iban": "Bankové údaje",
       "passport_id": "Číslo pasu",
       "nationality": "Národnosť",
       "documents": "Dokumenty"
@@ -158,7 +158,26 @@
       "review_notes": "Poznámky k preskúmaniu",
       "drop_files_here": "Presuňte súbory sem",
       "or_click_to_browse": "alebo kliknite pre výber",
-      "select_document_type_error": "Pred nahraním vyberte typ dokumentu pre každý súbor."
+      "select_document_type_error": "Pred nahraním vyberte typ dokumentu pre každý súbor.",
+      "bank_country": "Krajina banky",
+      "bank_account_prefix": "Predčíslie",
+      "bank_account_prefix_hint": "Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má.",
+      "bank_account_number": "Číslo účtu",
+      "bank_account_number_hint": "Časť pred lomkou, napríklad 5885638003.",
+      "bank_code": "Kód banky",
+      "bank_code_hint": "Štyri číslice za lomkou, napríklad 5500.",
+      "iban_hint": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie.",
+      "swift_code": "SWIFT kód",
+      "swift_code_hint": "Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete.",
+      "bank_name": "Názov banky",
+      "bank_account_holder": "Majiteľ účtu",
+      "bank_account_holder_hint": "Nepovinné — meno, ktoré má banka pri účte, ak sa líši od vášho.",
+      "job_radius": "Vzdialenosť pre upozornenia",
+      "job_radius_explainer": "Mení sa len to, na ktoré nové zákazky vás upozorníme. Ponuka naďalej zobrazuje všetky zákazky vo vašej krajine a ktorúkoľvek si môžete vziať.",
+      "job_radius_limit": "Upozorňovať len na zákazky v okolí",
+      "job_radius_off_hint": "Budeme vás upozorňovať na každú novú zákazku vo vašej krajine.",
+      "job_radius_distance": "Vzdialenosť od domova (km)",
+      "job_radius_distance_hint": "Medzi {{min}} a {{max}} km."
     },
     "dashboard": {
       "title": "Prehľad",
@@ -815,7 +834,12 @@
         "files_required": "Nahratie dokumentov je povinné.",
         "file_removed": "Súbor bol úspešne odstránený",
         "load_error": "Nepodarilo sa načítať informácie profilu. Skúste to prosím znova.",
-        "file_transformation_error": "Nepodarilo sa spracovať nahraté súbory. Skúste to prosím znova."
+        "file_transformation_error": "Nepodarilo sa spracovať nahraté súbory. Skúste to prosím znova.",
+        "bank_details_saved": "Bankové údaje boli uložené",
+        "bank_details_load_error": "Vaše bankové údaje sa nepodarilo načítať. Skúste to prosím znova.",
+        "not_loaded": "Profil sa ešte nenačítal",
+        "job_radius_saved": "Vzdialenosť pre upozornenia bola uložená",
+        "job_radius_load_error": "Nepodarilo sa načítať vašu vzdialenosť pre upozornenia. Skúste to prosím znova."
       },
       "documents": {
         "load_error": "Nepodarilo sa načítať dokumenty. Skúste to prosím znova.",
@@ -1003,6 +1027,7 @@
       "invalid_confirmation_code": "Neplatný potvrdzovací kód",
       "invalid_google_token": "Neplatný Google token",
       "invalid_apple_token": "Neplatný Apple token",
+      "social_account_not_found": "Tomuto prihláseniu nezodpovedá žiadny účet. Najprv sa zaregistrujte.",
       "invalid_password_format": "Neplatný formát hesla",
       "invalid_reset_token": "Neplatný token na obnovenie hesla",
       "same_reset_password": "Nové heslo sa zhoduje so starým heslom",
@@ -1031,12 +1056,32 @@
       "invalid_tax_id": "Neplatný formát IČO",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
+      "registration_number": {
+        "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
+      },
+      "vat_number": {
+        "invalid_format": "Neplatný formát IČ DPH pre vybranú krajinu"
+      },
       "must_be_positive": "Hodnota musí byť kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
       "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
       "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "payout": {
+        "account_number_required": "Zadajte číslo svojho účtu",
+        "country_not_supported": "Do banky v tejto krajine zatiaľ nevieme vyplácať",
+        "iban_country_mismatch": "Váš IBAN je z inej krajiny než vaša banka. Skontrolujte IBAN alebo zmeňte krajinu banky tak, aby súhlasili.",
+        "iban_mismatch": "Váš IBAN nezodpovedá číslu účtu a kódu banky. Skontrolujte všetky tri údaje, alebo IBAN nechajte prázdny a doplníme ho za vás.",
+        "invalid_account_number": "Toto číslo účtu sa nám nepodarilo overiť — takmer vždy ide o preklep v číslici. Porovnajte ho prosím s výpisom z účtu.",
+        "invalid_account_prefix": "Toto predčíslie účtu sa nám nepodarilo overiť — je to časť pred pomlčkou v čísle účtu. Skontrolujte prosím číslice, alebo pole nechajte prázdne, ak predčíslie nemáte.",
+        "invalid_bank_code": "Zadajte štvormiestny kód banky",
+        "invalid_iban": "Toto nie je platný IBAN. Opíšte ho prosím z výpisu z účtu alebo z bankovej aplikácie.",
+        "invalid_swift": "Tento SWIFT/BIC nepatrí do krajiny vašej banky. Opíšte ho prosím z výpisu z účtu alebo z bankovej aplikácie.",
+        "looks_like_card": "Vyzerá to ako číslo platobnej karty. Zadajte prosím číslo svojho bankového účtu — nájdete ho na výpise z účtu alebo v bankovej aplikácii.",
+        "scheme_not_supported": "Na tento typ účtu zatiaľ nevieme vyplácať",
+        "swift_required": "Vaša banka je v inej krajine, než v ktorej pracujete, preto potrebujeme aj SWIFT/BIC kód vašej banky."
+      },
       "file": {
         "max_size": "Súbor \"{{fileName}}\" prekračuje maximálnu veľkosť {{maxSize}} MB",
         "invalid_type": "Súbor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
@@ -1072,7 +1117,12 @@
       },
       "not_found": "Objednávka nenájdená",
       "already_assigned": "Objednávka je už priradená",
-      "no_available_spots": "Pre túto objednávku nie sú k dispozícii žiadne voľné miesta",
+      "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
+      "not_takeable": "Táto zákazka už nie je k dispozícii.",
+      "take": {
+        "already_cancelled": "Táto zákazka je už zrušená.",
+        "already_completed": "Táto zákazka je už dokončená."
+      },
       "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
       "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
       "max_employees_exceeded": "Prekročený maximálny počet zamestnancov",
@@ -1097,7 +1147,9 @@
       },
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
       "creation_failed": "Nepodarilo sa vytvoriť objednávku",
-      "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu"
+      "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu",
+      "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
+      "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite."
     },
     "user": {
       "email_confirmed": "E-mail je už potvrdený",
@@ -1117,7 +1169,8 @@
       "documents_missing": "Nahrajte požadované dokumenty",
       "not_approved": "Váš účet nie je schválený na prácu na zákazkách",
       "already_approved": "Zamestnanec už bol schválený",
-      "already_rejected": "Zamestnanec už bol zamietnutý"
+      "already_rejected": "Zamestnanec už bol zamietnutý",
+      "job_radius_out_of_range": "Zadaný dojazdový okruh je mimo povoleného rozsahu"
     },
     "employee_document": {
       "not_found": "Dokument nenájdený",
@@ -1170,7 +1223,11 @@
       "distance_rate_negative": "Sadzba za vzdialenosť nemôže byť záporná",
       "minimum_pay_negative": "Minimálna mzda nemôže byť záporná",
       "maximum_pay_negative": "Maximálna mzda nemôže byť záporná",
-      "maximum_less_than_minimum": "Maximálna mzda nemôže byť nižšia ako minimálna mzda"
+      "maximum_less_than_minimum": "Maximálna mzda nemôže byť nižšia ako minimálna mzda",
+      "last_for_live_catalogue_entry": "Toto je posledné nastavenie odmeny pre službu alebo balík, ktoré sa stále používajú. Jeho odstránením by pri zákazkách zmizla odhadovaná odmena."
+    },
+    "payout": {
+      "not_found": "Zatiaľ ste nezadali svoje platobné údaje"
     },
     "file": {
       "content_type_doesnt_match": "Typ súboru nezodpovedá obsahu",
@@ -1195,7 +1252,12 @@
       "not_existing_id": "Krajina s týmto ID neexistuje",
       "not_found": "Krajina nenájdená",
       "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
-      "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa"
+      "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa",
+      "not_serviced": "V tejto krajine zatiaľ nepôsobíme"
+    },
+    "gdpr": {
+      "consent_not_found": "Toto nastavenie súhlasu sme nenašli",
+      "consent_already_granted": "Tento súhlas ste už udelili"
     },
     "company": {
       "not_found": "Informácie o spoločnosti nenájdené",

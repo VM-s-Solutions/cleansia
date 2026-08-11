@@ -29,7 +29,7 @@ final class InvoiceDetailViewModelTests: XCTestCase {
     }
 
     func testInitLoadsInvoiceToLoaded() async {
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1", totalAmount: 4200))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1", totalAmount: 4200))
 
         let vm = makeViewModel()
         await vm.load()
@@ -49,7 +49,7 @@ final class InvoiceDetailViewModelTests: XCTestCase {
     }
 
     func testRefreshFailureKeepsLoadedInvoice() async {
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1"))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1"))
         let vm = makeViewModel()
         await vm.load()
         XCTAssertEqual(vm.state.loadedValue?.id, "inv-1")
@@ -62,7 +62,7 @@ final class InvoiceDetailViewModelTests: XCTestCase {
 
     func testDownloadSuccessEmitsPresentEventAndReturnsToIdle() async {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("inv.pdf")
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1"))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1"))
         client.downloadResult = .success(fileURL)
 
         let vm = makeViewModel()
@@ -79,7 +79,7 @@ final class InvoiceDetailViewModelTests: XCTestCase {
     }
 
     func testDownloadFailureSnackbarsAndReturnsToIdle() async {
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1"))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1"))
         client.downloadResult = .failure(ApiError(httpStatus: 500))
 
         let vm = makeViewModel()
@@ -91,14 +91,14 @@ final class InvoiceDetailViewModelTests: XCTestCase {
     }
 
     func testCanOpenPdfFalseWhenGenerationFailed() async {
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1", pdfGenerationFailed: true))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1", pdfGenerationFailed: true))
         let vm = makeViewModel()
         await vm.load()
         XCTAssertFalse(vm.canOpenPdf)
     }
 
     func testCanOpenPdfTrueWhenGenerationOk() async {
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-1", pdfGenerationFailed: false))
+        client.invoiceResult = .success(InvoiceDetail.stub(id: "inv-1", pdfGenerationFailed: false))
         let vm = makeViewModel()
         await vm.load()
         XCTAssertTrue(vm.canOpenPdf)

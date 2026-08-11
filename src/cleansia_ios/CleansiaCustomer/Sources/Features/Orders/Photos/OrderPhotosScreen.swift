@@ -45,8 +45,8 @@ struct OrderPhotosScreen: View {
                 .fixedSize()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case let .loaded(response):
-            grid(response.photos ?? [])
+        case let .loaded(gallery):
+            grid(gallery.photos)
         }
     }
 

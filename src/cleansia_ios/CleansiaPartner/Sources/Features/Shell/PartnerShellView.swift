@@ -20,6 +20,7 @@ struct PartnerShellView: View {
     @EnvironmentObject private var pushNavigation: PushNavigationModel
     @State private var deepLinkOrderId: String?
     @State private var deepLinkInvoiceId: String?
+    @State private var dashboardPath: [DashboardRoute] = []
     private let container: PartnerAppContainer
     private let onSignedOut: () -> Void
 
@@ -58,21 +59,57 @@ struct PartnerShellView: View {
         }
     }
 
-    private var tabs: some View {
-        TabView(selection: $model.selection) {
+    private var dashboardTab: some View {
+        NavigationStack(path: $dashboardPath) {
             DashboardView(
                 client: container.dashboardClient,
                 notificationBadge: container.notificationBadge,
                 notificationFeedClient: container.notificationFeedClient,
+                profileClient: container.profileClient,
+                settings: container.appSettings,
                 snackbar: container.snackbar,
+                pendingOffers: container.pendingOffers,
                 onOpenEarnings: { model.selectEarnings() },
                 onOpenOrders: { model.selectOrders() },
+                onOpenPendingOffers: { dashboardPath.append(.pendingOffers) },
                 // Feed-row taps land exactly where a push tap does — the same
                 // resolver, the same routing plan (FD-AC9).
                 onNotificationDestination: { apply(PushTapRouting.plan(for: $0)) }
             )
-            .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
-            .tag(ShellTab.dashboard)
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: DashboardRoute.self) { route in
+                switch route {
+                case .pendingOffers:
+                    PendingOffersView(
+                        store: container.pendingOffers,
+                        client: container.orderClient,
+                        staleness: container.ordersStaleness,
+                        snackbar: container.snackbar,
+                        // A confirmed offer is an ordinary job from that instant on, so it lands on
+                        // the detail every other taken job lands on — and the offers screen it came
+                        // from is popped out from under it.
+                        onOpenOrder: { dashboardPath = [.orderDetail(orderId: $0)] }
+                    )
+                case let .orderDetail(orderId):
+                    OrderDetailView(
+                        orderId: orderId,
+                        client: container.orderClient,
+                        staleness: container.ordersStaleness,
+                        checklistStore: container.cleaningChecklistStore,
+                        snackbar: container.snackbar,
+                        mapProvider: container.mapProvider,
+                        pendingOffers: container.pendingOffers
+                    )
+                }
+            }
+        }
+    }
+
+    private var tabs: some View {
+        TabView(selection: $model.selection) {
+            dashboardTab
+                .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
+                .tag(ShellTab.dashboard)
 
             OrdersRootView(
                 client: container.orderClient,
@@ -80,6 +117,7 @@ struct PartnerShellView: View {
                 checklistStore: container.cleaningChecklistStore,
                 snackbar: container.snackbar,
                 mapProvider: container.mapProvider,
+                pendingOffers: container.pendingOffers,
                 deepLinkOrderId: $deepLinkOrderId
             )
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }

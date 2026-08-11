@@ -6,19 +6,19 @@ import XCTest
 @MainActor
 final class EarningsViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
-        var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
+        var statsResult: ApiResult<DashboardStats> = .success(.stub())
         var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
         private(set) var statsCallCount = 0
         private(set) var statsEmployeeId: String??
 
-        func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto> {
+        func getStats(employeeId: String?) async -> ApiResult<DashboardStats> {
             statsCallCount += 1
             statsEmployeeId = .some(employeeId)
             return statsResult
         }
 
-        func getAvailableJobsPreview(limit _: Int) async -> ApiResult<AvailableJobsPreviewResponse> {
-            .success(AvailableJobsPreviewResponse())
+        func getAvailableJobsPreview(limit _: Int) async -> ApiResult<AvailableJobsPreview> {
+            .success(AvailableJobsPreview(totalAvailableCount: 0, totalPotentialEarnings: 0))
         }
 
         func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
@@ -47,7 +47,7 @@ final class EarningsViewModelTests: XCTestCase {
     }
 
     func testLoadMapsStatsToLoaded() async {
-        client.statsResult = .success(DashboardStatsDto(weekEarnings: 6262, currencyCode: "CZK"))
+        client.statsResult = .success(.stub(weekEarnings: 6262, currencyCode: "CZK"))
 
         let vm = makeViewModel()
         await vm.load()
@@ -59,7 +59,7 @@ final class EarningsViewModelTests: XCTestCase {
 
     func testLoadResolvesOwnEmployeeIdForStats() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
-        client.statsResult = .success(DashboardStatsDto())
+        client.statsResult = .success(.stub())
 
         let vm = makeViewModel()
         await vm.load()
@@ -77,7 +77,7 @@ final class EarningsViewModelTests: XCTestCase {
     }
 
     func testRetryAfterErrorKeepsPriorLoadedOnSecondFailure() async {
-        client.statsResult = .success(DashboardStatsDto(weekEarnings: 100, currencyCode: "CZK"))
+        client.statsResult = .success(.stub(weekEarnings: 100, currencyCode: "CZK"))
         let vm = makeViewModel()
         await vm.load()
         XCTAssertNotNil(vm.state.loadedValue)

@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -119,6 +120,7 @@ public class HandlePaymentNotification
         ITenantProvider tenantProvider,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
+        IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, string>
     {
         public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
@@ -286,6 +288,14 @@ public class HandlePaymentNotification
                     order.Id,
                     cancellationToken);
             }
+
+            // Q-BROWSE-01 (b): the two writes above are what make a card order offerable, so this is
+            // where its preferred cleaner is told. Creation could not: until the money lands the order
+            // is New + Pending, the browse gate refuses it, and CleanupStalePendingOrders cancels it an
+            // hour later. Runs after the terminal-state short-circuit, so a Stripe redelivery cannot
+            // produce a second announcement.
+            await PreferredOfferNotifier.NotifyBecameOfferableAsync(
+                order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
             return BusinessResult.Success(orderId);

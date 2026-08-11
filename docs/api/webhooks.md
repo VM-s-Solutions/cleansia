@@ -4,7 +4,7 @@ Cleansia receives Stripe webhooks to confirm or cancel card payments. The webhoo
 
 ::: info Source Files
 - Webhook handler: `src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs`
-- Partner controller: `src/Cleansia.Web/Controllers/PaymentController.cs`
+- Partner controller: `src/Cleansia.Web.Partner/Controllers/PaymentController.cs`
 - Customer controller: `src/Cleansia.Web.Customer/Controllers/PaymentController.cs`
 :::
 

@@ -90,6 +90,10 @@ public class RateLimitCoverageGuardTests
         typeof(Cleansia.Web.Admin.Controllers.AdminMarketingController),
         typeof(Cleansia.Web.Admin.Controllers.AdminEmailTemplateController),
         typeof(Cleansia.Web.Admin.Controllers.AdminGdprController),
+        // ADR-0034 D8.5: the payout reveal is modelled as a POST command precisely so this guard reaches
+        // it. Masking converts "one query returns everything" into "N deliberate reveals", which is only
+        // a control if N is bounded — the same policy that lists employee ids grants the reveal route.
+        typeof(Cleansia.Web.Admin.Controllers.AdminEmployeeController),
     };
 
     private static readonly string[] MutatingMethods = { "POST", "PUT", "DELETE", "PATCH" };
@@ -159,6 +163,18 @@ public class RateLimitCoverageGuardTests
     [InlineData(typeof(Cleansia.Web.Customer.Controllers.NotificationPreferencesController), "GetMine")]
     [InlineData(typeof(Cleansia.Web.Mobile.Customer.Controllers.NotificationPreferencesController), "GetMine")]
     public void NotificationPreferences_GetMine_Carries_The_Auth_Window(Type controller, string action)
+    {
+        Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));
+    }
+
+    // ADR-0039 D12.1: MyServingCleaners is a READ, so neither the mutating sweep above nor S5 as
+    // written reaches it — and that is exactly why it shipped unthrottled while CancelOrder eleven
+    // lines above it carries a window. Its answer is per-subject and repeating it reconstructs a
+    // named cleaner's work calendar, so it is rate-limited like a side-effecting endpoint.
+    [Theory]
+    [InlineData(typeof(Cleansia.Web.Customer.Controllers.OrderController), "MyServingCleaners")]
+    [InlineData(typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController), "MyServingCleaners")]
+    public void MyServingCleaners_Carries_The_Auth_Window(Type controller, string action)
     {
         Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));
     }

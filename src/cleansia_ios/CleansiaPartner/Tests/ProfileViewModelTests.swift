@@ -40,6 +40,27 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(data.contractStatus, .approved)
     }
 
+    func testTheBankRowSummaryReadsTheStoredPayoutDestination() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.payoutResult = .success(
+            MyPayoutDetails(accountPrefix: "000019", accountNumber: "2000145399", bankCode: "0800")
+        )
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.payoutSummary, "19-2000145399/0800")
+    }
+
+    func testAFailedPayoutReadLeavesTheBankRowOnItsPlaceholder() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.payoutResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        guard let data = vm.state.loadedValue else { return XCTFail("expected loaded despite payout failure") }
+        XCTAssertNil(data.payoutSummary)
+    }
+
     func testStatusFetchFailureStillLoadsWithNilChip() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana"))
         client.statusResult = .failure(ApiError(httpStatus: 500))
@@ -57,6 +78,34 @@ final class ProfileViewModelTests: XCTestCase {
 
         guard case .error = vm.state else { return XCTFail("expected error") }
         XCTAssertNotNil(snackbar.current)
+    }
+
+    func testTheHubReadsTheRadiusOffTheSameEmployeeFetch() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: 35))
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.jobRadiusKm, 35)
+    }
+
+    func testASavedRadiusRefreshesTheHubRowWithoutARefetch() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", jobRadiusKm: 35))
+        let vm = makeVM()
+        await vm.load()
+
+        vm.applyJobRadius(nil)
+        XCTAssertNil(vm.state.loadedValue?.jobRadiusKm)
+
+        vm.applyJobRadius(80)
+        XCTAssertEqual(vm.state.loadedValue?.jobRadiusKm, 80)
+    }
+
+    func testApplyingARadiusToAnUnloadedHubIsANoOp() {
+        let vm = makeVM()
+
+        vm.applyJobRadius(80)
+
+        XCTAssertTrue(vm.state.isLoading)
     }
 
     func testSignOutEmitsEffectAndLogsOut() async {

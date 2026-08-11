@@ -146,6 +146,15 @@
         }
       },
       {
+        "package": "PhoneNumberKit",
+        "repositoryURL": "https://github.com/PhoneNumberKit/PhoneNumberKit",
+        "state": {
+          "branch": null,
+          "revision": "575bda0cd71186372e2ecb1352b91d7853bce048",
+          "version": "5.0.5"
+        }
+      },
+      {
         "package": "Promises",
         "repositoryURL": "https://github.com/google/promises.git",
         "state": {

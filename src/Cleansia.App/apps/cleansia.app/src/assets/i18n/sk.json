@@ -175,6 +175,7 @@
       "error": "Registrácia zlyhala. Skúste to prosím znova.",
       "terms_agreement": "Súhlasím s podmienkami",
       "terms_and_conditions": "Súhlasím s <a href='/terms'>obchodnými podmienkami</a> a <a href='/privacy'>zásadami ochrany súkromia</a>",
+      "social_terms_required": "Pre pokračovanie cez Google alebo Apple potvrďte súhlas s obchodnými podmienkami a zásadami ochrany súkromia.",
       "validation": {
         "password_lowercase": "Aspoň jedno malé písmeno",
         "password_uppercase": "Aspoň jedno veľké písmeno",
@@ -760,8 +761,13 @@
       "time_label": "Vyberte čas",
       "select_date_first": "Najprv vyberte dátum",
       "slot_express": "Expres +20 %",
+      "slot_express_waived": "Expres · bez príplatku",
       "slot_unavailable": "Nedostupné",
       "express_surcharge_label": "Expresný termín (+20 %)",
+      "express_surcharge_waived_label": "Expresný termín — odpustené s Plus",
+      "express_waiver_available": "Plus pokrýva 20% expresný príplatok — {{count}} zostáva tento kalendárny mesiac.",
+      "express_waiver_used": "Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.",
+      "express_waiver_trial": "Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom.",
       "cancel_policy_title": "Storno podmienky",
       "cancel_policy_tier1_when": "Pred prijatím upratovačom",
       "cancel_policy_tier1_value": "Zdarma",
@@ -1091,15 +1097,17 @@
       "benefit_discount_body": "Pevné percento z každého upratovania. V kombinácii s vernostným programom je obmedzené na 12%.",
       "benefit_cancel_title": "Dlhšia doba na bezplatné zrušenie",
       "benefit_cancel_body": "Viac času na zmenu plánov bez poplatku.",
-      "benefit_express_title": "Express výhody",
-      "benefit_express_body": "Nižší príplatok za objednávky na poslednú chvíľu.",
       "benefit_favorite_title": "Vyžiadajte si obľúbeného upratovača",
-      "benefit_favorite_body": "Vyberte upratovača, ktorého už poznáte — bude prednostne priradený.",
+      "benefit_favorite_body": "Vyberte upratovača, ktorého už poznáte — požiadame ho ako prvého a ak rezerváciu nemôže prevziať, otvorí sa celému nášmu tímu.",
+      "benefit_express_title": "Expresné termíny bez príplatku",
+      "benefit_express_body": "Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú.",
       "renews_on": "Obnoví sa {{date}}",
       "cancelled_until": "Aktívne do {{date}} — neobnoví sa",
       "perk_discount": "{{percent}}% členská zľava",
       "perk_cancel_window": "{{hours}} h na bezplatné zrušenie",
-      "perk_express": "Výhody express objednávok",
+      "perk_express": "Expresný príplatok odpustený — {{count}} zostáva tento mesiac",
+      "perk_express_used": "Expresný príplatok odpustený — tento mesiac už žiadny nezostáva",
+      "perk_express_trial": "Expresný príplatok odpustený — začína po skončení skúšobného obdobia",
       "cancel_action": "Zrušiť členstvo",
       "cancel_dialog_title": "Zrušiť Cleansia Plus?",
       "cancel_dialog_message": "Vaše výhody zostanú aktívne do konca aktuálneho zaplateného obdobia. Ďalšia platba nebude vykonaná.",
@@ -1137,7 +1145,7 @@
       "welcome_perk_discount": "Členská zľava na každé upratovanie",
       "welcome_perk_recurring": "Pravidelné rozvrhy — raz objednať, navždy bežia",
       "welcome_perk_cancellation": "Dlhšie okno na bezplatné zrušenie",
-      "welcome_perk_express": "Výhody expresného upgradu",
+      "welcome_perk_express": "Expresné termíny bez príplatku — od prvého plateného mesiaca",
       "welcome_cta_setup_recurring": "Nastaviť pravidelné upratovanie",
       "welcome_cta_back": "Späť na členstvo"
     },
@@ -1426,6 +1434,7 @@
       "invalid_confirmation_code": "Tento potvrdzovací kód je neplatný alebo vypršal.",
       "invalid_google_token": "Prihlásenie cez Google sa nepodarilo. Skúste to znova.",
       "invalid_apple_token": "Prihlásenie cez Apple sa nepodarilo. Skúste to znova.",
+      "social_account_not_found": "K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte.",
       "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
       "invalid_reset_token": "Tento kód na obnovenie hesla je neplatný alebo vypršal.",
       "same_reset_password": "Vaše nové heslo sa musí líšiť od súčasného.",
@@ -1436,14 +1445,19 @@
     },
     "common": {
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
-      "error_occurred": "Vyskytla sa chyba"
+      "error_occurred": "Vyskytla sa chyba",
+      "required": "Toto pole je povinné.",
+      "max_length": "Táto hodnota je príliš dlhá.",
+      "min_length": "Táto hodnota je príliš krátka.",
+      "invalid_enum_value": "Táto možnosť nie je platná."
     },
     "user": {
       "email_confirmed": "Táto e-mailová adresa je už potvrdená.",
       "existing_email": "Účet s týmto e-mailom už existuje.",
       "not_existing_email": "Účet s týmto e-mailom sme nenašli.",
       "existing_phone_number": "Toto telefónne číslo sa už používa.",
-      "not_found": "Tento účet sme nenašli."
+      "not_found": "Tento účet sme nenašli.",
+      "not_allowed_to_update": "Nemáte oprávnenie meniť tento účet."
     },
     "language": {
       "not_supported": "Tento jazyk nie je podporovaný."
@@ -1460,6 +1474,7 @@
       "cancellation_window_closed": "Lehota na bezplatné zrušenie tejto objednávky vypršala.",
       "address_exactly_one_required": "Zadajte k objednávke práve jednu adresu.",
       "empty": "Pridajte do objednávky aspoň jednu službu alebo balík.",
+      "span_exceeds_maximum": "Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.",
       "selected_package": {
         "invalid": "Jeden z vybraných balíkov už nie je dostupný."
       },
@@ -1475,6 +1490,9 @@
         "not_match": "Celková cena objednávky sa zmenila — skontrolujte objednávku a skúste to znova."
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
+      "payment": {
+        "already_paid": "Táto objednávka už bola zaplatená."
+      },
       "creation_failed": "Objednávku sa nepodarilo vytvoriť. Skúste to prosím znova.",
       "not_completed": "Táto akcia je dostupná až po dokončení upratovania.",
       "review": {
@@ -1486,7 +1504,12 @@
       },
       "issue": {
         "description_required": "Pred odoslaním opíšte problém."
-      }
+      },
+      "preferred_employee": {
+        "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus.",
+        "not_eligible": "Vybrať si môžete iba upratovača, ktorý u vás už dokončil upratovanie."
+      },
+      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -1502,7 +1525,8 @@
     },
     "country": {
       "not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
-      "required": "Vyberte krajinu."
+      "required": "Vyberte krajinu.",
+      "not_existing_id": "Túto krajinu sme nenašli."
     },
     "city": {
       "not_serviced": "V tomto meste zatiaľ nepôsobíme."
@@ -1561,7 +1585,10 @@
       "not_found": "Vaše členstvo sme nenašli.",
       "not_owned_by_user": "Toto členstvo nemôžete spravovať.",
       "stripe_customer_required": "Nepodarilo sa nám spojiť s platobnou bránou — skúste to prosím znova.",
-      "swap_same_plan": "Na tomto pláne už ste."
+      "swap_same_plan": "Na tomto pláne už ste.",
+      "express_waiver": {
+        "no_longer_available": "Vaše bezplatné expresné vylepšenie už pre túto objednávku nie je k dispozícii — expresné objednávky zahrnuté v tomto mesiaci boli práve vyčerpané. Objednať môžete aj za bežnú expresnú cenu."
+      }
     },
     "recurring_booking": {
       "not_found": "Táto opakovaná objednávka už neexistuje.",
@@ -1575,6 +1602,22 @@
     "device": {
       "invalid_platform": "Táto platforma zariadenia nie je podporovaná.",
       "not_found": "Toto zariadenie sme nenašli."
+    },
+    "currency": {
+      "invalid": "Táto mena nie je podporovaná."
+    },
+    "email": {
+      "invalid_format": "Zadajte platnú e-mailovú adresu."
+    },
+    "general": {
+      "not_found": "Nenašli sme, čo hľadáte."
+    },
+    "validation": {
+      "date_must_be_in_past": "Dátum musí byť v minulosti.",
+      "invalid_age": "Zadajte platný vek.",
+      "invalid_date": "Zadajte platný dátum.",
+      "invalid_password": "Toto heslo nie je platné.",
+      "must_be_positive": "Hodnota musí byť väčšia ako nula."
     }
   },
   "loyalty": {
@@ -1683,6 +1726,25 @@
     "prefill_dropped_items": "Tieto položky sme z predvyplnenia odstránili — už nie sú k dispozícii: {{items}}",
     "order_detail_make_recurring": "Naplánovať pravidelne",
     "order_detail_make_recurring_plus_required": "Pre pravidelné rozvrhy je potrebné Cleansia Plus."
+  },
+  "preferred_cleaner": {
+    "title": "Vyžiadajte si obľúbeného upratovača",
+    "explainer": "Výhoda Plus · požiadame ho ako prvého a hneď ako rezerváciu nemôže prevziať, otvorí sa celému nášmu tímu.",
+    "placeholder": "Vyberte upratovača",
+    "loading": "Načítavame vašich upratovačov…",
+    "unavailable": "Nie je k dispozícii pre tento dátum a čas",
+    "section_title": "Váš obľúbený upratovač",
+    "awaiting_title": "Požiadali sme {{name}}",
+    "awaiting_body": "Rezerváciu pre nich držíme do {{time}}. Ak ju nemôžu prevziať, otvorí sa celému nášmu tímu.",
+    "accepted_title": "Potvrdené: {{name}}",
+    "closed_title": "Otvorené všetkým upratovačom",
+    "closed_body": "Žiadosť o upratovača, ktorého ste si vyžiadali, sa skončila. Táto rezervácia je teraz otvorená celému nášmu tímu.",
+    "choose_another": "Požiadať iného upratovača",
+    "choose_another_hint": "Môžete požiadať ešte jedného upratovača. Požiadame ho ako ďalšieho a ak rezerváciu nemôže prevziať, znova sa otvorí celému nášmu tímu.",
+    "choose_submit": "Požiadať",
+    "choose_success": "Požiadali sme ho.",
+    "list_error": "Vašich upratovačov sa nepodarilo načítať. Skúste to prosím znova.",
+    "list_empty": "Zatiaľ nie je koho požiadať — zoznam sa plní s dokončenými upratovaniami."
   },
   "enums": {
     "order_status": {

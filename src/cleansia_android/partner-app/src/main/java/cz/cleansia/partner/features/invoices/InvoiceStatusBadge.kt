@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,7 +29,7 @@ import cz.cleansia.partner.ui.theme.StatusPendingText
  *   1 Pending, 2 Approved, 3 Paid, 4 Disputed, 5 Rejected, 6 Cancelled.
  */
 @Composable
-fun InvoiceStatusBadge(status: EmployeeInvoiceStatus?) {
+fun InvoiceStatusBadge(status: EmployeeInvoiceStatus) {
     val (label, bg, fg) = when (status) {
         EmployeeInvoiceStatus._1 -> Triple(stringResource(R.string.invoice_status_pending), StatusPendingBg, StatusPendingText)
         EmployeeInvoiceStatus._2 -> Triple(stringResource(R.string.invoice_status_approved), StatusConfirmedBg, StatusConfirmedText)
@@ -38,7 +37,6 @@ fun InvoiceStatusBadge(status: EmployeeInvoiceStatus?) {
         EmployeeInvoiceStatus._4 -> Triple(stringResource(R.string.invoice_status_disputed), StatusFailedBg, StatusFailedText)
         EmployeeInvoiceStatus._5 -> Triple(stringResource(R.string.invoice_status_rejected), StatusFailedBg, StatusFailedText)
         EmployeeInvoiceStatus._6 -> Triple(stringResource(R.string.invoice_status_cancelled), StatusCancelledBg, StatusCancelledText)
-        null -> Triple("—", Color.LightGray, Color.DarkGray)
     }
     Text(
         text = label,

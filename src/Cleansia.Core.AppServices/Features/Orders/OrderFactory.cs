@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
@@ -23,11 +24,14 @@ public sealed class OrderFactory(
     IOrderRepository orderRepository,
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
+    IEmployeePayConfigRepository payConfigRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
     IVatCalculator vatCalculator,
     ILoyaltyService loyaltyService,
-    IUserMembershipRepository userMembershipRepository) : IOrderFactory
+    IUserMembershipRepository userMembershipRepository,
+    IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+    INotificationProducer notificationProducer) : IOrderFactory
 {
     /// <summary>
     /// LOY-003 — Hard cap on combined (Plus + tier) discount, applied as a
@@ -53,6 +57,23 @@ public sealed class OrderFactory(
 
     public async Task<Order> CreateAsync(CreateOrderInput input, CancellationToken cancellationToken)
     {
+        // An order whose selection has no platform-wide pay config quotes NOTHING on every cleaner's
+        // board at once and counts as zero in their earnings. The gate sits here rather than only in
+        // CreateOrder.Validator because the recurring materializer reaches this factory without running
+        // that validator — the same reason the booked-span cap is enforced in both places. First,
+        // before any pricing work, so the refusal costs one query.
+        var payCoverageGaps = await PayCoverageLookup.FindSelectionGapsAsync(
+            serviceRepository, packageRepository, payConfigRepository,
+            input.SelectedServiceIds, input.SelectedPackageIds, cancellationToken);
+
+        if (payCoverageGaps.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "No platform-wide EmployeePayConfig covers: "
+                + string.Join(", ", payCoverageGaps.Select(gap => $"{gap.Kind} '{gap.Name}'"))
+                + ". An order carrying it would show no pay to any cleaner.");
+        }
+
         // Resolve the tier discount + membership discount given the user.
         // Anonymous (guest) bookings skip both and only see promo if the
         // caller already validated one. Snapshot stays on the Order so
@@ -89,17 +110,22 @@ public sealed class OrderFactory(
         var resolution = ResolveLoy003Discount(
             membershipDiscount, tierDiscount, input.PromoDiscountAmount, input.RawSubtotal);
 
-        decimal? appliedTierDiscount = resolution.TierAmount > 0m ? resolution.TierAmount : null;
-        decimal? appliedMembershipDiscount = resolution.MembershipAmount > 0m ? resolution.MembershipAmount : null;
-        decimal? appliedPromoDiscount = resolution.PromoAmount > 0m ? resolution.PromoAmount : null;
-        string? appliedPromoCodeId = resolution.PromoAmount > 0m ? input.PromoCodeId : null;
-        string? appliedMembershipPlanId = resolution.MembershipAmount > 0m ? membershipPlanId : null;
-        LoyaltyTier? appliedTierAtPurchase = resolution.TierAmount > 0m ? tierAtPurchase : null;
-        var appliedAmount = resolution.TotalAmount;
+        var surchargeApplies = BookingPolicy.RequiresExpressSurcharge(
+            input.CleaningDate,
+            input.NowUtc,
+            waiverApplies: input.ReservedExpressWaiver != null);
 
         var finalTotalPrice = BookingPolicy.ApplyExpressSurcharge(
-            input.RawSubtotal - appliedAmount,
-            BookingPolicy.RequiresExpressSurcharge(input.CleaningDate, DateTime.UtcNow));
+            input.RawSubtotal - resolution.TotalAmount, surchargeApplies);
+
+        var applied = resolution.AsChargedAgainst(surchargeApplies);
+
+        decimal? appliedTierDiscount = applied.TierAmount > 0m ? applied.TierAmount : null;
+        decimal? appliedMembershipDiscount = applied.MembershipAmount > 0m ? applied.MembershipAmount : null;
+        decimal? appliedPromoDiscount = applied.PromoAmount > 0m ? applied.PromoAmount : null;
+        string? appliedPromoCodeId = applied.PromoAmount > 0m ? input.PromoCodeId : null;
+        string? appliedMembershipPlanId = applied.MembershipAmount > 0m ? membershipPlanId : null;
+        LoyaltyTier? appliedTierAtPurchase = applied.TierAmount > 0m ? tierAtPurchase : null;
 
         var order = Order.Create(
             input.CustomerName,
@@ -142,10 +168,45 @@ public sealed class OrderFactory(
         order.AddSelectedServices(selectedServices);
         order.AddSelectedPackages(selectedPackages);
 
-        var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
-                            selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
+        var estimatedTime = OrderDuration.EstimateMinutes(
+            selectedServices.Select(s => s.Service!),
+            selectedPackages.Select(p => p.Package!));
+
+        // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
+        // CreateOrder.Validator turns this into a business error for the customer; this is the backstop
+        // for callers that never run it (the recurring materializer).
+        if (BookingPolicy.ExceedsMaxBookableSpan(estimatedTime))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(input),
+                estimatedTime,
+                $"Booked estimate exceeds BookingPolicy.MaxBookableOrderSpanHours "
+                + $"({BookingPolicy.MaxBookableOrderSpanMinutes} min).");
+        }
+
         order.UpdateEstimatedTime(estimatedTime);
-        order.CalculateRequiredEmployees();
+        order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
+
+        // The factory never assigns either hold column itself — it hands the resolver's answer to the
+        // aggregate, which owns the (beneficiary, deadline) pair. A declined hold is not a failure:
+        // the preference is still stored, and the order goes straight to the open board.
+        var preferredCleaner = await preferredCleanerHoldResolver.ResolveAsync(
+            input.UserId,
+            input.PreferredEmployeeId,
+            input.Address.CountryId,
+            input.CleaningDate,
+            estimatedTime,
+            input.NowUtc,
+            cancellationToken);
+
+        if (preferredCleaner.HoldUntilUtc is { } holdUntilUtc)
+        {
+            order.GrantPreferredHold(
+                input.PreferredEmployeeId!,
+                holdUntilUtc,
+                input.NowUtc,
+                BookingPolicy.MaxPreferredOfferRounds);
+        }
 
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).
@@ -164,6 +225,18 @@ public sealed class OrderFactory(
         }
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+
+        // Sits after the only write of CurrentStatus because the seam reads that column; before the
+        // write it reads New only because New happens to be the enum's zero.
+        //
+        // The notify predicate is WIDER than the hold's (ADR-0036 D4.1) — too little lead time to
+        // withhold a seat still earns the targeted offer — and NARROWER than the preference: an order
+        // that is not yet offerable is announced by whichever site makes it so (Q-BROWSE-01 (b)), the
+        // Stripe webhook for card and the customer's confirm for recurring. A cash one-off is offerable
+        // the moment it exists, which is why it is the only shape announced here.
+        await PreferredOfferNotifier.NotifyIfOfferableAsync(
+            order, preferredCleaner.Recipient, notificationProducer, cancellationToken);
+
         orderRepository.Add(order);
         return order;
     }
@@ -222,8 +295,8 @@ public sealed class OrderFactory(
     }
 
     /// <summary>
-    /// Per-source amounts after LOY-003 cap + promo-replacement resolution.
-    /// Either (Membership + Tier) or Promo is non-zero, never both — the
+    /// Per-source amounts after LOY-003 cap + promo-replacement resolution, measured against the RAW
+    /// pre-surcharge subtotal. Either (Membership + Tier) or Promo is non-zero, never both — the
     /// promo branch zeroes the additive pair. Both Membership and Tier
     /// can be non-zero simultaneously in the combined branch.
     /// </summary>
@@ -231,5 +304,29 @@ public sealed class OrderFactory(
         decimal MembershipAmount,
         decimal TierAmount,
         decimal PromoAmount,
-        decimal TotalAmount);
+        decimal TotalAmount)
+    {
+        /// <summary>
+        /// The same resolution restated against the price actually charged — the ONE form that may be
+        /// reported, persisted or rendered.
+        ///
+        /// <para>Resolution happens on the raw pre-surcharge subtotal and stays there: the tier floor
+        /// and the 12% cap must be judged on the base <see cref="QuoteOrder"/> judged them on, or a
+        /// booking straddling the floor qualifies in the wizard and loses the discount at submit. But
+        /// the price these come off carries the express surcharge, and on an express order the raw
+        /// figure under-states the saving by <c>ExpressSurchargeRate</c> of itself — the customer would
+        /// have paid <c>raw * 1.2</c> and pays <c>(raw - d) * 1.2</c>, so they saved <c>d * 1.2</c>.
+        /// Every consumer composes the amount with the surcharge-inclusive price (the mappers'
+        /// <c>OriginalSubtotal = TotalPrice + applied</c>, the lifetime-savings sum, every client's
+        /// <c>totalPrice - discount</c>), and the order carries no express flag for any of them to
+        /// correct with, so the correction can only be made here, before the amount is written.</para>
+        /// </summary>
+        internal DiscountResolution AsChargedAgainst(bool surchargeApplies)
+        {
+            decimal Charged(decimal amount) => BookingPolicy.ApplyExpressSurcharge(amount, surchargeApplies);
+
+            return new DiscountResolution(
+                Charged(MembershipAmount), Charged(TierAmount), Charged(PromoAmount), Charged(TotalAmount));
+        }
+    }
 }

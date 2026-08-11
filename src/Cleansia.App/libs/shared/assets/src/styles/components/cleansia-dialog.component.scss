@@ -1,4 +1,6 @@
 // ─── Cleansia Dialog — Shared styling for all p-dialog instances ───
+@use '../common/typography' as *;
+
 $primary: #0ea5e9;
 $primary-hover: #0284c7;
 
@@ -12,7 +14,7 @@ $primary-hover: #0284c7;
   }
 
   .p-dialog-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: $font-heading;
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--text-color);
@@ -157,7 +159,7 @@ $primary-hover: #0284c7;
       width: 100%;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      font-family: 'Poppins', sans-serif;
+      font-family: $font-heading;
     }
   }
 

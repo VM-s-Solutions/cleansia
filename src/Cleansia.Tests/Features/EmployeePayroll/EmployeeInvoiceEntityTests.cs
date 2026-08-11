@@ -6,8 +6,9 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
 /// Pure-entity nets for <see cref="EmployeeInvoice"/>: clamp-to-zero, invoice numbering and
-/// payment-reference shape, deterministic variable symbol, and the status-transition guards that
-/// protect the money path (a paid invoice is terminal).
+/// payment-reference shape, the stamped-at-construction variable symbol and its one-time
+/// assignment, and the status-transition guards that protect the money path (a paid invoice is
+/// terminal).
 /// </summary>
 public class EmployeeInvoiceEntityTests
 {
@@ -22,6 +23,7 @@ public class EmployeeInvoiceEntityTests
             totalOrders: 1,
             subTotal: 100m,
             currencyId: "currency-1",
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
             bonusAmount: 0m,
             deductionAmount: 500m);
 
@@ -37,6 +39,7 @@ public class EmployeeInvoiceEntityTests
             totalOrders: 3,
             subTotal: 199.99m,
             currencyId: "currency-1",
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
             bonusAmount: 10.01m,
             deductionAmount: 5.50m);
 
@@ -55,7 +58,7 @@ public class EmployeeInvoiceEntityTests
         // the bonus/deduction lines AND still total 115, not add them again on top.
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m, bonusPay: 20m, deductionPay: 5m) };
 
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
 
         Assert.Equal(100m, invoice.SubTotal);
         Assert.Equal(20m, invoice.BonusAmount);
@@ -73,7 +76,7 @@ public class EmployeeInvoiceEntityTests
             PayrollMockFactory.OrderPay(basePay: 250m, expensesPay: 12.50m)
         };
 
-        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
         var added = PayrollMockFactory.Invoice(totalOrders: 0, subTotal: 0m).AddOrderPays(pays);
 
         Assert.Equal(created.SubTotal, added.SubTotal);
@@ -117,51 +120,61 @@ public class EmployeeInvoiceEntityTests
         Assert.Equal(EmployeeInvoiceStatus.Pending, invoice.Status);
     }
 
-    // ── AC10: deterministic variable symbol ──────────────────────────
+    // ── the variable symbol is stamped at construction, never derived ─
 
     [Fact]
-    public void GenerateVariableSymbol_Is_Deterministic_For_Same_Inputs()
+    public void Create_Stamps_The_Supplied_Variable_Symbol()
     {
-        var first = EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1");
-        var second = EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1");
+        var invoice = PayrollMockFactory.Invoice(variableSymbol: "2026000042");
 
-        Assert.Equal(first, second);
-    }
-
-    [Fact]
-    public void GenerateVariableSymbol_Is_Ten_Numeric_Characters()
-    {
-        var symbol = EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1");
-
-        Assert.Equal(10, symbol.Length);
-        Assert.Matches(@"^\d{10}$", symbol);
+        Assert.Equal("2026000042", invoice.VariableSymbol);
     }
 
     [Fact]
-    public void GenerateVariableSymbol_Differs_Across_Periods_For_Same_Employee()
+    public void AssignVariableSymbol_Refuses_An_Invoice_That_Already_Carries_One()
     {
-        var first = EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1");
-        var second = EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-2");
+        var invoice = PayrollMockFactory.Invoice();
 
-        Assert.NotEqual(first, second);
+        Assert.Throws<InvalidOperationException>(() => invoice.AssignVariableSymbol("2026000099"));
     }
 
-    // ── cross-invocation (cross-process) determinism ────────────────
-    // The expected values are independently derived from the stable FNV-1a-32 basis over the
-    // UTF-8 input bytes (empHash = fnv1a32("emp-1") % 10000, periodHash = fnv1a32("period-1") %
-    // 1000000, formatted D4+D6). They are hard-coded, not a second in-process call, so this would
-    // FAIL against a per-process string.GetHashCode() basis.
-
-    [Theory]
-    [InlineData("emp-1", "period-1", "1883454606")]
-    [InlineData("emp-1", "period-2", "1883676987")]
-    public void GenerateVariableSymbol_Matches_Stable_Hash_Expected_Value(
-        string employeeId, string payPeriodId, string expected)
+    [Fact]
+    public void AssignVariableSymbol_Refuses_A_Paid_Invoice()
     {
-        var symbol = EmployeeInvoice.GenerateVariableSymbol(employeeId, payPeriodId);
+        var invoice = PaidInvoice();
+        ClearVariableSymbol(invoice);
 
-        Assert.Equal(expected, symbol);
+        Assert.Throws<InvalidOperationException>(() => invoice.AssignVariableSymbol("2026000099"));
     }
+
+    [Fact]
+    public void AssignVariableSymbol_Refuses_A_Cancelled_Invoice()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+        invoice.Cancel("duplicate", "admin@cleansia.cz");
+        ClearVariableSymbol(invoice);
+
+        Assert.Throws<InvalidOperationException>(() => invoice.AssignVariableSymbol("2026000099"));
+    }
+
+    [Fact]
+    public void AssignVariableSymbol_Stamps_A_Symbol_Less_Unpaid_Invoice()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+        ClearVariableSymbol(invoice);
+
+        invoice.AssignVariableSymbol("2026000099");
+
+        Assert.Equal("2026000099", invoice.VariableSymbol);
+    }
+
+    // The legacy population this models cannot be built through Create any more — the parameter is
+    // required — so a null symbol is reached the only way it exists in production: a row that
+    // predates the allocator.
+    private static void ClearVariableSymbol(EmployeeInvoice invoice) =>
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.VariableSymbol))!
+            .GetSetMethod(nonPublic: true)!
+            .Invoke(invoice, [null]);
 
     // ── AC11: Approve legal from Pending/Disputed, illegal elsewhere ─
 
@@ -284,6 +297,30 @@ public class EmployeeInvoiceEntityTests
         Assert.Equal("duplicate", invoice.CancellationReason);
         Assert.Equal("admin@cleansia.cz", invoice.CancelledBy);
         Assert.NotNull(invoice.CancelledAt);
+    }
+
+    // ── the PDF failure record has to survive its own column ─────────
+
+    [Fact]
+    public void SetPdfGenerationError_Truncates_A_Message_Too_Long_For_The_Column()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        invoice.SetPdfGenerationError(new string('x', 5_000));
+
+        Assert.True(invoice.PdfGenerationFailed);
+        Assert.Equal(1000, invoice.PdfGenerationError!.Length);
+    }
+
+    [Fact]
+    public void SetPdfGenerationError_Keeps_A_Message_That_Fits_Verbatim()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        invoice.SetPdfGenerationError("blob storage unreachable");
+
+        Assert.Equal("blob storage unreachable", invoice.PdfGenerationError);
+        Assert.NotNull(invoice.PdfGenerationAttemptedAt);
     }
 
     [Fact]

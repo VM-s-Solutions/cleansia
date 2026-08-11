@@ -26,9 +26,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// <see cref="OrderMappers.SelectOrderListRows"/> projection. These tests pin that, over the same
 /// seeded rows, the projection + row mapper produce <see cref="OrderListItem"/>s
 /// JSON-identical to the old entity path (which is reconstructed here with the handlers'
-/// previous Include set), including the edge rows: a pre-backfill NULL
-/// <c>Orders.CurrentStatus</c> falling back to the history rule (with a same-tick Sequence
-/// tie), an order with no services/packages/assignees, and a cancelled order.
+/// previous Include set), including the edge rows: an order with no
+/// services/packages/assignees, and a cancelled order.
 /// </summary>
 public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDisposable
 {
@@ -141,10 +140,6 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         ctx.Add(cancelled);
 
         await ctx.CommitAsync(CancellationToken.None);
-
-        await using var nullCtx = NewContext();
-        await nullCtx.Database.ExecuteSqlRawAsync(
-            "UPDATE \"Orders\" SET \"CurrentStatus\" = NULL WHERE \"Id\" = {0}", "proj-legacy-null");
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
@@ -190,20 +185,6 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             var expected = expectedById[dto.Id];
             Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(dto));
         }
-    }
-
-    [Fact]
-    public async Task Null_CurrentStatus_Row_Falls_Back_To_The_History_Rule_With_Sequence_Tiebreak()
-    {
-        await using var ctx = NewContext();
-        var row = (await ctx.Set<Order>()
-            .Where(o => o.Id == "proj-legacy-null")
-            .SelectOrderListRows()
-            .ToListAsync(CancellationToken.None))
-            .Single();
-
-        Assert.Equal(OrderStatus.Completed, row.OrderStatus);
-        Assert.Equal(nameof(OrderStatus.Completed), row.MapToDto().OrderStatus.Name);
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ export default {
   displayName: 'partner-services',
   preset: '../../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  globalSetup: '<rootDir>/jest.global-setup.js',
   coverageDirectory: '../../../coverage/libs/core/partner-services',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [

@@ -18,12 +18,10 @@ namespace Cleansia.Tests.Features.Orders;
 /// <item>the column always equals the history-derived rule (the equivalence pin), including the
 /// same-timestamp Sequence tiebreak and Cancelled-after-Confirmed;</item>
 /// <item>every append through the seam updates the column (the write-seam pin), including on a
-/// reloaded entity;</item>
-/// <item>a legacy row with a NULL column (pre-backfill) still reads its status in memory via the
-/// history fallback (the rollout-tolerance pin).</item>
+/// reloaded entity.</item>
 /// </list>
 /// Column values are asserted via a server-side projection (<c>Select(o =&gt; o.CurrentStatus)</c>)
-/// so the in-memory fallback cannot mask a missing write.
+/// so an in-memory value cannot mask a missing write.
 /// </summary>
 public sealed class OrderCurrentStatusPersistenceTests : IDisposable
 {
@@ -193,31 +191,6 @@ public sealed class OrderCurrentStatusPersistenceTests : IDisposable
 
         Assert.Equal(OrderStatus.Confirmed, await ReadColumnAsync(order.Id));
         Assert.Equal(await ComputeFromHistoryAsync(order.Id), await ReadColumnAsync(order.Id));
-    }
-
-    [Fact]
-    public async Task Legacy_Null_Column_Falls_Back_To_History_In_Memory()
-    {
-        await EnsureSchemaAsync();
-        var order = NewOrder("cs-legacy-01");
-        var baseStamp = DateTimeOffset.UtcNow.AddHours(-4);
-        AppendTrack(order, OrderStatus.New, baseStamp);
-        AppendTrack(order, OrderStatus.Confirmed, baseStamp.AddMinutes(15));
-        await SeedAsync(order);
-
-        await using (var ctx = NewContext())
-        {
-            await ctx.Database.ExecuteSqlRawAsync(
-                "UPDATE \"Orders\" SET \"CurrentStatus\" = NULL WHERE \"Id\" = {0}", order.Id);
-        }
-
-        Assert.Null(await ReadColumnAsync(order.Id));
-
-        await using var readCtx = NewContext();
-        var legacy = await readCtx.Set<Order>()
-            .Include(o => o.OrderStatusHistory)
-            .SingleAsync(o => o.Id == order.Id, CancellationToken.None);
-        Assert.Equal(OrderStatus.Confirmed, legacy.CurrentStatus);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

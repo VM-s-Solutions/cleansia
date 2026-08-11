@@ -547,9 +547,15 @@
                 >
                   <span class="order-wizard__time-slot-label">{{ opt.label }}</span>
                   @if (opt.availability === 'express') {
-                    <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--express">
-                      {{ 'pages.order.slot_express' | translate }}
-                    </span>
+                    @if (facade.expressWaiverAvailable()) {
+                      <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--waived">
+                        {{ 'pages.order.slot_express_waived' | translate }}
+                      </span>
+                    } @else {
+                      <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--express">
+                        {{ 'pages.order.slot_express' | translate }}
+                      </span>
+                    }
                   } @else if (opt.availability === 'unavailable') {
                     <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--unavailable">
                       {{ 'pages.order.slot_unavailable' | translate }}
@@ -558,6 +564,27 @@
                 </button>
                 }
               </div>
+              <!-- The express verdict belongs at the moment of choice, not at payment: a member
+                   who learns their waiver is gone while confirming the price has already been
+                   surprised (ADR-0035 D7). -->
+              @if (hasExpressSlot()) {
+                @if (facade.expressWaiverAvailable()) {
+                  <p class="order-wizard__express-waiver order-wizard__express-waiver--available">
+                    <i class="pi pi-bolt" aria-hidden="true"></i>
+                    {{ 'pages.order.express_waiver_available' | translate: { count: facade.expressUpgradesRemaining() } }}
+                  </p>
+                } @else if (facade.expressWaiverExhausted()) {
+                  <p class="order-wizard__express-waiver">
+                    <i class="pi pi-info-circle" aria-hidden="true"></i>
+                    {{ 'pages.order.express_waiver_used' | translate }}
+                  </p>
+                } @else if (facade.expressWaiverPendingTrial()) {
+                  <p class="order-wizard__express-waiver">
+                    <i class="pi pi-info-circle" aria-hidden="true"></i>
+                    {{ 'pages.order.express_waiver_trial' | translate }}
+                  </p>
+                }
+              }
               <div class="order-wizard__cancel-policy-inline">
                 <h3 class="order-wizard__cancel-policy-inline-title">
                   <i class="pi pi-clock"></i>
@@ -773,6 +800,12 @@
             <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
           </div>
           }
+          @if (facade.expressSurchargeWaived()) {
+          <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+            <span>{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
+            <span>{{ formatPrice(0) }}</span>
+          </div>
+          }
         </div>
         }
 
@@ -866,6 +899,12 @@
       <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--express">
         <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
         <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
+      </div>
+      }
+      @if (facade.expressSurchargeWaived()) {
+      <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+        <span>{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
+        <span>{{ formatPrice(0) }}</span>
       </div>
       }
     </div>

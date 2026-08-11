@@ -19,14 +19,12 @@ struct LiveDisputeClient: DisputeClient {
     }
 
     func getById(disputeId: String) async -> ApiResult<DisputeDetail> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerDisputeAPI.disputeGetDisputeById(disputeId: disputeId)
-        }
-        return result.flatMap { details in
-            guard let detail = details.toDetail() else {
-                return .failure(ApiError(code: "dispute.malformed"))
+        await apiResult(mapError: ApiError.fromGenerated) {
+            let details = try await CustomerDisputeAPI.disputeGetDisputeById(disputeId: disputeId)
+            guard let detail = try details.toDetail() else {
+                throw ApiError(code: "dispute.malformed")
             }
-            return .success(detail)
+            return detail
         }
     }
 

@@ -40,7 +40,7 @@ public struct CodeInput: View {
             : ""
         let isFocusedBox = index == code.count
         return Text(character)
-            .font(CleansiaFont.poppins(.semibold, size: 24))
+            .cleansiaFont(.poppins(.semibold, size: 24))
             .foregroundColor(CleansiaColors.onSurface)
             .frame(width: 44, height: 56)
             .background(CleansiaColors.surface)

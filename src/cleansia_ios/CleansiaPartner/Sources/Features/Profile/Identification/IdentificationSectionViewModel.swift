@@ -79,7 +79,7 @@ final class IdentificationSectionViewModel: ViewModel {
     }
 
     func save() async {
-        guard !action.isSubmitting else { return }
+        guard case .loaded = state, !action.isSubmitting else { return }
         guard !form.employeeId.isBlank else {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return

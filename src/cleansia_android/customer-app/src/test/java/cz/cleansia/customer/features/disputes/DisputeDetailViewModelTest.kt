@@ -96,7 +96,7 @@ class DisputeDetailViewModelTest {
         vm.sendMessage("hello")
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError("server boom") }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertTrue(vm.sendState.value is ActionState.Error)
     }
 
@@ -167,7 +167,7 @@ class DisputeDetailViewModelTest {
         vm.uploadEvidence(pngBytes, "a.png", "image/png")
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError("server boom") }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertTrue(vm.uploadState.value is ActionState.Error)
     }
 

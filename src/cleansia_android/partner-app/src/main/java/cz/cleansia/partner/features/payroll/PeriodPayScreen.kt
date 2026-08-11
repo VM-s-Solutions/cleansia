@@ -293,7 +293,7 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
 }
 
 @Composable
-private fun MoneyRow(label: String, amount: Double?, symbol: String, bold: Boolean = false) {
+private fun MoneyRow(label: String, amount: Double, symbol: String, bold: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -311,7 +311,7 @@ private fun MoneyRow(label: String, amount: Double?, symbol: String, bold: Boole
             color = if (bold) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = formatMoney(amount ?: 0.0, symbol),
+            text = formatMoney(amount, symbol),
             style = if (bold) {
                 MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             } else {

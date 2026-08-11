@@ -55,8 +55,7 @@ import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.api.model.EmployeeInvoiceDto
-import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
+import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -183,10 +182,10 @@ fun InvoicesListScreen(
                         item(key = "summary") {
                             SummaryCard(invoices = uiState.invoices)
                         }
-                        items(uiState.invoices, key = { it.id.orEmpty() }) { invoice ->
+                        items(uiState.invoices, key = { it.id }) { invoice ->
                             InvoiceCard(
                                 invoice = invoice,
-                                onClick = { invoice.id?.let(onInvoiceClick) },
+                                onClick = { onInvoiceClick(invoice.id) },
                             )
                         }
                         item { Spacer(Modifier.height(MainBottomNavInset)) }
@@ -246,9 +245,9 @@ private fun Header(onNavigateBack: (() -> Unit)?) {
  * group's code which is still the right answer 99% of the time).
  */
 @Composable
-private fun SummaryCard(invoices: List<EmployeeInvoiceDto>) {
+private fun SummaryCard(invoices: List<Invoice>) {
     val total = remember(invoices) {
-        invoices.sumOf { it.totalAmount ?: 0.0 }
+        invoices.sumOf { it.totalAmount }
     }
     val code = remember(invoices) {
         invoices.firstNotNullOfOrNull { it.currencyCode }
@@ -292,7 +291,7 @@ private fun SummaryCard(invoices: List<EmployeeInvoiceDto>) {
 }
 
 @Composable
-private fun InvoiceCard(invoice: EmployeeInvoiceDto, onClick: () -> Unit) {
+private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
     val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
     val dateLine = remember(invoice.paidAt, invoice.generatedAt) {
         // Prefer paid-at (final state) so the user sees the date that
@@ -353,7 +352,7 @@ private fun InvoiceCard(invoice: EmployeeInvoiceDto, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = formatMoney(invoice.totalAmount ?: 0.0, symbol),
+                    text = formatMoney(invoice.totalAmount, symbol),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -368,7 +367,7 @@ private fun InvoiceCard(invoice: EmployeeInvoiceDto, onClick: () -> Unit) {
         // Footer meta row: jobs-included count on the left, date on the
         // right. Skipped entirely when both pieces are missing so the
         // card doesn't grow an empty band.
-        val orders = invoice.totalOrders ?: 0
+        val orders = invoice.totalOrders
         val hasFooter = orders > 0 || !dateLine.isNullOrBlank()
         if (hasFooter) {
             Spacer(Modifier.height(Spacing.S))

@@ -61,7 +61,7 @@ public class GetDashboardStats
             // computed in this zone so "today" matches the cleaner's
             // wall clock, then converted back to UTC for the SQL
             // comparison against the timestamptz columns.
-            var tz = ResolveTimeZone(userSessionProvider.GetTimeZoneId());
+            var tz = TimeZoneResolution.Resolve(userSessionProvider.GetTimeZoneId());
             var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
             var todayStartLocal = DateTime.SpecifyKind(nowLocal.Date, DateTimeKind.Unspecified);
             var todayEndLocal = todayStartLocal.AddDays(1);
@@ -231,9 +231,9 @@ public class GetDashboardStats
             );
         }
 
-        private async Task<int> GetAvailableOrdersCountAsync(string excludeEmployeeId, CancellationToken cancellationToken)
+        private async Task<int> GetAvailableOrdersCountAsync(string employeeId, CancellationToken cancellationToken)
         {
-            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(excludeEmployeeId);
+            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
             return await orderRepository.GetCountAsync(specification.SatisfiedBy(), cancellationToken);
         }
 
@@ -241,29 +241,6 @@ public class GetDashboardStats
         {
             var specification = DashboardSpecifications.CreateActiveOrdersSpec(employeeId);
             return await orderRepository.GetCountAsync(specification.SatisfiedBy(), cancellationToken);
-        }
-
-        /// <summary>
-        /// Resolve the caller's IANA timezone id (e.g. "Europe/Prague").
-        /// Falls back to UTC if the id is missing or unknown to the
-        /// host's tz database — the dashboard then behaves as it did
-        /// before zone-awareness was added.
-        /// </summary>
-        private static TimeZoneInfo ResolveTimeZone(string? id)
-        {
-            if (string.IsNullOrWhiteSpace(id)) return TimeZoneInfo.Utc;
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                return TimeZoneInfo.Utc;
-            }
-            catch (InvalidTimeZoneException)
-            {
-                return TimeZoneInfo.Utc;
-            }
         }
 
         /// <summary>

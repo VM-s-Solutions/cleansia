@@ -3,4 +3,10 @@
     <string name="core_search">Hľadať</string>
     <string name="core_snackbar_dismiss">Zavrieť</string>
     <string name="core_consent_toggle">Súhlasiť s podmienkami a zásadami ochrany súkromia</string>
+    <string name="core_error_server">Server je dočasne nedostupný. Skúste to neskôr.</string>
+    <string name="core_error_timeout">Časový limit pripojenia vypršal. Skúste to znova.</string>
+    <string name="core_error_no_connection">Skontrolujte pripojenie na internet a skúste to znova.</string>
+    <string name="core_error_not_found">Požadovaný zdroj nebol nájdený.</string>
+    <string name="core_error_unauthorized">Vaša relácia vypršala. Prihláste sa znova.</string>
+    <string name="core_error_unknown">Niečo sa pokazilo. Skúste to znova.</string>
 </resources>

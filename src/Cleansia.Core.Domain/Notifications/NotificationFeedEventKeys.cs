@@ -20,14 +20,19 @@ public enum NotificationFeedAudience
 /// mark-read, mark-all-read) is scoped to the calling host's keyset.
 ///
 /// Customer = every event currently dispatched to customers EXCEPT <c>promo.new_sitewide</c>
-/// (the one event with server-authored literal text; excluded from feed v1). Partner = the
-/// new-jobs digest, the only partner-targeted dispatch that exists.
+/// (the one event with server-authored literal text; excluded from feed v1). Partner = every
+/// partner-targeted dispatch.
+///
+/// A key belongs in a keyset only once the audience's clients render it: the unread badge counts
+/// every row in the keyset, so a key listed ahead of its client template inflates the badge with a
+/// row the app drops unrendered.
 /// </summary>
 public static class NotificationFeedEventKeys
 {
     public static readonly IReadOnlyList<string> Customer =
     [
         NotificationEventCatalog.OrderConfirmed,
+        NotificationEventCatalog.OrderCleanerAssigned,
         NotificationEventCatalog.OrderOnTheWay,
         NotificationEventCatalog.OrderInProgress,
         NotificationEventCatalog.OrderCompleted,
@@ -43,6 +48,7 @@ public static class NotificationFeedEventKeys
     public static readonly IReadOnlyList<string> Partner =
     [
         NotificationEventCatalog.NewJobsAvailable,
+        NotificationEventCatalog.PreferredOffer,
         NotificationEventCatalog.OrderAssignmentCancelled,
         NotificationEventCatalog.InvoicePaid,
     ];

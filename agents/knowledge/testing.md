@@ -119,6 +119,13 @@ These are the areas where a bug costs money, breaks the law, or leaks data. Each
   the HTTP status + body. Cover the auth/ownership rejection explicitly.
 - **Frontend:** test the **facade** (signal transitions, error→snackbar mapping) over the component
   where possible; assert the three states (empty/loading/error) render.
+- **Android ViewModel:** `advanceUntilIdle()` only settles work on the `TestDispatcher`. A load path
+  that reaches `safeApiCall` (or anything else hopping to `Dispatchers.IO`) completes in **real** time,
+  so the assertion runs while the state is still `Loading` — and the resulting `ClassCastException`
+  reads like a production bug, not a test bug. Await the settled state through Turbine instead
+  (`uiState.test { while (awaitItem() is …Loading) Unit; cancelAndIgnoreRemainingEvents() }`, then read
+  `uiState.value`) — `AddressSectionViewModelTest`/`BankSectionViewModelTest` are the models. A VM whose
+  every dependency is a mocked repository has no such hop and `advanceUntilIdle()` is still right there.
 - **Process-global meters** (e.g. `IntegrationFailureMetrics`): a `MeterListener` hears every
   parallel test in the process. Two hermeticity strategies, chosen by what you assert on: unique
   synthetic tag values + listener-side filtering (see `IntegrationFailureMetricsTests`), or — when

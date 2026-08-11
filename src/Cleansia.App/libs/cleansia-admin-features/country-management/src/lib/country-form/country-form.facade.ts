@@ -50,10 +50,9 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
   createCountry(data: CountryFormData): void {
     this.saving.set(true);
 
-    const command = new CreateCountryCommand({
-      isoCode: data.isoCode,
-      name: data.name,
-    });
+    const command = new CreateCountryCommand();
+    command.isoCode = data.isoCode;
+    command.name = data.name;
 
     this.adminClient.adminCountryClient
       .create(command)
@@ -75,10 +74,9 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
   updateCountry(countryId: string, data: CountryFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateCountryCommand({
-      countryId: countryId,
-      name: data.name,
-    });
+    const command = new UpdateCountryCommand();
+    command.countryId = countryId;
+    command.name = data.name;
 
     this.adminClient.adminCountryClient
       .update(countryId, command)

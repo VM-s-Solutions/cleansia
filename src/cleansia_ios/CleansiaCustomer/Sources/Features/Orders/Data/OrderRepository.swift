@@ -9,7 +9,7 @@ import Foundation
 /// in the `SessionScopedCacheRegistry` so sign-out / forced-401 wipes it.
 @MainActor
 final class OrderRepository: SessionScopedCache {
-    @Published private(set) var orders: [OrderListItem] = []
+    @Published private(set) var orders: [CustomerOrderSummary] = []
     @Published private(set) var totalRecords = 0
     @Published private(set) var loaded = false
     @Published private(set) var loading = false

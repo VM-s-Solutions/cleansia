@@ -4,8 +4,13 @@ import Combine
 import Foundation
 
 struct ProfileData: Equatable {
-    let employee: EmployeeItem
+    var employee: EmployeeItem
     let contractStatus: ContractStatus?
+    var payoutSummary: String?
+
+    var jobRadiusKm: Int? {
+        employee.jobRadiusKm
+    }
 }
 
 @MainActor
@@ -30,13 +35,26 @@ final class ProfileViewModel: ViewModel {
         state = .loading
         switch await client.getCurrentEmployee() {
         case let .success(employee):
-            // Status is fire-and-forget — a failed fetch just hides the chip.
+            // Status and payout destination are fire-and-forget — a failed fetch just hides
+            // the chip and leaves the bank row on its placeholder.
             let status = await (client.checkCurrentEmployee()).valueOrNil
-            state = .loaded(ProfileData(employee: employee, contractStatus: status?.contractStatus))
+            let payout = await (client.getMyPayoutDetails()).valueOrNil.flatMap { $0 }
+            state = .loaded(ProfileData(
+                employee: employee,
+                contractStatus: status?.contractStatus,
+                payoutSummary: PayoutAccountSummary.text(for: payout)
+            ))
         case let .failure(error):
             state = .error(error)
             snackbar.showError(localizer.message(for: error))
         }
+    }
+
+    func applyJobRadius(_ radiusKm: Int?) {
+        guard case let .loaded(data) = state else { return }
+        var updated = data
+        updated.employee.jobRadiusKm = radiusKm
+        state = .loaded(updated)
     }
 
     func signOut() async {

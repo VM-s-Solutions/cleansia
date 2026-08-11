@@ -71,7 +71,7 @@ struct ProfileHubContent: View {
             ProfileHubRowItem(
                 icon: "building.columns",
                 title: L10n.Profile.bankDetails,
-                summary: employee.iban.nonBlankOrNil ?? L10n.Profile.noData,
+                summary: data.payoutSummary.nonBlankOrNil ?? L10n.Profile.noData,
                 route: .bank(onboarding: false)
             ),
             ProfileHubRowItem(
@@ -85,6 +85,12 @@ struct ProfileHubContent: View {
 
     private var preferenceRows: [ProfileHubRowItem] {
         [
+            ProfileHubRowItem(
+                icon: "location.circle",
+                title: L10n.JobRadius.title,
+                summary: JobRadiusSelection(radiusKm: data.jobRadiusKm).summary,
+                route: .jobRadius
+            ),
             ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, route: .language),
             ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, route: .theme),
             ProfileHubRowItem(
@@ -158,12 +164,12 @@ private struct ProfileHero: View {
                     .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
                     .frame(width: 72, height: 72)
                 Text(initials)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onFixedWhite)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(.white)
                     .lineLimit(1)
                 if let email = employee.email.nonBlankOrNil {
@@ -337,10 +343,10 @@ private extension String? {
                         lastName: "Nováková",
                         street: "Vinohradská 12",
                         city: "Praha",
-                        zipCode: "120 00",
-                        iban: "CZ6508000000192000145399"
+                        zipCode: "120 00"
                     ),
-                    contractStatus: .approved
+                    contractStatus: .approved,
+                    payoutSummary: "19-2000145399/0800"
                 ),
                 languageSummary: "Čeština",
                 themeSummary: "Follow system",

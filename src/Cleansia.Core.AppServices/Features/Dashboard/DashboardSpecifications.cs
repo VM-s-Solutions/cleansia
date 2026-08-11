@@ -1,11 +1,26 @@
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Specifications;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
 public static class DashboardSpecifications
 {
-    public static OrderSpecification CreateAvailableOrdersSpec(string excludeEmployeeId)
+    /// <summary>
+    /// The orders a cleaner may take — the dashboard hero count and the preview beneath it.
+    /// Both terms come from <see cref="OrderAvailability"/>: the coarse status set is the
+    /// index-served prefilter (and the fail-closed exclusion of pre-backfill NULL rows), and
+    /// <c>offerableOnly</c> is the rule itself, which no status set can express because it is
+    /// payment-qualified. The set this used to carry was {Pending, Confirmed}, and Pending has no
+    /// writer — so the count was structurally zero for an entire pipeline of untaken cash orders
+    /// while the Available pane beside it listed them.
+    ///
+    /// <para><paramref name="employeeId"/> is the caller, and it is spent under TWO opposite
+    /// polarities: <c>excludeEmployeeId</c> drops the orders they are already on, and
+    /// <c>notHeldFromEmployeeId</c> keeps the ones held FOR them (ADR-0036 D5). Both parameters take
+    /// the same id and mean opposite things, which is why neither may be folded into the other.</para>
+    /// </summary>
+    public static OrderSpecification CreateAvailableOrdersSpec(string employeeId, DateTime nowUtc)
     {
         return OrderSpecification.Create(
             id: null,
@@ -21,10 +36,13 @@ public static class DashboardSpecifications
             paymentTypes: null,
             minTotalPrice: null,
             maxTotalPrice: null,
-            orderStatuses: new[] { OrderStatus.Pending, OrderStatus.Confirmed },
+            orderStatuses: OrderAvailability.OfferableStatuses,
             hasAvailableSpots: true,
             isUnassigned: null,
-            excludeEmployeeId: excludeEmployeeId
+            excludeEmployeeId: employeeId,
+            offerableOnly: true,
+            notHeldFromEmployeeId: employeeId,
+            nowUtc: nowUtc
         );
     }
 

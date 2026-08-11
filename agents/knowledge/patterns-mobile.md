@@ -164,6 +164,16 @@ class OrderRepository @Inject constructor(
 }
 ```
 
+> **"Nothing recorded yet" is a repository concern, not a screen state.** Several single-resource
+> GETs answer **HTTP 400 with a business key** rather than an empty body when the record does not exist
+> yet — `Employee/GetMyPayoutDetails` → `payout.not_found` is the live one. Left raw, every caller
+> either shows a first-time cleaner an error screen or, worse, silently treats *every* failure as
+> "empty" and offers to overwrite a destination it simply could not read. Normalize it **once, at the
+> repository**: return `ApiResult<T?>` where `Success(null)` means absent and a genuine failure stays
+> `Error` (partner `ProfileRepository.getPayoutDetails`). The ViewModels then split cleanly — absent
+> renders an empty form, `Error` renders the error state — and the one place that knows the key is
+> covered by a repo test feeding the real ProblemDetails body.
+
 `networkCall` re-throws `CancellationException` (structured concurrency) and returns `null` on any
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
@@ -179,6 +189,120 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > `BookingApiTest` is the model; `UserRepositoryTest` shows the same generated-client mocking. Mutate it
 > by deleting a mapper line: if nothing goes red, the test is one hop short. iOS mirrors this — its
 > generated models have the same all-optional shape.
+
+> **And the RESPONSE side: a repository REFUSES a generated DTO, it never defaults one — and the
+> refusal names the field (ADR-0048).** Neither mobile spec declares a `required` array, so the
+> generator types every property optional-with-null **regardless of `nullable: false`**, and the
+> contract survives only in the spec. The one place a client can re-assert it is the mapper. `?: 0.0`
+> on such a field is not a default, it is a fabrication — `0 Kč` to a cleaner who earned 4 800, with
+> nothing going red.
+>
+> **Five rules, each because the naive default breaks it.** (1) **Money and quantities are never
+> coerced** — a null in a `nullable: false` field is a renamed or broken wire field, not a zero.
+> (2) **Booleans follow the money rule** — `false` is a real state (an unpaid order, a period with no
+> invoice), so defaulting to it is a claim. (3) **Identity is refused or dropped, never synthesized** —
+> which of the two is the *per-surface* ruling below. (4) **Collections DO default** (`orEmpty()`) — an
+> absent list and an empty one render identically and falsify no arithmetic. (5) **Nullable-by-design
+> stays nullable** — the server drew that distinction on purpose. Reference: partner
+> `PeriodPayRepository.kt:77-84`, `DashboardRepository.kt:243-252`.
+>
+> **The rollup ruling is PER SURFACE and is never inherited: refuse the page where the list IS the
+> addends; drop the row where a total is supplied independently.** Backwards, it produces *a smaller,
+> plausible, unmarked number* — the failure with no symptom. Drop when the total comes from the server
+> (customer `OrderApi.kt:141-152` states it: the paged `total` is the server's own count, so a lost row
+> falsifies no figure, while refusing would hide every order answered correctly). Refuse when the
+> client sums the rows — the catalog case is sharpest, because a dropped services row keeps its **id
+> selected** in booking state, is still priced by the server on `Create`, and vanishes only from the
+> pre-quote subtotal: the customer pays a price they were never shown. Refuse also when the rows are
+> **alternatives to each other** (membership plans) — a missing one is a different purchase. The two
+> compose inside one mapper (`OrderApi.kt:133-137`). Write the ruling, for this surface, in the
+> mapper's doc comment.
+>
+> **Three facts that decide this and are all counter-intuitive.**
+> 1. **A bare `$ref` cannot carry `nullable` in OpenAPI 3.0, so its absence carries no information** —
+>    sibling keywords beside `$ref` are ignored. In `GdprExportOrderDto`,
+>    `"status": { "$ref": … }` (`src/cleansia_android/openapi/customer-mobile-api.json:8100-8102`) sits
+>    beside a genuinely non-nullable `totalPrice` (`:8103-8106`) and is indistinguishable from it. **A
+>    `$ref` field can look required and be genuinely optional** — read the C# property, never the
+>    schema's silence.
+> 2. **A `toDomain()` that coerces scores clean on a "does it have a mapper?" audit.** The customer app
+>    has mappers throughout *and the mappers coerce*. Any audit of this class reads what the mapper
+>    **does**; sweeping on the return type finds the wrong files (`ReferralApi.kt:20-23` returns a
+>    hand-written DTO through a coercing mapper).
+> 3. **`.orEmpty()` on the response BODY is not rule 4 — it is the worst outcome of the set.**
+>    `CatalogRepository` called it there, so a refused price list surfaced as an **empty catalog
+>    reported as Success** — "nothing is bookable today". Rule 4 defaults a collection *member*; it
+>    never defaults the payload — **with one exception, which is §D2's own discriminator applied to the
+>    payload (ADR-0048 amendment B1).** A collection *payload* may default to empty only when **all
+>    three** hold and the mapper's doc comment says which: absence and empty are the same product
+>    decision on that surface; nothing sums, counts or paginates it; and no affordance is derived from
+>    its emptiness that a user would read as a fact. `CatalogRepository.refresh` is the worked example
+>    **because it does both in one method** — services and packages **refuse** (`:82-83`), extras
+>    **degrade** (`:87`, *"best-effort by existing design … never a wrong add-on price"*). The
+>    favourite-cleaner picker is the other side (`OrderApi.kt:109`, `OrderRepository.kt:250`, reasoning
+>    at `OrderRepository.kt:240-246`). *Without the exception the rule puts three correct sites in
+>    violation and the "fix" degrades the booking flow.*
+>
+> **The refusal transport is decided ONCE, in `:core`, not per call site (ADR-0048 §D5, answering
+> T-0589).** The canonical idiom is partner `WireContract.kt` — `required("field")` throws a
+> purpose-built `WireContractViolation` carrying the field name (`:12-15`), and `mapWire` turns it into
+> `ApiResult.Error(ApiError.Server(200, …))` (`:22-28`). It wins on four grounds, in order of weight:
+> it **cannot degrade to Success** (one function decides the outcome, not N callers — customer
+> `OrderRepository.kt:84` and `:110` returned `ApiResult.Success(Unit)` for a refused page before
+> T-0588); it is the only form that **carries the field name**; it **attributes correctly** —
+> `ApiError.Server(200,…)` says the server answered and the answer was wrong, where `ApiError.Network`
+> says the opposite of what happened; and `required()` **composes** on one expression where
+> `?: return null` obliges every enclosing signature. **`ApiError.Network` is never an available channel
+> for a contract violation** — that reasoning is adopted verbatim from the form it replaces
+> (`RecurringBookingRepository.kt:110-115`: *"that channel is the silent one … reusing it here turns a
+> failed write into a no-op the user never sees"*). **It remains correct for a `null` from
+> `networkCall`**, where the transport really did fail; the two must not be confused.
+>
+> **`:core` carries FIVE pieces, not one, and the last two are contract changes to shared primitives
+> (ADR-0048 amendment B4; the fifth found by the T-0602 roster).** `Response<T>.mapWire`, `wireResult`,
+> `Response<R>.requiredBody()` (`core/network/WireContract.kt:48`, `:59`, `:71`), **`networkCall`
+> rethrowing `WireContractViolation`** (`core/network/NetworkCall.kt:61-62`), **and `safeApiCall`
+> attributing it as `ApiError.Server(200, …)` rather than `ApiError.Unknown`**. The fifth is the same
+> fact as the fourth on the *other* shared primitive, and it was missed for the same reason: an adapter
+> that maps **inside** a Retrofit `Response` raises the refusal at the **call**, so it surfaces in
+> `safeApiCall`, never in `mapWire`. Both were priced at zero by the ADR as authored. The fourth is load-bearing: the
+> customer's adapters map **inside** the Retrofit `Response` (`OrderApi.kt:54-110`), so a refusal can
+> only cross that boundary as a **throw** — raise (`required`) → survive the shared catch (`networkCall`)
+> → attribute once (`wireResult`). Without the rethrow, `networkCall`'s `catch (t: Throwable) → null`
+> swallows every customer-side violation and the repository reports `ApiError.Network`, which is the
+> exact defect this rule closes. **A port to another stack inherits all four**, not the one the ADR
+> originally priced.
+>
+> **⚠️ Do not repeat `WireContract.kt`'s original claim that the name *"reaches triage"* — nothing
+> records it today.** Partner does not *lack* Sentry, it **actively disables** it:
+> `partner-app/src/main/AndroidManifest.xml:89-92` carries `io.sentry.android.core.SentryInitProvider`
+> with `tools:node="remove"`, and `CleansiaPartnerApp.kt:24-25` says it stays *"until partner gets a
+> Sentry DSN provisioned"*. `ApiError.Server` renders as the generic line, so the cleaner does not see it
+> either. The name is **preserved in a value that reaches no sink** — still strictly better than losing
+> it, and why the idiom wins anyway. **The doc-comment closure has landed**
+> (`WireContract.kt:21-25`); which sink, and when, is `Q-OBS-01`. *(A grep for
+> `SentryAndroid`/`SENTRY_DSN` under `partner-app` returns nothing and is a **false negative** — the
+> ADR's original evidence, corrected by amendment B3. Turning it on is a manifest node plus a DSN, not
+> a dependency adoption.)*
+>
+> **Pin (per repository):** decode a captured payload with every member non-default; assert that
+> removing a `nullable: false` money key **fails** the mapping; and assert the mapper's `@SerialName`
+> set **equals the spec's property set** — the field-name contract the mapper owns implicitly and would
+> otherwise lose on a rename. `PeriodPayWireTest.kt` is the model.
+>
+> **Enforced by:** the per-repository `*WireTest` suites **and `WireContractRosterTest`**
+> (`src/cleansia_android/core/src/test/java/cz/cleansia/core/network/WireContractRosterTest.kt`), run
+> by `:core:testDebugUnitTest` / `:partner-app:testDebugUnitTest` / `:customer-app:testDebugUnitTest`
+> (`.github/workflows/android-ci.yml:79`) — **`T1-CI`**.
+> **Scope, stated because it is narrower than the paragraph:** the roster is no longer a written-down
+> list. `WireContractRosterTest` derives it from the tree on every run — a source under either app's
+> data layer that names a generated response model and has no `*WireTest.kt` in its package fails the
+> build, so a new repository joins the roster by existing rather than by being remembered. The
+> per-field judgement is still not expressible (it needs the spec's nullability for the schema the
+> mapper targets); what is mechanical is the **presence of a pin** plus rule 1's numeric-zero
+> coercions, whose baseline is zero. **ADR-0048 is `accepted`** (with amendments B1–B6)
+> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
+> **Retires when:** that status line stops reading `accepted`.
 
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
@@ -214,8 +338,10 @@ flags a `@Singleton` with a `StateFlow`/`DataStore` cache field that isn't a mem
 (non-blocking — a Room-backed cache it can't see slips past it, so it prompts, it does not gate); the
 **hard** guard is a roster-equality assertion test (`SessionScopedModuleTest` / iOS
 `SessionScopedCacheRegistryTest`) that is **specified but not yet built** (today's `AuthRepositoryTest`/
-`PushLogoutClearsTests` only exercise `clearAll()` with an injected set). A full static "is this per-user"
-check is infeasible for the line-based checker (Kotlin/Swift type-graph resolution) — see `enforcement.md`.
+`PushLogoutClearsTests` only exercise `clearAll()` with an injected set).
+**Retires when:** `SessionScopedModuleTest.kt` and `SessionScopedCacheRegistryTest.swift` exist.
+A full static "is this per-user" check is infeasible for the line-based checker (Kotlin/Swift type-graph
+resolution) — see `enforcement.md`.
 
 The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
 (the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the stored
@@ -306,6 +432,36 @@ raw components one-off; never duplicate a `:core` component.
 > a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
 > expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
 > the second failure falls through to the placeholder instead of looping.
+>
+> **And the guard is released by a successful render, not held for the session.** A signature expires
+> *again*: a session that outlives two expiries hits the second one with its one retry already spent, so
+> a "once per key" guard that is never re-armed drops the avatar to initials permanently — and every
+> suite stays green, because the first expiry is the only one anybody tests. So the component reports
+> **success as well as failure** (`CachedRemoteImage.onLoadSuccess`, Coil's `onSuccess`) and the owner
+> clears the watermark on it (`ProfileViewModel.avatarLoadSucceeded` / Android
+> `onAvatarLoadSucceeded`) — the retry is *spent*, not forfeited. Both platforms plumb the pair through
+> **every** surface that draws the disc, not just the one the bug was found on; a call site wired for
+> failure only re-arms nothing. Mutation to prove it: empty the success handler — a test that fails a
+> key, succeeds it, then fails it again must go red.
+>
+> **The credential is not the existence check.** "Does this resource exist" is answered by the
+> content-addressed **`fileName`**, never by the SAS URL beside it and never by "is something currently
+> drawn". A fetch can return the name with a blank signature: the disc then draws the initials while a
+> stored blob genuinely exists, so anything gated on the URL — or on what is rendered — silently
+> refuses a **deletion the user is entitled to make**, and refuses it invisibly, because the screen
+> looks exactly like "there is no photo". So the domain model keeps the URL **optional** beside a
+> required name (iOS `ProfilePhoto`, Android's separate `avatarUrl`/`avatarFileName`), rendering asks
+> "is it drawable", destructive affordances ask "does it exist". Mutation: key the removal on the URL —
+> a test for a stored photo whose signature is missing must go red. Generalizes past avatars to every
+> SAS-backed blob (order photos, dispute evidence).
+>
+> **A save that reports outcomes reports exactly one.** The specific claim beats the general one at a
+> **single call site** — `showSuccess(avatarConfirmation?.message ?? profileSaved)` — so "photo updated"
+> and "profile saved" can never both fire for one save, and the mapping stays a pure function of the
+> pending edit (`nil` = nothing specific to say), resolved from the value captured **before** the
+> await. Fire it **only in the success branch**: firing at the tap still passes every positive test,
+> because they see one emit either way, so the test that earns its place is **a failed save claiming
+> nothing** — the difference between "a photo was chosen" and "a photo was saved".
 
 > **A sheet over a live backdrop — the ONE way (Android `SnapSheet`):** a panel layered over a
 > full-bleed map is **not** a `BottomSheetScaffold`. That scaffold has exactly two resting states —
@@ -351,14 +507,170 @@ raw components one-off; never duplicate a `:core` component.
 > which is **every** localized chip row, because a three-chip line that fits in English overflows in
 > cs/sk/uk/ru and an `HStack` truncates rather than wraps.
 
-> **A perk/benefit the backend never enforces must not be rendered.** The membership `allowsExpressUpgrade`
-> flag is seeded, returned by `GetMyMembership` and read by exactly zero lines of pricing code — a Plus
-> member pays the standard express surcharge — so the iOS perk row deliberately omits it while Android
-> still shows an "Express" pill. Before mirroring a benefit chip, grep the field: if its only readers are
-> DTO mappers, it is marketing copy, not a feature, and a second platform doubles the promise. The
-> matching iOS shape is a semantic **`MembershipPerk`** enum resolved by `MembershipPerks.resolve` (the
-> "carry the token, not the resolved string" rule again), so a test can assert the express case does not
-> exist at all rather than hunting a literal in a view.
+> **A perk/benefit the backend never enforces must not be rendered — grep the field before mirroring a
+> benefit chip.** If a flag's only readers are DTO mappers, it is marketing copy, not a feature, and a
+> second platform doubles the promise. The matching iOS shape is a semantic **`MembershipPerk`** enum
+> resolved by `MembershipPerks.resolve` (the "carry the token, not the resolved string" rule again), so
+> the claim is assertable without hunting a literal in a view.
+>
+> ⚠️ **`allowsExpressUpgrade` is no longer the worked example — it SHIPPED, and the perk is rendered on
+> all three clients.** The express-upgrade waiver is live and metered per calendar month (ADR-0035):
+> `ExpressWaiverResolver` feeds the pricing calculator, the quote carries
+> `expressSurchargeWaivedByMembership` / `expressUpgradesRemaining`, and iOS renders it
+> (`MembershipPerks.swift:125-130` — `.express(...)` off `ExpressWaiverStatus.resolve`;
+> `SubscribePlusScreen.swift:45`; `CustomerShellView` → `showExpressPerk`), as do Android and web.
+> **Do not "restore parity" by deleting the iOS express perk** —
+> that undoes shipped work, which is precisely what a stale worked example instructs the next reader to do.
+> The general rule above is unchanged; only its example expired.
+>
+> **When the condition a tripwire guards gets fixed, REPOINT the tripwire at the claim's content — do not
+> delete it.** The old test asserted the express case *did not exist*; once the mechanism shipped it had
+> nothing left to do, and deleting it would have dropped the guard on the two sentences that made the old
+> claim false. `MembershipExpressClaimTests` now asserts, per locale **through the built bundle** rather
+> than the `.xcstrings` source, that every express string exists and is localized, that none promises
+> "same-day" (express is a 2–4 h lead window), that none hardcodes the per-plan quota (numbers erased by
+> *shape* — the 20 % rate and the 2…4 window — so a bare digit allow-list cannot smuggle "2 free express
+> bookings a month" through), and that each screen rendering the claim gates it on a **server field**.
+> A test that asserts a claim's truth conditions outlives the flag; a test that asserts absence does not.
+>
+> **Enforced by:** the express-claim invariants — `MembershipExpressClaimTests`
+> (`CleansiaCustomer/Tests/MembershipExpressClaimTests.swift`), run by `xcodebuild -scheme CleansiaCustomer
+> … build test` (`.github/workflows/ios-ci.yml:189-196`) — **T1-CI**. **Scope, stated because it is
+> narrower than the paragraph:** it gates the enumerated express keys and a **closed roster of three
+> screen→gate pairs** (`:133-144`); a *fourth* screen that renders the claim ungated is not caught, and
+> adding one means adding its row. The general "grep the field before mirroring a chip" rule is
+> **(guidance — no gate)** — it is a judgement about a field's readers, not a mechanically expressible
+> property. *Cross-stack note (descriptive — not a rule for web): the same content invariants are held for
+> the customer web app by `apps/cleansia.app/src/app/i18n/membership-express-claim.spec.ts`.*
+
+> **A number the server computes has no client-side twin, and the REASON travels with it (T-0527).** Both
+> cancel sheets rebuilt the fee schedule locally and both were wrong — 50% where the backend charges 25%,
+> "no refund is available" where it refunds half — because two of the three inputs (the caller's own
+> free-cancellation window, whether a cleaner has taken the job) are server-side facts no customer DTO
+> carries. There is no correct client-side version of such a number, so **there is no fallback**: a
+> confident wrong number is worse than a spinner. The shape both platforms now use: the endpoint returns a
+> **tier discriminator** alongside the amounts, and the client resolves it into ONE value type carrying
+> **string keys + raw amounts** (Android `CancellationFeeCallout`, iOS the identical struct) — keys not
+> sentences so the tier→copy map is assertable without a bundle, raw amounts so the view still owns the
+> currency. Three rules it encodes: (1) **render the discriminator, never re-derive it from the rate** —
+> `FreeNotAccepted` (nobody took the job) and `FreeOutsideWindow` (you are early) are both zero and are
+> different sentences; (2) a failed quote degrades to a **non-numeric** prompt with a **retry**, and the
+> destructive action is gated **only on "in flight"**, never on "failed" — a pricing outage must never
+> strand a customer on a booking they want gone (hoist that gate: iOS `CancelOrderConfirmGate` / Android
+> `cancelConfirmEnabled`, because it is one `.disabled(...)` argument nothing else can see); (3) when the
+> number stops being a guess, **re-examine the "estimated" disclaimer** rather than keeping it by reflex —
+> here it became "this is the cost right now, we check again the moment you confirm", which is the one
+> honest residual (the tier turns on the clock).
+>
+> **And when both platforms ship the same feature in one sprint, diff the COPY, not just the behaviour.**
+> These two sheets independently produced two different string sets for the same five server tiers — same
+> ladder, different sentences — which is a parity break a green suite on each side cannot see. The second
+> platform to land reads the first's `values*/strings.xml` (or `Localizable.xcstrings`) and takes the keys
+> and the translations verbatim; a five-locale test that every tier resolves to a **distinct, non-key**
+> string is the cheap net under it.
+>
+> ### The redaction narrowing of rule (1) — the discriminator is the field's own ARRIVAL (ADR-0047)
+>
+> Rule (1) above — *render the discriminator, never re-derive it* — governs a second case, and both
+> mobile lanes reached it independently. **When the server redacts a field for a caller class, the
+> client's gate is that field's own arrival; never a flag that re-derives entitlement client-side.**
+>
+> The pair (precise field, coarse substitute) is modelled as **one sealed value** with a case per
+> disclosure level — `precise` / `approximate` / `none` — and every surface reads it. Reference on both
+> platforms: `OrderLocationPresentation.kt:17-32` (built at `:34-40`) and
+> `OrderLocationPresentation.swift:13-45` (built at `:47-57`), each carrying the reasoning in its doc
+> comment.
+>
+> **Why the flag is wrong, in one sentence you cannot recover from the code:** the server redacts on
+> `CanAccessOrderAsync` (`GetOrderDetails.cs:58`, applied at `:137-139`) and computes
+> `isAssignedToCurrentUser` from the assignment list (`:81-82`). Those disagree for the employee who
+> books a cleaning **for their own home** — entitled, not assigned — and gating on the flag hides that
+> person's own data from them. It is a second authorization implementation living beside the server's,
+> and it will drift the next time the server's predicate widens.
+>
+> Four obligations travel with it:
+> - **Scope: fields, not actions.** An **action** gate (a Take/Start/Complete arm) and a **request**
+>   gate (whether to fetch at all) legitimately read the flag and fail **closed**. Withdrawing them
+>   would offer "Slide to start" on a stranger's order (`OrderPrimaryAction.kt:97`) and would fetch
+>   photographs of a home the caller is not entitled to (`OrderDetail.swift:119-124`). *The rule is
+>   about what is **rendered**, never about what is **offered**.*
+> - **Where there is no coarse substitute** — phone, access instructions, notes — the sealed value
+>   collapses to two cases and the gate is simply *did the field arrive*; but **every conjunct of that
+>   gate lives on the presentation model, and the view's expression is a single reference to it with no
+>   `&&`** (ADR-0047 amendment A1). A lifecycle term does not escape this: it becomes a parameter or a
+>   property — `OrderDisclosure.showsAccessCard(status)`
+>   (`OrderDisclosurePresentation.kt:45-46`) and `OrderDetail.showsAccessCard`
+>   (`OrderDetail.swift:140-142`) are the two shipped shapes.
+>   ⚠️ **"Named" is not the obligation; WHOLE is.** Two forms satisfy "named" and leave the defect live:
+>   a `val` inside the composable, and a *partial* gate where the model exposes the arrival term and the
+>   **view** conjoins `&& isMine`. The Android lane shipped the second by accident and **the mutation
+>   reinstating the entitlement flag passed green**; only moving the whole gate onto the model made it
+>   red. So the check is not "does it have a name" but **"does reinstating the flag anywhere in the gate
+>   redden a named test"** — and the way you find out is by mutating it.
+> - **Blank counts as absent — and blank is NOT ONE SHAPE.** The redaction is **mixed**: string scalars
+>   go to `string.Empty` (`OrderPiiRedaction.cs:25-29`, `:37-41`), collections to `[]` (`:49-50`), and
+>   **every free-text field plus `Address` to `null`** — `AccessInstructions = null` at `:44`. So the
+>   roster spans both forms and **neither `!= null` nor `!= ""` alone covers it**; the arrival test is
+>   `isNullOrBlank`/`isEmpty` (whitespace included) in every case. `null` is *ambiguous* here —
+>   "redacted" and "never entered" arrive identically — which is acceptable only because both render the
+>   same. *(ADR-0047 amendment A2 corrects §D4's original "not to `null`", which was false; three shipped
+>   doc comments still assert it — `OrderDetail.swift:133`, `OrderDisclosurePresentation.kt:21`,
+>   `OrderDetailRedactionGateTests.swift:17` — and are ticketed.)* Both shipped location resolvers say
+>   why for the substitute (`OrderLocationPresentation.kt:37-38`,
+>   `OrderLocationPresentation.swift:51-52`).
+> - **Withdrawing a render gate obliges you to check what was silently depending on it.** `canAddNotes`
+>   on both platforms had been riding the render gate that was withdrawn, so withdrawing it alone would
+>   have offered "Add note" on a stranger's job. One conjunct is **gained**, not lost.
+> - **A LIFECYCLE term survives; only the ENTITLEMENT term is withdrawn.** `showAccessCard` is
+>   `isMine && <populated> && (OnTheWay || InProgress)`; the status conjunct answers *when is this
+>   useful* and stays. Deleting the wrong conjunct turns a door code into permanently-visible content on
+>   a completed job.
+>
+> **The pin is behavioural, at the divergent shape** — the field populated **and**
+> `isAssignedToCurrentUser` false — not a source scan asserting the flag is absent. An absence
+> assertion is the shape the tripwire rule below already refuses: it asserts nothing about the claim's
+> content and goes green when the view is renamed away. The call-site binding suite
+> (`OrderDetailLocationCallSiteTests.swift:12-21`) stays for *"the view renders through the resolver"*;
+> it is the wrong instrument for *"the view does not consult a flag"*.
+>
+> **Enforced by:** per-surface behavioural tests at the entitled-but-not-assigned shape —
+> `OrderDisclosurePresentationTest` (Android), `OrderDetailRedactionGateTests` (iOS) — run by
+> `:partner-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) and the `CleansiaPartner`
+> scheme (`.github/workflows/ios-ci.yml:185-187`) — **`T1-CI`**. The baseline was closed by **T-0590**
+> (`7fdce902` Android, `327013db` iOS); the deviating form and the converted roster are in
+> `consistency.md` §*"Rendering a server-redacted field off an entitlement flag"*.
+> **ADR-0047 is `accepted`** (with amendments A1–A4)
+> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
+> **Retires when:** that status line stops reading `accepted`.
+>
+> ### The block-level case — a DISCLOSURE BLOCK's arrival is the SERVER's decision (ADR-0049)
+>
+> The narrowing above is about one **field**. It has a composite sibling: a group of fields the server
+> populates in order to say a **sentence** — `PreferredOfferDetails` on the customer order detail. The
+> rule is the same shape one level up, with the *who* made explicit: **the client renders the block off
+> the block's own arrival, and the SERVER decides the arrival.** A client must never conjoin a second
+> server field — an order status, a seat count — to work out whether the server's own sentence is still
+> true. The full rule, its scope line and the three obligations are on the backend page
+> (`patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the server when its sentence stops being
+> true"*), because that is the layer that owes the work.
+>
+> **iOS carries one such conjunct today and KEEPS it — this is a ruling, not an oversight.**
+> `PreferredOfferPresentation.disclosure(for:)` guards on `OrderStatusGroup.isUpcoming(order.status)`
+> (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/PreferredOfferPresentation.swift:23-24`).
+> Unlike the entitlement flag above, that term **agrees with the server on every input** — there is no
+> divergent caller class, so it is duplication rather than a second authorization. What it costs is
+> drift, and the retirement condition is written down rather than left to memory (ADR-0049 §D6): the
+> conjunct is deleted, and its two tests
+> (`src/cleansia_ios/CleansiaCustomer/Tests/PreferredOfferPresentationTests.swift:71-93`) repointed at
+> the absent-block case, the next time that file is opened for any reason.
+>
+> ⚠️ **And it does not fix the whole defect, which is why the server owns it.** `isUpcoming` is
+> `status != Completed && status != Cancelled`
+> (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:37-40`), so
+> on a `Confirmed`, fully-staffed booking it returns true and the card still says *"this booking is now
+> open to our whole team"* about a job somebody else already took. **No status grouping, at any
+> membership, can express that** — the term is a free-seat count. A mobile lane asked to "add the
+> grouping web is missing" should read ADR-0049 first.
 
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
@@ -418,6 +730,24 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
 
+> **A copy-only change is a silent NON-RUN on Android, and a mutation proof against one is worthless
+> until it is forced.** The locale guards read `res/values*/strings.xml` **off disk**, through a path
+> Gradle does not know is an input. Change only a string *value* and nothing Gradle tracks moves — the
+> R class is byte-identical — so `testDebugUnitTest` reports `UP-TO-DATE`, and `cleanTestDebugUnitTest`
+> then restores the same result `FROM-CACHE`. Measured 2026-08-09 on the closed-offer copy: a
+> deliberately wrong translation **passed the mutation twice** before the run was forced.
+>
+> So: any check whose evidence is a resource file, not code, is verified with
+> `./gradlew :<module>:testDebugUnitTest --rerun-tasks --no-build-cache`, and the report says how many
+> tasks **executed**. `N tasks up-to-date` is a non-run, not a pass — the same rule as capturing
+> `EXIT=$?` before a pipe, one layer up. CI's fresh checkout is what has actually been running these
+> assertions; locally they have been skipped since the first one was written.
+>
+> The same exposure exists on iOS for `StringCatalogCompletenessTests` and the push-key catalog tests,
+> which read the three `.xcstrings` off disk from `#filePath`. **Enforced by:** nothing automatic —
+> **T3-HUMAN**, and the named enforcer is the ticket's evidence line, which must state executed-task
+> counts rather than "green".
+
 **A conditional list of chips/pills/rows is a pure resolver, never a `buildList` inside the
 composable.** `MembershipPerks.resolve(response) -> List<MembershipPerk>` (customer
 `features/membership/MembershipPerks.kt`, mirrored by iOS `MembershipPerks.swift`) returns **semantic
@@ -426,6 +756,23 @@ were bugs the shape prevents: the labels were English literals (`"$pct% off"`) b
 `buildList` asks you for a resource id, and one `add(...)` sat outside every condition with no backing
 field. A resolver lets the test say "this case is not in the list" instead of grepping a view for a
 literal, and it makes the gating condition — not the rendering — the thing under test.
+
+**A price the SERVER charges is never estimated on the client (T-0527).** Both apps' cancel sheets computed the cancellation fee
+locally and disagreed with the backend in both charged tiers — **50% shown where 25% was taken**, *"no refund is available"* shown
+where half was refunded — because two of the three inputs (the caller's own free-cancellation window, whether a cleaner has been
+assigned) exist only server-side. The shape: a `GET` preview endpoint whose response carries a **tier discriminator** beside the
+money, a pure resolver `tier → (titleRes, amountRes, args, severity)` (customer `CancellationFeeCallout.kt`), and **no fallback
+ladder** — a fallback that disagrees IS the defect, and a confidently wrong number is worse than a spinner. Three rules travel with
+it. (1) An **unknown or absent discriminator renders "we could not check"**, never a defaulted ordinal: ordinal 0 is usually the
+free/best arm, so `tier?.value ?: 0` quotes a discount the server will not honour — default it at the API adapter and no test
+downstream can see it. (2) **Re-ask on every open**, and cancel the in-flight call rather than racing it; the quote is only true for
+the instant it was computed, so replaying the last one is the same class of lie. (3) A preview outage must **never block the action
+it prices** — only a quote *in flight* holds the confirm button, and that gate is a pure function (`cancelConfirmEnabled`) so the
+guarantee is assertable rather than buried in a composable. A server flag disclosing a cost the customer cannot otherwise see
+(`expressWaiverForfeitedOnCancel`, ADR-0035 AM-13) rides the same card and is pinned at the **call site** — it exists precisely
+because the forfeiture is invisible in the cases where the fee is zero. Finally, copy that spells a rate (*"50% fee"*) or a window
+(*"15 minutes"*) re-encodes the ladder in `strings.xml` where `R` cannot see it: state the server's amounts, and pin the absence
+with a locale-parity test that fails on a re-introduced `%%`.
 
 **A local preference the server also stores needs a sync seam, not just a DataStore write.**
 `AppSettingsRepository.setLanguage` wrote DataStore only, so `User.PreferredLanguageCode` — the sole
@@ -538,12 +885,26 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Android `SnackbarInsetState` global inset flow (`SnackbarInsetScope(88.dp)` in `MainShell.kt:244-246`) | a `@Published bottomInset` on `SnackbarController` (`setBottomInset`/`resetBottomInset`) that un-pinned hosts follow — the customer shell sets the bottom-chrome clearance (stock tab bar + docked Book FAB, `BookFabMetrics.chromeEnvelope` + gap — post-ADR-0022-supersede chrome) while its path is empty and resets on push/disappear (`ShellSnackbarInset`); a host may instead PIN an explicit `bottomInset:` (every modal-sheet host does, so a shell lift never leaks into a sheet). *(Architect-ratified T-0379, 2026-07-19 — verified against `SnackbarController.swift`/`GlobalSnackbarHost.swift`/`CustomerShellView.swift:104-109`)* |
 | a snackbar emitted while ANY modal sheet/cover is up (Android sheets are in-hierarchy, so this never occluded there) | **attach `.snackbarHost(snackbar, bottomInset:)` at every modal-sheet content root whose flow can emit** — the window-root host renders in the root view layer, structurally BELOW UIKit's sheet presentation layer, so it is invisible under any `.sheet`/`.fullScreenCover`; the same controller drives all hosts (booking / promo / referral / order-cancel / order-review sheets). A sheet flow that only emits via the root host is a defect (T-0371) |
 | `SwipeToConfirmButton.kt` (Wolt-style slide-to-confirm: thumb drag, ≥90%-of-track fire, spring-back below, parent `resetTrigger` snap-back so a failed submit is retryable) | the Core **`SlideToConfirm`** (`Components/SlideToConfirm.swift`) — the ONE control for both apps (partner `.subtle` style, customer booking `.prominent`): pure `SlideToConfirmThumb` (clamp/threshold/lock/reset, unit-tested), `resetTrigger:` parity + auto-reset when `isBusy` ends, `enabled:` dim-and-ignore. A static track with an `.onTapGesture` standing in for the slide is a defect (T-0371) |
-| partner `PersonalSectionScreen.kt` `BirthDateField` (tappable field → Material-3 `DatePickerDialog`, future dates blocked) / the customer profile date fields | the Core **`BirthDateField`** (`Components/BirthDateField.swift`) — the ONE tappable birth-date control for both apps (`label:`/`placeholder:`/optional `errorText:` params, medium date formatted via the environment `\.locale` so the in-app language switch re-renders it, `.graphical` `DatePicker` in a `.medium`-detent sheet, `in: ...Date()` future-block). A per-app private date-field copy is a defect |
+| partner `PersonalSectionScreen.kt` `BirthDateField` (tappable field → Material-3 `DatePickerDialog`, future dates blocked) / the customer profile date fields | the Core **`BirthDateField`** (`Components/BirthDateField.swift`) — the ONE tappable birth-date control for both apps (`label:`/`placeholder:`/optional `errorText:` params, medium date formatted via the environment `\.locale` so the in-app language switch re-renders it, `.graphical` `DatePicker` in a `.medium`-detent sheet, `in: ...Date()` future-block). A per-app private date-field copy is a defect. **Enforced by:** the swiftlint custom rule `birth_date_picker_is_the_shared_one` (`src/cleansia_ios/.swiftlint.yml`) — **T1-CI**. It is a POSITIVE match (a `selection:` binding over `birthDate` outside `BirthDateField.swift`), because the absence form — a `DatePicker` whose modifier chain lacks a timezone pin — is an unbounded negative over a region with no lexical terminator, and any character window is both evadable and breakable by a re-wrap. Three residuals, named rather than implied: it is identifier-keyed (`dob`/`dateOfBirth` are invisible), the environment pin inside `BirthDateField` is itself guarded by nothing, and it does not generalize to non-birth-date calendar-day fields |
 | `ApiErrorParser.parseToUserMessage` | an app-injectable `ApiErrorLocalizing` seam (`ApiErrorLocalizer`); server message wins, else status→localized fallback |
 | `stringResource(R.string.x)` | `String(localized:)` / `Localizable.strings`. **Positional args transpose:** Android's `%1$s` becomes `%1$@` in `.xcstrings` (`%1$d` stays) — `String(format:)` with `%s` and a Swift `String` prints garbage, not the argument, so a verbatim-copied `$s` key is a silent-corruption defect |
 | `navigation.Routes` (`@Serializable`) — **top-level audience hops** (Splash/Login/Lock/Main via `popUpTo{inclusive}`) | **the flat-enum root-switch** (`PartnerRootView` over a closed `enum Route`: `.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell), seeded `hasValidSession ? .splash : .login`, a verified login bounces through `.splash` which re-resolves shell-vs-lock (**ADR-0020**, reviewer #23). A top-level audience state modeled as a pushed `NavigationPath` is a deviation |
 | `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector). **Concrete (T-0310, §7.7):** the Profile tab hosts an in-tab `NavigationStack` over a typed `ProfileRoute` enum; the RegistrationLock (a root audience state) owns its OWN local `NavigationStack` over the same gate-section routes and pushes the **shared** section set over itself with `onboarding == true` — fail-closed, no cross-audience routing into the shell |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
+
+> **A regenerated client does not reach your checkout through git, and a stale one fails SILENTLY.**
+> The iOS generated packages are gitignored, so when the owner regenerates, only the **spec** moves in
+> version control (`src/cleansia_android/openapi/*.json`, which both platforms read). Your local
+> `Cleansia{Partner,Customer}Api` is only as new as the last local run of
+> `src/cleansia_ios/scripts/generate-api-clients.sh`. Android has the same shape one level down: its
+> checked-in `build/generated/` tree was still the pre-regen codegen after the owner's dump, and
+> `:partner-app:openApiGenerate --rerun-tasks` was needed.
+> **The failure mode is what makes this worth a rule:** a stale client does not fail to compile — it
+> decodes the new field away as null, so the app reads a value the server is sending and sees
+> nothing. Both platforms hit exactly that on `EmployeeItem.jobRadiusKm` (2026-08-09). So: after any
+> `manual_step: mobile-spec-regen`, **regenerate locally and verify the symbol exists** before
+> concluding anything about a field's absence. **Enforced by:** nothing automatic — **T3-HUMAN**, and
+> the check is one grep for the new symbol in the generated package.
 | Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless. **`installGeneratedClientAuth()` is the ONE seam for ALL generated-client globals**: the factory + basePath, `Cleansia{Partner,Customer}ApiAPI.apiResponseQueue = DispatchQueue(label: "cz.cleansia.api.response", qos: .userInitiated)` (the generator default is `.main` — response processing AND Codable decode on the main thread = UI stutter), and `CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: CodableHelper.dateFormatter.date(from:))` (Core wrapper: the generated ISO chain first, then offset-less `yyyy-MM-dd'T'HH:mm:ss[.fff…]` parsed as UTC — .NET `Kind=Unspecified` date-times otherwise fail the WHOLE response decode) |
 | `ApiErrorParser` reads the ProblemDetails body (`errors` dict → `detail`/`title` → generic) | every generated call site maps errors via the app-local `ApiError.fromGenerated` (`{Customer,Partner}GeneratedError.swift`), which delegates to Core **`ApiError.fromProblemDetails(httpStatus:body:fallbackMessage:)`** — the ONE ProblemDetails body parser (code = `errors`-dict key → `errorCode` → `type`, since the API base controller writes the business key into `type`); the raw body text is a last-resort message only. A second hand-rolled ProblemDetails parser in an app target is a defect. **Cancellation-class transport** (Swift `CancellationError`, `URLError.cancelled`, the bridged `NSURLErrorCancelled`/`-999` the generated client wraps as `ErrorResponse.error(-1, …, underlying)` — whose `localizedDescription` is the literal "cancelled") maps to the Core `ApiError.cancelledCode` marker via `ApiError.isCancellation(_:)`, which `SnackbarController.showApiError` **drops silently** — the Android `networkCall`-re-throws-`CancellationException` parity (a superseded request on tab-switch / pull-to-refresh / sheet-dismiss never snackbars). A call site that surfaces an error via `snackbar.showError(localizer.message(for:))` instead of `showApiError` bypasses that drop |
 | backend enums on mobile DTOs are ALWAYS ints on the wire (`TolerantEnumConverterFactory`), but the spec says string unless the enum carries **`[SwaggerEnumAsInt]`** — a missing attribute is a contract LIE that kills the whole response decode on both platforms (the MembershipStatus bug). New mobile-DTO enum checklist: attribute on the Domain enum → owner spec re-dump → regen clients → add the Android `IntEnumSerializersModule` entry | same checklist; the regenerated Swift enum becomes `Int`-backed (cases `_1…`) automatically — decode-only enums need no app-side mapping |
@@ -554,7 +915,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `core/location/ReverseGeocodingService.kt` (Mapbox Geocoding v5 over OkHttp; `accessToken` from BuildConfig) | `CleansiaCore/Location` **`GeocodingService`** protocol + **`CLGeocoderGeocodingService`** default impl — a 1:1 port (`reverseGeocode`/`forwardGeocode` → `GeocodedAddress?`/`[GeocodedAddress]`) **minus the Mapbox token + the OkHttp/network args** (MapKit = system framework, **no token**). Best-effort: nil/`[]` on error, **cancel the in-flight geocode before re-firing** (`kCLErrorGeocodeCanceled` swallowed) — the `runCatching{}.getOrNull()` parity. Debounce ports VERBATIM: **300ms forward / 500ms reverse** (`AddressPickerScreen.kt:188,171` — also the `CLGeocoder` rate-limit guard) (sprint-12 §7.6 D1/D3, reviewer #27) |
 | `core/location/{GeocodedAddress,UserLocation}.kt` + `MapStyles.kt` (Mapbox style URIs) | `Coordinate` + `GeocodedAddress` plain value types in `CleansiaCore/Location` (the `GeocodedAddress.kt` field parity). **`MapStyles.kt` is NOT ported** — the stock MapKit standard style is the parity baseline; a custom Mapbox Studio style returns only if Q-IOS-02 flips to "yes" (sprint-12 §7.6 D4) |
 | Mapbox `MapboxMap` + center-pin overlay + my-location FAB (`AddressPickerScreen.kt`) | **`MapProvider`** picker-map factory (a `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin the map pans under — iOS-16 variant, NO `Map{Marker}`/`onMapCameraChange`, reviewer #12) in `CleansiaCore/Location`, the **only** sanctioned MapKit consumer. **Current-location/the my-location FAB + the `LocationProvider` seam SHIPPED in T-0335** (T-0325's `NSLocationWhenInUseUsageDescription` ×5 landed first): a Core `LocationProvider` protocol + `CLLocationManagerLocationProvider` (the ONLY CoreLocation consumer besides the geocoding provider) behind the `\.locationProvider` environment key; the auto-center/FAB flows live in `AddressPickerViewModel` (`autoCenterOnOpen`/`recenterOnMyLocation` + the one-shot `locationFailed`) — already-denied on open stays silent (no nag), explicit FAB taps always answer. The picker centers on the **Prague default** until a fix arrives + ships pan+search parity. Full-bleed `OrderDetail` map + service-area polygon overlay added **additively** later (`MKMapView`/`UIViewRepresentable`, ADR-0014 D6′). The AddressPicker has **NO `UiState`/`ActionState`** — plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback (sprint-12 §7.6 D1/D2/D3). The picker **VM is a Core type** (`CleansiaCore/Location/AddressPickerViewModel`, public, `searchBias: [String] = ["cz","sk"]`) shared partner↔customer (**T-0349**); the **Views stay app-local** and carry the only sanctioned feature-layer `import MapKit` (the `pickerMap`/`fullBleedMap` MapKit-typed protocol binding — the `MapProvider.swift:5` seam boundary) |
-| Mapbox `MapBackdrop` full-bleed map (single address pin, camera-padded for the sheet — `OrderDetailScreen.kt:256-299`) | the **additive `MapProvider.fullBleedMap(coordinate:)` method** (`MKMapView`/`UIViewRepresentable` inside `MapKitMapProvider`, ADR-0014 D6′) — **ONE address pin, camera bottom-padded for the sheet peek**, NO `overlays:`/`polygon:` param (there is **no service-area polygon data** in the partner spec — `ServiceCityDto` has only `zipPrefix`; Android renders no polygon either; overlay support is additive IF T-0334 ever has geometry). The §7.6 D1 minimal-now/additive-later seam reaching T-0307; feature/VM import no MapKit (reviewer #7/#12/#30) (sprint-12 §7.9 (a)) |
+| Mapbox `MapBackdrop` full-bleed map (single address pin, camera-padded for the sheet — `OrderDetailScreen.kt:256-299`) | the **additive `MapProvider.fullBleedMap(coordinate:)` method** (`MKMapView`/`UIViewRepresentable` inside `MapKitMapProvider`, ADR-0014 D6′) — **ONE address pin, camera bottom-padded for the sheet peek**, NO `overlays:`/`polygon:` param (there is **no service-area polygon data** in the partner spec — `ServiceCityDto` has only `zipPrefix`; Android renders no polygon either; overlay support is additive IF T-0334 ever has geometry). The §7.6 D1 minimal-now/additive-later seam reaching T-0307; feature/VM import no MapKit (reviewer #7/#12/#30) (sprint-12 §7.9 (a)). **The pin itself is `CleansiaMapMarker` (Core `Location`)** — MapKit's stock annotation is a **red** balloon while Android's `MapPin`/`MapBackdropPin` is a `colorScheme.primary` disc, so the marker is tinted to the same light/dark pair (`0x0284C7`/`0x38BDF8`, Sky600/Sky400) with a white `mappin` SF Symbol glyph, vended by the shared stateless `MKMapViewDelegate` that `apply(to:)` installs. **No asset:** the owner asked for a colour match (Q-IOS-05), not an icon port — the balloon *shape* stays MapKit's, and a drawn/shipped disc is the only way to change that. The **hexes are the source of truth and the testable surface** (a `Color` → `UIColor` roundtrip flattens dynamic providers on the 16.0 floor — the `BrandGradient.stops` rule). **Every** map annotation goes through it, including SwiftUI `MapMarker(coordinate:tint:)` on the picker map — whose visible pin is still the SwiftUI centre overlay, so its `annotationItems: []` list stays empty. **Enforced by:** `MapAnnotationConfinementTests` (`CleansiaCoreTests`; `ios-ci.yml` → "Build & test CleansiaCore") — **T1-CI** |
 | `BottomSheetScaffold` + `rememberStandardBottomSheetState(PartiallyExpanded, skipHiddenState=true)`, full-bleed map always behind, `sheetPeekHeight=0.75·screen` (the Wolt/Foodora **non-modal** 3-snap sheet, `OrderDetailScreen.kt:172-245`) | the **custom non-modal `SnapSheet` `CleansiaCore` container** (`GeometryReader`+`DragGesture`, 3 snap offsets map-focus/peek≈0.75/expanded, layered over `fullBleedMap` — **iOS-16.0-safe, NOT `.presentationDetents`** which are `.medium`/`.large`-only on 16.0, custom 16.4+) — **ADR-0021** (the floor stays 16.0). NOT a modal `.sheet` (which would change the layout — dimmed screen behind, drag-to-dismiss, no live map). Native `.sheet`+`.presentationDetents` stays the **modal**-sheet way (the customer booking sheet, ADR-0018 D3); the discriminator = *modal-over-a-screen vs non-modal-over-a-live-backdrop* (reviewer #29) |
 | Composable `OrderPrimaryAction` inlining `when(status){…}` (status×ownership×photos → action, `OrderPrimaryAction.kt:54-126`) | a **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction` sealed enum** (`.take/.notifyOnTheWay/.start/.complete/.completeBlocked/.none`), one tested function for the **three** call sites (detail footer, list inline row, panes) — NOT three inline switches. Presentational; consumes `isMine`/`hasAfterPhotos` (ownership trust = SECURITY §7.8 O1–O4). Canonicalizes the Android inlined table (sprint-12 §7.9 (c), reviewer #31) |
 | `Code?.toOrderStatus()` matching `Code.value` against `OrderStatus.values()` (`OrderStatusPill.kt:40-42`) | one `extension Code { func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) } }` — the read-path DTOs (`OrderItem`/`OrderListItem`.`orderStatus`) carry the **`Code` envelope** `{type,name,value:Int?}` (the action responses carry the typed `OrderStatus`); `OrderStatus: Int` rawValues 0…6 = the backend ints (0 New·1 Pending·2 Confirmed·3 OnTheWay·4 InProgress·5 Completed·6 Cancelled). Mapped in **one** place — no raw-`Int` `.value` compares, no second mapper (sprint-12 §7.9, reviewer #31) |
@@ -564,7 +925,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Invoice-PDF viewing: the VM streams the `downloadInvoice` `ResponseBody` → app cache dir → a `FileProvider` URI handed to `Intent.ACTION_VIEW` (the system PDF viewer; a `notifyNoPdfViewer()` fallback if none installed — `InvoiceDetailViewModel.kt:81-108` / `InvoiceDetailScreen.kt:91-104`) | the Core **`QuickLookPreview` `UIViewControllerRepresentable`** (`CleansiaCore/Components`) wrapping **`QLPreviewController`** — the **2nd member of the `CameraOrLibraryPicker` family** (the canonical imperative-UIKit-controller-behind-a-SwiftUI-seam idiom; ADR-0018 D2 brand-skin-over-native), **reused by the customer app (T-0314)** so it MUST be Core, not partner-local. The generated swift5+urlsession `employeePayrollDownloadInvoice` (`format: binary`) **writes the body to disk and returns a local file `URL` itself** — so the VM holds the URL and surfaces it via a **ONE-SHOT event** (NOT a route); the screen presents `QuickLookPreview` over it. The "Open PDF" affordance is **guarded on the DTO's `pdfGenerationFailed`** (disabled/hidden when true — iOS does it better than Android's unconditional download). **NO `FileDownload` Core seam** (the generated client IS the download — an orchestration seam would be dead abstraction). **The previewed PDF is deleted from cache on dismiss — SECURITY E4** (`security/ios-earnings.md`); the coordinator hosts that cleanup. **Recorded Gate-DP divergence:** FileProvider/`ACTION_VIEW` → Core `QuickLookPreview`; same in-app PDF viewing, native mechanism, no stream-to-cache/FileProvider/no-viewer branch. **Rejected:** a partner-local representable (duplicated into customer); a share-sheet (export, not a viewer); `SafariView` (web URLs, not a `file://` PDF) (sprint-12 §7.12 (b), reviewer #33) |
 | Per-screen private `formatMoney`/`currencySymbol`/`formatDate` copied across `EarningsSummaryScreen.kt`/`InvoiceDetailScreen.kt`/`InvoicesListScreen.kt`/`PeriodPayScreen.kt` (two grouped money precisions: `%,.0f` whole for the earnings headline `:421`, `%,.2f` decimal for invoices/PeriodPay) | a small Core **`EarningsFormat`** (`CleansiaCore`, the `EmailValidator`/`PasswordPolicy` factoring): `formatMoney`(`%,.2f` grouped) + `formatMoneyWhole`(`%,.0f` grouped) + ISO→local date helpers, reusing the **currency-symbol resolution HARVESTED to Core** (≥3 call sites — a `NumberFormatter(.currency)`/`Locale` lookup with the never-crash raw-`code` fallback, the `Currency.getInstance(code).getSymbol(Locale)?:code` parity). The symbol lookup MUST build the override via **`Locale.Components(locale:)` + `Locale.Currency(code)`** — NEVER identifier concatenation (`"\(Locale.current.identifier)@currency=\(code)"`): real devices report keyword-carrying identifiers (e.g. `en_US@rg=czzzzz` when Region ≠ language default), the second `@` makes the identifier malformed, the currency override is silently dropped, and the symbol collapses to the device currency (`"$"` for CZK amounts — the iOS fix-3 Pay & Earnings defect). **Do NOT overload `DashboardFormat.money`** (it is `%.0f` ungrouped — the dashboard hero's own contract, neither earnings format). PeriodPay's `currencyCode` is threaded via the **nav route** (`EarningsRoute.periodPay`), not the DTO (`PeriodPaySummary` has none — `PeriodPayViewModel.kt:43-44`). Client-side display only — server amounts authoritative. The Earnings **summary** REUSES `PartnerDashboardClient.getStats` (the `DashboardStatsDto` the Dashboard hero renders — `EarningsSummaryViewModel.kt:23-32,49`), NOT a payroll-client duplicate or a `GetPeriodPays`-derived summary (sprint-12 §7.12 (c)/(d), reviewer #33) |
 | `:core/notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient}.kt` — FCM token (`FirebaseMessaging.getInstance().token` + the messaging-service `onNewToken`) → `/api/Device/Register`/`Unregister` (`Platform="android"`); registration is a session×token PROPERTY (`combine(session,token).filterNotNull().distinctUntilChanged()→ensureRegistered`); `unregisterDevice()` BEFORE the token wipe (`AuthRepository.kt:210-225`); `clear()` = `SessionScopedCache` local-only | a Core **`PushRegistrar`** protocol in `CleansiaCore/Push` — the **SOLE** consumer of `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications` (feature/lifecycle code imports neither `UserNotifications` nor `UIKit` — the `MapProvider`/`CameraOrLibraryPicker` seam family, ADR-0014 D6′/ADR-0018 D2) exposing `requestAuthorization`/`registerForRemoteNotifications`/an APNs-token stream (the `fcmToken: StateFlow<String?>` parity); the AppDelegate push callbacks via a per-app **`@UIApplicationDelegateAdaptor`** feeding it; a Core **`PushSessionObserver`** (the `PushTokenSessionObserver.kt` combine-parity); `Device/*` over the **ADR-0019** spine, **`Platform="ios"`**, the one `X-Device-Id`; `unregisterDevice()` from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe + the local `clear()` via the `SessionScopedCacheRegistry`. Minimal `willPresent`/`didReceive`-tap now; in-app feed/badge SHIPPED via the T-0393/T-0430 server-backed feed (`NotificationsInbox*` + keyset-gated badge; T-0336 superseded); the `aps-environment` entitlement (no plist key); delivery owner-gated → **T-0342** (sprint-12 §7.13, reviewer #34) |
-| customer/partner `CleansiaFirebaseMessagingService.kt` renders **data-only** pushes from `strings.xml` templates (device locale, unknown key = silent drop) + `NotificationDeepLink.encode/resolve` routes the tap intent | **display = the ADR-0025 APNs loc-key alert, NO new iOS render code**: the backend attaches `push.<event_key>.title|body` + allowlisted `loc-args` ({orderNumber, count} only; tier body argless, new-jobs body count-agnostic `%1$@`), which iOS resolves from **each app target's own `Localizable.xcstrings`** — NEVER CleansiaCore's (APNs sees only the main bundle's table; an SPM resource bundle is invisible) — full 12-event × 5-language catalog in EVERY token-registering build or the raw `push.*` key renders on the lock screen (pinned per app by `PushLocKeyCatalogTests`). Wording ports the Android notification strings per audience per locale (`%1$s`→`%1$@`); events the sibling Android app never renders borrow the other audience's wording. **Tap = the mirrored per-app trio**: delegate `didReceive` → pure `{Partner,Customer}NotificationDeepLink.resolve(userInfo)` (reads ONLY the data keys — `event_key`/`orderId`/`disputeId`; the `aps` block is ignored, test-pinned) → `PushNavigationModel.pendingDestination` (`@Published` + one-shot `consume()`) → the shell consumes in `.onChange` **and** `.onAppear` (cold start) and applies a pure `PushTapRouting`/`CustomerPushTapRouting` plan — tab + seeded `NavigationPath` (dispute thread seeds the list under it so back lands there) + modal sheets dismissed (a covered destination is invisible) |
+| customer/partner `CleansiaFirebaseMessagingService.kt` renders **data-only** pushes from `strings.xml` templates (device locale, unknown key = silent drop) + `NotificationDeepLink.encode/resolve` routes the tap intent | **display = the ADR-0025 APNs loc-key alert, NO new iOS render code**: the backend attaches `push.<event_key>.title|body` + allowlisted `loc-args` ({orderNumber, count} only; tier body argless, new-jobs body count-agnostic `%1$@`), which iOS resolves from **each app target's own `Localizable.xcstrings`** — NEVER CleansiaCore's (APNs sees only the main bundle's table; an SPM resource bundle is invisible) — every registered event × 5 languages in EVERY token-registering build or the raw `push.*` key renders on the lock screen (pinned per app by `PushLocKeyCatalogTests`; no event count is written down anywhere on purpose — the one that was drifted silently). The copy ships BEFORE the backend registers the event and the client roster may lead `ApnsDisplayMap` by an event, never trail it. Wording ports the Android notification strings per audience per locale (`%1$s`→`%1$@`); events the sibling Android app never renders borrow the other audience's wording. **Tap = the mirrored per-app trio**: delegate `didReceive` → pure `{Partner,Customer}NotificationDeepLink.resolve(userInfo)` (reads ONLY the data keys — `event_key`/`orderId`/`disputeId`; the `aps` block is ignored, test-pinned) → `PushNavigationModel.pendingDestination` (`@Published` + one-shot `consume()`) → the shell consumes in `.onChange` **and** `.onAppear` (cold start) and applies a pure `PushTapRouting`/`CustomerPushTapRouting` plan — tab + seeded `NavigationPath` (dispute thread seeds the list under it so back lands there) + modal sheets dismissed (a covered destination is invisible) |
 | `customer-app/.../core/auth/GoogleSignInController.kt` — provider acquisition returns a **typed `GoogleSignInResult`** (`Success(idToken, googleId, email, first, last) \| Cancelled \| NoAccount \| NotConfigured \| Failure`), **never navigates**, swallows-and-logs cancel/no-account; the VM maps the result → `AuthOutcome` then the repo's `googleAuth` POST | a Core **`SocialSignInProviding`** protocol (`CleansiaCore/Auth`) returning a typed **`SocialSignInResult`** (`.google(GoogleCredential) \| .apple(AppleCredential) \| cancelled \| noAccount \| notConfigured \| failure`) — fakeable, so the VM unit-tests against fakes (no live provider). The **acquisition impls are APP-LOCAL** in `CleansiaCustomer` (partner offers no social login — an ADR-0013 D3 split): `AppleSignInController` (`#if canImport(AuthenticationServices)`, the SOLE AuthenticationServices consumer — generates a crypto-random raw nonce, sets `request.nonce = SHA256(rawNonce)` HASHED to Apple, returns the **RAW** nonce to the backend; `.fullName`/`.email` scopes; name only on first authorization) + `GoogleSignInController` (`#if canImport(GoogleSignIn)`, the SOLE GoogleSignIn consumer — `serverClientID` = backend `Google:ClientId`, empty config → `.notConfigured` FAIL-SAFE, no crash). The seam keeps both first-party frameworks behind the protocol (the `PushRegistrar`/`CameraOrLibraryPicker` seam-family, with `#else` no-op fallbacks so Core/tests compile without the SPM dep). **Consumption = the Core spine:** two new `AuthApiClient` methods `googleAuth`/`appleAuth` (hand-written request DTOs, anon `noAuthSession`/no Bearer, `/api/Auth/{GoogleAuth,AppleAuth}`) that **reuse the SAME `resolveEmailGate` + single Keychain `persist`** — ~10 lines each, **NO parallel social token-write path** (a finding). The official `ASAuthorizationAppleIDButton` (via a `UIViewRepresentable` driving the seam, NOT SwiftUI's built-in request handler) is **first**, the Google button **second**, below the Core **`LabelledDivider`** (reused, NOT re-declared per app) `OR` divider on SignIn + SignUp (AR-ACCT-2/4.8). The Google button is a CUSTOM outlined label rendering the **real multicolor Google "G"** brand mark (a vector-PDF `google_g` imageset in the customer assets, `renderingMode(.original)` so it stays 4-color) + the localized "Continue with Google" — Google branding REQUIRES the official "G", NOT an SF Symbol. The provider snackbars are provider-**neutral** (`auth_social_*`, ×5) since Apple + Google share the `.noAccount`/`.notConfigured`/`.failure` branches. LIVE sign-in owner-gated → **T-0344** (Apple capability + `Apple:BundleId`) / **T-0345** (Google client ids); the `com.apple.developer.applesignin` entitlement + the GoogleSignIn-iOS SPM dep + the reversed-client-id URL-scheme **slot** (placeholder) ship now (sprint-12 §7.14 D6 / §7.15 D2/D3/D6, T-0312 Slice C) |
 
 | `res/drawable-nodpi/mascot_*.png` (brand raster art) + Coil-3 `MascotAnimation` over `res/raw/*.webp` (animated WebP, `repeatCount`, freeze-on-last-frame) | **one shared** asset catalog in `CleansiaCore` (`Sources/CleansiaCore/Resources/Assets.xcassets`, universal single-scale imagesets under the same `mascot_*` names) read via the Core **`Mascot` enum** (`Components/Mascot.swift`, resolves in `MascotAssets.bundle`) + the animated WebPs as **data assets in that same catalog** played by the Core **`AnimatedMascotView`** (`UIViewRepresentable` over ImageIO `CGAnimateImageDataWithBlock`, iOS 14+; `loop: false` stops on the last frame; static-`Mascot` fallback when the data asset is missing or animation fails). `CGAnimateImageDataWithBlock` has **no cancel handle**, so the representable's **`Coordinator` holds the active `(data, loop)` + a generation token**: `updateUIView` restarts on change and the superseded run stops itself via the block's stop flag — an empty `updateUIView` freezes the OLD animation when SwiftUI reuses the `UIImageView` for a different mascot. **`CGAnimateImageDataWithBlock` IGNORES the WebP container's baked-in loop count** (verified: `mascot_welcoming` carries `loopCount=1` yet the block repeats 49→0→1→… forever), so a one-shot must FORCE-stop itself on the last frame via the block's stop flag — the loop metadata cannot be relied on. **Freeze-on-last-frame is not automatic on device:** the block's transient last frame does not survive a later SwiftUI `updateUIView`/relayout, nor a fresh blank `UIImageView` SwiftUI hands back after the run ends (the reuse path where `shouldRestart` short-circuits and never re-sets `.image`). Fix: on completion the Coordinator **decodes and PINS the final frame** (`completedGeneration` + `pinnedFinalFrame`) and **re-asserts it on EVERY `updateUIView`** (not once) — `AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(loop:hasCompletedFrame:superseded:)` gates it to a completed, non-superseded one-shot so a newer run still wins. A single post-teardown re-apply (the earlier approach) was insufficient — it did not cover subsequent relayout. SF-symbol substitution is allowed for Material **icons** only, never for brand raster art — empty states go through the Core `MascotEmptyState` (now takes optional `subtitle`/`imageSize`/`titleFont` + an `actions` builder for the CTA) |
@@ -583,6 +944,22 @@ handling** — a call site catching a 401 and refreshing itself (the single-flig
 once, for all). Authentication is decided by the injected `AnonymousAllowList`, **not** the generated
 `requiresAuthentication` flag. T-0303 proves it; every later authed wave installs the same factory per host and
 writes no auth code.
+
+**Binding a repository `@Published` into an iOS view model — the ONE way:** `upstream.assign(to: &$property)`.
+`Subscribers.Assign` holds its `on:` target **strongly**, so the key-path form —
+`repository.$x.assign(to: \.x, on: self).store(in: &cancellables)` — closes
+`self → cancellables → subscription → Assign → self` and the view model never deallocates. The leak is
+invisible while a view model has no `deinit`; it turns into work that never stops the moment someone adds
+one (`OrderDetailViewModel`'s `deinit` is `pollTask?.cancel()`, so there the same shape left a poller
+running per screen open for the life of the process). The projected form needs no `cancellables` entry at
+all: the subscription's lifetime is the `@Published` property's. Prove a fix with a weak-reference release
+test, not by reading the call site.
+**Enforced by:** the `combine_assign_retains_target` custom rule in `src/cleansia_ios/.swiftlint.yml`,
+run by `swiftlint lint --strict` (`.github/workflows/ios-ci.yml`, blocking) — **T1-CI**. *Scope, stated
+because it is narrower than the paragraph: the rule matches the key-path call form
+(`.assign(to: \.…`) outside comments and strings; it does not decide whether a given target would
+actually have been retained, and `.swiftlint.yml`'s `included:` covers the two app `Sources` trees plus
+`CleansiaCore/Sources` and `CleansiaCore/Tests` — the app test targets are not linted.*
 
 **iOS jank idioms (T-0425 owner perf sweep):** (a) ship brand raster at ≤ the largest on-screen render
 size (the 1024²→600² mascot downsample — SwiftUI decodes the full asset on the MAIN thread at first
@@ -649,8 +1026,8 @@ audience state modeled as a pushed `NavigationPath`; a seed of `.dashboard` (the
 `.splash`); a verified login routing straight to `.dashboard` (bypassing the gate). The customer app copies
 the *pattern* (its own root view + audience states), not the partner enum.
 
-**iOS shell navigation — the ONE way (ADR-0022, 2026-07-02, as owner-superseded 2026-07-08; partner
-finalized T-0429; stale pill mandate swept T-0379):** no `NavigationStack` is ever nested inside another
+**iOS shell navigation — the ONE way (ADR-0022, 2026-07-02, as amended by owner direction 2026-07-08;
+partner finalized T-0429; stale pill mandate swept T-0379):** no `NavigationStack` is ever nested inside another
 (the audience root is a bare flat-enum `switch` — the `CustomerRootView.swift:17`/`PartnerRootView.swift:17`
 crash class), and every path is a **type-erased `NavigationPath`** (never `@Published var path: [SomeRoute]`
 — homogeneous typed sibling paths, multi-element sets, and `navigationDestination(isPresented:)` mixing are
@@ -738,6 +1115,75 @@ the selected tag never reaches it without an App Group. That is the opposite of 
 the accepted trade-off until an App Group exists (an entitlement/provisioning change). Do NOT confuse this with
 APNs `loc-key` strings, which must stay in each **app** target's catalog (APNs reads only the main bundle).
 
+**A key in the SHARED Core catalog must be voiced correctly for every persona that can receive it — and if
+two personas need different sentences for one key, the BACKEND emits two keys (ADR-0037, CH-X1).**
+`ApiErrorLocalizer.swift:29-33` resolves `"error." + key` **only** from `CoreL10n.bundle` and never probes the
+app bundle, so **every** `error.*` string is shared by CleansiaPartner and CleansiaCustomer, and neither app
+has (or should get) an override. Cleansia shipped `error.order.no_available_spots` = *"No cleaners are
+available for that slot. Please pick another time."* — a customer's sentence, and the **only** message a
+partner sees when they lose a race for a job. Two rules follow:
+- **Before adding an `error.*` string to Core, ask which commands can emit that key** (`rg <ConstantName>
+  src --type cs` — emitters, not the constant). Write the sentence for **all** of them, or ask the backend to
+  split the key. A sentence that is right for one audience and wrong for another is a defect the localizer
+  cannot fix.
+- **Do NOT "fix" it by teaching `ApiErrorLocalizer` to probe the app bundle first.** That is a second
+  resolution order and a per-app override seam — which then needs its own parity guard, for the exact class of
+  drift the shared catalog exists to prevent. **Audience-awareness belongs in the backend's key choice, not in
+  a shared client localizer** — that is what the per-audience API hosts are for. *(Rejected as A20 in ADR-0037;
+  cite that ADR if you are about to re-propose it.)*
+- **Corollary for the whole error path: a missing key fails differently on each client, and only one of the
+  three is visible.** Android shows the raw key (`ApiErrorTranslator.kt:70`), iOS shows the raw key
+  (`ApiErrorLocalizer.swift:18-20`), **web shows the generic "An error occurred"** and is therefore silent
+  (`http-error.interceptor.ts:14-20`). **Verify translations by grepping the locale files, never by watching a
+  screen** — Cleansia's `order.weekly_limit_reached` was missing from all five partner-web locales for months
+  because a reviewer "checked for the raw key" on a client that never shows one.
+- **"The key exists" is not "the key is voiced for whoever can now receive it", and a copy bill that ticks
+  existence will ship the defect it was written to close.** ADR-0037's bill marked
+  `order.already_cancelled` / `order.already_completed` **Reuse — iOS ✅ already localized** and its take gate
+  then made both newly reachable by a cleaner; both read *"This booking is already…"* in all five locales.
+  So the check when a change widens a key's audience is a **voice** check, not a presence check. The cheap
+  form of it: diff the Core `error.*` values against **`partner-app/src/main/res/values*/strings.xml`**, not
+  against the customer app's — Cleansia's Core `error.order.*` block was seeded from the Android **customer**
+  catalog, so `no_available_spots`, `time_conflict`, `weekly_limit_reached` and `not_found` all matched
+  Android *customer* verbatim while only partner commands could emit the first three. One mis-voiced string
+  is nearly always a seeded block, so sweep the whole surface the first time you find one.
+- **Pin it with a roster the backend grounds, not a spot assertion** (Core `PartnerErrorVoiceTests`): the
+  keys whose every emitter is a partner/admin command, each carrying its emitters, checked in all five
+  locales for (a) resolving to a sentence rather than the raw key and (b) carrying none of the customer
+  catalog's reservation vocabulary (`booking` / `rezervac` / `rezervác` / `бронюв` / `бронирован`). It reads
+  the **compiled** bundle, so it stays green where the on-disk `.xcstrings` suites cannot open the repo.
+  Its mirror for the other audience is Core **`CustomerErrorVoiceTests`** (same roster shape, for keys only a
+  booking command can emit) — a key reachable by exactly one persona gets a roster entry on that persona's
+  side, whichever it is.
+- **Source the sentence from the matching audience's Android catalog, verbatim per locale — do not author it
+  on iOS.** A partner-only key's five values are ported from `partner-app/src/main/res/values*/strings.xml`,
+  a customer-only key's from `customer-app/…`; iOS is the third client to render the same refusal, and a
+  better sentence written here is a divergence, not an improvement. Copy that encodes a backend rule
+  (the account-number mod-11 checksum reads "almost always a typo", not "invalid"; the IBAN mismatch names
+  the empty-IBAN fallback that derives it from the parts) is a **pin**, not prose — one small
+  `contains`-per-locale assertion beside the roster, so a re-word on one client cannot land silently.
+- **A roster that proves VOICE cannot prove PRESENCE — pin the keys the client can RECEIVE, per locale.**
+  The audience-exclusive rosters above, `CoreL10nCatalogTests` and `StringCatalogCompletenessTests` all
+  enumerate keys the catalog **already has**, so a key missing from **all five** locales is invisible to
+  every one of them: locale parity is *satisfied* by a key that is absent everywhere. So each iOS app
+  also carries a roster built from the other direction — every `BusinessErrorMessage` its own mobile
+  host's commands can answer with, the command's own validator/handler **and** any shared
+  validator/service it calls, each asserted to resolve to a sentence in en/cs/sk/uk/ru. Two construction
+  rules keep it honest: reachability is computed from that host's **`Controllers/`** alone (a feature
+  named in a Swagger schema filter is not an endpoint — that one false edge put the whole customer
+  booking surface on the partner roster), and a key **no client can provoke stays out** — the two
+  `payment.*` keys guarding the Stripe webhook signature are the standing example, because a roster
+  entry nothing can reach later reads as coverage. Mutation that proves the pair: delete one key from one
+  locale (red, naming key + locale), then delete a key outright — the completeness suites stay green and
+  only this roster goes red.
+  **Enforced by:** `CustomerErrorVoiceTests.testEveryCustomerReachableKeyResolvesInAllFiveLocales` +
+  `PartnerErrorVoiceTests.testEveryPartnerReachableKeyResolvesInAllFiveLocales` (CleansiaCore), run by
+  `xcodebuild -scheme CleansiaCore … build test` (`.github/workflows/ios-ci.yml:171-177`) — **T1-CI**.
+  **Scope, stated because it is narrower than the paragraph:** the rosters are hand-maintained, so a
+  backend key added after they were written is not caught until someone re-derives them.
+  *(Cross-stack note, descriptive — not a rule for Android: the Android lane reached the same shape in
+  the same week, after a customer was shown the literal `recurring_booking.membership_required`.)*
+
 **A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
 the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and
 the server's `LiveActivityPayloadFactory`. Any constant they must agree on (the ADR-0029 D2 stale-date
@@ -759,6 +1205,15 @@ once format specifiers are stripped; these are the fingerprint of Xcode having d
 non-English value equal to the English source unless it is on an asserted **allow-list** of proper nouns
 (IBAN, platform names, `Cleansia Plus`, format-only strings) — and (d) that allow-list carries no stale entry.
 Adding a locale-invariant string means adding an allow-list entry with a reason, never skipping the check.
+
+> **An allow-list entry names the LOCALES it covers, not just the key.** Most of these entries are
+> invariant everywhere (`IBAN`, `iOS`, `Cleansia Plus`), but several are invariant **only in cs/sk** —
+> `"min"`, `"h"`/`"m"`, `"Bonus"` — and are plainly false for uk/ru, which are Cyrillic. A whole-key
+> exception suppresses every locale, so a Ukrainian value left as the Latin English source is swallowed
+> by the very entry whose reason says *"the Czech word"*, and (d) still passes because cs and sk keep
+> echoing. Both rules are therefore checked per `(catalog, key, locale)`: (c) suppresses only the named
+> locales, and (d) fails an entry that names a locale which no longer echoes — narrow it rather than
+> deleting it. **Enforced by:** `StringCatalogCompletenessTests` (T1-CI, all three iOS test schemes).
 
 **Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
 a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.
@@ -991,10 +1446,12 @@ ADR.**
   `InvoicesListUiState` flag-bag. **The read-scoping / PII gate (own-id-only + the post-preview PDF cache-cleanup) is
   SECURITY's** (`security/ios-earnings.md`) — not this rule.
 - **Parity catch-ups (Android is thin → iOS does it right, file the Android follow-up):** Android renders Open-PDF
-  unconditionally (no `pdfGenerationFailed` gate) and hand-wrote a `PeriodPayApi` Retrofit interface (the spec didn't
-  carry `GetPeriodPays` at the time — `PeriodPayApi.kt:8-18`); iOS gates the affordance off the flag and uses the
-  **generated** `employeePayrollGetPeriodPays` (the regen'd spec now carries it). Both Android catch-ups are PM-filed
-  follow-ups, independent of the iOS wave.
+  unconditionally (no `pdfGenerationFailed` gate); iOS gates the affordance off the flag. That one is still a PM-filed
+  follow-up, independent of the iOS wave. **The second catch-up is CLOSED:** Android had hand-written a `PeriodPayApi`
+  Retrofit interface because the checked-in spec did not carry `GetPeriodPays` at the time — T-0576 (`51c1311c`) deleted
+  it and collapsed the call onto the **generated** `EmployeePayrollApi`, behind a `toDomain()` mapper that refuses to
+  coerce money or identity, so both platforms now call the same generated `employeePayrollGetPeriodPays`
+  (`PeriodPayRepository.kt:55-62`).
 
 **iOS push — the ONE way (sprint-12 §7.13, T-0311; ADR-0013 D8 + ADR-0014 D6′ + ADR-0018 D2 + ADR-0019 + the
 `SessionScopedCacheRegistry`; reviewer #34):** APNs push **registration + token plumbing + device lifecycle + a
@@ -1086,10 +1543,12 @@ surfaced as a **sealed `UiState<Catalog>`** on the VM (NOT the Android `loading`
 E1 catch). **Server is authoritative for pricing:** the VM's `quoteState` FSM (`idle`/`quoting`/`quoted(BookingQuote)`,
 no `Error` variant — a swallowed failure keeps the prior quote, the Android `QuoteState` parity) is driven by a Combine
 **quoteWatcher** — `$state.map(\.quoteRequest).removeDuplicates().debounce(400ms).sink → orderQuote`; iOS computes ONLY the
-**display math** in a pure **`BookingPricing`** port (max(tier,promo) discount FIRST, then +20% express on the discounted
-subtotal for the 2–4h lead band, mirroring `CreateOrder.Handler` ordering so the shown total == the charged raw subtotal).
-The footer Continue/Slide label shows the live total via `BookingPricing.finalTotal` (the `BookingBottomSheet.kt` footer
-parity). **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
+**display split** in a pure **`BookingPricing`** / **`BookingPriceSummary`** port — it *splits* the server's already-composed
+total and evaluates **no rate at all** (the rule immediately below). The footer Continue/Slide label shows the live total via
+`BookingPriceSummary.resolve(...).total` (the `BookingBottomSheet.kt` footer parity). ⚠️ This clause used to read *"discount
+FIRST, then +20% express on the discounted subtotal, mirroring `CreateOrder.Handler` ordering"* and named a
+`BookingPricing.finalTotal` that no longer exists — **that sentence shipped a defect on both clients** and is superseded by
+the rule below. **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
 `PartnerGeneratedAuth`, `CustomerAuthSpine.make` now returns a stack exposing the `headerAdapter`) — the first customer
 business client, authed through the one Core spine. Quote/catalog are in `AnonymousAllowList.customer`, so the
 `HeaderAdapter` withholds the Bearer on those paths even with a stored token — guest booking works tokenless. The
@@ -1102,8 +1561,64 @@ allow-list entries STAY (the carve-out is an additive classification, NOT a dele
 are anon-but-not-dual-use → **never** get the Bearer even signed-in; `Payment/CreatePaymentIntent` is in no anon set →
 always authed. `partner` has an empty `dualUsePaths` (no regression). The factory carries the Bearer on non-allow-listed paths. **Deviations a reviewer rejects:**
 a ported catalog flag-bag instead of `UiState<Catalog>`; a quote computed/totaled client-side instead of the server response;
-the discount applied AFTER the surcharge or promo/tier summed instead of max(); a per-call Bearer/401 on the quote/catalog
-call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
+**any pricing rate evaluated on the client** — express surcharge, VAT, tier or promo percentage — instead of splitting the
+server's own figures (promo/tier summed instead of `max()` is the same defect one layer up); a per-call Bearer/401 on the
+quote/catalog call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
+
+> **The client SPLITS the server's total; it never evaluates a rate — the ONE way for every money row on the booking sheet.**
+> `QuoteOrderResponse.totalPrice` **already contains** the express surcharge, so each row is derived by *subtraction*, in
+> exactly **one** place per app: iOS `BookingPriceSummary.resolve`
+> (`CleansiaCustomer/Sources/Features/Booking/BookingPricing.swift:46-63`), Android `BookingPriceSummary.resolve`
+> (`customer-app/…/features/booking/BookingPricing.kt:50-65`).
+>
+> ```
+> subtotal         = quote.totalPrice − quote.expressSurchargeAmount      // pre-surcharge, by subtraction
+> expressSurcharge = quote.expressSurchargeAmount                         // the server's number, verbatim
+> total            = max(quote.totalPrice − discount, 0)
+> expressLine      = waived ? .waived : applied ? .charged : .notExpress  // waived OUTRANKS charged
+> ```
+>
+> **Why the naive form is wrong — kept here because a rule whose rationale is missing gets re-derived away.** Both clients
+> used to mirror `CreateOrder.Handler`'s *ordering* (discount first, then +20 % express on the discounted subtotal). Both
+> were wrong on the wire: the number they were adding 20 % to had **already had 20 % added by the server**, so an express
+> booking displayed roughly a fifth more than the order was created with — on both platforms, agreeing with each other and
+> with neither the server nor the charge. Mirroring a server *formula* is not reproducing a server *number*: the formula's
+> input was the raw subtotal; what the client holds is the formula's **output**. Any time a client "mirrors backend ordering",
+> ask which end of the pipeline the value it holds came from.
+>
+> **This dissolves the pre-/post-discount base question rather than answering it.** There is no base to choose because no
+> rate is applied. Every discount amount on the quote was computed by the server *against the same pre-surcharge subtotal*,
+> so subtracting it off the gross total reproduces the server's own composition exactly — the clients now agree with the
+> server rather than merely with each other. The general form: **a new money line is a new AMOUNT field on the quote, never
+> a rate in the client.** If a row cannot be produced by adding or subtracting fields the server sent, the fix is a server
+> field, not client arithmetic.
+>
+> **The discriminator is "does a currency amount depend on it", NOT "is it a percentage"** — say it that way or the next
+> reader over-applies this and deletes a legitimate chip. Two things stay and are not violations:
+> `BookingPricing.requiresExpressSurcharge` (it decides which *slots the grid may label* express before any quote for that
+> slot exists — it touches no money and no money row reads it), and *rendering* a percentage as copy, e.g. the "5 % off"
+> perk label off `membership.discountPercentage` (`MembershipPerks.swift:116`). Displaying a rate is fine; **applying** one
+> to money is not. Likewise `effectiveDiscount` — `max(quote.tierDiscountAmount + quote.membershipDiscountAmount,
+> promoState.discount)` (`BookingViewModel.swift:96-99`) — is compliant: it *selects among server amounts*, and the LOY-003
+> best-wins shape is the server's, not the client's invention.
+>
+> *Cross-stack note (descriptive — not a rule for the backend or for web): the server composes
+> `totalPrice = chargeSubtotal + expressSurchargeAmount` (`src/Cleansia.Core.AppServices/Services/OrderPricingCalculator.cs:82`)
+> and derives its discount base as `rawSubtotal = grossSubtotal − ExpressSurchargeAmount`
+> (`src/Cleansia.Core.AppServices/Features/Orders/QuoteOrder.cs:163-164`); customer web performs the identical split at
+> `libs/cleansia-customer-features/order-wizard/src/lib/order-wizard/order-pricing.facade.ts:98-101`.*
+>
+> **Enforced by:** `BookingPriceSummaryTests` (`CleansiaCustomer/Tests/BookingPricingTests.swift:46-125`, run by
+> `xcodebuild -scheme CleansiaCustomer … build test`, `.github/workflows/ios-ci.yml:189-196`) **and** `BookingPriceSummaryTest`
+> (`customer-app/src/test/java/cz/cleansia/customer/features/booking/BookingPriceSummaryTest.kt`, run by
+> `:customer-app:testDebugUnitTest`, `.github/workflows/android-ci.yml:79`) — **T1-CI**. The Android suite carries the case
+> that kills the whole class of defect rather than one instance: a surcharge that is 20 % of **neither** the pre-discount nor
+> the post-discount subtotal, so only reading the server's `expressSurchargeAmount` produces it (`:56-65`) — one assertion
+> rejecting *both* candidate bases. **Scope, stated because it is narrower than the sentence:** the suites pin the resolver's
+> arithmetic, and every money row on both clients goes through that resolver today (iOS `BookingSheetView.swift:175`,
+> `Confirm/ConfirmStep.swift:30-31`; Android `ConfirmStep.kt:100`, `BookingBottomSheet.kt:554`). They do **not** catch a
+> *second* computer of money appearing beside it. Keep the one call site per screen — a new money row is a new field on
+> `BookingPriceSummary`, not a new calculation in a view.
 
 **Slice C (T-0313 §7.16 When&Where + Confirm extras/promo/referral, done):** Step 2 = the address row (a `.fullScreenCover`
 over a customer-local `BookingAddressPickerView` reusing the Core `MapProvider`/`GeocodingService` seam + the shared Core
@@ -1126,8 +1641,13 @@ slug→true `selectedExtraSlugs`. Promo + referral are **one-shot Apply-validate
 (`…/invalid(ReferralValidationError?)`) over a **`ReferralClient`** (`Referral/Validate`, **fail-soft** — a network failure or
 typed-invalid is `.invalid`, never fatal; the wire payload still forwards the raw code at submit, Slice D). Valid persists the
 normalized code into `BookingState`; the typed-error enums map to localized `.xcstrings` keys (NOT the `code: String?` placeholder).
-The code dialogs are native `.sheet`+`.presentationDetents([.medium])` owning local input+FSM, firing the VM's async validate once
-per Apply, swapping to Done on Valid (the `PromoCodeBottomSheet.kt` parity). **Recorded parity divergence:** Android's ConfirmStep
+The code dialogs are native `.sheet`s owning local input+FSM, firing the VM's async validate once
+per Apply, swapping to Done on Valid (the `PromoCodeBottomSheet.kt` parity); their detent is **NOT** a fixed `.medium` —
+it is the self-sizing `.fixedSize` + height-`PreferenceKey` + `.presentationDetents([.height(measured)])` shape ruled in the
+*iOS partner order work-loop* entry above, shipped at `CodeSheetShell.swift:29,36`. *(Erratum 2026-08-05, T-0471 lead: this
+sentence read `.sheet`+`.presentationDetents([.medium])` until today. It described the Slice-C shipped state and was
+superseded by the architect-ratified T-0397 rule, which withdrew `.medium` for exactly these promo/referral dialogs — so the
+catalog was granting on this line what it forbade above, and the granting form no longer matched the code either.)* **Recorded parity divergence:** Android's ConfirmStep
 *removed* the referral row (signup-only); the ticket re-scopes the referral FSM+row into Slice C, so iOS ships it (the
 `validateReferralCodeNow` FSM is still live on the Android VM). **The address-picker = one Core VM, app-local Views (the one way, T-0349 RESOLVED):** the address-picker VM is the **Core type**
 `CleansiaCore/Location/AddressPickerViewModel` (public, `init(geocoding:, reverseDebounce:, searchDebounce:, searchBias:
@@ -1213,10 +1733,15 @@ Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with ca
   `orderDownloadReceipt` **returns a local file `URL`** → the VM surfaces it via the effect → the screen presents the **Core
   `QuickLookPreview`** with `deleteOnDismiss` (the §7.10 D1 seam, reused — SECURITY E4). A **5-min active-order poller** (Confirmed/
   OnTheWay/InProgress only; self-cancels on terminal) + refresh-on-`.task` + an **`OrderEventBus`** seam cover refresh.
-  **Customer push registration is NOT built (that was partner T-0311); the poller + on-appear + the bus seam cover refresh until
-  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` previewing the fee/refund via a pure TDD'd
-  `CancellationFeePreview` (oops≤15m/free≥24h/half 4–24h/full<4h, the `CancelOrderSheet.kt` tiers; server recomputes
-  authoritatively). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
+  **Customer push was out of this slice's scope (T-0311 was partner-only), and the poller + on-appear + the bus seam are the
+  read cluster's refresh contract on their own.** Customer push registration has SHIPPED since — the T-0398 wiring folded into
+  **T-0403**: `CustomerAppDelegate.swift:24` registers with APNs directly in `didFinishLaunching` (deferring it behind
+  `requestAuthorization` is silently dropped by iOS — the comment above that line records the device proof), the container builds the
+  `PushTokenRegistrar` + `PushSessionObserver` (`CustomerAppContainer.swift:147-152`), and the tap plan is `CustomerPushTapRouting.swift`;
+  the display/tap row of the Android→iOS table above is the ONE way. It **replaced none of the three refresh seams** — they still carry
+  refresh here, so an arriving push is a bonus, never a precondition. Cancel is a modal `.sheet` rendering the **server's** quote
+  (`GET /api/Order/CancellationPreview`) — the client-side tier ladder both platforms shipped is deleted, see the fee-preview rule
+  above (T-0527). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
   is partner-only (§7.10).
 - **The T-0313 success→OrderDetail fold:** `BookingSuccessView` gains a "View order" CTA (next to "Go home") that threads the new
   `orderId` (already on `BookingSubmitOutcome.success`) up through `BookingSheetView.onViewOrder` → the shell jumps to the Orders tab

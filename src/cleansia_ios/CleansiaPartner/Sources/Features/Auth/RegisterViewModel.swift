@@ -55,11 +55,18 @@ final class RegisterViewModel: ViewModel {
     private let client: RegistrationAuthClient
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
+    private let signupConsent: SignupConsentRecording
 
-    init(client: RegistrationAuthClient, settings: AppSettingsStore, snackbar: SnackbarController) {
+    init(
+        client: RegistrationAuthClient,
+        settings: AppSettingsStore,
+        snackbar: SnackbarController,
+        signupConsent: SignupConsentRecording
+    ) {
         self.client = client
         self.settings = settings
         self.snackbar = snackbar
+        self.signupConsent = signupConsent
     }
 
     func onFirstNameChange(_ value: String) {
@@ -108,6 +115,7 @@ final class RegisterViewModel: ViewModel {
 
         switch result {
         case .success:
+            await signupConsent.recordSignupTick(email: form.email, accepted: form.acceptTerms)
             registerSuccess.send(form.email)
         case let .failure(error):
             snackbar.showApiError(error)

@@ -47,7 +47,7 @@ export function buildOrderStatusOptions(
   translate: TranslateService
 ): ICleansiaSelectOption[] {
   return [
-    { label: translate.instant('enums.order_status.pending'), value: OrderStatus.Pending },
+    { label: translate.instant('enums.order_status.new'), value: OrderStatus.New },
     { label: translate.instant('enums.order_status.confirmed'), value: OrderStatus.Confirmed },
     { label: translate.instant('enums.order_status.on_the_way'), value: OrderStatus.OnTheWay },
     { label: translate.instant('enums.order_status.in_progress'), value: OrderStatus.InProgress },

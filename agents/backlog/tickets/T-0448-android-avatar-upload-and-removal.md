@@ -1,11 +1,11 @@
 ---
 id: T-0448
 title: Android — avatar upload, render and removal on the customer profile
-status: blocked
+status: done
 size: M
 owner: android
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446, T-0450]
 blocks: [T-0453]
 stories: [US-user-avatar]

@@ -94,7 +94,8 @@ public class ReverseReferralHandlerTests
         var second = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
         Assert.True(second.IsFailure);
-        Assert.Equal(BusinessErrorMessage.ReferralNotQualified, second.Error!.Code);
+        Assert.Equal(BusinessErrorMessage.ReferralNotQualified, second.Error!.Message);
+        Assert.Equal(nameof(ReverseReferral.Command.ReferralId), second.Error.Code);
 
         // Exactly one revoke per side across BOTH invocations — no double clawback.
         _loyaltyService.Verify(s => s.RevokePointsManuallyAsync(
@@ -115,7 +116,8 @@ public class ReverseReferralHandlerTests
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.ReferralNotQualified, result.Error!.Code);
+        Assert.Equal(BusinessErrorMessage.ReferralNotQualified, result.Error!.Message);
+        Assert.Equal(nameof(ReverseReferral.Command.ReferralId), result.Error.Code);
         _loyaltyService.VerifyNoOtherCalls();
     }
 

@@ -1,0 +1,544 @@
+# ADR-0048 — A generated DTO is **refused** at the repository boundary, never defaulted; and the refusal **names the field**
+
+- **Status:** `accepted` — lead, 2026-08-11, **with amendments B1–B6** (`## Verdict (lead)`). Authored
+  `proposed` 2026-08-11; an independent challenger+lead pass ran 2026-08-11 **after** the implementation
+  landed (T-0588 / T-0589), and the amendments are what that pass found. **B1 is the one that had to
+  land before the token flipped** — §D4 fact 4 as authored puts correct, deliberate code in violation.
+- **Date:** 2026-08-11
+- **Mode:** **author**, with an author-run self-challenge (`## Challenge`), **then an independent
+  challenger/lead pass** (`## Challenge (independent — post-implementation)` / `## Verdict (lead)`).
+  The sweeps this ADR rules on were done by the T-0576 / T-0582 lanes and recorded on
+  `backlog/INDEX.md` (T-0582, T-0588, T-0589) and `questions/open.md` **N29**. **No code-state claim
+  is inherited from those rows** — every one below was re-opened at HEAD and is cited at `file:line`,
+  and §D7 records where a ticket's own stated membership test is **falsified** by the tree.
+- **Number:** **0048**, allocated 2026-08-11. 0047 was allocated the same day to the redaction-
+  rendering lane.
+- **Supersedes:** nothing. **Extends:** `patterns-mobile.md` §*"Networking & Repository — exact idiom"*
+  and its T-0441 note (*"every field on an OpenAPI-generated command is optional with a `= null`
+  default"* — the request side; this ADR is the response side).
+- **Routing (ADR-0033):** **test 1 fires, hard.** The rule puts shipped repositories in violation, so
+  it needs a `consistency.md` deviation entry and a canonicalization ticket — neither of which a
+  feature lane may file for itself.
+- **Living doc:** `agents/architecture/decisions/mobile-wire-contract.md`
+- **Answers:** **T-0589** (*which refusal idiom wins*) — §D5, §D6.
+- **Consumes:** ADR-0011 (`ApiResult<T>` is THE mobile repository contract, and the type lives in
+  `:core`), ADR-0032 (a constraining entry names an enforcer and declares a tier), ADR-0033.
+
+> ### ⚠️ Method declaration
+> **No shell.** `Read` / `Glob` / `Grep` / `Write` / `Edit` only. Nothing was compiled, executed or
+> measured. **No count of tree instances appears in the normative text** (`conventions.md`
+> §*"never enumerate a COUNT"*): §D7 is a membership test plus a roster.
+
+---
+
+## Context — why the generator hands the contract to the mapper
+
+Neither mobile spec declares a `required` array. The customer spec is `"openapi": "3.0.4"`
+(`src/cleansia_android/openapi/customer-mobile-api.json:2`), and OpenAPI 3.0's default is
+`nullable: false` — so a property with no `nullable` key is a property the **server never sends null
+for**. The Kotlin generator, seeing no `required` array, emits every property optional-with-null
+anyway. The contract therefore survives only in the spec, and the only place a client can re-assert it
+is the hand-written mapper.
+
+`?: 0.0` on such a field is not a default — it is a **fabrication**. It renders `0 Kč` to a cleaner who
+earned `4 800`, and nothing anywhere goes red.
+
+## Decision
+
+### D1 — Five rules, and each exists because the naive default breaks it
+
+A repository maps generated DTOs through a `toDomain()` / `toAppDto()` mapper. That mapper:
+
+1. **Money and quantities are never coerced.** A null in a field the spec marks `nullable: false` is a
+   renamed or broken wire field, not a zero. Refuse it.
+2. **Booleans follow the money rule.** `false` is a real state — an unpaid order, a period with no
+   invoice — so defaulting to it is a claim, not a fallback.
+3. **Identity is refused or dropped, never synthesized.** A row with no id is already dead (every card
+   navigates by id). Which of *refuse* and *drop* applies is §D2's question, and it is a **per-surface
+   ruling**.
+4. **Collections DO default** — `orEmpty()`. An absent list and an empty list are the same fact to
+   every renderer, and there is no arithmetic to falsify. *(Not the body: see §D4 fact 4.)*
+5. **Nullable-by-design stays nullable.** A field the spec marks `nullable: true` is carrying a real
+   "unknown", and forcing it to a value destroys the distinction the server drew.
+
+The shipped reference is partner `PeriodPayRepository.kt:77-84` / `:95-97` and
+`DashboardRepository.kt:243-252`.
+
+### D2 — The rollup ruling is **per surface**, and it is decided by where the total comes from
+
+> **Refuse the page where the list IS the addends. Drop the row where a total is supplied
+> independently.**
+
+Getting it backwards produces *"a smaller, plausible, unmarked number"* — the failure mode with no
+symptom.
+
+- **Drop the row** when the rendered total comes from the **server**, not from the rows. Customer
+  `OrderApi.kt:141-152` is the worked case and states it: the paged `total` is the server's own count,
+  the badges count rows actually shown, so a lost row cannot falsify a figure — while refusing the page
+  would hide every order the server answered correctly.
+- **Refuse the page** when the client **sums the rows**. The catalog case is the sharpest: a dropped
+  services/packages row keeps its **id selected** in booking state, so the server still prices it on
+  `Create` while it has vanished from the pre-quote subtotal — the customer pays a price they were
+  never shown.
+- **Refuse when the rows are alternatives to each other** (membership plans): a missing one is a
+  different purchase, not a shorter list.
+- **The two rulings compose within one mapper.** Customer `OrderApi.kt:133-137` is the shape: identity
+  is dropped in the page mapper, and a surviving row whose own money is broken refuses — and because
+  the row is an element of the page, that refusal refuses the page.
+
+**The ruling is made per surface and never inherited.** A lane porting this rule to a new repository
+answers *where does the number on screen come from* before it chooses, and records the answer in the
+mapper's doc comment, as `OrderApi.kt:122-126` and `:141-152` do.
+
+### D3 — The pin is a wire test over a captured payload, asserting the `@SerialName` set
+
+Per repository: decode a captured payload with **every** member non-default; assert that removing a
+`nullable: false` money key **fails** the mapping; and assert that the mapper's `@SerialName` set
+**equals the spec's property set** for that schema. The last one is the field-name contract the mapper
+owns implicitly and would otherwise lose silently on a rename.
+
+Named instances at HEAD: `PeriodPayWireTest.kt`, `InvoicesWireTest.kt`, `DashboardWireTest.kt`,
+`PendingOffersWireTest.kt` (partner); `OrderWireTest.kt`, `CatalogWireTest.kt`,
+`BookingQuoteWireTest.kt`, `MembershipWireTest.kt`, `LoyaltyWireTest.kt`, `ProfileWireTest.kt`
+(customer).
+
+### D4 — Five facts this class turns on, each counter-intuitive, each written down because it was learned the hard way
+
+1. **A bare `$ref` cannot carry `nullable` in OpenAPI 3.0, so its absence carries no information.**
+   Sibling keywords beside `$ref` are ignored, and the emitted schema shows it: in
+   `GdprExportOrderDto`, `"status": { "$ref": "#/components/schemas/OrderStatus" }`
+   (`customer-mobile-api.json:8100-8102`) sits beside `"totalPrice": { "type": "number", "format":
+   "double" }` (`:8103-8106`), which *is* non-nullable by omission. **A `$ref` field can look required
+   and be genuinely optional.** Never read a `$ref`'s missing `nullable` as a contract; read the C#
+   property.
+2. **A `toDomain()` that coerces scores clean on a "does it have a mapper?" audit.** The customer app
+   has mappers throughout — *and the mappers coerce*. Any audit of this class must read what the mapper
+   **does**. §D7's membership test is written on the mapper's null-handling for exactly this reason,
+   and it is why **T-0588's stated tell is wrong** (§D7).
+3. **The rollup ruling is surface-dependent** (§D2). There is no rule of the form "always refuse" or
+   "always drop"; there is a rule about *where the number comes from*.
+4. **`.orEmpty()` on the RESPONSE BODY is not rule 4 — it is the worst outcome of the set.**
+   `CatalogRepository` called it on the body, so a **refused price list surfaced as an empty catalog
+   reported as Success** — "nothing is bookable today", strictly worse than the coercion it looked
+   like. Rule 4 defaults a **collection member**; it never defaults the payload.
+
+   > ##### AMENDMENT B1 (lead, 2026-08-11) — the categorical form is contradicted by the ticket's own output
+   > *"It never defaults the payload"* is absolute, and **the migration that implements this ADR ships
+   > three deliberate exceptions to it**, two of them in the files T-0588 rewrote:
+   >
+   > | Site | What it does | Why it is not the defect |
+   > |---|---|---|
+   > | `customer-app/…/core/orders/OrderApi.kt:109` | `raw.mapWire { list -> list.orEmpty().mapNotNull { … } }` | `getMyServingCleaners` feeds the favourite-cleaner **picker**; the repository says so at `OrderRepository.kt:240-246` — *"silent on failure … the picker just shows an empty state so the booking proceeds without a preference"* |
+   > | `customer-app/…/core/orders/OrderRepository.kt:250` | `ApiResult.Success(resp.body().orEmpty())` | same surface, same ruling |
+   > | `customer-app/…/core/catalog/CatalogRepository.kt:87,92` | extras body defaulted, **beside** services/packages which refuse at `:82-83` | *"Extras stay best-effort by existing design: a refusal here degrades to no add-on section … and never a wrong add-on price"* |
+   >
+   > **The discriminator already exists — it is §D2, applied to the payload rather than to a row.** A
+   > collection **payload** may default to empty only when **all** of these hold, and the mapper's doc
+   > comment says which:
+   > 1. absence and empty are **the same product decision** on that surface;
+   > 2. **nothing sums, counts or paginates it** — no total, no badge, no "load more" term;
+   > 3. **no affordance is derived from its emptiness** that a customer would read as a fact (an empty
+   >    picker means *"no favourites yet"*, which is true either way; an empty **catalog** means
+   >    *"nothing is bookable"*, which is not).
+   >
+   > `CatalogRepository.refresh` is the worked example **because it does both in one method**: services
+   > and packages refuse (`:82-83`), extras degrade (`:87`), and the two sentences beside them say why.
+   > That is the shape a lane copies.
+   >
+   > **Without this amendment the ADR's own §How-a-reviewer-verifies step 1 turns three correct sites
+   > into findings**, and the "fix" would refuse the booking flow's preference picker whenever that
+   > endpoint degraded — a strictly worse outcome than the one the rule was written to prevent.
+5. **`nullable: true` on a plain `string` carries no information either — measured, not inferred.**
+   **Every one of the 359 plain-`string` properties in `customer-mobile-api.json` is `nullable: true`.
+   359 of 359, zero exceptions**, despite the backend building with `<Nullable>enable</Nullable>`
+   (re-measured 2026-08-11 by walking `components.schemas` and counting `type: string` properties with
+   no `format` and no `enum`). So a string's declared nullability is a constant, and a constant
+   discriminates nothing.
+
+   This is fact 1's problem one level worse: fact 1 says *absence* of `nullable` on a `$ref` is
+   uninformative; fact 5 says *presence* of `nullable: true` on a string is equally uninformative, and
+   there are 359 of them. **For strings, read the C# property — always.** The strings are the only type
+   like this, which is what makes it a generator artefact rather than a design intent: every other type
+   discriminates — `date-time` 39 non-nullable vs 25 nullable, `boolean` 62/3, `integer` 75/11,
+   `number` 43/25. Those four can be read off the spec; strings cannot.
+
+   ⚠️ **The practical trap is that a spec-driven sweep reads clean.** Anyone auditing string coercion
+   by asking the spec gets "nullable — the coercion is correct" for **every string on the wire**,
+   including `ReferralAccountDto.code`, `ReferralListItemDto.id`, and the Stripe client secret. That is
+   not a hypothetical: it is how these sites survived a sweep that was looking for exactly them.
+
+   > ##### AMENDMENT B2 (lead, 2026-08-11) — this fact is a DATED MEASUREMENT, not a standing truth,
+   > ##### and as authored it broke this ADR's own method declaration twice
+   > Two self-contradictions, both fixed here rather than left in an immutable artifact:
+   > 1. The **⚠️ Method declaration** says *"Nothing was compiled, executed or **measured**"* — and
+   >    fact 5 says *"re-measured 2026-08-11 by walking `components.schemas` and counting"*.
+   > 2. The same declaration says *"**No count of tree instances appears in the normative text**"* — and
+   >    fact 5, which sits under `## Decision`, carries **five** counts (359/359, 39/25, 62/3, 75/11,
+   >    43/25).
+   >
+   > **What is normative is the invariant, and it carries no number:** *a string's declared nullability
+   > in either mobile spec discriminates nothing, so for a `string` you read the C# property — always.*
+   > That sentence is what a lane applies, and it is unchanged by a regen.
+   >
+   > **What is evidence is the measurement, and it is dated and perishable.** Independently
+   > corroborated by the lead on **2026-08-11** against
+   > `src/cleansia_android/openapi/customer-mobile-api.json` at HEAD of `docs/sprint-15-decisions`: 359
+   > matches for a `"type": "string"` immediately followed by `"nullable": true`, and 359 is also the
+   > count fact 5 states, so the two agree. *(The file's other `"type": "string"` occurrences are 80
+   > carrying a `format`/`enum` sibling and the remainder query/path parameters and response-content
+   > schemas — i.e. not `components.schemas` properties, which is the population fact 5 scopes itself
+   > to.)*
+   >
+   > **Retires when:** any `mobile-spec-regen` lands. A regen is owner-only and can re-emit the whole
+   > `components.schemas` block, so **the number must be re-measured, not inherited**, and the day a
+   > single plain-`string` property comes back non-nullable the *invariant* is what fails, not the
+   > count. **Do not cite fact 5's numbers from this page after a regen; re-derive them.**
+
+### D5 — T-0589: the `WireContract` idiom wins
+
+**Three idioms are live at HEAD, not two.** T-0589's framing names two; the tree carries a third, and
+the third is the one whose *reasoning* is right.
+
+| # | Idiom | Where | What a broken `nullable: false` field produces |
+|---|---|---|---|
+| 1 | `required(field)` throws → `mapWire` catches | partner `WireContract.kt:12-15`, `:22-28` | `ApiResult.Error(ApiError.Server(200, "<field> is null but the mobile API contract declares it non-nullable"))` — **the field name survives in the value** |
+| 2 | `?: return null` → `networkError()` | customer `OrderApi.kt:195`, `OrderRepository.kt:125`, `:138` | `ApiResult.Error(ApiError.Network(…))` — loud, but **attributed to the network**, which is the one thing that did not fail |
+| 3 | `?: return null` → `emptyBodyError()` | customer `RecurringBookingRepository.kt:116-117` | `ApiResult.Error(ApiError.Unknown(…))` — correctly channelled, field name lost |
+
+**And idiom 2 has a fourth outcome the ticket does not name, which decides this on its own.** On the
+customer's paged path a refused body is not an error at all:
+`val body = resp.body() ?: return ApiResult.Success(Unit)` — `OrderRepository.kt:84` (`refresh`) and
+`:110` (`loadNextPage`). `mapBody` rewraps a refusal as a **200 with a null body**
+(`OrderApi.kt:116-118`), `isSuccessful` is true, and the repository reports **Success** with no rows
+added.
+
+That is the coercion defect wearing a different costume. The refusal at `OrderApi.kt:122-126` exists,
+in its own words, because *"a defaulted zero silently ends pagination, so the customer's older orders
+stop existing rather than fail to load"* — and one layer up, the refusal produces exactly that.
+
+**Ruling: idiom 1 is canonical.** Four grounds, in order of weight:
+
+1. **It cannot degrade to Success.** `mapWire` maps `ApiResult.Success` → `ApiResult.Error` and there
+   is no other path (`WireContract.kt:22-28`). Idioms 2 and 3 decide the outcome **at every caller**,
+   and at HEAD that produced three different answers including `Success(Unit)`. *The transport is
+   decided once, in one function, or it is decided N times.*
+2. **It is the only one that carries the field name** — the cost T-0589 was filed over.
+3. **It attributes correctly.** `ApiError.Server(200, …)` says *the server answered and the answer was
+   wrong*. `ApiError.Network` says the opposite of what happened, and sends a user to check their
+   connection and an investigator to the wrong subsystem.
+4. **It composes.** `required()` is a call-site obligation on one expression; `?: return null` obliges
+   every enclosing function to be nullable and every caller to handle it.
+
+**What is adopted from the losing side, not discarded:** `RecurringBookingRepository.kt:110-115`'s
+reasoning — *"deliberately not `ApiError.Network`: that channel is the silent one … reusing it here
+turns a failed write into a no-op the user never sees."* That is correct and idiom 1 satisfies it.
+`ApiError.Network` is not an available channel for a contract violation on any surface.
+
+### D6 — "…reaches triage" is **owed, not shipped**, and the migration ticket owes it
+
+`WireContract.kt:19-20` states the idiom's purpose as *"the offending field name reaches triage rather
+than the cleaner."* At HEAD **nothing on the partner app records it.** `partner-app` contains zero
+occurrences of `SentryAndroid` or `SENTRY_DSN` (swept 2026-08-11), and `:core`'s own build file says so
+in as many words: *"Customer wires both up; partner doesn't run Sentry yet"*
+(`core/build.gradle.kts:129-131`). `ApiError.Server` renders as the generic line, so the cleaner does
+not see it either.
+
+> #### AMENDMENT B3 (lead, 2026-08-11) — the conclusion is right; the sweep that produced it is a false negative
+> *"`partner-app` contains zero occurrences of `SentryAndroid` or `SENTRY_DSN`"* is a **negative claim
+> from a grep on the wrong terms.** Partner does not lack Sentry — it **actively disables** it:
+> `src/cleansia_android/partner-app/src/main/AndroidManifest.xml:89-92` carries
+> `io.sentry.android.core.SentryInitProvider` with `tools:node="remove"`, and
+> `partner-app/…/CleansiaPartnerApp.kt:24-25` records why — *"stays until partner gets a Sentry DSN
+> provisioned."*
+>
+> Same conclusion — **no sink exists today, the field name is carried and not delivered** — but a
+> materially different price for whatever ticket `Q-OBS-01` produces: turning it on is *removing a
+> manifest node and provisioning a DSN*, not adopting a dependency. A lane repeating the authored sweep
+> would price it as the latter.
+>
+> **D6's obligation is DISCHARGED, by the second of its two closures.** The migration corrected the doc
+> comment rather than building the sink:
+> `src/cleansia_android/core/src/main/java/cz/cleansia/core/network/WireContract.kt:21-25` now states
+> the name is *"carried, not delivered"*, names the manifest removal, and names `Q-OBS-01` as the
+> decider. That is the honest half and it is done.
+
+So the field name is **preserved in a value that reaches no sink**. The idiom is still right — it is
+the only one that keeps the name at all, and a name preserved can be routed later while a name lost
+cannot — but the ADR will not repeat an unbacked claim. This is the
+`patterns-backend.md` §*"⭐ If you write down an invariant, write down the thing that goes RED"* disease
+one layer up: **prose asserting a property nothing delivers.**
+
+**The migration ticket owes one of two closures, and must pick one rather than leaving the sentence
+standing:** either a sink for `ApiError.Server` on partner (the customer app already initialises Sentry
+— `CleansiaApp.kt:61-62`), or a correction to `WireContract.kt`'s doc comment stating that the name is
+carried for the day a sink exists. **Q-OBS-01 is the open owner question that governs which**
+(`questions/open.md`); this ADR does not pre-empt it.
+
+### D7 — The deviating form, its roster, the enforcer — and a correction to T-0588's stated tell
+
+**Deviating form (the membership test — normative):** *a mapper from a generated model that supplies a
+value for a field the spec marks `nullable: false` — `?: 0.0`, `?: 0`, `?: false`, `?: ""`, `?: <n>`,
+or `.orEmpty()` on the response **body*** — **or** a refusal whose transport is decided at the call
+site rather than by one shared wrapper (§D5).
+
+**⚠️ T-0588's row says the tell is *"the return type, still a generated `*Dto`"*. That is false at
+HEAD and a lane sweeping on it will read the wrong files.** `ReferralApi.getMy()` returns a
+**hand-written** `ReferralAccountDto` (`ReferralApi.kt:20-23`) through a mapper that coerces
+(`:44-50`, `:59-68`); `DisputeApi` likewise returns hand-written `DisputeListResponseDto` /
+`DisputeDetailsDto` (`DisputeApi.kt:30-38`). This is fact 2 of §D4 landing on the ticket that was
+written to close it. **Sweep on the mapper's null-handling, never on the return type.**
+
+**Roster (descriptive — read 2026-08-11; it decides nothing on its own).** Customer app, under
+`core/`:
+
+| Repository | File |
+|---|---|
+| Referral | `customer-app/…/core/referral/ReferralApi.kt` |
+| Dispute | `customer-app/…/core/disputes/DisputeApi.kt` |
+| Recurring booking | `customer-app/…/core/recurring/RecurringBookingApi.kt` |
+| Saved address | `customer-app/…/core/user/SavedAddressApi.kt` |
+| Promo code | `customer-app/…/core/promo/PromoCodeApi.kt` |
+| Notification preferences | `customer-app/…/core/notifications/NotificationPreferencesApi.kt` |
+
+Plus, on the **transport** limb of the form and independent of the six above: customer
+`OrderRepository.kt:84` and `:110` (a refusal reported as `Success(Unit)`), and every
+`?: networkError()` on a 2xx body — `OrderRepository.kt:125`, `:138`.
+
+**Enforcer:** the per-repository wire test of §D3, run by `:customer-app:testDebugUnitTest` /
+`:partner-app:testDebugUnitTest` in `android-ci.yml:79`.
+**Scope, stated because it is narrower than the rule:** the wire tests are a **closed roster** — they
+gate the repositories that have one, and a *seventh* repository added tomorrow with a coercing mapper
+is caught by nothing. The general form is not mechanically expressible by the line-based
+`check-consistency.mjs` (it needs the spec's nullability for the schema the mapper targets), so
+widening the roster means adding a wire test per repository, and the canonicalization ticket says so.
+
+**Tier:** **`T1-CI`** — condition met and the token flipped by T-0602 (`bcfd7092`), *after* the roster
+closed (`a19f07b6`) and not before, per `conventions.md` §*"add enforcement behind the cleanup, never in
+front of it"*. The live token is the catalog's; this line records that the condition was satisfied rather
+than waived.
+
+> ⚠️ **The closure changed shape from what this ADR anticipated.** §D3 above priced it as *"a wire test
+> per repository"* and called the roster **closed** — meaning a seventh repository added tomorrow is
+> caught by nothing. T-0602 found the six wire tests already existed (they landed in `d0da4dc3`, the
+> same commit as the sweep), so it built the thing that sentence says is missing instead:
+> `WireContractRosterTest` walks both apps' data layers and fails when a source that maps a generated
+> model has no `*WireTest.kt` beside it. **The roster is self-closing now, so §D3's scope caveat is
+> retired** — and the enforcer immediately found four defects the per-repository tests could not,
+> including a regression this sprint had introduced eight commits earlier.
+
+## Alternatives considered
+
+| Option | Disposition |
+|---|---|
+| **Coerce (`?: 0.0`) and move on** | **Rejected** — it is the defect. A fabricated number is indistinguishable from a correct one on screen, and the customer/cleaner acts on it. |
+| **Always refuse the page** | **Rejected.** It hides every row the server answered correctly for the sake of one it did not, and on the orders list the total is the server's own count so nothing is falsified by a drop (§D2). |
+| **Always drop the row** | **Rejected.** On a surface that sums its own rows this silently understates the number, which is the *"smaller, plausible, unmarked"* failure. |
+| **Declare the DTOs non-nullable and let `kotlinx.serialization` throw** | **Rejected as the general answer, though it is what customer `OrderDtos.kt:43` does for `totalPrice`.** It moves the refusal into the deserializer, where the thrown message is a serialization diagnostic rather than a domain one, it cannot express the drop-the-row ruling at all, and it puts the contract in a second place that must be kept in step with the spec by hand. Keep it only where a hand-written DTO already exists. |
+| **Fix the spec** (emit `required` arrays so the generator types the fields correctly) | **Rejected here, and it is the closest call — it would delete this whole class.** It is an owner-only `mobile-spec-regen` change to the emitted contract, it re-types every generated model on two apps at once, and every mapper would still need writing to survive the interim. **Not foreclosed:** if the generated models ever become non-nullable, §D1's rules 1–3 collapse into the type system and this ADR is superseded rather than amended. |
+| **Duplicate `WireContract` into `customer-app`** | **Rejected.** Two copies of the refusal transport is the divergence T-0589 exists to close, at half the migration cost and all of the future cost. |
+| **Move `WireContract` into `:core`** | ✅ **Chosen** — §D5, migration in the ticket spec below. It depends only on `cz.cleansia.core.network.ApiError`/`ApiResult`, which are already `:core` (`WireContract.kt:3-4`), so it is a package move plus a visibility change, not a new dependency. |
+
+### The migration, priced — because a ruling without its cost is a preference
+
+1. **Move `WireContract.kt` to `:core` (`cz.cleansia.core.network`), `internal` → `public`.** One file;
+   no new dependency (`WireContract.kt:3-4`).
+2. **Repoint the partner imports** — `DashboardRepository.kt:16`, `OrdersRepository.kt:29`,
+   `PeriodPayRepository.kt:8`. Mechanical.
+3. **`:core` grows a `Response<T>` counterpart to `mapWire`.** This is the real cost and it is **not**
+   a drop-in: partner adapters already return `ApiResult` (`DashboardRepository.kt:204`), while the
+   customer's adapters return Retrofit `Response<T>` and build `ApiResult` in the repository
+   (`OrderApi.kt:116-118`, `OrderRepository.kt:120-126`). Two shapes must meet. **Ruled: add the
+   `Response<T>` counterpart** — smallest change that closes the attribution gap — and record that
+   converging the customer adapters onto `safeApiCall`/`ApiResult` is the ADR-0011 direction, **not
+   this ticket's job**.
+4. **Customer mappers become total**: `toAppDto(): T?` → `toAppDto(): T` with `.required("field")`, and
+   the three `?: return ApiResult.Success(Unit)` / `?: networkError()` sites on 2xx bodies go
+   (`OrderRepository.kt:84`, `:110`, `:125`, `:138`).
+5. **iOS has neither idiom and inherits the `:core` shape as a Swift equivalent when it ports** —
+   which is the reason T-0589 was filed before the port rather than after.
+
+**Who owes it:** the Android lane, as the T-0588 canonicalization (steps 1–4); the iOS lane inherits
+step 5 with no decision left to make. §D6's closure is owed by whichever lane lands step 1.
+
+> #### AMENDMENT B4 (lead, 2026-08-11) — the pricing above is wrong in three places, and step 5 must not inherit it
+> **A ruling without its cost is a preference — and a ruling with the *wrong* cost is worse, because
+> the next lane quotes it.** The ruling (idiom 1, moved to `:core`) survives every correction below;
+> only the price changes. Read at HEAD after T-0588 / T-0589 landed:
+>
+> **(a) Step 2 misses a fourth partner import, and §D3 already implied it existed.** The three named
+> are real (`DashboardRepository.kt:16-17`, `OrdersRepository.kt:29-30`, `PeriodPayRepository.kt:8-9`).
+> The fourth is **`partner-app/…/data/invoices/InvoicesRepository.kt:13,16`** — and §D3 lists
+> `InvoicesWireTest.kt` among the wire tests shipped at HEAD, so the ADR names the repository's
+> *enforcer* while omitting the repository from its own repoint list. That is an internal
+> contradiction, not a stale reading. *(A fifth site,
+> `partner-app/…/data/auth/AuthRepository.kt:20,22`, consumes `wireResult` — new adoption, correctly
+> absent from a repoint list.)*
+>
+> **(b) Step 3 under-prices `:core` roughly fourfold, and one of the pieces is a behavioural change to
+> a SHARED primitive the ADR never mentions.** Priced: *"a `Response<T>` counterpart to `mapWire`."*
+> Shipped, in `core/src/main/java/cz/cleansia/core/network/`:
+> 1. `Response<T>.mapWire` (`WireContract.kt:48-50`) — the counterpart that was priced;
+> 2. `wireResult` (`:59-63`) — the wrapper that turns a propagated violation into `ApiError.Server`;
+> 3. `Response<R>.requiredBody()` (`:71`) — the refusal for a bodiless 2xx;
+> 4. **`networkCall` changed to rethrow `WireContractViolation`** (`NetworkCall.kt:61-62`).
+>
+> **(4) is load-bearing and its blast radius is both apps.** `networkCall`'s contract was *"any
+> `Throwable` → `null`"*, and the repository reads `null` as a network failure. An adapter that maps
+> **inside** its Retrofit `Response` raises the refusal at the call, so without the rethrow every
+> customer-side contract violation would have been reported as `ApiError.Network` — *the exact
+> attribution defect §D5 exists to close*, reintroduced by the migration that closes it. The ADR priced
+> that at zero.
+>
+> **The reason three pieces were needed rather than one is structural and belongs in the record:** the
+> customer's adapters map inside the Retrofit `Response` (`OrderApi.kt:54-110`) and build `ApiResult`
+> one layer up in the repository, so **a refusal can only cross that boundary as a throw** — hence
+> raise (`required`) → survive the shared catch (`networkCall` rethrow) → be attributed once
+> (`wireResult`). A single `Response<T>` counterpart cannot span it. Converging the customer adapters
+> onto `safeApiCall`/`ApiResult` remains the ADR-0011 direction and remains not this ticket's job.
+>
+> **(c) Step 4's "the sites go" is wrong; the implementation was right to deviate.** The
+> `?: networkError()` sites did not go — they **re-pointed**, from guarding a 2xx *body* (wrong) to
+> guarding a `null` from `networkCall` (right): `OrderRepository.kt:93`, `:123`, `:138`, `:248`. The
+> body is now `resp.requiredBody()`. **Corrected rule, which is what §D5 ground 3 already implies:**
+> `ApiError.Network` **stays** the channel for a null `networkCall` result and is **never** the channel
+> for a 2xx body that breaks the contract. *(The surviving `return ApiResult.Success(Unit)` at
+> `OrderRepository.kt:89` and `:118-119` are already-loading / exhausted guards, not refusals; step 4's
+> line-number list swept them in.)*
+>
+> **(d) Step 5 (iOS) therefore inherits FOUR pieces and a shared-primitive contract change, not one
+> file.** T-0589 was filed before the port precisely so the port would not re-decide this; it must not
+> now be scheduled against the authored price.
+
+## Challenge (author-run — no independent challenger has run)
+
+- **CH-1 — "one ADR, two decisions: the mapper contract and the refusal transport. Split it."**
+  **Rebutted.** They are not separable. §D2's ruling *decides whether a field name exists to
+  transport* — a dropped row has no refusal to attribute — and T-0589 exists precisely because the
+  *rule* was ruled without the *channel*, so two lanes implemented one rule three ways. Ruling the rule
+  again without the channel would reproduce the defect. Recorded because the split is the defensible
+  alternative reading.
+- **CH-2 — "idiom 1 throws for control flow, which the backend catalog forbids."**
+  **Rebutted on scope.** `consistency.md` B8 forbids a broad `catch (Exception)` for control flow
+  around a **provider call**. `mapWire` catches a **private, purpose-built** exception type
+  (`WireContractViolation`, `WireContract.kt:12-13`) inside a `runCatching` whose whole body is a pure
+  mapping function with no IO. Conceded partially: it does catch `Throwable`, so a genuine bug in the
+  mapper is reported as a wire violation. That is a narrowing worth making in the migration — catch
+  `WireContractViolation` specifically and let anything else crash — and it is written into the ticket
+  spec rather than left as taste.
+- **CH-3 — "you claim idiom 2 reports Success; prove it, don't assert it."**
+  Answered from three lines read at HEAD: `mapBody` returns `Response.success(transform(body()),
+  raw())` (`OrderApi.kt:116-118`), `refresh` reads `resp.body() ?: return ApiResult.Success(Unit)`
+  (`OrderRepository.kt:84`), and `toAppDto` returns null on refusal (`:127-139`, `:130-137`).
+- **CH-4 — "the six-repository roster will be stale before the ticket lands."**
+  Sustained and answered by shape: the roster is labelled descriptive, the membership test is
+  normative, and no count appears in the normative text.
+- **CH-5 — "`.orEmpty()` on collections contradicts rule 1: an absent list of pay lines is data loss
+  too."**
+  **Rebutted with a boundary.** An absent collection and an empty one render identically and falsify no
+  arithmetic — *unless* the collection is the addends of a rendered total, which is §D2, where the
+  ruling is refuse. The two rules meet there and D2 wins. Fact 4 of §D4 carves out the case that
+  actually bit (`.orEmpty()` on the **body**), which is not rule 4 at all.
+
+## Verdict (author's ruling — pending a lead)
+
+**D1–D7 stand.** T-0589 is **answered**: idiom 1 (`WireContract`) is canonical, it moves to `:core`,
+and the "reaches triage" half is owed and named. T-0588's stated membership test is **corrected** in
+§D7 and the ticket needs re-wording before a lane picks it up.
+
+## Challenge (independent — post-implementation, 2026-08-11)
+
+A challenger instance distinct from the author, running **after** T-0588 / T-0589 shipped
+(`d0da4dc3`, `34831ceb`, `b34d641d`, `a54775f4`). Method: `Read` / `Glob` / `Grep` only — **no shell,
+nothing compiled or executed; no test outcome or build result is claimed.** One count is asserted and
+it is a `Grep` count over one JSON file, stated with its date and its retirement condition (B2).
+
+- **IC-1 — "§D4 fact 4 is categorical and the ticket's own diff breaks it."** **Sustained, and it is
+  the most consequential finding in this pass.** Three deliberate body-level `.orEmpty()` sites
+  survive, two of them inside the migrated files. Under the ADR as authored, §How-a-reviewer-verifies
+  step 1 makes them findings and the "fix" refuses the booking flow's preference picker. → **B1**.
+- **IC-2 — "fact 5 is a measurement dressed as a law, in an ADR that declares it measured nothing."**
+  **Sustained on both limbs.** The number is right (independently corroborated) and the framing is
+  not. → **B2**.
+- **IC-3 — "§D6's sweep is a false negative."** **Sustained.** Sentry is present and disabled by
+  manifest node removal, not absent. Conclusion unchanged, cost of the follow-up materially
+  different. → **B3**.
+- **IC-4 — "the migration price is wrong, and §D3 contradicts §migration step 2."** **Sustained on
+  three counts** — a missed fourth partner import that §D3 itself implies, a `:core` cost roughly four
+  times what was priced including an unmentioned contract change to the shared `networkCall`, and a
+  step-4 prescription the implementation correctly disobeyed. → **B4**.
+- **IC-5 — "§D5's ruling is wrong now that the true cost is known."** **NOT sustained — the ruling
+  holds, and the lead re-derived it rather than deferring.** The corrected cost is four `:core` pieces
+  plus one shared-primitive change, paid once. The rejected alternative — duplicating `WireContract`
+  into `customer-app` — pays the `Response`-boundary problem **twice** (the customer adapters still map
+  inside `Response`, so a duplicate still needs `wireResult` + the `networkCall` rethrow, and the
+  rethrow lives in `:core` either way and would be edited from a second app's copy). It is not "half
+  the migration cost"; it is nearly all of it, plus a permanent second copy. **The magnitude claim in
+  the ADR's rejection row is wrong; its conclusion is right**, and `deliberation.md` step 5 requires
+  the Verdict to say which. → **B5**.
+- **IC-6 — "the §D7 roster is stale."** **Sustained in a way the roster's own shape does not
+  express.** The six named repositories are still coercing (`SavedAddressApi.kt:23`,
+  `RecurringBookingApi.kt:27`, `CatalogApi.kt:33/38/43` all still `mapBody`/`map` over
+  `list.orEmpty()`), so the deviation entry stays live — but **`MembershipApi` is now *partly*
+  migrated**: it imports `required` from `:core` (`MembershipApi.kt:12`) while `:68` still runs the old
+  `mapBody { list.orEmpty()… }`. A per-repository on/off roster cannot say that, and a lane reading
+  "Membership: migrated" would skip `:68`. → **B6**.
+
+## Verdict (lead) — `accepted with amendments`, 2026-08-11
+
+**D1, D2, D3, D5, D7 stand. §D4 fact 4, §D4 fact 5, §D6 and the priced migration are amended — B1–B6 —
+and the amendments are part of the accepted text.** No challenge blocks. Consensus declared; nothing
+escalated to the owner. **`Q-OBS-01` remains open and this ADR still does not pre-empt it.**
+
+**B5 (recorded here because it has no home section).** The *"Duplicate `WireContract` into
+`customer-app`"* rejection row says the duplicate costs *"half the migration cost and all of the future
+cost."* The half is wrong — see IC-5. The row's **disposition is unchanged**; its arithmetic is struck.
+
+**B6 (recorded here for the same reason).** §D7's roster is per-repository and the tree now holds a
+**partly**-migrated one. A roster row means *"this repository's mappers have not all been converted"*,
+never *"this repository has not been touched"*, and the canonicalization ticket must sweep on the
+membership test per **mapper**, not per file.
+
+**Why it is accepted rather than returned.** Every finding corrects evidence, scope or price. **No
+decision is reversed:** rules 1–5 stand, the per-surface rollup ruling stands, idiom 1 is still
+canonical and still belongs in `:core`, and the tree implements all of it. B1 is a *scope clause the
+ADR's own §D2 already supplies* — it was omitted, not decided against.
+
+**Provenance check (`deliberation.md` step 5).** Re-opened by the lead at HEAD: `WireContract.kt`,
+`NetworkCall.kt`, `OrderApi.kt`, `OrderRepository.kt`, `CatalogRepository.kt`,
+`partner-app/src/main/AndroidManifest.xml`, `CleansiaPartnerApp.kt`, every
+`import cz.cleansia.core.network.*` site, and `customer-mobile-api.json`. Divergences recorded:
+**§D6's sweep (false negative — B3)**, **migration steps 2/3/4 (three errors — B4)**, **§D4 fact 4
+(contradicted by the tree — B1)**, and the **rejection row's magnitude claim (wrong, conclusion right —
+B5)**.
+
+**Deliberately NOT ruled, because it needs a command.** The tier token stays
+`(gate pending: T-0588)`. `T1-CI` asserts a complete roster **and** a zero baseline; six repositories
+are unmigrated and one is half-migrated, so condition (b) is plainly unmet — this is not a
+shell-blocked judgement, it is simply not true yet. **What I would want run** before the *next* pass
+re-examines it: `./gradlew :core:testDebugUnitTest :partner-app:testDebugUnitTest
+:customer-app:testDebugUnitTest`, and specifically the B4(b) mutation — revert
+`NetworkCall.kt:61-62`'s rethrow and confirm a customer wire test goes red. If nothing reddens, the
+`networkCall` rethrow is unpinned and that is a missing test, not a passing build.
+
+**Follow-ups filed by this verdict (PM to allocate ids):**
+1. **B1 into the catalog.** `patterns-mobile.md` §*"And the RESPONSE side"* currently restates the
+   categorical form (*"it never defaults the payload"*, `:234-235`). It must carry B1's three
+   conditions, or the catalog keeps putting `OrderApi.kt:109`, `OrderRepository.kt:250` and
+   `CatalogRepository.kt:87` in violation.
+2. **A pin for the `networkCall` rethrow** if B4(b)'s mutation shows none exists.
+3. **Re-word T-0588's roster obligation** to sweep per mapper, per B6.
+
+## How a reviewer verifies compliance
+
+1. **Read what the mapper does, never whether one exists** (§D4 fact 2). A `toDomain()` in the diff is
+   not evidence; a `?:` on a `nullable: false` field is a finding.
+2. **Check the spec, not the generated type.** The generated property is nullable regardless. For a
+   `$ref` field the spec's silence means nothing (§D4 fact 1) — read the C# property.
+3. **Check that the rollup ruling was MADE, in the mapper's doc comment, and for this surface**
+   (§D2). An inherited ruling with no sentence about where the number comes from is a finding even
+   when the outcome happens to be right.
+4. **Check the refusal transport is `mapWire`**, not a per-call-site `?:`. A 2xx body that resolves to
+   `ApiResult.Success` or to `ApiError.Network` is a finding (§D5).
+5. **Check the wire test drives the mutation**: removing a `nullable: false` money key from the
+   captured payload must **fail** the mapping, and the `@SerialName` set must be asserted equal to the
+   spec's property set (§D3).

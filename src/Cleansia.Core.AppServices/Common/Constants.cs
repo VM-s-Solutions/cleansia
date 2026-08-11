@@ -78,21 +78,17 @@ public class Constants
         public const string Czk = "CZK";
     }
 
+    public class PayoutInvoice
+    {
+        // Days from issue to "datum splatnosti". A platform payment policy, not a legal minimum —
+        // this constant is the single point to swap for per-country configuration.
+        public const int PaymentTermsDays = 14;
+    }
+
     public class ReceiptNumberFormat
     {
         public const string Prefix = "RCP";
         public const string Format = "D4";
         public const string Pattern = "RCP-{0}-{1:D4}"; // RCP-YYYY-NNNN
     }
-
-    public static readonly (byte[] Signature, string MimeType)[] ImageSignatures =
-    [
-        ([0xFF, 0xD8, 0xFF], "image/jpeg"),
-        ([0x89, 0x50, 0x4E, 0x47], "image/png"),
-        ("GIF8"u8.ToArray(), "image/gif"),
-        ("BM"u8.ToArray(), "image/bmp"),
-        ([0x49, 0x49, 0x2A, 0x00], "image/tiff"),
-        ([0x4D, 0x4D, 0x00, 0x2A], "image/tiff"),
-        ("RIFF"u8.ToArray(), "image/webp")
-    ];
 }

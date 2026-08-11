@@ -175,6 +175,7 @@
       "error": "Registration failed. Please try again.",
       "terms_agreement": "I agree to the terms",
       "terms_and_conditions": "I agree to the <a href='/terms'>Terms of Service</a> and the <a href='/privacy'>Privacy Policy</a>",
+      "social_terms_required": "Accept the Terms of Service and the Privacy Policy to continue with Google or Apple.",
       "validation": {
         "password_lowercase": "At least one lowercase letter",
         "password_uppercase": "At least one uppercase letter",
@@ -760,8 +761,13 @@
       "time_label": "Select Time",
       "select_date_first": "Please select a date first",
       "slot_express": "Express +20%",
+      "slot_express_waived": "Express · no surcharge",
       "slot_unavailable": "Unavailable",
       "express_surcharge_label": "Express slot (+20%)",
+      "express_surcharge_waived_label": "Express slot — waived with Plus",
+      "express_waiver_available": "Plus covers the 20% express surcharge — {{count}} left this calendar month.",
+      "express_waiver_used": "No express waivers left this month — express slots are charged at +20% until next month.",
+      "express_waiver_trial": "Express slots are charged at +20% during your trial — the waiver starts with your first paid month.",
       "payment_method": "Payment Method",
       "payment_section_title": "How Would You Like to Pay?",
       "pay_by_card": "Pay by Card",
@@ -1091,15 +1097,17 @@
       "benefit_discount_body": "A flat percentage off every cleaning. Combined with your loyalty tier it is capped at 12%.",
       "benefit_cancel_title": "Wider free cancellation window",
       "benefit_cancel_body": "More time to change your plans without paying a fee.",
-      "benefit_express_title": "Express upgrade",
-      "benefit_express_body": "Pay less for last-minute bookings inside the express window.",
       "benefit_favorite_title": "Request your favorite cleaner",
-      "benefit_favorite_body": "Pick a cleaner you've worked with before — they'll be prioritized when matching.",
+      "benefit_favorite_body": "Pick a cleaner you've worked with before — we'll ask them first, and the booking opens to our whole team if they can't take it.",
+      "benefit_express_title": "Express bookings without the surcharge",
+      "benefit_express_body": "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over.",
       "renews_on": "Renews on {{date}}",
       "cancelled_until": "Active until {{date}} — won't renew",
       "perk_discount": "{{percent}}% member discount",
       "perk_cancel_window": "{{hours}}h free cancellation window",
-      "perk_express": "Express upgrade benefits",
+      "perk_express": "Express surcharge waived — {{count}} left this month",
+      "perk_express_used": "Express surcharge waived — none left until next month",
+      "perk_express_trial": "Express surcharge waived — starts when your trial ends",
       "cancel_action": "Cancel membership",
       "cancel_dialog_title": "Cancel Cleansia Plus?",
       "cancel_dialog_message": "Your benefits stay active until the end of your current paid period. You won't be charged again.",
@@ -1137,7 +1145,7 @@
       "welcome_perk_discount": "Member discount on every cleaning",
       "welcome_perk_recurring": "Recurring schedules — book once, run forever",
       "welcome_perk_cancellation": "Wider free cancellation window",
-      "welcome_perk_express": "Express upgrade benefits",
+      "welcome_perk_express": "Express bookings with the surcharge waived — from your first paid month",
       "welcome_cta_setup_recurring": "Set up a recurring cleaning",
       "welcome_cta_back": "Back to membership"
     },
@@ -1426,6 +1434,7 @@
       "invalid_confirmation_code": "That confirmation code is invalid or has expired.",
       "invalid_google_token": "Google sign-in failed. Please try again.",
       "invalid_apple_token": "Apple sign-in failed. Please try again.",
+      "social_account_not_found": "We couldn't find an account for that sign-in. Please sign up first.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
       "invalid_reset_token": "That reset code is invalid or has expired.",
       "same_reset_password": "Your new password must be different from your current one.",
@@ -1436,14 +1445,19 @@
     },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
-      "error_occurred": "An error occurred"
+      "error_occurred": "An error occurred",
+      "required": "This field is required.",
+      "max_length": "This value is too long.",
+      "min_length": "This value is too short.",
+      "invalid_enum_value": "That option isn't valid."
     },
     "user": {
       "email_confirmed": "This email address is already confirmed.",
       "existing_email": "An account with this email already exists.",
       "not_existing_email": "We couldn't find an account with this email.",
       "existing_phone_number": "This phone number is already in use.",
-      "not_found": "We couldn't find that account."
+      "not_found": "We couldn't find that account.",
+      "not_allowed_to_update": "You're not allowed to change this account."
     },
     "language": {
       "not_supported": "That language isn't supported."
@@ -1460,6 +1474,7 @@
       "cancellation_window_closed": "The free cancellation window for this order has closed.",
       "address_exactly_one_required": "Please provide exactly one address for this order.",
       "empty": "Add at least one service or package to your order.",
+      "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
       "selected_package": {
         "invalid": "One of the selected packages is no longer available."
       },
@@ -1475,6 +1490,9 @@
         "not_match": "The order total has changed — please review your order and try again."
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "payment": {
+        "already_paid": "This order has already been paid."
+      },
       "creation_failed": "We couldn't create your order. Please try again.",
       "not_completed": "This action is only available once the cleaning is completed.",
       "review": {
@@ -1486,7 +1504,12 @@
       },
       "issue": {
         "description_required": "Please describe the issue before submitting."
-      }
+      },
+      "preferred_employee": {
+        "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit.",
+        "not_eligible": "You can only choose a cleaner who has already completed a job for you."
+      },
+      "preferred_offer_closed": "This job can no longer be offered to a specific cleaner."
     },
     "address": {
       "already_exists": "You already have this address saved.",
@@ -1502,7 +1525,8 @@
     },
     "country": {
       "not_serviced": "We don't currently operate in this country.",
-      "required": "Please select a country."
+      "required": "Please select a country.",
+      "not_existing_id": "We couldn't find that country."
     },
     "city": {
       "not_serviced": "We don't currently serve this city."
@@ -1561,7 +1585,10 @@
       "not_found": "We couldn't find your membership.",
       "not_owned_by_user": "You can't manage this membership.",
       "stripe_customer_required": "We couldn't reach the payment provider — please try again.",
-      "swap_same_plan": "You're already on this plan."
+      "swap_same_plan": "You're already on this plan.",
+      "express_waiver": {
+        "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."
+      }
     },
     "recurring_booking": {
       "not_found": "That recurring booking no longer exists.",
@@ -1575,6 +1602,22 @@
     "device": {
       "invalid_platform": "This device platform isn't supported.",
       "not_found": "We couldn't find that device."
+    },
+    "currency": {
+      "invalid": "That currency isn't supported."
+    },
+    "email": {
+      "invalid_format": "Please enter a valid email address."
+    },
+    "general": {
+      "not_found": "We couldn't find what you were looking for."
+    },
+    "validation": {
+      "date_must_be_in_past": "The date must be in the past.",
+      "invalid_age": "Please enter a valid age.",
+      "invalid_date": "Please enter a valid date.",
+      "invalid_password": "That password isn't valid.",
+      "must_be_positive": "The value must be greater than zero."
     }
   },
   "loyalty": {
@@ -1683,6 +1726,25 @@
     "prefill_dropped_items": "We removed these from your prefill — they're no longer available: {{items}}",
     "order_detail_make_recurring": "Make this recurring",
     "order_detail_make_recurring_plus_required": "Cleansia Plus required to set up recurring schedules."
+  },
+  "preferred_cleaner": {
+    "title": "Request your favourite cleaner",
+    "explainer": "Plus benefit · we'll ask them first, and this booking opens to our whole team as soon as they can't take it.",
+    "placeholder": "Choose a cleaner",
+    "loading": "Loading your cleaners…",
+    "unavailable": "Not available for this date and time",
+    "section_title": "Your favourite cleaner",
+    "awaiting_title": "We've asked {{name}}",
+    "awaiting_body": "We're holding this booking for them until {{time}}. If they can't take it, it opens to our whole team.",
+    "accepted_title": "Confirmed by {{name}}",
+    "closed_title": "Open to all cleaners",
+    "closed_body": "The request for the cleaner you asked for has ended. This booking is now open to our whole team.",
+    "choose_another": "Ask a different cleaner",
+    "choose_another_hint": "You can ask one more cleaner. We'll ask them next, and if they can't take it this booking opens to our whole team again.",
+    "choose_submit": "Ask",
+    "choose_success": "We've asked them.",
+    "list_error": "We couldn't load your cleaners. Please try again.",
+    "list_empty": "There's no one to ask yet — the list fills up as your cleanings are completed."
   },
   "enums": {
     "order_status": {

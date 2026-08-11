@@ -40,7 +40,8 @@ struct ProfileTab: View {
                             onEdit: { onOpen(.editProfile(showBookingHint: false)) },
                             onAvatarLoadFailure: { photo in
                                 Task { await profileVM.avatarLoadFailed(fileName: photo.fileName) }
-                            }
+                            },
+                            onAvatarLoadSuccess: profileVM.avatarLoadSucceeded
                         )
 
                         MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
@@ -200,6 +201,7 @@ private struct ProfileHeader: View {
     var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
+    let onAvatarLoadSuccess: () -> Void
 
     @Environment(\.locale) private var locale
 
@@ -214,7 +216,8 @@ private struct ProfileHeader: View {
                 avatarCache: avatarCache,
                 topInset: topInset,
                 onEdit: onEdit,
-                onAvatarLoadFailure: onAvatarLoadFailure
+                onAvatarLoadFailure: onAvatarLoadFailure,
+                onAvatarLoadSuccess: onAvatarLoadSuccess
             )
             ProfileStatsCard(
                 bookings: user?.totalBookings ?? 0,
@@ -264,7 +267,7 @@ private struct ProfileStatsCard: View {
     private func statColumn(value: String, label: String) -> some View {
         VStack(spacing: Spacing.xxs) {
             Text(value)
-                .font(CleansiaTypography.headlineSmall)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
                 .fontWeight(.bold)
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
@@ -285,18 +288,20 @@ private struct HeroGradient: View {
     var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
+    let onAvatarLoadSuccess: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             ProfileAvatar(
-                display: user?.profilePhoto.map(AvatarDisplay.remote) ?? .initials,
+                display: AvatarDisplay.resolve(photo: user?.profilePhoto, edit: .unchanged),
                 initials: user?.initials ?? "",
                 cache: avatarCache,
-                onLoadFailure: onAvatarLoadFailure
+                onLoadFailure: onAvatarLoadFailure,
+                onLoadSuccess: onAvatarLoadSuccess
             )
             VStack(alignment: .leading, spacing: 2) {
                 Text(user?.fullName ?? "")
-                    .font(CleansiaTypography.headlineSmall)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(.white)
                     .lineLimit(1)
                 if let email = user?.email, !email.isEmpty {
@@ -387,7 +392,8 @@ struct EditProfileChip: View {
                 tier: "Regular",
                 avatarCache: RemoteImageCache(),
                 onEdit: {},
-                onAvatarLoadFailure: { _ in }
+                onAvatarLoadFailure: { _ in },
+                onAvatarLoadSuccess: {}
             )
             .background(CleansiaColors.background)
         }

@@ -199,7 +199,7 @@ private struct DisputesEmptyView: View {
             subtitle: L10n.Disputes.listEmptySubtitle,
             verticallyCentered: true,
             imageSize: 160,
-            titleFont: CleansiaTypography.headlineSmall
+            titleStyle: CleansiaTypography.headlineSmall
         ) {
             CleansiaPrimaryButton(L10n.Disputes.listEmptyCta, action: onBrowseOrders)
                 .fixedSize()

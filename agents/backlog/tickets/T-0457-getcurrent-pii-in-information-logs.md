@@ -1,11 +1,11 @@
 ---
 id: T-0457
 title: S6 — GET /api/User/GetCurrent writes the caller's email, name, phone and birth date to Information-level logs on all five hosts
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446]
 blocks: []
 stories: []
@@ -149,5 +149,87 @@ posed as AC1 and belongs to the implementer + reviewer, not to a panel.
      `ReviewNotes` crosses out of the pre-change window, so "pre-existing" was a typical-case claim,
      not a universal one.
 
+- 2026-08-04 — **implemented (backend). AC1 answered (b)+, with the reasoning below; the headline is that
+  the premise of "one endpoint" is wrong by two orders of magnitude.**
+
+  **The mechanism, established first.** Not a structured log call and not a serialized DTO: it is
+  `RequestLoggingMiddleware.SafeBody`, one copy per host, which slices every request and response body
+  into Information. It is generic over every route, so **every endpoint returning PII has the same
+  exposure** and fixing one route is theatre. Measured, not asserted: a wire-DTO walk over the five hosts
+  found **152 PII-shaped members on 80+ routes** — the caller's profile, every admin user/employee list
+  and detail, every order's customer contact block, the referral lists, the whole subject-access export.
+  `GET /api/User/GetCurrent` is 5 of those 152.
+
+  **AC1 — option (b), field-name redaction, but SHAPED rather than enumerated.** New
+  `ContactIdentityFieldRegex` on all five hosts: `[A-Za-z]*email | [A-Za-z]*phone[A-Za-z]* |
+  [A-Za-z]*firstName | [A-Za-z]*lastName | fullName | birthDate`. Quote-anchored on both sides, so a
+  name must match whole — which catches `customerEmail`/`actorEmail`/`recipientEmail` while leaving
+  `emailTemplateId` (an id) alone, and is why `*email` takes no suffix while `*phone*` does. Path
+  suppression was rejected as the primary tool for the reason the ticket names: it is a denylist the next
+  endpoint misses — demonstrated twice here, `/auth/` missing `/api/AdminAuth/…` (T-0446's find) and
+  `/gdpr` missing `/api/v1/AdminGdpr/export/{userId}` (found here, see T-0509).
+
+  **What makes it fail closed** — the part the AC did not ask for and the fix is worthless without.
+  `src/Cleansia.Tests/Logging/RequestLogPiiSurfaceGuardTests.cs` walks every wire DTO reachable from a
+  controller action on the five hosts, reads the token list **out of the live compiled regex** (so guard
+  and middleware cannot drift), and fails naming the DTO, member and routes when a PII-shaped member is
+  neither redacted, nor on a route suppressed on all five hosts, nor on a reasoned exception list. That
+  list has **one** entry (`EmailTemplateId`, an id).
+
+  **A second regex, not a wider one.** Merging contact identity into `SensitiveFieldRegex` made
+  `RedactionUnmaskedFreeTextGuardTests` flag essentially every string member of every DTO. The model
+  there is "a token collapse frees window", which is true of an unbounded value (base64/SAS/JWT) and
+  false of a bounded one — redacting a short name *lengthens* the body. Two named regexes keep that
+  guard's calibration honest; `RedactSensitiveFields` runs both passes.
+
+  **Inherited debt: all seven `AcceptedPreExisting` entries deleted, and the list is now empty.**
+  `CreateAdminUser.Command.{FirstName,LastName,PhoneNumber}` are redacted by the new pass;
+  `GetMyDocuments.{MyDocumentDto,Response}.{Description,ReviewNotes}` are free text no denylist reaches,
+  so `/getmydocuments` joined `IsSensitivePath` beside the `/savemydocuments` write side that was already
+  there.
+
+  **Also suppressed while in the method (both found by the guards, not by hand):** `gdpr/` replacing
+  `/gdpr` (see T-0509) and `/admincompany/` (Cleansia's own account number/IBAN/BIC — not confidential,
+  it prints on every receipt, but suppressed rather than excepted, because the alternative is a guard
+  entry reading "this bank account is fine to log").
+
+  **Out-of-scope sightings, for the PM to file:** the free-text surface a name-shaped heuristic cannot
+  reach (`Notes`, `Description`, `Reason`, `ApprovalNotes`, `MissingFields`, `LegalEntityName`, address
+  lines) is untouched by this ticket and is only covered where a route is suppressed. That is the
+  `/audit` sweep the ticket anticipated.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD, not from the commit
+  message.** All five `Cleansia.Web.{Admin,Customer,Mobile.Customer,Mobile.Partner,Partner}/Middleware/RequestLoggingMiddleware.cs`
+  carry `ContactIdentityFieldRegex` (2 references each — the declaration and the call in
+  `RedactSensitiveFields`); four-of-five would have been the hole and it is not. The DTO-walking guard is
+  real and it reads the token list out of the **live compiled regex** rather than restating it:
+  `Cleansia.Tests/Logging/WireSurface.cs` `ReadTokens("ContactIdentityFieldRegex")` reflects the private
+  static member off the middleware type and parses the alternation out of `regex.ToString()`, so a token
+  added to the middleware widens every guard that reads it and no guard can hold a stale copy.
+  `RequestLogPiiSurfaceGuardTests` walks the wire surface with an `Assert.InRange(membersWalked, 1000, 20000)`
+  anti-vacuity floor and an `Assert.NotEmpty(WireSurface.ReadContactIdentityTokens())`, so it cannot go
+  green over an empty scan. Shipped in `b9753e85`. AC evidence and the both-ways mutation proof were
+  already written into `## Review` by the implementing lane — the only thing missing was this transition.
+
 ## Review
 <!-- reviewer + security verdicts here; AC3 must name the assertion that flips -->
+
+**AC3 — the assertion that flips, and it was run both ways.**
+`RequestLogProfilePiiRedactionTests.ProfileResponse_ContactIdentity_NeverReachesTheLog`, the
+`Assert.DoesNotContain(value, message)` inside `Assert.All`. Fixtures are real `MyProfileDto`s built
+through the production mapper with a real SAS, at three name lengths (short / typical Czech / long
+Ukrainian), 700–1000 bytes; each case asserts non-vacuity first (body exceeds the 500-byte window AND
+the last PII value closes inside it) so truncation cannot be what removes the values.
+
+- **Before the fix** (run first, red): `Failed: 10, Passed: 5`, message
+  `String: ···"5 | Body: {"email":"jk@x.cz","firstName":"··· Found: "jk@x.cz"` — on all five hosts.
+- **After the fix**: green.
+- **Mutation-proven after the fact** by deleting the `ContactIdentityFieldRegex().Replace(...)` line from
+  `RedactSensitiveFields` on all five hosts: `Failed: 10, Passed: 111` in the Logging suite, identical
+  message. Restored **byte-exact**, sha256 verified on all five files.
+
+**AC4** — `ProfileResponse_StillCarriesTheCallerUserId` asserts `User: {userId}` is still in the message
+(the harness gained an optional authenticated-principal parameter for this).
+
+**AC5** — `Cleansia.Tests` **3017 passed / 0 failed** (baseline 2945). `Cleansia.IntegrationTests`
+**132/132**, `Cleansia.HostTests` **120/120**, both run locally. `dotnet build` clean.

@@ -8,7 +8,7 @@ import { AddressDto, PackageListItem, PaymentType, SavedAddressDto, ServiceListI
 import { TranslateModule } from '@ngx-translate/core';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
-import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData } from './order-wizard.models';
+import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
 
 function makeService(id: string, name: string): ServiceListItem {
   return ServiceListItem.fromJS({ id, name, basePrice: 100, perRoomPrice: 0 });
@@ -45,7 +45,7 @@ class FakeOrderWizardFacade {
   stepIcons = ['pi pi-list', 'pi pi-map-marker', 'pi pi-calendar', 'pi pi-credit-card', 'pi pi-check-circle'];
 
   activeStep = signal(0);
-  formData = signal<OrderWizardFormData>({ ...ORDER_WIZARD_INITIAL_DATA, address: new AddressDto({ street: '', city: '', zipCode: '', countryId: '', state: '' }) });
+  formData = signal<OrderWizardFormData>({ ...ORDER_WIZARD_INITIAL_DATA, address: createAddressDto({ street: '', city: '', zipCode: '', countryId: '', state: '' }) });
   submitting = signal(false);
   selectedCategorySlug = signal<string | null>(null);
 
@@ -69,6 +69,11 @@ class FakeOrderWizardFacade {
   effectivePromoDiscount = signal(0);
   expressSurcharge = signal(0);
   expressSurchargeApplied = signal(false);
+  expressSurchargeWaived = signal(false);
+  expressUpgradesRemaining = signal(0);
+  expressWaiverAvailable = signal(false);
+  expressWaiverExhausted = signal(false);
+  expressWaiverPendingTrial = signal(false);
   appliedDiscountKind = signal<'none' | 'membership' | 'tier' | 'combined' | 'promo'>('none');
   promoCode = signal('');
 

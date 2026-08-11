@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CustomerClient, PaymentType } from '@cleansia/customer-services';
+import { PaymentType } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, of } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import {
   CleansiaCodeInputDialogComponent,
@@ -11,6 +10,7 @@ import {
 } from '@cleansia/components';
 import { OrderWizardFacade } from '../order-wizard.facade';
 import { formatPrice, getItemTranslation, PromoCodeUiState } from '../order-wizard.models';
+import { WizardPreferredCleanerComponent } from './wizard-preferred-cleaner.component';
 
 /**
  * Map the backend's PromoCodeError enum (string) to a localized i18n key.
@@ -31,39 +31,21 @@ const PROMO_ERROR_KEYS: Record<string, string> = {
   selector: 'cleansia-wizard-summary-step',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, InputTextModule, TranslatePipe, CleansiaCodeInputDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    InputTextModule,
+    TranslatePipe,
+    CleansiaCodeInputDialogComponent,
+    WizardPreferredCleanerComponent,
+  ],
   templateUrl: './wizard-summary-step.component.html',
 })
-export class WizardSummaryStepComponent implements OnInit {
+export class WizardSummaryStepComponent {
   @Input({ required: true }) facade!: OrderWizardFacade;
   private readonly translate = inject(TranslateService);
-  // Always go through CustomerClient — direct injection of MembershipClient
-  // hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
-  private readonly customerClient = inject(CustomerClient);
   protected readonly PaymentType = PaymentType;
   protected readonly formatPriceFn = formatPrice;
-
-  /**
-   * Hours in the user's free-cancellation window when they hold an active
-   * Plus membership. Null when not Plus or not yet loaded — template falls
-   * back to the standard 24h tier-1 copy. One-shot fetch on init; the
-   * cancellation card is render-once and doesn't need live updates.
-   */
-  protected readonly plusFreeHours = signal<number | null>(null);
-
-  ngOnInit(): void {
-    // Anonymous users can't hold a Plus membership — skip the call to avoid a
-    // noisy 401 on the booking wizard before sign-in.
-    if (!this.facade.isAuthenticated()) return;
-    this.customerClient.membershipClient
-      .getMine()
-      .pipe(catchError(() => of(null)))
-      .subscribe((response) => {
-        if (response?.hasMembership && response.freeCancellationWindowHours) {
-          this.plusFreeHours.set(response.freeCancellationWindowHours);
-        }
-      });
-  }
 
   // ─── Dialog visibility ──────────────────────────────────────
   //
@@ -121,9 +103,8 @@ export class WizardSummaryStepComponent implements OnInit {
   });
 
   /**
-   * Final price — the server-quoted total (express surcharge already folded
-   * in) minus the best-of-three discount. Wrapped in computed because `facade`
-   * is an @Input and isn't bound at field-init time.
+   * The price the customer is charged, as the quote composed it. Wrapped in computed because
+   * `facade` is an @Input and isn't bound at field-init time.
    */
   protected readonly grandTotal = computed(() => this.facade.displayedTotalPrice());
 
@@ -150,12 +131,16 @@ export class WizardSummaryStepComponent implements OnInit {
     return this.facade.effectivePromoDiscount() <= combined;
   });
 
-  /** "Loyalty discount needs orders above X" hint when the floor wasn't met. */
+  /**
+   * "Loyalty discount needs orders above X" hint when the floor wasn't met. Judged on the
+   * pre-surcharge subtotal, the base `ResolveTierDiscountForOrderAsync` is given — against the gross
+   * an express basket straddling the floor reads as qualifying and then loses the discount at submit.
+   */
   protected readonly showTierFloorHint = computed(() => {
     const floor = this.facade.tierDiscountMinOrderAmount();
     if (floor == null || floor <= 0) return false;
     if (this.facade.effectiveDiscount() > 0) return false;
-    return this.facade.totalPrice() < floor;
+    return this.facade.preSurchargeSubtotal() < floor;
   });
 
   protected readonly tierFloorAmount = computed(() => {

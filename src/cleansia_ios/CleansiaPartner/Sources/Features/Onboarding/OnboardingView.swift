@@ -170,7 +170,7 @@ private struct OnboardingPageView: View {
             Spacer().frame(height: Spacing.l)
 
             Text(page.title)
-                .font(CleansiaTypography.displayMedium)
+                .cleansiaFont(CleansiaTypography.displayMedium)
                 .foregroundColor(CleansiaColors.onBackground)
                 .multilineTextAlignment(.center)
 

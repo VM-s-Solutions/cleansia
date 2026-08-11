@@ -2,7 +2,6 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
-using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
@@ -41,13 +40,46 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
     [HttpPut("UpdateEmployee")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
     [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UpdateEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployee.Command command)
     {
         var result = await Mediator.Send(command);
 
         return HandleResult<UpdateEmployee.Response>(result);
+    }
+
+    [HttpPut("UpdateBankDetails")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateBankDetails.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateBankDetails([FromBody] UpdateBankDetails.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateBankDetails.Response>(result);
+    }
+
+    [HttpPut("UpdateJobRadius")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateJobRadius.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateJobRadius([FromBody] UpdateJobRadius.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<UpdateJobRadius.Response>(result);
+    }
+
+    [HttpGet("GetMyPayoutDetails")]
+    [Permission(Policy.CanViewEmployeePayoutDetails)]
+    [ProducesResponseType(typeof(MyPayoutDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyPayoutDetails([FromQuery] GetMyPayoutDetails.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<MyPayoutDetails>(result);
     }
 
     [HttpPost("SaveMyDocuments")]

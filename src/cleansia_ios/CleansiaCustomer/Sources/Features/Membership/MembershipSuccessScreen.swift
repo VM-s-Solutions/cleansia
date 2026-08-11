@@ -2,6 +2,9 @@ import CleansiaCore
 import SwiftUI
 
 struct MembershipSuccessScreen: View {
+    /// The one perk on this list the plan may not carry, so it comes from the server rather than
+    /// from the layout.
+    let showExpressPerk: Bool
     let onSetupRecurring: () -> Void
     let onBackHome: () -> Void
 
@@ -12,7 +15,7 @@ struct MembershipSuccessScreen: View {
                     .frame(width: 200, height: 200)
                     .padding(.top, Spacing.xl)
                 Text(L10n.Membership.successTitle)
-                    .font(CleansiaTypography.headlineMedium)
+                    .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                 Text(L10n.Membership.successSubtitle)
                     .font(CleansiaTypography.bodyMedium)
@@ -27,7 +30,9 @@ struct MembershipSuccessScreen: View {
                     PerkRow(text: L10n.Membership.perkCancellationTitle)
                     PerkRow(text: L10n.Membership.perkFavoriteCleanerTitle)
                     PerkRow(text: L10n.Membership.perkRecurringTitle)
-                    PerkRow(text: L10n.Membership.perkExpressTitle)
+                    if showExpressPerk {
+                        PerkRow(text: L10n.Membership.successPerkExpress)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)
@@ -66,7 +71,7 @@ private struct PerkRow: View {
 #if DEBUG
     struct MembershipSuccessScreen_Previews: PreviewProvider {
         static var previews: some View {
-            MembershipSuccessScreen(onSetupRecurring: {}, onBackHome: {})
+            MembershipSuccessScreen(showExpressPerk: true, onSetupRecurring: {}, onBackHome: {})
                 .background(CleansiaColors.background)
         }
     }

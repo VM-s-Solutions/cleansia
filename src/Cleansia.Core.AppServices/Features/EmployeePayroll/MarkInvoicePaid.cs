@@ -18,6 +18,17 @@ public class MarkInvoicePaid
 
     public record Response(string InvoiceId);
 
+    // Paid is terminal — Dispute, Reject, UpdateAmounts and Cancel all refuse a paid invoice — so the
+    // mark cannot be undone and a second one must not overwrite the first actor's record of a transfer
+    // that already left the bank.
+    private static string? RefusalFor(EmployeeInvoiceStatus status) => status switch
+    {
+        EmployeeInvoiceStatus.Approved => null,
+        EmployeeInvoiceStatus.Paid => BusinessErrorMessage.InvoiceAlreadyPaid,
+        EmployeeInvoiceStatus.Cancelled => BusinessErrorMessage.InvoiceAlreadyCancelled,
+        _ => BusinessErrorMessage.InvoiceNotApproved
+    };
+
     public class Validator : AbstractValidator<Command>
     {
         private readonly IEmployeeInvoiceRepository _invoiceRepository;
@@ -32,8 +43,18 @@ public class MarkInvoicePaid
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(invoiceRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound)
-                .MustAsync(StatusIsValidAsync)
-                .WithMessage(BusinessErrorMessage.InvalidInvoiceStatus);
+                .MustAsync(NotAlreadyPaidAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyPaid)
+                .MustAsync(NotCancelledAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyCancelled)
+                .MustAsync(ApprovedAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceNotApproved)
+                // Inside this chain, never a root rule: the class-level default is Continue, so a root
+                // rule would run for an unknown id and dereference the null GetByIdAsync returns. It is
+                // also the forward statement of what this whole reference exists for — you do not
+                // record a transfer against a document that carries no reference.
+                .MustAsync(HasVariableSymbolAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceReferenceMissing);
 
             RuleFor(x => x.BankTransferNote)
                 .MaximumLength(500)
@@ -44,10 +65,28 @@ public class MarkInvoicePaid
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private async Task<bool> StatusIsValidAsync(string invoiceId, CancellationToken cancellationToken)
+        private async Task<bool> NotAlreadyPaidAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return invoice!.Status != EmployeeInvoiceStatus.Paid;
+        }
+
+        private async Task<bool> NotCancelledAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return invoice!.Status != EmployeeInvoiceStatus.Cancelled;
+        }
+
+        private async Task<bool> ApprovedAsync(string invoiceId, CancellationToken cancellationToken)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
             return invoice!.Status == EmployeeInvoiceStatus.Approved;
+        }
+
+        private async Task<bool> HasVariableSymbolAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return !string.IsNullOrEmpty(invoice!.VariableSymbol);
         }
     }
 
@@ -59,7 +98,18 @@ public class MarkInvoicePaid
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
-            invoice!.MarkAsPaid(command.BankTransferNote, command.AdminNotes);
+
+            // The validator's status read and this write are separate steps: a second admin marking the
+            // same invoice in between reaches MarkAsPaid's throw, which would surface as a 500 rather
+            // than a refusal and hide a possible double transfer.
+            var refusal = RefusalFor(invoice!.Status);
+            if (refusal is not null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), refusal));
+            }
+
+            invoice.MarkAsPaid(command.BankTransferNote, command.AdminNotes);
 
             // "You've been paid" — the cleaner's highest-value payroll signal (GetByIdAsync already
             // loads Employee.User). Skips a legacy invoice with no linked user. Feed row + push ride

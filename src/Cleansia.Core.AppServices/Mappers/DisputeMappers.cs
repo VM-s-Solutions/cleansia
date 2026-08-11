@@ -67,7 +67,15 @@ public static class DisputeMappers
         string? blobUrl = null;
         try
         {
-            blobUrl = blobClient.GenerateSasUri(evidence.FilePath, TimeSpan.FromHours(1)).ToString();
+            // The evidence row records no content type, so the served one is derived from the stored blob
+            // PATH through the same closed set — its extension is minted from the payload's bytes, while
+            // FileName is the caller's own string. An unrecognised extension serves opaquely.
+            blobUrl = blobClient
+                .GenerateSasUri(
+                    evidence.FilePath,
+                    TimeSpan.FromHours(1),
+                    ServedContentType.ForFileName(evidence.FilePath))
+                .ToString();
         }
         catch
         {

@@ -99,11 +99,10 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     if (!order?.id || rating === 0) return;
 
     this.reviewSubmitting.set(true);
-    const command = new SubmitOrderReviewCommand({
-      orderId: order.id,
-      rating,
-      comment: comment || undefined,
-    });
+    const command = new SubmitOrderReviewCommand();
+    command.orderId = order.id;
+    command.rating = rating;
+    command.comment = comment || undefined;
 
     this.customerClient.orderClient
       .submitReview(command)

@@ -14,13 +14,13 @@ struct OrderDetail: Equatable {
     let currencyCode: String?
     let currencySymbol: String?
 
-    let address: OrderDetailAddress?
-    let coordinate: Coordinate?
+    let location: OrderLocation
     let customerName: String?
     let customerPhone: String?
 
     let rooms: Int
     let bathrooms: Int
+    let crew: OrderCrew?
     let services: [OrderDetailService]
     let packages: [OrderDetailPackage]
     let extras: [String]
@@ -37,19 +37,6 @@ struct OrderDetail: Equatable {
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]
-}
-
-struct OrderDetailAddress: Equatable {
-    let street: String?
-    let city: String?
-    let zipCode: String?
-
-    var singleLine: String? {
-        let parts = [street, city, zipCode]
-            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
-    }
 }
 
 /// Name + the stable backend id: the checklist persists ticks under id-based keys
@@ -122,11 +109,52 @@ struct OrderDetailPayment: Equatable {
 }
 
 extension OrderDetail {
-    /// Whether the full-bleed map is shown: coords present AND the order is not
-    /// Cancelled (the visit never happened) — the `canShowMap` parity
-    /// (OrderDetailScreen.kt:165).
-    var canShowMap: Bool {
-        coordinate != nil && status != ._6
+    /// Where the full-bleed map centres, or nil when there is nothing precise to point at — a
+    /// browsing cleaner who only got the coarse zone, an order that predates the geocoding
+    /// backfill, or a cancelled visit that never happened.
+    var mapCoordinate: Coordinate? {
+        location.mapPoint(status: status)
+    }
+
+    /// The cleaner is on this job and the job is live (Confirmed / OnTheWay / InProgress): the work
+    /// tools show, and the photo rails with them. It is also the gate on the photo FETCH, because
+    /// `GetOrderPhotos` serves only a caller the strict access check admits and every photo is a
+    /// forwardable signed URL into a private home. One value for both, so a change to what is on
+    /// screen cannot leave behind a request nobody makes — the property Android gets structurally by
+    /// creating the photos view model inside the section itself.
+    var showsWorkSections: Bool {
+        isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
+    }
+
+    /// The fields `OrderPiiRedaction` blanks by caller class are rendered off their **own arrival**.
+    /// The server decides disclosure on `CanAccessOrderAsync`; `isAssignedToCurrentUser` counts the
+    /// assignment list. They disagree for the employee who booked this cleaning for their own home,
+    /// and gating the render on the flag hides that person's own data from them.
+    ///
+    /// A blank is a redaction, not a value — and the redaction is **mixed** (ADR-0047 §D4 as amended):
+    /// string scalars like this phone are blanked to `""`, the free text and the composites are set
+    /// to `null`, the lists to `[]`. Neither `!= nil` nor `!= ""` covers that set, so every gate below
+    /// tolerates null, empty and whitespace on the same field.
+    var showsCustomerContact: Bool {
+        !(customerPhone ?? "").isBlank
+    }
+
+    /// The lifecycle conjunct answers *when is a door code useful*, not *may this caller see it*, so
+    /// it stays — without it the code sits on screen forever on a finished job.
+    var showsAccessCard: Bool {
+        !(accessInstructions ?? "").isBlank && (status == ._3 || status == ._4)
+    }
+
+    /// The record of what was reported during the job outlives the job, so there is no lifecycle
+    /// term here — only the arrival of the record, or a live invitation to start one.
+    var showsNotesAndIssues: Bool {
+        !orderNotes.isEmpty || !orderIssues.isEmpty || canAddNotes
+    }
+
+    /// Writing is an action, so it fails closed on the assignment, and only while the job is under
+    /// way — nothing is added before the cleaner is on their way.
+    var canAddNotes: Bool {
+        isAssignedToCurrentUser && (status == ._3 || status == ._4)
     }
 
     /// The formatted sum the cleaner takes in cash, or nil when the wire carried no
@@ -139,9 +167,18 @@ extension OrderDetail {
 }
 
 extension OrderDetail {
-    init(_ item: OrderItem) {
-        id = item.id ?? ""
-        orderNumber = item.displayOrderNumber ?? item.id?.prefix(8).description ?? "—"
+    /// **Refuse.** One order, so there is no page to refuse and no row to drop. Identity is refused
+    /// rather than synthesized because every action on this screen — take, start, complete, the
+    /// photo fetch — is keyed by it, so a blank id produces a detail whose every button writes to
+    /// nothing. `rooms`/`bathrooms` are the scope the cleaner sizes the job by and
+    /// `isAssignedToCurrentUser`/`hasAfterPhotos` decide what is offered, so a coerced `0` or
+    /// `false` is a claim, not a fallback.
+    ///
+    /// The collections keep `?? []`: an absent list and an empty one render identically here and
+    /// falsify no arithmetic, because this screen sums nothing over them.
+    init(_ item: OrderItem) throws {
+        id = try item.id.requireNonBlank("id")
+        orderNumber = try item.displayOrderNumber.requireNonBlank("displayOrderNumber")
         status = item.status
         cleaningDateTime = item.cleaningDateTime
         completedAt = item.completedAt
@@ -149,22 +186,13 @@ extension OrderDetail {
         currencyCode = item.currency?.code ?? item.currency?.symbol
         currencySymbol = item.currency?.symbol
 
-        if let address = item.address {
-            self.address = OrderDetailAddress(street: address.street, city: address.city, zipCode: address.zipCode)
-            if let lat = address.latitude, let lon = address.longitude {
-                coordinate = Coordinate(latitude: lat, longitude: lon)
-            } else {
-                coordinate = nil
-            }
-        } else {
-            address = nil
-            coordinate = nil
-        }
+        location = OrderLocation(item)
         customerName = item.customerName
         customerPhone = item.customerPhone
 
-        rooms = item.rooms ?? 0
-        bathrooms = item.bathrooms ?? 0
+        rooms = try item.rooms.require("rooms")
+        bathrooms = try item.bathrooms.require("bathrooms")
+        crew = try OrderCrew(item)
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
                 .map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }
@@ -193,8 +221,8 @@ extension OrderDetail {
             statusCode: item.paymentStatus?.value
         )
 
-        isAssignedToCurrentUser = item.isAssignedToCurrentUser ?? false
-        hasAfterPhotos = item.hasAfterPhotos ?? false
+        isAssignedToCurrentUser = try item.isAssignedToCurrentUser.require("isAssignedToCurrentUser")
+        hasAfterPhotos = try item.hasAfterPhotos.require("hasAfterPhotos")
 
         orderNotes = item.orderNotes ?? []
         orderIssues = item.orderIssues ?? []

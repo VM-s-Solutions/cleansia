@@ -3,13 +3,16 @@ using Cleansia.Config;
 using Cleansia.Config.Health;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Functions.Core;
+using Cleansia.Functions.Middleware;
+using Cleansia.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureFunctionsWorkerDefaults(worker => worker.UseMiddleware<FunctionInvocationErrorMiddleware>())
     .ConfigureAppConfiguration((context, config) =>
     {
         // Committed production cron defaults for the four recurring/notification timers
@@ -24,6 +27,9 @@ var host = new HostBuilder()
             config.AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true);
         }
     })
+    // This host's ONLY off-box error signal. Sentry:Dsn arrives as the Sentry__Dsn app setting, the same
+    // Key Vault secret the five API hosts read; blank or absent leaves the SDK disabled.
+    .ConfigureLogging((context, logging) => logging.AddSentryMonitoring(context.Configuration))
     .ConfigureServices((context, services) =>
     {
         services.AddApplicationInsightsTelemetryWorkerService();

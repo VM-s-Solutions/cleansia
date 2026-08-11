@@ -1,5 +1,5 @@
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -16,9 +16,11 @@ public class GdprDeletionService(
     IOrderRepository orderRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
+    IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
+    ILiveActivityTokenRepository liveActivityTokenRepository,
     ICartRepository cartRepository,
     IUserConsentRepository userConsentRepository,
     IGdprRequestRepository gdprRequestRepository,
@@ -27,6 +29,9 @@ public class GdprDeletionService(
     IOrderEmployeePayRepository orderEmployeePayRepository,
     IRecurringBookingTemplateRepository recurringBookingTemplateRepository,
     IUserNotificationRepository userNotificationRepository,
+    IDeadLetterRepository deadLetterRepository,
+    IOutboxMessageRepository outboxMessageRepository,
+    IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<GdprDeletionService> logger)
@@ -47,24 +52,24 @@ public class GdprDeletionService(
 
         if (user is null)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.NotExistingUserWithEmail, "User not found"));
+                nameof(userId), BusinessErrorMessage.NotExistingUserWithEmail));
 
         var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, DeletionRequestType, cancellationToken);
         if (hasPending)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.GdprDeletionAlreadyPending, "A deletion request is already pending"));
+                nameof(userId), BusinessErrorMessage.GdprDeletionAlreadyPending));
 
         var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
         if (blockingOrder)
             return BusinessResult.Failure(new Error(
-                BusinessErrorMessage.GdprDeletionBlockedByOrder, "Active or in-progress order prevents deletion"));
+                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByOrder));
 
         if (user.Employee is not null)
         {
             var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
             if (blockingInvoice)
                 return BusinessResult.Failure(new Error(
-                    BusinessErrorMessage.GdprDeletionBlockedByInvoice, "Pending or approved invoice prevents deletion"));
+                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByInvoice));
         }
 
         var auditEntry = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
@@ -79,21 +84,34 @@ public class GdprDeletionService(
         return BusinessResult.Success();
     }
 
-    private async Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
-    {
-        var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
-            .Include(o => o.OrderStatusHistory)
-            .ToListAsync(cancellationToken);
+    /// <summary>
+    /// Erasure is refused while the subject still has a LIVE order — every status except the two
+    /// terminal ones. Deliberately the same membership as <c>OrderRepository.SlotBlockingStatuses</c>:
+    /// ADR-0037 D5 already names the two as the pair of conservative-direction readers of one question.
+    /// They stay two artifacts because they gate two different things in two layers — that one is the
+    /// repository's slot-occupancy filter, this one is the erasure refusal — and ADR-0049 §D7 refuses
+    /// promoting either to a shared platform grouping. <c>ErasureBlockingOrderStatusTests</c> pins them
+    /// against each other instead, so the next divergence fails rather than sits.
+    ///
+    /// <para><c>OnTheWay</c> was missing here from the day the set was written, with no ticket, ADR or
+    /// comment recording an intent to exclude it — while the DEAD <c>Pending</c> was present, which is
+    /// the tell: no deliberate reading of "is this order live" admits a status nothing writes and
+    /// refuses one a cleaner is actively driving under. Restored as the omission it was. Without it an
+    /// erasure could complete while a cleaner was en route to the subject's home, anonymizing the
+    /// customer record underneath a job that stays live and staffed.</para>
+    /// </summary>
+    private static readonly OrderStatus[] ErasureBlockingStatuses =
+    [
+        OrderStatus.New,
+        OrderStatus.Pending,
+        OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
+    ];
 
-        return orders.Any(o =>
-        {
-            var status = o.GetCurrentOrderStatus();
-            return status == OrderStatus.New
-                || status == OrderStatus.Pending
-                || status == OrderStatus.Confirmed
-                || status == OrderStatus.InProgress;
-        });
-    }
+    private Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
+        => orderRepository.GetFiltered(o => o.UserId == userId)
+            .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)
     {
@@ -154,6 +172,10 @@ public class GdprDeletionService(
                     logger.LogWarning(ex, "Failed to delete document blob {FilePath} for user {UserId}", doc.FilePath, user.Id);
                 }
             }
+
+            // Ordered, not adjacent by accident, for the same reason the dispute-evidence pair below is:
+            // FilePath is the only place the blob's name is stored, so the rows go after the blobs.
+            await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
         }
 
         var customerOrderIds = await orderRepository.GetFiltered(o => o.UserId == user.Id)
@@ -175,6 +197,11 @@ public class GdprDeletionService(
                 {
                     logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", orderId);
                 }
+
+                // The row survives the blob because the order does — and it carries the uploader's own file
+                // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
+                // reached (photos are not a navigation on the aggregate it loads).
+                photo.Anonymize();
             }
         }
 
@@ -191,13 +218,37 @@ public class GdprDeletionService(
             order.CustomerAddress?.Anonymize();
         }
 
-        var devices = await deviceRepository.GetByUserIdAsync(user.Id, ct);
-        deviceRepository.RemoveRange(devices);
+        // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
+        // a later login can reclaim the tombstone, and the stale-device retention sweep filters on IsActive
+        // too — so a logged-out handset's id and push token were reachable by neither path.
+        await deviceRepository.RemoveForSubjectAsync(user.Id, ct);
+
+        // The same handset's other APNs address. ADR-0029 D3 keeps activity registrations off the Device
+        // aggregate, so nothing above reaches them: the sweeps that do (the 24h janitor, the logout/revoke
+        // cascade) cover order-scoped rows and live sessions, and an erased account has neither — leaving
+        // the per-install push-to-start row with no reaper at all.
+        await liveActivityTokenRepository.RemoveForSubjectAsync(user.Id, ct);
 
         var notifications = await userNotificationRepository
             .GetFiltered(n => n.UserId == user.Id)
             .ToListAsync(ct);
         userNotificationRepository.RemoveRange(notifications);
+
+        // Id-keyed for the same reason the payout row below is: a poisoned send-email body holds the
+        // subject's address and real name verbatim, and its row has no navigation to a user at all.
+        await deadLetterRepository.RemoveForSubjectAsync(user.Id, ct);
+
+        // The same wire body one table over, before it poisons anything: an undrained or retry-exhausted
+        // send-email outbox row holds the address and real name just as verbatim, and no prune reaches it.
+        await outboxMessageRepository.RemoveForSubjectAsync(user.Id, ct);
+
+        // Not a session cut — the refresh path already refuses a deactivated user — but a retention start.
+        // RefreshTokenCleanupService hard-deletes only tokens that are revoked OR expired, so an untouched
+        // live token keeps the subject's IP address, device label and device id until its own natural
+        // expiry before the 90-day forensic window even begins. ADR-0027's directory is untouched: its poll
+        // predicate reads the password_reset reason alone.
+        await refreshTokenService.RevokeAllForUserAsync(
+            user.Id, GdprAuditReasons.RefreshTokenRevocation, exceptRawToken: null, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);
@@ -207,8 +258,30 @@ public class GdprDeletionService(
             consent.Withdraw();
 
         var disputes = await disputeRepository.GetDisputesByUserIdAsync(user.Id, ct);
+        var evidenceBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
         foreach (var dispute in disputes)
+        {
+            // These two steps are ordered, not adjacent by accident. Anonymize() overwrites
+            // DisputeEvidence.FilePath, which is the only place the blob's name is stored — nothing else
+            // in the database, the GDPR export or the audit log records it. Run it first and the delete
+            // below is issued against "[DELETED]": the file survives with nothing left able to name it,
+            // and the only way back is enumerating the container under the dispute id.
+            foreach (var evidence in dispute.Evidence)
+            {
+                try
+                {
+                    await evidenceBlobClient.DeleteAsync(evidence.FilePath, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Failed to delete dispute evidence blob {BlobName} on dispute {DisputeId} during erasure; the row's path is cleared next, so this name is the only remaining handle on the file",
+                        evidence.FilePath, dispute.Id);
+                }
+            }
+
             dispute.Anonymize();
+        }
 
         var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
         savedAddressRepository.RemoveRange(savedAddresses);
@@ -231,6 +304,12 @@ public class GdprDeletionService(
                 .GetByEmployeeIdAsync(user.Employee.Id, ct);
             foreach (var pay in employeeOwnedPays)
                 pay.Anonymize();
+
+            // Id-keyed, not a navigation walk: this aggregate is loaded with only Employee → Address, and
+            // there is no lazy loading, so a clear reaching through Employee.PayoutDetails would be a
+            // silent no-op and the bank account, SWIFT and holder name would survive the erasure while
+            // the request returned success (ADR-0034 D1.1.2). Anonymize() only drops the gate scalar.
+            await employeePayoutDetailsRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
             user.Employee.Address?.Anonymize();

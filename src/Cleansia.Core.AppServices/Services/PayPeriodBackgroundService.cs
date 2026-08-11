@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -17,6 +18,9 @@ namespace Cleansia.Core.AppServices.Services;
 
 public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 {
+    private const string EmptyRenderMessage = "PDF generation returned empty result";
+    private const string NoCompanyInfoMessage = "No active company info is configured to issue this invoice against";
+
     private readonly IPayPeriodRepository _payPeriodRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IEmailService _emailService;
@@ -24,6 +28,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ILogger<PayPeriodBackgroundService> _logger;
     private readonly ICurrencyRepository _currencyRepository;
     private readonly IEmployeeInvoiceRepository _employeeInvoiceRepository;
+    private readonly IEmployeePayoutDetailsRepository _employeePayoutDetailsRepository;
     private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
     private readonly ICompanyInfoRepository _companyInfoRepository;
     private readonly ILanguageRepository _languageRepository;
@@ -32,6 +37,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly IPdfService _pdfService;
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
     private readonly ITenantProvider _tenantProvider;
+    private readonly IPayoutReferenceAllocator _payoutReferenceAllocator;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -41,6 +47,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ILogger<PayPeriodBackgroundService> logger,
         ICurrencyRepository currencyRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICompanyInfoRepository companyInfoRepository,
         ILanguageRepository languageRepository,
@@ -48,7 +55,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ICountryConfigurationRepository countryConfigurationRepository,
         IPdfService pdfService,
         IBlobContainerClientFactory blobContainerClientFactory,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        IPayoutReferenceAllocator payoutReferenceAllocator)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -57,6 +65,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _logger = logger;
         _currencyRepository = currencyRepository;
         _employeeInvoiceRepository = employeeInvoiceRepository;
+        _employeePayoutDetailsRepository = employeePayoutDetailsRepository;
         _orderEmployeePayRepository = orderEmployeePayRepository;
         _companyInfoRepository = companyInfoRepository;
         _languageRepository = languageRepository;
@@ -65,6 +74,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _pdfService = pdfService;
         _blobContainerClientFactory = blobContainerClientFactory;
         _tenantProvider = tenantProvider;
+        _payoutReferenceAllocator = payoutReferenceAllocator;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -201,6 +211,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 .GetQueryable()
                 .Include(e => e.User)
                 .Include(e => e.Address)
+                    .ThenInclude(a => a!.Country)
                 .Where(e => e.IsActive)
                 .ToListAsync(cancellationToken);
 
@@ -321,17 +332,55 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
                        await _currencyRepository.GetDefaultAsync(cancellationToken);
 
+        var variableSymbol = await _payoutReferenceAllocator.AllocateAsync(cancellationToken);
+        if (variableSymbol.IsFailure)
+        {
+            _logger.LogError(
+                "Could not allocate a payout reference for employee {EmployeeId} / period {PeriodId} ({Error}); skipping this employee's invoice",
+                employee.Id,
+                period.Id,
+                variableSymbol.Error?.Message);
+            return null;
+        }
+
         var invoice = EmployeeInvoice.CreateFromOrderPays(
             employee.Id,
             period.Id,
             orderPays,
-            currency!.Id);
+            currency!.Id,
+            variableSymbol.Value!);
 
         _employeeInvoiceRepository.Add(invoice);
 
         foreach (var orderPay in orderPays)
         {
             orderPay.AssignToInvoice(invoice.Id);
+        }
+
+        // C1 — make the reference durable BEFORE any document carrying it is rendered, uploaded or
+        // emailed. Today the whole group commits at the end, after every cleaner has already been
+        // emailed their PDF, so one bad row means everyone has an invoice in their inbox and no
+        // invoice row exists for any of them.
+        try
+        {
+            await _unitOfWork.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+        {
+            // Rollback() is context-global — it sets EVERY tracked entry to Unchanged, including
+            // period.Close() if no earlier employee in this period has already committed. So on the
+            // FIRST invoicing employee of a period this also reverts the close: the period stays Open,
+            // is re-selected on the next tick, and its period-closed emails go out a second time. No
+            // duplicate invoice results (the already-has-one guard above skips it) and no money moves.
+            _unitOfWork.Rollback();
+
+            _logger.LogError(
+                ex,
+                "Duplicate payout reference {VariableSymbol} for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
+                variableSymbol.Value,
+                employee.Id,
+                period.Id);
+            return null;
         }
 
         var language = await _languageRepository.GetByCodeAsync(languageCode, cancellationToken) ??
@@ -349,22 +398,34 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             if (pdfBytes == null || pdfBytes.Length == 0)
             {
-                throw new InvalidOperationException("PDF generation returned empty result");
+                throw new InvalidOperationException(EmptyRenderMessage);
             }
 
             var pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, pdfBytes, cancellationToken);
             invoice.SetPdfBlobUrl(pdfBlobUrl);
             invoice.ClearPdfGenerationError();
 
+            // C2 — without it these mutations ride the NEXT employee's commit and are lost with
+            // whatever fails next.
+            await _unitOfWork.CommitAsync(cancellationToken);
+
             var fileName = $"{invoice.InvoiceNumber}.pdf";
             return (pdfBytes, fileName);
         }
-        catch (Exception ex)
+        // A cancelled run is not a failed render: nothing was attempted to completion, and the recording
+        // commit would be cancelled with it — leaving the stamp dirty in the tracker to ride the NEXT
+        // employee's commit. It propagates instead.
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Failed to generate PDF for invoice {InvoiceId}", invoice.Id);
 
-            // Mark invoice with error but don't fail entire process
+            // The row is the admin's only durable signal that this invoice needs a re-render (ADR-0046
+            // Erratum E5), so it must carry the CAUSE and not a placeholder standing in for it.
             invoice.SetPdfGenerationError(ex.Message);
+
+            // C2 on the failure arm too: the PDF-error state for the employee whose generation just
+            // failed is exactly what is lost if it rides a later commit that also fails.
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             // Invoice will be created without PDF
             // Admin can regenerate PDF later via RegenerateInvoicePdf endpoint
@@ -380,43 +441,37 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         string languageCode,
         CancellationToken cancellationToken)
     {
-        try
+        var countryId = employee.Address?.CountryId;
+
+        // Try to get company info by employee's country, fallback to any active
+        var companyInfo = countryId != null
+            ? await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+            : null;
+        companyInfo ??= await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+        if (companyInfo == null)
         {
-            var countryId = employee.Address?.CountryId;
-
-            // Try to get company info by employee's country, fallback to any active
-            var companyInfo = countryId != null
-                ? await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                : null;
-            companyInfo ??= await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
-
-            if (companyInfo == null)
-            {
-                _logger.LogError("No active company info found for country {CountryId}", countryId);
-                return null;
-            }
-            var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
-
-            var dateFormat = "dd.MM.yyyy";
-            if (!string.IsNullOrEmpty(countryId))
-            {
-                var countryConfig = await _countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
-                if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
-                    dateFormat = countryConfig.DateFormat;
-            }
-
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
-
-            var countryCode = employee.Address?.Country?.IsoCode;
-            var pdfBytes = _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
-
-            return pdfBytes;
+            throw new InvalidOperationException(NoCompanyInfoMessage);
         }
-        catch (Exception ex)
+
+        var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
+
+        var dateFormat = "dd.MM.yyyy";
+        if (!string.IsNullOrEmpty(countryId))
         {
-            _logger.LogError(ex, "Error generating invoice PDF");
-            return null;
+            var countryConfig = await _countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+            if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
+                dateFormat = countryConfig.DateFormat;
         }
+
+        var payoutDetails = await _employeePayoutDetailsRepository
+            .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
+
+        var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
+
+        var countryCode = employee.Address?.Country?.IsoCode;
+
+        return _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
     }
 
     private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string? countryId, CancellationToken cancellationToken)
@@ -435,7 +490,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             VatRate = config.VatRate,
             DigitalSignatureRequired = config.DigitalSignatureRequired,
             EInvoiceFormat = config.EInvoiceFormat,
-            LegalDisclaimerTemplate = config.LegalDisclaimerTemplate
+            LegalDisclaimerTemplate = config.LegalDisclaimerTemplate,
+            LegalDisclaimerLanguageCode = config.LegalDisclaimerLanguageCode,
+            LegalDisclaimerReviewStatus = config.LegalDisclaimerReviewStatus,
+            ConstantSymbol = config.ConstantSymbol
         };
     }
 

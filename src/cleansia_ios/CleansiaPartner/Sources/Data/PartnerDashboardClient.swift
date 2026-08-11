@@ -3,21 +3,21 @@ import CleansiaPartnerApi
 import Foundation
 
 protocol PartnerDashboardClient {
-    func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto>
-    func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreviewResponse>
+    func getStats(employeeId: String?) async -> ApiResult<DashboardStats>
+    func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreview>
     func getCurrentEmployee() async -> ApiResult<EmployeeItem>
 }
 
 struct LivePartnerDashboardClient: PartnerDashboardClient {
-    func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto> {
+    func getStats(employeeId: String?) async -> ApiResult<DashboardStats> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerDashboardAPI.dashboardGetStats(employeeId: employeeId)
+            try await DashboardStats(PartnerDashboardAPI.dashboardGetStats(employeeId: employeeId))
         }
     }
 
-    func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreviewResponse> {
+    func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreview> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerDashboardAPI.dashboardGetAvailableJobsPreview(limit: limit)
+            try await AvailableJobsPreview(PartnerDashboardAPI.dashboardGetAvailableJobsPreview(limit: limit))
         }
     }
 

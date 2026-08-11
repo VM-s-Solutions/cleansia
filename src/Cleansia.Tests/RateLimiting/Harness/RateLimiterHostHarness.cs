@@ -80,18 +80,21 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
     /// TCP peer (the "proxy");
     /// default is the trusted peer. <paramref name="xffClientIp"/> is the synthetic X-Forwarded-For
     /// client IP. <paramref name="sub"/>, when set, authenticates the request as that subject.
+    /// <paramref name="method"/> defaults to POST (the canonical stub routes); a test mirroring a
+    /// read endpoint's window passes "GET".
     /// Returns the resulting status code and the client IP the pipeline resolved.
     /// </summary>
     public async Task<RlResponse> SendAsync(
         string path,
         string? xffClientIp = null,
         string? sub = null,
-        string connectionPeer = TrustedProxyPeer)
+        string connectionPeer = TrustedProxyPeer,
+        string method = "POST")
     {
         var ctx = await Server.SendAsync(c =>
         {
             c.Connection.RemoteIpAddress = System.Net.IPAddress.Parse(connectionPeer);
-            c.Request.Method = "POST";
+            c.Request.Method = method;
             c.Request.Path = path;
             if (xffClientIp is not null) c.Request.Headers["X-Forwarded-For"] = xffClientIp;
             if (sub is not null) c.Request.Headers[TestSubHeader] = sub;

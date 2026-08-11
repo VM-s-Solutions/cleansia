@@ -2487,6 +2487,85 @@
         }
       }
     },
+    "/api/Employee/GetMyPayoutDetails": {
+      "get": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_GetMyPayoutDetails",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/GetMyPayoutDetails_Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Employee/UpdateEmergencyContact": {
       "put": {
         "tags": [
@@ -2598,6 +2677,75 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpdateAvailability_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Employee/UpdateJobRadius": {
+      "put": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_UpdateJobRadius",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobRadius_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateJobRadius_Response"
                 }
               }
             }
@@ -6078,6 +6226,194 @@
         }
       }
     },
+    "/api/Order/MyPendingOffers": {
+      "get": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_MyPendingOffers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOfferItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Order/DeclinePreferredOffer": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_DeclinePreferredOffer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeclinePreferredOffer_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclinePreferredOffer_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ServiceCity": {
       "get": {
         "tags": [
@@ -6330,7 +6666,7 @@
             "type": "string",
             "nullable": true
           },
-          "customerAddress": {
+          "customerAddressApproximate": {
             "type": "string",
             "nullable": true
           },
@@ -6722,6 +7058,26 @@
             "nullable": true
           },
           "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeclinePreferredOffer_Command": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeclinePreferredOffer_Response": {
+        "type": "object",
+        "properties": {
+          "orderId": {
             "type": "string",
             "nullable": true
           }
@@ -7213,10 +7569,6 @@
             "type": "string",
             "nullable": true
           },
-          "iban": {
-            "type": "string",
-            "nullable": true
-          },
           "emergencyContactName": {
             "type": "string",
             "nullable": true
@@ -7242,6 +7594,11 @@
                 "$ref": "#/components/schemas/TimeRange"
               }
             },
+            "nullable": true
+          },
+          "jobRadiusKm": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -7332,6 +7689,9 @@
           },
           "employee": {
             "$ref": "#/components/schemas/GdprExportEmployeeDto"
+          },
+          "payoutDetails": {
+            "$ref": "#/components/schemas/GdprExportPayoutDetailsDto"
           },
           "orders": {
             "type": "array",
@@ -7507,6 +7867,64 @@
         },
         "additionalProperties": false
       },
+      "GdprExportPayoutDetailsDto": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "$ref": "#/components/schemas/PayoutScheme"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PayoutDetailsStatus"
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "iban": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastRevealedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revealCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "GdprExportProfileDto": {
         "type": "object",
         "properties": {
@@ -7619,6 +8037,10 @@
         },
         "additionalProperties": false
       },
+      "GetMyPayoutDetails_Query": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "GetOrderPhotos_OrderPhotoDto": {
         "type": "object",
         "properties": {
@@ -7721,6 +8143,9 @@
           "lastName": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7915,6 +8340,55 @@
           },
           "monthName": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyPayoutDetails": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "$ref": "#/components/schemas/PayoutScheme"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PayoutDetailsStatus"
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "iban": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -8215,6 +8689,10 @@
           "address": {
             "$ref": "#/components/schemas/OrderAddress"
           },
+          "customerAddressApproximate": {
+            "type": "string",
+            "nullable": true
+          },
           "rooms": {
             "type": "integer",
             "format": "int32"
@@ -8347,6 +8825,25 @@
             },
             "nullable": true
           },
+          "requiredEmployees": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxEmployees": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "availableSpots": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assignedEmployeesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasAvailableSpots": {
+            "type": "boolean"
+          },
           "receiptNumber": {
             "type": "string",
             "nullable": true
@@ -8378,6 +8875,13 @@
           },
           "hasAfterPhotos": {
             "type": "boolean"
+          },
+          "expressWaiverForfeitedOnCancel": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "preferredOffer": {
+            "$ref": "#/components/schemas/PreferredOfferDetails"
           }
         },
         "additionalProperties": false
@@ -8853,6 +9357,78 @@
           "Card"
         ]
       },
+      "PayoutDetailsStatus": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Provided",
+          "NeedsReconfirmation"
+        ]
+      },
+      "PayoutScheme": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "CzskDomesticWithIban",
+          "SepaIban",
+          "ProviderPayoutToken"
+        ]
+      },
+      "PendingOfferItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "cleaningDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estimatedTime": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "respondByUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerAddressApproximate": {
+            "type": "string",
+            "nullable": true
+          },
+          "rooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PeriodPaySummaryDto": {
         "type": "object",
         "properties": {
@@ -8957,6 +9533,43 @@
         "x-enumNames": [
           "Before",
           "After"
+        ]
+      },
+      "PreferredOfferDetails": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/PreferredOfferState"
+          },
+          "cleanerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "respondByUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "canChooseAnother": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PreferredOfferState": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "None",
+          "AwaitingConfirmation",
+          "Accepted",
+          "Closed"
         ]
       },
       "ProblemDetails": {
@@ -9761,6 +10374,34 @@
           "iban": {
             "type": "string",
             "nullable": true
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9916,10 +10557,6 @@
             "type": "string",
             "nullable": true
           },
-          "iban": {
-            "type": "string",
-            "nullable": true
-          },
           "emergencyName": {
             "type": "string",
             "nullable": true
@@ -10017,6 +10654,36 @@
         "properties": {
           "employeeId": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateJobRadius_Command": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateJobRadius_Response": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "radiusKm": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },

@@ -10,13 +10,15 @@ struct RegisterView: View {
         client: RegistrationAuthClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
+        signupConsent: SignupConsentRecording,
         onSignIn: @escaping () -> Void,
         onRegistered: @escaping (String) -> Void
     ) {
         _vm = StateObject(wrappedValue: RegisterViewModel(
             client: client,
             settings: settings,
-            snackbar: snackbar
+            snackbar: snackbar,
+            signupConsent: signupConsent
         ))
         self.onSignIn = onSignIn
         self.onRegistered = onRegistered
@@ -70,7 +72,7 @@ private struct RegisterContent: View {
                 Spacer().frame(height: Spacing.l)
 
                 Text(L10n.Register.title)
-                    .font(CleansiaTypography.displayMedium)
+                    .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)
                     .multilineTextAlignment(.center)
 

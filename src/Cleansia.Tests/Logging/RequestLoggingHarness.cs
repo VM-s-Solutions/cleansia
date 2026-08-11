@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Cleansia.Config.Abstractions;
@@ -52,19 +53,37 @@ internal static class RequestLoggingHarness
             .GetField(constName, BindingFlags.NonPublic | BindingFlags.Static)!
             .GetRawConstantValue()!;
 
+    /// <param name="requestBody">
+    /// Supplied instead of <paramref name="requestJson"/> when the test needs to observe the stream
+    /// itself (see <see cref="CountingRequestBodyStream"/>). Mutually exclusive with it.
+    /// </param>
+    /// <param name="onNextInvoked">
+    /// Runs at the top of the terminal delegate — i.e. after the request has been logged and before the
+    /// response has been. Anything measured about the REQUEST read must be snapshotted here, not after
+    /// <c>InvokeAsync</c> returns.
+    /// </param>
     public static async Task<List<string>> RunAsync(
         Type middlewareType,
         string path,
         string responseJson,
         string? requestJson = null,
-        string method = "GET")
+        string method = "GET",
+        string? authenticatedUserId = null,
+        Stream? requestBody = null,
+        Action? onNextInvoked = null)
     {
+        if (requestBody is not null && requestJson is not null)
+        {
+            throw new ArgumentException("Pass either requestJson or requestBody, not both.", nameof(requestBody));
+        }
+
         var factory = new CapturingLoggerFactory();
         var loggerType = typeof(Logger<>).MakeGenericType(middlewareType);
         var logger = Activator.CreateInstance(loggerType, factory)!;
 
         RequestDelegate next = async ctx =>
         {
+            onNextInvoked?.Invoke();
             ctx.Response.StatusCode = StatusCodes.Status200OK;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(responseJson));
@@ -73,11 +92,18 @@ internal static class RequestLoggingHarness
         var middleware = Activator.CreateInstance(middlewareType, next, logger)!;
 
         var context = new DefaultHttpContext();
+        if (authenticatedUserId is not null)
+        {
+            context.User = new ClaimsPrincipal(
+                new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, authenticatedUserId)], "test"));
+        }
+
         context.Request.Method = method;
         context.Request.Path = path;
-        context.Request.Body = requestJson is null
-            ? new MemoryStream()
-            : new MemoryStream(Encoding.UTF8.GetBytes(requestJson));
+        context.Request.Body = requestBody
+            ?? (requestJson is null
+                ? new MemoryStream()
+                : new MemoryStream(Encoding.UTF8.GetBytes(requestJson)));
         context.Response.Body = new MemoryStream();
 
         var invoke = middlewareType.GetMethod("InvokeAsync", BindingFlags.Public | BindingFlags.Instance)!;

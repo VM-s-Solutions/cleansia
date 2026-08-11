@@ -1,11 +1,11 @@
 ---
 id: T-0496
 title: Currency bug in the express surcharge
-status: draft
+status: done
 size: S
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []

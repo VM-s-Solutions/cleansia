@@ -9,6 +9,7 @@ import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -88,7 +89,7 @@ class DisputeDetailViewModel @Inject constructor(
             when (val result = disputeRepository.getById(id)) {
                 is ApiResult.Success -> _state.value = UiState.Loaded(result.data)
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error)
                     _state.value = UiState.Error
                 }
             }
@@ -115,8 +116,8 @@ class DisputeDetailViewModel @Inject constructor(
                     load()
                 }
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
-                    _sendState.value = ActionState.Error(result.error.getUserMessage())
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error)
+                    _sendState.value = ActionState.Error(result.error.userMessage(appContext))
                 }
             }
         }
@@ -157,8 +158,8 @@ class DisputeDetailViewModel @Inject constructor(
                     load()
                 }
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
-                    _uploadState.value = ActionState.Error(result.error.getUserMessage())
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error)
+                    _uploadState.value = ActionState.Error(result.error.userMessage(appContext))
                 }
             }
         }

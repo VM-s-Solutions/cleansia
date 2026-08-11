@@ -69,11 +69,10 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
     if (!disputeId || this.resolving()) return;
 
     this.resolving.set(true);
-    const command = new ResolveDisputeCommand({
-      disputeId,
-      refundAmount: refundAmount ?? undefined,
-      resolutionNotes: resolutionNotes?.trim() || undefined,
-    });
+    const command = new ResolveDisputeCommand();
+    command.disputeId = disputeId;
+    command.refundAmount = refundAmount ?? undefined;
+    command.resolutionNotes = resolutionNotes?.trim() || undefined;
 
     this.disputeClient
       .resolve(command)
@@ -100,7 +99,9 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
     if (!disputeId || this.updatingStatus()) return;
 
     this.updatingStatus.set(true);
-    const command = new UpdateDisputeStatusCommand({ disputeId, newStatus });
+    const command = new UpdateDisputeStatusCommand();
+    command.disputeId = disputeId;
+    command.newStatus = newStatus;
 
     this.disputeClient
       .updateStatus(command)
@@ -130,11 +131,10 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
     if (!disputeId || !trimmed || this.sendingMessage()) return;
 
     this.sendingMessage.set(true);
-    const command = new AddDisputeMessageCommand({
-      disputeId,
-      message: trimmed,
-      isStaffMessage: true,
-    });
+    const command = new AddDisputeMessageCommand();
+    command.disputeId = disputeId;
+    command.message = trimmed;
+    command.isStaffMessage = true;
 
     this.disputeClient
       .addMessage(command)

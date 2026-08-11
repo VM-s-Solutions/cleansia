@@ -17,8 +17,9 @@ Cleansia uses JWT bearer tokens for API authentication with role-based access co
 - Token generation: `src/Cleansia.Core.AppServices/Services/TokenService.cs`
 - JWT config: `src/Cleansia.Infra.Common/Configuration/Interfaces/IJwtSettings.cs`
 - Auth handlers: `src/Cleansia.Core.AppServices/Features/Auth/`
-- Partner API controller: `src/Cleansia.Web/Controllers/AuthController.cs`
-- Mobile API controller: `src/Cleansia.Web.Mobile/Controllers/AuthController.cs`
+- Partner API controller: `src/Cleansia.Web.Partner/Controllers/AuthController.cs`
+- Partner Mobile controller: `src/Cleansia.Web.Mobile.Partner/Controllers/AuthController.cs`
+- Customer Mobile controller: `src/Cleansia.Web.Mobile.Customer/Controllers/AuthController.cs`
 :::
 
 ## Endpoints

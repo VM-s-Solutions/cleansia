@@ -82,6 +82,11 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
             .HasConversion<int>()
             .HasDefaultValue(Cleansia.Core.Fiscal.Abstractions.FiscalEnforcementMode.None);
 
+        // Null ⇒ the country is not open for payouts; the validator then accepts only a
+        // self-describing IBAN (ADR-0034 D4). Adding a country is a seed value, not a schema change.
+        builder.Property(e => e.PayoutScheme)
+            .HasConversion<int>();
+
         builder.Property(e => e.RefundStripeFeeRate)
             .HasPrecision(5, 4);
 

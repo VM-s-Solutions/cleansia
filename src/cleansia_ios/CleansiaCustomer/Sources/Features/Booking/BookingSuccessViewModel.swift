@@ -7,7 +7,7 @@ import Foundation
 /// moment is never blocked on a failed fetch.
 enum BookingSuccessUiState {
     case loading
-    case loaded(OrderItem)
+    case loaded(CustomerOrderDetail)
     case error
 }
 
@@ -16,13 +16,13 @@ final class BookingSuccessViewModel: ObservableObject {
     @Published private(set) var state: BookingSuccessUiState = .loading
 
     private let orderId: String
-    private let fetch: @Sendable (String) async -> OrderItem?
+    private let fetch: @Sendable (String) async -> CustomerOrderDetail?
     private let warmOrders: @Sendable () async -> Void
     private var didLoad = false
 
     init(
         orderId: String,
-        fetch: @escaping @Sendable (String) async -> OrderItem?,
+        fetch: @escaping @Sendable (String) async -> CustomerOrderDetail?,
         warmOrders: @escaping @Sendable () async -> Void = {}
     ) {
         self.orderId = orderId
@@ -30,7 +30,7 @@ final class BookingSuccessViewModel: ObservableObject {
         self.warmOrders = warmOrders
     }
 
-    var order: OrderItem? {
+    var order: CustomerOrderDetail? {
         if case let .loaded(order) = state { return order }
         return nil
     }

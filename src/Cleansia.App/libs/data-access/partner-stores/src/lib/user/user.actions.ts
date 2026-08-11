@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { UserFilter } from '@cleansia/models';
 import {
   ApiException,
-  BlobFileDto,
   MyProfileDto,
   PagedDataOfUserListItem,
   SortDefinition,
@@ -50,26 +49,6 @@ export const loadUserDetailSuccess = createAction(
 );
 export const loadUserDetailFailure = createAction(
   '[User] Load Detail Failure',
-  props<{ error: ApiException }>()
-);
-
-export const updateUserCurrent = createAction(
-  '[User] Update Current',
-  props<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber?: string;
-    birthDate?: Date;
-    photo?: BlobFileDto;
-  }>()
-);
-export const updateUserCurrentSuccess = createAction(
-  '[User] Update Current Success',
-  props<{ id: string }>()
-);
-export const updateUserCurrentFailure = createAction(
-  '[User] Update Current Failure',
   props<{ error: ApiException }>()
 );
 

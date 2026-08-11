@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -54,8 +55,12 @@ public class GetOrderPhotos
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
+            // Strict, not browse: every photo is an interior view of a private dwelling handed over as
+            // a signed URL that works outside Cleansia auth and can be forwarded. Nothing about the
+            // inside of the home is part of deciding whether to take the job, and the write paths were
+            // already assignment-gated.
             var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
-            if (order == null || !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken))
+            if (order == null || !await orderAccessService.CanAccessOrderAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
@@ -65,25 +70,7 @@ public class GetOrderPhotos
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             var hideEmployeeIds = orderAccessService.IsCustomerCaller();
 
-            var photoDtos = photos.Select(p => new OrderPhotoDto(
-                Id: p.Id,
-                PhotoType: p.PhotoType,
-                BlobUrl: GenerateSasUrl(blobClient, p.BlobUrl),
-                FileName: p.FileName,
-                OriginalFileName: p.OriginalFileName,
-                FileSizeBytes: p.FileSizeBytes,
-                ContentType: p.ContentType,
-                CapturedAt: p.CapturedAt,
-                CapturedByEmployeeId: hideEmployeeIds ? null : p.CapturedByEmployeeId,
-                CapturedByEmployeeName: hideEmployeeIds
-                    ? p.CapturedBy?.User?.FirstName
-                    : (p.CapturedBy != null
-                        ? $"{p.CapturedBy.User?.FirstName} {p.CapturedBy.User?.LastName}".Trim()
-                        : null),
-                Width: p.Width,
-                Height: p.Height,
-                Notes: p.Notes
-            )).ToList();
+            var photoDtos = photos.Select(p => MapToDto(p, blobClient, hideEmployeeIds)).ToList();
 
             var beforeCount = await photoRepository.GetPhotoCountByOrderIdAndTypeAsync(
                 query.OrderId,
@@ -101,7 +88,38 @@ public class GetOrderPhotos
                 AfterPhotoCount: afterCount));
         }
 
-        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl)
+        /// <summary>
+        /// The DTO's ContentType is the SAME answer as the header the SAS pins, never the raw recorded
+        /// string. A row written before the intake sniffed still holds whatever its uploader claimed, so
+        /// emitting that verbatim tells a client <c>image/tiff</c> about a blob that will arrive as
+        /// <c>application/octet-stream</c> — one fact with two sources, and the client believes the one
+        /// that is wrong.
+        /// </summary>
+        private static OrderPhotoDto MapToDto(OrderPhoto photo, IBlobContainerClient blobClient, bool hideEmployeeIds)
+        {
+            var servedAs = ServedContentType.ForRecordedType(photo.ContentType);
+
+            return new OrderPhotoDto(
+                Id: photo.Id,
+                PhotoType: photo.PhotoType,
+                BlobUrl: GenerateSasUrl(blobClient, photo.BlobUrl, servedAs),
+                FileName: photo.FileName,
+                OriginalFileName: photo.OriginalFileName,
+                FileSizeBytes: photo.FileSizeBytes,
+                ContentType: servedAs.Value,
+                CapturedAt: photo.CapturedAt,
+                CapturedByEmployeeId: hideEmployeeIds ? null : photo.CapturedByEmployeeId,
+                CapturedByEmployeeName: hideEmployeeIds
+                    ? photo.CapturedBy?.User?.FirstName
+                    : (photo.CapturedBy != null
+                        ? $"{photo.CapturedBy.User?.FirstName} {photo.CapturedBy.User?.LastName}".Trim()
+                        : null),
+                Width: photo.Width,
+                Height: photo.Height,
+                Notes: photo.Notes);
+        }
+
+        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs)
         {
             // We need to recover the blob name (the path WITHIN the
             // container) from the stored absolute URL so we can hand
@@ -123,7 +141,7 @@ public class GetOrderPhotos
             var blobName = containerIndex >= 0 && containerIndex + 1 < pathSegments.Length
                 ? string.Join("/", pathSegments.Skip(containerIndex + 1))
                 : string.Join("/", pathSegments.Skip(1)); // legacy fallback
-            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
+            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1), servedAs).ToString();
         }
     }
 }

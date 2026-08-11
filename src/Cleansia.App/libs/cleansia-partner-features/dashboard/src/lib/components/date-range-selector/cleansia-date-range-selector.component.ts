@@ -16,7 +16,7 @@ export class CleansiaDateRangeSelectorComponent {
   endDate = input<Date>(new Date());
   rangeChanged = output<{ startDate: Date; endDate: Date }>();
 
-  selectedPreset: string = 'last6Months';
+  selectedPreset = 'last6Months';
 
   constructor(private translate: TranslateService) {}
 
@@ -24,7 +24,7 @@ export class CleansiaDateRangeSelectorComponent {
     this.selectedPreset = preset;
     const today = new Date();
     let startDate: Date;
-    let endDate: Date = new Date(today);
+    const endDate = new Date(today);
 
     switch (preset) {
       case 'thisMonth':

@@ -18,21 +18,16 @@ struct OrderDetailView: View {
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
-    /// Read from the shell, which already observes the membership repository and
-    /// warms it in `prefetch()`. Deliberately not refreshed here: a network call
-    /// on every order open to decide one button's visibility is a bad trade, and
-    /// Android has the identical cold-deep-link exposure.
-    private let hasMembership: Bool
 
     init(
         orderId: String,
         client: OrderClient,
         repository: OrderRepository,
+        membershipRepository: MembershipRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
         mapProvider: MapProvider,
-        hasMembership: Bool,
         onReportIssue: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
         onMakeRecurring: @escaping (String) -> Void
@@ -42,6 +37,7 @@ struct OrderDetailView: View {
                 orderId: orderId,
                 client: client,
                 repository: repository,
+                membershipRepository: membershipRepository,
                 snackbar: snackbar,
                 eventBus: eventBus
             )
@@ -51,7 +47,6 @@ struct OrderDetailView: View {
         self.snackbar = snackbar
         self.paymentSheet = paymentSheet
         self.mapProvider = mapProvider
-        self.hasMembership = hasMembership
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
@@ -82,9 +77,10 @@ struct OrderDetailView: View {
             }
     }
 
-    /// `OrderItem.id` is optional on the wire, so fall back to the id this
-    /// screen was routed with — they are the same order, and "" is never a
-    /// usable id for the photos screen or the dispute route.
+    /// The wire's `id` is optional, so fall back to the id this screen was routed
+    /// with — they are the same order, and "" is never a usable id for the photos
+    /// screen or the dispute route. This second source is why `CustomerOrderDetail`
+    /// does not refuse a missing id the way the partner detail does.
     private var orderId: String {
         vm.state.loadedValue?.id ?? routeOrderId
     }
@@ -110,7 +106,7 @@ struct OrderDetailView: View {
     /// The map is always behind, the sheet is always over it, and the mascot rides
     /// the seam between them — the partner order-detail topology, which is what the
     /// customer screen is being brought to parity with.
-    private func loadedShell(_ order: OrderItem) -> some View {
+    private func loadedShell(_ order: CustomerOrderDetail) -> some View {
         SnapSheet(anchor: $snapAnchor) {
             OrderDetailMapBackdrop(order: order, mapProvider: mapProvider)
         } ornament: {
@@ -133,17 +129,17 @@ struct OrderDetailView: View {
     }
 
     @ViewBuilder
-    private func footer(_ order: OrderItem) -> some View {
+    private func footer(_ order: CustomerOrderDetail) -> some View {
         if OrderRecurringConfirm.needsConfirmation(order) {
             ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
                 Task { await vm.confirmRecurring() }
             }
-        } else if OrderDetailFooterActions.showFooter(order.status, hasMembership: hasMembership) {
+        } else if OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring) {
             OrderDetailActionsFooter(
                 showRebook: OrderDetailFooterActions.showRebook(order.status),
                 showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
                     order.status,
-                    hasMembership: hasMembership
+                    authoring: vm.recurringAuthoring
                 ),
                 showCancel: OrderStatusGroup.isCancellable(order.status),
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
@@ -156,24 +152,24 @@ struct OrderDetailView: View {
         }
     }
 
-    @ViewBuilder
     private var cancelSheet: some View {
-        if let order = vm.state.loadedValue {
-            CancelOrderSheet(
-                order: order,
-                isSubmitting: vm.cancelState.isSubmitting,
-                errorMessage: vm.cancelState.errorMessage,
-                onReasonChanged: vm.dismissCancelError,
-                onConfirm: { reason in Task { await vm.cancel(reason: reason) } },
-                onDismiss: {
-                    if !vm.cancelState.isSubmitting {
-                        showCancelSheet = false
-                        vm.dismissCancelError()
-                    }
+        CancelOrderSheet(
+            quote: vm.cancellationQuote,
+            currencyCode: vm.cancellationQuote.loadedValue?.currencyCode ?? vm.state.loadedValue?.currencyCode,
+            isSubmitting: vm.cancelState.isSubmitting,
+            errorMessage: vm.cancelState.errorMessage,
+            onReasonChanged: vm.dismissCancelError,
+            onRetryQuote: { Task { await vm.loadCancellationQuote() } },
+            onConfirm: { reason in Task { await vm.cancel(reason: reason) } },
+            onDismiss: {
+                if !vm.cancelState.isSubmitting {
+                    showCancelSheet = false
+                    vm.dismissCancelError()
                 }
-            )
-            .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
-        }
+            }
+        )
+        .task { await vm.loadCancellationQuote() }
+        .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
     }
 
     @ViewBuilder
@@ -220,7 +216,7 @@ private struct ReceiptFile: Identifiable {
 enum OrderRecurringConfirm {
     /// A recurring-generated order awaiting customer confirmation: it carries a
     /// `recurringTemplateId` and its payment status is Pending (value 1).
-    static func needsConfirmation(_ order: OrderItem) -> Bool {
+    static func needsConfirmation(_ order: CustomerOrderDetail) -> Bool {
         guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
         return order.paymentStatus?.value == 1
     }
@@ -259,22 +255,24 @@ enum OrderDetailFooterActions {
         OrderStatusGroup.isCompleted(status)
     }
 
-    /// Same Completed-only gate as rebook, plus the Plus gate — recurring
-    /// bookings are a membership perk, so offering the CTA without one would
-    /// walk the customer into a paywall from a button that promised a schedule.
-    static func showMakeRecurring(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
-        showRebook(status) && hasMembership
+    /// Same Completed-only gate as rebook, plus the authoring half of Plus —
+    /// recurring bookings are a membership perk. The gate resolves permissively
+    /// from a nullable membership: a resolved non-member is walked into no
+    /// paywall, and an answer still in flight costs a member nothing, because
+    /// the server refuses an unentitled create with its own localized message.
+    static func showMakeRecurring(_ status: OrderStatus?, authoring: RecurringAuthoringGate) -> Bool {
+        showRebook(status) && authoring == .allowed
     }
 
     /// The footer renders if any of its four actions would. Completed used to
     /// arrive here only via `isReportable`, which is an accident of the dispute
     /// window happening to extend past completion rather than a statement about
     /// re-booking; naming all four keeps the gate honest if that window narrows.
-    static func showFooter(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
+    static func showFooter(_ status: OrderStatus?, authoring: RecurringAuthoringGate) -> Bool {
         OrderStatusGroup.isCancellable(status)
             || OrderStatusGroup.isReportable(status)
             || showRebook(status)
-            || showMakeRecurring(status, hasMembership: hasMembership)
+            || showMakeRecurring(status, authoring: authoring)
     }
 }
 

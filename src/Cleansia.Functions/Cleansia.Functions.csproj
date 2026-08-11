@@ -27,6 +27,9 @@
 		     [Function] trigger shells below stay in this Exe so the Worker SDK source-gen
 		     still discovers all 16 triggers, and delegate to the Core handlers. -->
 		<ProjectReference Include="..\Cleansia.Functions.Core\Cleansia.Functions.Core.csproj" />
+		<!-- AddSentryMonitoring — this host's error telemetry. Reached transitively through
+		     Cleansia.Config, but declared because Program.cs calls it directly. -->
+		<ProjectReference Include="..\Cleansia.ServiceDefaults\Cleansia.ServiceDefaults.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

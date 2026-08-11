@@ -7,7 +7,7 @@ struct HomeSectionTitle: View {
 
     var body: some View {
         Text(text)
-            .font(CleansiaFont.poppins(.semibold, size: 16))
+            .cleansiaFont(.poppins(.semibold, size: 16))
             .foregroundColor(CleansiaColors.onBackground)
     }
 }
@@ -59,7 +59,7 @@ struct TrustStrip: View {
 /// `HomeTab.kt:679-745`).
 struct OrderAgainCard: View {
     @Environment(\.locale) private var locale
-    let order: OrderListItem
+    let order: CustomerOrderSummary
     let onTap: () -> Void
 
     var body: some View {
@@ -249,15 +249,18 @@ private struct PopularPackageCard: View {
 
 #if DEBUG
     struct HomeSectionViews_Previews: PreviewProvider {
-        static var sampleOrder: OrderListItem {
-            OrderListItem(
+        static var sampleOrder: CustomerOrderSummary {
+            CustomerOrderSummary(
                 id: "o1",
+                displayOrderNumber: "1042",
+                statusCode: Code(type: "OrderStatus", name: "Completed", value: 5),
                 cleaningDateTime: Date(),
-                totalPrice: 1290,
-                orderStatus: Code(type: "OrderStatus", name: "Completed", value: 5),
-                selectedPackages: [PackageListItem(id: "p1", name: "Standard cleaning")],
-                currency: CurrencyListItem(code: "CZK"),
-                selectedServices: [ServiceListItem(id: "s1", name: "Deep clean")]
+                estimatedMinutes: 120,
+                address: "Zenklova 6, Praha",
+                total: 1290,
+                currencyCode: "CZK",
+                services: [CustomerOrderLineName(name: "Deep clean", translations: nil)],
+                packages: [CustomerOrderLineName(name: "Standard cleaning", translations: nil)]
             )
         }
 

@@ -22,7 +22,7 @@ struct OrdersTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L10n.Orders.title)
-                .font(CleansiaTypography.headlineMedium)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
                 .padding(.horizontal, Spacing.ml)
                 .padding(.vertical, Spacing.m)
@@ -74,7 +74,7 @@ private struct OrdersListContent: View {
 
                 ForEach(vm.filteredOrders, id: \.id) { order in
                     Button {
-                        if let id = order.id { onOrderClick(id) }
+                        onOrderClick(order.id)
                     } label: {
                         OrderListCard(order: order)
                     }
@@ -153,12 +153,12 @@ private struct OrderFilterChip: View {
 
 struct OrderListCard: View {
     @Environment(\.locale) private var locale
-    let order: OrderListItem
+    let order: CustomerOrderSummary
 
     var body: some View {
         HStack(spacing: 0) {
             Rectangle()
-                .fill(OrderStatusPresentation.color(order.orderStatus))
+                .fill(OrderStatusPresentation.color(order.statusCode))
                 .frame(width: 4)
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -168,19 +168,19 @@ struct OrderListCard: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
                     OrderStatusPill(
-                        label: OrderStatusPresentation.label(order.orderStatus),
-                        color: OrderStatusPresentation.color(order.orderStatus)
+                        label: OrderStatusPresentation.label(order.statusCode),
+                        color: OrderStatusPresentation.color(order.statusCode)
                     )
                 }
                 Text(OrdersFormat.dateRange(
                     order.cleaningDateTime,
-                    estimatedMinutes: order.estimatedTime ?? 0,
+                    estimatedMinutes: order.estimatedMinutes,
                     locale: locale
                 ))
                 .font(CleansiaTypography.titleLarge)
                 .foregroundColor(CleansiaColors.onBackground)
 
-                if let address = order.customerAddress, !address.isBlank {
+                if let address = order.address, !address.isBlank {
                     Label(address, systemImage: "mappin.and.ellipse")
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -193,7 +193,7 @@ struct OrderListCard: View {
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(2)
                     Spacer()
-                    Text(OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code))
+                    Text(OrdersFormat.price(order.total, currencyCode: order.currencyCode))
                         .font(CleansiaTypography.titleLarge)
                         .foregroundColor(CleansiaColors.onBackground)
                 }
@@ -252,7 +252,7 @@ private struct OrdersEmptyView: View {
             subtitle: L10n.Orders.emptySubtitle,
             verticallyCentered: true,
             imageSize: 160,
-            titleFont: CleansiaTypography.headlineSmall
+            titleStyle: CleansiaTypography.headlineSmall
         ) {
             CleansiaPrimaryButton(L10n.Orders.emptyCta, action: onBookCleaning)
                 .fixedSize()
@@ -263,13 +263,17 @@ private struct OrdersEmptyView: View {
 #if DEBUG
     struct OrderListCard_Previews: PreviewProvider {
         static var previews: some View {
-            OrderListCard(order: OrderListItem(
+            OrderListCard(order: CustomerOrderSummary(
                 id: "1",
-                customerAddress: "Karlovo náměstí 10, Praha",
                 displayOrderNumber: "1042",
-                totalPrice: 1290,
-                orderStatus: Code(type: "OrderStatus", name: "OnTheWay", value: 3),
-                currency: CurrencyListItem(code: "CZK")
+                statusCode: Code(type: "OrderStatus", name: "OnTheWay", value: 3),
+                cleaningDateTime: Date(),
+                estimatedMinutes: 120,
+                address: "Karlovo náměstí 10, Praha",
+                total: 1290,
+                currencyCode: "CZK",
+                services: [],
+                packages: []
             ))
             .padding()
             .background(CleansiaColors.background)

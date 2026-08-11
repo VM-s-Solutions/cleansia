@@ -68,7 +68,7 @@ public sealed class OrderSpecificationCurrentStatusTests : IAsyncLifetime, IDisp
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory]
-    [InlineData(OrderStatus.Pending, OrderStatus.Confirmed)] // the available-orders status set
+    [InlineData(OrderStatus.Pending, OrderStatus.Confirmed)]
     [InlineData(OrderStatus.Cancelled)]
     [InlineData(OrderStatus.Completed)]
     [InlineData(OrderStatus.InProgress)]

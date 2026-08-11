@@ -732,3 +732,48 @@ those: `orders/OrderRepository.kt:84` and `:110` (a refused page reported as `Ap
    already in the tree and is adopted rather than discarded — `RecurringBookingRepository.kt:110-115`:
    *"that channel is the silent one … reusing it here turns a failed write into a no-op the user never
    sees."* The network did not fail; the payload did.
+
+## A disclosure block shipped past its sentence's truth — the deviating form (2026-08-11)
+
+> **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`
+> (`.github/workflows/backend-ci.yml:69-71`) — **`(gate pending: T-0595)`** → **`T1-CI`**.
+> **Retires when:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` exists.
+> Rule, scope and rejected alternatives: `patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the
+> server when its sentence stops being true"*; decision: **ADR-0049**, which is `proposed`
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+>
+> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
+> test 1). **The baseline is read from the tree, not counted** — and unusually it is a *single*
+> producer, because the block has one producer.
+
+**The deviating form (normative — it decides the next case):** *a read handler that populates a block
+of DTO fields whose only job is to select a customer-facing sentence, without evaluating whether that
+sentence is still true of the row it is about.*
+
+The live instance: `GetOrderDetails.ResolvePreferredOfferAsync`
+(`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:146-173`) derives
+`PreferredOfferState` from four columns that contain no fulfilment status and no seat count
+(`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`). So the customer's order detail says
+*"The request for the cleaner you asked for has ended. This booking is now open to our whole team."*
+(`src/Cleansia.App/apps/cleansia.app/src/assets/i18n/en.json:1740-1741`) on a cancelled booking, on a
+finished one, **and on a live booking a different cleaner already took**.
+
+**Explicitly NOT a deviation, and this is a ruling rather than an omission:**
+
+- **`RespondByUtc`'s suppression** (`GetOrderDetails.cs:169-171`) is the *correct* form of this rule
+  already shipping in the same method — a field withheld because its sentence is not being said.
+- **A client-side status conjunct is not the remedy** and adding one to the web facade would collide
+  with the guard `d5ba1484` left behind
+  (`src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.models.spec.ts:164-188`).
+- **iOS's `isUpcoming` conjunct** (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/PreferredOfferPresentation.swift:23-24`)
+  is recorded as **knowing duplication with a retirement condition** (ADR-0049 §D6), not as a violation
+  — it agrees with the server on every input.
+
+**What this class teaches that a "does the client check the status?" audit would miss:** *the grouping
+the ticket asks for cannot express the defect.* Every candidate status membership contains `Confirmed`,
+and the sharpest false sentence is on a `Confirmed`, fully-staffed booking. The distinguishing term is
+`Order.AvailableSpots <= 0` (`src/Cleansia.Core.Domain/Orders/Order.cs:136`) — a **seat count**, not a
+status — which is also why `AssignedEmployees.Count > 0` is the wrong term: with
+`RequiredEmployees = ceil(EstimatedTime / 120)` (`Order.cs:697-707`) a booking over two hours has a
+second seat, and the sentence is still true while it is free.

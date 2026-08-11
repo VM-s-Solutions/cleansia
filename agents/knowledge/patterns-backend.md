@@ -390,6 +390,70 @@ Any change to the list shape must keep `OrderListProjectionEquivalenceTests` (JS
 against the retained entity-mapper path) green — that test is the contract that the projection
 and the entity path emit identical DTO values.
 
+## A DISCLOSURE BLOCK is withheld by the server when its sentence stops being true (ADR-0049)
+
+> **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` (backend CI,
+> `.github/workflows/backend-ci.yml:69-71`) — **`(gate pending: T-0595)`** → **`T1-CI`** on landing.
+> The baseline is **not zero**: one live violation, `GetOrderDetails.ResolvePreferredOfferAsync`
+> (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:146-173`), which sends the block
+> on a concluded booking today. **Retires when:**
+> `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` exists.
+> Decision: **ADR-0049**, which is `proposed`
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+
+**A disclosure block is a group of fields the server populates in order to make a STATEMENT about the
+state of the world** — a sentence, not a datum. `PreferredOfferDetails`
+(`src/Cleansia.Core.AppServices/Features/Orders/DTOs/PreferredOfferDetails.cs:5-14`) is the reference
+instance: its `State` member is meaningless except as a sentence selector, and its own doc comment is
+written entirely in terms of what the customer is *told*.
+
+**The rule: the server does not ship a disclosure block whose sentence has stopped being true.** The
+client renders the block off the block's **own arrival** and composes nothing — it must never have to
+conjoin a second server field (a status, a count) to work out whether the server's own sentence still
+holds. Three clients composing that themselves is three chances to get it wrong, and the platform
+already paid for it: the customer web card renders *"This booking is now open to our whole team"* on
+every past order the customer ever named a cleaner for
+(`src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.facade.ts:61-63`
+reads no status at all).
+
+**Scope — the load-bearing half, and it is why this could not be written as *"the server does not send
+stale data"*.** That framing sweeps in the whole order-detail payload on a completed order and would
+license withholding the cleaner's name, the price and the photo rail from order history. It does
+**not** govern an **action** gate, a **request** gate, a **lifecycle-utility** gate (ADR-0047 §D1/§D5,
+unchanged), or a plain datum. *If a field would still be worth showing with no sentence around it,
+this rule does not reach it.*
+
+**Three obligations travel with it.**
+
+1. **Withhold the BLOCK, do not coerce the state.** The nested-optional DTO is already the "nothing to
+   say" channel (`GetOrderDetails.cs:127-135` hands `null` for every non-customer caller), so
+   withholding needs no wire change and no `nswag-regen`. Collapsing the state to its "none" member
+   instead makes that member's documented meaning a lie
+   (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:14-18`), and a new member costs a regen on three
+   generated clients *and* hands the render question straight back to them.
+2. **The derivation stays a pure domain function, and the status test is written INLINE, not promoted.**
+   `PreferredOffer.StateOf` keeps its four inputs (`PreferredOffer.cs:36-53`); disclosability is a
+   second pure function beside it. **Do not extract a shared `OrderStatus` grouping for it** — the three
+   "is this order live" sets in the tree today all differ, each for a stated reason:
+   `OrderRepository.cs:259-271` (a `static readonly` array *because EF inlines it into SQL* — a C#
+   predicate cannot replace it), `GdprDeletionService.cs:94-101` (a different membership), and
+   `AdminOverrideOrderStatus.cs:86-97` (two refusals with **different error keys**). Extract when a
+   second caller exists, not before.
+3. **Prove the withholding cannot remove an AFFORDANCE.** Where the block also carries a "you may still
+   act" flag, withholding it must be shown — not assumed — to be impossible while that flag is true.
+   For the preferred offer it is provable: `PreferredOfferExit.IsOpen` conjoins
+   `OrderAvailability.IsOfferable` (`PreferredOfferExit.cs:40-49`, `OrderAvailability.cs:60-63`) and an
+   empty-seat term, so `¬disclosable ⇒ ¬IsOpen`. **That implication is the enforcer's core assertion**,
+   not a comment.
+
+**Withhold FALSE sentences, not merely stale ones.** The tempting term for "somebody took this job" is
+`AssignedEmployees.Count > 0` — the term `PreferredOfferExit.cs:46` itself uses. It is wrong for a
+*sentence about the booking*: `RequiredEmployees = ceil(EstimatedTime / 120)`
+(`src/Cleansia.Core.Domain/Orders/Order.cs:697-707`), so a booking over two hours carries more than one
+seat and *"open to our whole team"* stays **true** while a seat is free. The term is
+`Order.AvailableSpots <= 0` (`Order.cs:136`).
+
 ## B8 — the refund money path (ADR-0006 seam + ADR-0009 policy)
 
 A refund is the one side effect with both money and fiscal consequences, so it has a frozen contract:

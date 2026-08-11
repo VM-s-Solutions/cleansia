@@ -507,6 +507,52 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
    only its own `code → key` map + fallback — never re-implement the extraction inline. The same helper
    backs `SnackbarService.extractApiErrorMessage`.
 
+## A server-authored disclosure block is rendered off its own ARRIVAL — the facade composes nothing (ADR-0049)
+
+> **Enforced by:** the mutation guard in
+> `src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.models.spec.ts:164-188`,
+> extended from `canChooseAnother` to `state`, run by `npx nx affected -t test`
+> (`.github/workflows/frontend-ci.yml:85-87`) — **`(gate pending: T-0595)`** → **`T1-CI`** on landing.
+> **Scope, stated because the token overstates it otherwise:** `affected` gates changes that touch the
+> customer-orders lib — which is every change that could violate it — not the whole workspace. The
+> baseline **is** zero: neither `order-preferred-offer.facade.ts` nor `order-preferred-offer.models.ts`
+> reads an order status today. Decision: **ADR-0049**, which is `proposed`
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> **Retires when:** that status line stops reading `proposed`.
+
+When the server sends a **block of fields that exist to say a sentence** — `preferredOffer` is the
+reference instance — the facade's "should I render this" answer is **the block arrived**, and nothing
+else. Do **not** conjoin an order status, a date or a count to decide whether the server's own
+sentence is still true: that question is the server's (`patterns-backend.md` §*"A DISCLOSURE BLOCK is
+withheld by the server when its sentence stops being true"*), and a client that answers it is a second
+copy of a rule the platform cannot redeploy on a phone.
+
+This is the same direction as `d5ba1484`, which **deleted** three client narrowings from this feature
+once the server carried the term. `order-preferred-offer.models.spec.ts:164-188` is the guard that
+deletion left behind — *"the flag is the whole answer on EVERY fulfilment state"*. A lane "fixing" a
+false sentence by adding a status veto to the facade is reintroducing exactly what that guard forbids.
+
+**Scope.** This governs a **disclosure block**. It does not govern an action gate, a request gate, or a
+lifecycle gate (*when is this datum useful*) — those legitimately read a status and fail closed
+(ADR-0047 §D1). *If a field would still be worth showing with no sentence around it, this rule does not
+reach it.*
+
+### `isUpcoming` means two different things in this repo — never name a status predicate with a time word
+
+| Name | Where | Actually asks |
+|---|---|---|
+| `OrdersComponent.isUpcoming` | `libs/cleansia-customer-features/orders/src/lib/orders/orders.component.ts:124-126` | `cleaningDateTime >= now` — a **clock** rule. **A cancelled future booking passes it.** Its one caller is a CSS class (`libs/cleansia-customer-features/orders/src/lib/orders/orders.component.html:166`) |
+| `OrderStatusGroup.isUpcoming` (iOS) | `src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:37-40` | `status != Completed && status != Cancelled` — a **status** rule under the same name |
+| `OrderDetailsFacade.isActiveOrderStatus` | `libs/cleansia-partner-features/orders/src/lib/order-details/order-details.facade.ts:278-285` | `{Confirmed, OnTheWay, InProgress}` — private, partner-only, and its subject is *may notes and issues be added*. It is iOS's `isActive`, **not** iOS's `isUpcoming` |
+
+`libs/shared/models/src/lib/models/order-status.models.ts:19-27` carries the enum and **no**
+predicates, which is why each of the three above grew locally. **Reaching for one of them because the
+name sounds right is the trap** — a web lane reached for the first one and stopped. A predicate over
+`OrderStatus` is not named `upcoming`, `current` or `recent`; time words belong to predicates over
+`cleaningDateTime`. And before promoting any of them to `@cleansia/models`, read ADR-0049 §D7: the
+backend's three "is this order live" sets already disagree with each other, so a shared grouping owes a
+reconciliation, not a name.
+
 ## What to mirror, not invent
 
 - Extend `UnsubscribeControlDirective`; state in `signal()`; `takeUntil(this.destroyed$)` on every stream.

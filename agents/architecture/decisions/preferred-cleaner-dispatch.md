@@ -497,6 +497,60 @@ line as the `?:` fallback for the cleaner's **name**, so it is destroyed by the 
   reason:** the likely outcome (workers may object) needs a suppression flag, and **`null` is already
   reserved for it** — so the answer changes text unless it changes nothing.
 
+### The customer's offer block — PRESENCE, not just content (ADR-0049, 2026-08-11)
+
+ADR-0045 §D7.2 settled what the block **contains**. It said nothing about **when it is sent**, and that
+gap is a shipped defect: `PreferredOffer.StateOf` derives from four columns with no fulfilment status
+and no seat count (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`), and nothing downstream
+withholds the result — the web facade's `visible()` is `state !== None || canChooseAnother()`
+(`order-preferred-offer.facade.ts:61-63`).
+
+So the card says *"The request for the cleaner you asked for has ended. This booking is now open to our
+whole team."* (`apps/cleansia.app/src/assets/i18n/en.json:1740-1741`) in three situations where it is
+false: a cancelled booking, a finished one, **and a live booking a different cleaner already took**.
+
+**The finding that decided the layer.** T-0595 proposed a shared order-status grouping, on the model of
+iOS's `OrderStatusGroup.isUpcoming`. **No status grouping can express the third case.** Every candidate
+membership contains `Confirmed`, so on a `Confirmed`, fully-staffed booking iOS's own fix
+(`OrderStatusMapping.swift:37-40` → `PreferredOfferPresentation.swift:23-24`) still produces the false
+sentence. The distinguishing term is a **seat count** — `Order.AvailableSpots`
+(`src/Cleansia.Core.Domain/Orders/Order.cs:136`) — which is not a client's arithmetic to do.
+
+**The shape.** A second pure function beside `StateOf`:
+
+```
+IsDisclosable(state, currentStatus, availableSpots)
+  =  currentStatus ∉ {Completed, Cancelled}                        // (a) the booking concluded
+  ∧  ¬(state == Closed ∧ availableSpots <= 0)                      // (b) the search is over
+```
+
+and `GetOrderDetails.ResolvePreferredOfferAsync` returns `null` when it is false — reusing the
+nested-optional channel the DTO already has, so **no wire change and no `nswag-regen`**. The safety
+property, asserted rather than assumed: **`¬IsDisclosable ⇒ ¬PreferredOfferExit.IsOpen`**, provable
+from `PreferredOfferExit.cs:40-49` + `OrderAvailability.cs:60-63` + the `MaxEmployees ≥ 1` invariant
+(`Order.cs:112`, `:697-707`, `:709-718`), so withholding can never hide a live re-choose affordance.
+
+**Limb (b) uses free seats, not assignments — and the difference is most of the order book.** The
+tempting term is `AssignedEmployees.Count > 0`, which is what `IsOpen` itself uses
+(`PreferredOfferExit.cs:46`). It is wrong for a *sentence about the booking*:
+`RequiredEmployees = ceil(EstimatedTime / 120)`, so a booking over two hours carries a second seat and
+*"open to our whole team"* stays true while that seat is free. **Withhold false sentences, not stale
+ones.**
+
+**What each stack owes** (detail in ADR-0049 §D6): backend ships the whole fix; **web adds a pin, not a
+narrowing** — a status conjunct in the facade would collide with the mutation guard `d5ba1484` left at
+`order-preferred-offer.models.spec.ts:164-188`; **iOS keeps** its `isUpcoming` conjunct as knowing
+duplication with a written retirement condition; **Android needs nothing**, and its customer app does
+not map the block at all.
+
+**Two things ruled deliberately, so they are not re-derived.** (1) **No platform-wide order-status
+grouping** — the three "is this order live" sets in the tree today all differ, each for a stated reason
+(`OrderRepository.cs:259-271` is a `static readonly` array because EF inlines it into SQL;
+`GdprDeletionService.cs:94-101` has a different membership; `AdminOverrideOrderStatus.cs:86-97` is two
+refusals with different error keys). (2) **`upcoming` is not a status-predicate name** — it already
+means a clock rule on web (`orders.component.ts:124-126`) and a status rule on iOS, and a web lane
+reached for the wrong one.
+
 ### The Plus gate
 
 - Server-side, a **second `MustAsync`** in the existing `When(...)` block at `CreateOrder.cs:140-147`,
@@ -605,6 +659,9 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **Race lost at submit** *(ADR-0039)* | create the order, store the preference, no hold, tell nobody | reject the booking; push the customer | support evidence that customers believe the preference was honoured → the answer is **copy**, not a push |
 | **`PastDue` (card failed)** | **no benefits, immediately** — owner ruling 2026-08-03 | a grace window through Stripe's retries (what `MembershipStatus.cs` used to document) | **settled; do not reopen.** Support volume from customers who lost benefits before being told is the signal — and the answer is **P-1** (tell them), not a grace window |
 | **Lapse × recurring schedule** | **keep generating, full price, notify** — owner ruling 2026-08-03 | stop materializing on lapse; keep the member price | **settled; do not reopen.** *Never drop a customer's cleaning* is the governing rule |
+| **Who decides the offer block is still worth saying** *(ADR-0049 — new)* | **the server withholds the whole block** (`IsDisclosable`) | a shared client-side `OrderStatus` grouping on three stacks (T-0595's proposal); a fifth `StateOf` input; a fifth enum member; a `shouldRender` flag beside the block | a *second* server consumer of `StateOf` — then the two functions merge behind one entry point returning `PreferredOfferState?` |
+| **The "search is over" term** *(ADR-0049 — new)* | **`AvailableSpots <= 0`** | `AssignedEmployees.Count > 0` (what `IsOpen` uses) | the `Closed` copy splitting its two jobs — *"your request ended"* survives a filled booking, *"open to our whole team"* does not |
+| **iOS's redundant `isUpcoming` conjunct** *(ADR-0049 — new)* | **kept**, with a written retirement condition | deleted in the same wave | the file being opened for any other reason — then it goes, and its two tests repoint at the absent-block case |
 
 ## Open / undecided
 
@@ -685,6 +742,10 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **ADR-0039 — new, PM to file (P2)** ⛔ | **precondition of A3** — `BookingPolicy.MaxBookableOrderSpanHours` + the `OrderFactory` guard (before `CalculateRequiredEmployees`) + both validators + the error key × 5 locales + the `cap <= floor` test |
 | **ADR-0039 — new, PM to file (P3)** ⛔ | **precondition of A3** — the `IsActive` filter on the picker's employee **and** its user. Fold into A6's edit; it is the same `.Select()` |
 | **ADR-0039 — new, PM to file (P4)** | the `*IgnoringTenant*` architecture test (no reference under `Core.AppServices/Features/**`, with an allow-list). ADR-0028's lane, generalises past this feature. **Retires a manual review step.** Not blocking |
+| **T-0595** *(ADR-0049)* | `PreferredOffer.IsDisclosable` + the `null` return in `ResolvePreferredOfferAsync` + `PreferredOfferDisclosureTests` (including the `¬IsDisclosable ⇒ ¬IsOpen` row) + **two web test rows and no web production code**. No migration, no `nswag-regen`, no i18n |
+| ***new, PM to file** (ADR-0049 §D8)* | rename iOS's `OrderStatusGroup.isUpcoming` — it reads *"not concluded"* and collides with web's date-based `isUpcoming`. One file, no behaviour change. **Not ridden into T-0595** |
+| ***new, PM to file** (ADR-0049 §D6)* | Android customer has **no** favourite-cleaner disclosure at all — its hand-written `OrderDtos.kt` does not map `preferredOffer`. Same gap T-0580 closed for web; it inherits a correct server and needs no grouping |
+| ***new, PM to file** (ADR-0049 §Found en route)* | `GdprDeletionService.HasBlockingOrderAsync` (`GdprDeletionService.cs:94-101`) omits `OrderStatus.OnTheWay` while its sibling live-order set includes it (`OrderRepository.cs:259-271`). **Intent unverified** — two files that disagree, routed as a candidate, not asserted as a defect |
 | **ADR-0039 — new, PM to file (A1)** — **S**, was M | extract `LiveCommitmentsInWindow` from the shipped private predicate + add `GetBusyEmployeeIdsInWindowAsync` as a third wrapper. **No ignoring sibling.** ⚠️ **+ AC: `EXPLAIN (ANALYZE, BUFFERS)` in `Cleansia.IntegrationTests`; + AC: overlap cases re-run against real PostgreSQL** (the shipped pins run on SQLite). Both pin classes stay green |
 | **ADR-0039 — new, PM to file (A2)** | `OrderDuration.EstimateMinutes` extraction + `OrderFactory` rewire + `TC-AVAIL-WINDOW-0` + **the picker's SQL `Sum` projection held to the same test** (the draft cited `ExistWithIdsAsync` as precedent — that is a `CountAsync` that materializes nothing) |
 | **ADR-0039 — new, PM to file (A3)** | `GetMyServingCleaners` gains the slot + the tri-state answer. ⚠️ **`nswag-regen`, owner-only**. Depends on A1 + A2 **and on P1 + P2 + P3** |

@@ -3,6 +3,26 @@
 The manifest of every ticket. The **PM owns this file** and updates it on every state transition.
 One row per ticket. Source of truth for "what's the team doing right now".
 
+> ## ⚠️ A commit SHA on a closed row usually resolves to NOTHING, and that is not fabrication
+>
+> Measured 2026-08-11: **18 distinct short SHAs cited across roughly 105 rows resolve to no object in
+> this repository** — `b8f89202` alone appears on 16 rows, `5d631f8c` on 17, `8ddfef9d` on 13.
+>
+> **The cause is squash-merge, not invention.** `master` has exactly one merge commit in its whole
+> history (the initial import); every PR lands as a single squashed commit titled `… (#NNN)`. So a lane
+> that records the SHA it committed on its feature branch is recording an object that **ceases to exist
+> the moment the PR merges**. The row was true when written and was falsified by a process, which is the
+> same decay `conventions.md` §*"A claim about the tree carries its own retirement condition"* exists to
+> stop — one level up, in the backlog, where no checker looks.
+>
+> **So: cite the PR number, which survives the squash, not the branch SHA, which does not.** A SHA is
+> still useful *within* an unmerged branch — every reference in this sprint's rows resolves today,
+> because `docs/sprint-15-decisions` has not merged yet — and every one of them will die on merge too.
+> Do not "fix" the ~105 dead references by deleting them: they are the only record of which lane did the
+> work, and the PR number beside most of them still resolves. **Do not read a dead SHA as evidence a
+> closure is false** — that inference is exactly what this note exists to prevent, and it is the reason
+> a lane nearly re-implemented two already-shipped tickets.
+
 ## Legend
 - **Status:** draft · ready · in_progress · in_review · qa · done · blocked
 - **Size:** S · M · L
@@ -1984,7 +2004,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 | **T-0263** | Admin invoice failed-PDF render (failed-vs-pending indicator + `PdfGenerationError` text) + i18n ×5 — carried frontend half of T-0238 | S | **blocked** (admin nswag-regen) | T-0238✓ (backend) | frontend | no | **nswag-regen (admin)** | T-0238 AC3/AC4 held at Wave-6 close |
 | **T-0264** | Remove vestigial `api.email.sending_failed` locale keys (admin.app + partner.app, ×5 locales each = 10 entries) | S | **DONE ✅ (row was stale — shipped `b9e91cd8` PR #81)** — re-verified 2026-07-19: key absent from all 10 files, zero live references repo-wide | T-0262✓ | frontend | no | — | T-0262 residual (its `errors.*`/backend scope did not reach the `api.*` namespace) |
-| **T-0265** | Make email-validating VMs unit-testable off `android.util.Patterns` (Robolectric or extract) — `LoginViewModelTest`×4 + `DashboardViewModelTest` red on plain JVM | S | **draft** (sprint 7) | — | android | no | — | T-0197 Phase-2 verification (pre-existing test-env gap, proven on clean `master`) |
+| **T-0265** | Make email-validating VMs unit-testable off `android.util.Patterns` (Robolectric or extract) — `LoginViewModelTest`×4 + `DashboardViewModelTest` red on plain JVM | S | **DONE ✅** (PR #81) — shipped by the **extraction** route, not Robolectric: `core/validation/EmailValidator.kt` is pure `java.util.regex.Pattern` with a pure-JVM test in `:core`, consumed by partner's Login/ForgotPassword/Register view models, and zero `android.util.Patterns` references remain in production code. `PasswordPolicy.kt` already cites it as precedent, so the seam generalized. The named-red tests are green: LoginViewModelTest 9/9, DashboardViewModelTest 4/4. ⚠️ **Measured while closing this: removing `unitTests.isReturnDefaultValues` from all three modules produces 52 failures, and 100% are `android.util.Log` — zero are ViewModel tests.** So the extraction fully removed the `Patterns` dependency, and the flag now serves only fire-and-forget logging. Keep in view that **the flag is what made this defect silent**: it turned `Patterns.EMAIL_ADDRESS` into a null failing later at use, instead of the loud `Method X not mocked` that `Log` produces — so the next platform *constant* dependency will present as a mystery NPE, not a missing mock | — | android | no | — | T-0197 Phase-2 verification (pre-existing test-env gap, proven on clean `master`) |
 
 > **T-0263** carries the **frontend half of T-0238** (the admin failed-vs-pending render + error text +
 > i18n). T-0238 shipped its backend DTO fields in Wave 6; the frontend AC is **blocked on the owner's
@@ -2441,7 +2461,6 @@ One row per ticket. Source of truth for "what's the team doing right now".
 | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` mapping; + RecurringBookingTemplate JSON-id dangling refs | M | draft | T-0191✓ | backend, db | **yes** | ef-migration | T-0191a security re-gate notes 1+2 |
 | **T-0238** | EmployeeInvoice DTOs gain PdfGenerationFailed/PdfGenerationError + admin regen (closes Q-W3-3 / T-0171d AC4) | S | draft | T-0171✓ | backend, frontend | no | nswag-regen | Q-W3-3 |
 | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` (14 files) + eslint boundary rule | M | draft | — | frontend | no | — | Wave-3 review finding |
-| **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | draft | — | android | no | — | T-0195 reviewer nit |
 | **T-0241** | Admin-app selector-prefix eslint alignment + Nx generator default | S | draft | — | frontend | no | — | recurring 3A+ baseline noise |
 
 **Wave-4 close follow-ups (filed 2026-06-13, all `draft`, Wave-5 candidates) — production findings the test wave uncovered but (correctly) did NOT fix in a test-only wave. T-0242–T-0244 from 4A; T-0245/T-0246 from 4C. ⚠️ T-0245 is a MULTI-TENANT GO-LIVE BLOCKER (must land before any multi-tenant onboarding, alongside T-0236).**

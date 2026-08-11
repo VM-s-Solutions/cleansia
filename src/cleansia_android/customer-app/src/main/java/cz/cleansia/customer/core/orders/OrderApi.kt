@@ -125,6 +125,7 @@ private fun GenPagedDataOfOrderListItem?.toAppDto(): OrderListResponseDto {
         total = page.total.required("total"),
         // The two rulings, each where it is decided: an unidentifiable row is dropped, a row whose own
         // money is broken refuses the page.
+        receivedCount = page.`data`.orEmpty().size,
         data = page.`data`.orEmpty()
             .filter { it.id != null }
             .map { it.toAppDtoOrRefuse() },

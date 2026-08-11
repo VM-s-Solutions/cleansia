@@ -158,6 +158,63 @@ class OrderRepositoryTest {
         coVerify(exactly = 1) { api.getMyOrders(offset = 1, limit = 20) }
     }
 
+    /**
+     * The drop-the-row ruling makes the cache smaller than the page the server sent, so an offset
+     * read off the cache re-requests the rows that survived and never reaches the ones after the row
+     * that did not.
+     */
+    @Test
+    fun loadNextPage_givenADroppedRow_asksForTheOffsetTheServerSentTo() = runTest {
+        val firstPage = OrderListResponseDto(total = 4, data = listOf(listItem("o-1")), receivedCount = 2)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+
+        coEvery { api.getMyOrders(offset = 2, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 4, data = listOf(listItem("o-3")), receivedCount = 2),
+        )
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 2, limit = 20) }
+        assertEquals(listOf("o-1", "o-3"), repo.orders.value.map { it.id })
+    }
+
+    /**
+     * `size >= total` compares survivors against the server's count, so one dropped row keeps the
+     * stop condition permanently false and the list keeps asking for pages it already has.
+     */
+    @Test
+    fun loadNextPage_givenADroppedRow_stillStopsAtTheServersCount() = runTest {
+        val firstPage = OrderListResponseDto(total = 4, data = listOf(listItem("o-1")), receivedCount = 2)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getMyOrders(offset = 2, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 4, data = listOf(listItem("o-3")), receivedCount = 2),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 2, limit = 20) }
+    }
+
+    @Test
+    fun loadNextPage_givenAPageTheServerAnsweredEmpty_stopsRatherThanAskingAgain() = runTest {
+        val firstPage = OrderListResponseDto(total = 9, data = listOf(listItem("o-1")), receivedCount = 1)
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getMyOrders(offset = 1, limit = 20) } returns Response.success(
+            OrderListResponseDto(total = 9, data = emptyList(), receivedCount = 0),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getMyOrders(offset = 1, limit = 20) }
+    }
+
     @Test
     fun loadNextPage_doesNothingWhenAlreadyLoading() = runTest {
         // Bring repo into the "has-more-pages" state so loadNextPage isn't a

@@ -71,6 +71,17 @@ class OrderRepository @Inject constructor(
     private val pageSize = 20
 
     /**
+     * Rows the server has SENT so far — the offset of the next page and the term the stop condition
+     * compares against [totalRecords]. Not `orders.size`: the page mapper drops an unidentifiable
+     * row, so every drop would otherwise re-request the survivors and hold `size >= total` false
+     * forever, which is a list that keeps asking for pages it already has.
+     */
+    private var receivedSoFar = 0
+
+    /** A page the server answered with no rows at all ends paging; the counter alone cannot. */
+    private var exhausted = false
+
+    /**
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
      */
@@ -85,6 +96,8 @@ class OrderRepository @Inject constructor(
             }
             val body = resp.requiredBody()
             _orders.value = body.data
+            receivedSoFar = body.receivedCount
+            exhausted = body.receivedCount == 0
             // Backend PagedData wrapper exposes total under `total`; expose it as
             // totalRecords in the repo API to keep consumers agnostic of the wire name.
             _totalRecords.value = body.total
@@ -103,14 +116,16 @@ class OrderRepository @Inject constructor(
      */
     suspend fun loadNextPage(): ApiResult<Unit> = wireResult {
         if (_loadingMore.value) return ApiResult.Success(Unit)
-        if (_orders.value.size >= _totalRecords.value) return ApiResult.Success(Unit) // nothing more to load
+        if (exhausted || receivedSoFar >= _totalRecords.value) return ApiResult.Success(Unit)
         _loadingMore.value = true
         try {
-            val resp = networkCall { api.getMyOrders(offset = _orders.value.size, limit = pageSize) }
+            val resp = networkCall { api.getMyOrders(offset = receivedSoFar, limit = pageSize) }
                 ?: return networkError()
             if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
             val body = resp.requiredBody()
             _orders.value = _orders.value + body.data
+            receivedSoFar += body.receivedCount
+            exhausted = body.receivedCount == 0
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
         } finally {
@@ -257,6 +272,8 @@ class OrderRepository @Inject constructor(
     override suspend fun clear() {
         _orders.value = emptyList()
         _totalRecords.value = 0
+        receivedSoFar = 0
+        exhausted = false
         _loaded.value = false
         staleness.reset()
     }

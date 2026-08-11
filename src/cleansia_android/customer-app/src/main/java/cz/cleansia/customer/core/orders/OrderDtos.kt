@@ -21,6 +21,12 @@ data class OrderListResponseDto(
     val pageSize: Int = 0,
     val total: Int = 0,
     val data: List<OrderListItemDto> = emptyList(),
+    /**
+     * Rows the server SENT, which is not [data].size once the mapper drops an unidentifiable one.
+     * Pagination is offset-based against the server's [total], so both the offset and the stop
+     * condition have to count what the server counted or neither ever reaches it.
+     */
+    val receivedCount: Int = data.size,
 )
 
 /** Mirrors backend `OrderListItem`. */

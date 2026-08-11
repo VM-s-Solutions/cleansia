@@ -6,6 +6,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -128,6 +129,56 @@ class DisputeRepositoryTest {
             listOf(DisputeListItemDto(id = "d-1"), DisputeListItemDto(id = "d-2")),
             repo.disputes.value,
         )
+    }
+
+    /**
+     * Composes exactly as the orders list does, and breaks the same way: an offset read off the
+     * cache re-requests the survivors and never reaches past the dropped row, and `size >= total`
+     * never trips once one row is gone.
+     */
+    @Test
+    fun loadNextPage_givenADroppedRow_asksForTheOffsetTheServerSentTo() = runTest {
+        val page0 = DisputeListResponseDto(
+            total = 4,
+            data = listOf(DisputeListItemDto(id = "d-1")),
+            receivedCount = 2,
+        )
+        coEvery { api.getPaged(offset = 0, limit = 20) } returns Response.success(page0)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getPaged(offset = 2, limit = 20) } returns Response.success(
+            DisputeListResponseDto(
+                total = 4,
+                data = listOf(DisputeListItemDto(id = "d-3")),
+                receivedCount = 2,
+            ),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getPaged(offset = 2, limit = 20) }
+        assertEquals(listOf("d-1", "d-3"), repo.disputes.value.map { it.id })
+    }
+
+    @Test
+    fun loadNextPage_givenAPageTheServerAnsweredEmpty_stopsRatherThanAskingAgain() = runTest {
+        val page0 = DisputeListResponseDto(
+            total = 9,
+            data = listOf(DisputeListItemDto(id = "d-1")),
+            receivedCount = 1,
+        )
+        coEvery { api.getPaged(offset = 0, limit = 20) } returns Response.success(page0)
+        val repo = newRepo()
+        repo.refresh()
+        coEvery { api.getPaged(offset = 1, limit = 20) } returns Response.success(
+            DisputeListResponseDto(total = 9, data = emptyList(), receivedCount = 0),
+        )
+
+        repo.loadNextPage()
+        repo.loadNextPage()
+
+        coVerify(exactly = 1) { api.getPaged(offset = 1, limit = 20) }
     }
 
     @Test

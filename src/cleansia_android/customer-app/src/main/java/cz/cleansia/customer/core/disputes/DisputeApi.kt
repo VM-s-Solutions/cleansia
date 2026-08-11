@@ -99,6 +99,7 @@ private fun GenPagedDisputes?.toAppDto(): DisputeListResponseDto? {
         pageNumber = pageNumber ?: return null,
         pageSize = pageSize ?: return null,
         total = total ?: return null,
+        receivedCount = `data`.orEmpty().size,
         data = `data`.orEmpty()
             .filter { it.id != null }
             .map { it.toAppDtoOrRefuse() ?: return null },

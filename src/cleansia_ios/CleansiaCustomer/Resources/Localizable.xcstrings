@@ -22051,6 +22051,216 @@
         }
       }
     },
+    "preferred_offer_accepted_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzeno: %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmed by %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтверждено: %1$@"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrdené: %1$@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підтверджено: %1$@"
+          }
+        }
+      }
+    },
+    "preferred_offer_asked_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervaci pro ně držíme do %1$@. Pokud ji nemohou převzít, otevře se celému našemu týmu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We're holding this booking for them until %1$@. If they can't take it, it opens to our whole team."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы держим этот заказ для них до %1$@. Если они не смогут его взять, он откроется для всей нашей команды."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezerváciu pre nich držíme do %1$@. Ak ju nemôžu prevziať, otvorí sa celému nášmu tímu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми тримаємо це замовлення для них до %1$@. Якщо вони не зможуть його взяти, воно відкриється для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "preferred_offer_asked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Požádali jsme %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We've asked %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы попросили %1$@"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Požiadali sme %1$@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ми попросили %1$@"
+          }
+        }
+      }
+    },
+    "preferred_offer_closed_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádost o uklízeče, kterého jste si vyžádali, skončila. Tato rezervace je nyní otevřená celému našemu týmu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The request for the cleaner you asked for has ended. This booking is now open to our whole team."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрос на клинера, которого вы выбрали, завершён. Этот заказ теперь открыт для всей нашей команды."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiadosť o upratovača, ktorého ste si vyžiadali, sa skončila. Táto rezervácia je teraz otvorená celému nášmu tímu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запит на клінера, якого ви обрали, завершено. Це замовлення тепер відкрите для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "preferred_offer_closed_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otevřeno všem uklízečům"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open to all cleaners"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыто для всех клинеров"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otvorené všetkým upratovačom"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відкрито для всіх клінерів"
+          }
+        }
+      }
+    },
+    "preferred_offer_section_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš oblíbený uklízeč"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your favourite cleaner"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш любимый клинер"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš obľúbený upratovač"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш улюблений клінер"
+          }
+        }
+      }
+    },
     "profile_delete_account" : {
       "extractionState" : "stale",
       "localizations" : {

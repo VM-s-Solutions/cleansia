@@ -26,6 +26,10 @@ struct OrderDetailContent: View {
                         OrderHeroCard(order: order)
                     }
 
+                    if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
+                        PreferredOfferCard(disclosure: disclosure)
+                    }
+
                     if let address = order.address {
                         OrderAddressCard(address: address)
                     }

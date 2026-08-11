@@ -250,9 +250,11 @@ the next person to move it is told what else moves.
 2. ✅ the **sweep** — deliberately NOT done inside T-0574, because fixing the corpus in the same change
    would have hidden whether the checker works;
 3. ✅ the repo-root workflow (`.github/workflows/catalog-claims.yml`), now blocking;
-4. ⬜ **one line extending reviewer-check 5 "Catalog-edit routing"** to re-read the banners and
+4. ✅ **reviewer-check 5 "Catalog-edit routing"** now carries a fifth test: re-read the banners and
    citations of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false
-   sentence that survived a pass over its own page.
+   sentence that survived a pass over its own page — and paste the checker's summary line into the
+   verdict. It names the two shapes the tool cannot fail on: a `Retires when:` condition that is now
+   satisfied, and a citation that still resolves under a sentence that has gone stale.
 
 `consistency.md` §*"Catalog claims about the tree"* still carries the pre-landing
 `(gate pending: catalog-claim-liveness checker — ticket owed)` token; it belongs to a different

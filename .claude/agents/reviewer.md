@@ -124,6 +124,17 @@ author.
       `T2-ADVISORY`** — `check-consistency.mjs` is in zero `.github/` workflows; `frontend-ci.yml` runs
       lint with `continue-on-error: true`. **Open the named enforcer and read what it asserts**: if the
       sentence claims more, the sentence narrows (stating the residual) or the enforcer widens.
+   5. **Re-read the WHOLE FILE's banners and citations, not just the hunk.** Every claim the
+      catalog-claim sweep found was written correctly and falsified later by an edit somewhere else, and
+      the sixth was a false sentence that **survived a pass over its own page** — because the reviewer
+      read the diff. So on any diff touching a catalog page, run
+      `node agents/tools/check-catalog-claims.mjs` and paste its summary line into your verdict. It is
+      `T1-CI` and blocking as of the sweep that took the baseline to zero, so a red here is a red build,
+      not advice. Two failure shapes it will not catch and you must read for: a `Retires when:` marker
+      whose remainder names a path that **already exists** (the condition is satisfied, so the banner it
+      guards is now false — this bit me while writing the promotion commit itself), and a citation that
+      still resolves while the sentence around it has gone stale, which the tool reports only as
+      advisory C3B.
    Nothing fires ⇒ inline is correct; sanity-check the content and say so in your verdict.
 6. Write a verdict: `APPROVED` or `CHANGES REQUESTED` with the numbered list. Approve only when every
    applicable gate passes.

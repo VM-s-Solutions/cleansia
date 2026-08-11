@@ -8,18 +8,6 @@ extension Code {
     }
 }
 
-extension OrderItem {
-    var status: OrderStatus? {
-        orderStatus?.toOrderStatus()
-    }
-}
-
-extension OrderListItem {
-    var status: OrderStatus? {
-        orderStatus?.toOrderStatus()
-    }
-}
-
 extension OrderStatusTrackDto {
     var statusEnum: OrderStatus? {
         status?.toOrderStatus()

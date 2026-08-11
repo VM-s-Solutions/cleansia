@@ -24,7 +24,7 @@ enum PreferredOfferPresentation {
     ///
     /// A state whose sentence cannot be completed is not disclosed at all: "We've asked " is worse than
     /// silence, and the sentence is the whole feature.
-    static func disclosure(for order: OrderItem) -> PreferredOfferDisclosure? {
+    static func disclosure(for order: CustomerOrderDetail) -> PreferredOfferDisclosure? {
         guard let offer = order.preferredOffer else { return nil }
         switch offer.state {
         case ._1:

@@ -11,7 +11,7 @@ import Foundation
 /// `CatalogRepository` singleton, so Home and the booking sheet read one cache.
 @MainActor
 final class HomeTabViewModel: ViewModel {
-    @Published private(set) var recentOrders: [OrderListItem] = []
+    @Published private(set) var recentOrders: [CustomerOrderSummary] = []
     @Published private(set) var ordersLoaded = false
     @Published private(set) var ordersLoading = false
     @Published private(set) var recurringTemplates: [RecurringTemplate] = []
@@ -92,11 +92,11 @@ final class HomeTabViewModel: ViewModel {
         !activeRecurring.isEmpty
     }
 
-    var mostRecentCompleted: OrderListItem? {
+    var mostRecentCompleted: CustomerOrderSummary? {
         HomeSections.mostRecentCompleted(recentOrders)
     }
 
-    var recentForDisplay: [OrderListItem] {
+    var recentForDisplay: [CustomerOrderSummary] {
         HomeSections.recentForDisplay(recentOrders)
     }
 

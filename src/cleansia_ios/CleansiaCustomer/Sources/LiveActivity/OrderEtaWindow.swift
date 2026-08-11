@@ -10,9 +10,9 @@ extension EtaWindow {
     /// phase window read off the status history, so a cleaner running late still leaves an end that is
     /// ahead of "now" instead of one that has already passed.
     /// nil when the order carries no appointment time — there is nothing to count.
-    static func forOrder(_ order: OrderItem) -> EtaWindow? {
+    static func forOrder(_ order: CustomerOrderDetail) -> EtaWindow? {
         guard let scheduledStart = order.cleaningDateTime else { return nil }
-        let duration = TimeInterval(max(order.estimatedTime ?? 0, 1) * 60)
+        let duration = TimeInterval(max(order.estimatedMinutes, 1) * 60)
         let phase = phase(for: order, arrivalBy: scheduledStart, duration: duration)
 
         return EtaWindow(
@@ -30,7 +30,7 @@ extension EtaWindow {
     /// which writer landed last. Every other status has no phase to time, and both ends stay nil together —
     /// a start without an end anchors a countdown at a moment that was never a departure.
     private static func phase(
-        for order: OrderItem,
+        for order: CustomerOrderDetail,
         arrivalBy: Date,
         duration: TimeInterval
     ) -> (start: Date, end: Date)? {

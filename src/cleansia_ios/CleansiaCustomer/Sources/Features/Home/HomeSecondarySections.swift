@@ -6,7 +6,7 @@ import SwiftUI
 /// `HomeTab.kt:932-1055`).
 struct RecentBookingsSection: View {
     @Environment(\.locale) private var locale
-    let orders: [OrderListItem]
+    let orders: [CustomerOrderSummary]
     let onOrderTap: (String) -> Void
     let onSeeAll: () -> Void
 
@@ -24,7 +24,7 @@ struct RecentBookingsSection: View {
             VStack(spacing: Spacing.xs) {
                 ForEach(orders, id: \.id) { order in
                     RecentBookingRow(order: order) {
-                        if let id = order.id { onOrderTap(id) }
+                        onOrderTap(order.id)
                     }
                 }
             }
@@ -35,7 +35,7 @@ struct RecentBookingsSection: View {
 
 private struct RecentBookingRow: View {
     @Environment(\.locale) private var locale
-    let order: OrderListItem
+    let order: CustomerOrderSummary
     let onTap: () -> Void
 
     var body: some View {
@@ -60,7 +60,7 @@ private struct RecentBookingRow: View {
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(1)
                         if let label = HomeSections.statusChipLabel(order) {
-                            OrderStatusPill(label: label, color: OrderStatusPresentation.color(order.orderStatus))
+                            OrderStatusPill(label: label, color: OrderStatusPresentation.color(order.statusCode))
                         }
                         Spacer(minLength: 0)
                     }
@@ -85,7 +85,7 @@ private struct RecentBookingRow: View {
 
     private var recentSubtitle: String {
         let when = OrdersFormat.dateTime(order.cleaningDateTime, locale: locale)
-        let price = OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code)
+        let price = OrdersFormat.price(order.total, currencyCode: order.currencyCode)
         return "\(when) · \(price)"
     }
 }
@@ -245,15 +245,18 @@ struct HomeSkeleton: View {
 
 #if DEBUG
     struct HomeSecondarySections_Previews: PreviewProvider {
-        static var sampleOrder: OrderListItem {
-            OrderListItem(
+        static var sampleOrder: CustomerOrderSummary {
+            CustomerOrderSummary(
                 id: "o1",
+                displayOrderNumber: "1042",
+                statusCode: Code(type: "OrderStatus", name: "Completed", value: 5),
                 cleaningDateTime: Date(),
-                totalPrice: 1290,
-                orderStatus: Code(type: "OrderStatus", name: "Completed", value: 5),
-                selectedPackages: [PackageListItem(id: "p1", name: "Standard cleaning")],
-                currency: CurrencyListItem(code: "CZK"),
-                selectedServices: [ServiceListItem(id: "s1", name: "Deep clean")]
+                estimatedMinutes: 120,
+                address: "Zenklova 6, Praha",
+                total: 1290,
+                currencyCode: "CZK",
+                services: [CustomerOrderLineName(name: "Deep clean", translations: nil)],
+                packages: [CustomerOrderLineName(name: "Standard cleaning", translations: nil)]
             )
         }
 

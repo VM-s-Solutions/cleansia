@@ -138,7 +138,7 @@ struct HomeTab: View {
                 Group {
                     if let completed = vm.mostRecentCompleted {
                         OrderAgainCard(order: completed) {
-                            if let id = completed.id { onRebookOrder(id) }
+                            onRebookOrder(completed.id)
                         }
                     } else {
                         TrustStrip()

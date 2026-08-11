@@ -54,12 +54,12 @@ enum OrdersFormat {
     /// Up to 2 package names then service names, "+ N more" suffix. Names resolve
     /// to `locale`'s translation when the snapshot carries one, else the frozen
     /// English name.
-    static func servicesSummary(_ order: OrderListItem, locale: Locale = .current) -> String {
+    static func servicesSummary(_ order: CustomerOrderSummary, locale: Locale = .current) -> String {
         let languageCode = locale.language.languageCode?.identifier ?? "en"
-        let packages = (order.selectedPackages ?? []).compactMap {
+        let packages = order.packages.compactMap {
             localizedName($0.name, translations: $0.translations, languageCode: languageCode)
         }
-        let services = (order.selectedServices ?? []).compactMap {
+        let services = order.services.compactMap {
             localizedName($0.name, translations: $0.translations, languageCode: languageCode)
         }
         let combined = packages + services

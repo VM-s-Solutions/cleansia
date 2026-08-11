@@ -13,7 +13,7 @@ struct BookingSuccessView: View {
     init(
         confirmationCode: String,
         orderId: String,
-        loadOrder: @escaping @Sendable (String) async -> OrderItem?,
+        loadOrder: @escaping @Sendable (String) async -> CustomerOrderDetail?,
         warmOrders: @escaping @Sendable () async -> Void = {},
         onViewOrder: (() -> Void)?,
         onDone: @escaping () -> Void
@@ -104,14 +104,14 @@ struct BookingSuccessView: View {
         }
     }
 
-    private func summaryRows(_ order: OrderItem) -> [SummaryRow] {
+    private func summaryRows(_ order: CustomerOrderDetail) -> [SummaryRow] {
         var rows: [SummaryRow] = []
         if order.cleaningDateTime != nil {
             rows.append(SummaryRow(
                 label: L10n.Booking.successArrivalLabel,
                 value: OrdersFormat.dateRange(
                     order.cleaningDateTime,
-                    estimatedMinutes: order.estimatedTime ?? 0,
+                    estimatedMinutes: order.estimatedMinutes,
                     locale: locale
                 )
             ))
@@ -119,10 +119,10 @@ struct BookingSuccessView: View {
         if let address = addressLine(order.address) {
             rows.append(SummaryRow(label: L10n.Booking.successAddressLabel, value: address))
         }
-        if let total = order.totalPrice, total > 0 {
+        if order.total > 0 {
             rows.append(SummaryRow(
                 label: L10n.Booking.successTotalLabel,
-                value: OrdersFormat.price(total, currencyCode: order.currency?.code)
+                value: OrdersFormat.price(order.total, currencyCode: order.currencyCode)
             ))
         }
         return rows
@@ -160,7 +160,7 @@ struct BookingSuccessView: View {
     private var timelineCard: some View {
         let entries = BookingSuccessTimeline.entries(
             status: orderVM.order?.status,
-            cleanerAssigned: !(orderVM.order?.assignedEmployees ?? []).isEmpty
+            cleanerAssigned: !(orderVM.order?.assignedEmployees.isEmpty ?? true)
         )
         return VStack(alignment: .leading, spacing: Spacing.s) {
             Text(L10n.Booking.successProgress)

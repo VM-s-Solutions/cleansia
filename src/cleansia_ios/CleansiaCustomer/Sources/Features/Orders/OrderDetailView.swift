@@ -77,9 +77,10 @@ struct OrderDetailView: View {
             }
     }
 
-    /// `OrderItem.id` is optional on the wire, so fall back to the id this
-    /// screen was routed with — they are the same order, and "" is never a
-    /// usable id for the photos screen or the dispute route.
+    /// The wire's `id` is optional, so fall back to the id this screen was routed
+    /// with — they are the same order, and "" is never a usable id for the photos
+    /// screen or the dispute route. This second source is why `CustomerOrderDetail`
+    /// does not refuse a missing id the way the partner detail does.
     private var orderId: String {
         vm.state.loadedValue?.id ?? routeOrderId
     }
@@ -105,7 +106,7 @@ struct OrderDetailView: View {
     /// The map is always behind, the sheet is always over it, and the mascot rides
     /// the seam between them — the partner order-detail topology, which is what the
     /// customer screen is being brought to parity with.
-    private func loadedShell(_ order: OrderItem) -> some View {
+    private func loadedShell(_ order: CustomerOrderDetail) -> some View {
         SnapSheet(anchor: $snapAnchor) {
             OrderDetailMapBackdrop(order: order, mapProvider: mapProvider)
         } ornament: {
@@ -128,7 +129,7 @@ struct OrderDetailView: View {
     }
 
     @ViewBuilder
-    private func footer(_ order: OrderItem) -> some View {
+    private func footer(_ order: CustomerOrderDetail) -> some View {
         if OrderRecurringConfirm.needsConfirmation(order) {
             ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
                 Task { await vm.confirmRecurring() }
@@ -154,7 +155,7 @@ struct OrderDetailView: View {
     private var cancelSheet: some View {
         CancelOrderSheet(
             quote: vm.cancellationQuote,
-            currencyCode: vm.cancellationQuote.loadedValue?.currencyCode ?? vm.state.loadedValue?.currency?.code,
+            currencyCode: vm.cancellationQuote.loadedValue?.currencyCode ?? vm.state.loadedValue?.currencyCode,
             isSubmitting: vm.cancelState.isSubmitting,
             errorMessage: vm.cancelState.errorMessage,
             onReasonChanged: vm.dismissCancelError,
@@ -215,7 +216,7 @@ private struct ReceiptFile: Identifiable {
 enum OrderRecurringConfirm {
     /// A recurring-generated order awaiting customer confirmation: it carries a
     /// `recurringTemplateId` and its payment status is Pending (value 1).
-    static func needsConfirmation(_ order: OrderItem) -> Bool {
+    static func needsConfirmation(_ order: CustomerOrderDetail) -> Bool {
         guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
         return order.paymentStatus?.value == 1
     }

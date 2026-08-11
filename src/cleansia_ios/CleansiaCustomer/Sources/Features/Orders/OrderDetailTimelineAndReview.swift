@@ -58,14 +58,14 @@ private struct TimelineRow: View {
 }
 
 struct OrderReviewCard: View {
-    let review: OrderReviewDto?
+    let review: CustomerOrderReview?
     let onLeaveReview: () -> Void
 
     var body: some View {
         OrderCardSurface {
             OrderSectionHeaderRow(title: L10n.OrderDetail.yourReview)
             if let review {
-                StarsRow(rating: review.rating ?? 0)
+                StarsRow(rating: review.rating)
                 if let comment = review.comment, !comment.isBlank {
                     Text(verbatim: "“\(comment)”")
                         .font(CleansiaTypography.bodyMedium)
@@ -94,7 +94,7 @@ private struct StarsRow: View {
 }
 
 struct OrderReceiptCard: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
     let isDownloading: Bool
     let onDownload: () -> Void
 

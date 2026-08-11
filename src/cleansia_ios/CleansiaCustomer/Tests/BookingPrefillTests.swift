@@ -102,12 +102,13 @@ final class BookingPrefillTests: XCTestCase {
     // MARK: - rebook (BookingBottomSheet.kt:305-374)
 
     func testRebookReplacesSelectionsAndCopiesTheOrderAddress() {
-        var order = OrderFixtures.detail(id: "o1", statusValue: 5)
-        order.selectedServices = [ServiceDetails(id: "s-1", name: "Deep clean")]
-        order.selectedPackages = [PackageDetails(id: "p-1", name: "Move-out")]
-        order.rooms = 4
-        order.bathrooms = 2
-        order.address = OrderAddress(street: "Old 9", city: "Brno", zipCode: "60200")
+        let order = OrderFixtures.detail(
+            address: OrderAddress(street: "Old 9", city: "Brno", zipCode: "60200"),
+            rooms: 4,
+            bathrooms: 2,
+            services: [OrderFixtures.service(id: "s-1", name: "Deep clean")],
+            packages: [OrderFixtures.package(id: "p-1", name: "Move-out")]
+        )
 
         var current = BookingState()
         current.selectedServiceIds = ["stale"]
@@ -133,12 +134,13 @@ final class BookingPrefillTests: XCTestCase {
     }
 
     func testRebookDropsRetiredCatalogItemsAndFlagsIt() {
-        var order = OrderFixtures.detail(id: "o1", statusValue: 5)
-        order.selectedServices = [
-            ServiceDetails(id: "s-1", name: "Kept"),
-            ServiceDetails(id: "s-gone", name: "Retired")
-        ]
-        order.selectedPackages = [PackageDetails(id: "p-gone", name: "Retired")]
+        let order = OrderFixtures.detail(
+            services: [
+                OrderFixtures.service(id: "s-1", name: "Kept"),
+                OrderFixtures.service(id: "s-gone", name: "Retired")
+            ],
+            packages: [OrderFixtures.package(id: "p-gone", name: "Retired")]
+        )
 
         let result = BookingPrefill.rebook(
             BookingState(),
@@ -153,8 +155,7 @@ final class BookingPrefillTests: XCTestCase {
     }
 
     func testRebookTrustsOriginalIdsWhenTheCatalogIsNotReady() {
-        var order = OrderFixtures.detail(id: "o1", statusValue: 5)
-        order.selectedServices = [ServiceDetails(id: "s-unknown", name: "Any")]
+        let order = OrderFixtures.detail(services: [OrderFixtures.service(id: "s-unknown", name: "Any")])
 
         for catalog in [nil, Catalog.empty] {
             let result = BookingPrefill.rebook(BookingState(), order: order, savedAddresses: [], catalog: catalog)
@@ -163,10 +164,8 @@ final class BookingPrefillTests: XCTestCase {
         }
     }
 
-    func testRebookKeepsCurrentRoomsWhenTheOrderCarriesNone() {
-        var order = OrderFixtures.detail(id: "o1", statusValue: 5)
-        order.rooms = 0
-        order.bathrooms = nil
+    func testRebookKeepsCurrentRoomsWhenTheOrderCarriesZero() {
+        let order = OrderFixtures.detail(rooms: 0, bathrooms: 0)
 
         var current = BookingState()
         current.rooms = 3
@@ -178,8 +177,7 @@ final class BookingPrefillTests: XCTestCase {
     }
 
     func testRebookMatchesASavedAddressCaseInsensitively() {
-        var order = OrderFixtures.detail(id: "o1", statusValue: 5)
-        order.address = OrderAddress(street: "MAIN 1", city: "prague", zipCode: "11000")
+        let order = OrderFixtures.detail(address: OrderAddress(street: "MAIN 1", city: "prague", zipCode: "11000"))
 
         let saved = SavedAddressFixtures.address(id: "saved-1")
         let result = BookingPrefill.rebook(BookingState(), order: order, savedAddresses: [saved], catalog: nil)

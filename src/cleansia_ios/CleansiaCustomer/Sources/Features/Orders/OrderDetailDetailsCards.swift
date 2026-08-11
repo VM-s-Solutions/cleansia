@@ -4,22 +4,20 @@ import SwiftUI
 
 struct CleaningDetailsCard: View {
     @Environment(\.locale) private var locale
-    let order: OrderItem
-
-    private var activeExtras: [String] {
-        (order.extras ?? [:]).filter(\.value).keys.sorted()
-    }
+    let order: CustomerOrderDetail
 
     var body: some View {
         OrderCardSurface {
             OrderSectionHeaderRow(title: L10n.OrderDetail.sectionDetails)
             OrderInfoRow(
                 label: L10n.OrderDetail.rooms,
-                value: L10n.OrderDetail.roomsBathrooms(order.rooms ?? 0, order.bathrooms ?? 0)
+                value: L10n.OrderDetail.roomsBathrooms(order.rooms, order.bathrooms)
             )
             OrderInfoRow(
                 label: L10n.OrderDetail.estimated,
-                value: (order.estimatedTime ?? 0) > 0 ? L10n.OrderDetail.durationMinutes(order.estimatedTime ?? 0) : "—"
+                value: order.estimatedMinutes > 0
+                    ? L10n.OrderDetail.durationMinutes(order.estimatedMinutes)
+                    : "—"
             )
             if let completedAt = order.completedAt {
                 OrderInfoRow(
@@ -27,11 +25,11 @@ struct CleaningDetailsCard: View {
                     value: OrdersFormat.dateTime(completedAt, locale: locale)
                 )
             }
-            if !activeExtras.isEmpty {
+            if !order.activeExtras.isEmpty {
                 Text(L10n.OrderDetail.extras)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
-                ExtrasFlow(keys: activeExtras)
+                ExtrasFlow(keys: order.activeExtras)
             }
         }
     }
@@ -47,7 +45,7 @@ private struct ExtrasFlow: View {
 
 struct OrderServicesCard: View {
     @Environment(\.locale) private var locale
-    let services: [ServiceDetails]
+    let services: [CustomerOrderService]
 
     var body: some View {
         OrderCardSurface {
@@ -75,8 +73,8 @@ struct OrderServicesCard: View {
                         }
                     }
                     Spacer()
-                    if (service.estimatedTime ?? 0) > 0 {
-                        TimeChip(minutes: service.estimatedTime ?? 0)
+                    if service.estimatedMinutes > 0 {
+                        TimeChip(minutes: service.estimatedMinutes)
                     }
                 }
             }
@@ -86,7 +84,7 @@ struct OrderServicesCard: View {
 
 struct OrderPackagesCard: View {
     @Environment(\.locale) private var locale
-    let packages: [PackageDetails]
+    let packages: [CustomerOrderPackage]
 
     var body: some View {
         OrderCardSurface {
@@ -112,14 +110,14 @@ struct OrderPackagesCard: View {
                                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                                 .lineLimit(2)
                         }
-                        if let included = package.includedServices, !included.isEmpty {
-                            Text(included.joined(separator: ", "))
+                        if !package.includedServices.isEmpty {
+                            Text(package.includedServices.joined(separator: ", "))
                                 .font(CleansiaTypography.labelSmall)
                                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                         }
                     }
                     Spacer()
-                    Text(OrdersFormat.price(package.price ?? 0, currencyCode: package.currencyCode))
+                    Text(OrdersFormat.price(package.price, currencyCode: package.currencyCode))
                         .font(CleansiaTypography.titleLarge)
                         .foregroundColor(CleansiaColors.onBackground)
                 }
@@ -136,7 +134,7 @@ enum OrderInstructions {
         let text: String
     }
 
-    static func plainBlocks(_ order: OrderItem) -> [Block] {
+    static func plainBlocks(_ order: CustomerOrderDetail) -> [Block] {
         var result: [Block] = []
         if let value = order.specialInstructions, !value.isBlank {
             result.append(Block(label: L10n.OrderDetail.specialInstructions, text: value))
@@ -147,18 +145,18 @@ enum OrderInstructions {
         return result
     }
 
-    static func secret(_ order: OrderItem) -> String? {
+    static func secret(_ order: CustomerOrderDetail) -> String? {
         guard let value = order.accessInstructions, !value.isBlank else { return nil }
         return value
     }
 
-    static func hasAnything(_ order: OrderItem) -> Bool {
+    static func hasAnything(_ order: CustomerOrderDetail) -> Bool {
         !plainBlocks(order).isEmpty || secret(order) != nil
     }
 }
 
 struct OrderInstructionsCard: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     var body: some View {
         if OrderInstructions.hasAnything(order) {

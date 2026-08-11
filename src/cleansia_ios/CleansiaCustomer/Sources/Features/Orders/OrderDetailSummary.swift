@@ -62,20 +62,19 @@ struct OrderPriceBreakdown: Equatable {
     let paymentStatus: OrderPaymentStatus?
     let currencyCode: String?
 
-    static func resolve(_ order: OrderItem) -> OrderPriceBreakdown {
-        let total = order.totalPrice ?? 0
-        let original = order.originalSubtotal ?? 0
+    static func resolve(_ order: CustomerOrderDetail) -> OrderPriceBreakdown {
+        let original = order.originalSubtotal
         return OrderPriceBreakdown(
-            subtotal: original > 0 && original != total ? original : nil,
+            subtotal: original > 0 && original != order.total ? original : nil,
             discounts: [
                 line(.tier, order.tierDiscountAmount),
                 line(.membership, order.membershipDiscountAmount),
                 line(.promo, order.promoDiscountAmount)
             ].compactMap { $0 },
-            total: total,
+            total: order.total,
             paymentMethod: paymentMethod(order.paymentType),
             paymentStatus: paymentStatus(order.paymentStatus),
-            currencyCode: order.currency?.code
+            currencyCode: order.currencyCode
         )
     }
 
@@ -115,22 +114,21 @@ struct OrderHeroFacts: Equatable {
     let discountChips: [OrderDiscountSource]
     let currencyCode: String?
 
-    static func resolve(_ order: OrderItem) -> OrderHeroFacts {
-        let total = order.totalPrice ?? 0
-        let original = order.originalSubtotal ?? 0
+    static func resolve(_ order: CustomerOrderDetail) -> OrderHeroFacts {
+        let original = order.originalSubtotal
         let discounted = order.appliedDiscountSource.map { $0 != ._0 } ?? false
         return OrderHeroFacts(
             confirmationCode: order.confirmationCode.flatMap { $0.isBlank ? nil : $0 },
-            total: total,
-            struckSubtotal: discounted && original > total ? original : nil,
+            total: order.total,
+            struckSubtotal: discounted && original > order.total ? original : nil,
             discountChips: OrderDiscountSource.chips(for: order.appliedDiscountSource),
-            currencyCode: order.currency?.code
+            currencyCode: order.currencyCode
         )
     }
 }
 
 struct OrderPriceBreakdownCard: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     private var breakdown: OrderPriceBreakdown {
         OrderPriceBreakdown.resolve(order)
@@ -183,7 +181,7 @@ struct OrderPriceBreakdownCard: View {
 /// this strip is the remainder — and it is the only route to the confirmation
 /// code for the three statuses in which a cleaner is on the way.
 struct OrderHeroFactsStrip: View {
-    let order: OrderItem
+    let order: CustomerOrderDetail
 
     private var facts: OrderHeroFacts {
         OrderHeroFacts.resolve(order)
@@ -216,7 +214,9 @@ struct OrderHeroFactsStrip: View {
 
 #if DEBUG
     struct OrderDetailSummary_Previews: PreviewProvider {
-        private static let order = OrderItem(
+        private static let order = try? CustomerOrderDetail(OrderItem(
+            rooms: 3,
+            bathrooms: 1,
             paymentType: Code(value: 2),
             paymentStatus: Code(value: 2),
             totalPrice: 1590,
@@ -224,14 +224,17 @@ struct OrderHeroFactsStrip: View {
             appliedDiscountSource: ._4,
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
+            estimatedTime: 180,
             confirmationCode: "CLN-12345",
             currency: CurrencyDetailDto(code: "CZK")
-        )
+        ))
 
         static var previews: some View {
             VStack(spacing: Spacing.s) {
-                OrderHeroFactsStrip(order: order)
-                OrderPriceBreakdownCard(order: order)
+                if let order {
+                    OrderHeroFactsStrip(order: order)
+                    OrderPriceBreakdownCard(order: order)
+                }
             }
             .padding(Spacing.ml)
             .background(CleansiaColors.background)

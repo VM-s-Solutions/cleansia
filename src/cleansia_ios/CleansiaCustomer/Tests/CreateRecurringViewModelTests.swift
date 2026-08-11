@@ -97,14 +97,13 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     func testPathBPrefillsFromCompletedOrder() async {
         let orderClient = FakeOrderClient()
-        let order = OrderItem(
+        let order = OrderFixtures.detail(
             id: "ord-7",
+            statusCode: Code(type: "OrderStatus", name: nil, value: 5),
             rooms: 3,
             bathrooms: 2,
-            paymentType: Code(type: "PaymentType", name: nil, value: 2),
-            orderStatus: Code(type: "OrderStatus", name: nil, value: 5),
-            selectedPackages: [],
-            selectedServices: [ServiceDetails(id: "svc-prefill")]
+            services: [OrderFixtures.service(id: "svc-prefill")],
+            paymentType: Code(type: "PaymentType", name: nil, value: 2)
         )
         orderClient.detailResults = [.success(order)]
         let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
@@ -199,7 +198,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
     /// template is being edited — with a non-blank id, so both ternary branches are reachable.
     func testEditingIgnoresASourceOrderInsteadOfPrefillingOverTheTemplate() async {
         let orderClient = FakeOrderClient()
-        orderClient.detailResults = [.success(OrderItem(id: "ord-7", rooms: 9, bathrooms: 9))]
+        orderClient.detailResults = [.success(OrderFixtures.detail(id: "ord-7", rooms: 9, bathrooms: 9))]
         let (vm, client) = makeVM(
             sourceOrderId: "ord-7",
             editing: RecurringFixtures.template(),

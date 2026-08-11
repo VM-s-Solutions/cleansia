@@ -3,7 +3,7 @@ import CleansiaCustomerApi
 import Foundation
 
 struct OrdersPage: Equatable {
-    let items: [OrderListItem]
+    let items: [CustomerOrderSummary]
     let total: Int
 }
 
@@ -45,7 +45,7 @@ struct RecurringConfirmation: Equatable {
 
 protocol OrderClient: Sendable {
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage>
-    func getById(orderId: String) async -> ApiResult<OrderItem>
+    func getById(orderId: String) async -> ApiResult<CustomerOrderDetail>
     func cancel(orderId: String, reason: String?) async -> ApiResult<OrderCancellation>
     func submitReview(orderId: String, rating: Int, comment: String?) async -> ApiResult<OrderReviewDto>
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
@@ -59,17 +59,21 @@ struct LiveOrderClient: OrderClient {
     /// input to `hasMore` (`orders.count < total`), so a coerced `0` reports every page as the last
     /// one and the customer's older orders stop existing rather than fail to load. The rows
     /// themselves default to empty: an absent page and an empty one are the same fact to the list,
-    /// which counts what it shows and sums nothing.
+    /// which counts what it shows and sums nothing. Each surviving row makes its own two rulings —
+    /// see ``CustomerOrderSummary``.
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
         await apiResult(mapError: ApiError.fromGenerated) {
             let paged = try await CustomerOrderAPI.orderGetMyOrders(offset: offset, limit: limit)
-            return try OrdersPage(items: paged.data ?? [], total: paged.total.require("total"))
+            return try OrdersPage(
+                items: (paged.data ?? []).compactMap(CustomerOrderSummary.init),
+                total: paged.total.require("total")
+            )
         }
     }
 
-    func getById(orderId: String) async -> ApiResult<OrderItem> {
+    func getById(orderId: String) async -> ApiResult<CustomerOrderDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerOrderAPI.orderGetById(orderId: orderId)
+            try await CustomerOrderDetail(CustomerOrderAPI.orderGetById(orderId: orderId))
         }
     }
 

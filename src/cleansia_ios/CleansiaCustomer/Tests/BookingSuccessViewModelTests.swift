@@ -11,7 +11,7 @@ private final class SuccessLoadRecorder: @unchecked Sendable {
 final class BookingSuccessViewModelTests: XCTestCase {
     private func makeVM(
         orderId: String = "o-1",
-        order: OrderItem? = nil,
+        order: CustomerOrderDetail? = nil,
         recorder: SuccessLoadRecorder = SuccessLoadRecorder()
     ) -> BookingSuccessViewModel {
         BookingSuccessViewModel(
@@ -32,7 +32,7 @@ final class BookingSuccessViewModelTests: XCTestCase {
     }
 
     func testLoadSuccessPopulatesTheSummaryOrder() async {
-        let order = OrderItem(id: "o-1", totalPrice: 1200, confirmationCode: "CLN-777")
+        let order = OrderFixtures.detail(id: "o-1", confirmationCode: "CLN-777", total: 1200)
         let vm = makeVM(order: order)
 
         await vm.load()
@@ -63,7 +63,7 @@ final class BookingSuccessViewModelTests: XCTestCase {
 
     func testLoadIsSingleFlight() async {
         let recorder = SuccessLoadRecorder()
-        let vm = makeVM(order: OrderItem(id: "o-1"), recorder: recorder)
+        let vm = makeVM(order: OrderFixtures.detail(id: "o-1"), recorder: recorder)
 
         await vm.load()
         await vm.load()
@@ -82,7 +82,7 @@ final class BookingSuccessViewModelTests: XCTestCase {
     }
 
     func testEffectiveCodePrefersTheLoadedOrdersCode() async {
-        let vm = makeVM(order: OrderItem(confirmationCode: "SERVER-1"))
+        let vm = makeVM(order: OrderFixtures.detail(confirmationCode: "SERVER-1"))
 
         await vm.load()
 
@@ -90,7 +90,7 @@ final class BookingSuccessViewModelTests: XCTestCase {
     }
 
     func testEffectiveCodeFallsBackWhileLoadingAndWhenTheLoadedCodeIsBlank() async {
-        let vm = makeVM(order: OrderItem(confirmationCode: " "))
+        let vm = makeVM(order: OrderFixtures.detail(confirmationCode: " "))
 
         XCTAssertEqual(vm.effectiveCode(fallback: "NAV-1"), "NAV-1")
         await vm.load()

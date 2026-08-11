@@ -337,14 +337,14 @@ final class OrderEtaWindowTests: XCTestCase {
     private func order(
         statusValue: Int,
         cleaningDateTime: Date? = nil,
-        estimatedTime: Int? = 90,
-        history: [OrderStatusTrackDto]? = nil
-    ) -> OrderItem {
-        OrderItem(
+        estimatedMinutes: Int = 90,
+        history: [OrderStatusTrackDto] = []
+    ) -> CustomerOrderDetail {
+        OrderFixtures.detail(
             id: "o1",
+            statusCode: Code(type: "OrderStatus", name: nil, value: statusValue),
             cleaningDateTime: cleaningDateTime,
-            estimatedTime: estimatedTime,
-            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue),
+            estimatedMinutes: estimatedMinutes,
             statusHistory: history
         )
     }
@@ -400,7 +400,7 @@ final class OrderEtaWindowTests: XCTestCase {
         let window = EtaWindow.forOrder(order(
             statusValue: 4,
             cleaningDateTime: booked,
-            estimatedTime: 2,
+            estimatedMinutes: 2,
             history: [OrderFixtures.track(statusValue: 4, createdOn: startedAt)]
         ))
 
@@ -428,8 +428,11 @@ final class OrderEtaWindowTests: XCTestCase {
         XCTAssertNil(window?.phaseEnd)
     }
 
-    func testAMissingEstimateStillYieldsAValidWindow() {
-        let window = EtaWindow.forOrder(order(statusValue: 3, cleaningDateTime: booked, estimatedTime: nil))
+    /// A null estimate can no longer reach here — `CustomerOrderDetail` refuses it, precisely because
+    /// this method is the one reader that would have turned it into a one-minute cleaning. A server-sent
+    /// ZERO still can, and the floor is what keeps the card off a zero-length countdown.
+    func testAZeroEstimateStillYieldsAValidWindow() {
+        let window = EtaWindow.forOrder(order(statusValue: 3, cleaningDateTime: booked, estimatedMinutes: 0))
 
         XCTAssertEqual(window?.scheduledEnd, booked.addingTimeInterval(60))
     }

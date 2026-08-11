@@ -111,13 +111,13 @@ final class LiveActivityRegistrarTests: XCTestCase {
 final class OrderLiveActivitySyncTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_700_000_000)
 
-    private func order(statusValue: Int, history: [OrderStatusTrackDto]? = nil) -> OrderItem {
-        OrderItem(
+    private func order(statusValue: Int, history: [OrderStatusTrackDto] = []) -> CustomerOrderDetail {
+        OrderFixtures.detail(
             id: "o1",
+            statusCode: Code(type: "OrderStatus", name: nil, value: statusValue),
             displayOrderNumber: "1042",
             cleaningDateTime: start,
-            estimatedTime: 90,
-            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue),
+            estimatedMinutes: 90,
             statusHistory: history
         )
     }

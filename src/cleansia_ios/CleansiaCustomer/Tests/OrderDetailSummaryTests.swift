@@ -9,17 +9,17 @@ final class OrderDetailSummaryTests: XCTestCase {
     // MARK: - Subtotal row
 
     func testSubtotalIsHiddenWhenNothingWasDiscounted() {
-        let order = OrderItem(totalPrice: 2100, originalSubtotal: 2100)
+        let order = OrderFixtures.detail(total: 2100, originalSubtotal: 2100)
         XCTAssertNil(OrderPriceBreakdown.resolve(order).subtotal)
     }
 
     func testSubtotalIsHiddenWhenTheWireCarriesNone() {
-        let order = OrderItem(totalPrice: 2100, originalSubtotal: 0)
+        let order = OrderFixtures.detail(total: 2100, originalSubtotal: 0)
         XCTAssertNil(OrderPriceBreakdown.resolve(order).subtotal)
     }
 
     func testSubtotalShowsWhenItDiffersFromTheTotal() {
-        let order = OrderItem(totalPrice: 1890, originalSubtotal: 2100)
+        let order = OrderFixtures.detail(total: 1890, originalSubtotal: 2100)
         XCTAssertEqual(OrderPriceBreakdown.resolve(order).subtotal, 2100)
         XCTAssertEqual(OrderPriceBreakdown.resolve(order).total, 1890)
     }
@@ -27,8 +27,8 @@ final class OrderDetailSummaryTests: XCTestCase {
     // MARK: - Discount lines
 
     func testEveryNonZeroSourceGetsItsOwnLineInAndroidsOrder() {
-        let order = OrderItem(
-            totalPrice: 1400,
+        let order = OrderFixtures.detail(
+            total: 1400,
             originalSubtotal: 2100,
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
@@ -48,12 +48,12 @@ final class OrderDetailSummaryTests: XCTestCase {
     /// top, so a member who paid for it sees a struck-through subtotal and no
     /// membership line — the only place the app can say where the money went.
     func testTopTierPlusMemberSeesTheTierLineAndNoMembershipLine() {
-        let order = OrderItem(
-            totalPrice: 1890,
+        let order = OrderFixtures.detail(
+            total: 1890,
             originalSubtotal: 2100,
-            appliedDiscountSource: ._4,
             tierDiscountAmount: 210,
-            membershipDiscountAmount: 0
+            membershipDiscountAmount: 0,
+            appliedDiscountSource: ._4
         )
         let discounts = OrderPriceBreakdown.resolve(order).discounts
         XCTAssertEqual(discounts, [.init(source: .tier, amount: 210)])
@@ -61,7 +61,7 @@ final class OrderDetailSummaryTests: XCTestCase {
     }
 
     func testAbsentAndNegativeAmountsNeverRenderALine() {
-        let order = OrderItem(totalPrice: 2100, originalSubtotal: 2100, tierDiscountAmount: -5)
+        let order = OrderFixtures.detail(total: 2100, originalSubtotal: 2100, tierDiscountAmount: -5)
         XCTAssertTrue(OrderPriceBreakdown.resolve(order).discounts.isEmpty)
     }
 
@@ -78,7 +78,7 @@ final class OrderDetailSummaryTests: XCTestCase {
 
     func testAPaymentMethodWithNoCodeAndNoNameIsNotRendered() {
         XCTAssertNil(method(value: 9))
-        XCTAssertNil(OrderPriceBreakdown.resolve(OrderItem()).paymentMethod)
+        XCTAssertNil(OrderPriceBreakdown.resolve(OrderFixtures.detail()).paymentMethod)
     }
 
     // MARK: - Payment status
@@ -99,30 +99,30 @@ final class OrderDetailSummaryTests: XCTestCase {
 
     func testAPaymentStatusWithNoCodeAndNoNameIsNotRendered() {
         XCTAssertNil(status(value: 6))
-        XCTAssertNil(OrderPriceBreakdown.resolve(OrderItem()).paymentStatus)
+        XCTAssertNil(OrderPriceBreakdown.resolve(OrderFixtures.detail()).paymentStatus)
     }
 
     // MARK: - Hero facts
 
     func testTheCodeIsCarriedForwardSoTheLiveHeroCanShowIt() {
-        let order = OrderItem(confirmationCode: "CLN-777")
+        let order = OrderFixtures.detail(confirmationCode: "CLN-777")
         XCTAssertEqual(OrderHeroFacts.resolve(order).confirmationCode, "CLN-777")
     }
 
     func testABlankCodeIsNoCode() {
-        XCTAssertNil(OrderHeroFacts.resolve(OrderItem(confirmationCode: "  ")).confirmationCode)
-        XCTAssertNil(OrderHeroFacts.resolve(OrderItem()).confirmationCode)
+        XCTAssertNil(OrderHeroFacts.resolve(OrderFixtures.detail(confirmationCode: "  ")).confirmationCode)
+        XCTAssertNil(OrderHeroFacts.resolve(OrderFixtures.detail()).confirmationCode)
     }
 
     func testTheStruckSubtotalNeedsBothADiscountSourceAndAHigherSubtotal() {
         XCTAssertNil(OrderHeroFacts.resolve(
-            OrderItem(totalPrice: 1890, originalSubtotal: 2100, appliedDiscountSource: ._0)
+            OrderFixtures.detail(total: 1890, originalSubtotal: 2100, appliedDiscountSource: ._0)
         ).struckSubtotal)
         XCTAssertNil(OrderHeroFacts.resolve(
-            OrderItem(totalPrice: 2100, originalSubtotal: 2100, appliedDiscountSource: ._1)
+            OrderFixtures.detail(total: 2100, originalSubtotal: 2100, appliedDiscountSource: ._1)
         ).struckSubtotal)
         XCTAssertEqual(OrderHeroFacts.resolve(
-            OrderItem(totalPrice: 1890, originalSubtotal: 2100, appliedDiscountSource: ._1)
+            OrderFixtures.detail(total: 1890, originalSubtotal: 2100, appliedDiscountSource: ._1)
         ).struckSubtotal, 2100)
     }
 
@@ -138,11 +138,11 @@ final class OrderDetailSummaryTests: XCTestCase {
     // MARK: - Fixtures
 
     private func method(value: Int, name: String? = nil) -> OrderPaymentMethod? {
-        OrderPriceBreakdown.resolve(OrderItem(paymentType: Code(name: name, value: value))).paymentMethod
+        OrderPriceBreakdown.resolve(OrderFixtures.detail(paymentType: Code(name: name, value: value))).paymentMethod
     }
 
     private func status(value: Int, name: String? = nil) -> OrderPaymentStatus? {
-        OrderPriceBreakdown.resolve(OrderItem(paymentStatus: Code(name: name, value: value))).paymentStatus
+        OrderPriceBreakdown.resolve(OrderFixtures.detail(paymentStatus: Code(name: name, value: value))).paymentStatus
     }
 
     private func chips(_ source: AppliedDiscountSource) -> [OrderDiscountSource] {

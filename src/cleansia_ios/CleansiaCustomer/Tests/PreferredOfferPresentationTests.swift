@@ -91,9 +91,11 @@ final class PreferredOfferPresentationTests: XCTestCase {
     /// The block's arrival is the whole gate, so it does not need a status to be one — and the wire
     /// carries the status inside an envelope that can arrive empty.
     func testTheOrderStatusIsNotReadAtAll() {
-        let withBlock = OrderItem(orderStatus: nil, preferredOffer: details(state: ._3))
-        XCTAssertEqual(PreferredOfferPresentation.disclosure(for: withBlock), .closed)
-        XCTAssertNil(PreferredOfferPresentation.disclosure(for: OrderItem(orderStatus: nil)))
+        XCTAssertEqual(
+            PreferredOfferPresentation.disclosure(for: statelessOrder(offer: details(state: ._3))),
+            .closed
+        )
+        XCTAssertNil(PreferredOfferPresentation.disclosure(for: statelessOrder(offer: nil)))
     }
 
     private func details(
@@ -104,7 +106,11 @@ final class PreferredOfferPresentationTests: XCTestCase {
         PreferredOfferDetails(state: state, cleanerName: name, respondByUtc: respondBy, canChooseAnother: false)
     }
 
-    private func order(status: OrderStatus = ._2, offer: PreferredOfferDetails?) -> OrderItem {
-        OrderItem(orderStatus: Code(value: status.rawValue), preferredOffer: offer)
+    private func order(status: OrderStatus = ._2, offer: PreferredOfferDetails?) -> CustomerOrderDetail {
+        OrderFixtures.detail(statusCode: Code(value: status.rawValue), preferredOffer: offer)
+    }
+
+    private func statelessOrder(offer: PreferredOfferDetails?) -> CustomerOrderDetail {
+        OrderFixtures.detail(statusCode: nil, preferredOffer: offer)
     }
 }

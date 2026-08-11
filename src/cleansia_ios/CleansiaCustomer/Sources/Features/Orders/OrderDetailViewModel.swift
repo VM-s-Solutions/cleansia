@@ -19,7 +19,7 @@ extension PhotosUiState {
 
 @MainActor
 final class OrderDetailViewModel: ViewModel {
-    @Published private(set) var state: UiState<OrderItem> = .loading
+    @Published private(set) var state: UiState<CustomerOrderDetail> = .loading
     @Published private(set) var photos: PhotosUiState = .idle
     @Published private(set) var cancelState: ActionState = .idle
     @Published private(set) var cancellationQuote: UiState<CancellationQuote> = .loading
@@ -136,7 +136,7 @@ final class OrderDetailViewModel: ViewModel {
 
     // MARK: - Active-order poller
 
-    private func evaluatePoller(for order: OrderItem) {
+    private func evaluatePoller(for order: CustomerOrderDetail) {
         if OrderStatusGroup.isActive(order.status) {
             guard pollTask == nil else { return }
             pollTask = Task { [weak self, pollInterval] in
@@ -165,7 +165,7 @@ final class OrderDetailViewModel: ViewModel {
     /// The window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
     /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
     /// counts against what really happened.
-    private func syncLiveActivity(for order: OrderItem) {
+    private func syncLiveActivity(for order: CustomerOrderDetail) {
         guard let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
         let orderNumber = order.displayOrderNumber ?? ""
@@ -214,7 +214,7 @@ final class OrderDetailViewModel: ViewModel {
         let payload = (trimmed?.isEmpty ?? true) ? nil : trimmed
         switch await client.cancel(orderId: orderId, reason: payload) {
         case let .success(response):
-            let currency = state.loadedValue?.currency?.code
+            let currency = state.loadedValue?.currencyCode
             let message: String = if let refunded = response.refunded {
                 L10n.OrderCancel.successWithRefund(OrdersFormat.price(refunded, currencyCode: currency))
             } else {

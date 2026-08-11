@@ -247,10 +247,10 @@ final class CreateRecurringViewModel: ViewModel {
     private func prefill(from orderId: String) async {
         guard case let .success(order) = await orderClient.getById(orderId: orderId) else { return }
         var state = formState
-        state.rooms = max(0, order.rooms ?? state.rooms)
-        state.bathrooms = max(0, order.bathrooms ?? state.bathrooms)
-        state.selectedServiceIds = Set((order.selectedServices ?? []).compactMap(\.id))
-        state.selectedPackageIds = Set((order.selectedPackages ?? []).compactMap(\.id))
+        state.rooms = max(0, order.rooms)
+        state.bathrooms = max(0, order.bathrooms)
+        state.selectedServiceIds = Set(order.services.compactMap(\.id))
+        state.selectedPackageIds = Set(order.packages.compactMap(\.id))
         if let paymentType = order.paymentType?.value {
             state.paymentType = paymentType
         }

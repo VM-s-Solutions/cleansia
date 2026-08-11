@@ -8,7 +8,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var pageError: ApiError?
     private(set) var pageRequests: [(offset: Int, limit: Int)] = []
 
-    var detailResults: [ApiResult<OrderItem>] = []
+    var detailResults: [ApiResult<CustomerOrderDetail>] = []
     private(set) var detailCallCount = 0
 
     var cancelResult: ApiResult<OrderCancellation> = .success(
@@ -42,7 +42,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         return .success(pages[index])
     }
 
-    func getById(orderId _: String) async -> ApiResult<OrderItem> {
+    func getById(orderId _: String) async -> ApiResult<CustomerOrderDetail> {
         defer { detailCallCount += 1 }
         let index = min(detailCallCount, detailResults.count - 1)
         guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
@@ -86,18 +86,148 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     }
 }
 
+/// Domain fixtures, built through the memberwise initializers rather than through the wire mappers.
+/// Every default here is a value the wire can legitimately carry, so nothing assembled below is a
+/// payload the app would have refused — and the refusals themselves are driven against the real
+/// mappers in `CustomerWireContractTests`, which is where they belong.
 enum OrderFixtures {
-    static func listItem(id: String, statusValue: Int) -> OrderListItem {
-        OrderListItem(
+    static func summary(id: String, statusValue: Int) -> CustomerOrderSummary {
+        summary(id: id, statusCode: Code(type: "OrderStatus", name: nil, value: statusValue))
+    }
+
+    static func summary(
+        id: String = "o1",
+        statusCode: Code? = nil,
+        displayOrderNumber: String? = nil,
+        cleaningDateTime: Date? = nil,
+        estimatedMinutes: Int = 0,
+        address: String? = nil,
+        total: Double = 0,
+        currencyCode: String? = nil,
+        services: [CustomerOrderLineName] = [],
+        packages: [CustomerOrderLineName] = []
+    ) -> CustomerOrderSummary {
+        CustomerOrderSummary(
             id: id,
-            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue)
+            displayOrderNumber: displayOrderNumber,
+            statusCode: statusCode,
+            cleaningDateTime: cleaningDateTime,
+            estimatedMinutes: estimatedMinutes,
+            address: address,
+            total: total,
+            currencyCode: currencyCode,
+            services: services,
+            packages: packages
         )
     }
 
-    static func detail(id: String = "o1", statusValue: Int) -> OrderItem {
-        OrderItem(
+    static func detail(id: String = "o1", statusValue: Int) -> CustomerOrderDetail {
+        detail(id: id, statusCode: Code(type: "OrderStatus", name: nil, value: statusValue))
+    }
+
+    static func detail(
+        id: String? = "o1",
+        statusCode: Code? = nil,
+        displayOrderNumber: String? = nil,
+        cleaningDateTime: Date? = nil,
+        completedAt: Date? = nil,
+        confirmationCode: String? = nil,
+        receiptNumber: String? = nil,
+        recurringTemplateId: String? = nil,
+        address: OrderAddress? = nil,
+        rooms: Int = 0,
+        bathrooms: Int = 0,
+        estimatedMinutes: Int = 0,
+        extras: [String: Bool] = [:],
+        services: [CustomerOrderService] = [],
+        packages: [CustomerOrderPackage] = [],
+        notes: String? = nil,
+        specialInstructions: String? = nil,
+        accessInstructions: String? = nil,
+        total: Double = 0,
+        originalSubtotal: Double = 0,
+        tierDiscountAmount: Double? = nil,
+        membershipDiscountAmount: Double? = nil,
+        promoDiscountAmount: Double? = nil,
+        appliedDiscountSource: AppliedDiscountSource? = nil,
+        paymentType: Code? = nil,
+        paymentStatus: Code? = nil,
+        currencyCode: String? = nil,
+        assignedEmployees: [AssignedEmployeeDto] = [],
+        statusHistory: [OrderStatusTrackDto] = [],
+        review: CustomerOrderReview? = nil,
+        preferredOffer: PreferredOfferDetails? = nil
+    ) -> CustomerOrderDetail {
+        CustomerOrderDetail(
             id: id,
-            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue)
+            displayOrderNumber: displayOrderNumber,
+            statusCode: statusCode,
+            cleaningDateTime: cleaningDateTime,
+            completedAt: completedAt,
+            confirmationCode: confirmationCode,
+            receiptNumber: receiptNumber,
+            recurringTemplateId: recurringTemplateId,
+            address: address,
+            rooms: rooms,
+            bathrooms: bathrooms,
+            estimatedMinutes: estimatedMinutes,
+            extras: extras,
+            services: services,
+            packages: packages,
+            notes: notes,
+            specialInstructions: specialInstructions,
+            accessInstructions: accessInstructions,
+            total: total,
+            originalSubtotal: originalSubtotal,
+            tierDiscountAmount: tierDiscountAmount,
+            membershipDiscountAmount: membershipDiscountAmount,
+            promoDiscountAmount: promoDiscountAmount,
+            appliedDiscountSource: appliedDiscountSource,
+            paymentType: paymentType,
+            paymentStatus: paymentStatus,
+            currencyCode: currencyCode,
+            assignedEmployees: assignedEmployees,
+            statusHistory: statusHistory,
+            review: review,
+            preferredOffer: preferredOffer
+        )
+    }
+
+    static func service(
+        id: String? = nil,
+        name: String? = nil,
+        description: String? = nil,
+        estimatedMinutes: Int = 0,
+        translations: [String: Translation]? = nil
+    ) -> CustomerOrderService {
+        CustomerOrderService(
+            id: id,
+            name: name,
+            description: description,
+            estimatedMinutes: estimatedMinutes,
+            translations: translations
+        )
+    }
+
+    static func package(
+        id: String? = nil,
+        name: String? = nil,
+        description: String? = nil,
+        price: Double = 0,
+        estimatedMinutes: Int = 0,
+        currencyCode: String? = nil,
+        includedServices: [String] = [],
+        translations: [String: Translation]? = nil
+    ) -> CustomerOrderPackage {
+        CustomerOrderPackage(
+            id: id,
+            name: name,
+            description: description,
+            price: price,
+            estimatedMinutes: estimatedMinutes,
+            currencyCode: currencyCode,
+            includedServices: includedServices,
+            translations: translations
         )
     }
 

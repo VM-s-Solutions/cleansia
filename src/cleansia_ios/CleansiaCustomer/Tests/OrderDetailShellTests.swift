@@ -67,25 +67,22 @@ final class OrderDetailShellTests: XCTestCase {
     }
 
     func testMissingEitherCoordinateHasNoMap() {
-        var order = orderAt(latitude: 50, longitude: 14, status: ._2)
-        order.address?.latitude = nil
-        XCTAssertNil(OrderDetailMap.coordinate(for: order))
-        order = orderAt(latitude: 50, longitude: 14, status: ._2)
-        order.address?.longitude = nil
-        XCTAssertNil(OrderDetailMap.coordinate(for: order))
+        XCTAssertNil(OrderDetailMap.coordinate(for: orderAt(latitude: nil, longitude: 14, status: ._2)))
+        XCTAssertNil(OrderDetailMap.coordinate(for: orderAt(latitude: 50, longitude: nil, status: ._2)))
     }
 
     func testMissingAddressHasNoMap() {
-        XCTAssertNil(OrderDetailMap.coordinate(for: OrderItem(orderStatus: Code(value: 2))))
+        XCTAssertNil(OrderDetailMap.coordinate(for: OrderFixtures.detail(statusCode: Code(value: 2))))
     }
 
     // MARK: - Instructions split
 
     func testAccessInstructionsAreNeverAPlainBlock() {
-        var order = OrderItem()
-        order.specialInstructions = "Use the eco products under the sink."
-        order.accessInstructions = "Key box by the gate, code 4417."
-        order.notes = "Cat is friendly."
+        let order = OrderFixtures.detail(
+            notes: "Cat is friendly.",
+            specialInstructions: "Use the eco products under the sink.",
+            accessInstructions: "Key box by the gate, code 4417."
+        )
 
         let plain = OrderInstructions.plainBlocks(order).map(\.text)
         XCTAssertEqual(plain, ["Use the eco products under the sink.", "Cat is friendly."])
@@ -93,32 +90,30 @@ final class OrderDetailShellTests: XCTestCase {
     }
 
     func testBlankAccessInstructionsProduceNoSecret() {
-        var order = OrderItem()
-        order.accessInstructions = "   \n "
+        let order = OrderFixtures.detail(accessInstructions: "   \n ")
         XCTAssertNil(OrderInstructions.secret(order))
     }
 
     func testACardWithNothingButAccessInstructionsStillRenders() {
-        var order = OrderItem()
-        order.accessInstructions = "Alarm code 9911."
+        let order = OrderFixtures.detail(accessInstructions: "Alarm code 9911.")
         XCTAssertTrue(OrderInstructions.plainBlocks(order).isEmpty)
         XCTAssertTrue(OrderInstructions.hasAnything(order))
     }
 
     func testAnEmptyOrderHasNoInstructionsCard() {
-        XCTAssertFalse(OrderInstructions.hasAnything(OrderItem()))
+        XCTAssertFalse(OrderInstructions.hasAnything(OrderFixtures.detail()))
     }
 
     // MARK: - Fixtures
 
-    private func orderAt(latitude: Double, longitude: Double, status: Int) -> OrderItem {
-        OrderItem(
-            address: OrderAddress(street: "Vinohradská 12", latitude: latitude, longitude: longitude),
-            orderStatus: Code(value: status)
+    private func orderAt(latitude: Double?, longitude: Double?, status: Int) -> CustomerOrderDetail {
+        OrderFixtures.detail(
+            statusCode: Code(value: status),
+            address: OrderAddress(street: "Vinohradská 12", latitude: latitude, longitude: longitude)
         )
     }
 
-    private func orderAt(latitude: Double, longitude: Double, status: OrderStatus) -> OrderItem {
+    private func orderAt(latitude: Double?, longitude: Double?, status: OrderStatus) -> CustomerOrderDetail {
         orderAt(latitude: latitude, longitude: longitude, status: status.rawValue)
     }
 }

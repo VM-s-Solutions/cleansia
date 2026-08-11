@@ -99,6 +99,100 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(refused.apiErrorOrNil?.code, ApiError.wireContractCode)
     }
 
+    // MARK: the order detail — the price the customer paid, and the scope it was quoted against
+
+    func testAFullyPopulatedOrderDetailMaps() throws {
+        var payload = OrderItem.wireComplete()
+        payload.currency = CurrencyDetailDto(code: "CZK")
+        payload.selectedServices = [ServiceDetails(name: "Deep clean", estimatedTime: 120)]
+        payload.selectedPackages = [PackageDetails(name: "Move-out", price: 800, estimatedTime: 60)]
+        payload.review = OrderReviewDto(rating: 4, comment: "Spotless.")
+
+        let detail = try CustomerOrderDetail(payload)
+
+        XCTAssertEqual(detail.total, 1590)
+        XCTAssertEqual(detail.originalSubtotal, 2100)
+        XCTAssertEqual(detail.rooms, 3)
+        XCTAssertEqual(detail.estimatedMinutes, 180)
+        XCTAssertEqual(detail.packages.first?.price, 800)
+        XCTAssertEqual(detail.review?.rating, 4)
+        XCTAssertEqual(detail.currencyCode, "CZK")
+    }
+
+    func testABrokenOrderDetailIsRefusedRatherThanPricedAtZero() {
+        for (field, break_) in [
+            ("totalPrice", { (dto: inout OrderItem) in dto.totalPrice = nil }),
+            ("originalSubtotal", { dto in dto.originalSubtotal = nil }),
+            ("rooms", { dto in dto.rooms = nil }),
+            ("bathrooms", { dto in dto.bathrooms = nil }),
+            ("estimatedTime", { dto in dto.estimatedTime = nil })
+        ] {
+            var payload = OrderItem.wireComplete()
+            break_(&payload)
+            assertRefused(field) { try CustomerOrderDetail(payload) }
+        }
+    }
+
+    /// A line refuses with the order rather than dropping out of it: the lines and the total are read
+    /// side by side, so a silently shorter or cheaper breakdown is a total that stops adding up.
+    func testABrokenCatalogLineRefusesWithTheOrder() {
+        for (field, break_) in [
+            ("price", { (dto: inout OrderItem) in dto.selectedPackages = [PackageDetails(estimatedTime: 60)] }),
+            ("estimatedTime", { dto in dto.selectedPackages = [PackageDetails(price: 800)] }),
+            ("estimatedTime", { dto in dto.selectedServices = [ServiceDetails(name: "Deep clean")] })
+        ] {
+            var payload = OrderItem.wireComplete()
+            break_(&payload)
+            assertRefused(field) { try CustomerOrderDetail(payload) }
+        }
+    }
+
+    /// A review always carries a rating. Coerced, the card draws five empty stars over the customer's
+    /// own comment — a verdict they never gave rather than a blank.
+    func testAReviewWithNoRatingRefusesRatherThanDrawingZeroStars() {
+        var payload = OrderItem.wireComplete()
+        payload.review = OrderReviewDto(rating: nil, comment: "Spotless.")
+        assertRefused("rating") { try CustomerOrderDetail(payload) }
+    }
+
+    /// The one identifier this surface does NOT refuse: the screen is routed with the order id and
+    /// keeps it, so a null here has an equally authoritative replacement and refusing would blank a
+    /// screen that navigates perfectly.
+    func testTheDetailKeepsMappingWithoutAnIdBecauseTheRouteCarriesOne() throws {
+        var payload = OrderItem.wireComplete()
+        payload.id = nil
+        XCTAssertNil(try CustomerOrderDetail(payload).id)
+    }
+
+    // MARK: the orders page — the row's own money, and the row that cannot be opened
+
+    /// Because the row is an element of the page, refusing it refuses the page: the client maps the
+    /// rows with a `rethrows` `compactMap`, so an order is priced as the server priced it or the list
+    /// says it could not be loaded.
+    func testAnOrderRowRefusesItsOwnMoneyRatherThanShowingItAtZero() {
+        for (field, break_) in [
+            ("totalPrice", { (dto: inout OrderListItem) in dto.totalPrice = nil }),
+            ("estimatedTime", { dto in dto.estimatedTime = nil })
+        ] {
+            var payload = OrderListItem.wireComplete()
+            break_(&payload)
+            assertRefused(field) { try CustomerOrderSummary(payload) }
+        }
+    }
+
+    /// The other half of the same ruling, and it goes the other way: an id-less row is already dead
+    /// because every card navigates by id, and nothing on the list or Home sums or counts these rows
+    /// against a figure — the paged `total` is the server's own count — so dropping one falsifies
+    /// nothing while refusing the page would hide every order the server answered correctly.
+    func testARowWithNoUsableIdIsDroppedRatherThanRefusingThePage() throws {
+        for missing in [nil, "", "   "] {
+            var payload = OrderListItem.wireComplete()
+            payload.id = missing
+            XCTAssertNil(try CustomerOrderSummary(payload), "\(missing.debugDescription) is not a navigable row")
+        }
+        XCTAssertEqual(try CustomerOrderSummary(.wireComplete())?.total, 1590)
+    }
+
     // MARK: the express-waiver quota — a claim, not a number
 
     /// The one case where the coerced value is the OPPOSITE of what the server's null means:

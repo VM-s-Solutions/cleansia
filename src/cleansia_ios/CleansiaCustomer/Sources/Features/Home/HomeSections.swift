@@ -27,13 +27,13 @@ enum HomeSections {
     }
 
     /// First Completed order in repo (recent-first) order (`HomeTab.kt:170-172`).
-    static func mostRecentCompleted(_ orders: [OrderListItem]) -> OrderListItem? {
+    static func mostRecentCompleted(_ orders: [CustomerOrderSummary]) -> CustomerOrderSummary? {
         orders.first { OrderStatusGroup.isCompleted($0.status) }
     }
 
     /// Defensive local sort by cleaningDateTime desc, nils last, top 3
     /// (`HomeTab.kt:177-181`).
-    static func recentForDisplay(_ orders: [OrderListItem]) -> [OrderListItem] {
+    static func recentForDisplay(_ orders: [CustomerOrderSummary]) -> [CustomerOrderSummary] {
         let sorted = orders.sorted {
             ($0.cleaningDateTime ?? .distantPast) > ($1.cleaningDateTime ?? .distantPast)
         }
@@ -41,7 +41,7 @@ enum HomeSections {
     }
 
     /// Render-gate for the recent block (`HomeTab.kt:185`).
-    static func showRecent(recent: [OrderListItem], ordersLoaded: Bool, ordersLoading: Bool) -> Bool {
+    static func showRecent(recent: [CustomerOrderSummary], ordersLoaded: Bool, ordersLoading: Bool) -> Bool {
         !recent.isEmpty && (ordersLoaded || !ordersLoading)
     }
 
@@ -84,11 +84,15 @@ enum HomeSections {
     /// English name, and the suffix routes through the same localized key as
     /// the Orders-tab summary (`OrdersFormat.servicesSummary`) so both render
     /// wholly in the app language.
-    static func recentBookingTitle(_ order: OrderListItem, fallback: String, languageCode: String) -> String {
-        let serviceNames = (order.selectedServices ?? []).compactMap {
+    static func recentBookingTitle(
+        _ order: CustomerOrderSummary,
+        fallback: String,
+        languageCode: String
+    ) -> String {
+        let serviceNames = order.services.compactMap {
             localizedLineName($0.name, translations: $0.translations, languageCode: languageCode)
         }
-        let packageNames = (order.selectedPackages ?? []).compactMap {
+        let packageNames = order.packages.compactMap {
             localizedLineName($0.name, translations: $0.translations, languageCode: languageCode)
         }
         let names = serviceNames + packageNames
@@ -107,11 +111,11 @@ enum HomeSections {
 
     /// Mapped status label, else the wire name, else nil → chip hidden
     /// (`HomeTab.kt:1021-1023`).
-    static func statusChipLabel(_ order: OrderListItem) -> String? {
+    static func statusChipLabel(_ order: CustomerOrderSummary) -> String? {
         if let status = order.status {
             return L10n.Orders.statusLabel(status)
         }
-        return order.orderStatus?.name?.nonBlank
+        return order.statusCode?.name?.nonBlank
     }
 
     /// "MMM d" for the Order-again subtitle, nil-safe (`HomeTab.kt:684-692`).

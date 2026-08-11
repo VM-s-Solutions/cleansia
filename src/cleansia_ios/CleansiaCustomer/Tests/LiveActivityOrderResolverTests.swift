@@ -9,12 +9,12 @@ import XCTest
 /// answers wrong the backend registers an update token against the wrong order — or none at all, which is
 /// the "card appears and then freezes" symptom.
 final class LiveActivityOrderResolverTests: XCTestCase {
-    private func page(_ items: [OrderListItem]) -> OrdersPage {
+    private func page(_ items: [CustomerOrderSummary]) -> OrdersPage {
         OrdersPage(items: items, total: items.count)
     }
 
-    private func listItem(id: String, orderNumber: String?) -> OrderListItem {
-        OrderListItem(id: id, displayOrderNumber: orderNumber)
+    private func listItem(id: String, orderNumber: String?) -> CustomerOrderSummary {
+        OrderFixtures.summary(id: id, displayOrderNumber: orderNumber)
     }
 
     func testResolvesTheIdOfTheMatchingOrderNumber() async {

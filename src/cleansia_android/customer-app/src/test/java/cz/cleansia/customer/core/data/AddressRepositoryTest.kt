@@ -113,6 +113,23 @@ class AddressRepositoryTest {
         assertTrue(result.error is ApiError.Server)
     }
 
+    /**
+     * The consequence that makes this list refuse rather than default: [AddressRepository.refreshFromServer]
+     * writes its answer straight to DataStore, so `orEmpty()` on an unanswered read deleted the
+     * customer's saved homes off the handset and reported Success for it. Reaching `writeCache` at
+     * all would blow up on the mocked Context, so the Error IS the assertion that it was not reached.
+     */
+    @Test
+    fun refreshFromServer_givenA2xxWithNoBody_refusesInsteadOfWipingTheCachedAddresses() = runTest {
+        signedIn()
+        coEvery { api.getMine() } returns Response.success(null)
+
+        val result = newRepo().refreshFromServer()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Server)
+    }
+
     @Test
     fun refreshFromServer_whenApiThrows_returnsNetworkErrorSilently() = runTest {
         signedIn()

@@ -14,9 +14,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -67,6 +69,24 @@ class RecurringBookingWireTest {
 
     private suspend fun templates(body: String) = serving(body) { it.getMine() }.body()
 
+    /**
+     * The list refuses by throwing now, so the assertion is on the field the refusal names rather
+     * than on a null body — the whole point of the idiom is that the name survives.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
+
     private suspend fun loadedTemplates(body: String): List<RecurringBookingTemplateDto> {
         val dto = templates(body)
         assertNotNull("expected the captured payload to map", dto)
@@ -107,20 +127,14 @@ class RecurringBookingWireTest {
     @Test
     fun aMissingRoomCountRefusesTheListRatherThanBeingWrittenBackAsZero() = runTest {
         listOf("rooms", "bathrooms").forEach { field ->
-            assertNull(
-                "a missing $field must refuse the list rather than round-trip as zero",
-                templates(templatesWithFirstRow { it - field }),
-            )
+            refuses(field) { templates(templatesWithFirstRow { it - field }) }
         }
     }
 
     @Test
     fun aMissingScheduleFieldRefusesTheList() = runTest {
         TEMPLATE_REQUIRED_FIELDS.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the list",
-                templates(templatesWithFirstRow { it - field }),
-            )
+            refuses(field) { templates(templatesWithFirstRow { it - field }) }
         }
     }
 
@@ -136,7 +150,7 @@ class RecurringBookingWireTest {
 
     @Test
     fun aMissingActiveFlagRefusesTheList() = runTest {
-        assertNull(templates(templatesWithFirstRow { it - "isActive" }))
+        refuses("isActive") { templates(templatesWithFirstRow { it - "isActive" }) }
     }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
@@ -147,7 +161,7 @@ class RecurringBookingWireTest {
      */
     @Test
     fun anIdLessTemplateRefusesTheListRatherThanHidingAStandingCharge() = runTest {
-        assertNull(templates(templatesWithFirstRow { it - "id" }))
+        refuses("id") { templates(templatesWithFirstRow { it - "id" }) }
     }
 
     // --- rule 4: collections do default -----------------------------------------
@@ -166,6 +180,16 @@ class RecurringBookingWireTest {
     @Test
     fun aCustomerWithNoTemplatesGetsAnEmptyList() = runTest {
         assertEquals(emptyList<RecurringBookingTemplateDto>(), loadedTemplates("[]"))
+    }
+
+    /**
+     * `[]` and a bodiless 204 are different answers. `[]` is a customer with no standing instruction;
+     * a 204 is the server not answering, and defaulting that to empty states as a fact that nothing
+     * is scheduled — on the only screen that can pause or delete the schedule that still is.
+     */
+    @Test
+    fun aBodylessTemplateListRefusesRatherThanReadingAsNothingScheduled() = runTest {
+        refuses("RecurringBookingTemplateDto[]") { serving("", code = 204) { it.getMine() } }
     }
 
     // --- rule 5: nullable-by-design fields stay nullable ---------------------------

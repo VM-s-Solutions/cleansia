@@ -7,6 +7,8 @@ import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,7 +46,7 @@ class CatalogRepository @Inject constructor(
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    suspend fun refresh(): ApiResult<Unit> {
+    suspend fun refresh(): ApiResult<Unit> = wireResult {
         if (_loading.value) {
             Log.d(TAG, "refresh: already loading, skipping")
             return ApiResult.Success(Unit)
@@ -76,16 +78,17 @@ class CatalogRepository @Inject constructor(
                 return httpError(packagesResp.errorBody(), packagesResp.code())
             }
 
-            // A 200 with no body is CatalogApi refusing a price list it could not map faithfully.
-            // orEmpty() here used to turn that into an empty catalog reported as success, so a broken
-            // wire read as "nothing is bookable today" with nothing on screen saying otherwise.
-            val servicesBody = servicesResp.body() ?: return networkError()
-            val packagesBody = packagesResp.body() ?: return networkError()
+            // Both bodies are total now — CatalogApi refuses a price list it cannot map faithfully,
+            // and the refusal arrives here as a WireContractViolation naming the field rather than as
+            // a null this layer has to guess about. `requiredBody` covers the one case left, a 2xx
+            // that carried no body at all, and names the endpoint.
+            val servicesBody = servicesResp.requiredBody()
+            val packagesBody = packagesResp.requiredBody()
             // Extras stay best-effort by existing design: a refusal here degrades to no add-on
             // section, which is the same thing the customer sees when the endpoint is down, and never
             // a wrong add-on price.
             val extrasBody = if (extrasResp?.isSuccessful == true) extrasResp.body() else null
-            Log.d(TAG, "refresh: parsed servicesBody=${servicesBody?.size} packagesBody=${packagesBody?.size} extrasBody=${extrasBody?.size}")
+            Log.d(TAG, "refresh: parsed servicesBody=${servicesBody.size} packagesBody=${packagesBody.size} extrasBody=${extrasBody?.size}")
 
             _services.value = servicesBody
             _packages.value = packagesBody

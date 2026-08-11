@@ -17,7 +17,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -86,6 +88,24 @@ class CatalogWireTest {
     private suspend fun extras(body: String, code: Int = 200) =
         serving(body, code) { it.getExtras() }.body()
 
+    /**
+     * Services and packages refuse by throwing now, so the assertion is on the field the refusal
+     * names rather than on a null body — the whole point of the idiom is that the name survives.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
+
     private suspend fun loadedServices(body: String): List<ServiceListItem> {
         val list = services(body)
         assertNotNull("expected the captured payload to map", list)
@@ -137,16 +157,13 @@ class CatalogWireTest {
     @Test
     fun aMissingServicePriceRefusesTheWholePriceListRatherThanOfferingItFree() = runTest {
         listOf("basePrice", "perRoomPrice").forEach { field ->
-            assertNull(
-                "a missing $field must refuse the price list rather than offer the service free",
-                services(servicesWithFirstRow { it - field }),
-            )
+            refuses(field) { services(servicesWithFirstRow { it - field }) }
         }
     }
 
     @Test
     fun aMissingPackagePriceRefusesTheWholePriceList() = runTest {
-        assertNull(packages(packagesWithFirstRow { it - "price" }))
+        refuses("price") { packages(packagesWithFirstRow { it - "price" }) }
     }
 
     @Test
@@ -156,7 +173,7 @@ class CatalogWireTest {
 
     @Test
     fun anExplicitNullPriceRefusesTheListToo() = runTest {
-        assertNull(services(servicesWithFirstRow { it + ("basePrice" to JsonNull) }))
+        refuses("basePrice") { services(servicesWithFirstRow { it + ("basePrice" to JsonNull) }) }
     }
 
     // --- rule 2: booleans follow the money rule ---------------------------------
@@ -173,12 +190,12 @@ class CatalogWireTest {
      */
     @Test
     fun aServiceWithoutAnIdRefusesThePageRatherThanVanishingFromTheSubtotal() = runTest {
-        assertNull(services(servicesWithFirstRow { it - "id" }))
+        refuses("id") { services(servicesWithFirstRow { it - "id" }) }
     }
 
     @Test
     fun aPackageWithoutAnIdRefusesThePage() = runTest {
-        assertNull(packages(packagesWithFirstRow { it - "id" }))
+        refuses("id") { packages(packagesWithFirstRow { it - "id" }) }
     }
 
     @Test
@@ -193,13 +210,13 @@ class CatalogWireTest {
 
     @Test
     fun aServiceWhoseCategoryIsBrokenRefusesThePage() = runTest {
-        assertNull(
+        refuses("displayOrder") {
             services(
                 servicesWithFirstRow { row ->
                     row + ("category" to (row["category"]!!.jsonObject - "displayOrder"))
                 },
-            ),
-        )
+            )
+        }
     }
 
     // --- rule 4: collections do default -----------------------------------------
@@ -212,14 +229,20 @@ class CatalogWireTest {
     }
 
     /**
-     * A 204 is a tenant with nothing in its catalog, not a refusal: there is no row whose price could
-     * be wrong, so the picker renders empty rather than erroring. It is also the only way the body
-     * reaches the mapper as null — an empty or literal-`null` 200 fails in the converter above it.
+     * `[]` and a bodiless 204 are NOT the same answer, and separating them is the ruling T-0602 made
+     * per surface. `[]` is a tenant with nothing in its catalog — no row whose price could be wrong,
+     * so the picker renders empty. A 204 is the server declining to send a price list at all, and
+     * defaulting that to empty is the "nothing is bookable today" failure ADR-0048 §D4 fact 4 was
+     * written about: strictly worse than the coercion it looks like, and reported as Success.
+     *
+     * Extras go the other way on exactly this line, and only because they clear all three of B1's
+     * conditions where services and packages fail every one.
      */
     @Test
-    fun aNoContentCatalogIsAnEmptyListRatherThanARefusal() = runTest {
-        assertEquals(emptyList<ServiceListItem>(), services("", code = 204))
-        assertEquals(emptyList<PackageListItem>(), packages("", code = 204))
+    fun aBodylessCatalogRefusesWhileABodylessAddOnListDegrades() = runTest {
+        refuses("ServiceListItem[]") { services("", code = 204) }
+        refuses("PackageListItem[]") { packages("", code = 204) }
+
         assertEquals(emptyList<ExtraListItem>(), extras("", code = 204))
     }
 

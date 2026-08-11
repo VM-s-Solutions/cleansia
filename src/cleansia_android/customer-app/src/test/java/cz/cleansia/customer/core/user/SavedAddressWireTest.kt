@@ -14,9 +14,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -39,6 +41,7 @@ class SavedAddressWireTest {
 
     private suspend fun <T> serving(
         body: String,
+        code: Int = 200,
         onRequest: (RecordedRequest) -> Unit = {},
         call: suspend (SavedAddressApi) -> T,
     ): T {
@@ -47,7 +50,7 @@ class SavedAddressWireTest {
         return try {
             server.enqueue(
                 MockResponse()
-                    .setResponseCode(200)
+                    .setResponseCode(code)
                     .setHeader("Content-Type", "application/json")
                     .setBody(body),
             )
@@ -65,6 +68,24 @@ class SavedAddressWireTest {
     }
 
     private suspend fun addresses(body: String) = serving(body) { it.getMine() }.body()
+
+    /**
+     * The list refuses by throwing now, so the assertion is on the field the refusal names rather
+     * than on a null body — the whole point of the idiom is that the name survives.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
 
     private suspend fun loadedAddresses(body: String): List<SavedAddressDto> {
         val dto = addresses(body)
@@ -102,7 +123,7 @@ class SavedAddressWireTest {
      */
     @Test
     fun aMissingDefaultFlagRefusesTheListRatherThanMovingTheBooking() = runTest {
-        assertNull(addresses(addressesWithFirstRow { it - "isDefault" }))
+        refuses("isDefault") { addresses(addressesWithFirstRow { it - "isDefault" }) }
     }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
@@ -113,16 +134,13 @@ class SavedAddressWireTest {
      */
     @Test
     fun anIdLessAddressRefusesTheListRatherThanSubstitutingAnother() = runTest {
-        assertNull(addresses(addressesWithFirstRow { it - "id" }))
+        refuses("id") { addresses(addressesWithFirstRow { it - "id" }) }
     }
 
     @Test
     fun aMissingAddressLineRefusesTheList() = runTest {
         ADDRESS_REQUIRED_FIELDS.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the list",
-                addresses(addressesWithFirstRow { it - field }),
-            )
+            refuses(field) { addresses(addressesWithFirstRow { it - field }) }
         }
     }
 
@@ -131,6 +149,16 @@ class SavedAddressWireTest {
     @Test
     fun aCustomerWithNoSavedAddressesGetsAnEmptyList() = runTest {
         assertEquals(emptyList<SavedAddressDto>(), loadedAddresses("[]"))
+    }
+
+    /**
+     * `[]` and a bodiless 204 are different answers. `[]` is a customer who has saved none; a 204 is
+     * the server not answering, and defaulting that to empty told a returning customer they had
+     * never saved an address — then `AddressRepository.refreshFromServer` wrote it to disk.
+     */
+    @Test
+    fun aBodylessAddressListRefusesRatherThanReadingAsNoneSaved() = runTest {
+        refuses("SavedAddressDto[]") { serving("", code = 204) { it.getMine() } }
     }
 
     // --- rule 5: nullable-by-design fields stay nullable ---------------------------

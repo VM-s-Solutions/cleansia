@@ -12,6 +12,8 @@ import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import cz.cleansia.customer.core.user.SavedAddressApi
 import cz.cleansia.customer.core.user.SetDefaultSavedAddressCommand
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -71,7 +73,7 @@ class AddressRepository @Inject constructor(
      * Pulls the signed-in user's saved addresses from the backend and overwrites
      * the local cache. No-op ([ApiResult.Success]) when the user is unauthenticated.
      */
-    suspend fun refreshFromServer(): ApiResult<Unit> {
+    suspend fun refreshFromServer(): ApiResult<Unit> = wireResult {
         if (tokenStore.current() == null) return ApiResult.Success(Unit)
 
         val response = networkCall { api.getMine() } ?: return networkError()
@@ -80,8 +82,10 @@ class AddressRepository @Inject constructor(
             return httpError(response.errorBody(), response.code())
         }
 
-        val mapped = response.body().orEmpty().map { it.toUserAddress() }
-        writeCache(mapped)
+        // Never `orEmpty()` here: this line's answer is written straight to DataStore, so defaulting
+        // an unanswered read to "no addresses" wipes the customer's saved homes off the handset and
+        // reports Success for it. `requiredBody` refuses instead and the cache is left alone.
+        writeCache(response.requiredBody().map { it.toUserAddress() })
         return ApiResult.Success(Unit)
     }
 
@@ -111,7 +115,7 @@ class AddressRepository @Inject constructor(
         }
     }
 
-    private suspend fun createOnServer(address: UserAddress, setAsDefault: Boolean): ApiResult<Unit> {
+    private suspend fun createOnServer(address: UserAddress, setAsDefault: Boolean): ApiResult<Unit> = wireResult {
         // Wave 1 Finding 2 — refuse to submit without coordinates. The backend
         // expects non-nullable lat/lng and would otherwise bind nulls to 0.0.
         // Surface the same "move pin" copy the picker uses; mirrors how the
@@ -123,7 +127,7 @@ class AddressRepository @Inject constructor(
             return httpError(response.errorBody(), response.code())
         }
 
-        val dto = response.body() ?: return refreshFromServer()
+        val dto = response.requiredBody()
 
         return if (setAsDefault) {
             // Server demoted the peers — refetch so the cache reflects it.
@@ -135,7 +139,7 @@ class AddressRepository @Inject constructor(
         }
     }
 
-    private suspend fun updateOnServer(address: UserAddress): ApiResult<Unit> {
+    private suspend fun updateOnServer(address: UserAddress): ApiResult<Unit> = wireResult {
         val serverId = address.serverId ?: return ApiResult.Success(Unit)
         // Same coordinate guard as createOnServer — see Wave 1 Finding 2.
         val command = address.toUpdateCommand(serverId) ?: return movePinError()
@@ -145,7 +149,7 @@ class AddressRepository @Inject constructor(
             return httpError(response.errorBody(), response.code())
         }
 
-        val mapped = response.body()?.toUserAddress() ?: address
+        val mapped = response.requiredBody().toUserAddress()
         mergeIntoCache(localIdToReplace = address.id, replacement = mapped)
         return ApiResult.Success(Unit)
     }

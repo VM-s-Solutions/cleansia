@@ -7,6 +7,8 @@ import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,20 +44,22 @@ class RecurringBookingRepository @Inject constructor(
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    suspend fun refresh(): ApiResult<Unit> = mutex.withLock {
+    suspend fun refresh(): ApiResult<Unit> = wireResult { mutex.withLock {
         _loading.value = true
         try {
             val resp = networkCall { api.getMine() } ?: return@withLock networkError()
             if (!resp.isSuccessful) {
                 return@withLock httpError(resp.errorBody(), resp.code())
             }
-            _templates.value = resp.body() ?: emptyList()
+            // Not `?: emptyList()`: an unanswered read became "you have no recurring bookings",
+            // marked loaded, on the only screen that can pause or delete one.
+            _templates.value = resp.requiredBody()
             _loaded.value = true
             return@withLock ApiResult.Success(Unit)
         } finally {
             _loading.value = false
         }
-    }
+    } }
 
     suspend fun create(request: CreateRecurringBookingRequest): ApiResult<RecurringBookingTemplateDto> {
         val resp = networkCall("create") { api.create(request) } ?: return networkError()

@@ -3,6 +3,7 @@ package cz.cleansia.core.network
 import okhttp3.Protocol
 import okhttp3.Request
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -46,7 +47,9 @@ class WireContractTest {
         val error = (result as ApiResult.Error).error
         assertTrue("expected Server but was $error", error is ApiError.Server)
         assertEquals(200, (error as ApiError.Server).statusCode)
-        assertTrue(error.message.startsWith("grandTotal "))
+        // The name survives in the field that is carried, never in the one that is rendered.
+        assertTrue(error.diagnostic!!.startsWith("grandTotal "))
+        assertFalse(error.getUserMessage().contains("grandTotal"))
     }
 
     /**
@@ -73,7 +76,8 @@ class WireContractTest {
 
         val error = (result as ApiResult.Error).error
         assertTrue("expected Server but was $error", error is ApiError.Server)
-        assertTrue((error as ApiError.Server).message.startsWith("refundAmount "))
+        assertTrue((error as ApiError.Server).diagnostic!!.startsWith("refundAmount "))
+        assertFalse(error.getUserMessage().contains("refundAmount"))
     }
 
     @Test

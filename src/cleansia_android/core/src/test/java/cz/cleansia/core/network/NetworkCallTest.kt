@@ -3,6 +3,7 @@ package cz.cleansia.core.network
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -99,7 +100,8 @@ class NetworkCallTest {
         val error = (result as ApiResult.Error).error
         assertTrue("a contract violation must never surface as Network, but was $error", error is ApiError.Server)
         assertEquals(200, (error as ApiError.Server).statusCode)
-        assertTrue(error.message.startsWith("setupIntentClientSecret "))
+        assertTrue(error.diagnostic!!.startsWith("setupIntentClientSecret "))
+        assertFalse(error.getUserMessage().contains("setupIntentClientSecret"))
     }
 
     @Test

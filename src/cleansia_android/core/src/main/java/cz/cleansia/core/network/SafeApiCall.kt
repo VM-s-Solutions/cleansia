@@ -44,7 +44,7 @@ internal suspend fun <T> safeApiCallExpecting(
         // arrives here rather than at `mapWire`. `catch (e: Exception)` below would report it as
         // Unknown, which loses the one thing the idiom exists to say: the server answered and the
         // answer was wrong.
-        ApiResult.Error(ApiError.Server(HTTP_OK, violation.message.orEmpty()))
+        ApiResult.Error(wireViolationError(violation))
     } catch (e: SocketTimeoutException) {
         ApiResult.Error(ApiError.Network("Connection timeout. Please try again."))
     } catch (e: UnknownHostException) {

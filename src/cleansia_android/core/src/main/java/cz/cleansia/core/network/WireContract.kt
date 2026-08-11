@@ -18,11 +18,12 @@ fun <T : Any> T?.required(field: String): T = this ?: throw WireContractViolatio
  * [ApiError.Server] — a 200 whose body breaks the contract is a server fault, and Server is the arm
  * that says *the server answered and the answer was wrong* rather than blaming the connection.
  *
- * The field name is **carried, not delivered**. Partner initialises no Sentry (`AndroidManifest.xml`
- * removes `SentryInitProvider`, and `core/build.gradle.kts` says the deps are inert there), and
- * [ApiError.Server] renders as `R.string.error_server`, so the cleaner does not see it either. This
- * is the only idiom that keeps the name at all, and a name kept can be routed the day a sink exists;
- * a name lost cannot. Q-OBS-01 decides when that day is.
+ * The field name is **carried, not delivered**, and [ApiError.Server.diagnostic] is where it is
+ * carried — never `message`, which is what gets rendered. Partner initialises no Sentry
+ * (`AndroidManifest.xml` removes `SentryInitProvider`, and `core/build.gradle.kts` says the deps are
+ * inert there), so nothing records it yet. This is the only idiom that keeps the name at all, and a
+ * name kept can be routed the day a sink exists; a name lost cannot. Q-OBS-01 decides when that day
+ * is.
  *
  * Catches [WireContractViolation] alone: a genuine bug in the mapper is not a wire violation and
  * reporting it as one loses the stack that would have named it.
@@ -32,7 +33,7 @@ fun <T, R> ApiResult<T>.mapWire(transform: (T) -> R): ApiResult<R> = when (this)
     is ApiResult.Success -> try {
         ApiResult.Success(transform(data))
     } catch (violation: WireContractViolation) {
-        ApiResult.Error(ApiError.Server(HTTP_OK, violation.message.orEmpty()))
+        ApiResult.Error(wireViolationError(violation))
     }
 }
 
@@ -59,8 +60,23 @@ inline fun <T, R : Any> Response<T>.mapWire(transform: (T?) -> R): Response<R> =
 inline fun <T> wireResult(block: () -> ApiResult<T>): ApiResult<T> = try {
     block()
 } catch (violation: WireContractViolation) {
-    ApiResult.Error(ApiError.Server(HTTP_OK, violation.message.orEmpty()))
+    ApiResult.Error(wireViolationError(violation))
 }
+
+/**
+ * The one place a [WireContractViolation] becomes an [ApiError], so the split between what is shown
+ * and what is carried is made once rather than at each of the three catch sites.
+ *
+ * The offending field name goes to [ApiError.Server.diagnostic] and never to `message`: it is the
+ * whole point of the idiom that the name survives, and it is equally the point that a customer never
+ * reads it. `ApiError.Server(200, …)` still says *the server answered and the answer was wrong*.
+ */
+@PublishedApi
+internal fun wireViolationError(violation: WireContractViolation): ApiError.Server = ApiError.Server(
+    statusCode = HTTP_OK,
+    message = ApiError.SERVER_USER_MESSAGE,
+    diagnostic = violation.message,
+)
 
 /**
  * The body of a 2xx a total mapper produced. Retrofit types it nullable and a total mapper cannot

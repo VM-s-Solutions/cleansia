@@ -79,8 +79,12 @@ class AuthRepositorySessionFlagsTest {
         val error = (result as ApiResult.Error).error
         assertTrue("expected Server but was $error", error is ApiError.Server)
         assertTrue(
-            "the refusal must name $field, but said \"${(error as ApiError.Server).message}\"",
-            error.message.startsWith("$field "),
+            "the refusal must name $field, but carried \"${(error as ApiError.Server).diagnostic}\"",
+            error.diagnostic!!.startsWith("$field "),
+        )
+        assertTrue(
+            "the rendered line must not leak $field, but was \"${error.getUserMessage()}\"",
+            !error.getUserMessage().contains(field),
         )
     }
 

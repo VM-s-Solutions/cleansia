@@ -80,9 +80,14 @@ class PaymentWireTest {
             "a broken 2xx body is the server's fault, not the connection's; got $error",
             error is ApiError.Server,
         )
+        // The name lives in the carried diagnostic; the rendered line must not mention it.
         assertTrue(
-            "the refusal must name $field, but said \"${(error as ApiError.Server).message}\"",
-            error.message.startsWith("$field "),
+            "the refusal must name $field, but carried \"${(error as ApiError.Server).diagnostic}\"",
+            error.diagnostic!!.startsWith("$field "),
+        )
+        assertTrue(
+            "the rendered line must not leak $field, but was \"${error.getUserMessage()}\"",
+            !error.getUserMessage().contains(field),
         )
     }
 

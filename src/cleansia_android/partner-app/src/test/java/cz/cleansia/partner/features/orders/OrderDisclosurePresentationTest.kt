@@ -30,11 +30,16 @@ class OrderDisclosurePresentationTest {
         orderIssues = listOf(OrderIssueDto(id = "i-1", description = "Vacuum belt snapped")),
     )
 
-    /** What `OrderPiiRedaction.RedactForBrowsingCleaner` actually sends: `string.Empty` and `[]`. */
+    /**
+     * What `OrderPiiRedaction.RedactForBrowsingCleaner` actually sends, in all three forms it uses:
+     * `CustomerPhone` is blanked to `string.Empty`, `AccessInstructions` is set to `null`, and the
+     * two work-record lists become `[]`. A fixture that blanked the door code too would leave the
+     * null arm untested on the one field the server nulls.
+     */
     private val browsingCleaner = OrderItem(
         isAssignedToCurrentUser = false,
         customerPhone = "",
-        accessInstructions = "",
+        accessInstructions = null,
         orderNotes = emptyList(),
         orderIssues = emptyList(),
     )

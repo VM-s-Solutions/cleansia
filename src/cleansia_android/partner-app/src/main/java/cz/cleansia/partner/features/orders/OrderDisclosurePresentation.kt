@@ -18,7 +18,12 @@ import cz.cleansia.partner.api.model.OrderStatus
  * `isAssignedToCurrentUser` and still fails closed — offering "Slide to start" on a stranger's order
  * is the failure that gate exists to prevent.
  *
- * The redaction writes `string.Empty` and `[]`, never `null`, so every test here is arrival-by-content.
+ * The redaction is **mixed**, and the roster spans both forms: string scalars are blanked to
+ * `string.Empty` (`CustomerName`, `CustomerEmail`, `CustomerPhone`, `ConfirmationCode`), collections
+ * to `[]` (`OrderNotes`, `OrderIssues`), and every free-text field is set to `null` —
+ * `AccessInstructions`, `Notes`, `SpecialInstructions`, `CompletionNotes`, plus `Address`, `Review`
+ * and `PreferredOffer`. Neither `!= null` nor `!= ""` alone covers it, so every read here is
+ * arrival-by-content: `isNotBlank` on a scalar, `isNullOrEmpty` on a list.
  */
 data class OrderDisclosure(
     val customerPhone: String?,

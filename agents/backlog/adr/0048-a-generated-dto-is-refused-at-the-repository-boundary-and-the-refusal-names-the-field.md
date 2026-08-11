@@ -99,7 +99,7 @@ Named instances at HEAD: `PeriodPayWireTest.kt`, `InvoicesWireTest.kt`, `Dashboa
 `BookingQuoteWireTest.kt`, `MembershipWireTest.kt`, `LoyaltyWireTest.kt`, `ProfileWireTest.kt`
 (customer).
 
-### D4 — Four facts this class turns on, each counter-intuitive, each written down because it was learned the hard way
+### D4 — Five facts this class turns on, each counter-intuitive, each written down because it was learned the hard way
 
 1. **A bare `$ref` cannot carry `nullable` in OpenAPI 3.0, so its absence carries no information.**
    Sibling keywords beside `$ref` are ignored, and the emitted schema shows it: in
@@ -118,6 +118,24 @@ Named instances at HEAD: `PeriodPayWireTest.kt`, `InvoicesWireTest.kt`, `Dashboa
    `CatalogRepository` called it on the body, so a **refused price list surfaced as an empty catalog
    reported as Success** — "nothing is bookable today", strictly worse than the coercion it looked
    like. Rule 4 defaults a **collection member**; it never defaults the payload.
+5. **`nullable: true` on a plain `string` carries no information either — measured, not inferred.**
+   **Every one of the 359 plain-`string` properties in `customer-mobile-api.json` is `nullable: true`.
+   359 of 359, zero exceptions**, despite the backend building with `<Nullable>enable</Nullable>`
+   (re-measured 2026-08-11 by walking `components.schemas` and counting `type: string` properties with
+   no `format` and no `enum`). So a string's declared nullability is a constant, and a constant
+   discriminates nothing.
+
+   This is fact 1's problem one level worse: fact 1 says *absence* of `nullable` on a `$ref` is
+   uninformative; fact 5 says *presence* of `nullable: true` on a string is equally uninformative, and
+   there are 359 of them. **For strings, read the C# property — always.** The strings are the only type
+   like this, which is what makes it a generator artefact rather than a design intent: every other type
+   discriminates — `date-time` 39 non-nullable vs 25 nullable, `boolean` 62/3, `integer` 75/11,
+   `number` 43/25. Those four can be read off the spec; strings cannot.
+
+   ⚠️ **The practical trap is that a spec-driven sweep reads clean.** Anyone auditing string coercion
+   by asking the spec gets "nullable — the coercion is correct" for **every string on the wire**,
+   including `ReferralAccountDto.code`, `ReferralListItemDto.id`, and the Stripe client secret. That is
+   not a hypothetical: it is how these sites survived a sweep that was looking for exactly them.
 
 ### D5 — T-0589: the `WireContract` idiom wins
 

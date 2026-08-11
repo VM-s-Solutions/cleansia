@@ -312,8 +312,19 @@ is caught by nothing. The general form is not mechanically expressible by the li
 `check-consistency.mjs` (it needs the spec's nullability for the schema the mapper targets), so
 widening the roster means adding a wire test per repository, and the canonicalization ticket says so.
 
-**Tier:** `(gate pending: T-0588)` → **`T1-CI`** when the roster is complete and the baseline is zero
-(`conventions.md` §*"The price of a law"*, condition (b)).
+**Tier:** **`T1-CI`** — condition met and the token flipped by T-0602 (`bcfd7092`), *after* the roster
+closed (`a19f07b6`) and not before, per `conventions.md` §*"add enforcement behind the cleanup, never in
+front of it"*. The live token is the catalog's; this line records that the condition was satisfied rather
+than waived.
+
+> ⚠️ **The closure changed shape from what this ADR anticipated.** §D3 above priced it as *"a wire test
+> per repository"* and called the roster **closed** — meaning a seventh repository added tomorrow is
+> caught by nothing. T-0602 found the six wire tests already existed (they landed in `d0da4dc3`, the
+> same commit as the sweep), so it built the thing that sentence says is missing instead:
+> `WireContractRosterTest` walks both apps' data layers and fails when a source that maps a generated
+> model has no `*WireTest.kt` beside it. **The roster is self-closing now, so §D3's scope caveat is
+> retired** — and the enforcer immediately found four defects the per-repository tests could not,
+> including a regression this sprint had introduced eight commits earlier.
 
 ## Alternatives considered
 

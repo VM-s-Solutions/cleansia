@@ -258,10 +258,14 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > failed write into a no-op the user never sees"*). **It remains correct for a `null` from
 > `networkCall`**, where the transport really did fail; the two must not be confused.
 >
-> **`:core` carries FOUR pieces, not one, and the fourth is a contract change to a shared primitive
-> (ADR-0048 amendment B4).** `Response<T>.mapWire`, `wireResult`, `Response<R>.requiredBody()`
-> (`core/network/WireContract.kt:48`, `:59`, `:71`) **and `networkCall` rethrowing
-> `WireContractViolation`** (`core/network/NetworkCall.kt:61-62`). The fourth is load-bearing: the
+> **`:core` carries FIVE pieces, not one, and the last two are contract changes to shared primitives
+> (ADR-0048 amendment B4; the fifth found by the T-0602 roster).** `Response<T>.mapWire`, `wireResult`,
+> `Response<R>.requiredBody()` (`core/network/WireContract.kt:48`, `:59`, `:71`), **`networkCall`
+> rethrowing `WireContractViolation`** (`core/network/NetworkCall.kt:61-62`), **and `safeApiCall`
+> attributing it as `ApiError.Server(200, …)` rather than `ApiError.Unknown`**. The fifth is the same
+> fact as the fourth on the *other* shared primitive, and it was missed for the same reason: an adapter
+> that maps **inside** a Retrofit `Response` raises the refusal at the **call**, so it surfaces in
+> `safeApiCall`, never in `mapWire`. Both were priced at zero by the ADR as authored. The fourth is load-bearing: the
 > customer's adapters map **inside** the Retrofit `Response` (`OrderApi.kt:54-110`), so a refusal can
 > only cross that boundary as a **throw** — raise (`required`) → survive the shared catch (`networkCall`)
 > → attribute once (`wireResult`). Without the rethrow, `networkCall`'s `catch (t: Throwable) → null`

@@ -188,6 +188,21 @@ final class ExpressWaiverStatusTests: XCTestCase {
         XCTAssertEqual(status(perMonth: 2, remaining: 0), .exhausted)
     }
 
+    /// The server states the three shapes in as many words: *null = no membership; 0 = exhausted, OR
+    /// still inside the trial*. Collapsing null onto zero therefore tells a member on a quota plan
+    /// that they used up a benefit they paid for — the coerced value is the opposite of what the
+    /// server's own null means, and "used up" is a claim where silence is not.
+    func testAnUnreportedQuotaIsNeverReportedAsUsedUp() {
+        XCTAssertEqual(status(perMonth: 2, remaining: nil), .none)
+        XCTAssertNotEqual(status(perMonth: 2, remaining: nil), .exhausted)
+    }
+
+    func testAnUnreportedQuotaIsNotAdvertisedEitherWay() {
+        XCTAssertFalse(status(perMonth: 2, remaining: nil).isAdvertised)
+        XCTAssertFalse(status(perMonth: 2, remaining: nil, trialEndsAtUtc: Self.now.addingTimeInterval(3600))
+            .isAdvertised)
+    }
+
     /// A trial member is active and keeps the other benefits but earns no waiver; the quota still
     /// reports the plan's number so the client can say WHEN waivers start.
     func testATrialInFlightIsNeverAvailableEvenWithQuotaReported() {

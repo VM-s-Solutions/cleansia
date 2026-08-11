@@ -12,10 +12,9 @@ protocol RecurringBookingClient: Sendable {
 
 struct LiveRecurringBookingClient: RecurringBookingClient {
     func getMine() async -> ApiResult<[RecurringTemplate]> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerRecurringBookingAPI.recurringBookingGetMine()
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerRecurringBookingAPI.recurringBookingGetMine().map { try $0.toDomain() }
         }
-        return result.map { $0.compactMap { $0.toDomain() } }
     }
 
     func create(_ input: CreateRecurringInput) async -> ApiResult<RecurringTemplate> {
@@ -32,15 +31,10 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             startsOn: input.startsOn,
             endsOn: nil
         )
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerRecurringBookingAPI.recurringBookingCreate(createRecurringBookingCommand: command)
-        }
-        switch result {
-        case let .success(dto):
-            guard let template = dto.toDomain() else { return .failure(ApiError(code: "recurring.malformed")) }
-            return .success(template)
-        case let .failure(error):
-            return .failure(error)
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerRecurringBookingAPI
+                .recurringBookingCreate(createRecurringBookingCommand: command)
+                .toDomain()
         }
     }
 
@@ -59,15 +53,10 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             startsOn: input.startsOn,
             endsOn: input.endsOn
         )
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerRecurringBookingAPI.recurringBookingUpdate(updateRecurringBookingCommand: command)
-        }
-        switch result {
-        case let .success(dto):
-            guard let template = dto.toDomain() else { return .failure(ApiError(code: "recurring.malformed")) }
-            return .success(template)
-        case let .failure(error):
-            return .failure(error)
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerRecurringBookingAPI
+                .recurringBookingUpdate(updateRecurringBookingCommand: command)
+                .toDomain()
         }
     }
 
@@ -86,32 +75,27 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
     }
 }
 
+/// **Refuse the page.** A dropped template is a standing booking that keeps materializing orders the
+/// customer can no longer see, pause or cancel from this screen — the one place they can. `rooms`
+/// and `bathrooms` are the scope every generated order is priced from, so a `0` understates a repeat
+/// charge rather than one.
 private extension RecurringBookingTemplateDto {
-    func toDomain() -> RecurringTemplate? {
-        guard let id,
-              let frequency,
-              let dayOfWeek,
-              let timeOfDay,
-              let savedAddressId,
-              let paymentType,
-              let startsOn,
-              let isActive
-        else { return nil }
-        return RecurringTemplate(
-            id: id,
-            frequency: frequency,
-            dayOfWeek: dayOfWeek,
-            timeOfDay: timeOfDay,
-            rooms: rooms ?? 0,
-            bathrooms: bathrooms ?? 0,
-            savedAddressId: savedAddressId,
+    func toDomain() throws -> RecurringTemplate {
+        try RecurringTemplate(
+            id: id.requireNonBlank("id"),
+            frequency: frequency.require("frequency"),
+            dayOfWeek: dayOfWeek.require("dayOfWeek"),
+            timeOfDay: timeOfDay.requireNonBlank("timeOfDay"),
+            rooms: rooms.require("rooms"),
+            bathrooms: bathrooms.require("bathrooms"),
+            savedAddressId: savedAddressId.requireNonBlank("savedAddressId"),
             addressLine: addressLine,
             selectedServiceIds: selectedServiceIds ?? [],
             selectedPackageIds: selectedPackageIds ?? [],
-            paymentType: paymentType,
-            startsOn: startsOn,
+            paymentType: paymentType.require("paymentType"),
+            startsOn: startsOn.require("startsOn"),
             endsOn: endsOn,
-            isActive: isActive
+            isActive: isActive.require("isActive")
         )
     }
 }

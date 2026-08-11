@@ -50,19 +50,16 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertEqual(command.birthDate?.rawValue, "1982-09-04")
     }
 
-    func testMyProfileMapsStatsIntoTheDomainProfile() {
+    func testMyProfileMapsStatsIntoTheDomainProfile() throws {
         let memberSince = Date(timeIntervalSince1970: 1_739_534_400)
-        let dto = MyProfileDto(
-            email: "jane@example.com",
-            firstName: "Jane",
-            lastName: "Doe",
+        let dto = MyProfileDto.wireComplete(
             memberSince: memberSince,
             totalBookings: 7,
             totalSavings: 320,
             savingsCurrencyCode: "CZK"
         )
 
-        let user = dto.toDomain(id: "user-1")
+        let user = try dto.toDomain(id: "user-1")
 
         XCTAssertEqual(user.memberSince, memberSince)
         XCTAssertEqual(user.totalBookings, 7)
@@ -70,10 +67,13 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertEqual(user.savingsCurrencyCode, "CZK")
     }
 
-    func testMyProfileDefaultsAbsentStatsToZeroAndNil() {
-        let dto = MyProfileDto(email: "jane@example.com")
+    /// A genuinely new account has no bookings and no savings, and the server says so with zeros.
+    /// `memberSince` is `nullable: false` yet stays optional: the hero already renders its absence,
+    /// so leaving it nil fabricates no join date.
+    func testAnAccountWithNoHistoryYetStillMaps() throws {
+        let dto = MyProfileDto.wireComplete()
 
-        let user = dto.toDomain(id: "user-1")
+        let user = try dto.toDomain(id: "user-1")
 
         XCTAssertNil(user.memberSince)
         XCTAssertEqual(user.totalBookings, 0)
@@ -140,13 +140,12 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertEqual(command.removePhoto, false)
     }
 
-    func testMyProfileMapsTheStoredPhotoNameAndSignedUrl() {
-        let dto = MyProfileDto(
-            email: "jane@example.com",
+    func testMyProfileMapsTheStoredPhotoNameAndSignedUrl() throws {
+        let dto = MyProfileDto.wireComplete(
             profilePhoto: BlobFileDto(fileName: "blob-1", blobUrl: "https://blobs.example/blob-1?sig=abc")
         )
 
-        let photo = dto.toDomain(id: "user-1").profilePhoto
+        let photo = try dto.toDomain(id: "user-1").profilePhoto
 
         XCTAssertEqual(photo?.fileName, "blob-1")
         XCTAssertEqual(photo?.blobURL?.absoluteString, "https://blobs.example/blob-1?sig=abc")
@@ -155,21 +154,21 @@ final class UserProfileClientMappingTests: XCTestCase {
     /// The name is the photo's identity and the URL is only how to fetch it, so a stored photo whose
     /// SAS came back blank is still a stored photo — it simply cannot be drawn this fetch. Dropping it
     /// here would tell the profile there is nothing to delete.
-    func testMyProfileKeepsAStoredPhotoWhoseSignedUrlIsMissing() {
-        let dto = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: "blob-1"))
+    func testMyProfileKeepsAStoredPhotoWhoseSignedUrlIsMissing() throws {
+        let dto = MyProfileDto.wireComplete(profilePhoto: BlobFileDto(fileName: "blob-1"))
 
-        let photo = dto.toDomain(id: "user-1").profilePhoto
+        let photo = try dto.toDomain(id: "user-1").profilePhoto
 
         XCTAssertEqual(photo?.fileName, "blob-1")
         XCTAssertNil(photo?.blobURL)
     }
 
-    func testMyProfileHasNoPhotoWithoutAName() {
-        let noName = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(blobUrl: "https://blobs.example/x"))
-        let blank = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: " ", blobUrl: " "))
+    func testMyProfileHasNoPhotoWithoutAName() throws {
+        let noName = MyProfileDto.wireComplete(profilePhoto: BlobFileDto(blobUrl: "https://blobs.example/x"))
+        let blank = MyProfileDto.wireComplete(profilePhoto: BlobFileDto(fileName: " ", blobUrl: " "))
 
-        XCTAssertNil(noName.toDomain(id: "user-1").profilePhoto)
-        XCTAssertNil(blank.toDomain(id: "user-1").profilePhoto)
+        XCTAssertNil(try noName.toDomain(id: "user-1").profilePhoto)
+        XCTAssertNil(try blank.toDomain(id: "user-1").profilePhoto)
     }
 
     func testUpdateCommandBlanksPhoneToNil() {
@@ -186,5 +185,30 @@ final class UserProfileClientMappingTests: XCTestCase {
 
         XCTAssertNil(command.phoneNumber)
         XCTAssertNil(command.birthDate)
+    }
+}
+
+private extension MyProfileDto {
+    /// A payload that satisfies the contract: every member the mapper refuses is populated, so a
+    /// fixture cannot assert against something the app would refuse in production.
+    static func wireComplete(
+        email: String = "jane@example.com",
+        profilePhoto: BlobFileDto? = nil,
+        memberSince: Date? = nil,
+        totalBookings: Int = 0,
+        totalSavings: Double = 0,
+        savingsCurrencyCode: String? = nil
+    ) -> MyProfileDto {
+        MyProfileDto(
+            email: email,
+            firstName: "Jane",
+            lastName: "Doe",
+            isEmailConfirmed: true,
+            profilePhoto: profilePhoto,
+            memberSince: memberSince,
+            totalBookings: totalBookings,
+            totalSavings: totalSavings,
+            savingsCurrencyCode: savingsCurrencyCode
+        )
     }
 }

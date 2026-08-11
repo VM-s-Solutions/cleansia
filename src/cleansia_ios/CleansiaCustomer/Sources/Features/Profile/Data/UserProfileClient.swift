@@ -116,21 +116,28 @@ extension BlobFileDto {
     }
 }
 
+/// **Refuse.** The identity fields feed the edit form, which posts them back, so a coerced `""`
+/// does not render as an empty label — it is what overwrites the name on the account the next time
+/// the customer saves. `totalSavings` is money the hero states outright, and `isEmailConfirmed` is a
+/// verification claim that `false` makes for the server.
+///
+/// `phoneNumber`, `birthDate`, `savingsCurrencyCode` and the photo are nullable by design and stay
+/// so — every one of them has a rendered absence.
 extension MyProfileDto {
-    func toDomain(id: String) -> CurrentUserProfile {
-        CurrentUserProfile(
+    func toDomain(id: String) throws -> CurrentUserProfile {
+        try CurrentUserProfile(
             id: id,
-            email: email ?? "",
-            firstName: firstName ?? "",
-            lastName: lastName ?? "",
+            email: email.requireNonBlank("email"),
+            firstName: firstName.requireNonBlank("firstName"),
+            lastName: lastName.requireNonBlank("lastName"),
             phoneNumber: phoneNumber,
             birthDate: birthDate?.wrappedDate,
             preferredLanguageCode: preferredLanguageCode,
-            isEmailConfirmed: isEmailConfirmed ?? false,
+            isEmailConfirmed: isEmailConfirmed.require("isEmailConfirmed"),
             profilePhoto: profilePhoto?.toDomain(),
             memberSince: memberSince,
-            totalBookings: totalBookings ?? 0,
-            totalSavings: totalSavings ?? 0,
+            totalBookings: totalBookings.require("totalBookings"),
+            totalSavings: totalSavings.require("totalSavings"),
             savingsCurrencyCode: savingsCurrencyCode
         )
     }

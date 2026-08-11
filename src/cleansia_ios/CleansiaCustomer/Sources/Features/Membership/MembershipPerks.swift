@@ -23,9 +23,16 @@ enum ExpressWaiverStatus: Equatable {
         trialEndsAtUtc: Date?,
         now: Date
     ) -> ExpressWaiverStatus {
+        // `upgradesPerMonth` null IS the non-member state by the server's own definition, so folding
+        // it onto zero here lands on exactly the answer it means.
         guard hasMembership, (upgradesPerMonth ?? 0) > 0 else { return .none }
+        // `upgradesRemaining` is not the same: null means *no membership* and zero means *used up or
+        // trialing*, so collapsing the two tells a member on a quota plan they spent a benefit they
+        // paid for. Nothing here can tell which it is, and silence is the only answer that is not a
+        // claim.
+        guard let upgradesRemaining else { return .none }
         if let trialEndsAtUtc, trialEndsAtUtc > now { return .trial }
-        return (upgradesRemaining ?? 0) > 0 ? .available : .exhausted
+        return upgradesRemaining > 0 ? .available : .exhausted
     }
 
     static func resolve(_ membership: MyMembership?, now: Date = Date()) -> ExpressWaiverStatus {

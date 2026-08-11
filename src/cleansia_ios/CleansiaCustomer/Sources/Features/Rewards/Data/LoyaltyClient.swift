@@ -10,63 +10,72 @@ protocol LoyaltyClient: Sendable {
 
 struct LiveLoyaltyClient: LoyaltyClient {
     func getMy() async -> ApiResult<LoyaltyAccount> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerLoyaltyAPI.loyaltyGetMy()
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerLoyaltyAPI.loyaltyGetMy().toDomain()
         }
-        return result.map { $0.toDomain() }
     }
 
     func getTiers() async -> ApiResult<[TierInfo]> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerLoyaltyAPI.loyaltyGetTiers()
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerLoyaltyAPI.loyaltyGetTiers().tiers?.map { try $0.toDomain() } ?? []
         }
-        return result.map { ($0.tiers ?? []).map { $0.toDomain() } }
     }
 
     func getActivity(offset: Int, limit: Int) async -> ApiResult<LoyaltyActivityPage> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerLoyaltyAPI.loyaltyGetActivity(offset: offset, limit: limit)
-        }
-        return result.map { paged in
-            LoyaltyActivityPage(items: (paged.data ?? []).map { $0.toDomain() }, total: paged.total ?? 0)
+        await apiResult(mapError: ApiError.fromGenerated) {
+            let paged = try await CustomerLoyaltyAPI.loyaltyGetActivity(offset: offset, limit: limit)
+            return try LoyaltyActivityPage(
+                items: (paged.data ?? []).map { try $0.toDomain() },
+                total: paged.total.require("total")
+            )
         }
     }
 }
 
+/// **Refuse.** One object, no page and no row. `currentTier` coerced to `1` demotes a Gold customer
+/// to Bronze on screen and re-labels every perk under it, and `currentDiscountPercent` coerced to `0`
+/// withdraws a rate they earned. `pointsToNextTier` and `nextTier` are nullable by design — the top
+/// tier has no next one, which the progress row already renders.
 private extension GetMyLoyaltyResponse {
-    func toDomain() -> LoyaltyAccount {
-        LoyaltyAccount(
-            currentTier: currentTier?.rawValue ?? 1,
-            lifetimePoints: lifetimePoints ?? 0,
-            completedBookingsCount: completedBookingsCount ?? 0,
+    func toDomain() throws -> LoyaltyAccount {
+        try LoyaltyAccount(
+            currentTier: currentTier.require("currentTier").rawValue,
+            lifetimePoints: lifetimePoints.require("lifetimePoints"),
+            completedBookingsCount: completedBookingsCount.require("completedBookingsCount"),
             tierAchievedOn: tierAchievedOn,
             pointsToNextTier: pointsToNextTier,
             nextTier: nextTier?.rawValue,
-            currentDiscountPercent: currentDiscountPercent ?? 0,
+            currentDiscountPercent: currentDiscountPercent.require("currentDiscountPercent"),
             currentDiscountMinOrderAmount: currentDiscountMinOrderAmount,
             currentPerks: (currentPerks ?? []).map { TierPerk(icon: $0.icon, labelKey: $0.labelKey) }
         )
     }
 }
 
+/// **Refuse the page.** The tiers are one ordered ladder read against each other — a dropped rung
+/// silently moves where the next one starts, and a `0` threshold puts a rung at the bottom of a
+/// ladder it does not belong to.
 private extension GetLoyaltyTiersTierInfo {
-    func toDomain() -> TierInfo {
-        TierInfo(
-            tier: tier?.rawValue ?? 1,
-            lifetimePointsThreshold: lifetimePointsThreshold ?? 0,
-            discountPercent: discountPercent ?? 0,
+    func toDomain() throws -> TierInfo {
+        try TierInfo(
+            tier: tier.require("tier").rawValue,
+            lifetimePointsThreshold: lifetimePointsThreshold.require("lifetimePointsThreshold"),
+            discountPercent: discountPercent.require("discountPercent"),
             minimumOrderAmountForDiscount: minimumOrderAmountForDiscount,
             perks: (perks ?? []).map { TierPerk(icon: $0.icon, labelKey: $0.labelKey) }
         )
     }
 }
 
+/// **Refuse the page.** The ledger carries no identity to drop a row by, so a broken row can only
+/// refuse — and `type` decides whether a row reads as points earned or points spent, which a default
+/// of `1` answers for the customer.
 private extension GetLoyaltyActivityActivityItem {
-    func toDomain() -> LoyaltyActivityItem {
-        LoyaltyActivityItem(
-            type: type?.rawValue ?? 1,
-            points: points ?? 0,
-            source: source?.rawValue ?? 1,
+    func toDomain() throws -> LoyaltyActivityItem {
+        try LoyaltyActivityItem(
+            type: type.require("type").rawValue,
+            points: points.require("points"),
+            source: source.require("source").rawValue,
             orderId: orderId,
             orderDisplayNumber: orderDisplayNumber,
             occurredOn: occurredOn

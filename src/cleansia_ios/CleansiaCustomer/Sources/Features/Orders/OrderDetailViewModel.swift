@@ -28,7 +28,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var confirmRecurringState: ActionState = .idle
     @Published private(set) var hasMembership: Bool?
 
-    let cancelSucceeded = PassthroughSubject<CancelOrderResponse, Never>()
+    let cancelSucceeded = PassthroughSubject<OrderCancellation, Never>()
     let reviewSucceeded = PassthroughSubject<OrderReviewDto, Never>()
     let receiptReady = PassthroughSubject<URL, Never>()
     let recurringCardPayment = PassthroughSubject<PaymentSheetPresentation, Never>()
@@ -215,11 +215,8 @@ final class OrderDetailViewModel: ViewModel {
         switch await client.cancel(orderId: orderId, reason: payload) {
         case let .success(response):
             let currency = state.loadedValue?.currency?.code
-            let message: String = if response.refundInitiated == true, (response.refundAmount ?? 0) > 0 {
-                L10n.OrderCancel.successWithRefund(OrdersFormat.price(
-                    response.refundAmount ?? 0,
-                    currencyCode: currency
-                ))
+            let message: String = if let refunded = response.refunded {
+                L10n.OrderCancel.successWithRefund(OrdersFormat.price(refunded, currencyCode: currency))
             } else {
                 L10n.OrderCancel.successNoRefund
             }

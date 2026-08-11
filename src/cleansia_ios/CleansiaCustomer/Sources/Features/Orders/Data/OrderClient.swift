@@ -7,6 +7,29 @@ struct OrdersPage: Equatable {
     let total: Int
 }
 
+/// **Refuse.** Both members are non-nullable on the server and the pair is a statement about the
+/// customer's money: coerced, `refundInitiated` reads `false` and the screen says "cancelled, no
+/// refund" over a refund the server did start. There is no page and no row here — one response.
+struct OrderCancellation: Equatable {
+    let refundAmount: Double
+    let refundInitiated: Bool
+
+    init(refundAmount: Double, refundInitiated: Bool) {
+        self.refundAmount = refundAmount
+        self.refundInitiated = refundInitiated
+    }
+
+    init(_ response: CancelOrderResponse) throws {
+        refundAmount = try response.refundAmount.require("refundAmount")
+        refundInitiated = try response.refundInitiated.require("refundInitiated")
+    }
+
+    var refunded: Double? {
+        guard refundInitiated, refundAmount > 0 else { return nil }
+        return refundAmount
+    }
+}
+
 /// Result of `orderConfirmRecurring`. A nil/empty `clientSecret` means the
 /// backend already confirmed the order (cash path); a non-empty one means the
 /// card path needs a PaymentSheet to finish.
@@ -23,7 +46,7 @@ struct RecurringConfirmation: Equatable {
 protocol OrderClient: Sendable {
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage>
     func getById(orderId: String) async -> ApiResult<OrderItem>
-    func cancel(orderId: String, reason: String?) async -> ApiResult<CancelOrderResponse>
+    func cancel(orderId: String, reason: String?) async -> ApiResult<OrderCancellation>
     func submitReview(orderId: String, rating: Int, comment: String?) async -> ApiResult<OrderReviewDto>
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
     func getPhotos(orderId: String) async -> ApiResult<GetOrderPhotosResponse>
@@ -32,12 +55,15 @@ protocol OrderClient: Sendable {
 }
 
 struct LiveOrderClient: OrderClient {
+    /// **Refuse the count, keep the rows.** `total` is the server's own record count and the ONLY
+    /// input to `hasMore` (`orders.count < total`), so a coerced `0` reports every page as the last
+    /// one and the customer's older orders stop existing rather than fail to load. The rows
+    /// themselves default to empty: an absent page and an empty one are the same fact to the list,
+    /// which counts what it shows and sums nothing.
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
-        let result = await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerOrderAPI.orderGetMyOrders(offset: offset, limit: limit)
-        }
-        return result.map { paged in
-            OrdersPage(items: paged.data ?? [], total: paged.total ?? 0)
+        await apiResult(mapError: ApiError.fromGenerated) {
+            let paged = try await CustomerOrderAPI.orderGetMyOrders(offset: offset, limit: limit)
+            return try OrdersPage(items: paged.data ?? [], total: paged.total.require("total"))
         }
     }
 
@@ -47,10 +73,10 @@ struct LiveOrderClient: OrderClient {
         }
     }
 
-    func cancel(orderId: String, reason: String?) async -> ApiResult<CancelOrderResponse> {
+    func cancel(orderId: String, reason: String?) async -> ApiResult<OrderCancellation> {
         let command = CancelOrderCommand(orderId: orderId, reason: reason)
         return await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerOrderAPI.orderCancelOrder(cancelOrderCommand: command)
+            try await OrderCancellation(CustomerOrderAPI.orderCancelOrder(cancelOrderCommand: command))
         }
     }
 

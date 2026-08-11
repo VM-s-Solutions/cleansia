@@ -11,7 +11,9 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var detailResults: [ApiResult<OrderItem>] = []
     private(set) var detailCallCount = 0
 
-    var cancelResult: ApiResult<CancelOrderResponse> = .success(CancelOrderResponse())
+    var cancelResult: ApiResult<OrderCancellation> = .success(
+        OrderCancellation(refundAmount: 0, refundInitiated: false)
+    )
     private(set) var cancelCallCount = 0
     private(set) var lastCancelReason: String??
 
@@ -47,7 +49,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         return detailResults[index]
     }
 
-    func cancel(orderId _: String, reason: String?) async -> ApiResult<CancelOrderResponse> {
+    func cancel(orderId _: String, reason: String?) async -> ApiResult<OrderCancellation> {
         cancelCallCount += 1
         lastCancelReason = .some(reason)
         return cancelResult

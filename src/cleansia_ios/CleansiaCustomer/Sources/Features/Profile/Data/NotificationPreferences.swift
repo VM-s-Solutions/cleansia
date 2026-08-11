@@ -77,20 +77,25 @@ final class LiveNotificationPreferencesClient: NotificationPreferencesClient {
     }
 }
 
-private extension NotificationPreferencesDto {
-    func toDomain() -> NotificationPreferences {
-        NotificationPreferences(
-            orderUpdates: orderUpdates ?? true,
-            cleanerOnTheWay: cleanerOnTheWay ?? true,
-            orderCompleted: orderCompleted ?? true,
-            orderCancelled: orderCancelled ?? true,
-            refundIssued: refundIssued ?? true,
-            membershipExpiring: membershipExpiring ?? true,
-            membershipCancelled: membershipCancelled ?? true,
-            tierUpgrade: tierUpgrade ?? true,
-            promo: promo ?? false,
-            disputeReply: disputeReply ?? true,
-            recurringScheduled: recurringScheduled ?? true
+/// **Refuse.** All eleven are non-nullable `bool` on the server, and the screen writes back every
+/// one of them: `toCommand()` sends the whole struct, so a defaulted toggle is not a display guess —
+/// it is the value that overwrites the customer's stored choice the next time they save anything on
+/// this screen. Defaulting to `true` re-subscribes someone who opted out; defaulting `promo` to
+/// `false` discards a marketing consent they gave. An error screen loses nothing by comparison.
+extension NotificationPreferencesDto {
+    func toDomain() throws -> NotificationPreferences {
+        try NotificationPreferences(
+            orderUpdates: orderUpdates.require("orderUpdates"),
+            cleanerOnTheWay: cleanerOnTheWay.require("cleanerOnTheWay"),
+            orderCompleted: orderCompleted.require("orderCompleted"),
+            orderCancelled: orderCancelled.require("orderCancelled"),
+            refundIssued: refundIssued.require("refundIssued"),
+            membershipExpiring: membershipExpiring.require("membershipExpiring"),
+            membershipCancelled: membershipCancelled.require("membershipCancelled"),
+            tierUpgrade: tierUpgrade.require("tierUpgrade"),
+            promo: promo.require("promo"),
+            disputeReply: disputeReply.require("disputeReply"),
+            recurringScheduled: recurringScheduled.require("recurringScheduled")
         )
     }
 }

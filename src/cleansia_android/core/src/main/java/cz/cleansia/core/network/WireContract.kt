@@ -15,8 +15,14 @@ fun <T : Any> T?.required(field: String): T = this ?: throw WireContractViolatio
 
 /**
  * Runs a total mapper over a successful response, turning a contract violation into
- * [ApiError.Server] — a 200 whose body breaks the contract is a server fault, and Server renders as
- * the generic line, so the offending field name reaches triage rather than the cleaner.
+ * [ApiError.Server] — a 200 whose body breaks the contract is a server fault, and Server is the arm
+ * that says *the server answered and the answer was wrong* rather than blaming the connection.
+ *
+ * The field name is **carried, not delivered**. Partner initialises no Sentry (`AndroidManifest.xml`
+ * removes `SentryInitProvider`, and `core/build.gradle.kts` says the deps are inert there), and
+ * [ApiError.Server] renders as `R.string.error_server`, so the cleaner does not see it either. This
+ * is the only idiom that keeps the name at all, and a name kept can be routed the day a sink exists;
+ * a name lost cannot. Q-OBS-01 decides when that day is.
  *
  * Catches [WireContractViolation] alone: a genuine bug in the mapper is not a wire violation and
  * reporting it as one loses the stack that would have named it.

@@ -816,6 +816,22 @@ loads its subject through a **tenant-scoped** read, so it only runs when the cal
 matches the subject's. `IgnoreQueryFilters` in the outbox and live-activity walks is defence in depth,
 not the thing that makes them work. `DeadLetter` is the one where it is genuinely load-bearing.
 
+> ⚠️ **NOTHING IN ANY SUITE WATCHES THE EMITTED DDL, so a model/migration gap is invisible to CI.**
+> Found 2026-08-11 while arming `IX_Users_TenantId_Email`. `NullsNotDistinctIndexModelTests` reads
+> `ctx.Model` — it is an EF **model** assertion, so it goes red on a missing builder call and green the
+> moment that call lands, **whether or not a migration carrying the DDL exists**. Measured in that
+> order: roster row added alone → red; `.AreNullsDistinct(false)` added → green. And the integration
+> fixture ignores `PendingModelChangesWarning` (`BaseIntegrationTest.cs:86-87`) for a stated and
+> legitimate reason — a shadow property that maps to a Postgres system column and needs no DDL — so the
+> one warning that would surface the gap is off.
+>
+> Net: between a model change and the owner's regenerated migration, **the code asserts a guarantee the
+> database does not yet provide, and every suite is green.** The reviewer's read of the migration is the
+> only gate on that half. Pre-prod this is survivable because the single `Initial` migration is
+> regenerated wholesale rather than stacked — but it means *"the model test is green"* is **not**
+> evidence the constraint exists, and a claim that a DB-level guarantee is live owes the migration, not
+> the builder call.
+
 ## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
 
 > **LAW.** ADR-0038 `accepted` 2026-08-03 (panel lead's `## Verdict`, amendments AM-1 … AM-11). Living

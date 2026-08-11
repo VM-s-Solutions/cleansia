@@ -240,6 +240,27 @@ A ticket whose mechanical checks fail cannot be `done`, regardless of how good t
 check is failing for a reason genuinely unrelated to the change (a flaky test, a pre-existing
 baseline item), the Reviewer says so explicitly with evidence — it is never waved through silently.
 
+> ⚠️ **"Flaky" is a VERDICT, not a first description — and reaching it costs a measured rate and a
+> read of the production path.** Measured 2026-08-11: an iOS gate that failed **3 times in 20** full
+> suite runs and **0 in 40** isolated. One in seven is not noise, and the isolated-vs-suite gap is the
+> tell — scheduling pressure, not the code. Two candidate failures, both shaped *"two happened where
+> one was expected, under concurrency"*, which is the signature of a real race far more often than of
+> a bad test. Both turned out to be **test** defects, but that was the finding, not the assumption:
+> the fixture threw a 401 on every task's first attempt regardless of which token the request carried,
+> so it could not distinguish *failed to coalesce* from *the new token was rejected too* — and the
+> second refresh it intermittently counted was **correct behaviour**. Had it gone the other way, the
+> bug was two refreshes racing one rotating refresh token, i.e. **the customer silently signed out**.
+>
+> **A de-flake that is not mutation-proven is the same failure as a guard that passes without looking
+> — it just fails from the other side.** The evidence is in the tree: a `Task.yield()` in
+> `ProfileFakes.swift` carried a comment claiming it had fixed this exact flake, and it had not. It
+> yielded on the generic executor *after* the call had already left the actor, so it never handed the
+> actor to the re-entry it was meant to schedule. Decoration with a comment on it. So a de-flake owes
+> the same two artifacts as any other fix: **a before/after rate over enough runs to mean something**,
+> and **a mutation showing the repointed test still reddens for the reason it exists** — here,
+> inserting a suspension between the in-flight check and its assignment reddens both coalescing tests,
+> which proves the invariant is live rather than merely green.
+
 ### Gate 8.5 — iOS 16.4 floor smoke (every `layers: [ios]` ticket)
 
 The project's declared support floor is **iOS 16** (ADR-0014 — the iPhone 8/X-class reach), and the

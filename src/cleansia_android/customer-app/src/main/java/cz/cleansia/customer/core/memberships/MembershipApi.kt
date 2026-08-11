@@ -9,6 +9,7 @@ import cz.cleansia.customer.api.model.GetMyMembershipResponse as GenGetMyMembers
 import cz.cleansia.customer.api.model.MembershipStatus as GenMembershipStatus
 import cz.cleansia.customer.api.model.SwapMembershipPlanCommand as GenSwapMembershipPlanCommand
 import cz.cleansia.customer.api.model.SwapMembershipPlanResponse as GenSwapMembershipPlanResponse
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -81,12 +82,19 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
 
 // ─── Generated → app DTO mappers ───
 
+/**
+ * Every field here is a credential the Stripe PaymentSheet is opened with, and all four are
+ * non-nullable on `CreateMembershipSubscription.Response`. Blanked, the sheet fails with nothing on
+ * screen or in the log to say which credential was missing — a refusal naming the field is the whole
+ * difference between a diagnosable failure and an unexplained one. The spec calls all four
+ * `nullable: true`, as it does every string on this wire; the C# record is the contract.
+ */
 private fun GenCreateMembershipSubscriptionResponse.toAppDto(): CreateMembershipSubscriptionResponse =
     CreateMembershipSubscriptionResponse(
-        membershipId = membershipId.orEmpty(),
-        setupIntentClientSecret = setupIntentClientSecret.orEmpty(),
-        stripeCustomerId = stripeCustomerId.orEmpty(),
-        ephemeralKey = ephemeralKey.orEmpty(),
+        membershipId = membershipId.required("membershipId"),
+        setupIntentClientSecret = setupIntentClientSecret.required("setupIntentClientSecret"),
+        stripeCustomerId = stripeCustomerId.required("stripeCustomerId"),
+        ephemeralKey = ephemeralKey.required("ephemeralKey"),
     )
 
 /**
@@ -94,11 +102,14 @@ private fun GenCreateMembershipSubscriptionResponse.toAppDto(): CreateMembership
  * also exposes `membershipId`, but no caller reads it post-cancel today, so
  * we fill the empty string here. If a future flow needs it, add it to the
  * backend response first.
+ *
+ * `effectiveEndDate` is `DateTime` (non-nullable) and it is the whole content of the confirmation:
+ * blank, the sheet says the membership ends on nothing.
  */
 private fun GenCancelMembershipSubscriptionResponse.toAppDto(): CancelMembershipSubscriptionResponse =
     CancelMembershipSubscriptionResponse(
         membershipId = "",
-        effectiveEndDate = effectiveEndDate?.toString().orEmpty(),
+        effectiveEndDate = effectiveEndDate?.toString().required("effectiveEndDate"),
     )
 
 /**
@@ -155,9 +166,13 @@ private fun GenGetMembershipPlansResponse.toAppDto(): MembershipPlanDto? {
     )
 }
 
+/**
+ * Both are non-nullable on `SwapMembershipPlan.Response` — unlike `GetMyMembership`'s
+ * `currentPeriodEnd`, which is `DateTime?` because a non-member has no period, and stays nullable.
+ */
 private fun GenSwapMembershipPlanResponse.toAppDto(): SwapMembershipPlanResponse =
     SwapMembershipPlanResponse(
         membershipId = "",
-        newPlanCode = newPlanCode.orEmpty(),
-        currentPeriodEnd = currentPeriodEnd?.toString().orEmpty(),
+        newPlanCode = newPlanCode.required("newPlanCode"),
+        currentPeriodEnd = currentPeriodEnd?.toString().required("currentPeriodEnd"),
     )

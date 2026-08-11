@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.memberships
 
+import cz.cleansia.core.network.WireContractViolation
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -18,6 +19,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 import retrofit2.Retrofit
@@ -71,6 +73,20 @@ class MembershipWireTest {
     private suspend fun plans(body: String) = serving(body) { it.getPlans() }.body()
 
     private suspend fun mine(body: String) = serving(body) { it.getMine() }.body()
+
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
 
     private suspend fun loadedPlans(body: String): List<MembershipPlanDto> {
         val list = plans(body)
@@ -219,6 +235,54 @@ class MembershipWireTest {
         assertEquals(2, answer?.expressUpgradesRemaining)
     }
 
+    // --- the Stripe credentials and the two non-nullable period ends ---------------
+
+    @Test
+    fun everySubscribeCredentialArrivesWithItsLiteralValue() = runTest {
+        val started = serving(CAPTURED_SUBSCRIBE) {
+            it.subscribe(CreateMembershipSubscriptionRequest(planCode = "plus-annual"))
+        }.body()!!
+
+        assertEquals("seti_1ABC_secret_XYZ", started.setupIntentClientSecret)
+        assertEquals("cus_ABC123", started.stripeCustomerId)
+        assertEquals("ek_test_ABC", started.ephemeralKey)
+    }
+
+    /**
+     * A blanked client secret is not a display bug: the PaymentSheet opens, fails, and leaves nothing
+     * on screen or in a log to say which of the four credentials was missing. All four are
+     * non-nullable on `CreateMembershipSubscription.Response`; the spec's `nullable: true` is what it
+     * says about every string on this wire.
+     */
+    @Test
+    fun aMissingStripeCredentialRefusesRatherThanOpeningASheetThatCannotSucceed() = runTest {
+        SUBSCRIBE_REQUIRED_CREDENTIALS.forEach { field ->
+            refuses(field) {
+                serving(withoutKey(CAPTURED_SUBSCRIBE, field)) {
+                    it.subscribe(CreateMembershipSubscriptionRequest(planCode = "plus-annual"))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun aCancelWithoutAnEndDateRefusesRatherThanSayingTheMembershipEndsOnNothing() = runTest {
+        refuses("effectiveEndDate") {
+            serving(withoutKey(CAPTURED_CANCEL, "effectiveEndDate")) { it.cancel() }
+        }
+    }
+
+    @Test
+    fun aSwapWithoutItsTermsRefusesRatherThanConfirmingAPlanChangeWithNoPlanAndNoDate() = runTest {
+        listOf("newPlanCode", "currentPeriodEnd").forEach { field ->
+            refuses(field) {
+                serving(withoutKey(CAPTURED_SWAP, field)) {
+                    it.swapPlan(SwapMembershipPlanRequest(newPlanCode = "plus-monthly"))
+                }
+            }
+        }
+    }
+
     // --- payload plumbing ---------------------------------------------------------
 
     private fun mutating(body: String, transform: (JsonObject) -> JsonObject): String =
@@ -247,6 +311,31 @@ class MembershipWireTest {
         (0 until descriptor.elementsCount).map { descriptor.getElementName(it) }.toSet()
 
     private companion object {
+
+        val SUBSCRIBE_REQUIRED_CREDENTIALS = listOf(
+            "membershipId",
+            "setupIntentClientSecret",
+            "stripeCustomerId",
+            "ephemeralKey",
+        )
+
+        val CAPTURED_SUBSCRIBE = """
+            {
+              "membershipId": "mem-1",
+              "setupIntentClientSecret": "seti_1ABC_secret_XYZ",
+              "stripeCustomerId": "cus_ABC123",
+              "ephemeralKey": "ek_test_ABC"
+            }
+        """.trimIndent()
+
+        val CAPTURED_CANCEL = """
+            { "effectiveEndDate": "2026-09-11T00:00:00Z" }
+        """.trimIndent()
+
+        val CAPTURED_SWAP = """
+            { "newPlanCode": "plus-monthly", "currentPeriodEnd": "2026-09-11T00:00:00Z" }
+        """.trimIndent()
+
 
         /** Every member non-zero and non-default. */
         val CAPTURED_PLANS = """

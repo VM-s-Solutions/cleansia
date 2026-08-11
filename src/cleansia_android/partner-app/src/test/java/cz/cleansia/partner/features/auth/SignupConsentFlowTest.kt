@@ -147,6 +147,9 @@ class SignupConsentFlowTest {
             JwtTokenResponse(
                 token = "header.payload.signature",
                 isEmailConfirmed = true,
+                // Non-nullable on the C# record, so the wire always carries it and the mapper
+                // refuses a payload that does not.
+                hasAdminAccess = false,
                 userId = "u-1",
                 email = sessionEmail,
                 refreshToken = "r-1",

@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.user
 
 import cz.cleansia.customer.api.model.Code as GenCode
+import cz.cleansia.core.network.required
 import cz.cleansia.customer.api.model.MyProfileDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -95,17 +96,19 @@ data class CurrentUser(
 }
 
 /**
- * Map a generated [MyProfileDto] (nullable everywhere) into the UI's
- * [CurrentUser] (non-null strings, blanks where the backend gave null).
- * Takes the user id separately because the backend's `MyProfileDto` doesn't
- * carry it — caller pulls it from the JWT.
+ * Map a generated [MyProfileDto] into the UI's [CurrentUser]. Takes the user id separately because
+ * the backend's `MyProfileDto` doesn't carry it — caller pulls it from the JWT.
+ *
+ * `email`, `firstName` and `lastName` are non-nullable on the C# record, so blanking them renders a
+ * signed-in account with no name and no address to recover it from. The spec calls them
+ * `nullable: true` — it calls every string on this wire that, which is why the C# is the contract.
  */
 internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser? {
     return CurrentUser(
         id = userId,
-        email = email.orEmpty(),
-        firstName = firstName.orEmpty(),
-        lastName = lastName.orEmpty(),
+        email = email.required("email"),
+        firstName = firstName.required("firstName"),
+        lastName = lastName.required("lastName"),
         phoneNumber = phoneNumber,
         birthDate = birthDate?.toString(),
         preferredLanguageCode = preferredLanguageCode,

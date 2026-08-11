@@ -16,6 +16,7 @@ import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Provider
@@ -80,7 +81,7 @@ class UserRepository @Inject constructor(
     }
 
     /** Fetch the authenticated user's profile and update the cached [currentUser]. */
-    suspend fun refreshCurrentUser(): ApiResult<Unit> {
+    suspend fun refreshCurrentUser(): ApiResult<Unit> = wireResult {
         // User id isn't part of the profile response — it's in the JWT sub
         // claim. Pull it once at request time so downstream code can keep
         // using `currentUser.value.id`.

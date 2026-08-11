@@ -17,7 +17,9 @@ import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.AuthenticatedAuthApi
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.required
 import cz.cleansia.core.network.safeApiCall
+import cz.cleansia.core.network.wireResult
 import cz.cleansia.core.notifications.PushTokenRepository
 import kotlinx.serialization.json.Json
 import java.time.Instant
@@ -93,7 +95,7 @@ class AuthRepositoryImpl @Inject constructor(
         email: String,
         password: String,
         rememberMe: Boolean,
-    ): ApiResult<LoginOutcome> {
+    ): ApiResult<LoginOutcome> = wireResult {
         val trustedDeviceToken = tokenStore.current()?.trustedDeviceToken
         val result = safeApiCall(json) {
             authApi.authLogin(
@@ -167,7 +169,7 @@ class AuthRepositoryImpl @Inject constructor(
         return response.map { it ?: false }
     }
 
-    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> {
+    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> = wireResult {
         val result = safeApiCall(json) {
             authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code, email = email))
         }
@@ -300,7 +302,7 @@ class AuthRepositoryImpl @Inject constructor(
                 email = body.email ?: fallbackEmail,
                 employeeId = employee.id,
                 isEmailConfirmed = true,
-                hasAdminAccess = body.hasAdminAccess ?: false,
+                hasAdminAccess = body.hasAdminAccess.required("hasAdminAccess"),
                 firstName = employee.firstName,
                 lastName = employee.lastName,
                 role = body.role,
@@ -308,6 +310,13 @@ class AuthRepositoryImpl @Inject constructor(
         )
     }
 
+    /**
+     * `isEmailConfirmed` and `hasAdminAccess` are both non-nullable `bool` on `JwtTokenResponse`, and
+     * the old `?: false` fell the wrong way on each: it locks a confirmed cleaner into the
+     * confirm-email screen, and it contradicts the server's own `HasAdminAccess = true` default.
+     * Failing closed is the safe direction, but it is not the same as knowing the value — the
+     * refusal names the field instead, and [wireResult] on the two session-minting paths carries it.
+     */
     private suspend fun persistProfile(body: JwtTokenResponse, fallbackEmail: String) {
         val existing = userProfileStore.current()
         userProfileStore.save(
@@ -315,8 +324,8 @@ class AuthRepositoryImpl @Inject constructor(
                 userId = body.userId ?: existing?.userId.orEmpty(),
                 email = body.email ?: fallbackEmail,
                 employeeId = existing?.employeeId,
-                isEmailConfirmed = body.isEmailConfirmed ?: existing?.isEmailConfirmed ?: false,
-                hasAdminAccess = body.hasAdminAccess ?: existing?.hasAdminAccess ?: false,
+                isEmailConfirmed = body.isEmailConfirmed.required("isEmailConfirmed"),
+                hasAdminAccess = body.hasAdminAccess.required("hasAdminAccess"),
                 firstName = existing?.firstName,
                 lastName = existing?.lastName,
                 role = body.role ?: existing?.role,

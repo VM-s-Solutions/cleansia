@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.user
 
+import cz.cleansia.core.network.WireContractViolation
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -12,6 +13,7 @@ import cz.cleansia.customer.api.model.MyProfileDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -38,6 +40,20 @@ class ProfileWireTest {
         val user = profile(body)
         assertNotNull("expected the captured payload to map", user)
         return user!!
+    }
+
+    private fun refuses(field: String, mapping: () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the profile", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
     }
 
     // --- the field-name contract ------------------------------------------------
@@ -96,8 +112,11 @@ class ProfileWireTest {
 
     /**
      * `savingsCurrencyCode` is `nullable: true`: a customer who has saved nothing on a fresh account
-     * has no currency to render it in. Blank name and email are the existing skeleton treatment and
-     * are left alone — they are `nullable: true` too, and the screen renders their absence.
+     * has no currency to render it in.
+     *
+     * Name and email are NOT in that group, whatever the spec says: `MyProfileDto` declares
+     * `string Email, string FirstName, string LastName`, and every plain string on this wire is
+     * emitted `nullable: true` regardless — which is why they are asserted as refusals below.
      */
     @Test
     fun aProfileWithNoCurrencyOrPhotoStillLoads() {
@@ -120,6 +139,23 @@ class ProfileWireTest {
         )
 
         assertNull(user.avatarFileName)
+    }
+
+    /**
+     * Blanking these renders a signed-in account with no name and no address to recover it from, and
+     * the profile-completeness gate reads `email.isBlank()` — so the customer is told their profile
+     * is incomplete about a field they filled in.
+     */
+    @Test
+    fun aMissingIdentityStringRefusesTheProfileRatherThanBlankingTheAccount() {
+        listOf("email", "firstName", "lastName").forEach { field ->
+            refuses(field) { profile(withoutKey(CAPTURED_PROFILE, field)) }
+        }
+    }
+
+    @Test
+    fun anExplicitNullIdentityStringRefusesToo() {
+        refuses("email") { profile(withKey(CAPTURED_PROFILE, "email", JsonNull)) }
     }
 
     // --- payload plumbing ---------------------------------------------------------

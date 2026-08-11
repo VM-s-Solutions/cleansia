@@ -153,6 +153,25 @@ class ReferralRepositoryTest {
         assertEquals(true, repo.loaded.value)
     }
 
+    /**
+     * The other half of the same ruling, and the half that was wrong: a TRANSPORT failure degrades
+     * (above), but a 2xx whose body the mapper refused used to be swallowed by `?.let` and reported
+     * as Success. On a first load "leave the list as-is" IS the empty list, so the breakdown read
+     * "you have invited nobody" directly under counters from `GetMy` saying otherwise.
+     */
+    @Test
+    fun refresh_whenTheReferralsPageIsRefused_failsRatherThanReportingNobodyInvited() = runTest {
+        coEvery { api.getMy() } returns Response.success(account())
+        coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(null)
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertEquals(emptyList<ReferralListItemDto>(), repo.referrals.value)
+        assertEquals(false, repo.loaded.value)
+    }
+
     // ── validate() ──
 
     @Test

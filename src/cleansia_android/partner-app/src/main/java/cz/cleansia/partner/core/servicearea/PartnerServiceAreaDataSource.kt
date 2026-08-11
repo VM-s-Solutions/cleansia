@@ -33,7 +33,11 @@ class PartnerServiceAreaDataSource @Inject constructor(
                 Log.w("ServiceArea", "countryGetServiced failed: HTTP ${response.code()}")
                 return@runCatching null
             }
-            response.body().orEmpty().mapNotNull { dto ->
+            // Never `orEmpty()`: this function's null IS the "couldn't check" answer
+            // (`ServiceAreaProvider.loadCountries` — *"treat it as 'couldn't check', never as
+            // 'serves nothing'"*), so defaulting a bodiless 2xx to an empty list states the one
+            // reading the caller's own contract forbids.
+            (response.body() ?: return@runCatching null).mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
                     id = id,
@@ -54,7 +58,7 @@ class PartnerServiceAreaDataSource @Inject constructor(
                 Log.w("ServiceArea", "serviceCityGetServiceCities failed: HTTP ${response.code()}")
                 return@runCatching null
             }
-            response.body().orEmpty().mapNotNull { dto ->
+            (response.body() ?: return@runCatching null).mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 val cityCountryId = dto.countryId ?: return@mapNotNull null
                 ServicedCity(

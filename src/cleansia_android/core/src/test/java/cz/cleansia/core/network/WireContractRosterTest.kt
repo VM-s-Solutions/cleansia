@@ -17,14 +17,31 @@ import org.junit.Test
  */
 class WireContractRosterTest {
 
-    private data class DataLayer(val path: String, val generatedModels: String)
+    private data class DataLayer(val path: String, val generatedApi: String)
 
     private val dataLayers = listOf(
-        DataLayer("customer-app/src/main/java/cz/cleansia/customer/core", "cz.cleansia.customer.api.model"),
-        DataLayer("partner-app/src/main/java/cz/cleansia/partner/data", "cz.cleansia.partner.api.model"),
+        DataLayer("customer-app/src/main/java/cz/cleansia/customer/core", "cz.cleansia.customer.api"),
+        DataLayer("partner-app/src/main/java/cz/cleansia/partner/data", "cz.cleansia.partner.api"),
         // Partner's app-shared clients (consent, push) live under `core/` rather than `data/`, and
         // the roster is only closed if it follows them there.
-        DataLayer("partner-app/src/main/java/cz/cleansia/partner/core", "cz.cleansia.partner.api.model"),
+        DataLayer("partner-app/src/main/java/cz/cleansia/partner/core", "cz.cleansia.partner.api"),
+    )
+
+    /**
+     * Named, with the reason, rather than missed by a predicate: each calls a generated endpoint but
+     * maps no response field into an app type, so there is no field-name contract for a wire test to
+     * hold. A file added to this list is a decision visible in the diff; a file the predicate simply
+     * failed to see is not, which is how the two service-area sources went unwatched until a sweep
+     * found a live defect in them.
+     */
+    private val notMappers = setOf(
+        // Registers a device token; reads only whether the call succeeded.
+        "notifications/DeviceApiClient.kt",
+        // Hilt graph — builds the clients, and its one body read is the token-refresh plumbing
+        // pinned by RefreshClientClassificationTest.
+        "network/NetworkModule.kt",
+        // Reads one id off an already-refused ApiResult; owns no mapper.
+        "auth/EmployeeIdResolver.kt",
     )
 
     private val androidRoot: File =
@@ -33,9 +50,14 @@ class WireContractRosterTest {
             ?: error("cleansia_android root not found from ${File(".").absolutePath}")
 
     /**
-     * A source is on the roster when it names a generated **response**-side model and turns a wire
+     * A source is on the roster when it names a generated **response**-side type and turns a wire
      * body into a value. `*Command` / `*Request` are the request side, which the generator types
      * optional for a different reason (T-0441) and which no mapper reads.
+     *
+     * The `client` package counts as well as `model`, and that is not belt-and-braces: Kotlin infers
+     * the DTO type off the client method, so a file can map `dto.id` without ever importing the
+     * model. Both service-area sources are written exactly that way, and keying on `model` alone
+     * left them off the roster while they defaulted an unanswered read to "we serve nowhere".
      */
     private fun rosterSources(layer: DataLayer): List<File> {
         val root = File(androidRoot, layer.path)
@@ -44,14 +66,16 @@ class WireContractRosterTest {
             .filter { it.isFile && it.extension == "kt" }
             .filter { file ->
                 val text = file.readText()
-                readsAGeneratedResponseModel(text, layer.generatedModels) && producesAnAppValue(text)
+                readsAGeneratedResponseModel(text, layer.generatedApi) &&
+                    producesAnAppValue(text) &&
+                    notMappers.none { file.invariantSeparatorsPath.endsWith(it) }
             }
             .sortedBy { it.invariantSeparatorsPath }
             .toList()
     }
 
-    private fun readsAGeneratedResponseModel(text: String, modelPackage: String): Boolean =
-        Regex(Regex.escape(modelPackage) + "\\.([A-Za-z0-9_]+)")
+    private fun readsAGeneratedResponseModel(text: String, apiPackage: String): Boolean =
+        Regex(Regex.escape(apiPackage) + "\\.(?:model|client)\\.([A-Za-z0-9_]+)")
             .findAll(text)
             .map { it.groupValues[1] }
             .any { !it.endsWith("Command") && !it.endsWith("Request") }
@@ -138,10 +162,12 @@ class WireContractRosterTest {
             ".required(",
             "toAppDto",
             "toDomain",
+            // The tell for a file that reads the wire without naming a mapper at all.
+            ".body()",
         )
 
         val ZERO_COERCION = Regex("""\?:\s*0(\.0+)?[fFlLdD]?\b|orZero\(\)""")
 
-        const val MIN_ROSTER_SOURCES = 20
+        const val MIN_ROSTER_SOURCES = 25
     }
 }

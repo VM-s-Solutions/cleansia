@@ -15,7 +15,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -67,6 +69,24 @@ class PromoCodeWireTest {
     private suspend fun validation(body: String) =
         serving(body) { it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0)) }.body()
 
+    /**
+     * The mapper is total now, so a refusal arrives as a throw carrying the field name rather than
+     * as a null body — asserting the name is the point of the idiom.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
+
     private suspend fun loadedValidation(body: String): ValidatePromoCodeResponse {
         val dto = validation(body)
         assertNotNull("expected the captured payload to map", dto)
@@ -107,7 +127,7 @@ class PromoCodeWireTest {
      */
     @Test
     fun aMissingVerdictRefusesTheAnswerRatherThanRejectingTheCode() = runTest {
-        assertNull(validation(withoutKey(CAPTURED_VALID, "isValid")))
+        refuses("isValid") { validation(withoutKey(CAPTURED_VALID, "isValid")) }
     }
 
     @Test
@@ -135,9 +155,9 @@ class PromoCodeWireTest {
 
     @Test
     fun aBodylessSuccessIsRefusedRatherThanReadingAsInvalid() = runTest {
-        assertNull(
-            serving("", code = 204) { it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0)) }.body(),
-        )
+        refuses("ValidatePromoCodeResponse") {
+            serving("", code = 204) { it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0)) }
+        }
     }
 
     // --- payload plumbing ---------------------------------------------------------

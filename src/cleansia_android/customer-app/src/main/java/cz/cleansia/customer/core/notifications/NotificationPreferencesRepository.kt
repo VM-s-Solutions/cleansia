@@ -5,6 +5,8 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -69,29 +71,22 @@ class NotificationPreferencesRepository @Inject constructor(
     }
 
     /**
-     * Reads the body explicitly rather than through `safeApiCall`, which answers a 2xx-with-no-body
-     * with `Success(Unit as T)` — an unchecked cast that would store `Unit` in the snapshot and
-     * throw at the first read. [NotificationPreferencesApi] answers a contract refusal with exactly
-     * that shape.
+     * A refused payload must never reach the snapshot, because `update` is a replace-all PUT: the
+     * next toggle the customer touches writes all eleven back, so anything this layer invented
+     * becomes the server's record of their consent. `requiredBody` refuses and the snapshot keeps
+     * its previous value.
      */
     private suspend fun call(
         block: suspend () -> retrofit2.Response<NotificationPreferencesPayload>,
-    ): ApiResult<NotificationPreferencesPayload> {
+    ): ApiResult<NotificationPreferencesPayload> = wireResult {
         val resp = networkCall { block() } ?: return networkError()
         if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
-        return resp.body()?.let { ApiResult.Success(it) } ?: emptyBodyError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
 
-    /**
-     * A 2xx whose body did not survive [NotificationPreferencesApi]'s contract refusal. Deliberately
-     * not [ApiError.Network]: that channel is the silent one and the network is the one thing that
-     * did not fail.
-     */
-    private fun emptyBodyError(): ApiResult<Nothing> =
-        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)

@@ -124,6 +124,14 @@ android {
             kotlin.srcDir("${layout.buildDirectory.get()}/generated/openapi/src/main/kotlin")
         }
     }
+
+    testOptions {
+        // Matches :core and :customer-app. Pure-JVM unit tests cannot link against android.jar, so
+        // a fire-and-forget android.util.Log call inside a repository under test blew up with
+        // "Method w in android.util.Log not mocked" — on the error branch, which is the branch most
+        // worth testing.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 // ─── OpenAPI generated client ───────────────────────────────────────

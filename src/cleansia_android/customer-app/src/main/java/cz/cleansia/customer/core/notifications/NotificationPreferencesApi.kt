@@ -4,6 +4,8 @@ import cz.cleansia.customer.api.client.NotificationPreferencesApi as GenNotifica
 import cz.cleansia.customer.api.model.NotificationPreferencesDto as GenNotificationPreferencesDto
 import cz.cleansia.customer.api.model.UpdateNotificationPreferencesCommand as GenUpdateNotificationPreferencesCommand
 import kotlinx.serialization.Serializable
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -20,20 +22,16 @@ class NotificationPreferencesApi(
 ) {
     suspend fun getMine(): Response<NotificationPreferencesPayload> {
         val raw = notificationPreferencesApi.notificationPreferencesGetMine()
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun update(body: NotificationPreferencesPayload): Response<NotificationPreferencesPayload> {
         val raw = notificationPreferencesApi.notificationPreferencesUpdate(
             updateNotificationPreferencesCommand = body.toWire(),
         )
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
-
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
 /**
  * Every toggle is refused, and this surface is the one where a coerced value does not stay a display
@@ -46,20 +44,20 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
  * A null body is refused rather than being read as a complete set of server-side defaults: the
  * backend lazy-creates the row on read, so "no preferences exist" is not a state this endpoint has.
  */
-private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload? {
-    if (this == null) return null
+private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload {
+    val prefs = required("NotificationPreferencesDto")
     return NotificationPreferencesPayload(
-        orderUpdates = orderUpdates ?: return null,
-        cleanerOnTheWay = cleanerOnTheWay ?: return null,
-        orderCompleted = orderCompleted ?: return null,
-        orderCancelled = orderCancelled ?: return null,
-        refundIssued = refundIssued ?: return null,
-        membershipExpiring = membershipExpiring ?: return null,
-        membershipCancelled = membershipCancelled ?: return null,
-        tierUpgrade = tierUpgrade ?: return null,
-        promo = promo ?: return null,
-        disputeReply = disputeReply ?: return null,
-        recurringScheduled = recurringScheduled ?: return null,
+        orderUpdates = prefs.orderUpdates.required("orderUpdates"),
+        cleanerOnTheWay = prefs.cleanerOnTheWay.required("cleanerOnTheWay"),
+        orderCompleted = prefs.orderCompleted.required("orderCompleted"),
+        orderCancelled = prefs.orderCancelled.required("orderCancelled"),
+        refundIssued = prefs.refundIssued.required("refundIssued"),
+        membershipExpiring = prefs.membershipExpiring.required("membershipExpiring"),
+        membershipCancelled = prefs.membershipCancelled.required("membershipCancelled"),
+        tierUpgrade = prefs.tierUpgrade.required("tierUpgrade"),
+        promo = prefs.promo.required("promo"),
+        disputeReply = prefs.disputeReply.required("disputeReply"),
+        recurringScheduled = prefs.recurringScheduled.required("recurringScheduled"),
     )
 }
 

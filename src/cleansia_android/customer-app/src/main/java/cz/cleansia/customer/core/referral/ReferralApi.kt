@@ -7,6 +7,8 @@ import cz.cleansia.customer.api.model.GetMyReferralsReferralListItem as GenRefer
 import cz.cleansia.customer.api.model.PagedDataOfGetMyReferralsReferralListItem as GenPagedReferralList
 import cz.cleansia.customer.api.model.ValidateReferralQuery as GenValidateReferralQuery
 import cz.cleansia.customer.api.model.ValidateReferralResponse as GenValidateReferralResponse
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -19,25 +21,21 @@ class ReferralApi(
 ) {
     suspend fun getMy(): Response<ReferralAccountDto> {
         val raw = referralApi.referralGetMy()
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun getMyReferrals(offset: Int = 0, limit: Int = 20): Response<ReferralListResponseDto> {
         val raw = referralApi.referralGetMyReferrals(offset = offset, limit = limit)
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun validate(body: ValidateReferralRequest): Response<ValidateReferralResponse> {
         val raw = referralApi.referralValidate(
             validateReferralQuery = GenValidateReferralQuery(code = body.code),
         )
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
-
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
 // ─── Generated → app DTO mappers ───
 
@@ -48,14 +46,14 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
  * blanked because the card is gated on `code.isNotBlank()`: an empty one removes the invite feature
  * from the screen instead of reporting that it could not be loaded.
  */
-private fun GenGetMyReferralResponse?.toAppDto(): ReferralAccountDto? {
-    if (this == null) return null
+private fun GenGetMyReferralResponse?.toAppDto(): ReferralAccountDto {
+    val account = required("GetMyReferralResponse")
     return ReferralAccountDto(
-        code = code ?: return null,
-        timesUsed = timesUsed ?: return null,
-        qualifiedCount = qualifiedCount ?: return null,
-        acceptedCount = acceptedCount ?: return null,
-        pointsPerReferral = pointsPerReferral ?: return null,
+        code = account.code.required("code"),
+        timesUsed = account.timesUsed.required("timesUsed"),
+        qualifiedCount = account.qualifiedCount.required("qualifiedCount"),
+        acceptedCount = account.acceptedCount.required("acceptedCount"),
+        pointsPerReferral = account.pointsPerReferral.required("pointsPerReferral"),
     )
 }
 
@@ -71,13 +69,15 @@ private fun GenGetMyReferralResponse?.toAppDto(): ReferralAccountDto? {
  * from the breakdown — and it matches the loyalty ledger, which is the same "here is what you earned,
  * line by line" surface on the same tab.
  */
-private fun GenPagedReferralList?.toAppDto(): ReferralListResponseDto? {
-    if (this == null) return null
+private fun GenPagedReferralList?.toAppDto(): ReferralListResponseDto {
+    val page = required("PagedDataOfGetMyReferralsReferralListItem")
     return ReferralListResponseDto(
-        pageNumber = pageNumber ?: return null,
-        pageSize = pageSize ?: return null,
-        total = total ?: return null,
-        data = `data`.orEmpty().map { it.toAppDto() ?: return null },
+        pageNumber = page.pageNumber.required("pageNumber"),
+        pageSize = page.pageSize.required("pageSize"),
+        total = page.total.required("total"),
+        // `.orEmpty()` on the page's own member, never on the body above it: an absent `data` array
+        // beside a present `total` is an empty page, where an absent BODY is no answer at all.
+        data = page.`data`.orEmpty().map { it.toAppDto() },
     )
 }
 
@@ -87,13 +87,13 @@ private fun GenPagedReferralList?.toAppDto(): ReferralListResponseDto? {
  * qualified. `pointsAwardedToReferrer` stays nullable: `nullable: true` in the spec, because a
  * referral that has not qualified has genuinely been awarded nothing.
  */
-private fun GenReferralListItem.toAppDto(): ReferralListItemDto? {
+private fun GenReferralListItem.toAppDto(): ReferralListItemDto {
     return ReferralListItemDto(
-        id = id ?: return null,
+        id = id.required("id"),
         // Generated field is `referredFirstName`; surface under the hand-written
         // name (UI calls it referredUserName, but the value is still anonymised).
         referredUserName = referredFirstName,
-        status = status?.value ?: return null,
+        status = status.required("status").value,
         acceptedOn = acceptedOn?.toString(),
         firstQualifyingOrderOn = firstQualifyingOrderOn?.toString(),
         pointsAwardedToReferrer = pointsAwardedToReferrer,
@@ -105,11 +105,11 @@ private fun GenReferralListItem.toAppDto(): ReferralListItemDto? {
  * into "that code is not valid" on the signup form — the customer loses the joining bonus and the
  * referrer loses theirs, and the screen states a reason the server never gave.
  */
-private fun GenValidateReferralResponse?.toAppDto(): ValidateReferralResponse? {
-    if (this == null) return null
+private fun GenValidateReferralResponse?.toAppDto(): ValidateReferralResponse {
+    val verdict = required("ValidateReferralResponse")
     return ValidateReferralResponse(
-        isValid = isValid ?: return null,
-        referrerFirstName = referrerFirstName,
-        errorCode = errorCode,
+        isValid = verdict.isValid.required("isValid"),
+        referrerFirstName = verdict.referrerFirstName,
+        errorCode = verdict.errorCode,
     )
 }

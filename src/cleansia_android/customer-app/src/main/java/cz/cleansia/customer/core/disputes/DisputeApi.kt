@@ -13,6 +13,8 @@ import cz.cleansia.customer.api.model.UploadDisputeEvidenceResponse as GenUpload
 import cz.cleansia.customer.core.user.toAppDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
@@ -28,12 +30,12 @@ class DisputeApi(
 ) {
     suspend fun getPaged(offset: Int = 0, limit: Int = 20): Response<DisputeListResponseDto> {
         val raw = disputeApi.disputeGetPagedDisputes(offset = offset, limit = limit)
-        return raw.mapBody { it.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun getById(id: String): Response<DisputeDetailsDto> {
         val raw = disputeApi.disputeGetDisputeById(disputeId = id)
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 
     suspend fun create(body: CreateDisputeRequest): Response<String> =
@@ -64,7 +66,7 @@ class DisputeApi(
         // for the existing `DisputeRepository` call site.
         val disputeIdString = disputeId.asString()
         val raw = disputeApi.disputeUploadEvidence(disputeId = disputeIdString, file = file)
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
 
@@ -75,10 +77,6 @@ private fun RequestBody.asString(): String? = try {
 } catch (_: Throwable) {
     null
 }
-
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
 // ─── Generated → app DTO mappers ───
 
@@ -93,28 +91,30 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
  * customer every other dispute the server answered, while a surviving row whose own content is broken
  * refuses, and because the row is an element of the page that refuses the page.
  */
-private fun GenPagedDisputes?.toAppDto(): DisputeListResponseDto? {
-    if (this == null) return null
+private fun GenPagedDisputes?.toAppDto(): DisputeListResponseDto {
+    val page = required("PagedDataOfDisputeListItem")
     return DisputeListResponseDto(
-        pageNumber = pageNumber ?: return null,
-        pageSize = pageSize ?: return null,
-        total = total ?: return null,
-        receivedCount = `data`.orEmpty().size,
-        data = `data`.orEmpty()
+        pageNumber = page.pageNumber.required("pageNumber"),
+        pageSize = page.pageSize.required("pageSize"),
+        total = page.total.required("total"),
+        // `.orEmpty()` on the page's own member, never on the body above it: an absent `data` array
+        // beside a present `total` is an empty page, where an absent BODY is no answer at all.
+        receivedCount = page.`data`.orEmpty().size,
+        data = page.`data`.orEmpty()
             .filter { it.id != null }
-            .map { it.toAppDtoOrRefuse() ?: return null },
+            .map { it.toAppDtoOrRefuse() },
     )
 }
 
-private fun GenDisputeListItem.toAppDtoOrRefuse(): DisputeListItemDto? {
+private fun GenDisputeListItem.toAppDtoOrRefuse(): DisputeListItemDto {
     return DisputeListItemDto(
         id = id,
         orderId = orderId,
         displayOrderNumber = displayOrderNumber,
         customerName = customerName,
         customerEmail = customerEmail,
-        reason = reason?.toAppDto() ?: return null,
-        status = status?.toAppDto() ?: return null,
+        reason = reason?.toAppDto().required("reason"),
+        status = status?.toAppDto().required("status"),
         createdOn = createdOn?.toString(),
         resolvedOn = resolvedOn?.toString(),
         refundAmount = refundAmount,
@@ -126,29 +126,30 @@ private fun GenDisputeListItem.toAppDtoOrRefuse(): DisputeListItemDto? {
  * the content rather than decoration over it, so a message that cannot be attributed refuses the
  * dispute with it.
  */
-private fun GenDisputeDetails.toAppDto(): DisputeDetailsDto? {
-    return DisputeDetailsDto(
+private fun GenDisputeDetails?.toAppDto(): DisputeDetailsDto {
+    val details = required("DisputeDetails")
+    return with(details) { DisputeDetailsDto(
         id = id,
         orderId = orderId,
         displayOrderNumber = displayOrderNumber,
         userId = null, // not on generated DTO
         customerName = customerName,
         customerEmail = customerEmail,
-        reason = reason?.toAppDto() ?: return null,
+        reason = reason?.toAppDto().required("reason"),
         description = description,
-        status = status?.toAppDto() ?: return null,
+        status = status?.toAppDto().required("status"),
         resolutionNotes = resolutionNotes,
         refundAmount = refundAmount,
         resolvedBy = null, // not on generated DTO
         resolvedOn = resolvedOn?.toString(),
         stripeDisputeId = null, // not on generated DTO
-        messages = messages?.map { it.toAppDto() ?: return null },
+        messages = messages?.map { it.toAppDto() },
         evidence = evidence?.map { it.toAppDto() },
         createdOn = createdOn?.toString(),
         createdBy = null,
         updatedOn = updatedOn?.toString(),
         updatedBy = null,
-    )
+    ) }
 }
 
 /**
@@ -157,13 +158,13 @@ private fun GenDisputeDetails.toAppDto(): DisputeDetailsDto? {
  * waiting to hear whether their money is coming back, the answer arrives and reads as their own
  * words.
  */
-private fun GenDisputeMessageDto.toAppDto(): DisputeMessageDto? {
+private fun GenDisputeMessageDto.toAppDto(): DisputeMessageDto {
     return DisputeMessageDto(
         id = id,
         message = message,
         authorId = authorId,
         authorName = authorName,
-        isStaffMessage = isStaffMessage ?: return null,
+        isStaffMessage = isStaffMessage.required("isStaffMessage"),
         createdOn = createdOn?.toString(),
     )
 }
@@ -177,13 +178,15 @@ private fun GenDisputeEvidenceDto.toAppDto(): DisputeEvidenceDto = DisputeEviden
     uploadedOn = uploadedOn?.toString(),
 )
 
-private fun GenUploadDisputeEvidenceResponse.toAppDto(): UploadDisputeEvidenceResponse =
-    UploadDisputeEvidenceResponse(
-        evidenceId = evidenceId,
-        fileName = fileName,
-        blobUrl = blobUrl,
-        uploadedOn = uploadedOn?.toString(),
-    )
+private fun GenUploadDisputeEvidenceResponse?.toAppDto(): UploadDisputeEvidenceResponse =
+    with(required("UploadDisputeEvidenceResponse")) {
+        UploadDisputeEvidenceResponse(
+            evidenceId = evidenceId,
+            fileName = fileName,
+            blobUrl = blobUrl,
+            uploadedOn = uploadedOn?.toString(),
+        )
+    }
 
 private fun Int.toWireReason(): GenDisputeReason? = when (this) {
     1 -> GenDisputeReason._1

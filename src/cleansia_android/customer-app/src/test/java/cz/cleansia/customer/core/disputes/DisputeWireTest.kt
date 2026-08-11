@@ -16,7 +16,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -37,6 +39,24 @@ class DisputeWireTest {
         isLenient = true
         explicitNulls = false
         serializersModule = IntEnumSerializersModule
+    }
+
+    /**
+     * The mapper is total now, so a refusal arrives as a throw carrying the field name rather than
+     * as a null body — asserting the name is the point of the idiom.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
     }
 
     private suspend fun <T> serving(
@@ -115,10 +135,7 @@ class DisputeWireTest {
     @Test
     fun aMissingPagedCounterRefusesThePageRatherThanEndingPagination() = runTest {
         listOf("pageNumber", "pageSize", "total").forEach { field ->
-            assertNull(
-                "a missing $field must refuse the page",
-                page(withoutKey(CAPTURED_PAGE, field)),
-            )
+            refuses(field) { page(withoutKey(CAPTURED_PAGE, field)) }
         }
     }
 
@@ -143,7 +160,7 @@ class DisputeWireTest {
      */
     @Test
     fun anUnattributableMessageRefusesTheDisputeRatherThanBecomingTheCustomers() = runTest {
-        assertNull(detail(detailWithLastMessage { it - "isStaffMessage" }))
+        refuses("isStaffMessage") { detail(detailWithLastMessage { it - "isStaffMessage" }) }
     }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
@@ -164,13 +181,13 @@ class DisputeWireTest {
 
     @Test
     fun aBrokenStatusCodeRefusesThePageRatherThanReadingAsNotStarted() = runTest {
-        assertNull(page(pageWithFirstRow { it.withCodeMissingValue("status") }))
-        assertNull(page(pageWithFirstRow { it.withCodeMissingValue("reason") }))
+        refuses("status") { page(pageWithFirstRow { it.withCodeMissingValue("status") }) }
+        refuses("reason") { page(pageWithFirstRow { it.withCodeMissingValue("reason") }) }
     }
 
     @Test
     fun aMissingStatusObjectRefusesThePage() = runTest {
-        assertNull(page(pageWithFirstRow { it - "status" }))
+        refuses("status") { page(pageWithFirstRow { it - "status" }) }
     }
 
     @Test
@@ -218,7 +235,7 @@ class DisputeWireTest {
 
     @Test
     fun aBodylessSuccessIsRefusedRatherThanFabricated() = runTest {
-        assertNull(serving("", code = 204) { it.getPaged(0, 20) }.body())
+        refuses("PagedDataOfDisputeListItem") { serving("", code = 204) { it.getPaged(0, 20) } }
     }
 
     // --- payload plumbing ---------------------------------------------------------

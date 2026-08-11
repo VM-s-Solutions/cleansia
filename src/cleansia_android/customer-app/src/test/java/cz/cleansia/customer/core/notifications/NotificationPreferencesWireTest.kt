@@ -13,7 +13,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -65,6 +67,24 @@ class NotificationPreferencesWireTest {
 
     private suspend fun preferences(body: String) = serving(body) { it.getMine() }.body()
 
+    /**
+     * The mapper is total now, so a refusal arrives as a throw carrying the field name rather than
+     * as a null body — asserting the name is the point of the idiom.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
+
     private suspend fun loadedPreferences(body: String): NotificationPreferencesPayload {
         val dto = preferences(body)
         assertNotNull("expected the captured payload to map", dto)
@@ -112,10 +132,7 @@ class NotificationPreferencesWireTest {
     @Test
     fun aMissingToggleRefusesThePayloadRatherThanDecidingConsent() = runTest {
         SPEC_PROPERTIES.forEach { field ->
-            assertNull(
-                "a missing $field must refuse rather than be written back as the app's guess",
-                preferences(withoutKey(CAPTURED, field)),
-            )
+            refuses(field) { preferences(withoutKey(CAPTURED, field)) }
         }
     }
 
@@ -123,7 +140,7 @@ class NotificationPreferencesWireTest {
     fun theUpdateEchoIsRefusedOnTheSameTerms() = runTest {
         val sent = loadedPreferences(CAPTURED)
 
-        assertNull(serving(withoutKey(CAPTURED, "promo")) { it.update(sent) }.body())
+        refuses("promo") { serving(withoutKey(CAPTURED, "promo")) { it.update(sent) } }
         assertEquals(sent, serving(CAPTURED) { it.update(sent) }.body())
     }
 
@@ -135,7 +152,7 @@ class NotificationPreferencesWireTest {
      */
     @Test
     fun aBodylessSuccessIsRefusedRatherThanFabricatingAFullSetOfOptIns() = runTest {
-        assertNull(serving("", code = 204) { it.getMine() }.body())
+        refuses("NotificationPreferencesDto") { serving("", code = 204) { it.getMine() } }
     }
 
     // --- payload plumbing ---------------------------------------------------------

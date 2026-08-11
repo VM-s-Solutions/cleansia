@@ -17,7 +17,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import cz.cleansia.core.network.WireContractViolation
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -76,6 +78,24 @@ class ReferralWireTest {
     private suspend fun validation(body: String) =
         serving(body) { it.validate(ValidateReferralRequest("FRIEND10")) }.body()
 
+    /**
+     * The mapper is total now, so a refusal arrives as a throw carrying the field name rather than
+     * as a null body — asserting the name is the point of the idiom.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
+
     private suspend fun loadedAccount(body: String): ReferralAccountDto {
         val dto = account(body)
         assertNotNull("expected the captured payload to map", dto)
@@ -121,10 +141,7 @@ class ReferralWireTest {
     @Test
     fun aMissingCounterRefusesTheAccountRatherThanSayingNobodyJoined() = runTest {
         ACCOUNT_REQUIRED_NUMBERS.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the account rather than report nothing earned",
-                account(withoutKey(CAPTURED_ACCOUNT, field)),
-            )
+            refuses(field) { account(withoutKey(CAPTURED_ACCOUNT, field)) }
         }
     }
 
@@ -134,7 +151,7 @@ class ReferralWireTest {
      */
     @Test
     fun aMissingCodeRefusesTheAccountRatherThanHidingTheInviteCard() = runTest {
-        assertNull(account(withoutKey(CAPTURED_ACCOUNT, "code")))
+        refuses("code") { account(withoutKey(CAPTURED_ACCOUNT, "code")) }
     }
 
     @Test
@@ -150,10 +167,7 @@ class ReferralWireTest {
     @Test
     fun aMissingPagedCounterRefusesThePage() = runTest {
         listOf("pageNumber", "pageSize", "total").forEach { field ->
-            assertNull(
-                "a missing $field must refuse the page",
-                referrals(withoutKey(CAPTURED_REFERRALS, field)),
-            )
+            refuses(field) { referrals(withoutKey(CAPTURED_REFERRALS, field)) }
         }
     }
 
@@ -173,7 +187,7 @@ class ReferralWireTest {
      */
     @Test
     fun aMissingVerdictRefusesTheValidationRatherThanRejectingTheCode() = runTest {
-        assertNull(validation(withoutKey(CAPTURED_VALIDATION, "isValid")))
+        refuses("isValid") { validation(withoutKey(CAPTURED_VALIDATION, "isValid")) }
     }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
@@ -185,12 +199,12 @@ class ReferralWireTest {
      */
     @Test
     fun aReferralWithoutAnIdRefusesThePageRatherThanVanishingFromTheBreakdown() = runTest {
-        assertNull(referrals(referralsWithFirstRow { it - "id" }))
+        refuses("id") { referrals(referralsWithFirstRow { it - "id" }) }
     }
 
     @Test
     fun aMissingStatusRefusesThePageRatherThanReportingAnUnpaidInvite() = runTest {
-        assertNull(referrals(referralsWithFirstRow { it - "status" }))
+        refuses("status") { referrals(referralsWithFirstRow { it - "status" }) }
     }
 
     @Test
@@ -243,9 +257,13 @@ class ReferralWireTest {
      */
     @Test
     fun aBodylessSuccessIsRefusedRatherThanFabricated() = runTest {
-        assertNull(serving("", code = 204) { it.getMy() }.body())
-        assertNull(serving("", code = 204) { it.getMyReferrals(0, 20) }.body())
-        assertNull(serving("", code = 204) { it.validate(ValidateReferralRequest("FRIEND10")) }.body())
+        refuses("GetMyReferralResponse") { serving("", code = 204) { it.getMy() } }
+        refuses("PagedDataOfGetMyReferralsReferralListItem") {
+            serving("", code = 204) { it.getMyReferrals(0, 20) }
+        }
+        refuses("ValidateReferralResponse") {
+            serving("", code = 204) { it.validate(ValidateReferralRequest("FRIEND10")) }
+        }
     }
 
     // --- payload plumbing ---------------------------------------------------------

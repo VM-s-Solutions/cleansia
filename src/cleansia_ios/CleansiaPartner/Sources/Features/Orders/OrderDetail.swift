@@ -129,8 +129,12 @@ extension OrderDetail {
     /// The fields `OrderPiiRedaction` blanks by caller class are rendered off their **own arrival**.
     /// The server decides disclosure on `CanAccessOrderAsync`; `isAssignedToCurrentUser` counts the
     /// assignment list. They disagree for the employee who booked this cleaning for their own home,
-    /// and gating the render on the flag hides that person's own data from them. A blank is a
-    /// redaction, not a value: the server sends `""` and `[]`, so the test is never `!= nil`.
+    /// and gating the render on the flag hides that person's own data from them.
+    ///
+    /// A blank is a redaction, not a value — and the redaction is **mixed** (ADR-0047 §D4 as amended):
+    /// string scalars like this phone are blanked to `""`, the free text and the composites are set
+    /// to `null`, the lists to `[]`. Neither `!= nil` nor `!= ""` covers that set, so every gate below
+    /// tolerates null, empty and whitespace on the same field.
     var showsCustomerContact: Bool {
         !(customerPhone ?? "").isBlank
     }

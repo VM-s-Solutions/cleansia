@@ -14,7 +14,8 @@ final class OrderDetailRedactionGateTests: XCTestCase {
     }
 
     func testTheContactChipsStayHiddenOnAPhoneTheServerBlanked() throws {
-        // `OrderPiiRedaction` sends "" for a browsing cleaner, never null.
+        // The phone is one of the scalars `OrderPiiRedaction` blanks to `""`; a customer who left no
+        // number arrives as null. Both are the same absence here, and whitespace is neither.
         for withheld in [nil, "", "   "] {
             XCTAssertFalse(
                 try detail(isMine: true, phone: withheld).showsCustomerContact,

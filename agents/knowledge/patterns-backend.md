@@ -696,8 +696,40 @@ column first.** The values are usually already computed and thrown away at the w
 (`PoisonHandlerBase.cs:69` builds the descriptor, `:80` passes none of it).
 
 **Deviating form:** an entity with a verbatim-body column whose doc-comment says "unbounded" and whose
-type appears in **no** retention, prune or GDPR path. Grep test: for each such column, the type name
-must appear in `Features/DataRetention/**` or in `GdprDeletionService`.
+type appears in **no** retention, prune or GDPR path.
+
+**Enforced by `SubjectDataErasureRosterTests` — `T1-CI`, and it replaces the grep test this entry used
+to specify.** The grep test was *"for each such column, the type name must appear in
+`Features/DataRetention/**` or in `GdprDeletionService`"*, and it was a procedure nobody ran: we found
+`DeadLetter`, then `OutboxMessage`, then `LiveActivityToken` **by hand, one per ticket**, each after the
+last. The roster walks `DbContext.Model.GetEntityTypes()` and requires a written verdict per
+subject-bearing entity, checked against `GdprDeletionService`'s own source so a verdict and a deletion
+cannot drift apart. On the run that first went green it found **four more** — a logged-out `Device`
+tombstone, `EmployeeDocument` rows left behind after their blobs were deleted, `OrderPhoto` free text,
+and live `RefreshToken` rows.
+
+Three things about its shape are the transferable part:
+
+- **It asks a fifth question the four obvious ones miss.** Subject-bearing is usually *"has a `UserId`
+  FK, or a name/email/address-shaped column"* — and all four of those questions **fail on the two tables
+  we actually missed**, because `DeadLetter` and `OutboxMessage` hold their subject inside a serialized
+  wire body and carry no subject column at all. So the roster also asks *does this entity **declare** an
+  unbounded string column*. Measured: that question adds exactly those two.
+- **`DeclaringType == entityType.ClrType` is load-bearing, not defensive.** An inherited audit string is
+  unbounded on nearly every table, so without the declared-here narrowing the question classifies the
+  whole schema and the roster becomes a list of everything — which is the same as a list of nothing.
+- **Anti-vacuity at three levels**, because a reflective walk that silently matches nothing is the
+  failure mode of every guard of this kind: floors on the entity types the model exposed, on the rows
+  walked, and on the verdict sites actually checked against source.
+
+⚠️ **A verdict of "erased" is asserted against the service's source, so the roster catches a REMOVED
+deletion as well as a new entity.** The addition arm is the one that matters — a new entity with a
+`UserId` and no verdict — and it is the arm a hand-maintained list cannot have.
+
+**One correction worth keeping**, because two commit messages in this area imply otherwise: the erasure
+loads its subject through a **tenant-scoped** read, so it only runs when the caller's tenant already
+matches the subject's. `IgnoreQueryFilters` in the outbox and live-activity walks is defence in depth,
+not the thing that makes them work. `DeadLetter` is the one where it is genuinely load-bearing.
 
 ## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
 

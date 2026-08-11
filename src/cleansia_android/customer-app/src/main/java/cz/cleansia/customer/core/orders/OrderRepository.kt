@@ -81,7 +81,7 @@ class OrderRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.body() ?: return refusedPageError()
             _orders.value = body.data
             // Backend PagedData wrapper exposes total under `total`; expose it as
             // totalRecords in the repo API to keep consumers agnostic of the wire name.
@@ -107,7 +107,7 @@ class OrderRepository @Inject constructor(
             val resp = networkCall { api.getMyOrders(offset = _orders.value.size, limit = pageSize) }
                 ?: return networkError()
             if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.body() ?: return refusedPageError()
             _orders.value = _orders.value + body.data
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
@@ -235,6 +235,18 @@ class OrderRepository @Inject constructor(
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    /**
+     * A 2xx whose body did not survive [OrderApi]'s contract refusal. `mapBody` rewraps a refusal as a
+     * 200 with a null body, so `isSuccessful` stays true — and reporting that as `Success` reproduces,
+     * one layer up, the exact failure the refusal exists to prevent: the page ends and the customer's
+     * older orders stop existing rather than fail to load.
+     *
+     * Deliberately not [ApiError.Network]: that channel is the silent one and the network is the one
+     * thing that did not fail.
+     */
+    private fun refusedPageError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         // Carry the message [ApiErrorParser] already resolved from the body so

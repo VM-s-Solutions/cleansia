@@ -403,6 +403,58 @@ class OrderRepositoryTest {
         assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
     }
 
+    // ── a refused page is not an empty one ──
+
+    /**
+     * [OrderApi]'s `mapBody` rewraps a contract refusal as a 200 with a null body, so `isSuccessful`
+     * stays true. Reading that as `Success` reproduced, one layer up, the exact failure the refusal
+     * exists to prevent — the page ends and the customer's older orders stop existing rather than
+     * fail to load.
+     */
+    @Test
+    fun refresh_givenARefusedBody_reportsAnErrorRatherThanAnEmptySuccess() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(null)
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("a refused page must not read as Success", result is ApiResult.Error)
+        assertEquals(unknownMessage, (result as ApiResult.Error).error.message)
+        assertFalse("a refused page must not latch first-paint", repo.loaded.value)
+        assertTrue("a refused page must not pass as fresh", repo.staleness.isStale())
+    }
+
+    @Test
+    fun loadNextPage_givenARefusedBody_reportsAnErrorRatherThanEndingPagination() = runTest {
+        val firstPage = OrderListResponseDto(total = 5, data = listOf(listItem("o-1")))
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns Response.success(firstPage)
+        val repo = newRepo()
+        repo.refresh()
+
+        coEvery { api.getMyOrders(offset = 1, limit = 20) } returns Response.success(null)
+        val result = repo.loadNextPage()
+
+        assertTrue("a refused page must not read as Success", result is ApiResult.Error)
+        assertEquals(listOf("o-1"), repo.orders.value.map { it.id })
+        assertEquals(5, repo.totalRecords.value)
+    }
+
+    /** The other half: a page the server genuinely answered with no rows is still a success. */
+    @Test
+    fun refresh_givenAGenuinelyEmptyPage_isStillASuccess() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns
+            Response.success(OrderListResponseDto(total = 0, data = emptyList()))
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("an empty page is a real answer", result is ApiResult.Success)
+        assertEquals(emptyList<OrderListItemDto>(), repo.orders.value)
+        assertEquals(0, repo.totalRecords.value)
+        assertTrue(repo.loaded.value)
+        assertFalse(repo.staleness.isStale())
+    }
+
     // ── loading flow transitions (Turbine) ──
 
     @Test

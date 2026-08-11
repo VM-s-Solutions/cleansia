@@ -434,12 +434,16 @@ this rule does not reach it.*
    generated clients *and* hands the render question straight back to them.
 2. **The derivation stays a pure domain function, and the status test is written INLINE, not promoted.**
    `PreferredOffer.StateOf` keeps its four inputs (`PreferredOffer.cs:36-53`); disclosability is a
-   second pure function beside it. **Do not extract a shared `OrderStatus` grouping for it** — the three
-   "is this order live" sets in the tree today all differ, each for a stated reason:
-   `OrderRepository.cs:259-271` (a `static readonly` array *because EF inlines it into SQL* — a C#
-   predicate cannot replace it), `GdprDeletionService.cs:94-101` (a different membership), and
-   `AdminOverrideOrderStatus.cs:86-97` (two refusals with **different error keys**). Extract when a
-   second caller exists, not before.
+   second pure function beside it. **Do not extract a shared `OrderStatus` grouping for it** — the
+   "is this order live" sets in the tree answer different questions and are kept apart for stated
+   reasons: `OrderRepository.cs:264-271` (a `static readonly` array *because EF inlines it into SQL* —
+   a C# predicate cannot replace it), `GdprDeletionService.cs:104-111` (an in-memory read over
+   materialized rows), and `AdminOverrideOrderStatus.cs:86-97` (two refusals with **different error
+   keys**). **Two of those three now carry the same membership, and that is still not a reason to share
+   one artifact** — a SQL form and a C# form are kept as two texts pinned by an equivalence test
+   (§*"a duplicated predicate"*, `patterns-backend.md:1074`), and here the pin is
+   `ErasureBlockingOrderStatusTests`. Extract when a second caller of *the same question* exists, not
+   before.
 3. **Prove the withholding cannot remove an AFFORDANCE.** Where the block also carries a "you may still
    act" flag, withholding it must be shown — not assumed — to be impossible while that flag is true.
    For the preferred offer it is provable: `PreferredOfferExit.IsOpen` conjoins

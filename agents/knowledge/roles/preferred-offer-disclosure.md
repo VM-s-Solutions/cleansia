@@ -84,9 +84,11 @@ already uses for every non-customer caller
 4. **The free-seat term is `AvailableSpots <= 0`, never `AssignedEmployees.Count > 0`.** The latter is
    `IsOpen`'s term for a different question and silences a **true** sentence on multi-seat bookings
    (`Order.cs:697-707`).
-5. **No shared `OrderStatus` grouping was extracted.** The three live-order sets in the tree differ on
-   purpose — `OrderRepository.cs:259-271`, `GdprDeletionService.cs:94-101`,
-   `AdminOverrideOrderStatus.cs:86-97`.
+5. **No shared `OrderStatus` grouping was extracted.** The live-order sets in the tree are kept apart on
+   purpose — `OrderRepository.cs:264-271` (EF inlines it into SQL), `GdprDeletionService.cs:104-111`
+   (in-memory; same membership as the first since T-0595, pinned to it by
+   `ErasureBlockingOrderStatusTests` rather than merged), `AdminOverrideOrderStatus.cs:86-97` (two
+   refusals, different error keys).
 6. **Every NEW consumer of `StateOf` conjoins `IsDisclosable`.** A second surface rendering the state
    without it reintroduces the defect one screen over.
 

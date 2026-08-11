@@ -85,20 +85,38 @@ public class GdprDeletionService(
         return BusinessResult.Success();
     }
 
+    /// <summary>
+    /// Erasure is refused while the subject still has a LIVE order — every status except the two
+    /// terminal ones. Deliberately the same membership as <c>OrderRepository.SlotBlockingStatuses</c>:
+    /// ADR-0037 D5 already names the two as the pair of conservative-direction readers of one question.
+    /// They stay two artifacts because that one is a <c>static readonly</c> array EF inlines into SQL
+    /// and this one runs in memory, so they are pinned against each other by
+    /// <c>ErasureBlockingOrderStatusTests</c> instead of merged (ADR-0049 §D7 refuses promoting either
+    /// to a shared platform grouping).
+    ///
+    /// <para><c>OnTheWay</c> was missing here from the day the set was written, with no ticket, ADR or
+    /// comment recording an intent to exclude it — while the DEAD <c>Pending</c> was present, which is
+    /// the tell: no deliberate reading of "is this order live" admits a status nothing writes and
+    /// refuses one a cleaner is actively driving under. Restored as the omission it was. Without it an
+    /// erasure could complete while a cleaner was en route to the subject's home, anonymizing the
+    /// customer record underneath a job that stays live and staffed.</para>
+    /// </summary>
+    private static readonly OrderStatus[] ErasureBlockingStatuses =
+    [
+        OrderStatus.New,
+        OrderStatus.Pending,
+        OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
+    ];
+
     private async Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
     {
         var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
             .Include(o => o.OrderStatusHistory)
             .ToListAsync(cancellationToken);
 
-        return orders.Any(o =>
-        {
-            var status = o.GetCurrentOrderStatus();
-            return status == OrderStatus.New
-                || status == OrderStatus.Pending
-                || status == OrderStatus.Confirmed
-                || status == OrderStatus.InProgress;
-        });
+        return orders.Any(o => ErasureBlockingStatuses.Contains(o.GetCurrentOrderStatus()));
     }
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)

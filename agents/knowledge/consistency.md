@@ -660,14 +660,36 @@ and is a second authorization implementation beside the server's.
 field that `OrderPiiRedaction.RedactForBrowsingCleaner` blanks (`OrderPiiRedaction.cs:25-31`,
 `:37-53`), and whose condition names `isAssignedToCurrentUser` or a local aliasing it.*
 
-**Roster (descriptive — read 2026-08-11; it decides nothing on its own).** A call site that passes the
-test and is not here means the **roster** is stale; one that is here and passes the test is the defect.
+**Roster — CLOSED 2026-08-11 by T-0590 (`7fdce902` Android, `327013db` iOS). The baseline is zero.**
+All three rows on both platforms were converted; each field's gate is now a named property on the
+presentation model reading that field's own arrival. **Enforced by:** `OrderDisclosurePresentationTest`
+(Android) and `OrderDetailRedactionGateTests` (iOS) — **`T1-CI`**, `android-ci.yml` / `ios-ci.yml`.
+A call site that passes the deviating-form test and is not here means the **roster** is stale.
 
 | # | Field | Android | iOS |
 |---|---|---|---|
 | 1 | `CustomerPhone` — call + SMS chips | `CustomerCard.kt:86-87` | `OrderDetailCards.swift:96-97` |
 | 2 | `AccessInstructions` — access card | `OrderDetailScreen.kt:481-483` | `OrderDetailContent.swift:19-23` |
 | 3 | `OrderNotes`/`OrderIssues` — notes & issues section | `OrderDetailScreen.kt:630` | `OrderDetailContent.swift:124` |
+
+⚠️ **Two things the conversion taught that the rule as written did not say, both worth more than the
+roster.**
+
+**A named property that is only PARTLY named is not pinnable.** The Android lane's first pass left the
+gate as a `val` inside the composable — still a name, still not an inline `if` in the condition — and
+the mutation reinstating the entitlement flag on it **passed green**. Only moving the whole gate onto
+the presentation model made it red. So the obligation is not "give it a name"; it is *the gate is
+computed where a test can reach it without a UI harness*, and the way you find out is by mutating it.
+
+**Blank is not one shape.** The rule says the server redacts to `string.Empty` and `[]`, and both
+lanes checked rather than inheriting that: `OrderPiiRedaction.cs` sends `CustomerPhone = string.Empty`
+and `OrderNotes = []` — but `AccessInstructions = null`. A `!= null` test covers neither the phone nor
+a whitespace-only value; the test is `isNullOrBlank`/`isEmpty` in every case, which is what the rule
+already said and what checking confirmed for a different reason than the one given.
+
+**One conjunct GAINED rather than lost.** `canAddNotes` on both platforms had been riding the render
+gate that was withdrawn, so withdrawing it alone would have offered "Add note" on a stranger's job.
+Withdrawing a render gate obliges you to check what was silently depending on it.
 
 **Explicitly NOT deviations, and this is a ruling rather than an omission** — each gates an **action**
 or a **request**, fails closed, and stays exactly as written: `showWorkSections`/`showsWorkSections`

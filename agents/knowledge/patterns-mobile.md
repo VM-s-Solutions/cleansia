@@ -589,6 +589,35 @@ raw components one-off; never duplicate a `:core` component.
 > **ADR-0047 is `proposed`**
 > (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
 > **Retires when:** that status line stops reading `proposed`.
+>
+> ### The block-level case — a DISCLOSURE BLOCK's arrival is the SERVER's decision (ADR-0049)
+>
+> The narrowing above is about one **field**. It has a composite sibling: a group of fields the server
+> populates in order to say a **sentence** — `PreferredOfferDetails` on the customer order detail. The
+> rule is the same shape one level up, with the *who* made explicit: **the client renders the block off
+> the block's own arrival, and the SERVER decides the arrival.** A client must never conjoin a second
+> server field — an order status, a seat count — to work out whether the server's own sentence is still
+> true. The full rule, its scope line and the three obligations are on the backend page
+> (`patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the server when its sentence stops being
+> true"*), because that is the layer that owes the work.
+>
+> **iOS carries one such conjunct today and KEEPS it — this is a ruling, not an oversight.**
+> `PreferredOfferPresentation.disclosure(for:)` guards on `OrderStatusGroup.isUpcoming(order.status)`
+> (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/PreferredOfferPresentation.swift:23-24`).
+> Unlike the entitlement flag above, that term **agrees with the server on every input** — there is no
+> divergent caller class, so it is duplication rather than a second authorization. What it costs is
+> drift, and the retirement condition is written down rather than left to memory (ADR-0049 §D6): the
+> conjunct is deleted, and its two tests
+> (`src/cleansia_ios/CleansiaCustomer/Tests/PreferredOfferPresentationTests.swift:71-93`) repointed at
+> the absent-block case, the next time that file is opened for any reason.
+>
+> ⚠️ **And it does not fix the whole defect, which is why the server owns it.** `isUpcoming` is
+> `status != Completed && status != Cancelled`
+> (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:37-40`), so
+> on a `Confirmed`, fully-staffed booking it returns true and the card still says *"this booking is now
+> open to our whole team"* about a job somebody else already took. **No status grouping, at any
+> membership, can express that** — the term is a free-seat count. A mobile lane asked to "add the
+> grouping web is missing" should read ADR-0049 first.
 
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill

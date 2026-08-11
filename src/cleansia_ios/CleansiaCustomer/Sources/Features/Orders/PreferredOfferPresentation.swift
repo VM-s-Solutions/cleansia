@@ -13,17 +13,19 @@ enum PreferredOfferDisclosure: Equatable {
 }
 
 enum PreferredOfferPresentation {
-    /// The block is scoped to a booking that is still looking for a cleaner. Every sentence in it is
-    /// about one, and the closed sentence makes a forward-looking claim about the platform — "now open
-    /// to our whole team" — that a cancelled booking contradicts and a finished one outlived. The
-    /// reservation state itself carries no order status, so the narrowing is made here.
+    /// The block is rendered off its **own arrival**, with no order-status term.
+    ///
+    /// The narrowing belongs to the server (ADR-0049 §D4): `PreferredOffer.IsDisclosable` withholds the
+    /// whole block once its sentence stops being true — a concluded booking, or a closed reservation on
+    /// a booking with no seat left for "now open to our whole team" to be true of. A status conjunct
+    /// here would be a second, weaker copy of that predicate: it cannot see the seat count the server's
+    /// other limb turns on, so it would silence a true sentence while claiming to remove false ones.
+    /// `testAnArrivedBlockIsDisclosedOnEveryFulfilmentState` is what reddens if one comes back.
     ///
     /// A state whose sentence cannot be completed is not disclosed at all: "We've asked " is worse than
     /// silence, and the sentence is the whole feature.
     static func disclosure(for order: OrderItem) -> PreferredOfferDisclosure? {
-        guard OrderStatusGroup.isUpcoming(order.status), let offer = order.preferredOffer else {
-            return nil
-        }
+        guard let offer = order.preferredOffer else { return nil }
         switch offer.state {
         case ._1:
             guard let name = named(offer.cleanerName), let respondBy = offer.respondByUtc else { return nil }

@@ -65,36 +65,35 @@ final class PreferredOfferPresentationTests: XCTestCase {
         XCTAssertNil(PreferredOfferPresentation.disclosure(for: order(offer: details(state: ._2, name: " "))))
     }
 
-    /// Every sentence in this block is about a booking that is still looking for a cleaner, and the
-    /// closed one makes a forward-looking claim about the platform — "now open to our whole team". A
-    /// cancelled booking is open to nobody, so the block says nothing rather than something false.
-    func testACancelledBookingDisclosesNothing() {
-        for state in [PreferredOfferState._1, ._2, ._3] {
-            XCTAssertNil(
+    /// The "this booking is now open to our whole team" sentence really does stop being true on a
+    /// concluded booking — but deciding that is the server's job now (ADR-0049 §D4), and it withholds the
+    /// whole block. So a block that ARRIVES is one the server means, on every fulfilment state, and a
+    /// client-side status veto would only silence sentences the server had already judged true.
+    func testAnArrivedBlockIsDisclosedOnEveryFulfilmentState() {
+        for status in OrderStatus.allCases {
+            XCTAssertEqual(
                 PreferredOfferPresentation.disclosure(
-                    for: order(status: ._6, offer: details(state: state, name: "Jana", respondBy: deadline))
+                    for: order(status: status, offer: details(state: ._3))
                 ),
-                "state \(state) still speaks on a cancelled booking"
+                .closed,
+                "status \(status) vetoed a block the server chose to send"
+            )
+            XCTAssertEqual(
+                PreferredOfferPresentation.disclosure(
+                    for: order(status: status, offer: details(state: ._2, name: "Jana"))
+                ),
+                .accepted(cleanerName: "Jana"),
+                "status \(status) vetoed a block the server chose to send"
             )
         }
     }
 
-    /// Same reason on a finished clean: the assignment is history, and "now open to our whole team"
-    /// would be false on every past order the customer ever named a cleaner for.
-    func testACompletedBookingDisclosesNothing() {
-        for state in [PreferredOfferState._1, ._2, ._3] {
-            XCTAssertNil(
-                PreferredOfferPresentation.disclosure(
-                    for: order(status: ._5, offer: details(state: state, name: "Jana", respondBy: deadline))
-                ),
-                "state \(state) still speaks on a completed booking"
-            )
-        }
-    }
-
-    func testAnOrderWithNoStatusAtAllDisclosesNothing() {
-        let item = OrderItem(orderStatus: nil, preferredOffer: details(state: ._3))
-        XCTAssertNil(PreferredOfferPresentation.disclosure(for: item))
+    /// The block's arrival is the whole gate, so it does not need a status to be one — and the wire
+    /// carries the status inside an envelope that can arrive empty.
+    func testTheOrderStatusIsNotReadAtAll() {
+        let withBlock = OrderItem(orderStatus: nil, preferredOffer: details(state: ._3))
+        XCTAssertEqual(PreferredOfferPresentation.disclosure(for: withBlock), .closed)
+        XCTAssertNil(PreferredOfferPresentation.disclosure(for: OrderItem(orderStatus: nil)))
     }
 
     private func details(

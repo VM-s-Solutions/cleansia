@@ -62,9 +62,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
+import cz.cleansia.partner.features.settings.LanguageChooser
 import cz.cleansia.partner.navigation.NavRoute
 
 /**
@@ -163,6 +166,20 @@ fun RegistrationLockScreen(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Until approval this screen replaces the whole app, so without a
+            // chooser here a cleaner who skipped the intro has no way to change
+            // the app's language while they wait.
+            LanguageChooser(
+                selected = LocalAppSettings.current.language,
+                onSelect = { language ->
+                    // Persist first, apply second: apply() recreates the
+                    // Activity on API < 33 and would otherwise race the write.
+                    viewModel.setLanguage(language)
+                    AppLocale.apply(language.tag)
+                },
+                modifier = Modifier.align(Alignment.End),
+            )
+
             LockHeroIcon()
             Spacer(Modifier.height(Spacing.M))
 

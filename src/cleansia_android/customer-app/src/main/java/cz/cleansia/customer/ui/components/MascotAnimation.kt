@@ -14,6 +14,17 @@ import coil3.request.ImageRequest
 import cz.cleansia.customer.BuildConfig
 
 /**
+ * Canvas size, in pixels, of every animated mascot in `res/raw/`.
+ *
+ * Pinned as the decode size because otherwise Coil resolves it from the
+ * layout — 140.dp is 420 px at 3x — and `ImageDecoder` then rescales all
+ * 125 frames on the CPU to buy no extra detail the source doesn't have.
+ * Decoding at native size lets the GPU do the upscale once per draw
+ * instead, via [ContentScale.Fit].
+ */
+private const val MASCOT_CANVAS_PX = 360
+
+/**
  * Renders an animated WebP mascot from `res/raw/`.
  *
  * Backed by Coil 3 with the animated-image decoder registered in
@@ -44,6 +55,7 @@ fun MascotAnimation(
     val context = LocalContext.current
     val request = ImageRequest.Builder(context)
         .data(resId)
+        .size(MASCOT_CANVAS_PX)
         .memoryCacheKey("mascot:$resId:${BuildConfig.VERSION_CODE}")
         .diskCachePolicy(CachePolicy.DISABLED)
         .repeatCount(if (loop) -1 else 0)

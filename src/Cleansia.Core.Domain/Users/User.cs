@@ -206,7 +206,7 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
-    public User Update(string firstName, string lastName, string phoneNumber, DateOnly? birthDate = null)
+    public User Update(string firstName, string lastName, string? phoneNumber, DateOnly? birthDate = null)
     {
         FirstName = firstName;
         LastName = lastName;

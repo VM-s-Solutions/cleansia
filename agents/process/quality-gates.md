@@ -49,6 +49,46 @@ an unverified finding. A clean area reported honestly ("traced X/Y/Z, no defect,
 is a valid, valuable result; manufacturing findings to look thorough is the failure mode this gate
 prevents. This is the report-side complement to the build-side **verify-not-trust** rule in Gate 8.
 
+### Gate 0.5 — Verification integrity (every agent that reports a check, a suite or a build as passing)
+
+The other meta-gate: Gate 0 governs how a **finding** is reported; this governs how a **pass** is
+earned. Three real misses forced it: a security fix whose test passed **identically before and after**
+the fix; a Gradle run reported as passing that was `56 up-to-date` and had **executed nothing**; and
+iOS tests reported green that had **never been compiled**. **A false green costs more than a red,
+because it retires the question** — nobody looks again.
+
+Every applicable leg must hold:
+
+1. **Mutation-prove the test.** One **named** test must be *shown* to go **RED without the fix**:
+   revert the fix — or, where the pre-fix state doesn't compile, stub the changed body — run, record
+   the failure; restore, run, record the pass. The verdict names that test and **both** numbers
+   ("`Login_ForeignDeviceId_Rejected`, 1 failed pre-revert / 0 after restore") and confirms the restore
+   is **byte-exact** (`git diff` clean); a mutation left in the tree is a shipped defect. A test that
+   passes identically before and after proves the code compiles, not that the fix works. **Scoped by
+   the evidence, not the ticket type:** where the AC's evidence is not an executable assertion — a
+   screenshot, visual parity, a generated artifact — leg 1 does not apply; say so under leg 3 rather
+   than inventing a mutation or demanding an asset-exists test (that is theater — see `testing.md`).
+2. **A cached run is not a run.** The verifier executes the suite **itself** and records the command,
+   exit code and counts (the Gate 8 verify-not-trust artifact). What that rule does not say, and this
+   does: **`UP-TO-DATE` / fully-cached / "0 tests ran" is the absence of a run, not a pass** — re-run
+   un-cached (`gradle --rerun-tasks`, `nx --skip-nx-cache`, `xcodebuild clean … test`) and record what
+   actually executed. Zero tests run — or zero files scanned — is a **non-run**, however green the exit
+   code: a checker that exits 0 having inspected nothing has told you nothing.
+3. **Declare what you could NOT verify.** Name each check that did not run **and why** — toolchain, an
+   absent generated project, environment, data. "I could not build the app scheme here: the
+   `.xcodeproj` is generated and not committed" is a **pass** of this leg and a useful result;
+   **silence** about a check that did not run is a **FAIL**. An absent toolchain is Gate 8's
+   **DEFERRED-TO-CI / UNVERIFIED-LOCALLY** entry — record it once, not twice. But where the blocker is
+   the reporting **agent's own tool grant** rather than the environment, that is a **routing**
+   obligation, not a deferral: name the agent that can run it.
+
+Against its neighbours — the line is the **question asked**, not the mutation used: **Gate 6.5** asks
+*would the suite stay green with this feature deleted* (a property of the suite, on the behavior/spine
+classes it enumerates); leg 1 asks *was this named test red before this change* (a property of this
+change's evidence, on every fix). One test can satisfy both — cite it under each and mutate once. The
+Gate 8 **verify-not-trust** blockquote binds the orchestrator's combined-tree run at batch close; this
+gate binds **every** agent reporting **any** check, at any point in the flow.
+
 ### Gate 1 — Conventions self-check (always)
 The change conforms to [`../knowledge/conventions.md`](../knowledge/conventions.md) and the
 relevant stack catalog (`patterns-backend.md` / `patterns-frontend.md` / `patterns-mobile.md`).
@@ -123,7 +163,9 @@ empty collection). The reviewer **names that test** in the verdict (e.g. "Gate 6
 `RefundKey_DoubleSubmit_SingleStripeCall` goes red against a no-op seam"). If no such test can be named,
 the suite is asserting the scaffolding, not the behavior — the gate fails, however green the run. The
 cheap mental check: *delete the method body — does anything go red?* Routing flags these tickets up
-front (`routing.md` §"Spine tickets gate harder") so the dev writes to this gate, not just past it.
+front (`routing.md` §"Spine tickets gate harder") so the dev writes to this gate, not just past it. Its
+sibling on a *fix* is **Gate 0.5 leg 1** — not "would the suite survive a stub" but "was this named test
+red before this change".
 
 ### Gate 7 — Contract & docs parity (when the surface changed)
 - If a backend DTO/endpoint changed, the ticket carries a `MANUAL_STEP: nswag-regen` flag for the
@@ -251,6 +293,17 @@ follow-through is: **after any regen, run all three production builds** (`build:
 partner,admin}`) and fix the consumers before pushing. The blocking frontend prod-build CI catches
 this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
 already fails on the drift symptom.)
+
+**Mechanized after the second occurrence — [ADR-0031](../backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md).**
+The rule above is unchanged and still binds; it is now carried by two mechanisms instead of by memory.
+Every `generate-*-client` script ends in `npm run typecheck`, which runs the Angular compiler over
+**all** app compilation units and names the offending file:line before anything is pushed
+(`generate-clients` regenerates all three and typechecks once). That guard is a **typecheck, not a
+build** — no bundling, budgets, SSR prerender or styles — so the three production builds stay the
+pre-push step and CI stays the authority. `frontend-ci.yml` now also builds pushes to `master`
+(paths-scoped, e2e PR-only), so a regen that slips past both reddens **its own** commit instead of the
+next contributor's PR. The "no dedicated client-drift CI job" position above is **upheld** — no job was
+added; the existing build gate was pointed at the branch where the damage lands.
 
 ### Match agent count to task risk (don't fan out mechanical work)
 Multi-agent fan-out earns its overhead on **wide, parallel, or risky** work (a many-file migration, a

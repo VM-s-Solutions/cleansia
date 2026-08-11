@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,15 +63,12 @@ fun ScopeCard(
         icon = Icons.Outlined.Home,
         modifier = modifier,
     ) {
+        val roomsLabel = if (rooms > 0) pluralStringResource(R.plurals.scope_rooms, rooms, rooms) else null
+        val bathsLabel = if (baths > 0) pluralStringResource(R.plurals.scope_baths, baths, baths) else null
         Text(
-            text = buildString {
-                if (rooms > 0) append("$rooms rooms")
-                if (baths > 0) {
-                    if (isNotEmpty()) append(" · ")
-                    append("$baths bathrooms")
-                }
-                if (isEmpty()) append("—")
-            },
+            text = listOfNotNull(roomsLabel, bathsLabel)
+                .joinToString(" · ")
+                .ifEmpty { "—" },
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
         )

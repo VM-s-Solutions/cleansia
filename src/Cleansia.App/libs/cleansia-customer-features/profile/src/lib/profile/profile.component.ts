@@ -23,7 +23,6 @@ import {
   AddSavedAddressCommand,
   ChangePasswordCommand,
   SavedAddressDto,
-  UpdateCurrentUserCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
 import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
@@ -36,6 +35,7 @@ import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
+import { AVATAR_ACCEPT_ATTRIBUTE } from './profile.models';
 
 @Component({
   selector: 'cleansia-customer-profile',
@@ -77,6 +77,10 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly addresses = this.facade.addresses;
   readonly addressesLoading = this.facade.addressesLoading;
   readonly countryOptions = this.facade.countryOptions;
+  readonly avatarUrl = this.facade.avatarUrl;
+  readonly avatarSaving = this.facade.avatarSaving;
+
+  readonly avatarAccept = AVATAR_ACCEPT_ATTRIBUTE;
 
   activeSection = signal('personal');
   sections: SectionDef[] = PROFILE_SECTIONS;
@@ -221,17 +225,38 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   saveProfile(): void {
     if (this.profileForm.invalid) return;
 
-    const cmd = new UpdateCurrentUserCommand({
-      id: undefined,
-      firstName: this.profileForm.value.firstName || undefined,
-      lastName: this.profileForm.value.lastName || undefined,
-      phoneNumber: this.profileForm.value.phoneNumber || undefined,
-      birthDate: this.profileForm.value.birthDate || undefined,
-      languageCode: this.translate.currentLang,
-      photo: undefined as any,
-    });
+    this.facade.saveProfile(
+      {
+        firstName: this.profileForm.value.firstName || undefined,
+        lastName: this.profileForm.value.lastName || undefined,
+        phoneNumber: this.profileForm.value.phoneNumber || undefined,
+        birthDate: this.profileForm.value.birthDate || undefined,
+        languageCode: this.translate.currentLang,
+      },
+      () => this.loadProfile(),
+    );
+  }
 
-    this.facade.saveProfile(cmd, () => this.loadProfile());
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+
+    if (file) {
+      void this.facade.uploadAvatar(file);
+    }
+  }
+
+  removeAvatar(): void {
+    this.facade.removeAvatar();
+  }
+
+  onAvatarLoaded(): void {
+    this.facade.onAvatarLoaded();
+  }
+
+  onAvatarLoadFailed(): void {
+    this.facade.onAvatarLoadFailed();
   }
 
   changePassword(): void {

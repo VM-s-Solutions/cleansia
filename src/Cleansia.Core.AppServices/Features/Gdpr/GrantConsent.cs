@@ -1,8 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -25,35 +25,20 @@ public static class GrantConsent
 
     internal class Handler(
         IUserSessionProvider userSessionProvider,
-        IRequestMetadataProvider requestMetadata,
-        IUserConsentRepository userConsentRepository)
+        IConsentService consentService)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
             // userId is non-null past the controller's [Permission] gate.
             var userId = userSessionProvider.GetUserId()!;
-            var ipAddress = requestMetadata.IpAddress;
-            var userAgent = requestMetadata.DeviceLabel;
 
-            var existing = await userConsentRepository.GetByUserAndTypeAsync(
-                userId, request.ConsentType, cancellationToken);
+            var granted = await consentService.TryGrantAsync(userId, request.ConsentType, cancellationToken);
 
-            if (existing is not null)
-            {
-                if (existing.IsGranted)
-                    return BusinessResult.Failure(new Error(
-                        BusinessErrorMessage.ConsentAlreadyGranted, "Consent already granted"));
-
-                existing.Regrant(ipAddress, userAgent);
-            }
-            else
-            {
-                var consent = UserConsent.Grant(userId, request.ConsentType, ipAddress, userAgent);
-                userConsentRepository.Add(consent);
-            }
-
-            return BusinessResult.Success();
+            return granted
+                ? BusinessResult.Success()
+                : BusinessResult.Failure(new Error(
+                    BusinessErrorMessage.ConsentAlreadyGranted, "Consent already granted"));
         }
     }
 }

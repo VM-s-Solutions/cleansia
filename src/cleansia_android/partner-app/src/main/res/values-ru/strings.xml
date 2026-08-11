@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cleansia Partner</string>
+    <string name="splash_tagline">Ваши заказы, график и оплата — в одном месте</string>
 
     <!-- Common -->
     <string name="loading">Загрузка…</string>
@@ -1092,6 +1093,9 @@
     <string name="error_order_payment_not_confirmed">Оплата за этот заказ ещё не подтверждена.</string>
     <string name="error_order_not_cash_payment">Это не заказ с оплатой наличными.</string>
     <string name="error_order_cash_already_collected">Наличные за этот заказ уже получены.</string>
+    <string name="error_order_card_payment_already_settled">Этот заказ уже оплачен картой. Не берите наличные — статус оплаты обновлён.</string>
+    <string name="error_order_card_payment_in_progress">Оплата картой за этот заказ ещё обрабатывается. Подождите немного и попробуйте снова.</string>
+    <string name="error_order_card_payment_unverified">Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту.</string>
 
     <string name="error_order_note_content_required">Текст заметки обязателен.</string>
     <string name="error_order_issue_description_required">Описание проблемы обязательно.</string>

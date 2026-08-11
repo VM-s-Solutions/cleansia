@@ -1,6 +1,7 @@
 import CleansiaCore
 import Combine
 import Foundation
+import UIKit
 @testable import CleansiaCustomer
 
 final class FakeGdprDeleteClient: GdprDeleteClient, @unchecked Sendable {
@@ -114,7 +115,8 @@ enum ProfileFixtures {
         email: String = "jane@example.com",
         firstName: String = "Jane",
         lastName: String = "Doe",
-        phoneNumber: String? = "+420123456789"
+        phoneNumber: String? = "+420123456789",
+        profilePhoto: ProfilePhoto? = nil
     ) -> CurrentUserProfile {
         CurrentUserProfile(
             id: id,
@@ -124,8 +126,26 @@ enum ProfileFixtures {
             phoneNumber: phoneNumber,
             birthDate: nil,
             preferredLanguageCode: "en",
-            isEmailConfirmed: true
+            isEmailConfirmed: true,
+            profilePhoto: profilePhoto
         )
+    }
+
+    static func photo(
+        fileName: String = "blob-1",
+        blobURL: String = "https://blobs.example/user-files/blob-1?sig=abc"
+    ) -> ProfilePhoto {
+        ProfilePhoto(fileName: fileName, blobURL: URL(string: blobURL)!)
+    }
+
+    static func image(width: Int = 200, height: Int = 200) -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let size = CGSize(width: width, height: height)
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+        }
     }
 
     static func preferences(promo: Bool = false) -> NotificationPreferences {

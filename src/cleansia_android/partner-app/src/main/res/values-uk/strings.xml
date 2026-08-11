@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cleansia Partner</string>
+    <string name="splash_tagline">Ваші замовлення, графік і оплата — в одному місці</string>
 
     <!-- Common -->
     <string name="loading">Завантаження…</string>
@@ -1092,6 +1093,9 @@
     <string name="error_order_payment_not_confirmed">Оплату за це замовлення ще не підтверджено.</string>
     <string name="error_order_not_cash_payment">Це не замовлення з оплатою готівкою.</string>
     <string name="error_order_cash_already_collected">Готівку за це замовлення вже отримано.</string>
+    <string name="error_order_card_payment_already_settled">Це замовлення вже оплачено карткою. Не беріть готівку — статус оплати оновлено.</string>
+    <string name="error_order_card_payment_in_progress">Оплата карткою за це замовлення ще обробляється. Зачекайте хвилинку та спробуйте ще раз.</string>
+    <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
     <string name="error_order_issue_description_required">Опис проблеми обов\'язковий.</string>

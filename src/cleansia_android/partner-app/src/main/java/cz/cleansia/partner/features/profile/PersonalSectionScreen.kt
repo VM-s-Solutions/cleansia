@@ -59,10 +59,10 @@ import java.time.format.DateTimeFormatter
  * pill is decorative — tapping it surfaces a snackbar via the parent
  * VM's "coming soon" hook (caller wires that).
  *
- * Email is rendered locked + read-only. The backend allows email
- * updates but changing it has knock-on effects (auth, login, audit)
- * and the customer flow already treats it the same way; mirror here
- * to keep the contract consistent.
+ * Email is rendered locked + read-only. The backend has no email
+ * field on any profile command — the login address is the session's
+ * identity and only support can change it — so there is nothing to
+ * send and nothing that could be saved.
  *
  * Phone uses CleansiaPhoneInput so format-as-you-type matches the
  * region inferred from a leading "+", falling back to device locale.
@@ -211,9 +211,9 @@ private fun AvatarPreview(initials: String) {
 }
 
 /**
- * Email displayed locked. Backend allows updates but the partner
- * shouldn't change their own login from the profile; the admin owns
- * that path. Matches the customer profile's read-only treatment.
+ * Email displayed locked. The profile commands carry no email at all;
+ * changing a login address is a support-only path. Matches the
+ * customer profile's read-only treatment.
  */
 @Composable
 private fun ReadOnlyEmailField(value: String) {

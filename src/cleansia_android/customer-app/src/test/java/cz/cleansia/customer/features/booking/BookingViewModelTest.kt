@@ -251,6 +251,110 @@ class BookingViewModelTest {
         assertNull(sent.captured.specialInstructions)
     }
 
+    /**
+     * Entry instructions reach the cleaner, so a note the user typed must survive
+     * the trip to the wire — trimmed, exactly like its special-instructions sibling.
+     */
+    @Test
+    fun submit_givenAccessInstructions_sendsThemOnTheCreateCommand() = runTest {
+        currentUserFlow.value = completeUser()
+        val quote = QuoteOrderResponse(
+            totalPrice = 100.0,
+            currencyId = "cur-1",
+            currencyCode = "CZK",
+            servicesSubtotal = 100.0,
+            packagesSubtotal = 0.0,
+            exchangeRate = 1.0,
+        )
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "cash",
+                street = "Wenceslas",
+                city = "Prague",
+                zipCode = "11000",
+                accessInstructions = "  Side gate, key box code 4417.  ",
+            )
+        }
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals("Side gate, key box code 4417.", sent.captured.accessInstructions)
+    }
+
+    /** Same blank-normalisation contract as special instructions — no empty note persisted. */
+    @Test
+    fun submit_givenBlankAccessInstructions_sendsNull() = runTest {
+        currentUserFlow.value = completeUser()
+        val quote = QuoteOrderResponse(
+            totalPrice = 100.0,
+            currencyId = "cur-1",
+            currencyCode = "CZK",
+            servicesSubtotal = 100.0,
+            packagesSubtotal = 0.0,
+            exchangeRate = 1.0,
+        )
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "cash",
+                street = "Wenceslas",
+                city = "Prague",
+                zipCode = "11000",
+                accessInstructions = "   \n ",
+            )
+        }
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertNull(sent.captured.accessInstructions)
+    }
+
+    /**
+     * Backend rejects anything past 2000 UTF-16 code units. Capping on input
+     * means the user hits the limit at the keystroke instead of at submit.
+     */
+    @Test
+    fun updateAccessInstructions_whenLongerThanBackendLimit_capsAtMaxLength() = runTest {
+        val vm = newViewModel()
+
+        vm.updateAccessInstructions("k".repeat(BookingViewModel.ACCESS_INSTRUCTIONS_MAX_LENGTH + 500))
+
+        assertEquals(
+            BookingViewModel.ACCESS_INSTRUCTIONS_MAX_LENGTH,
+            vm.state.value.accessInstructions.length,
+        )
+    }
+
+    @Test
+    fun updateAccessInstructions_whenWithinBackendLimit_keepsTextVerbatim() = runTest {
+        val vm = newViewModel()
+
+        vm.updateAccessInstructions("  Ring the bell twice.  ")
+
+        assertEquals("  Ring the bell twice.  ", vm.state.value.accessInstructions)
+    }
+
     @Test
     fun submit_whenAlreadySubmitting_secondCallShortCircuitsToFailed() = runTest {
         currentUserFlow.value = completeUser()

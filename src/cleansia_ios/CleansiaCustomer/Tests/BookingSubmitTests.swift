@@ -14,7 +14,8 @@ final class BookingSubmitTests: XCTestCase {
         profile: FakeProfileClient = FakeProfileClient(),
         create: FakeOrderCreateClient = FakeOrderCreateClient(),
         country: FakeCountryResolver = FakeCountryResolver(),
-        tokenStore: FakeTokenStore = .signedIn()
+        tokenStore: FakeTokenStore = .signedIn(),
+        cardAvailable: Bool = false
     ) -> BookingViewModel {
         BookingViewModel(
             quoteClient: quote,
@@ -22,6 +23,7 @@ final class BookingSubmitTests: XCTestCase {
             orderCreateClient: create,
             countryResolver: country,
             tokenStore: tokenStore,
+            isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
@@ -383,6 +385,58 @@ final class BookingSubmitTests: XCTestCase {
         _ = await vm.submit()
 
         XCTAssertNil(create.commands.first?.specialInstructions)
+    }
+
+    /// Entry instructions are the second free-text note on the order. Both iOS
+    /// order surfaces already render it, so before this wiring they rendered a
+    /// field that was always empty for an iOS-placed order.
+    func testAccessInstructionsAreSentOnTheCreateCommand() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update { _ in
+            var s = self.readyState()(BookingState())
+            s.accessInstructions = "  Gate code 4321, second door on the left.  "
+            return s
+        }
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(
+            create.commands.first?.accessInstructions,
+            "Gate code 4321, second door on the left."
+        )
+    }
+
+    func testBlankAccessInstructionsAreSentAsNil() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update { _ in
+            var s = self.readyState()(BookingState())
+            s.accessInstructions = "   \n "
+            return s
+        }
+
+        _ = await vm.submit()
+
+        XCTAssertNil(create.commands.first?.accessInstructions)
+    }
+
+    /// The two notes are distinct columns on the backend and must not be
+    /// crossed over on the way to the wire.
+    func testTheTwoNotesTravelOnTheirOwnFields() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update { _ in
+            var s = self.readyState()(BookingState())
+            s.specialInstructions = "Eco products only"
+            s.accessInstructions = "Key under the mat"
+            return s
+        }
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(create.commands.first?.specialInstructions, "Eco products only")
+        XCTAssertEqual(create.commands.first?.accessInstructions, "Key under the mat")
     }
 
     func testDoubleSubmitYieldsSingleCreateCall() async {

@@ -1,5 +1,9 @@
 package cz.cleansia.customer.features.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +30,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,11 +40,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +55,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -57,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
+import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
@@ -74,7 +86,13 @@ import cz.cleansia.customer.ui.theme.Sky600
 fun EditProfileScreen(
     user: CurrentUser? = null,
     saving: Boolean = false,
+    avatarPhoto: AvatarPhoto? = null,
+    avatarBusy: Boolean = false,
     onBack: () -> Unit = {},
+    onPickPhoto: (Uri) -> Unit = {},
+    onRemovePhoto: () -> Unit = {},
+    onAvatarLoadFailed: () -> Unit = {},
+    onAvatarLoadSucceeded: () -> Unit = {},
     onSave: (firstName: String, lastName: String, phone: String, birthDate: String) -> Unit = { _, _, _, _ -> },
 ) {
     // Seed the form once per user identity. Using `user?.id` as the remember key
@@ -120,8 +138,15 @@ fun EditProfileScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // Avatar preview + change-photo pill
-            AvatarPreview(initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}")
+            AvatarPreview(
+                initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}",
+                photo = avatarPhoto,
+                busy = avatarBusy,
+                onPickPhoto = onPickPhoto,
+                onRemovePhoto = onRemovePhoto,
+                onLoadFailed = onAvatarLoadFailed,
+                onLoadSucceeded = onAvatarLoadSucceeded,
+            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -189,8 +214,40 @@ fun EditProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AvatarPreview(initials: String) {
+private fun AvatarPreview(
+    initials: String,
+    photo: AvatarPhoto?,
+    busy: Boolean,
+    onPickPhoto: (Uri) -> Unit,
+    onRemovePhoto: () -> Unit,
+    onLoadFailed: () -> Unit,
+    onLoadSucceeded: () -> Unit,
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    var pickerUnavailable by remember { mutableStateOf(false) }
+
+    // The system photo picker grants per-item access to exactly what the user
+    // chose, so it needs no storage permission on any API level we support and
+    // there is no denial branch to write. On devices without it, androidx falls
+    // back through the Play services picker to ACTION_OPEN_DOCUMENT, which is
+    // equally permission-free.
+    val pickImage = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> uri?.let(onPickPhoto) },
+    )
+    val launchPicker = {
+        // A device with no picker and no document provider throws rather than
+        // returning empty-handed, and an uncaught throw here kills the screen.
+        runCatching {
+            pickImage.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        }.onFailure { pickerUnavailable = true }
+        Unit
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,18 +263,28 @@ private fun AvatarPreview(initials: String) {
                     .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    initials.uppercase(),
+                ProfileAvatarContent(
+                    initials = initials,
                     // fontSize pinned: these initials are sized to the 104.dp circle above, not to
                     // a type slot. Without the pin they follow displaySmall (26sp) and rattle
                     // around inside the avatar. Partner's PersonalSectionScreen pins the same 36.
-                    style = MaterialTheme.typography.displaySmall.copy(
+                    initialsStyle = MaterialTheme.typography.displaySmall.copy(
                         fontFamily = Poppins,
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp,
                     ),
-                    color = Sky600,
+                    initialsColor = Sky600,
+                    photo = photo,
+                    onLoadFailed = onLoadFailed,
+                    onLoadSucceeded = onLoadSucceeded,
                 )
+                if (busy) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 3.dp,
+                    )
+                }
             }
             // Camera pill — bottom-right overlay
             Box(
@@ -227,17 +294,77 @@ private fun AvatarPreview(initials: String) {
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary)
                     .border(3.dp, MaterialTheme.colorScheme.background, CircleShape)
-                    .clickable { /* TODO: launch photo picker */ },
+                    .clickable(enabled = !busy) {
+                        if (photo == null) launchPicker() else showOptions = true
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Outlined.CameraAlt,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.profile_avatar_change),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp),
                 )
             }
         }
+    }
+
+    if (showOptions) {
+        ModalBottomSheet(
+            onDismissRequest = { showOptions = false },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+                AvatarOption(
+                    icon = Icons.Outlined.PhotoLibrary,
+                    label = stringResource(R.string.profile_avatar_change),
+                    onClick = {
+                        showOptions = false
+                        launchPicker()
+                    },
+                )
+                AvatarOption(
+                    icon = Icons.Outlined.DeleteOutline,
+                    label = stringResource(R.string.profile_avatar_remove),
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        showOptions = false
+                        onRemovePhoto()
+                    },
+                )
+            }
+        }
+    }
+
+    if (pickerUnavailable) {
+        CleansiaDialog(
+            onDismiss = { pickerUnavailable = false },
+            title = stringResource(R.string.profile_avatar_picker_unavailable_title),
+            message = stringResource(R.string.profile_avatar_picker_unavailable_message),
+            confirmLabel = stringResource(R.string.common_ok),
+            onConfirm = { pickerUnavailable = false },
+        )
+    }
+}
+
+@Composable
+private fun AvatarOption(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(16.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = tint)
     }
 }
 

@@ -13,6 +13,15 @@
 </section>
 
 <div class="legal-page">
+  @if ('terms_page.review_notice' | translate; as notice) {
+    <div class="legal-page__notice" role="note">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <p class="legal-page__notice-text">{{ notice }}</p>
+    </div>
+  }
+  @if ('terms_page.last_updated_date' | translate; as updated) {
+    <p class="legal-page__meta">{{ 'terms_page.last_updated' | translate: { date: updated } }}</p>
+  }
   @for (i of sections; track i) {
     <div class="legal-page__section">
       <h2 class="legal-page__section-title">{{ 'terms_page.section' + i + '_title' | translate }}</h2>

@@ -174,7 +174,7 @@
       "success": "Účet vytvořen! Zkontrolujte svůj email pro potvrzení.",
       "error": "Registrace se nezdařila. Zkuste to prosím znovu.",
       "terms_agreement": "Souhlasím s podmínkami",
-      "terms_and_conditions": "Souhlasím s <a href='/gdpr'>obchodními podmínkami a zásadami ochrany osobních údajů</a>",
+      "terms_and_conditions": "Souhlasím s <a href='/terms'>obchodními podmínkami</a> a <a href='/privacy'>zásadami ochrany osobních údajů</a>",
       "validation": {
         "password_lowercase": "Alespoň jedno malé písmeno",
         "password_uppercase": "Alespoň jedno velké písmeno",
@@ -613,6 +613,17 @@
       "password_change_note": "Heslo musí obsahovat alespoň 8 znaků, velké a malé písmeno a číslo.",
       "save_success": "Profil úspěšně uložen",
       "save_error": "Nepodařilo se uložit profil",
+      "avatar": {
+        "alt": "Profilová fotka",
+        "hint": "Použijte čtvercový obrázek do 10 MB — JPG, PNG, WebP nebo GIF.",
+        "change": "Změnit fotku",
+        "remove": "Odstranit fotku",
+        "upload_success": "Profilová fotka byla aktualizována",
+        "remove_success": "Profilová fotka byla odstraněna",
+        "invalid_type": "Vyberte obrázek (JPG, PNG, WebP nebo GIF).",
+        "size_exceeded": "Obrázek je příliš velký. Maximální velikost je 10 MB.",
+        "read_failed": "Soubor se nepodařilo načíst. Zkuste prosím jiný."
+      },
       "addresses_title": "Adresy",
       "addresses_desc": "Spravujte uložené adresy pro rychlé objednávky",
       "preferences_title": "Předvolby",
@@ -1077,7 +1088,7 @@
       "subscribe_cta": "Předplatit — platba přes Stripe",
       "subscribe_footnote": "Můžete kdykoli zrušit. Vaše výhody zůstávají aktivní do konce zaplaceného období.",
       "benefit_discount_title": "Členská sleva na každou objednávku",
-      "benefit_discount_body": "Pevné procento z každého úklidu navíc k běžným cenám.",
+      "benefit_discount_body": "Pevné procento z každého úklidu. V kombinaci s věrnostním programem je omezeno na 12%.",
       "benefit_cancel_title": "Delší doba na bezplatné zrušení",
       "benefit_cancel_body": "Více času na změnu plánů bez poplatku.",
       "benefit_express_title": "Express výhody",
@@ -1086,7 +1097,7 @@
       "benefit_favorite_body": "Vyberte uklízeče, kterého už znáte — bude přednostně přiřazen.",
       "renews_on": "Obnoví se {{date}}",
       "cancelled_until": "Aktivní do {{date}} — neobnoví se",
-      "perk_discount": "{{percent}}% sleva na každý úklid",
+      "perk_discount": "{{percent}}% členská sleva",
       "perk_cancel_window": "{{hours}} h na bezplatné zrušení",
       "perk_express": "Výhody express objednávek",
       "cancel_action": "Zrušit členství",
@@ -1111,8 +1122,8 @@
       "hero_trial_price": "0 Kč / prvních {{days}} dní",
       "hero_then_price": "poté {{price}} / měsíc",
       "hero_then_price_year": "poté {{price}} / rok",
-      "social_proof_headline": "Členové ušetří ~80 Kč na úklid",
-      "social_proof_sub": "Napříč všemi vašimi objednávkami, navíc k dalším slevám",
+      "social_proof_headline": "Jak funguje členská sleva",
+      "social_proof_sub": "Plus a váš věrnostní program se sčítají maximálně do 12%. Promo kódy se nesčítají — uplatní se vyšší sleva.",
       "perks_section_title": "Co získáte",
       "cta_start_trial": "Začít zkušební období zdarma",
       "cta_subscribe": "Získat Cleansia Plus",
@@ -1303,7 +1314,8 @@
       "max_size": "Max. velikost",
       "or_drag_drop": "nebo přetáhněte",
       "selected_files": "Vybrané soubory"
-    }
+    },
+    "brand_mark_alt": "Cleansia"
   },
   "validation": {
     "common": {
@@ -1367,8 +1379,10 @@
   },
   "terms_page": {
     "title": "Obchodní podmínky",
-    "last_updated": "Poslední aktualizace",
+    "last_updated": "Poslední aktualizace: {{date}}",
+    "last_updated_date": "",
     "intro": "Před používáním našich služeb si prosím pečlivě přečtěte tyto obchodní podmínky.",
+    "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
     "section1_title": "1. Přijetí podmínek",
     "section1_text": "Přístupem k službám Cleansia a jejich používáním souhlasíte s těmito obchodními podmínkami. Pokud s podmínkami nesouhlasíte, naše služby prosím nepoužívejte.",
     "section2_title": "2. Popis služeb",
@@ -1384,8 +1398,10 @@
   },
   "privacy_page": {
     "title": "Ochrana osobních údajů",
-    "last_updated": "Poslední aktualizace",
+    "last_updated": "Poslední aktualizace: {{date}}",
+    "last_updated_date": "",
     "intro": "Vaše soukromí je pro nás důležité. Tyto zásady vysvětlují, jak shromažďujeme, používáme a chráníme vaše osobní údaje.",
+    "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
     "section1_title": "1. Jaké údaje sbíráme",
     "section1_text": "Sbíráme osobní údaje, které nám poskytnete při zadávání objednávek, vytváření účtu nebo kontaktování nás. Jedná se o vaše jméno, emailovou adresu, telefonní číslo a adresu.",
     "section2_title": "2. Jak vaše údaje používáme",
@@ -1428,6 +1444,9 @@
       "not_existing_email": "Účet s tímto e-mailem jsme nenašli.",
       "existing_phone_number": "Toto telefonní číslo se již používá.",
       "not_found": "Tento účet jsme nenašli."
+    },
+    "language": {
+      "not_supported": "Tento jazyk není podporován."
     },
     "order": {
       "cleaning_date": {
@@ -1550,7 +1569,8 @@
       "saved_address_not_found": "Vyberte pro tento plán uloženou adresu.",
       "no_services_or_packages": "Vyberte alespoň jednu službu nebo balíček.",
       "starts_on_in_past": "Datum zahájení nemůže být v minulosti.",
-      "ends_on_before_start": "Datum ukončení musí být po datu zahájení."
+      "ends_on_before_start": "Datum ukončení musí být po datu zahájení.",
+      "membership_required": "Opakované úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si předplatné aktivujte."
     },
     "device": {
       "invalid_platform": "Tato platforma zařízení není podporována.",

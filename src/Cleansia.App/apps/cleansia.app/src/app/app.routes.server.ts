@@ -1,12 +1,13 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
-  // Static pages — prerendered at build time (no API calls needed)
-  { path: 'terms', renderMode: RenderMode.Prerender },
-  { path: 'privacy', renderMode: RenderMode.Prerender },
+  // SSR pages — rendered on request (need API data for SEO).
+  // The legal pages are Server, not Prerender: prerendering needs the builder's
+  // `outputMode`, without which the engine answers a Prerender route with a 404
+  // because no document was emitted for it at build time.
+  { path: 'terms', renderMode: RenderMode.Server },
+  { path: 'privacy', renderMode: RenderMode.Server },
   { path: 'not-found', renderMode: RenderMode.Server },
-
-  // SSR pages — rendered on request (need API data for SEO)
   { path: '', renderMode: RenderMode.Server },
   { path: 'services', renderMode: RenderMode.Server },
 

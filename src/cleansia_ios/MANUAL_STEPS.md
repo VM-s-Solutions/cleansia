@@ -8,6 +8,23 @@ These steps require a Mac, Xcode, and/or an Apple Developer account. Agents do n
 brew install xcodegen
 ```
 
+## 1b. Create the local build config (once, and only once)
+
+```sh
+cp src/cleansia_ios/Config/Local.xcconfig.example src/cleansia_ios/Config/Local.xcconfig
+```
+
+Open it and set the two values:
+
+- `STRIPE_PUBLISHABLE_KEY` — your Stripe **publishable** key (`pk_test_...` / `pk_live_...`).
+  Never a secret key; the build refuses one.
+- `DEVELOPMENT_TEAM` — your 10-character Apple Developer Team ID.
+
+One file, both apps. It is gitignored, so `git pull`, `git checkout` and `xcodegen generate`
+cannot wipe it — which they previously did to the same values held in `project.yml` and
+`Info.plist`. **Do this before step 2**, or the first customer build warns that card payment is
+disabled.
+
 ## 2. Generate the Xcode projects
 
 ```sh
@@ -31,11 +48,14 @@ xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone
 
 ## 4. Signing & provisioning (Apple Developer)
 
-The `project.yml` specs ship signing placeholders: `DEVELOPMENT_TEAM` is empty and
-`CODE_SIGN_STYLE` is `Automatic`. Before running on a device or submitting to TestFlight:
+`CODE_SIGN_STYLE` is `Automatic` and `DEVELOPMENT_TEAM` defaults to empty in
+`Config/Base.xcconfig`. Before running on a device or submitting to TestFlight:
 
-- Set the Apple Developer **Team** on each app target (or set `DEVELOPMENT_TEAM` in the `project.yml`
-  `settings.base` and regenerate).
+- Set `DEVELOPMENT_TEAM` in `Config/Local.xcconfig` (step 1b) — **not** in `project.yml`, where
+  the next pull would delete it, and **not** in Xcode's Signing & Capabilities editor, which writes
+  into the regenerated `.xcodeproj` and loses it on the next `xcodegen generate`. fastlane instead
+  passes `ASC_TEAM_ID` from `fastlane/.env` as an xcarg, which overrides the file; either is
+  accepted by the pre-build check.
 - Register the bundle ids `cz.cleansia.partner` and `cz.cleansia.customer` in the developer portal.
 - Create/download provisioning profiles + certificates.
 

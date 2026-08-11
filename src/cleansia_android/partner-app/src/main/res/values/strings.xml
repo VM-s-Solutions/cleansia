@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cleansia Partner</string>
+    <string name="splash_tagline">Your jobs, schedule and pay — in one place</string>
 
     <!-- Common -->
     <string name="loading">Loading…</string>
@@ -1115,6 +1116,9 @@
     <string name="error_order_payment_not_confirmed">This order\'s payment hasn\'t been confirmed yet.</string>
     <string name="error_order_not_cash_payment">This isn\'t a cash order.</string>
     <string name="error_order_cash_already_collected">Cash has already been collected for this order.</string>
+    <string name="error_order_card_payment_already_settled">This order was already paid by card. Don\'t collect cash — the payment status has been updated.</string>
+    <string name="error_order_card_payment_in_progress">A card payment for this order is still processing. Wait a moment and try again.</string>
+    <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
 
     <!-- Order — notes / issues / review -->
     <string name="error_order_note_content_required">Note text is required.</string>

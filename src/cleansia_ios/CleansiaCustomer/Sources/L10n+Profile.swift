@@ -161,6 +161,46 @@ extension L10n {
         static var phoneRequired: String {
             localized("profile_edit_phone_required")
         }
+
+        static var photoLabel: String {
+            localized("profile_photo_label")
+        }
+
+        static var photoAdd: String {
+            localized("profile_photo_add")
+        }
+
+        static var photoChange: String {
+            localized("profile_photo_change")
+        }
+
+        static var photoRemove: String {
+            localized("profile_photo_remove")
+        }
+
+        static var photoTake: String {
+            localized("profile_photo_take")
+        }
+
+        static var photoLibrary: String {
+            localized("profile_photo_library")
+        }
+
+        static var photoUnreadable: String {
+            localized("profile_photo_error")
+        }
+
+        static var cameraPermissionTitle: String {
+            localized("camera_permission_title")
+        }
+
+        static var cameraPermissionMessage: String {
+            localized("camera_permission_message")
+        }
+
+        static var openSettings: String {
+            localized("open_settings")
+        }
     }
 
     enum Preferences {

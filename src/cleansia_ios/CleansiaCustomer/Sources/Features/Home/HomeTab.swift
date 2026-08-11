@@ -99,13 +99,19 @@ struct HomeTab: View {
             .snackbarHost(snackbar, bottomInset: Spacing.m)
         }
         .task { await vm.runFirstPaintCeiling() }
-        .task { await vm.refreshMembershipIfNeeded() }
+        // Loyalty, recent bookings and membership, gated on their own freshness
+        // watermarks. SwiftUI restarts a `.task` every time it re-presents the
+        // tab root, so the gate — not the hook — is what keeps a tab tap free.
+        .task { await vm.refreshStaleSources() }
         .task { await vm.refreshCatalogIfNeeded() }
         .task { await notificationBadge.refresh() }
         .task(id: vm.isPlus) { await vm.refreshRecurringIfPlus(vm.isPlus) }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
+                // The badge is cheap enough to refetch on every foreground; the
+                // three cached sources are not, hence the staleness gate.
                 Task { await notificationBadge.refresh() }
+                Task { await vm.refreshStaleSources() }
             }
         }
     }

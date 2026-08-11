@@ -13,6 +13,7 @@ import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
+import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -33,8 +34,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Shared form state for the "create recurring booking" screen. Backs both
- * Path A (blank-slate) and Path B (pre-filled from a Completed order).
+ * Shared form state for the recurring-booking form. Backs three paths:
+ * Path A (blank-slate create), Path B (create pre-filled from a Completed
+ * order) and Path C (edit an existing template).
  *
  * Path B is keyed on the optional `orderId` nav arg. When present, init()
  * fetches the order detail and copies services/packages/rooms/bathrooms/
@@ -45,6 +47,12 @@ import kotlinx.datetime.toLocalDateTime
  * (orders snapshot the inline address only). Forcing the user to pick a
  * saved address explicitly means we always end up with a valid template
  * the materializer can resolve, no string-matching gymnastics needed.
+ *
+ * Path C is keyed on the optional `templateId` nav arg and submits through
+ * `update` instead of `create`. The backend update is a full replace, so the
+ * form must start from the stored template rather than from defaults — a
+ * template that can't be resolved leaves the form empty on purpose, which the
+ * submit guard then refuses to send.
  */
 @HiltViewModel
 class CreateRecurringViewModel @Inject constructor(
@@ -58,6 +66,11 @@ class CreateRecurringViewModel @Inject constructor(
 
     /** Optional source order id for Path B pre-fill. Null → Path A blank slate. */
     val sourceOrderId: String? = savedStateHandle.get<String>("orderId")?.takeIf { it.isNotBlank() }
+
+    /** Optional template id for Path C. Null → the form creates rather than updates. */
+    val editingTemplateId: String? = savedStateHandle.get<String>("templateId")?.takeIf { it.isNotBlank() }
+
+    val isEditing: Boolean = editingTemplateId != null
 
     private val _state = MutableStateFlow(CreateRecurringFormState())
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
@@ -77,16 +90,20 @@ class CreateRecurringViewModel @Inject constructor(
                 if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
             }
         }
-        // Default the savedAddressId to the user's default address so Path B
-        // and Path A both start with a sensible pick.
-        viewModelScope.launch {
-            val addresses = addressRepo.addresses.first()
-            val defaultAddr = addresses.firstOrNull { it.isDefault } ?: addresses.firstOrNull()
-            defaultAddr?.serverId?.let { serverId ->
-                _state.value = _state.value.copy(savedAddressId = serverId)
+        if (editingTemplateId != null) {
+            prefillFromTemplate(editingTemplateId)
+        } else {
+            // Default the savedAddressId to the user's default address so Path B
+            // and Path A both start with a sensible pick.
+            viewModelScope.launch {
+                val addresses = addressRepo.addresses.first()
+                val defaultAddr = addresses.firstOrNull { it.isDefault } ?: addresses.firstOrNull()
+                defaultAddr?.serverId?.let { serverId ->
+                    _state.value = _state.value.copy(savedAddressId = serverId)
+                }
             }
+            if (sourceOrderId != null) prefillFromOrder(sourceOrderId)
         }
-        if (sourceOrderId != null) prefillFromOrder(sourceOrderId)
     }
 
     // ─── Mutators (one per field; called from Compose) ───
@@ -117,55 +134,104 @@ class CreateRecurringViewModel @Inject constructor(
     // ─── Validation + submit ───
 
     /**
-     * Build the wire request from current state. Returns null if the form is
-     * incomplete — the screen already disables the submit button in that case
-     * but we double-check here so callers can't bypass.
+     * The form is complete enough to send. The screen already disables the
+     * submit button in that case but we double-check here so callers can't
+     * bypass — and in edit mode an unresolved template leaves the form empty,
+     * so this is what stops defaults being written over a stored schedule.
      */
-    private fun buildRequest(): CreateRecurringBookingRequest? {
-        val s = _state.value
-        if (s.savedAddressId.isBlank()) return null
-        if (s.selectedServiceIds.isEmpty() && s.selectedPackageIds.isEmpty()) return null
-        if (s.startsOnIso.isBlank()) return null
-        return CreateRecurringBookingRequest(
-            frequency = s.frequency.code,
-            dayOfWeek = s.dayOfWeek,
-            timeOfDay = s.timeOfDay,
-            rooms = s.rooms,
-            bathrooms = s.bathrooms,
-            savedAddressId = s.savedAddressId,
-            selectedServiceIds = s.selectedServiceIds.toList(),
-            selectedPackageIds = s.selectedPackageIds.toList(),
-            paymentType = s.paymentType,
-            startsOn = s.startsOnIso,
+    private fun CreateRecurringFormState.isSubmittable(): Boolean =
+        savedAddressId.isNotBlank() &&
+            (selectedServiceIds.isNotEmpty() || selectedPackageIds.isNotEmpty()) &&
+            startsOnIso.isNotBlank() &&
+            timeOfDay.isNotBlank()
+
+    private fun CreateRecurringFormState.toCreateRequest() = CreateRecurringBookingRequest(
+        frequency = frequency.code,
+        dayOfWeek = dayOfWeek,
+        timeOfDay = timeOfDay,
+        rooms = rooms,
+        bathrooms = bathrooms,
+        savedAddressId = savedAddressId,
+        selectedServiceIds = selectedServiceIds.toList(),
+        selectedPackageIds = selectedPackageIds.toList(),
+        paymentType = paymentType,
+        startsOn = startsOnIso,
+    )
+
+    private fun CreateRecurringFormState.toUpdateRequest(templateId: String) =
+        UpdateRecurringBookingRequest(
+            templateId = templateId,
+            frequency = frequency.code,
+            dayOfWeek = dayOfWeek,
+            timeOfDay = timeOfDay,
+            rooms = rooms,
+            bathrooms = bathrooms,
+            savedAddressId = savedAddressId,
+            selectedServiceIds = selectedServiceIds.toList(),
+            selectedPackageIds = selectedPackageIds.toList(),
+            paymentType = paymentType,
+            startsOn = startsOnIso,
         )
-    }
 
     /** True when the form has the minimum data needed to submit. */
     val isValid: StateFlow<Boolean> = _state
-        .map { s ->
-            s.savedAddressId.isNotBlank()
-                && (s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty())
-                && s.startsOnIso.isNotBlank()
-                && s.timeOfDay.isNotBlank()
-        }
+        .map { it.isSubmittable() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun submit() {
         if (_submitState.value is ActionState.Submitting) return
-        val request = buildRequest() ?: return
+        val form = _state.value
+        if (!form.isSubmittable()) return
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
-            when (val result = recurringRepo.create(request)) {
+            val result = if (editingTemplateId != null) {
+                recurringRepo.update(form.toUpdateRequest(editingTemplateId))
+            } else {
+                recurringRepo.create(form.toCreateRequest())
+            }
+            when (result) {
                 is ApiResult.Success -> {
                     _submitState.value = ActionState.Idle
-                    snackbar.showSuccessKey(R.string.recurring_create_success)
+                    snackbar.showSuccessKey(
+                        if (isEditing) R.string.recurring_edit_success else R.string.recurring_create_success,
+                    )
                     _submitted.emit(Unit)
                 }
                 is ApiResult.Error -> {
-                    snackbar.showErrorKey(R.string.recurring_create_failed)
+                    snackbar.showErrorKey(
+                        if (isEditing) R.string.recurring_edit_failed else R.string.recurring_create_failed,
+                    )
                     _submitState.value = ActionState.Error(result.error.getUserMessage())
                 }
             }
+        }
+    }
+
+    // ─── Path C pre-fill ───
+
+    private fun prefillFromTemplate(templateId: String) {
+        viewModelScope.launch {
+            val template = recurringRepo.templates.value.firstOrNull { it.id == templateId }
+                ?: run {
+                    recurringRepo.refresh()
+                    recurringRepo.templates.value.firstOrNull { it.id == templateId }
+                }
+            if (template == null) {
+                snackbar.showErrorKey(R.string.recurring_edit_load_failed)
+                return@launch
+            }
+            _state.value = CreateRecurringFormState(
+                frequency = RecurrenceFrequency.fromCode(template.frequency),
+                dayOfWeek = template.dayOfWeek,
+                timeOfDay = template.timeOfDay,
+                rooms = template.rooms,
+                bathrooms = template.bathrooms,
+                savedAddressId = template.savedAddressId,
+                selectedServiceIds = template.selectedServiceIds.toSet(),
+                selectedPackageIds = template.selectedPackageIds.toSet(),
+                paymentType = template.paymentType,
+                startsOnIso = template.startsOn,
+            )
         }
     }
 

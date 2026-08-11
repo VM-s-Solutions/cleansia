@@ -1,22 +1,18 @@
 <div
   class="cleansia-brand-name"
-  [ngClass]="{
-    'cleansia-brand-name__wrapped': wrapped(),
-    'cleansia-brand-name--hide-name': !showName()
-  }"
+  [class.cleansia-brand-name--compact]="compact()"
 >
   <a [routerLink]="'/' + defaultRoute()">
     <picture>
       <source srcset="assets/logos/Logo.webp" type="image/webp" />
       <img
-        src="assets/logos/Logo.webp"
-        alt="Cleansia logo"
-        width="32"
-        height="32"
+        src="assets/logos/Logo.png"
+        [alt]="'components.brand_mark_alt' | translate"
+        width="132"
+        height="24"
         loading="lazy"
         decoding="async"
       />
     </picture>
-    <h2>Cleansia</h2>
   </a>
 </div>

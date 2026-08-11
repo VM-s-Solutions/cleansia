@@ -6,28 +6,21 @@ struct OrderHeroCard: View {
     @Environment(\.locale) private var locale
     let order: OrderItem
 
-    private var hasDiscount: Bool {
-        guard let source = order.appliedDiscountSource, source != ._0 else { return false }
-        return (order.originalSubtotal ?? 0) > (order.totalPrice ?? 0)
+    private var facts: OrderHeroFacts {
+        OrderHeroFacts.resolve(order)
     }
 
     var body: some View {
         OrderCardSurface {
-            HStack(alignment: .top) {
-                OrderStatusPill(
-                    label: OrderStatusPresentation.label(order.orderStatus),
-                    color: OrderStatusPresentation.color(order.orderStatus)
-                )
-                Spacer()
-                if let code = order.confirmationCode, !code.isBlank {
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(L10n.OrderDetail.codeLabel)
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        Text(code)
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                    }
+            if let code = facts.confirmationCode {
+                HStack(alignment: .top) {
+                    Text(L10n.OrderDetail.codeLabel)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Spacer()
+                    Text(code)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
                 }
             }
             Text(OrdersFormat.dateRange(
@@ -39,37 +32,23 @@ struct OrderHeroCard: View {
             .foregroundColor(CleansiaColors.onBackground)
 
             HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
-                Text(OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code))
+                Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
                     .font(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.primary)
-                if hasDiscount {
-                    Text(OrdersFormat.price(order.originalSubtotal ?? 0, currencyCode: order.currency?.code))
+                if let struck = facts.struckSubtotal {
+                    Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
                         .font(CleansiaTypography.titleMedium)
                         .strikethrough()
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
             }
 
-            if hasDiscount {
-                discountChips
-            }
-        }
-    }
-
-    private var discountChips: some View {
-        HStack(spacing: Spacing.xs) {
-            switch order.appliedDiscountSource {
-            case ._1:
-                DiscountChip(label: L10n.OrderDetail.discountTier)
-            case ._2:
-                DiscountChip(label: L10n.OrderDetail.discountMembership)
-            case ._3:
-                DiscountChip(label: L10n.OrderDetail.discountPromo)
-            case ._4:
-                DiscountChip(label: L10n.OrderDetail.discountMembership)
-                DiscountChip(label: L10n.OrderDetail.discountTier)
-            default:
-                EmptyView()
+            if facts.struckSubtotal != nil {
+                HStack(spacing: Spacing.xs) {
+                    ForEach(facts.discountChips, id: \.self) { source in
+                        DiscountChip(label: L10n.OrderDetail.discountLabel(source))
+                    }
+                }
             }
         }
     }

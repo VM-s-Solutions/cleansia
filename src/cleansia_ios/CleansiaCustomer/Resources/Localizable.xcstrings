@@ -1541,6 +1541,41 @@
         }
       }
     },
+    "booking_access_instructions_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak se dostaneme dovnitř? (nepovinné)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How should we get in? (optional)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как нам попасть внутрь? (необязательно)"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ako sa dostaneme dnu? (nepovinné)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як нам потрапити всередину? (необов’язково)"
+          }
+        }
+      }
+    },
     "booking_address_default" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14007,31 +14042,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sleva platí navíc k vašemu věrnostnímu programu."
+            "value" : "Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Discount applies on top of your loyalty tier."
+            "value" : "Off every cleaning. Combined with your loyalty tier it is capped at 12%."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Скидка действует в дополнение к вашему уровню лояльности."
+            "value" : "На каждую уборку. В сочетании с уровнем лояльности ограничена 12%."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zľava platí navyše k vášmu vernostnému programu."
+            "value" : "Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Знижка діє додатково до вашого рівня лояльності."
+            "value" : "На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%."
           }
         }
       }
@@ -14042,31 +14077,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% sleva na každý úklid"
+            "value" : "5% členská sleva"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% off every cleaning"
+            "value" : "5% member discount"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% скидка на каждую уборку"
+            "value" : "5% скидка для участников"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% zľava na každé upratovanie"
+            "value" : "5% členská zľava"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% знижка на кожне прибирання"
+            "value" : "5% знижка для учасників"
           }
         }
       }
@@ -14207,6 +14242,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ваш улюблений клінер"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_cancellation" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zrušení %1$d h zdarma"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$dh free cancel"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "отмена за %1$d ч"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zrušenie %1$d h zadarmo"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "скасування за %1$d год"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_discount" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sleva %1$d %%"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d%% off"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "скидка %1$d%%"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zľava %1$d %%"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "знижка %1$d%%"
+          }
+        }
+      }
+    },
+    "membership_perk_pill_recurring" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pravidelně"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярно"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pravidelne"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярно"
           }
         }
       }
@@ -14532,31 +14672,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Členové ušetří ~80 Kč na úklid"
+            "value" : "Jak funguje členská sleva"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Members save ~80 Kč per cleaning"
+            "value" : "How the member discount works"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Участники экономят ~80 Kč на уборке"
+            "value" : "Как работает скидка для участников"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Členovia ušetria ~80 Kč na upratovanie"
+            "value" : "Ako funguje členská zľava"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Учасники економлять ~80 Kč на прибиранні"
+            "value" : "Як працює знижка для учасників"
           }
         }
       }
@@ -14567,31 +14707,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Napříč všemi vašimi objednávkami, navíc k dalším slevám"
+            "value" : "Plus a váš věrnostní program se sčítají maximálně do 12%. Promo kódy se nesčítají — uplatní se vyšší sleva."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Across all your bookings, on top of any other discount"
+            "value" : "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На всех ваших бронированиях, в дополнение к другим скидкам"
+            "value" : "Plus и ваш уровень лояльности вместе дают максимум 12%. Промокоды не суммируются — применяется большая скидка."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Naprieč všetkými vašimi objednávkami, navyše k iným zľavám"
+            "value" : "Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На всіх ваших бронюваннях, на додачу до інших знижок"
+            "value" : "Plus і ваш рівень лояльності сумарно дають максимум 12%. Промокоди не додаються — застосовується більша знижка."
           }
         }
       }
@@ -18656,6 +18796,76 @@
         }
       }
     },
+    "order_detail_payment_method" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Způsob platby"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment method"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Способ оплаты"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spôsob platby"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спосіб оплати"
+          }
+        }
+      }
+    },
+    "order_detail_payment_status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплата"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплата"
+          }
+        }
+      }
+    },
     "order_detail_progress_percent" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18792,6 +19002,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Деталі прибирання"
+          }
+        }
+      }
+    },
+    "order_detail_services" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozpis ceny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price breakdown"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расчёт цены"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozpis ceny"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розбивка ціни"
           }
         }
       }
@@ -19181,6 +19426,41 @@
         }
       }
     },
+    "order_detail_subtotal" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mezisoučet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtotal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Промежуточный итог"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medzisúčet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проміжний підсумок"
+          }
+        }
+      }
+    },
     "order_detail_timeline" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -19212,6 +19492,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Хронологія статусу"
+          }
+        }
+      }
+    },
+    "order_detail_total" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celkem"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Итого"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celkom"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усього"
           }
         }
       }
@@ -20546,6 +20861,181 @@
         }
       }
     },
+    "orders_payment_disputed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napadeno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disputed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оспорено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napadnuté"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оскаржено"
+          }
+        }
+      }
+    },
+    "orders_payment_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selhalo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zlyhalo"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося"
+          }
+        }
+      }
+    },
+    "orders_payment_paid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplaceno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплачено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplatené"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сплачено"
+          }
+        }
+      }
+    },
+    "orders_payment_pending" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba čeká"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment pending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ожидает оплаты"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba čaká"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очікує оплати"
+          }
+        }
+      }
+    },
+    "orders_payment_refunded" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vráceno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refunded"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возвращено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vrátené"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повернуто"
+          }
+        }
+      }
+    },
     "orders_services_more" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -21631,6 +22121,251 @@
         }
       }
     },
+    "profile_photo_add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přidat fotku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить фото"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pridať fotku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати фото"
+          }
+        }
+      }
+    },
+    "profile_photo_change" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Změnit fotku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить фото"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmeniť fotku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змінити фото"
+          }
+        }
+      }
+    },
+    "profile_photo_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto fotku nelze použít. Vyberte prosím jinou."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That photo could not be used. Please pick another one."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это фото не удалось использовать. Выберите другое."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Túto fotku sa nepodarilo použiť. Vyberte prosím inú."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це фото не вдалося використати. Виберіть інше."
+          }
+        }
+      }
+    },
+    "profile_photo_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профиля"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotografia"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профілю"
+          }
+        }
+      }
+    },
+    "profile_photo_library" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybrat z galerie"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose from Library"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать из галереи"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybrať z galérie"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибрати з галереї"
+          }
+        }
+      }
+    },
+    "profile_photo_remove" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odebrat fotku"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить фото"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odstrániť fotku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити фото"
+          }
+        }
+      }
+    },
+    "profile_photo_take" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyfotit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать фото"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odfotiť"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зробити фото"
+          }
+        }
+      }
+    },
     "profile_row_appearance" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -21742,31 +22477,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upravit profil"
+            "value" : "Upravit"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit profile"
+            "value" : "Edit"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Редактировать профиль"
+            "value" : "Редактировать"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upraviť profil"
+            "value" : "Upraviť"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Редагувати профіль"
+            "value" : "Редагувати"
           }
         }
       }
@@ -23626,6 +24361,41 @@
         }
       }
     },
+    "recurring_bookings_edit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upravit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upraviť"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редагувати"
+          }
+        }
+      }
+    },
     "recurring_bookings_empty_cta" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -23941,6 +24711,41 @@
         }
       }
     },
+    "recurring_create_address_add_new" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přidat novou adresu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add new address"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить новый адрес"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pridať novú adresu"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати нову адресу"
+          }
+        }
+      }
+    },
     "recurring_create_address_default" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -23972,41 +24777,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ЗА ЗАМОВЧУВАННЯМ"
-          }
-        }
-      }
-    },
-    "recurring_create_address_empty" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nejprve si v profilu uložte adresu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a saved address from your profile first."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сначала сохраните адрес в профиле."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Najprv si v profile uložte adresu."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спочатку збережіть адресу у профілі."
           }
         }
       }
@@ -24637,6 +25407,146 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Зробити регулярним"
+          }
+        }
+      }
+    },
+    "recurring_edit_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Změny se nepodařilo uložit. Zkuste to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the changes. Try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить изменения. Попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmeny sa nepodarilo uložiť. Skúste to znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося зберегти зміни. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "recurring_edit_submit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uložit změny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save changes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить изменения"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uložiť zmeny"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зберегти зміни"
+          }
+        }
+      }
+    },
+    "recurring_edit_success" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozvrh byl upraven"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schedule updated"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расписание обновлено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozvrh bol upravený"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розклад оновлено"
+          }
+        }
+      }
+    },
+    "recurring_edit_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upravit rozvrh"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit schedule"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить расписание"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upraviť rozvrh"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редагувати розклад"
           }
         }
       }

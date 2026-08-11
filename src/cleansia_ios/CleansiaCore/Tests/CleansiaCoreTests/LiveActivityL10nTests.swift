@@ -8,18 +8,19 @@ final class LiveActivityL10nTests: XCTestCase {
     private static let regions = ["en", "cs", "sk", "uk", "ru"]
 
     private static let accessors: [(name: String, read: () -> String)] = [
-        ("status.on_the_way.title", { LiveActivityL10n.Status.onTheWayTitle }),
+        ("step.confirmed", { LiveActivityL10n.Step.confirmed }),
+        ("step.on_the_way", { LiveActivityL10n.Step.onTheWay }),
+        ("step.cleaning", { LiveActivityL10n.Step.cleaning }),
+        ("step.done", { LiveActivityL10n.Step.done }),
+        ("step_of", { LiveActivityL10n.stepOf(3, 4) }),
         ("status.on_the_way.detail", { LiveActivityL10n.Status.onTheWayDetail }),
-        ("status.in_progress.title", { LiveActivityL10n.Status.inProgressTitle }),
         ("status.in_progress.detail", { LiveActivityL10n.Status.inProgressDetail }),
         ("status.completed.title", { LiveActivityL10n.Status.completedTitle }),
         ("status.completed.detail", { LiveActivityL10n.Status.completedDetail }),
         ("status.cancelled.title", { LiveActivityL10n.Status.cancelledTitle }),
         ("status.cancelled.detail", { LiveActivityL10n.Status.cancelledDetail }),
         ("status.generic.title", { LiveActivityL10n.Status.genericTitle }),
-        ("eta.remaining", { LiveActivityL10n.Eta.remaining }),
-        ("eta.left", { LiveActivityL10n.Eta.left }),
-        ("eta.elapsed", { LiveActivityL10n.Eta.elapsed }),
+        ("finish", { LiveActivityL10n.finish }),
         ("booking_fallback", { LiveActivityL10n.bookingFallback }),
         ("order_number", { LiveActivityL10n.orderNumber("AB12CD34") })
     ]

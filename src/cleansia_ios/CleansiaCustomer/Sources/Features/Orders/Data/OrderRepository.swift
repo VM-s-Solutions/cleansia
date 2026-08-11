@@ -15,12 +15,17 @@ final class OrderRepository: SessionScopedCache {
     @Published private(set) var loading = false
     @Published private(set) var loadingMore = false
 
+    /// Freshness watermark for page 0. Only the Home resume hook consults it;
+    /// the Orders tab and pull-to-refresh always go to the network.
+    let staleness: Staleness
+
     private let client: OrderClient
     private let pageSize: Int
 
-    init(client: OrderClient, pageSize: Int = 20) {
+    init(client: OrderClient, pageSize: Int = 20, staleness: Staleness = Staleness()) {
         self.client = client
         self.pageSize = pageSize
+        self.staleness = staleness
     }
 
     var hasMore: Bool {
@@ -38,6 +43,7 @@ final class OrderRepository: SessionScopedCache {
             orders = page.items
             totalRecords = page.total
             loaded = true
+            staleness.markFresh()
             return .success(())
         case let .failure(error):
             return .failure(error)
@@ -66,5 +72,6 @@ final class OrderRepository: SessionScopedCache {
         orders = []
         totalRecords = 0
         loaded = false
+        staleness.invalidate()
     }
 }

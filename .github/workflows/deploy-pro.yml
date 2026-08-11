@@ -27,6 +27,11 @@ on:
         options:
           - deploy
           - what-if
+      forceProvision:
+        description: 'Re-run Bicep even if deploy/bicep is unchanged (normally skipped — on prod that first restart hits the LIVE site, which the slot-swap posture exists to avoid)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   id-token: write
@@ -49,4 +54,5 @@ jobs:
       mode: ${{ inputs.mode }}
       region: weu
       bicepparamFile: deploy/bicep/weu.prod.bicepparam
+      forceProvision: ${{ inputs.forceProvision }}
     secrets: inherit

@@ -6645,6 +6645,10 @@
           "contentType": {
             "type": "string",
             "nullable": true
+          },
+          "blobUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7072,6 +7076,10 @@
             "nullable": true
           },
           "specialInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessInstructions": {
             "type": "string",
             "nullable": true
           }
@@ -10212,6 +10220,9 @@
           "languageCode": {
             "type": "string",
             "nullable": true
+          },
+          "removePhoto": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

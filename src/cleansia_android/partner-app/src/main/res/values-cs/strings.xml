@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cleansia Partner</string>
+    <string name="splash_tagline">Vaše zakázky, rozvrh i výplata — na jednom místě</string>
 
     <!-- Common -->
     <string name="loading">Načítání…</string>
@@ -1109,6 +1110,9 @@
     <string name="error_order_payment_not_confirmed">Platba za tuto zakázku ještě nebyla potvrzena.</string>
     <string name="error_order_not_cash_payment">Toto není zakázka placená hotově.</string>
     <string name="error_order_cash_already_collected">Hotovost za tuto zakázku již byla přijata.</string>
+    <string name="error_order_card_payment_already_settled">Tato zakázka již byla zaplacena kartou. Nevybírejte hotovost — stav platby byl aktualizován.</string>
+    <string name="error_order_card_payment_in_progress">Platba kartou za tuto zakázku se stále zpracovává. Chvíli počkejte a zkuste to znovu.</string>
+    <string name="error_order_card_payment_unverified">Nepodařilo se ověřit platbu kartou za tuto zakázku. Zatím nevybírejte hotovost — zkuste to za chvíli znovu.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
     <string name="error_order_issue_description_required">Popis problému je povinný.</string>

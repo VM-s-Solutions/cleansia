@@ -19,14 +19,22 @@ namespace Cleansia.Config;
 
 public static class CoreExtensions
 {
-    public static IServiceCollection AddCoreBindings(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
+    /// <param name="eagerlyReloadNpgsqlTypeCatalog">
+    /// Functions-worker only — see <see cref="Database.DbContextBindingExtensions.AddDbContextBindings"/>.
+    /// Leaving it false keeps a blocking Postgres round-trip out of every API host's startup path.
+    /// </param>
+    public static IServiceCollection AddCoreBindings(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment env,
+        bool eagerlyReloadNpgsqlTypeCatalog = false)
     {
         return services
             .AddValidators()
             .AddMediator()
             .AddServices()
             .AddRepositories()
-            .AddDbContextBindings(configuration, env)
+            .AddDbContextBindings(configuration, env, eagerlyReloadNpgsqlTypeCatalog)
             .AddConfigurationBindings()
             .AddStripe(configuration, env)
             .AddSendGrid()

@@ -12,6 +12,42 @@ public enum SnapAnchor: CaseIterable, Equatable {
         case .expanded: 0.95
         }
     }
+
+    /// Tapping the handle is a two-way trip between the backdrop and the content,
+    /// so a single tap always changes something and a second tap always undoes it.
+    public var tapToggled: SnapAnchor {
+        self == .mapFocus ? .peek : .mapFocus
+    }
+
+    public var moreExpanded: SnapAnchor {
+        switch self {
+        case .mapFocus: .peek
+        case .peek, .expanded: .expanded
+        }
+    }
+
+    public var lessExpanded: SnapAnchor {
+        switch self {
+        case .expanded: .peek
+        case .peek, .mapFocus: .mapFocus
+        }
+    }
+
+    public var accessibilityValue: String {
+        switch self {
+        case .mapFocus: CoreL10n.localized("snap_sheet.anchor.map_focus")
+        case .peek: CoreL10n.localized("snap_sheet.anchor.peek")
+        case .expanded: CoreL10n.localized("snap_sheet.anchor.expanded")
+        }
+    }
+}
+
+/// Where an edge-anchored ornament sits: its centre rides the sheet's top edge, so
+/// half of it overlaps the backdrop and half the sheet, and it tracks every drag.
+public enum SnapSheetOrnament {
+    public static func offsetY(sheetTop: CGFloat, size: CGFloat) -> CGFloat {
+        sheetTop - size / 2
+    }
 }
 
 public enum SnapResolver {
@@ -57,19 +93,25 @@ public enum SnapResolver {
     }
 }
 
-public struct SnapSheet<Background: View, Content: View>: View {
+public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     @Binding private var anchor: SnapAnchor
     @State private var dragOffset: CGFloat = 0
+    private let ornamentSize: CGFloat
     private let background: Background
+    private let ornament: Ornament
     private let content: Content
 
     public init(
         anchor: Binding<SnapAnchor>,
+        ornamentSize: CGFloat = 128,
         @ViewBuilder background: () -> Background,
+        @ViewBuilder ornament: () -> Ornament,
         @ViewBuilder content: () -> Content
     ) {
         _anchor = anchor
+        self.ornamentSize = ornamentSize
         self.background = background()
+        self.ornament = ornament()
         self.content = content()
     }
 
@@ -89,9 +131,16 @@ public struct SnapSheet<Background: View, Content: View>: View {
                     .frame(height: height)
                     .offset(y: currentTop)
                     .gesture(dragGesture(containerHeight: height))
-                    .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: anchor)
-                    .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: dragOffset)
+
+                ornament
+                    .frame(width: ornamentSize, height: ornamentSize)
+                    .offset(y: SnapSheetOrnament.offsetY(sheetTop: currentTop, size: ornamentSize))
+                    .allowsHitTesting(false)
+                    .padding(.trailing, Spacing.m)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: anchor)
+            .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: dragOffset)
         }
     }
 
@@ -100,7 +149,7 @@ public struct SnapSheet<Background: View, Content: View>: View {
     /// row (the sticky footer) pinned inside the visible area at every anchor.
     private func sheet(bottomOverhang: CGFloat) -> some View {
         VStack(spacing: 0) {
-            DragHandle()
+            DragHandle(anchor: $anchor)
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
@@ -142,15 +191,45 @@ public struct SnapSheet<Background: View, Content: View>: View {
     }
 }
 
+/// A drag is unreachable under VoiceOver and undiscoverable without one, so the
+/// handle is also a button (tap toggles backdrop/content) and an adjustable
+/// element (swipe up/down walks the anchors).
 private struct DragHandle: View {
+    @Binding var anchor: SnapAnchor
+
     var body: some View {
-        Capsule()
-            .fill(CleansiaColors.outline)
-            .frame(width: 36, height: 5)
-            .padding(.top, Spacing.xs)
-            .padding(.bottom, Spacing.xxs)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+        Button {
+            anchor = anchor.tapToggled
+        } label: {
+            Capsule()
+                .fill(CleansiaColors.outline)
+                .frame(width: 36, height: 5)
+                .padding(.top, Spacing.xs)
+                .padding(.bottom, Spacing.xxs)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(CoreL10n.localized("snap_sheet.handle.label")))
+        .accessibilityValue(Text(anchor.accessibilityValue))
+        .accessibilityHint(Text(CoreL10n.localized("snap_sheet.handle.hint")))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: anchor = anchor.moreExpanded
+            case .decrement: anchor = anchor.lessExpanded
+            @unknown default: break
+            }
+        }
+    }
+}
+
+public extension SnapSheet where Ornament == EmptyView {
+    init(
+        anchor: Binding<SnapAnchor>,
+        @ViewBuilder background: () -> Background,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(anchor: anchor, background: background, ornament: { EmptyView() }, content: content)
     }
 }
 

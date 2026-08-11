@@ -128,27 +128,43 @@ struct OrderPackagesCard: View {
     }
 }
 
-struct OrderInstructionsCard: View {
-    let order: OrderItem
+/// Access instructions hold door codes, key-box combinations and alarm codes, so
+/// they are split off from the freely-printed blocks and never travel with them.
+enum OrderInstructions {
+    struct Block: Equatable {
+        let label: String
+        let text: String
+    }
 
-    private var blocks: [(label: String, text: String)] {
-        var result: [(String, String)] = []
+    static func plainBlocks(_ order: OrderItem) -> [Block] {
+        var result: [Block] = []
         if let value = order.specialInstructions, !value.isBlank {
-            result.append((L10n.OrderDetail.specialInstructions, value))
-        }
-        if let value = order.accessInstructions, !value.isBlank {
-            result.append((L10n.OrderDetail.accessInstructions, value))
+            result.append(Block(label: L10n.OrderDetail.specialInstructions, text: value))
         }
         if let value = order.notes, !value.isBlank {
-            result.append((L10n.OrderDetail.notes, value))
+            result.append(Block(label: L10n.OrderDetail.notes, text: value))
         }
         return result
     }
 
+    static func secret(_ order: OrderItem) -> String? {
+        guard let value = order.accessInstructions, !value.isBlank else { return nil }
+        return value
+    }
+
+    static func hasAnything(_ order: OrderItem) -> Bool {
+        !plainBlocks(order).isEmpty || secret(order) != nil
+    }
+}
+
+struct OrderInstructionsCard: View {
+    let order: OrderItem
+
     var body: some View {
-        if !blocks.isEmpty {
+        if OrderInstructions.hasAnything(order) {
             OrderCardSurface {
                 OrderSectionHeaderRow(title: L10n.OrderDetail.instructions)
+                let blocks = OrderInstructions.plainBlocks(order)
                 ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
                     if index > 0 { Divider().background(CleansiaColors.outlineVariant) }
                     VStack(alignment: .leading, spacing: Spacing.hair) {
@@ -158,6 +174,14 @@ struct OrderInstructionsCard: View {
                         Text(block.text)
                             .font(CleansiaTypography.bodyMedium)
                             .foregroundColor(CleansiaColors.onSurface)
+                    }
+                }
+                if let secret = OrderInstructions.secret(order) {
+                    CleansiaRevealPanel(title: L10n.OrderDetail.accessInstructions) {
+                        Text(secret)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurface)
+                            .textSelection(.enabled)
                     }
                 }
             }

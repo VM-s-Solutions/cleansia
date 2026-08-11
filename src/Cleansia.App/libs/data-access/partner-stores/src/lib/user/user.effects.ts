@@ -11,6 +11,14 @@ import { TranslateService } from '@ngx-translate/core';
 import { catchError, map, mergeMap, of } from 'rxjs';
 import * as UserActions from './user.actions';
 
+const createEmptyPhoto = (): BlobFileDto => {
+  const photo = new BlobFileDto();
+  photo.fileName = '';
+  photo.contentType = '';
+  photo.base64Content = '';
+  return photo;
+};
+
 @Injectable()
 export class UserEffects {
   private readonly partnerClient = inject(PartnerClient);
@@ -85,11 +93,7 @@ export class UserEffects {
           lastName,
           phoneNumber,
           birthDate,
-          photo = new BlobFileDto({
-            fileName: '',
-            contentType: '',
-            base64Content: '',
-          }),
+          photo = createEmptyPhoto(),
         }) =>
           this.partnerClient.userClient
             .updateCurrentUser(
@@ -102,6 +106,7 @@ export class UserEffects {
                 photo,
                 languageCode:
                   this.translate.currentLang || this.translate.getDefaultLang(),
+                removePhoto: false,
               })
             )
             .pipe(

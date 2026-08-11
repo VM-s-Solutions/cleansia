@@ -190,6 +190,23 @@ errors come from `ErrorPipe`; API errors from `SnackbarService.showApiError`.
 `lib.routes.ts` exports a `Route[]`, list + `create` + `:id/edit`, using `data: { mode, title }` read
 in the component via `route.snapshot.data`.
 
+## Customer SSR (`cleansia.app` only) — two traps that both render the wrong page with a 200
+
+`apps/cleansia.app/server.ts` is a hand-written Express host, and the render catch-all is mounted
+**path-lessly** (`app.use((req, res, next) => …)`). A path pattern — `app.use('{*path}', …)` — matches
+the same requests but makes Express strip the matched segment from `req.url`, so the engine renders
+`/` for every deep link and the landing micro-cache serves that home page to every cookie-less GET of
+any URL. It answers 200, and a browser hides it by re-routing during hydration, so only a `curl` of a
+deep link shows it. Guarded by `apps/cleansia.app/src/app/ssr/server-request-path.spec.ts`.
+
+`RenderMode.Prerender` in `app.routes.server.ts` needs the builder's `outputMode` option, which
+`project.json` does not set — without it `prerendered-routes.json` is emitted empty, the engine finds
+no document for the route and returns nothing, and Express answers `Cannot GET /<route>`. Use
+`RenderMode.Server` for any route that must be server-rendered until `outputMode` is deliberately
+adopted. Verify a new server-rendered route by building and curling it, never by opening a browser:
+`npm run build:cleansia-customer && (cd dist/apps/cleansia.app && PORT=4400 node server/server.mjs)`,
+then check the `<title>` and body text of the response.
+
 ## Selector-driven detail (master select → dependent load)
 
 When a screen is "pick X in a `cleansia-select`, load the data for X" (e.g. partner `period-pay`:
@@ -206,6 +223,15 @@ the component, every subscription lives in the facade.
 Keys live in `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`, deeply namespaced
 (`pages.company_management.columns.legal_name`). Use `TranslatePipe` in templates,
 `TranslateService.instant` in TS.
+
+### Owner-blankable copy — an empty value hides its own block
+
+For a line only the owner can supply or retire (a publication date, a "pending review" banner), give
+it its own key with `""` as the shipped value and render it under `@if ('page.key' | translate; as
+value)`. ngx-translate only falls back for an **undefined** value, so `""` passes through as falsy and
+the block disappears — the owner turns the line on or off by editing five JSON values, with no code
+change and no boolean flag in the component. Used by `legal-pages` for `last_updated_date` and
+`review_notice`.
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
@@ -266,6 +292,37 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
   `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
   back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.
 
+## Building a generated DTO — construct-then-assign, never an object literal (ADR-0031)
+
+**ADR-0031 is the source of truth** for why: the derivation, the `markOptionalProperties: false`
+consequence, the three `master` breaks it is drawn from, and the scope of the rule all live there.
+This entry is the call-site form only.
+
+```ts
+const photo = new BlobFileDto();
+photo.fileName = file.name;
+photo.base64Content = base64Content;
+photo.contentType = file.type;
+```
+
+not `new BlobFileDto({ fileName, base64Content, contentType })`. Only the **literal** is
+regen-fragile — the constructor's parameter is typed `IBlobFileDto`, so a literal is checked for
+completeness while property assignment is not. Passing an already-built **instance** into an
+enclosing DTO (`new SaveOrderPhotosPhotoToSave({ file: blobFile, … })`) is fine.
+
+Two things that bite in practice: you **cannot** pre-add the field ahead of a regen (`blobUrl:
+undefined` in a literal fails today's excess-property check, `TS2353`), and a lambda-parameter
+default cannot hold the statements — extract a module-level factory (`const createEmptyPhoto =
+(): BlobFileDto => { … }`).
+
+**Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
+against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply
+omits it and compiles against both the current and the post-regen client. This is what lets a
+contract-narrowing fix land in one change instead of being blocked on the owner's regen.
+
+When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
+owner regenerates; that work needs no regenerated client and unblocks the regen.
+
 ## Module boundaries — the per-app client is the only client a feature may import
 
 Each app owns its **own generated client lib**: `@cleansia/customer-services`
@@ -306,3 +363,64 @@ that reintroduces the cross-site cookie failure — and never weaken the cookie 
 customer app is SSR: its server render resolves the relative base against the incoming request
 origin in `app.config.server.ts` (via the `REQUEST` token), so SSR fetches also flow through the
 proxy. Full run-mode docs: `src/Cleansia.App/CLAUDE.md`.
+
+## Brand mark — `cleansia-brand-name` is the whole lockup
+
+The mark is the wordmark taken from that app's own iOS art (owner ruling, T-0444). It already contains
+the name, so `cleansia-brand-name` renders the image **alone** — never beside a `<h2>Cleansia</h2>` or
+a `<span>Cleansia</span>`, which would print the word twice. A suffix the artwork does *not* carry
+(admin's "Admin") is fine; the brand word itself is never repeated.
+
+**Customer and admin ship the same "Cleansia" wordmark; partner ships the stacked "Cleansia Partner"
+lockup** — because the partner iOS app has its own lockup and the partner web app is the same product.
+Do not "fix" partner back to match: `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by
+each app's own assets folder precisely so an app can differ, and the spec pins the three shapes
+(`616×112`, `616×112`, `616×172`) rather than a single digest.
+
+Two consequences of the marks differing in *shape*, both handled without per-app markup:
+
+- **Sizing is by width, so the word "Cleansia" is the same size everywhere.** That line spans the full
+  width of both lockups (measured aspect 5.4870 customer / 5.4646 partner), so equal width means equal
+  wordmark; the partner mark is simply taller. Never size the marks to equal height — that would
+  shrink the partner brand.
+- **The box's aspect is a CSS variable, `--cleansia-brand-aspect`**, defaulted in the shared stylesheet
+  and overridden in `apps/cleansia-partner.app/src/styles.scss`. An `<img>` whose ratio only arrives
+  with the bytes is a layout shift, and the `width`/`height` attributes live in a *shared* template
+  that cannot know which app it is in.
+- **The alt text comes from the app's own i18n bundle** (`components.brand_mark_alt`), for the same
+  reason and by the same trick: per-app resolution with no per-call-site plumbing. An input would not
+  reach the sidebar, which partner and admin share.
+
+Generally: when a shared component must differ per app, reach for something the app already resolves
+for itself — its `assets/` folder, its i18n bundle, a CSS custom property in its `styles.scss`. A DI
+token works too but `app.config.ts` statically importing `@cleansia/components` trips
+`enforce-module-boundaries` (that lib is lazy-loaded) and pulls the whole barrel in eagerly.
+
+Its only variant input is `compact` — the collapsed sidebar rail, where the mark shrinks rather than
+being cropped or swapped.
+
+Two properties to keep when touching any brand asset. Both are **enforced**, not advised, by
+`cleansia-brand-name.component.spec.ts` — it reads the shipped files off disk, so regenerating an
+asset wrongly goes red in `nx test components`:
+
+- **The bytes must match the extension.** The spec checks magic bytes (PNG signature / `RIFF`+`WEBP` /
+  ICO reserved+type), because a PNG served as `.webp` under `<source type="image/webp">` is a false
+  MIME claim in markup and it shipped that way for months before T-0444.
+- **The mark is drawn in exactly one ink, and that ink is `--cleansia-primary`.** The spec decodes
+  `Logo.png` and diffs its single visible colour against `variables.scss`, so a re-theme that forgets
+  the logo fails instead of drifting.
+
+And one rule for the shape: **size a non-square logo by width, not height** —
+`width: Npx; max-width: 100%; height: auto`. A fixed `height` plus `max-width` squashes a replaced
+element horizontally when the container is narrow (CSS 2.1 §10.4); at 1:1 you never notice, at 5.5:1
+it is immediate. Note the workspace is **content-box** (no universal `border-box` reset; PrimeFlex only
+sets it on `.grid > .col`), so a rail's usable width is its `width` minus its own padding and border.
+
+## Heading rank is not the type scale — `cleansia-title` takes `level`
+
+`cleansia-title`'s `size` picks the visual scale *and*, by default, the heading tag
+(`large→h1, big→h2, default→h3, small→h5`). Do not reach for a bigger `size` to get a better outline:
+`--large` is `3rem` against `--default`'s `1.5rem`, and page stylesheets key off the
+`.cleansia-title--<size>` class, so changing size silently changes both type and styling. Pass
+`[level]="1"` instead — a page's own title is the `h1` whatever size it is drawn at. Leave `level` off
+and nothing changes. Every auth screen carries `[level]="1"` for exactly this reason (T-0444).

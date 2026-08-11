@@ -102,6 +102,7 @@ public static class BusinessErrorMessage
     public const string RecurringTemplateNoServicesOrPackages = "recurring_booking.no_services_or_packages";
     public const string RecurringTemplateStartsOnInPast = "recurring_booking.starts_on_in_past";
     public const string RecurringTemplateEndsOnBeforeStart = "recurring_booking.ends_on_before_start";
+    public const string RecurringTemplateMembershipRequired = "recurring_booking.membership_required";
 
     public const string OrderNotInProgress = "order.not_in_progress";
     public const string OrderNotConfirmed = "order.not_confirmed";

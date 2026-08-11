@@ -55,6 +55,15 @@ Much of the codebase has no tests yet (see the audit). When you touch an unteste
 write a **characterization test first** that pins the *current* behavior, confirm it passes, then
 TDD the change on top. This stops you silently breaking behavior you didn't know existed.
 
+### When you're fixing a bug (you have to *manufacture* the red)
+A fix has no natural red phase — the code already exists and the suite is already green, so a test
+written after the fix very often passes against the bug too. Write the test **against the unfixed
+code and watch it fail**; only then fix. If the test came second, **revert the fix and prove the test
+goes red**, then restore. A test that passes identically before and after the fix pins nothing (this
+is how an account-takeover fix once shipped unproven). The reviewer gates this as
+[`../process/quality-gates.md`](../process/quality-gates.md) **Gate 0.5 leg 1** — it wants the test
+**named** and both numbers, so hand it over with them.
+
 ---
 
 ## Which layer tests what
@@ -121,6 +130,8 @@ These are the areas where a bug costs money, breaks the law, or leaks data. Each
 ## Anti-patterns (Reviewer rejects)
 
 - A test that asserts a method exists or returns non-null but checks no behavior (theater).
+- A bug-fix test that **passes against the unfixed code** — the fix-case twin of theater: it proves the
+  code compiles, not that the bug is gone (Gate 0.5 leg 1).
 - All-happy-path with no failure/edge cases — money and state machines especially must test the sad
   paths.
 - Tests coupled to incidental detail (exact log strings, private fields) that break on any refactor.

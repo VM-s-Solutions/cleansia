@@ -1,9 +1,11 @@
 package cz.cleansia.partner.features.auth
 
+import android.content.Context
 import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
@@ -19,8 +21,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +34,7 @@ class LoginViewModelTest {
     private lateinit var authRepository: AuthRepository
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
+    private lateinit var context: Context
 
     @Before
     fun setUp() {
@@ -41,9 +42,15 @@ class LoginViewModelTest {
         errorTranslator = mockk()
         snackbar = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
+        // Distinct sentinels per resource: a hardcoded English literal coming
+        // back cannot equal any of them, and neither can the wrong key.
+        context = mockk()
+        every { context.getString(R.string.error_email_required) } returns EMAIL_REQUIRED
+        every { context.getString(R.string.error_email_invalid) } returns EMAIL_INVALID
+        every { context.getString(R.string.error_password_required) } returns PASSWORD_REQUIRED
     }
 
-    private fun viewModel() = LoginViewModel(authRepository, errorTranslator, snackbar)
+    private fun viewModel() = LoginViewModel(authRepository, errorTranslator, snackbar, context)
 
     @Test
     fun `blank email sets field error and does not submit`() = runTest {
@@ -52,7 +59,7 @@ class LoginViewModelTest {
         vm.login()
         advanceUntilIdle()
 
-        assertNotNull(vm.uiState.value.emailError)
+        assertEquals(EMAIL_REQUIRED, vm.uiState.value.emailError)
         assertEquals(ActionState.Idle, vm.loginState.value)
         coVerify(exactly = 0) { authRepository.login(any(), any(), any()) }
     }
@@ -65,8 +72,27 @@ class LoginViewModelTest {
         vm.login()
         advanceUntilIdle()
 
-        assertNotNull(vm.uiState.value.emailError)
+        assertEquals(EMAIL_INVALID, vm.uiState.value.emailError)
         coVerify(exactly = 0) { authRepository.login(any(), any(), any()) }
+    }
+
+    /**
+     * The three validation messages were English literals on a screen a Czech,
+     * Slovak, Ukrainian or Russian cleaner sees before anything else. The keys
+     * existed and were translated in all five locales — they were simply never
+     * read. Nothing failed, because an untranslated literal is invisible to
+     * both `R` and a locale key-parity check.
+     */
+    @Test
+    fun `every validation message comes from a string resource`() = runTest {
+        val vm = viewModel()
+        vm.login()
+        advanceUntilIdle()
+
+        assertEquals(EMAIL_REQUIRED, vm.uiState.value.emailError)
+        assertEquals(PASSWORD_REQUIRED, vm.uiState.value.passwordError)
+        verify { context.getString(R.string.error_email_required) }
+        verify { context.getString(R.string.error_password_required) }
     }
 
     @Test
@@ -167,6 +193,12 @@ class LoginViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { authRepository.login("a@b.com", "secret", true) }
+    }
+
+    private companion object {
+        const val EMAIL_REQUIRED = "res:error_email_required"
+        const val EMAIL_INVALID = "res:error_email_invalid"
+        const val PASSWORD_REQUIRED = "res:error_password_required"
     }
 
     @Test

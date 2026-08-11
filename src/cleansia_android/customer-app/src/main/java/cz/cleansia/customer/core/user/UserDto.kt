@@ -58,6 +58,19 @@ data class CurrentUser(
     val totalSavings: Double = 0.0,
     /** Currency code for [totalSavings]; null when the user has no realized orders. */
     val savingsCurrencyCode: String? = null,
+    /**
+     * Blob name of the profile photo, or null when the user has none.
+     *
+     * The backend mints a fresh GUID on every upload, so this is content-addressed:
+     * it is the image cache key, and it changes exactly when the image changes.
+     */
+    val avatarFileName: String? = null,
+    /**
+     * Read SAS for [avatarFileName] — a live credential valid for one hour, minted
+     * per profile fetch. Fetch target only: never cache on it (it differs on every
+     * read) and never persist it.
+     */
+    val avatarUrl: String? = null,
 ) {
     val fullName: String get() = "$firstName $lastName".trim()
     val initials: String get() =
@@ -82,4 +95,6 @@ internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser = CurrentUs
     totalBookings = totalBookings ?: 0,
     totalSavings = totalSavings ?: 0.0,
     savingsCurrencyCode = savingsCurrencyCode,
+    avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
+    avatarUrl = profilePhoto?.blobUrl?.takeIf { it.isNotBlank() },
 )

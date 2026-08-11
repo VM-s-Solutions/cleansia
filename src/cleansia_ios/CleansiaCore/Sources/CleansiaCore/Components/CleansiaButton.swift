@@ -78,10 +78,35 @@ public struct CleansiaPrimaryButton: View {
     }
 }
 
+/// Colour resolution for `CleansiaOutlinedButton`, hoisted out of the view so the
+/// neutral default and the border-follows-content rule are assertable without a
+/// snapshot harness.
+///
+/// The colour has to arrive through `init`, not `.tint()`: an explicit
+/// `foregroundColor` outranks the environment tint, and `stroke` takes a literal
+/// `ShapeStyle` that never consults the environment at all. A `.tint(...)` on this
+/// button is silently dead, which is how the order-detail Cancel/Report actions
+/// shipped uniformly grey.
+enum CleansiaOutlinedButtonColors {
+    static func content(_ contentColor: Color?) -> Color {
+        contentColor ?? CleansiaColors.onSurface
+    }
+
+    /// The border follows the content colour unless overridden, because Android
+    /// colours both slots identically on every tinted `OutlinedButton` and a red
+    /// label inside a grey capsule reads as a rendering fault rather than as a
+    /// destructive action.
+    static func border(content: Color?, border: Color?) -> Color {
+        border ?? content ?? CleansiaColors.outline
+    }
+}
+
 public struct CleansiaOutlinedButton: View {
     private let text: String
     private let size: CleansiaButtonSize
     private let leadingIcon: String?
+    private let contentColor: Color?
+    private let borderColor: Color?
     private let enabled: Bool
     private let action: () -> Void
 
@@ -89,12 +114,16 @@ public struct CleansiaOutlinedButton: View {
         _ text: String,
         size: CleansiaButtonSize = .large,
         leadingIcon: String? = nil,
+        contentColor: Color? = nil,
+        borderColor: Color? = nil,
         enabled: Bool = true,
         action: @escaping () -> Void
     ) {
         self.text = text
         self.size = size
         self.leadingIcon = leadingIcon
+        self.contentColor = contentColor
+        self.borderColor = borderColor
         self.enabled = enabled
         self.action = action
     }
@@ -109,8 +138,13 @@ public struct CleansiaOutlinedButton: View {
             }
             .frame(maxWidth: .infinity, minHeight: size.minHeight)
             .padding(.horizontal, size.horizontalPadding)
-            .foregroundColor(CleansiaColors.onSurface)
-            .overlay(Capsule().stroke(CleansiaColors.outline, lineWidth: 1))
+            .foregroundColor(CleansiaOutlinedButtonColors.content(contentColor))
+            .overlay(
+                Capsule().stroke(
+                    CleansiaOutlinedButtonColors.border(content: contentColor, border: borderColor),
+                    lineWidth: 1
+                )
+            )
         }
         .disabled(!enabled)
     }
@@ -206,6 +240,11 @@ public struct CleansiaTextLink: View {
                 CleansiaPrimaryButton("Loading", loading: true) {}
                 CleansiaPrimaryButton("Disabled", enabled: false) {}
                 CleansiaOutlinedButton("Continue with Google", leadingIcon: "globe") {}
+                CleansiaOutlinedButton(
+                    "Cancel order",
+                    leadingIcon: "xmark.circle",
+                    contentColor: CleansiaColors.error
+                ) {}
                 CleansiaDangerButton("Delete account", leadingIcon: "trash") {}
                 CleansiaTextLink("Forgot password?") {}
             }

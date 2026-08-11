@@ -89,7 +89,6 @@ class PersonalSectionViewModel @Inject constructor(
     fun onLastNameChange(v: String) = updateForm { it.copy(lastName = v, lastNameError = null) }
     fun onBirthDateChange(v: String) = updateForm { it.copy(birthDate = v, birthDateError = null) }
     fun onPhoneChange(v: String) = updateForm { it.copy(phone = v) }
-    fun onEmailChange(v: String) = updateForm { it.copy(email = v) }
 
     fun save() {
         val form = (_uiState.value as? PersonalSectionUiState.Loaded)?.form ?: return
@@ -121,7 +120,6 @@ class PersonalSectionViewModel @Inject constructor(
                 lastName = form.lastName.trim(),
                 birthDate = form.birthDate,
                 phone = form.phone.takeIf { it.isNotBlank() },
-                email = form.email.takeIf { it.isNotBlank() },
             )
             when (result) {
                 is ApiResult.Success -> {

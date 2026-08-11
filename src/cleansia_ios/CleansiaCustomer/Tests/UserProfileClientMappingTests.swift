@@ -56,6 +56,87 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertNil(user.savingsCurrencyCode)
     }
 
+    // MARK: - The avatar on the wire
+
+    /// Asserted on the GENERATED command, not on `ProfileUpdate`: every generated property is optional
+    /// with a nil default, so dropping a line from the mapper still compiles and a ViewModel test that
+    /// stops at the app DTO stays green while the field never reaches the wire.
+    func testUpdateCommandCarriesThePickedPhotoAndAsksForNoRemoval() {
+        let update = ProfileUpdate(
+            id: "user-1",
+            firstName: "Grace",
+            lastName: "Hopper",
+            phoneNumber: nil,
+            birthDate: nil,
+            languageCode: nil,
+            photo: ProfilePhotoUpload(base64: "QUJD", contentType: "image/jpeg", fileName: "photo.jpg")
+        )
+
+        let command = UpdateCurrentUserCommand(update)
+
+        XCTAssertEqual(command.photo?.base64Content, "QUJD")
+        XCTAssertEqual(command.photo?.contentType, "image/jpeg")
+        XCTAssertEqual(command.photo?.fileName, "photo.jpg")
+        XCTAssertEqual(command.removePhoto, false)
+    }
+
+    func testUpdateCommandAsksForRemovalWithoutSendingAPhoto() {
+        let update = ProfileUpdate(
+            id: "user-1",
+            firstName: "Grace",
+            lastName: "Hopper",
+            phoneNumber: nil,
+            birthDate: nil,
+            languageCode: nil,
+            removePhoto: true
+        )
+
+        let command = UpdateCurrentUserCommand(update)
+
+        XCTAssertEqual(command.removePhoto, true)
+        XCTAssertNil(command.photo)
+    }
+
+    /// The `fe0c985b` regression, at the wire: a save that never touched the avatar must carry no
+    /// image AND an explicit `false`, so the stored photo survives an ordinary field edit.
+    func testUpdateCommandLeavesTheStoredPhotoAloneWhenNothingWasTouched() {
+        let update = ProfileUpdate(
+            id: "user-1",
+            firstName: "Grace",
+            lastName: "Hopper",
+            phoneNumber: nil,
+            birthDate: nil,
+            languageCode: nil
+        )
+
+        let command = UpdateCurrentUserCommand(update)
+
+        XCTAssertNil(command.photo)
+        XCTAssertEqual(command.removePhoto, false)
+    }
+
+    func testMyProfileMapsTheStoredPhotoNameAndSignedUrl() {
+        let dto = MyProfileDto(
+            email: "jane@example.com",
+            profilePhoto: BlobFileDto(fileName: "blob-1", blobUrl: "https://blobs.example/blob-1?sig=abc")
+        )
+
+        let photo = dto.toDomain(id: "user-1").profilePhoto
+
+        XCTAssertEqual(photo?.fileName, "blob-1")
+        XCTAssertEqual(photo?.blobURL.absoluteString, "https://blobs.example/blob-1?sig=abc")
+    }
+
+    func testMyProfileHasNoPhotoWithoutBothANameAndAUrl() {
+        let noUrl = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: "blob-1"))
+        let noName = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(blobUrl: "https://blobs.example/x"))
+        let blank = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: " ", blobUrl: " "))
+
+        XCTAssertNil(noUrl.toDomain(id: "user-1").profilePhoto)
+        XCTAssertNil(noName.toDomain(id: "user-1").profilePhoto)
+        XCTAssertNil(blank.toDomain(id: "user-1").profilePhoto)
+    }
+
     func testUpdateCommandBlanksPhoneToNil() {
         let update = ProfileUpdate(
             id: "user-1",

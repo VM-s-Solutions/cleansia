@@ -15,6 +15,10 @@ name: Deploy to Azure (reusable)
 # - `mode` is resolved by the CALLER (push → deploy; dispatch → the chosen input) and passed in;
 #   every gated job reads `inputs.mode`. `what-if` is a non-mutating Bicep preview: no secret push,
 #   no migrations, no deploys.
+# - The Bicep STEP inside `provision` is fingerprint-gated (see the gate comment in that job): it runs
+#   only when deploy/bicep/** or a secret-presence flag changed, so an app-code deploy restarts each
+#   site once (the artifact deploy) instead of twice. `forceProvision: true` overrides. The rest of the
+#   job — the secret push to Key Vault — is unconditional, so secret rotation never depends on the gate.
 # - Every resource name is the Bicep-derived `<type>-cleansia[-<audience>]-<region>-<env>` scheme,
 #   driven by `inputs.env` + `matrix.region` — no stage name is hardcoded in any job.
 # - Every job that reads per-stage secrets sets `environment: inputs.githubEnvironment`, so with
@@ -57,6 +61,11 @@ on:
         description: "Repo-relative path to the stage's .bicepparam file"
         type: string
         required: true
+      forceProvision:
+        description: "Run Bicep even when the infrastructure fingerprint is unchanged (use after a portal edit, or to re-assert config)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   # ===========================================================================================
@@ -334,6 +343,51 @@ jobs:
             echo "APNS_PROVISIONED=false" >> "$GITHUB_ENV"
           fi
 
+      # ── Provision gate ────────────────────────────────────────────────────────────────────────────
+      # `az deployment group create` rewrites siteConfig + app settings on all 7 sites, which RESTARTS
+      # every one of them — before the artifact deploy restarts them again. On an app-code-only deploy
+      # that first restart buys nothing and costs a second cold start (on prod it also restarts the
+      # LIVE site, defeating the point of the slot-swap posture). So run Bicep only when the desired
+      # infrastructure actually differs from what is deployed.
+      #
+      # "Differs" = a fingerprint over deploy/bicep/** PLUS the three secret-presence flags resolved
+      # above, compared against the `provisionedBicepHash` tag this job stamps on the resource group
+      # after a successful provision. Including the flags is what keeps "the owner just set
+      # FIREBASE_SERVICE_ACCOUNT_JSON" from silently never being wired — that flips the fingerprint
+      # even though no file changed.
+      #
+      # FAIL-OPEN BY DESIGN: a missing tag, an unreadable/absent resource group, or any error here all
+      # resolve to "provision". The first run after this lands has no tag, so it provisions; a brand-new
+      # region provisions; only the steady state (nothing changed since the last successful provision)
+      # skips. `forceProvision` is the manual override for drift you know about (a portal edit).
+      # NOT covered: drift we cannot see (someone changed a setting in the portal) — the tag still says
+      # up-to-date. `mode: what-if` always previews, so that is the drift check.
+      - name: Resolve whether Bicep needs to run
+        if: inputs.mode == 'deploy'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          FORCE_PROVISION: ${{ inputs.forceProvision }}
+        run: |
+          BICEP_HASH="$( { find deploy/bicep -type f -print0 | sort -z | xargs -0 sha256sum; \
+                           echo "flags:$FCM_PROVISIONED:$FISCAL_PROVISIONED:$APNS_PROVISIONED"; } \
+                         | sha256sum | cut -c1-40 )"
+          echo "BICEP_HASH=$BICEP_HASH" >> "$GITHUB_ENV"
+
+          if [ "$FORCE_PROVISION" = "true" ]; then
+            echo "PROVISION_NEEDED=true" >> "$GITHUB_ENV"
+            echo "forceProvision requested — running Bicep."
+            exit 0
+          fi
+
+          DEPLOYED_HASH="$(az group show -n "$RG" --query "tags.provisionedBicepHash" -o tsv 2>/dev/null || true)"
+          if [ "$DEPLOYED_HASH" = "$BICEP_HASH" ]; then
+            echo "PROVISION_NEEDED=false" >> "$GITHUB_ENV"
+            echo "Infrastructure fingerprint unchanged ($BICEP_HASH) — skipping Bicep, so the app deploy is the only restart."
+          else
+            echo "PROVISION_NEEDED=true" >> "$GITHUB_ENV"
+            echo "Infrastructure fingerprint changed (deployed='${DEPLOYED_HASH:-none}', wanted='$BICEP_HASH') — running Bicep."
+          fi
+
       - name: Bicep what-if (non-mutating preview)
         if: inputs.mode == 'what-if'
         run: |
@@ -353,7 +407,7 @@ jobs:
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
 
       - name: Bicep deploy (provision/update)
-        if: inputs.mode == 'deploy'
+        if: inputs.mode == 'deploy' && env.PROVISION_NEEDED == 'true'
         # One blanket retry: PG flexible server reports transient ServerIsBusy when a
         # configurations/* write races the server's own async update on a re-deploy;
         # ARM template deployments are idempotent, so a second attempt is safe.
@@ -379,6 +433,23 @@ jobs:
           POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
+
+      # Stamp the fingerprint ONLY after Bicep actually succeeded, so a failed or half-applied provision
+      # leaves the old (or no) tag and the next run retries instead of skipping. Merge, not replace —
+      # the resource group's own tags must survive. Best-effort on purpose: an unstamped success costs
+      # exactly one redundant provision next run, which must not be traded for a failed deploy.
+      - name: Record the provisioned infrastructure fingerprint
+        if: inputs.mode == 'deploy' && env.PROVISION_NEEDED == 'true'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          RG_ID="$(az group show -n "$RG" --query id -o tsv 2>/dev/null || true)"
+          if [ -n "$RG_ID" ] && az tag update --resource-id "$RG_ID" --operation Merge \
+               --tags provisionedBicepHash="$BICEP_HASH" --output none 2>/dev/null; then
+            echo "stamped provisionedBicepHash=$BICEP_HASH"
+          else
+            echo "::warning::Could not stamp provisionedBicepHash on $RG — the next deploy will re-run Bicep."
+          fi
 
       # The single "Login to Azure" at the top of this job mints a GitHub OIDC client assertion valid for
       # only ~5 minutes. The Bicep deploy above runs well past that (full provision + a 3-minute retry), and
@@ -621,6 +692,24 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./partner-api
 
+      # Dev has no slot, so the artifact deploy lands straight on the live site and leaves it COLD —
+      # the first visitor pays the .NET/Node start. Warm it here, on CI's time, and PROVE it answers
+      # before the job is called green: a deploy that never goes healthy is a failed deploy, not a
+      # green one you find out about from a white screen. Same loop the prod path runs against the
+      # staging slot, pointed at the live dev hostname.
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::api-cleansia-partner never went healthy at $SITE_URL after the deploy"
+          exit 1
+
       # Slots are not Always On (deliberate — see appService.bicep), so the freshly-deployed slot is
       # cold: warm it and PROVE it healthy before the swap. Failing here fails the job — a slot that
       # never answers /health must not be swapped into production.
@@ -678,6 +767,19 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./admin-api
 
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::api-cleansia-admin never went healthy at $SITE_URL after the deploy"
+          exit 1
+
       - name: Warm the staging slot
         if: inputs.env == 'prod'
         run: |
@@ -731,6 +833,19 @@ jobs:
           app-name: api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-api
+
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::api-cleansia-customer never went healthy at $SITE_URL after the deploy"
+          exit 1
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'
@@ -786,6 +901,19 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./partner-mobile-api
 
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::api-cleansia-partner-mobile never went healthy at $SITE_URL after the deploy"
+          exit 1
+
       - name: Warm the staging slot
         if: inputs.env == 'prod'
         run: |
@@ -839,6 +967,19 @@ jobs:
           app-name: api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-mobile-api
+
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::api-cleansia-customer-mobile never went healthy at $SITE_URL after the deploy"
+          exit 1
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'
@@ -954,6 +1095,19 @@ jobs:
           app-name: web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-app
+
+      - name: Warm the deployed site
+        if: inputs.env != 'prod'
+        run: |
+          SITE_URL="https://web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
+            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
+            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::web-cleansia-customer never went healthy at $SITE_URL after the deploy"
+          exit 1
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'

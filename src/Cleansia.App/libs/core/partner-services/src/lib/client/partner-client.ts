@@ -6148,6 +6148,7 @@ export class BlobFileDto implements IBlobFileDto {
     fileName!: string | undefined;
     base64Content!: string | undefined;
     contentType!: string | undefined;
+    blobUrl!: string | undefined;
 
     constructor(data?: IBlobFileDto) {
         if (data) {
@@ -6163,6 +6164,7 @@ export class BlobFileDto implements IBlobFileDto {
             this.fileName = Data["fileName"];
             this.base64Content = Data["base64Content"];
             this.contentType = Data["contentType"];
+            this.blobUrl = Data["blobUrl"];
         }
     }
 
@@ -6178,6 +6180,7 @@ export class BlobFileDto implements IBlobFileDto {
         data["fileName"] = this.fileName;
         data["base64Content"] = this.base64Content;
         data["contentType"] = this.contentType;
+        data["blobUrl"] = this.blobUrl;
         return data;
     }
 }
@@ -6186,6 +6189,7 @@ export interface IBlobFileDto {
     fileName: string | undefined;
     base64Content: string | undefined;
     contentType: string | undefined;
+    blobUrl: string | undefined;
 }
 
 export class CalculateOrderPayCommand implements ICalculateOrderPayCommand {
@@ -12804,6 +12808,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
     birthDate!: Date | undefined;
     photo!: BlobFileDto;
     languageCode!: string | undefined;
+    removePhoto!: boolean;
 
     constructor(data?: IUpdateCurrentUserCommand) {
         if (data) {
@@ -12823,6 +12828,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
             this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
             this.photo = Data["photo"] ? BlobFileDto.fromJS(Data["photo"]) : undefined as any;
             this.languageCode = Data["languageCode"];
+            this.removePhoto = Data["removePhoto"];
         }
     }
 
@@ -12842,6 +12848,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
         data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
         data["photo"] = this.photo ? this.photo.toJSON() : undefined as any;
         data["languageCode"] = this.languageCode;
+        data["removePhoto"] = this.removePhoto;
         return data;
     }
 }
@@ -12854,6 +12861,7 @@ export interface IUpdateCurrentUserCommand {
     birthDate: Date | undefined;
     photo: BlobFileDto;
     languageCode: string | undefined;
+    removePhoto: boolean;
 }
 
 export class UpdateCurrentUserResponse implements IUpdateCurrentUserResponse {
@@ -12904,7 +12912,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     state!: string | undefined;
     nationalityId!: string | undefined;
     phone!: string | undefined;
-    email!: string | undefined;
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
@@ -12939,7 +12946,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.phone = Data["phone"];
-            this.email = Data["email"];
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
@@ -12984,7 +12990,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["phone"] = this.phone;
-        data["email"] = this.email;
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
@@ -13022,7 +13027,6 @@ export interface IUpdateEmployeeCommand {
     state: string | undefined;
     nationalityId: string | undefined;
     phone: string | undefined;
-    email: string | undefined;
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;

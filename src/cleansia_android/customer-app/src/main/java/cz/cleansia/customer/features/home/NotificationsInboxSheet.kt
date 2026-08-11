@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,12 +66,14 @@ fun NotificationsInboxSheet(
     viewModel: NotificationsInboxViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(viewModel) { viewModel.open() }
     LaunchedEffect(viewModel) { viewModel.openRoute.collect { onOpenRoute(it) } }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         Column(
@@ -94,10 +96,14 @@ fun NotificationsInboxSheet(
                     if (s.items.isEmpty()) {
                         InboxEmptyState()
                     } else {
+                        // fill = false lets a short feed keep wrapping to its
+                        // content — the sheet only grows to full height once
+                        // there are enough rows to need it.
                         InboxFeedList(
                             state = s,
                             onRowClick = viewModel::onRowClick,
                             onLoadMore = viewModel::loadMore,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                     }
             }
@@ -181,11 +187,10 @@ private fun InboxFeedList(
     state: NotificationsInboxUiState.Loaded,
     onRowClick: (NotificationFeedItem) -> Unit,
     onLoadMore: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 480.dp),
+        modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

@@ -2,10 +2,10 @@ import ImageIO
 import XCTest
 @testable import CleansiaCore
 
-/// Reads the SHIPPED segment files out of the customer catalog and checks that they still add up to the
-/// animation the playback code assumes. The data assets live in the app target, so the package test
-/// bundle reads them from the repo instead — a re-export that drops a frame, renames a file or rounds a
-/// delay fails here rather than on a device.
+/// Reads the SHIPPED segment files off disk and checks that they still add up to the animation the
+/// playback code assumes — a re-export that drops a frame, renames a file or rounds a delay fails here
+/// rather than on a device. `MascotBundledAssetTests` covers the same assets once COMPILED into the
+/// catalog; this covers what is checked in.
 final class MascotSegmentAssetTests: XCTestCase {
     private static let expectedFrames = 125
     private static let expectedDurationMilliseconds = 5207
@@ -15,8 +15,7 @@ final class MascotSegmentAssetTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("CleansiaCustomer/Resources/Assets.xcassets")
+            .appendingPathComponent("Sources/CleansiaCore/Resources/Assets.xcassets")
     }
 
     func testEverySegmentOfTheCleaningLoopIsPresent() throws {

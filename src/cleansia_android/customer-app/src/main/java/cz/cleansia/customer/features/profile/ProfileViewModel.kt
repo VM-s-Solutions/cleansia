@@ -1,15 +1,21 @@
 package cz.cleansia.customer.features.profile
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.core.media.Base64Image
+import cz.cleansia.core.media.ImageCompressor
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +24,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * What the user has asked to happen to their avatar, pending a save.
+ *
+ * Three cases rather than a nullable image, because "no image" is ambiguous
+ * between "leave it alone" and "delete it" — and the server treats those very
+ * differently (`UpdateCurrentUser.cs:135`).
+ */
+sealed interface AvatarDraft {
+    data object Unchanged : AvatarDraft
+
+    /**
+     * [previewUri] is the picked content URI, rendered locally so the change is
+     * visible before the save round trip; [image] is what actually uploads.
+     */
+    data class Picked(val previewUri: Uri, val image: Base64Image) : AvatarDraft
+
+    data object Removed : AvatarDraft
+}
 
 /**
  * Shared VM for the profile tab and the edit-profile screen. Both surface the
@@ -30,6 +55,7 @@ class ProfileViewModel @Inject constructor(
     membershipRepository: MembershipRepository,
     private val settings: AppSettingsRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     val currentUser: StateFlow<CurrentUser?> = userRepository.currentUser
@@ -47,6 +73,20 @@ class ProfileViewModel @Inject constructor(
 
     private val _saveState = MutableStateFlow<ActionState>(ActionState.Idle)
     val saveState: StateFlow<ActionState> = _saveState.asStateFlow()
+
+    private val _avatarDraft = MutableStateFlow<AvatarDraft>(AvatarDraft.Unchanged)
+    val avatarDraft: StateFlow<AvatarDraft> = _avatarDraft.asStateFlow()
+
+    /** Covers the decode + downscale of a pick, which is seconds on a big capture. */
+    private val _avatarState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val avatarState: StateFlow<ActionState> = _avatarState.asStateFlow()
+
+    /**
+     * The avatar blob name we have already spent our one refetch on. Keyed on the
+     * name rather than a bare flag because a new upload mints a new name, which
+     * restores the budget for the image that actually changed.
+     */
+    private var avatarRetriedFor: String? = null
 
     /**
      * Trigger a refresh. We don't auto-fetch in init so test harnesses can
@@ -68,6 +108,56 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
+     * Downscale and strip the metadata from a picked image, then hold it as the
+     * pending draft. Nothing is uploaded until the user saves.
+     *
+     * The picker callback is dispatched on the main thread and hands over only a
+     * [Uri]; [ImageCompressor] does the read, decode, downscale and base64 off it.
+     */
+    fun pickAvatar(uri: Uri) {
+        if (_avatarState.value is ActionState.Submitting) return
+        _avatarState.value = ActionState.Submitting
+        viewModelScope.launch {
+            val encoded = ImageCompressor.compressToBase64(appContext.contentResolver, uri)
+            _avatarState.value = ActionState.Idle
+            if (encoded == null) {
+                snackbar.showError(appContext.getString(R.string.profile_avatar_encode_failed))
+                return@launch
+            }
+            _avatarDraft.value = AvatarDraft.Picked(previewUri = uri, image = encoded)
+        }
+    }
+
+    fun removeAvatar() {
+        _avatarDraft.value = AvatarDraft.Removed
+    }
+
+    /** Leaving the edit screen without saving must not carry the pick into the next visit. */
+    fun discardAvatarDraft() {
+        _avatarDraft.value = AvatarDraft.Unchanged
+    }
+
+    /**
+     * The avatar image failed to load: refetch the profile once for a fresh SAS.
+     *
+     * The loader cannot see the status code, so there is nothing to branch on — an
+     * expired SAS (403) and a deleted blob (404) arrive identically. Refetching once
+     * fixes the first and is harmless for the second, which then falls back to the
+     * initials; [avatarRetriedFor] is what stops the second case looping.
+     */
+    fun onAvatarLoadFailed() {
+        val fileName = userRepository.currentUser.value?.avatarFileName ?: return
+        if (avatarRetriedFor == fileName) return
+        avatarRetriedFor = fileName
+        viewModelScope.launch { userRepository.refreshCurrentUser() }
+    }
+
+    /** Hands the retry budget back, so an expiry later in a long session can still recover. */
+    fun onAvatarLoadSucceeded() {
+        avatarRetriedFor = null
+    }
+
+    /**
      * Save profile edits. Calls [onSaved] after the server accepts + the local
      * cache is refreshed, so the edit screen can pop back to a fresh profile.
      */
@@ -81,6 +171,7 @@ class ProfileViewModel @Inject constructor(
     ) {
         if (_saveState.value is ActionState.Submitting) return
         _saveState.value = ActionState.Submitting
+        val draft = _avatarDraft.value
         viewModelScope.launch {
             val result = userRepository.updateCurrentUser(
                 firstName = firstName.trim(),
@@ -88,9 +179,12 @@ class ProfileViewModel @Inject constructor(
                 phoneNumber = phoneNumber?.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = languageCode,
+                photo = (draft as? AvatarDraft.Picked)?.image,
+                removePhoto = draft is AvatarDraft.Removed,
             )
             result
                 .onSuccess {
+                    _avatarDraft.value = AvatarDraft.Unchanged
                     _saveState.value = ActionState.Idle
                     onSaved()
                 }

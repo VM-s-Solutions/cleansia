@@ -7,21 +7,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,11 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,8 +46,8 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.settings.AppSettingsRepository
-import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.features.settings.LanguageChooser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -116,14 +109,14 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.systemBars),
     ) {
-        // Language sits opposite Skip in the intro header rather than in the
-        // post-signup RegistrationLock chain: that chain only renders after
-        // RegisterEmployee has already stamped PreferredLanguageCode and queued
-        // the confirmation email, so a choice made there would arrive too late
-        // to affect the one mail that matters — and its "Step X of 4" progress
-        // maths counts profile sections, which a display preference is not.
+        // The intro is where the language choice still reaches the confirmation
+        // email: RegisterEmployee stamps PreferredLanguageCode from whatever is
+        // stored by then. The RegistrationLock chain carries the same chooser,
+        // but only as a display preference — by the time it renders the mail
+        // has been queued.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -180,83 +173,6 @@ fun OnboardingScreen(
             },
         )
         Spacer(Modifier.height(Spacing.L))
-    }
-}
-
-/**
- * Compact language dropdown for the pre-auth intro.
- *
- * A dropdown, not a pushed picker route: onboarding is reached before the
- * cleaner has an account and the intro deliberately has no app bar to go back
- * to, so a full screen would need a bespoke return path. The trigger shows the
- * language *the app is in right now* — the native name, or the translated
- * "System" label when following the device — so it is legible to someone who
- * cannot read the language currently on screen.
- */
-@Composable
-private fun LanguageChooser(
-    selected: LanguagePreference,
-    onSelect: (LanguagePreference) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val systemLabel = stringResource(R.string.language_system)
-    val label = LanguageLabels.nativeName(selected) ?: systemLabel
-    // The trigger has no visible caption — "Language" is what a screen reader
-    // must announce, and that string already ships in all five locales.
-    val accessibilityLabel = stringResource(R.string.language)
-
-    Box {
-        Row(
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { expanded = true }
-                .padding(horizontal = Spacing.S, vertical = Spacing.XS)
-                .semantics { contentDescription = accessibilityLabel },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Language,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.size(Spacing.XS))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Icon(
-                imageVector = Icons.Outlined.ArrowDropDown,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            LanguageLabels.ordered.forEach { option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = LanguageLabels.nativeName(option) ?: systemLabel,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
-                            ),
-                            color = if (option == selected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        onSelect(option)
-                    },
-                )
-            }
-        }
     }
 }
 

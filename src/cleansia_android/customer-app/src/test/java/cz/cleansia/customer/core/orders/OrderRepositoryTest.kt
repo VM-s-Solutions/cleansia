@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -312,6 +313,44 @@ class OrderRepositoryTest {
         assertEquals(emptyList<OrderListItemDto>(), repo.orders.value)
         assertEquals(0, repo.totalRecords.value)
         assertEquals(false, repo.loaded.value)
+    }
+
+    // ── staleness watermark ──
+
+    @Test
+    fun staleness_isStaleUntilARefreshSucceeds() = runTest {
+        val repo = newRepo()
+        assertTrue("a never-fetched cache must read stale", repo.staleness.isStale())
+
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns
+            Response.success(OrderListResponseDto(total = 1, data = listOf(listItem("o-1"))))
+        repo.refresh()
+
+        assertFalse("a successful refresh must stamp the watermark", repo.staleness.isStale())
+    }
+
+    @Test
+    fun staleness_staysStaleWhenTheRefreshFails() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns
+            Response.error(500, "{}".toResponseBody("application/json".toMediaType()))
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertTrue(repo.staleness.isStale())
+    }
+
+    @Test
+    fun clear_resetsStalenessSoTheNextUserRefetches() = runTest {
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } returns
+            Response.success(OrderListResponseDto(total = 1, data = listOf(listItem("o-1"))))
+        val repo = newRepo()
+        repo.refresh()
+        assertFalse(repo.staleness.isStale())
+
+        repo.clear()
+
+        assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
     }
 
     // ── loading flow transitions (Turbine) ──

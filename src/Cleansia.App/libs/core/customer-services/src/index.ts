@@ -130,6 +130,7 @@ export type {
 } from './lib/client/customer-client';
 export {
   ApiException,
+  BlobFileDto,
   GetCurrentUserQuery,
   MyProfileDto,
   OrderItem,
@@ -166,6 +167,7 @@ export {
 } from './lib/client/customer-client';
 export type {
   IPackageServiceSummary,
+  IBlobFileDto,
   ICategoryDto,
   ICountryListItem,
   IUpdateCurrentUserCommand,

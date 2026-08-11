@@ -43,6 +43,7 @@ final class BookingDraftSurvivalTests: XCTestCase {
             next.selectedTime = "10:00"
             next.promoCode = "WELCOME10"
             next.specialInstructions = "Ring twice"
+            next.accessInstructions = "Key box by the gate, code 4321"
             return next
         }
         vm.advance()
@@ -66,6 +67,7 @@ final class BookingDraftSurvivalTests: XCTestCase {
         XCTAssertEqual(vm.state.selectedTime, "10:00")
         XCTAssertEqual(vm.state.promoCode, "WELCOME10")
         XCTAssertEqual(vm.state.specialInstructions, "Ring twice")
+        XCTAssertEqual(vm.state.accessInstructions, "Key box by the gate, code 4321")
         XCTAssertEqual(vm.currentStep, 3)
     }
 

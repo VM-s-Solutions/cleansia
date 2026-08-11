@@ -30,13 +30,13 @@ import cz.cleansia.partner.api.model.OrderItem
  * Order metadata row that sits inside the sheet content (NOT in the
  * drag handle anymore). Two rows:
  *
- *   #ORD-…                                 [1200 CZK]
+ *   #ORD-…  (Confirmed)                    [1200 CZK]
  *   📅 May 22, 2026, 9:00 AM
  *
- * Order # on the left, price pill on the right. Date with calendar
- * icon below. Renders as a transparent inline element — no card
+ * Order # + status pill on the left, price pill on the right. Date with
+ * calendar icon below. Renders as a transparent inline element — no card
  * background, no shadow — so it reads as metadata between the timer
- * card above and the progress bar below.
+ * card above and the progress bar below. Matches the iOS compact header.
  */
 @Composable
 fun OrderMetadataRow(
@@ -61,11 +61,18 @@ fun OrderMetadataRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = "#${order.displayOrderNumber ?: order.id?.take(8) ?: "—"}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f, fill = false),
+            ) {
+                Text(
+                    text = "#${order.displayOrderNumber ?: order.id?.take(8) ?: "—"}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                OrderStatusPill(status = order.orderStatus.toOrderStatus())
+            }
             if (payLabel != null) {
                 PayChip(label = payLabel)
             }

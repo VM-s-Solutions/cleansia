@@ -75,6 +75,9 @@ export class CleansiaSidebarMenuComponent {
 
   isMobile = computed(() => this.isMobileSignal());
 
+  // The mobile drawer always opens at full width, so it is never a narrow rail.
+  brandCompact = computed(() => this.effectiveCollapsed() && !this.isMobile());
+
   constructor() {
     if (this.isBrowser) {
       this.updateMobileStatus();

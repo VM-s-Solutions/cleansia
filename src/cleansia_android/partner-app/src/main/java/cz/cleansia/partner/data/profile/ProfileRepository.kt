@@ -55,13 +55,16 @@ interface ProfileRepository {
      */
     fun getRegistrationStatusStaleness(): Staleness
 
+    /**
+     * Carries no email: the login address is the session's identity and the
+     * command has no field for it. It is read-only everywhere it is shown.
+     */
     suspend fun updatePersonalInfo(
         employeeId: String,
         firstName: String,
         lastName: String,
         birthDate: String?,
         phone: String?,
-        email: String?,
     ): ApiResult<Unit>
 
     /**
@@ -170,7 +173,6 @@ class ProfileRepositoryImpl @Inject constructor(
         lastName: String,
         birthDate: String?,
         phone: String?,
-        email: String?,
     ): ApiResult<Unit> = safeApiCall(json) {
         employeeApi.employeeUpdatePersonalInfo(
             UpdatePersonalInfoCommand(
@@ -179,7 +181,6 @@ class ProfileRepositoryImpl @Inject constructor(
                 lastName = lastName,
                 birthDate = birthDate,
                 phone = phone,
-                email = email,
             ),
         )
     }.map { }

@@ -119,6 +119,12 @@ jobs:
           install "$BIN" "$RUNNER_TEMP/pinned-tools/swiftlint"
           "$RUNNER_TEMP/pinned-tools/swiftlint" version
 
+      # Severity rules for the missing-Config/Local.xcconfig diagnostic that both app
+      # targets run as a pre-build phase. The runner deliberately has no Local.xcconfig,
+      # so CI is also the standing proof that a fresh clone still builds.
+      - name: Test the local-config check
+        run: ./scripts/tests/check-local-config.test.sh
+
       # The generated business client (CleansiaPartnerApi / CleansiaCustomerApi) is
       # gitignored and machine-owned — regenerate it from the committed mobile specs
       # before xcodegen, since both project.yml files now depend on it.

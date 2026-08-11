@@ -168,6 +168,18 @@ class OrderRepository @Inject constructor(
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 
+> **Testing the request side of an Api adapter: assert the GENERATED command, not the app one (T-0441).**
+> Adding a field to a request means editing two DTOs and one `toWire()` mapper. **Every field on an
+> OpenAPI-generated command is optional with a `= null` default**, so forgetting the mapper line is
+> invisible to the compiler *and* to a ViewModel test that mocks the adapter — the app DTO carries the
+> value, the wire does not, and the suite stays green. This shipped as a review finding: deleting the
+> `accessInstructions = accessInstructions` line from `BookingApi.toWire()` left the booking suite
+> **24/24 green and compiling**. So when an adapter maps app→generated, one test mocks the **generated**
+> client (`mockk<OrderApi>()`), calls the adapter, and asserts the captured **generated** command —
+> `BookingApiTest` is the model; `UserRepositoryTest` shows the same generated-client mocking. Mutate it
+> by deleting a mapper line: if nothing goes red, the test is one hop short. iOS mirrors this — its
+> generated models have the same all-optional shape.
+
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
 member and must `clear()` on sign-out; leaving one out leaks the prior user's data to the next account
@@ -240,6 +252,114 @@ raw components one-off; never duplicate a `:core` component.
 > the delete-account confirm both consume it; partner `ProfileHubContent`'s hand-rolled copy is the
 > remaining convergence target.
 
+> **A colour-resolver test does not cover the call site (T-0473).** Hoisting a component's colour rules
+> into a pure resolver (`CleansiaOutlinedButtonColors`) makes the *component* assertable and stops
+> there: it proves the button honours whatever colour it is handed, never which colour a screen hands
+> it. Reassigning a role at the call site leaves that suite green — the order-detail footer moved Report
+> issue from `primary` to `error` without a single failure, under a comment that named the old pairing.
+> **So when a screen's styling is a bare argument** (`contentColor:` / `colorScheme.x`), hoist it one
+> level further, into a value type the screen and a test can both name — iOS
+> `OrderDetailFooterStyle` (glyph + tint per action) is the shape. Hoist the **glyph** with the tint
+> whenever two actions share a colour: the icon is then the only differentiator, and nothing else in the
+> repo can see it change. Where the platform has no seam to hoist into (a Compose screen with no test
+> harness), the sanctioned fallback is a source-text assertion scoped to the one block —
+> `NotificationsScreenTogglesTest` / `OrderDetailFooterTintTest`, not a whole-file `contains`.
+
+> **The same blind spot has two cheaper-to-spot forms, and both shipped.** (1) A **wire field nothing
+> renders**: the customer order detail decoded `tierDiscountAmount`/`membershipDiscountAmount`/
+> `promoDiscountAmount` on every order and drew none of them, so a Plus member on a loyalty tier saw a
+> struck-through subtotal with no account of the difference — a decode test stays green forever because
+> decoding is all it checks. (2) A **VM mutator whose only caller is a test**: iOS
+> `CreateRecurringViewModel.setRooms` had one caller in the whole repo and it was `CreateRecurringViewModelTests`,
+> `setBathrooms` had none, so a blank recurring create silently submitted the 2/1 default — and that one
+> is *price-affecting*. Both are one `grep` each (a DTO field whose only readers are mappers; a
+> `func set…` whose only caller is under `Tests/`), so run them when you port a screen rather than
+> waiting for a resolver test that cannot see either. The fix in both cases is the rule above — hoist
+> the decision into a named value type (`OrderPriceBreakdown` / `OrderHeroFacts`) and pin the **call
+> site** with a scoped source-text assertion (`OrderDetailSummaryBindingTests` /
+> `CreateRecurringBindingTests`), because a resolver test alone would have passed on every one of these.
+
+> **Ink on a theme-INVARIANT surface — the ONE way (T-0451):** a `Color.dynamic` token is right almost
+> everywhere and wrong wherever the surface beneath it refuses to adapt. Both profile-hero avatar discs
+> are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them
+> and measured **2.14:1** — under the WCAG **3:1** large-text floor — while light mode stayed fine at
+> 4.10:1, which is why it survived review. **Pin the light-mode value; do not make the surface adaptive:**
+> the disc is a deliberate cut-out in the brand gradient and Android's customer hero pins `Sky600` for
+> the same reason (`ProfileTab.kt`), so adapting the disc would open a fresh divergence while closing a
+> defect. Core owns the pinned pair — **`CleansiaColors.onFixedWhite`**, derived from the internal
+> `fixedWhiteHex`/`onFixedWhiteHex` so `FixedWhiteContrastTests` can pin the **ratio** from the hexes
+> (a `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor — the `BrandGradientTests`
+> rule). The generalizable law: **an adaptive foreground over a hardcoded background is a contrast
+> defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
+> neither is visible in the theme the author develops in.
+
+> **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
+> screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —
+> the avatar — because every blob URL this backend returns is **re-signed per fetch**, so a URL-keyed
+> cache (`AsyncImage`'s, `URLCache`'s, Kingfisher's default) misses every time and re-downloads the same
+> face. Core owns the pair: **`RemoteImageCache`** (`Media/`) keyed on the caller's key with the URL as
+> the fetch target only, and **`CachedRemoteImage`** (`Components/`) rendering it with a placeholder.
+> Three rules the seam encodes: the key is the **content-addressed `fileName`** the backend re-mints on
+> every upload (never the URL, never a per-user id); the holder is **per-user state** and `register`s
+> with the `SessionScopedCacheRegistry` (S11); and the loader runs on an **`.ephemeral`** `URLSession`
+> so neither the bytes nor the credential-bearing URL that keyed them land in an on-disk `URLCache`. On
+> a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
+> expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
+> the second failure falls through to the placeholder instead of looping.
+
+> **A sheet over a live backdrop — the ONE way (Android `SnapSheet`):** a panel layered over a
+> full-bleed map is **not** a `BottomSheetScaffold`. That scaffold has exactly two resting states —
+> `sheetPeekHeight` and expanded — so `initialValue = PartiallyExpanded, skipHiddenState = true` gives a
+> sheet that **cannot be dragged below its peek**; the partner order detail has shipped a comment
+> promising "drag down for a bigger map glimpse" over a sheet physically unable to do it. Use
+> `cz.cleansia.core.ui.components.SnapSheet` instead: `AnchoredDraggableState` + `DraggableAnchors` over
+> three anchors — `SnapAnchor.MapFocus` 0.30 / `Peek` 0.75 / `Expanded` 0.95 covered — matching the iOS
+> `SnapAnchor` values one for one (ADR-0021), with `backdrop` / sheet / `overlay` slots and a nested-scroll
+> hand-off so a drag up expands before the content scrolls. Three rules it encodes: the sheet is sized
+> **and** placed in one `Modifier.layout` reading the offset in the **layout phase**, so a drag never
+> recomposes the content; anything glued to the moving edge (the mascot) takes the offset as a
+> **`() -> Float`** read inside `offset {}` for the same reason; and the shallowest anchor is floored at
+> `SnapSheetDefaults.MinSheetHeight`, because 30% of a short display cannot hold a sticky action footer
+> and a footer pushed past the bottom edge is worse than a slightly smaller map. Anchors + the top-edge
+> math are a pure function (`snapSheetTopPx`) so `SnapAnchorTest` can pin the numbers iOS also pins.
+
+> **iOS mascot art lives in `CleansiaCore`, and the seam puck is one component — the ONE way:**
+> every mascot, still and animated, is in **`CleansiaCore/Sources/CleansiaCore/Resources/Assets.xcassets`**
+> and resolves through **`MascotAssets.bundle`** (`= Bundle.module`); the app catalogs keep only
+> app-specific art (icon, wordmark, splash). SwiftPM's `.process("Resources")` compiles a `.dataset`
+> into the module's `Assets.car` exactly like an app target's, so animated WebPs share fine. Do NOT copy
+> a mascot into a second app catalog: `Mascot.image` and `MascotAssetCache` both read the one bundle, and
+> two copies drift. The sheet-edge puck is the Core **`MascotPuck(MascotArt?)`** dropped into
+> `SnapSheet`'s `ornament:` slot; the **status → art mapping stays per-app** (`OrderDetailMascotArt`),
+> because each app's `OrderStatus` is its own generated type and the two apps map the same statuses
+> differently — customer animates the welcome at Confirmed/OnTheWay, partner keeps every non-InProgress
+> status still, per Android's `FloatingMascot`.
+>
+> **The trap this exists to close:** `AnimatedMascotView` falls back to the still `Mascot` whenever a
+> data asset cannot be resolved, so a mascot missing from the bundle **renders happily and looks
+> finished** while the animated-vs-still rule is silently gone. A file-existence check misses it
+> entirely. Assert instead that `MascotAssetCache.shared.asset(for:)` returns every segment, that the
+> decode yields frames whose **pixels differ** (`MascotBundledAssetTests`), and — per app — that the
+> shared bundle resolves inside the built app (`CleansiaPartner/Tests/MascotAssetsTests.swift`).
+> Mutation to prove it: point `MascotAssets.bundle` at `Bundle.main`; both suites must go red.
+
+> **iOS wrapping chip/pill row — the ONE way:** Compose's `FlowRow` maps to the Core **`ChipFlow`**
+> `Layout` (`Core/Components/ChipFlow.swift`) over the pure **`ChipFlowPacking`** greedy first-fit
+> (same file pair, `ChipFlowPackingTests` in Core). It was a partner-only copy inside
+> `OrdersListComponents.swift` until the customer membership perk row needed the same wrap; both apps
+> now consume the one Core type. Reach for it whenever a row of short labels can outgrow its width —
+> which is **every** localized chip row, because a three-chip line that fits in English overflows in
+> cs/sk/uk/ru and an `HStack` truncates rather than wraps.
+
+> **A perk/benefit the backend never enforces must not be rendered.** The membership `allowsExpressUpgrade`
+> flag is seeded, returned by `GetMyMembership` and read by exactly zero lines of pricing code — a Plus
+> member pays the standard express surcharge — so the iOS perk row deliberately omits it while Android
+> still shows an "Express" pill. Before mirroring a benefit chip, grep the field: if its only readers are
+> DTO mappers, it is marketing copy, not a feature, and a second platform doubles the promise. The
+> matching iOS shape is a semantic **`MembershipPerk`** enum resolved by `MembershipPerks.resolve` (the
+> "carry the token, not the resolved string" rule again), so a test can assert the express case does not
+> exist at all rather than hunting a literal in a view.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular
@@ -268,6 +388,23 @@ raw components one-off; never duplicate a `:core` component.
 > `cleansia.cz` anywhere in the iOS tree (Swift, string catalog or plist) is a defect, and
 > `ConsentCatalogTests` pins the markup + the no-literal-domain rule across both apps × five locales.
 
+> **A `Row` of fixed-count labels — truncating needs `weight`, not just `maxLines` (T-0479).** Compose
+> measures each **unweighted** `Row` child against whatever its earlier siblings left, so the last slot
+> of a bottom bar gets the remainder — which is nothing, once three Cyrillic labels and a 72dp FAB hole
+> have been paid for. Adding `maxLines = 1` on its own therefore upgrades a visible two-line wrap into
+> an **invisible tab**: the last column is measured to ~0dp and its icon clips with it. The fix is
+> always the pair — `Modifier.weight(1f)` on every slot (equal budgets) **plus** `maxLines = 1` +
+> `overflow = TextOverflow.Ellipsis` + `textAlign = TextAlign.Center` (an ellipsized `Text` fills its
+> whole constraint, so a `Start`-aligned label drifts left of its centred icon). Budget the result
+> against the **narrowest** width × the **longest** locale before calling it done, and remember the
+> slot's own horizontal padding is spent out of that budget: at 320dp the customer pill gives each slot
+> 50dp, where 8dp-per-side padding truncated even English ("Ho…") and 4dp does not. Visual truncation
+> costs nothing in accessibility — Compose hands the semantics tree the string it was given, so TalkBack
+> still reads the whole label — but a Kotlin-side `label.take(n)` would truncate the spoken label too and
+> is never the fix. `BottomNavLabelTruncationTest` (one per app) pins the pair. **iOS does not inherit
+> this**: `.tabItem` is UIKit-rendered and ignores the SwiftUI text modifiers, which is why T-0480 is a
+> separate ticket rather than a port.
+
 ## Navigation — typed routes
 
 `navigation/Routes.kt` defines `@Serializable data object`/`data class` routes; args are constructor
@@ -280,6 +417,88 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 `appContext.getString` in the VM), domain-prefixed (`order_`, `auth_`, `error_`). Loading/Error/Loaded
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
+
+**A conditional list of chips/pills/rows is a pure resolver, never a `buildList` inside the
+composable.** `MembershipPerks.resolve(response) -> List<MembershipPerk>` (customer
+`features/membership/MembershipPerks.kt`, mirrored by iOS `MembershipPerks.swift`) returns **semantic
+cases**, and the composable resolves `stringResource` per case. Both halves of the old inline version
+were bugs the shape prevents: the labels were English literals (`"$pct% off"`) because nothing in a
+`buildList` asks you for a resource id, and one `add(...)` sat outside every condition with no backing
+field. A resolver lets the test say "this case is not in the list" instead of grepping a view for a
+literal, and it makes the gating condition — not the rendering — the thing under test.
+
+**A local preference the server also stores needs a sync seam, not just a DataStore write.**
+`AppSettingsRepository.setLanguage` wrote DataStore only, so `User.PreferredLanguageCode` — the sole
+input to the language every server-rendered email is written in — stayed frozen at signup. The shape
+(customer `core/settings/LanguagePreferenceSync.kt`, mirrored by iOS `LanguagePreferenceSync.swift`):
+a `LanguagePreferenceSync` interface + a pure `LanguagePreferencePush.forUser(...)` decision + a
+`@Singleton` live impl, called from the VM after the local write. Three properties are load-bearing:
+send the **resolved** tag (`emailLanguageTag()`, never the "System" null — the server cannot see the
+device locale and the validator rejects a raw `de-DE`); **replay the whole cached profile**, because
+`UpdateCurrentUser` still replaces first/last name outright; and stay **silent on failure**, because
+a display-language tap is not a save anyone is waiting on.
+
+**A backend enum reaches the screen as an ordinal → resource id; its `name` is a DEBUG-only
+diagnostic.** Every `Code` on the wire carries both a `value` and a non-localized English `name`
+("OnTheWay", "PartiallyRefunded"). Matching on the `name`, or falling back to it, ships English to
+cs/sk/uk/ru. The one shape (partner `OrderStatusPresentation.kt` / `PaymentPresentation.kt`, customer
+`orderStatusLabelRes` / `paymentStatusLabelRes`, iOS `OrderStatusLabel` / `OrderStatusPresentation`):
+a pure `xLabelRes(ordinal): Int?` covering **every** ordinal the backend defines — count them against
+the enum, the missing one is always the newest (Cancelled, PartiallyRefunded) — and a `@Composable`
+that resolves it, falling through to a placeholder. **Take `isDebug` as a parameter rather than
+reading `BuildConfig.DEBUG`**: unit tests run against the *debug* variant, so a resolver that reads
+`BuildConfig` directly makes the production branch — the one that decides whether English leaks —
+permanently unassertable.
+
+**An untranslated literal is invisible to every check we have**, which is why five shipped at once
+(partner status timeline, login validation, scope line; customer payment status). `R` cannot see prose
+that never became a resource, locale key-parity compares only keys that exist, and this module has no
+`lint` step in CI. So a screen with no test seam gets a **source-text scan scoped to the file** —
+strip comments and `${…}` templates, then fail on any string literal holding three or more
+consecutive letters (separators `·`, `#`, `—` pass; prose never does) — **plus a call-site pin**,
+because a resolver test does not cover the call site (the T-0473 rule): assert the card still calls
+`orderStatusLabel(…)` and does not read `.name` itself. `OrderDetailCardStringsTest` is the model;
+mutation-prove both halves by re-introducing the literal.
+
+**A key-dispatched navigation `when` is not exhaustive, so a test has to be.** Profile rows reach
+`CleansiaNavHost` as a `String` key through a `when (key)` used as a *statement*, which Kotlin never
+requires to be total — a row whose key has no branch compiles, renders, and does nothing when tapped
+(the customer "Privacy" row did exactly that for its whole life). `ProfileRowRoutingTest` closes it
+from the outside: parse the keys the tab can emit and the branches the host declares, then assert set
+equality **both ways**, so a dead row and an orphaned branch each go red.
+
+## Picking an image, and rendering one that lives behind a SAS (T-0448)
+
+Three rules, each of which was a bug before it was a rule.
+
+**Picking.** An **image-only** pick uses `ActivityResultContracts.PickVisualMedia` +
+`PickVisualMediaRequest(…ImageOnly)` (customer `EditProfileScreen.kt`). It grants per-item access to
+exactly what the user chose, so **it needs no runtime permission on any API level from 26 up** — there
+is no `READ_MEDIA_IMAGES`, no rationale dialog, and no denial branch to write, because androidx falls
+back through the Play-services picker to `ACTION_OPEN_DOCUMENT`, which is equally permission-free. A
+**mixed-content** pick (documents, dispute evidence — PDFs arrive too) keeps
+`GetContent`/`GetMultipleContents` + the `isImageMimeType` split. `PhotosSection.kt` is an image-only
+`GetContent` predating this and is not a counter-example. The one failure the picker still has is
+`launch()` **throwing** on a device with neither a picker nor a document provider — wrap it and show a
+translated message; an uncaught throw takes the screen down.
+
+**Compressing.** Every upload path goes through the `:core` `ImageCompressor.compressToBase64` —
+never a second read/encode. It is what strips EXIF/GPS (by re-encode, not by erasure) and bounds the
+payload; the VM owns the call so the outcome is JVM-testable with `mockkObject(ImageCompressor)`
+(`OrderPhotosViewModelTest`, `ProfileViewModelTest`).
+
+**Rendering a SAS-backed image.** The `blobUrl` on a `BlobFileDto` is a **one-hour read credential
+minted fresh on every fetch**, so it is a fetch target and nothing else: key Coil's cache on the
+**`fileName`** (content-addressed — the backend re-mints the GUID on replace), never on the URL, or
+every read is a cache miss pinning a URL that dies within the hour. Never persist the URL, and never
+raise OkHttp logging to `Level.BODY` while debugging one (`HEADERS` debug / `NONE` release, both apps)
+— that writes the whole signed URL into logcat. For a **personal** image (the avatar), also
+`diskCachePolicy(CachePolicy.DISABLED)`: memory-only removes the "when do we evict the previous user's
+face from disk" question rather than answering it, at the cost of one small refetch per cold start.
+**On a load error there is nothing to branch on** — an expired SAS is 403 and a deleted blob is 404,
+and the loader surfaces neither, so the only implementable rule is **refetch the profile once, guarded
+by the `fileName` already retried**, with the composable falling back to its placeholder meanwhile so
+a genuinely deleted blob cannot loop.
 
 ---
 
@@ -348,9 +567,11 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | customer/partner `CleansiaFirebaseMessagingService.kt` renders **data-only** pushes from `strings.xml` templates (device locale, unknown key = silent drop) + `NotificationDeepLink.encode/resolve` routes the tap intent | **display = the ADR-0025 APNs loc-key alert, NO new iOS render code**: the backend attaches `push.<event_key>.title|body` + allowlisted `loc-args` ({orderNumber, count} only; tier body argless, new-jobs body count-agnostic `%1$@`), which iOS resolves from **each app target's own `Localizable.xcstrings`** — NEVER CleansiaCore's (APNs sees only the main bundle's table; an SPM resource bundle is invisible) — full 12-event × 5-language catalog in EVERY token-registering build or the raw `push.*` key renders on the lock screen (pinned per app by `PushLocKeyCatalogTests`). Wording ports the Android notification strings per audience per locale (`%1$s`→`%1$@`); events the sibling Android app never renders borrow the other audience's wording. **Tap = the mirrored per-app trio**: delegate `didReceive` → pure `{Partner,Customer}NotificationDeepLink.resolve(userInfo)` (reads ONLY the data keys — `event_key`/`orderId`/`disputeId`; the `aps` block is ignored, test-pinned) → `PushNavigationModel.pendingDestination` (`@Published` + one-shot `consume()`) → the shell consumes in `.onChange` **and** `.onAppear` (cold start) and applies a pure `PushTapRouting`/`CustomerPushTapRouting` plan — tab + seeded `NavigationPath` (dispute thread seeds the list under it so back lands there) + modal sheets dismissed (a covered destination is invisible) |
 | `customer-app/.../core/auth/GoogleSignInController.kt` — provider acquisition returns a **typed `GoogleSignInResult`** (`Success(idToken, googleId, email, first, last) \| Cancelled \| NoAccount \| NotConfigured \| Failure`), **never navigates**, swallows-and-logs cancel/no-account; the VM maps the result → `AuthOutcome` then the repo's `googleAuth` POST | a Core **`SocialSignInProviding`** protocol (`CleansiaCore/Auth`) returning a typed **`SocialSignInResult`** (`.google(GoogleCredential) \| .apple(AppleCredential) \| cancelled \| noAccount \| notConfigured \| failure`) — fakeable, so the VM unit-tests against fakes (no live provider). The **acquisition impls are APP-LOCAL** in `CleansiaCustomer` (partner offers no social login — an ADR-0013 D3 split): `AppleSignInController` (`#if canImport(AuthenticationServices)`, the SOLE AuthenticationServices consumer — generates a crypto-random raw nonce, sets `request.nonce = SHA256(rawNonce)` HASHED to Apple, returns the **RAW** nonce to the backend; `.fullName`/`.email` scopes; name only on first authorization) + `GoogleSignInController` (`#if canImport(GoogleSignIn)`, the SOLE GoogleSignIn consumer — `serverClientID` = backend `Google:ClientId`, empty config → `.notConfigured` FAIL-SAFE, no crash). The seam keeps both first-party frameworks behind the protocol (the `PushRegistrar`/`CameraOrLibraryPicker` seam-family, with `#else` no-op fallbacks so Core/tests compile without the SPM dep). **Consumption = the Core spine:** two new `AuthApiClient` methods `googleAuth`/`appleAuth` (hand-written request DTOs, anon `noAuthSession`/no Bearer, `/api/Auth/{GoogleAuth,AppleAuth}`) that **reuse the SAME `resolveEmailGate` + single Keychain `persist`** — ~10 lines each, **NO parallel social token-write path** (a finding). The official `ASAuthorizationAppleIDButton` (via a `UIViewRepresentable` driving the seam, NOT SwiftUI's built-in request handler) is **first**, the Google button **second**, below the Core **`LabelledDivider`** (reused, NOT re-declared per app) `OR` divider on SignIn + SignUp (AR-ACCT-2/4.8). The Google button is a CUSTOM outlined label rendering the **real multicolor Google "G"** brand mark (a vector-PDF `google_g` imageset in the customer assets, `renderingMode(.original)` so it stays 4-color) + the localized "Continue with Google" — Google branding REQUIRES the official "G", NOT an SF Symbol. The provider snackbars are provider-**neutral** (`auth_social_*`, ×5) since Apple + Google share the `.noAccount`/`.notConfigured`/`.failure` branches. LIVE sign-in owner-gated → **T-0344** (Apple capability + `Apple:BundleId`) / **T-0345** (Google client ids); the `com.apple.developer.applesignin` entitlement + the GoogleSignIn-iOS SPM dep + the reversed-client-id URL-scheme **slot** (placeholder) ship now (sprint-12 §7.14 D6 / §7.15 D2/D3/D6, T-0312 Slice C) |
 
-| `res/drawable-nodpi/mascot_*.png` (brand raster art) + Coil-3 `MascotAnimation` over `res/raw/*.webp` (animated WebP, `repeatCount`, freeze-on-last-frame) | per-app asset-catalog **universal single-scale imagesets** (same `mascot_*` names) read via the Core **`Mascot` enum** (`Components/Mascot.swift`, resolves in `.main` bundle) + the animated WebPs as **asset-catalog data assets** played by the Core **`AnimatedMascotView`** (`UIViewRepresentable` over ImageIO `CGAnimateImageDataWithBlock`, iOS 14+; `loop: false` stops on the last frame; static-`Mascot` fallback when the data asset is missing or animation fails). `CGAnimateImageDataWithBlock` has **no cancel handle**, so the representable's **`Coordinator` holds the active `(data, loop)` + a generation token**: `updateUIView` restarts on change and the superseded run stops itself via the block's stop flag — an empty `updateUIView` freezes the OLD animation when SwiftUI reuses the `UIImageView` for a different mascot. **`CGAnimateImageDataWithBlock` IGNORES the WebP container's baked-in loop count** (verified: `mascot_welcoming` carries `loopCount=1` yet the block repeats 49→0→1→… forever), so a one-shot must FORCE-stop itself on the last frame via the block's stop flag — the loop metadata cannot be relied on. **Freeze-on-last-frame is not automatic on device:** the block's transient last frame does not survive a later SwiftUI `updateUIView`/relayout, nor a fresh blank `UIImageView` SwiftUI hands back after the run ends (the reuse path where `shouldRestart` short-circuits and never re-sets `.image`). Fix: on completion the Coordinator **decodes and PINS the final frame** (`completedGeneration` + `pinnedFinalFrame`) and **re-asserts it on EVERY `updateUIView`** (not once) — `AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(loop:hasCompletedFrame:superseded:)` gates it to a completed, non-superseded one-shot so a newer run still wins. A single post-teardown re-apply (the earlier approach) was insufficient — it did not cover subsequent relayout. SF-symbol substitution is allowed for Material **icons** only, never for brand raster art — empty states go through the Core `MascotEmptyState` (now takes optional `subtitle`/`imageSize`/`titleFont` + an `actions` builder for the CTA) |
+| `res/drawable-nodpi/mascot_*.png` (brand raster art) + Coil-3 `MascotAnimation` over `res/raw/*.webp` (animated WebP, `repeatCount`, freeze-on-last-frame) | **one shared** asset catalog in `CleansiaCore` (`Sources/CleansiaCore/Resources/Assets.xcassets`, universal single-scale imagesets under the same `mascot_*` names) read via the Core **`Mascot` enum** (`Components/Mascot.swift`, resolves in `MascotAssets.bundle`) + the animated WebPs as **data assets in that same catalog** played by the Core **`AnimatedMascotView`** (`UIViewRepresentable` over ImageIO `CGAnimateImageDataWithBlock`, iOS 14+; `loop: false` stops on the last frame; static-`Mascot` fallback when the data asset is missing or animation fails). `CGAnimateImageDataWithBlock` has **no cancel handle**, so the representable's **`Coordinator` holds the active `(data, loop)` + a generation token**: `updateUIView` restarts on change and the superseded run stops itself via the block's stop flag — an empty `updateUIView` freezes the OLD animation when SwiftUI reuses the `UIImageView` for a different mascot. **`CGAnimateImageDataWithBlock` IGNORES the WebP container's baked-in loop count** (verified: `mascot_welcoming` carries `loopCount=1` yet the block repeats 49→0→1→… forever), so a one-shot must FORCE-stop itself on the last frame via the block's stop flag — the loop metadata cannot be relied on. **Freeze-on-last-frame is not automatic on device:** the block's transient last frame does not survive a later SwiftUI `updateUIView`/relayout, nor a fresh blank `UIImageView` SwiftUI hands back after the run ends (the reuse path where `shouldRestart` short-circuits and never re-sets `.image`). Fix: on completion the Coordinator **decodes and PINS the final frame** (`completedGeneration` + `pinnedFinalFrame`) and **re-asserts it on EVERY `updateUIView`** (not once) — `AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(loop:hasCompletedFrame:superseded:)` gates it to a completed, non-superseded one-shot so a newer run still wins. A single post-teardown re-apply (the earlier approach) was insufficient — it did not cover subsequent relayout. SF-symbol substitution is allowed for Material **icons** only, never for brand raster art — empty states go through the Core `MascotEmptyState` (now takes optional `subtitle`/`imageSize`/`titleFont` + an `actions` builder for the CTA) |
 | a full-bleed colored header that reaches the top screen edge **under** the status bar, drawn by applying the gradient `background()` BEFORE `windowInsetsPadding(WindowInsets.statusBars)` so the brush fills behind the bar while the content is inset below it (`SubscribePlusScreen.kt:308-317` Plus hero; the Profile hero instead keeps 12dp breathing room via a column-level `statusBars` pad — `ProfileTab.kt:128-134`) | wrap the screen body in a **`GeometryReader { proxy in … }`** and put **`.ignoresSafeArea(.container, edges: .top)` on the INNER `ScrollView`** (NOT on the `GeometryReader` itself), then thread `proxy.safeAreaInsets.top` into the header as its **internal** top padding (`.padding(.top, base + topInset)` INSIDE the `.background(LinearGradient…)`). The scroll content then starts at `y=0` so the gradient fills behind the bar, while the reader — which does NOT ignore the safe area — reports the **real** top inset that pads the text/back-button below the clock. **Applying `.ignoresSafeArea` to the `GeometryReader` itself COLLAPSES `proxy.safeAreaInsets.top` to 0** (verified on-sim, iPhone 17 / iOS 26 + iPhone 14 / iOS 16.4, fix-round 6): the header then draws under the status bar (avatar/name, back-button behind the clock) — a defect. A child `LinearGradient().ignoresSafeArea(edges: .top)` INSIDE the `ScrollView` also does NOT bleed upward (the scroll insets its content below the top safe area) — the failed round-5 approach. The Profile hero is an owner-directed edge-to-edge deviation from Android's breathing-room treatment (iOS fix-round 6); the Plus header matches Android. One refinement (fix-round 8): `proxy.safeAreaInsets.top` settles 0 → real on first layout, so a header whose body can animate must pin `.animation(nil, value: topInset)` or the settle animates as a visible slide (`SubscribePlusScreen.swift` HeroBlock). *(Architect-ratified T-0397, 2026-07-19 — verified at all 3 call sites: customer `ProfileTab`, `SubscribePlusScreen`, partner `ProfileHubContent`)* |
-| adaptive launcher icon (`ic_launcher_foreground.xml` C-mark vector on `#0284C7`) + androidx splashscreen theme (`windowSplashScreenBackground` + `values-night` variant) | **AppIcon.appiconset** (modern single-size 1024 PNG derived from the same vector path, background baked in, per-app mark) + `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in `project.yml`; launch screen = `UILaunchScreen: {UIColorName: SplashBackground}` (a colorset with the dark-appearance variant). `UIImageName` is **known-broken on the iOS 16.4 SIMULATOR** (renders scaled-to-fill or blank) — re-probe on real hardware before use; color-only until then. The branded mascot splash is the in-app `SplashGateView` (gradient `CleansiaColors.splashGradientStart/End`, 600ms fade + brand hold in the splash VM) |
+| adaptive launcher icon — a **Poppins-Bold wordmark vector** (`ic_launcher_foreground.xml` + the byte-identical `ic_launcher_monochrome.xml`) over a `ic_launcher_background.xml` linear-gradient vector, **the same three-layer wrapper in both apps**, the audience difference living only in the mark (customer "Cleansia" on sky `#0098D2→#40C9F9`, partner "Cleansia + PARTNER" on the deeper `#006D98→#00B4ED`) + androidx splashscreen theme (`windowSplashScreenBackground` + `values-night` variant) whose `windowSplashScreenAnimatedIcon` **reuses the launcher foreground** — no second asset. The branded in-app splash is the shared `:core` **`WordmarkSplash`** (per-letter reveal on `SplashGradientStart/End`, optional PARTNER lockup, per-app `splash_tagline`) | **AppIcon.appiconset** (modern single-size 1024 PNG derived from the same wordmark, background baked in, per-app mark) + `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in `project.yml`; launch screen = a `LaunchScreen.storyboard` over the `SplashBackground` colorset + the `LaunchWordmark` imageset (`UILaunchScreen: {UIImageName:…}` is **known-broken on the iOS 16.4 SIMULATOR** — scaled-to-fill or blank — which is why the storyboard, not the plist key, carries the wordmark). The branded splash is the shared Core `WordmarkSplashView` (gradient `CleansiaColors.splashGradientStart/End`, per-letter reveal + brand hold in the splash VM) |
+
+> **Brand-mark geometry — the ONE way (T-0443).** The iOS 1024 masters are the source; Android reproduces them as **vectors**, never as an imported PNG. Two platform constraints decide the numbers and neither is optional: (a) an iOS icon is authored full-bleed for a fixed rounded-rect mask, so a naive import is sheared by a **circle**-mask launcher — the Android mark is scaled to the iOS mark's fraction of the icon (measured from the master, e.g. 822/1024 = 80.3%) **of the inner 72dp**, which puts its furthest ink corner ~29dp from centre, inside the **66dp (radius 33) safe circle**; (b) the background gradient runs **(18,18)→(90,90)**, not corner-to-corner, because the launcher crops 18dp of bleed off every edge — a 0→108 gradient shows only its middle third and reads flat. The **notification small icon is the exception that is never a straight copy**: Android keeps only a small icon's alpha, so it must be a flat single-fill silhouette (any colour or gradient flattens to a white blob), and an 8-letter wordmark is illegible at 24dp — both apps therefore ship the same Poppins-Bold **"C" monogram** filling 20 of the 24dp canvas. `BrandIconCatalogTest` (`:core`) pins all of it, because every one of these failures is silent at build time.
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -446,6 +667,24 @@ be a god-enum without de-dup, and `ProfileRoute` is shared with the out-of-shell
 **Deviations a reviewer rejects (#35):** a nested `NavigationStack`; a typed `[Route]` path array; a
 resurrected pill/pager or glass-FAB composite; a customer child route registered anywhere but the ONE
 shell-level `.navigationDestination(for: ShellRoute.self)`.
+
+> **A `.tabItem` label takes no text modifier, and the bar has no overflow behaviour to fall back on
+> (measured, T-0480).** `UITabBarItem` — not SwiftUI — lays the label out, so `.lineLimit`,
+> `.truncationMode`, `.minimumScaleFactor` and `.fixedSize` written inside `.tabItem` are **discarded
+> silently**: on the 16.4 floor all six variants produced byte-identical geometry, and
+> `.truncationMode(.middle)` left `lineBreakMode` on `byTruncatingTail` while `.minimumScaleFactor(0.4)`
+> left `adjustsFontSizeToFitWidth` false. A diff that adds them compiles, reviews clean and changes
+> nothing. **Nor does the Android remedy have an iOS counterpart to port:** the bar is `numberOfLines = 1`
+> and never wraps, but it also never truncates — the label is always sized to its FULL natural width
+> (`sizeThatFits == bounds` even at 143.5pt in a 71pt slot) and simply **draws over its neighbours**. So
+> tab-label overflow on iOS is a **string-length constraint, not a layout one**, and the only place to
+> defend it is the catalog. `ShellTabBarLabelTests` in each app is the fence: it hosts the real `TabView`
+> in a `UIWindow` at the narrowest supported width (**375pt** — iPhone SE 3rd gen / 8 / 13 mini; nothing
+> iOS-16-capable is narrower), then per locale asserts each label's natural width fits its slot and its
+> drawn ink stays within one line height. Two traps it encodes: measure the **rendered `UILabel`**, never
+> the modifier in the source (a source-level assertion passes on a diff that does nothing); and iOS 26
+> keeps a selected-semibold **and** an unselected-medium label per item, so count distinct titles, not
+> label instances, and measure both — the semibold one is wider.
 
 **Partner registration gate — fail-closed (sprint-12 §7.4 Decision 1, reviewer #24, SECURITY):** the gate sits
 **between login and the shell** (the shell is unreachable until complete). The predicate is the **AND** of
@@ -1068,6 +1307,21 @@ the Parity rule; Gate-SEC):** the customer settings tail over the generated `Cus
   current-password "change password" instead of the reset-code flow; a second settings store or theme/language in the Keychain; a
   rebuilt (not promoted-in-place) Profile hub that drops the disputes/addresses rows. **The GDPR/Devices/prefs SECURITY enforcement is
   Gate-SEC (security charter) — this rule fixes the seams.**
+
+**Owner-local build values — the ONE way (T-0475):** a per-developer value (the Stripe publishable key,
+`DEVELOPMENT_TEAM`) lives ONLY in the gitignored `src/cleansia_ios/Config/Local.xcconfig`, which
+`Config/Base.xcconfig` pulls in with `#include?` last so it wins; both `project.yml` files point every
+configuration at `Base.xcconfig` via `configFiles:`. **Never put such a value in `project.yml` or
+`Info.plist`** — `project.yml` is tracked, so any pull/checkout/reset deletes it, and `Info.plist` is
+xcodegen OUTPUT, so `xcodegen generate` rewrites it. Both wiped the owner's key repeatedly. The committed
+`Base.xcconfig` keeps an **empty default** for each key, so a fresh clone and CI still build and test on the
+simulator with no local file; `Local.xcconfig.example` is the committed template. A missing value is
+reported by name at build time (`scripts/check-local-config.sh`, a pre-build phase on both app targets;
+warning on Debug, **error** on Release, and always an error for a non-`pk_` Stripe key) and stays
+**fail-closed** at runtime. **Deviations a reviewer rejects:** a value typed into `project.yml`
+`settings:`; a second per-app local xcconfig instead of the one shared file; setting the team in Xcode's
+Signing & Capabilities editor (it writes the gitignored, regenerated `.xcodeproj`); a test that asserts
+ambient build config by reading `Bundle.main` instead of injecting the flag.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

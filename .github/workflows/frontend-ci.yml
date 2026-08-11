@@ -1,9 +1,24 @@
 name: Frontend CI
 
+# Also runs on pushes to master, for the same reason backend-ci does: a pull_request-only
+# trigger means a direct-to-master commit is never built, so an NSwag regen that breaks an
+# untouched consumer lands unnoticed and reddens the next contributor's PR instead. The push
+# trigger is paths-scoped to the frontend tree and skips the e2e job (a merged PR already ran
+# it); the concurrency group keeps stacked pushes from burning minutes on stale SHAs.
 on:
   pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/Cleansia.App/**'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -29,8 +44,25 @@ jobs:
 
       # Derive the Nx affected base (the PR target branch) so lint/test only run on
       # projects the change actually touches — fast, and still a real gate.
+      #
+      # A push has no base_ref. `github.event.before` is the canonical push base and is
+      # the one that covers EVERY commit in the push — `HEAD~1` sees only the last, so a
+      # multi-commit or rebase push would under-run the affected tests. It is preferred
+      # for exactly that reason, but it is not always reachable (a force-push can drop it;
+      # it is all-zeros on branch creation), and an unresolvable --base makes the affected
+      # steps ERROR — which would fail this job BEFORE the three production builds, i.e.
+      # take out the drift gate this trigger exists to carry. So: use `before` when it
+      # resolves, fall back to `HEAD~1` when it does not. Either way the blast radius is
+      # bounded — the three builds below are unconditional and never affected-gated.
       - name: Set Nx base
-        run: echo "NX_BASE=origin/${{ github.base_ref }}" >> "$GITHUB_ENV"
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "NX_BASE=origin/${{ github.base_ref }}" >> "$GITHUB_ENV"
+          elif git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            echo "NX_BASE=${{ github.event.before }}" >> "$GITHUB_ENV"
+          else
+            echo "NX_BASE=HEAD~1" >> "$GITHUB_ENV"
+          fi
 
       # Lint is INFORMATIONAL for now (continue-on-error): the lint baseline has
       # pre-existing debt in several libs (module-boundary, a11y, unused-var), so making
@@ -40,6 +72,12 @@ jobs:
       - name: Lint (affected, non-blocking)
         continue-on-error: true
         run: npx nx affected -t lint --base="$NX_BASE" --head=HEAD --parallel=3
+        working-directory: ./src/Cleansia.App
+
+      # The regen-drift guard's own suite. It runs here so the guard cannot rot into
+      # scaffolding: stub tools/typecheck-apps.mjs to exit 0 and this step goes red.
+      - name: Regen-drift guard self-test
+        run: npm run typecheck:test
         working-directory: ./src/Cleansia.App
 
       # Jest unit tests — the suites (facades, components, parity guards, a11y) that
@@ -75,6 +113,7 @@ jobs:
   # `webServer` boots `nx run <app>:serve` on the same :4200, so they cannot share a
   # job concurrently — each step boots and tears down its own app server in turn.
   e2e-smoke:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     steps:

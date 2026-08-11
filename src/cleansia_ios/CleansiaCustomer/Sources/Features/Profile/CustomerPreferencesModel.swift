@@ -9,9 +9,11 @@ final class CustomerPreferencesModel: ObservableObject {
     @Published private(set) var theme: Theme
 
     private let settings: AppSettingsStore
+    private let languageSync: LanguagePreferenceSync?
 
-    init(settings: AppSettingsStore) {
+    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync? = nil) {
         self.settings = settings
+        self.languageSync = languageSync
         languageTag = settings.languageTag
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
         theme = settings.theme
@@ -33,12 +35,18 @@ final class CustomerPreferencesModel: ObservableObject {
         applyResolvedLanguage()
     }
 
+    /// The RESOLVED tag reaches the server, never the "System" sentinel: `PreferredLanguageCode` has to be
+    /// one of the five supported codes because it picks the template every server-rendered mail is written
+    /// in, and the server cannot see this device's locale.
     private func applyResolvedLanguage() {
         let resolved = settings.languageTag
         L10n.bundle = Self.bundle(for: resolved)
         CoreL10n.apply(languageTag: resolved)
         languageTag = resolved
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
+        if let languageSync {
+            Task { await languageSync.send(languageCode: resolved) }
+        }
     }
 
     func setTheme(_ theme: Theme) {

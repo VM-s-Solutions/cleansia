@@ -94,12 +94,13 @@ object Routes {
     data object RecurringBookings
 
     /**
-     * Recurring booking create form. Optional [orderId] pre-fills
-     * services/packages/rooms/etc. from a past Completed order (Path B).
-     * Without it, the form is a blank slate (Path A).
+     * Recurring booking form. Optional [orderId] pre-fills
+     * services/packages/rooms/etc. from a past Completed order (Path B);
+     * optional [templateId] loads an existing schedule and submits an update
+     * instead of a create (Path C). Neither → blank slate (Path A).
      */
     @Serializable
-    data class CreateRecurringBooking(val orderId: String? = null)
+    data class CreateRecurringBooking(val orderId: String? = null, val templateId: String? = null)
 
     // ── Orders ──
     @Serializable

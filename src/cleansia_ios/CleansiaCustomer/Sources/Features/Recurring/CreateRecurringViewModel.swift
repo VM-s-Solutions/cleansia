@@ -20,6 +20,40 @@ struct CreateRecurringFormState: Equatable {
             && startsOn != nil
             && !timeOfDay.isBlank
     }
+
+    init() {}
+
+    init(_ template: RecurringTemplate) {
+        frequency = RecurrenceFrequency(rawValue: template.frequency) ?? .weekly
+        dayOfWeek = template.dayOfWeek
+        timeOfDay = template.timeOfDay
+        rooms = template.rooms
+        bathrooms = template.bathrooms
+        savedAddressId = template.savedAddressId
+        selectedServiceIds = Set(template.selectedServiceIds)
+        selectedPackageIds = Set(template.selectedPackageIds)
+        paymentType = template.paymentType
+        startsOn = template.startsOn
+    }
+}
+
+extension UpdateRecurringInput {
+    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?) {
+        self.init(
+            templateId: templateId,
+            frequency: input.frequency,
+            dayOfWeek: input.dayOfWeek,
+            timeOfDay: input.timeOfDay,
+            rooms: input.rooms,
+            bathrooms: input.bathrooms,
+            savedAddressId: input.savedAddressId,
+            selectedServiceIds: input.selectedServiceIds,
+            selectedPackageIds: input.selectedPackageIds,
+            paymentType: input.paymentType,
+            startsOn: input.startsOn,
+            endsOn: endsOn
+        )
+    }
 }
 
 @MainActor
@@ -30,6 +64,7 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var savedAddresses: [RecurringSavedAddress] = []
 
     let sourceOrderId: String?
+    let editing: RecurringTemplate?
 
     private let repository: RecurringBookingRepository
     private let catalogClient: CatalogClient
@@ -39,23 +74,38 @@ final class CreateRecurringViewModel: ViewModel {
 
     init(
         sourceOrderId: String?,
+        editing: RecurringTemplate? = nil,
         repository: RecurringBookingRepository,
         catalogClient: CatalogClient,
         addressClient: RecurringSavedAddressClient,
         orderClient: OrderClient,
         snackbar: SnackbarController
     ) {
-        self.sourceOrderId = sourceOrderId?.isBlank == false ? sourceOrderId : nil
+        self.sourceOrderId = editing == nil && sourceOrderId?.isBlank == false ? sourceOrderId : nil
+        self.editing = editing
         self.repository = repository
         self.catalogClient = catalogClient
         self.addressClient = addressClient
         self.orderClient = orderClient
         self.snackbar = snackbar
         super.init()
+        if let editing {
+            formState = CreateRecurringFormState(editing)
+        }
+    }
+
+    var isEditing: Bool {
+        editing != nil
     }
 
     var isValid: Bool {
         formState.isValid
+    }
+
+    /// An edited template can start in the past; a new one cannot start before today.
+    var earliestStart: Date {
+        guard let startsOn = editing?.startsOn else { return Date() }
+        return min(startsOn, Date())
     }
 
     func load() async {
@@ -66,17 +116,30 @@ final class CreateRecurringViewModel: ViewModel {
             self.catalog = catalog
         }
         if case let .success(addresses) = await addressResult {
-            savedAddresses = addresses
-            if formState.savedAddressId.isBlank {
-                let preferred = addresses.first(where: \.isDefault) ?? addresses.first
-                if let preferred {
-                    formState.savedAddressId = preferred.id
-                }
-            }
+            apply(addresses)
         }
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
         }
+    }
+
+    /// Re-read the list after the inline address manager closes — an address
+    /// created there is invisible to this form's `load()` snapshot, so the row
+    /// the customer just made would not be there to pick.
+    func reloadAddresses() async {
+        if case let .success(addresses) = await addressClient.getMine() {
+            apply(addresses)
+        }
+    }
+
+    /// Seeding only fills a blank selection, so a hand-picked address survives
+    /// a reload that a newly-added default would otherwise steal.
+    private func apply(_ addresses: [RecurringSavedAddress]) {
+        savedAddresses = addresses
+        guard formState.savedAddressId.isBlank,
+              let preferred = addresses.first(where: \.isDefault) ?? addresses.first
+        else { return }
+        formState.savedAddressId = preferred.id
     }
 
     // MARK: - Mutators
@@ -135,14 +198,19 @@ final class CreateRecurringViewModel: ViewModel {
         guard !submitState.isSubmitting else { return false }
         guard let input = buildInput() else { return false }
         submitState = .submitting
-        switch await repository.create(input) {
+        let result: ApiResult<RecurringTemplate> = if let editing {
+            await repository.update(UpdateRecurringInput(input, templateId: editing.id, endsOn: editing.endsOn))
+        } else {
+            await repository.create(input)
+        }
+        switch result {
         case .success:
             submitState = .idle
-            snackbar.showSuccess(L10n.Recurring.createSuccess)
+            snackbar.showSuccess(isEditing ? L10n.Recurring.editSuccess : L10n.Recurring.createSuccess)
             return true
         case let .failure(error):
             snackbar.showApiError(error)
-            submitState = .error(L10n.Recurring.createFailed)
+            submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false
         }
     }

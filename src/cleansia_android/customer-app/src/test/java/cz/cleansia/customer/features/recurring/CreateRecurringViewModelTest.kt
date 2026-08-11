@@ -8,15 +8,17 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.orders.OrderRepository
-import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
+import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
+import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,8 @@ class CreateRecurringViewModelTest {
     private lateinit var addressRepo: AddressRepository
     private lateinit var snackbar: SnackbarController
 
+    private lateinit var templatesFlow: MutableStateFlow<List<RecurringBookingTemplateDto>>
+
     @Before
     fun setUp() {
         recurringRepo = mockk(relaxed = true)
@@ -48,13 +52,17 @@ class CreateRecurringViewModelTest {
         catalogRepo = mockk(relaxed = true)
         addressRepo = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
+        templatesFlow = MutableStateFlow(emptyList())
         coEvery { catalogRepo.refresh() } returns ApiResult.Success(Unit)
         every { addressRepo.addresses } returns MutableStateFlow(emptyList())
+        every { recurringRepo.templates } returns templatesFlow
     }
 
-    private fun viewModel(orderId: String? = null) =
+    private fun viewModel(orderId: String? = null, templateId: String? = null) =
         CreateRecurringViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("orderId" to orderId)),
+            savedStateHandle = SavedStateHandle(
+                mapOf("orderId" to orderId, "templateId" to templateId),
+            ),
             recurringRepo = recurringRepo,
             orderRepo = orderRepo,
             catalogRepo = catalogRepo,
@@ -153,5 +161,122 @@ class CreateRecurringViewModelTest {
 
         coVerify(exactly = 0) { recurringRepo.create(any()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    private val editableTemplate = template.copy(
+        frequency = RecurrenceFrequency.Biweekly.code,
+        dayOfWeek = 2,
+        timeOfDay = "14:30",
+        rooms = 5,
+        bathrooms = 3,
+        savedAddressId = "addr-9",
+        selectedServiceIds = listOf("svc-7"),
+        selectedPackageIds = listOf("pkg-3"),
+        paymentType = 2,
+        startsOn = "2026-09-15T00:00:00Z",
+    )
+
+    @Test
+    fun `edit mode prefills every field from the cached template`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(vm.isEditing)
+        assertEquals(RecurrenceFrequency.Biweekly, state.frequency)
+        assertEquals(2, state.dayOfWeek)
+        assertEquals("14:30", state.timeOfDay)
+        assertEquals(5, state.rooms)
+        assertEquals(3, state.bathrooms)
+        assertEquals("addr-9", state.savedAddressId)
+        assertEquals(setOf("svc-7"), state.selectedServiceIds)
+        assertEquals(setOf("pkg-3"), state.selectedPackageIds)
+        assertEquals(2, state.paymentType)
+        assertEquals("2026-09-15T00:00:00Z", state.startsOnIso)
+    }
+
+    @Test
+    fun `edit mode refreshes when the template is not cached yet`() = runTest {
+        coEvery { recurringRepo.refresh() } coAnswers {
+            templatesFlow.value = listOf(editableTemplate)
+            ApiResult.Success(Unit)
+        }
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        assertEquals("addr-9", vm.state.value.savedAddressId)
+        coVerify(exactly = 1) { recurringRepo.refresh() }
+    }
+
+    @Test
+    fun `edit mode submits an update carrying the template id and never creates`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+
+        vm.submitted.test {
+            vm.submit()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+        assertEquals("tpl-1", request.captured.templateId)
+        assertEquals(4, request.captured.rooms)
+        assertEquals("addr-9", request.captured.savedAddressId)
+        assertEquals(listOf("svc-7"), request.captured.selectedServiceIds)
+        assertEquals(listOf("pkg-3"), request.captured.selectedPackageIds)
+        assertEquals("2026-09-15T00:00:00Z", request.captured.startsOn)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `edit mode update failure surfaces ActionState Error`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { recurringRepo.update(any()) } returns
+            ApiResult.Error(ApiError.Server(statusCode = 500, message = "server boom"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertTrue(vm.submitState.value is ActionState.Error)
+    }
+
+    @Test
+    fun `edit mode with an unresolvable template never submits defaults over the schedule`() = runTest {
+        val vm = viewModel(templateId = "missing")
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { recurringRepo.update(any()) }
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    @Test
+    fun `create mode never calls update`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { recurringRepo.update(any()) }
+        assertTrue(!vm.isEditing)
     }
 }

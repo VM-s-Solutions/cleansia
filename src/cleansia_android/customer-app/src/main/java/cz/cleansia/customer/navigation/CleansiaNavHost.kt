@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -410,11 +411,23 @@ fun CleansiaNavHost(
             val user by vm.currentUser.collectAsState()
             val saveState by vm.saveState.collectAsState()
             val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val avatarDraft by vm.avatarDraft.collectAsState()
+            val avatarState by vm.avatarState.collectAsState()
+
+            // A pending pick must not survive an abandoned edit — the hero would
+            // otherwise show an image the server never received.
+            DisposableEffect(vm) { onDispose { vm.discardAvatarDraft() } }
 
             EditProfileScreen(
                 user = user,
                 saving = saving,
+                avatarPhoto = cz.cleansia.customer.features.profile.avatarPhotoFor(user, avatarDraft),
+                avatarBusy = avatarState is cz.cleansia.customer.ui.state.ActionState.Submitting,
                 onBack = { navController.popBackStack() },
+                onPickPhoto = vm::pickAvatar,
+                onRemovePhoto = vm::removeAvatar,
+                onAvatarLoadFailed = vm::onAvatarLoadFailed,
+                onAvatarLoadSucceeded = vm::onAvatarLoadSucceeded,
                 onSave = { firstName, lastName, phone, birthDate ->
                     vm.saveProfile(
                         firstName = firstName,
@@ -546,10 +559,7 @@ fun CleansiaNavHost(
             popEnterTransition = popEnter,
             popExitTransition = popExit,
         ) {
-            LanguageScreen(
-                onBack = { navController.popBackStack() },
-                settingsRepository = settingsRepository,
-            )
+            LanguageScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.SubscribePlus>(
             enterTransition = pushEnter,
@@ -600,6 +610,9 @@ fun CleansiaNavHost(
                 onCreateNew = {
                     navController.navigate(Routes.CreateRecurringBooking())
                 },
+                onEdit = { templateId ->
+                    navController.navigate(Routes.CreateRecurringBooking(templateId = templateId))
+                },
             )
         }
         composable<Routes.CreateRecurringBooking>(
@@ -616,10 +629,12 @@ fun CleansiaNavHost(
                     // success) doesn't have RecurringBookings on the back
                     // stack, so popBackStack(RecurringBookings) was a no-op
                     // and the user got stuck on the create screen. Navigate
-                    // forward + pop the create route so back from the list
-                    // doesn't loop into the wizard again.
+                    // forward + pop the form route so back from the list
+                    // doesn't loop into the wizard again; singleTop stops
+                    // Path C (entered FROM the list) stacking a second copy.
                     navController.navigate(Routes.RecurringBookings) {
                         popUpTo<Routes.CreateRecurringBooking> { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
             )

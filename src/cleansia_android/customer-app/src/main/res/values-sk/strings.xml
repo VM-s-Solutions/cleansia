@@ -225,6 +225,7 @@
     <string name="orders_payment_failed">Zlyhalo</string>
     <string name="orders_payment_refunded">Vrátené</string>
     <string name="orders_payment_disputed">Napadnuté</string>
+    <string name="orders_payment_partially_refunded">Čiastočne vrátené</string>
     <string name="orders_filter_all">Všetko</string>
     <string name="orders_filter_upcoming">Nadchádzajúce</string>
     <string name="orders_filter_completed">Dokončené</string>
@@ -292,6 +293,13 @@
     <string name="order_detail_services_header">Služby</string>
     <string name="order_detail_packages_header">Balíčky</string>
     <string name="order_detail_cleaner_fallback">Upratovačka Cleansia</string>
+    <string name="order_detail_subtotal">Medzisúčet</string>
+    <string name="order_detail_payment_method">Spôsob platby</string>
+    <string name="order_detail_payment_status">Platba</string>
+    <string name="order_detail_completion_notes">Poznámky upratovačky</string>
+    <string name="order_detail_map_unavailable">Mapa nie je pre túto objednávku dostupná</string>
+    <string name="order_detail_show_map">Zobraziť mapu</string>
+    <string name="order_detail_show_details">Zobraziť detaily objednávky</string>
 
     <!-- Order cancel -->
     <string name="order_action_cancel">Zrušiť objednávku</string>
@@ -364,13 +372,12 @@
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
     <string name="profile_email_placeholder">vy@example.com</string>
-    <string name="profile_row_edit">Upraviť profil</string>
+    <string name="profile_row_edit">Upraviť</string>
     <string name="profile_row_addresses">Uložené adresy</string>
     <string name="profile_row_payment">Platobné metódy</string>
     <string name="profile_row_notifications">Upozornenia</string>
     <string name="profile_row_security">Zabezpečenie</string>
     <string name="profile_row_help">Pomocník a podpora</string>
-    <string name="profile_row_privacy">Súkromie a údaje</string>
     <string name="profile_logout">Odhlásiť sa</string>
     <string name="profile_logout_dialog_title">Odhlásiť sa?</string>
     <string name="profile_logout_dialog_message">Budete odhlásený z tohto zariadenia. Vaše objednávky a odmeny zostanú vo vašom účte — stačí sa znova prihlásiť a budete pokračovať tam, kde ste skončili.</string>
@@ -398,6 +405,12 @@
     <string name="profile_edit_phone">Telefón</string>
     <string name="profile_edit_birthdate">Dátum narodenia</string>
     <string name="profile_edit_save">Uložiť zmeny</string>
+    <string name="profile_avatar_change">Zmeniť fotku</string>
+    <string name="profile_avatar_remove">Odstrániť fotku</string>
+    <string name="profile_avatar_content_description">Profilová fotka</string>
+    <string name="profile_avatar_encode_failed">Tento obrázok sa nepodarilo použiť. Skúste inú fotku.</string>
+    <string name="profile_avatar_picker_unavailable_title">Žiadny výber fotiek</string>
+    <string name="profile_avatar_picker_unavailable_message">V tomto zariadení nie je žiadna aplikácia na výber fotky.</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Uložené adresy</string>
@@ -705,6 +718,7 @@
     <string name="booking_pay_cash">Hotovosťou</string>
     <string name="booking_pay_cash_desc">Platba pri dodaní</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
+    <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
     <string name="booking_success_title">Rezervácia potvrdená!</string>
     <string name="booking_success_subtitle">Vaše upratovanie je rezervované. Oddýchnite si.</string>
@@ -779,8 +793,8 @@
     <string name="membership_hero_trial_price">0 Kč / prvých %1$d dní</string>
     <string name="membership_hero_then_price">potom %1$s / mesiac</string>
     <string name="membership_hero_then_price_year">potom %1$s / rok</string>
-    <string name="membership_social_proof_headline">Členovia ušetria ~80 Kč na upratovanie</string>
-    <string name="membership_social_proof_sub">Naprieč všetkými vašimi objednávkami, navyše k iným zľavám</string>
+    <string name="membership_social_proof_headline">Ako funguje členská zľava</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava.</string>
     <string name="membership_perks_section_title">Čo získate</string>
     <string name="membership_cta_start_trial">Začať skúšobné obdobie zdarma</string>
     <string name="membership_cta_subscribe">Získať Cleansia Plus</string>
@@ -809,10 +823,15 @@
     <string name="membership_perk_recurring_desc">Nastavte raz — každý druhý štvrtok o 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušenie</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny pred upratovaním bez poplatkov.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% zľava na každé upratovanie</string>
-    <string name="membership_perk_discount_desc">Zľava platí navyše k vášmu vernostnému programu.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% členská zľava</string>
+    <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
     <string name="membership_perk_express_title">Expresný upgrade zdarma</string>
     <string name="membership_perk_express_desc">Jedna bezplatná objednávka v deň objednania mesačne, bez príplatku.</string>
+
+    <!-- Perk pills on the active management card. -->
+    <string name="membership_perk_pill_discount">zľava %1$d %%</string>
+    <string name="membership_perk_pill_cancellation">zrušenie %1$d h zadarmo</string>
+    <string name="membership_perk_pill_recurring">Pravidelne</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -851,6 +870,7 @@
     <string name="recurring_bookings_pause">Pozastaviť</string>
     <string name="recurring_bookings_resume">Obnoviť</string>
     <string name="recurring_bookings_delete">Zmazať</string>
+    <string name="recurring_bookings_edit">Upraviť</string>
     <string name="recurring_bookings_delete_dialog_title">Zmazať tento rozvrh?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">Z tohto rozvrhu už nebudú automaticky vznikať žiadne nové upratovania.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Upratovania už zaradené v kalendári zostávajú potvrdené — ak ich nechcete, zrušte ich jednotlivo v Objednávkach.</string>
@@ -887,6 +907,11 @@
     <string name="recurring_create_submit">Vytvoriť rozvrh</string>
     <string name="recurring_create_success">Opakovaný rozvrh vytvorený.</string>
     <string name="recurring_create_failed">Rozvrh sa nepodarilo vytvoriť. Skúste to znova.</string>
+    <string name="recurring_edit_title">Upraviť opakované upratovanie</string>
+    <string name="recurring_edit_submit">Uložiť zmeny</string>
+    <string name="recurring_edit_success">Rozvrh bol aktualizovaný.</string>
+    <string name="recurring_edit_failed">Rozvrh sa nepodarilo upraviť. Skúste to znova.</string>
+    <string name="recurring_edit_load_failed">Tento rozvrh sa nepodarilo načítať. Vráťte sa späť a skúste to znova.</string>
     <string name="recurring_freq_weekly_label">Každý týždeň</string>
     <string name="recurring_freq_biweekly_label">Každé 2 týždne</string>
     <string name="recurring_freq_monthly_label">Každý mesiac</string>
@@ -1197,6 +1222,7 @@
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
     <string name="error_general_not_found">Zdroj nebol nájdený</string>
     <string name="error_language_not_found">Jazyk nebol nájdený</string>
+    <string name="error_language_not_supported">Tento jazyk nie je podporovaný.</string>
     <string name="error_membership_already_active">Už máte aktívne členstvo.</string>
     <string name="error_membership_not_found">Členstvo nebolo nájdené.</string>
     <string name="error_membership_plan_not_found">Plán členstva sa nenašiel.</string>

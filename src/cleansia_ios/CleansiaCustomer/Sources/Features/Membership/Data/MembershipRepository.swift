@@ -12,10 +12,15 @@ final class MembershipRepository: SessionScopedCache {
     @Published private(set) var plans: [MembershipPlan] = []
     @Published private(set) var loading = false
 
+    /// Freshness watermark for `current`. A subscribe/cancel/swap refreshes
+    /// through the membership VM, so this only gates the ambient Home resume.
+    let staleness: Staleness
+
     private let client: MembershipManagementClient
 
-    init(client: MembershipManagementClient) {
+    init(client: MembershipManagementClient, staleness: Staleness = Staleness()) {
         self.client = client
+        self.staleness = staleness
     }
 
     @discardableResult
@@ -26,6 +31,7 @@ final class MembershipRepository: SessionScopedCache {
         let result = await client.getMine()
         if case let .success(membership) = result {
             current = membership
+            staleness.markFresh()
         }
         return result
     }
@@ -58,5 +64,6 @@ final class MembershipRepository: SessionScopedCache {
     func clear() async {
         current = nil
         plans = []
+        staleness.invalidate()
     }
 }

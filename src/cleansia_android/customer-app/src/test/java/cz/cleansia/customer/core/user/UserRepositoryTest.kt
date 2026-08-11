@@ -4,8 +4,11 @@ import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.api.client.GdprApi
 import cz.cleansia.customer.api.client.UserApi
+import cz.cleansia.customer.api.model.BlobFileDto
 import cz.cleansia.customer.api.model.MyProfileDto
+import cz.cleansia.customer.api.model.UpdateCurrentUserCommand
 import cz.cleansia.core.auth.ForcedSignOutReason
+import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
@@ -18,6 +21,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.slot
 import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
@@ -271,6 +275,102 @@ class UserRepositoryTest {
         assertTrue(error is ApiError.Server)
         assertEquals(serverMessage, error.getUserMessage())
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ── updateCurrentUser(): the avatar reaches the GENERATED command ──
+    //
+    // These assert the wire, not the repo signature. Every field on the generated
+    // command defaults to null, so dropping a mapper line still compiles and every
+    // test that stops at the repo boundary stays green — the value simply never
+    // leaves the phone.
+
+    /** Primes the cache (updateCurrentUser needs a user id) and captures the sent command. */
+    private suspend fun captureUpdateCommand(
+        photo: Base64Image? = null,
+        removePhoto: Boolean = false,
+    ): UpdateCurrentUserCommand {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        val sent = slot<UpdateCurrentUserCommand>()
+        coEvery { userApi.userUpdateCurrentUser(capture(sent)) } returns Response.success(
+            cz.cleansia.customer.api.model.UpdateCurrentUserResponse(),
+        )
+
+        repo.updateCurrentUser(
+            firstName = "Ann",
+            lastName = "Brown",
+            phoneNumber = null,
+            birthDate = null,
+            languageCode = null,
+            photo = photo,
+            removePhoto = removePhoto,
+        )
+        return sent.captured
+    }
+
+    @Test
+    fun updateCurrentUser_givenAPickedPhoto_putsTheEncodedImageOnTheGeneratedCommand() = runTest {
+        val command = captureUpdateCommand(
+            photo = Base64Image(base64 = "encoded", contentType = "image/jpeg", fileName = "me.jpg"),
+        )
+
+        assertEquals("encoded", command.photo?.base64Content)
+        assertEquals("image/jpeg", command.photo?.contentType)
+        assertEquals("me.jpg", command.photo?.fileName)
+        assertEquals(false, command.removePhoto)
+    }
+
+    @Test
+    fun updateCurrentUser_givenRemoval_putsRemovePhotoTrueAndNoImageOnTheGeneratedCommand() = runTest {
+        val command = captureUpdateCommand(removePhoto = true)
+
+        assertEquals(true, command.removePhoto)
+        assertNull(command.photo)
+    }
+
+    /**
+     * The `fe0c985b` regression: an ordinary name/phone save must say nothing about
+     * the avatar. A null photo alone is not enough — `removePhoto` riding true (or
+     * arriving null, which is what deleting the mapper line produces) is what
+     * destroyed the image the user still had.
+     */
+    @Test
+    fun updateCurrentUser_givenNoPhotoAction_sendsNoImageAndRemovePhotoFalse() = runTest {
+        val command = captureUpdateCommand()
+
+        assertNull(command.photo)
+        assertEquals(false, command.removePhoto)
+    }
+
+    @Test
+    fun refreshCurrentUser_mapsTheProfilePhotoNameAndSasOntoCurrentUser() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(
+            profile().copy(
+                profilePhoto = BlobFileDto(
+                    fileName = "9f1c-guid",
+                    blobUrl = "https://blob.example/9f1c-guid?sig=abc",
+                ),
+            ),
+        )
+
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        assertEquals("9f1c-guid", repo.currentUser.value?.avatarFileName)
+        assertEquals("https://blob.example/9f1c-guid?sig=abc", repo.currentUser.value?.avatarUrl)
+    }
+
+    @Test
+    fun refreshCurrentUser_givenNoProfilePhoto_leavesTheAvatarFieldsNull() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        assertNull(repo.currentUser.value?.avatarFileName)
+        assertNull(repo.currentUser.value?.avatarUrl)
     }
 
     // ── clear() (SessionScopedCache) ──

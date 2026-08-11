@@ -18,6 +18,13 @@ CleansiaCustomerApi/
 # project's sender id / API key). Owner drops it into each app's Firebase/ folder.
 **/GoogleService-Info.plist
 
+# Local build config — owner-local, shared by both apps; never committed (holds
+# the Stripe publishable key and the Apple DEVELOPMENT_TEAM). Owner copies
+# Config/Local.xcconfig.example to Config/Local.xcconfig once; git and xcodegen
+# never touch it again. Absent → simulator builds still work, card payment is
+# hidden (cash only) and device signing is unconfigured.
+**/Config/Local.xcconfig
+
 # fastlane — local secrets + build output (see fastlane/README.md)
 fastlane/.env
 fastlane/report.xml

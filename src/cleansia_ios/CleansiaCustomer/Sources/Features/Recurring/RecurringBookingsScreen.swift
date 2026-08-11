@@ -4,6 +4,7 @@ import SwiftUI
 struct RecurringBookingsScreen: View {
     @StateObject private var vm: RecurringBookingsViewModel
     let onCreateNew: () -> Void
+    let onEdit: (RecurringTemplate) -> Void
     let onSubscribePlus: () -> Void
 
     @State private var pendingDeleteId: String?
@@ -13,6 +14,7 @@ struct RecurringBookingsScreen: View {
         membershipRepository: MembershipRepository,
         snackbar: SnackbarController,
         onCreateNew: @escaping () -> Void,
+        onEdit: @escaping (RecurringTemplate) -> Void,
         onSubscribePlus: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: RecurringBookingsViewModel(
@@ -21,6 +23,7 @@ struct RecurringBookingsScreen: View {
             snackbar: snackbar
         ))
         self.onCreateNew = onCreateNew
+        self.onEdit = onEdit
         self.onSubscribePlus = onSubscribePlus
     }
 
@@ -52,6 +55,7 @@ struct RecurringBookingsScreen: View {
                         TemplateCard(
                             template: template,
                             isMutating: vm.mutatingId == template.id,
+                            onEdit: { onEdit(template) },
                             onToggle: {
                                 Task {
                                     await vm.toggleActive(templateId: template.id, currentlyActive: template.isActive)
@@ -142,8 +146,10 @@ private struct RecurringEmptyState: View {
 }
 
 private struct TemplateCard: View {
+    @Environment(\.locale) private var locale
     let template: RecurringTemplate
     let isMutating: Bool
+    let onEdit: () -> Void
     let onToggle: () -> Void
     let onDelete: () -> Void
 
@@ -163,31 +169,41 @@ private struct TemplateCard: View {
                         .background(CleansiaColors.surfaceVariant, in: Capsule())
                 }
             }
-            Text(L10n.Recurring.dayAtTime(RecurringWeekday.label(template.dayOfWeek), template.timeOfDay))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            Text(L10n.Recurring.dayAtTime(
+                RecurringWeekday.label(template.dayOfWeek, locale: locale),
+                template.timeOfDay
+            ))
+            .font(CleansiaTypography.bodyMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
             if let addressLine = template.addressLine, !addressLine.isEmpty {
                 Text(addressLine)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
-            HStack(spacing: Spacing.m) {
-                Button(action: onToggle) {
-                    Label(
-                        template.isActive ? L10n.Recurring.pause : L10n.Recurring.resume,
-                        systemImage: template.isActive ? "pause.circle" : "play.circle"
-                    )
-                    .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.primary)
-                }
-                .disabled(isMutating)
-                Spacer()
-                Button(action: onDelete) {
-                    Label(L10n.Recurring.delete, systemImage: "trash")
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.error)
-                }
-                .disabled(isMutating)
+            // A flow, not an HStack: three labelled actions in cs/sk/uk/ru overflow a 375pt card and
+            // would otherwise truncate rather than wrap.
+            ChipFlow(spacing: Spacing.m) {
+                CardAction(
+                    label: L10n.Recurring.edit,
+                    systemImage: "square.and.pencil",
+                    tint: CleansiaColors.primary,
+                    disabled: isMutating,
+                    action: onEdit
+                )
+                CardAction(
+                    label: template.isActive ? L10n.Recurring.pause : L10n.Recurring.resume,
+                    systemImage: template.isActive ? "pause.circle" : "play.circle",
+                    tint: CleansiaColors.primary,
+                    disabled: isMutating,
+                    action: onToggle
+                )
+                CardAction(
+                    label: L10n.Recurring.delete,
+                    systemImage: "trash",
+                    tint: CleansiaColors.error,
+                    disabled: isMutating,
+                    action: onDelete
+                )
             }
             .padding(.top, Spacing.xs)
         }
@@ -201,16 +217,45 @@ private struct TemplateCard: View {
     }
 }
 
-enum RecurringWeekday {
-    static func label(_ dotNetDay: Int) -> String {
-        var components = DateComponents()
-        components.weekday = (dotNetDay % 7) + 1
-        let calendar = Calendar.current
-        guard let date = calendar.nextDate(after: Date(), matching: components, matchingPolicy: .nextTime) else {
-            return ""
+private struct CardAction: View {
+    let label: String
+    let systemImage: String
+    let tint: Color
+    let disabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(label, systemImage: systemImage)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(tint)
         }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+    }
+}
+
+/// Backend `dayOfWeek` follows .NET `DayOfWeek` (Sun=0..Sat=6), which is exactly the index order of
+/// Foundation's `weekdaySymbols`. Symbols come from the passed locale, not the device's, so a Ukrainian
+/// user on an English phone still reads Ukrainian day names.
+enum RecurringWeekday {
+    static func label(_ dotNetDay: Int, locale: Locale) -> String {
+        symbols(locale, \.weekdaySymbols)[safe: dotNetDay] ?? ""
+    }
+
+    static func shortLabel(_ dotNetDay: Int, locale: Locale) -> String {
+        symbols(locale, \.shortWeekdaySymbols)[safe: dotNetDay] ?? ""
+    }
+
+    private static func symbols(_ locale: Locale, _ keyPath: KeyPath<DateFormatter, [String]>) -> [String] {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        formatter.locale = locale
+        return formatter[keyPath: keyPath]
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

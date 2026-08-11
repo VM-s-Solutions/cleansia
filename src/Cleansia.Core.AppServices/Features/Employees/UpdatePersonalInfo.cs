@@ -43,8 +43,6 @@ public class UpdatePersonalInfo
 
             RuleFor(c => c.Phone)
                 .ValidatePhoneNumber();
-
-            AddEmailRules(c => c.Email);
         }
 
         private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
@@ -60,8 +58,7 @@ public class UpdatePersonalInfo
         string FirstName,
         string LastName,
         DateOnly BirthDate,
-        string Phone,
-        string Email) : ICommand<Response>;
+        string Phone) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 

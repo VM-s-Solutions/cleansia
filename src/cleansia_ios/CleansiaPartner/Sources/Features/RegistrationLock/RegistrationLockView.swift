@@ -4,6 +4,7 @@ import SwiftUI
 struct RegistrationLockView: View {
     @StateObject private var vm: RegistrationLockViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
+    @ObservedObject private var preferences: PreferencesModel
     @State private var path = NavigationPath()
 
     let onCompleted: () -> Void
@@ -19,6 +20,7 @@ struct RegistrationLockView: View {
         client: PartnerRegistrationClient,
         authClient: AuthClient,
         profileClient: PartnerProfileClient,
+        preferences: PreferencesModel,
         snackbar: SnackbarController,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
@@ -28,6 +30,7 @@ struct RegistrationLockView: View {
     ) {
         _vm = StateObject(wrappedValue: RegistrationLockViewModel(client: client, authClient: authClient))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: profileClient))
+        self.preferences = preferences
         self.profileClient = profileClient
         self.snackbar = snackbar
         self.geocoding = geocoding
@@ -81,8 +84,13 @@ struct RegistrationLockView: View {
             RegistrationLockContent(
                 data: data,
                 isSigningOut: vm.action.isSubmitting,
+                languageSummary: PreferencesLabels.languageSummary(
+                    isFollowingSystem: preferences.isFollowingSystemLanguage,
+                    tag: preferences.languageTag
+                ),
                 onRetry: { Task { await vm.load() } },
                 onFix: handleFix,
+                onLanguage: { path.append(ProfileRoute.language) },
                 onSignOut: { Task { await vm.signOut() } }
             )
             // Re-resolve the gate whenever the lock surfaces again (e.g. after a
@@ -147,7 +155,9 @@ struct RegistrationLockView: View {
             )
         case .documents:
             DocumentsSectionView(client: profileClient, snackbar: snackbar)
-        case .emergency, .language, .theme, .devices:
+        case .language:
+            LanguagePickerView(preferences: preferences, onSelected: { path.removeLast() })
+        case .emergency, .theme, .devices:
             EmptyView()
         }
     }
@@ -156,8 +166,10 @@ struct RegistrationLockView: View {
 struct RegistrationLockContent: View {
     let data: RegistrationLockData
     let isSigningOut: Bool
+    let languageSummary: String
     let onRetry: () -> Void
     let onFix: (RegistrationStep) -> Void
+    let onLanguage: () -> Void
     let onSignOut: () -> Void
 
     var body: some View {
@@ -174,11 +186,41 @@ struct RegistrationLockContent: View {
                     }
                 }
                 .padding(.horizontal, Spacing.m)
+                // The form this screen demands is only fillable in a language the cleaner reads, and the
+                // pre-auth intro that used to be the only language control is one-shot and skippable.
+                LanguageRow(summary: languageSummary, action: onLanguage)
                 SignOutButton(isSigningOut: isSigningOut, action: onSignOut)
             }
             .padding(.vertical, Spacing.xl)
         }
         .refreshable { onRetry() }
+    }
+}
+
+private struct LanguageRow: View {
+    let summary: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "globe")
+                    .font(.system(size: 20))
+                    .foregroundColor(CleansiaColors.primary)
+                Text(L10n.Profile.language)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                Spacer()
+                Text(summary)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                Image(systemName: "chevron.right")
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .cardPadding()
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Spacing.m)
     }
 }
 
@@ -341,16 +383,20 @@ private struct SignOutButton: View {
                 RegistrationLockContent(
                     data: sample(.locked),
                     isSigningOut: false,
+                    languageSummary: "Українська",
                     onRetry: {},
                     onFix: { _ in },
+                    onLanguage: {},
                     onSignOut: {}
                 )
                 .previewDisplayName("Locked")
                 RegistrationLockContent(
                     data: sample(.awaitingReview),
                     isSigningOut: false,
+                    languageSummary: "Українська",
                     onRetry: {},
                     onFix: { _ in },
+                    onLanguage: {},
                     onSignOut: {}
                 )
                 .previewDisplayName("Awaiting review")

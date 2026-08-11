@@ -415,6 +415,79 @@ Feed reads/marks are always scoped to the calling mobile host's audience keyset 
 controller overwrites the `Audience` field server-side (S1-style enrichment); never trust it from
 the client.
 
+## Reading a blob back to a client — what T-0446 did, and an OPEN question for the architect
+
+**Descriptive, not prescriptive.** There are three live shapes for turning a stored blob name into a
+readable reference, they disagree, and picking one as *the* way is an **architect panel call that has
+not happened**. This section records what exists so the next implementer chooses knowingly.
+
+The shared facts, true in all three: a stored blob **name** is not a readable reference, so the read
+DTO carries a short-lived read SAS beside it in a field named **`BlobUrl`** (`OrderPhotoDto.BlobUrl`,
+`DisputeEvidenceDto.BlobUrl`, `BlobFileDto.BlobUrl`), the lifetime is **1 hour**
+(`GenerateSasUri(blobName, TimeSpan.FromHours(1))`), and the grant is `sr=b` + `sp=r` — read on ONE
+blob, not widenable to a container listing. That last property is a **tenant-isolation** control in
+`user-files` (a flat container with no per-tenant or per-user prefix), so pin it with a real-client
+test (`ProfilePhotoSasGrantScopeTests`) rather than a mock's return value, and do not soften it.
+
+Where the three diverge is **failure handling**:
+
+| Site | Shape | Behaviour when SAS generation throws |
+|---|---|---|
+| `GetOrderPhotos.GenerateSasUrl` (`:104-126`) | private helper in the handler, **no** `try/catch` | the whole query 500s |
+| `DisputeMappers.MapToDto` (`:65-70`) | in the mapper, bare `catch {}` | degrades to null, **silently** (no log) |
+| `UploadDisputeEvidence.Handler` (`:110-123`) · `GetCurrentUser.Handler` (T-0446) | in the handler, `try/catch` → `LogWarning` → null | degrades to null, logged |
+
+T-0446 adopted the third because the ticket named it and because runtime-readiness asks for graceful
+degradation plus no silent swallow — the image is decoration, the read is the core action. It did
+**not** retrofit the other two. **Open for the architect:** ratify one shape and decide whether to
+retrofit; until then, mirroring the third is the safe default, not a rule.
+
+Two things that are **not** open — one a security invariant, one a durability/cache-correctness one:
+
+- **Never log the URI** *(security — S6)*. Log the blob name; a signed URL in a log is a credential in a log. The
+  hosts' `RequestLoggingMiddleware` slices request/response bodies into Information-level logs, so
+  every host's `SensitiveFieldRegex` carries `blobUrl` (five copies) and every host **redacts before
+  it truncates** — truncate-first cannot match a value whose closing quote falls past the cut, so it
+  logs the visible prefix raw. Both are pinned by `RequestLogSignedUrlRedactionTests`; a new
+  signed-URL field under a different name must join that list in the same change.
+  **The corollary is the trap, and it is not an upload-only concern** — that framing is exactly why
+  the first three fixes missed the fourth. Redacting collapses ANY long value (a base64 payload, a
+  SAS, a JWT) to a 15-character sentinel, so whatever sat behind it in the record moves INTO the
+  window: `SaveMyDocuments.Description`, `SaveOrderPhotos.Notes`, `UploadOrderPhoto.Notes`,
+  `GetOrderPhotos`' per-photo `Notes` on the RESPONSE, and `JwtTokenResponse.Email` behind the
+  admin refresh token. Free text cannot be reached by a field-name denylist, so those routes go in
+  **`IsSensitivePath`** (wholesale suppression); a *named secret* behind another one — the Stripe
+  `ephemeralKey` behind `clientSecret` — belongs in the regex instead.
+  **Do not rely on remembering this.** `RedactionUnmaskedFreeTextGuardTests` walks every wire DTO
+  reachable from a controller action, reads the token list out of the live regex, and fails naming
+  the type, member and route. Adding a redaction token automatically widens it.
+
+  **Where this stands, in three parts — do not read the first two as covering the third:**
+  1. *Free text behind a token* — **closed by enumeration** (four instances, all suppressed).
+  2. *A field unmasked when the token in front of it collapses* — **closed by a test**, the guard above.
+  3. *A secret whose field name was never in the token list at all* — **NOT closed. Nothing detects
+     it.** `SetupIntentClientSecret` is the proof: the alternation is quote-anchored, so the
+     `clientSecret` token never matched it and a live Stripe setup-intent secret logged raw.
+     `ephemeralKey` was the same class and was found only by luck, because it happened to sit behind
+     an already-redacted field. Closing it needs a name/shape heuristic (`*Secret*`, `*Token*`,
+     `*Key*`, `*Password*`, values shaped `sk_`/`ek_`/`seti_`/`pi_`) over the same wire walk — a
+     follow-up ticket, not done here. **Adding a credential-shaped field to a DTO today is caught by
+     nothing; add the token by hand.**
+- **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
+  `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
+  content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced
+  image unrenderable behind any name-keyed cache.
+  **The supersede rules apply only where a blob is REPLACED in place** — today that is
+  `UpdateCurrentUser` alone; the other three only ever add. Where you do replace: upload the new blob
+  **before** deleting the superseded one (a failed upload must not destroy what the user still has),
+  and do delete it, or every replace orphans a blob. **Open:** deleting inline still races the
+  commit — the UoW pipeline commits *after* the handler, so a failed commit rolls the row back to a
+  name whose blob is already gone. The durable shape is to not delete inline at all (a retryable
+  sweep keyed off the superseded name); that is the SEC-4 follow-up, and it also closes the GDPR gap
+  where erasure only deletes the *current* name.
+
+The field is nullable + defaulted so it is additive on the wire (S9).
+
 ## Queue-consumer idempotency — the claim-ordering rule (ADR-0002 D2.2 · ADR-0010 · ADR-0023)
 
 Every effect-realizing queue consumer MUST assert its terminal effect has not already happened

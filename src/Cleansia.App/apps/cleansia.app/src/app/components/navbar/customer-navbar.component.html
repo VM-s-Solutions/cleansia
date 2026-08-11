@@ -3,13 +3,9 @@
   <div
     class="customer-navbar__inner flex align-items-center justify-content-between px-4 lg:px-6 h-full"
   >
-    <!-- Logo (desktop) -->
-    <div class="customer-navbar__left hidden md:flex align-items-center">
-      <cleansia-brand-name [defaultRoute]="''" [showName]="!isMobile()" />
-    </div>
-    <!-- Logo (mobile) -->
-    <div class="customer-navbar__brand-mobile md:hidden">
-      <cleansia-brand-name [defaultRoute]="''" [showName]="true" />
+    <!-- Logo -->
+    <div class="customer-navbar__left flex align-items-center">
+      <cleansia-brand-name [defaultRoute]="''" />
     </div>
 
     <!-- Desktop nav links -->

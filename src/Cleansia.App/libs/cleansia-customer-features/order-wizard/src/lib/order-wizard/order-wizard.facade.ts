@@ -586,6 +586,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       // the property out of the JSON entirely, matching every other optional
       // here. Trimmed because a whitespace-only note is not a note.
       specialInstructions: data.specialInstructions.trim() || undefined,
+      accessInstructions: data.entryInstructions.trim() || undefined,
     });
 
     if (data.paymentType === PaymentType.Card) {

@@ -2,7 +2,6 @@ package cz.cleansia.customer.features.orders
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
@@ -31,11 +29,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.ui.components.MascotAnimation
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -46,15 +44,16 @@ import kotlinx.datetime.Instant
  * `InProgress`); for terminal states (`Completed`, `Cancelled`) and the
  * pre-acceptance phase (`New`, `Pending`) we keep the original [HeroCard].
  *
- * The hero combines four signals on one card:
- *  1. Status-aware mascot floating in the top-right corner — overlay style,
- *     not a separate block.
- *  2. Status pill + a contextual headline that mutates per state
+ * The hero combines three signals on one card:
+ *  1. Status pill + a contextual headline that mutates per state
  *     ("Marek accepted", "Cleaning in progress", etc).
- *  3. Live progress bar driven by `(now - startedAt) / estimatedDurationMin`
+ *  2. Live progress bar driven by `(now - startedAt) / estimatedDurationMin`
  *     when `InProgress`. Only rendered if we have both anchors.
- *  4. Step indicator at the bottom (Booked → Accepted → Started → Finished)
+ *  3. Step indicator at the bottom (Booked → Accepted → Started → Finished)
  *     with the current step highlighted.
+ *
+ * The mascot belongs to [OrderFloatingMascot], which straddles the sheet's top
+ * edge above this card — one character per screen, not one per card.
  *
  * The "now" tick re-evaluates every 30 seconds via [LaunchedEffect] so the
  * progress bar advances without leaning on an external clock or push event.
@@ -83,7 +82,7 @@ fun LiveProgressHero(order: OrderDetailDto) {
         ?.fullName
         ?.takeIf { it.isNotBlank() }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
@@ -102,93 +101,65 @@ fun LiveProgressHero(order: OrderDetailDto) {
             )
             .padding(16.dp),
     ) {
-        // Mascot overlay — top-right, smaller than the standalone version,
-        // positioned so it never collides with the headline column.
-        if (status == OrderStatus.InProgress) {
-            MascotAnimation(
-                resId = R.raw.mascot_cleaning_in_progress,
-                size = 140.dp,
-                modifier = Modifier.align(Alignment.TopEnd),
-            )
-        } else if (status == OrderStatus.Confirmed || status == OrderStatus.OnTheWay) {
-            MascotAnimation(
-                resId = R.raw.mascot_welcoming,
-                size = 140.dp,
-                modifier = Modifier.align(Alignment.TopEnd),
-                loop = false,
+        val statusLabelRes = orderStatusLabelRes(order.orderStatus?.value)
+        val statusLabel = statusLabelRes?.let { stringResource(it) }
+            ?: order.orderStatus?.name ?: "—"
+        HeroStatusPill(
+            label = statusLabel,
+            color = orderStatusColor(order.orderStatus?.value),
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = headlineFor(status, cleanerName),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        subheadFor(status, order.estimatedTime)?.let { subhead ->
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = subhead,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        Column(
-            modifier = Modifier
-                // Reserve room on the right for the mascot overlay. Without this
-                // the headline can collide with the mascot at 360dp widths.
-                .padding(end = 140.dp + 8.dp),
-        ) {
-            val statusLabelRes = orderStatusLabelRes(order.orderStatus?.value)
-            val statusLabel = statusLabelRes?.let { stringResource(it) }
-                ?: order.orderStatus?.name ?: "—"
-            HeroStatusPill(
-                label = statusLabel,
-                color = orderStatusColor(order.orderStatus?.value),
+        if (status == OrderStatus.InProgress) {
+            val progress = computeInProgressProgress(
+                statusHistory = order.statusHistory,
+                estimatedMinutes = order.estimatedTime,
+                nowEpoch = nowEpoch,
             )
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                text = headlineFor(status, cleanerName),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            subheadFor(status, order.estimatedTime)?.let { subhead ->
+            if (progress != null) {
+                Spacer(Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = subhead,
-                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(
+                        R.string.order_detail_progress_percent,
+                        (progress * 100).toInt().coerceIn(0, 100),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
-        // Progress bar + step indicator live below the headline column —
-        // pulled out of the right-padded Column so they span full width.
-        Column(modifier = Modifier.padding(top = if (status == OrderStatus.Confirmed || status == OrderStatus.OnTheWay) 130.dp else 140.dp)) {
-            if (status == OrderStatus.InProgress) {
-                val progress = computeInProgressProgress(
-                    statusHistory = order.statusHistory,
-                    estimatedMinutes = order.estimatedTime,
-                    nowEpoch = nowEpoch,
-                )
-                if (progress != null) {
-                    Spacer(Modifier.height(12.dp))
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(
-                            R.string.order_detail_progress_percent,
-                            (progress * 100).toInt().coerceIn(0, 100),
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-            StepIndicator(currentStatus = status)
-        }
+        Spacer(Modifier.height(14.dp))
+        StepIndicator(currentStatus = status)
     }
 }
 
@@ -332,10 +303,10 @@ private fun StepIndicator(currentStatus: OrderStatus?) {
             }
         }
         Spacer(Modifier.height(6.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+        // Equal weighted cells rather than fixed widths: five Ukrainian or
+        // Russian step labels do not fit in five 72dp columns at 411dp, and
+        // the overflow silently clipped the last one.
+        Row(modifier = Modifier.fillMaxWidth()) {
             steps.forEachIndexed { idx, label ->
                 Text(
                     text = label,
@@ -346,7 +317,8 @@ private fun StepIndicator(currentStatus: OrderStatus?) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
                     fontWeight = if (idx == activeIdx) FontWeight.SemiBold else FontWeight.Normal,
-                    modifier = Modifier.width(72.dp),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }

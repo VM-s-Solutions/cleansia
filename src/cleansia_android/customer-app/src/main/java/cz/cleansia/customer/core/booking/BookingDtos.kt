@@ -118,6 +118,13 @@ data class CreateOrderCommand(
      * sending null keeps the wire honest about "the user typed nothing".
      */
     val specialInstructions: String? = null,
+    /**
+     * How the cleaner gets into the property ("side gate, key box 4417").
+     * Same blank→null normalisation as [specialInstructions]; the confirm step
+     * caps it at 2000 chars so an over-long note is stopped at the keystroke
+     * rather than coming back as a `CreateOrder` MaximumLength rejection.
+     */
+    val accessInstructions: String? = null,
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val language: String = "en",
 )

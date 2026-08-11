@@ -85,6 +85,10 @@ final class PartnerAppContainer: AppContainer {
         tokenStore: authStack.spine.tokenStore,
         client: userClient
     )
+    lazy var languageReconciler = LanguageReconciler(settings: appSettings) { [languageSync] tag in
+        languageSync.send(languageCode: tag)
+    }
+
     let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel
@@ -162,6 +166,13 @@ final class PartnerAppContainer: AppContainer {
 
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
+    }
+
+    /// Rides the same session signal the device registration does, for the same reason: it is derived
+    /// from the token state, so it fires on a restored session as well as a fresh sign-in and no auth
+    /// path can forget to call it. Nothing here belongs to a screen — the seam detaches its own work.
+    func startLanguageReconcile() {
+        languageReconciler.attach(hasSession: hasSessionSubject.eraseToAnyPublisher())
     }
 
     func installGeneratedClientAuth() {

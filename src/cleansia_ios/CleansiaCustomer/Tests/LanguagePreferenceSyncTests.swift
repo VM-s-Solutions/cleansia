@@ -138,6 +138,7 @@ final class LanguagePreferenceSyncTests: XCTestCase {
 @MainActor
 private final class SpyLanguageSync: LanguagePreferenceSync {
     private(set) var sent: [String] = []
+    private(set) var reconciled: [String] = []
     private var expectation: XCTestExpectation?
 
     func expect(_ count: Int) -> XCTestExpectation {
@@ -150,5 +151,9 @@ private final class SpyLanguageSync: LanguagePreferenceSync {
     func send(languageCode: String) async {
         sent.append(languageCode)
         expectation?.fulfill()
+    }
+
+    func reconcile(languageCode: String) async {
+        reconciled.append(languageCode)
     }
 }

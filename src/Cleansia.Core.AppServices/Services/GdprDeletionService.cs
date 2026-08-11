@@ -1,6 +1,5 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
-using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -89,10 +88,10 @@ public class GdprDeletionService(
     /// Erasure is refused while the subject still has a LIVE order — every status except the two
     /// terminal ones. Deliberately the same membership as <c>OrderRepository.SlotBlockingStatuses</c>:
     /// ADR-0037 D5 already names the two as the pair of conservative-direction readers of one question.
-    /// They stay two artifacts because that one is a <c>static readonly</c> array EF inlines into SQL
-    /// and this one runs in memory, so they are pinned against each other by
-    /// <c>ErasureBlockingOrderStatusTests</c> instead of merged (ADR-0049 §D7 refuses promoting either
-    /// to a shared platform grouping).
+    /// They stay two artifacts because they gate two different things in two layers — that one is the
+    /// repository's slot-occupancy filter, this one is the erasure refusal — and ADR-0049 §D7 refuses
+    /// promoting either to a shared platform grouping. <c>ErasureBlockingOrderStatusTests</c> pins them
+    /// against each other instead, so the next divergence fails rather than sits.
     ///
     /// <para><c>OnTheWay</c> was missing here from the day the set was written, with no ticket, ADR or
     /// comment recording an intent to exclude it — while the DEAD <c>Pending</c> was present, which is
@@ -110,14 +109,9 @@ public class GdprDeletionService(
         OrderStatus.InProgress,
     ];
 
-    private async Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
-    {
-        var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
-            .Include(o => o.OrderStatusHistory)
-            .ToListAsync(cancellationToken);
-
-        return orders.Any(o => ErasureBlockingStatuses.Contains(o.GetCurrentOrderStatus()));
-    }
+    private Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
+        => orderRepository.GetFiltered(o => o.UserId == userId)
+            .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)
     {

@@ -718,12 +718,15 @@ offered.* A canonicalization that deletes these is worse than the defect.
 
 ## A generated DTO coerced, or refused at the call site — the deviating form (2026-08-11)
 
-> **Enforced by:** the per-repository `*WireTest` suites, run by `:partner-app:testDebugUnitTest` /
-> `:customer-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) —
-> **`(gate pending: T-0588)`** → **`T1-CI`**. **Scope, narrower than the rule:** the wire tests are a
-> **closed roster**; a new repository with a coercing mapper is caught by nothing, and widening means
-> adding a wire test per repository. Not expressible by `check-consistency.mjs` — deciding it needs the
-> spec's nullability for the schema the mapper targets, which is not line-local. Rule and rejected
+> **Enforced by:** the per-repository `*WireTest` suites **and `WireContractRosterTest`**
+> (`src/cleansia_android/core/src/test/java/cz/cleansia/core/network/WireContractRosterTest.kt`), run
+> by `:core:testDebugUnitTest` / `:partner-app:testDebugUnitTest` / `:customer-app:testDebugUnitTest`
+> (`.github/workflows/android-ci.yml:79`) — **`T1-CI`**. **Scope, narrower than the rule:** the roster
+> is derived from the tree rather than written down — a data-layer source that names a generated
+> response model and has no `*WireTest.kt` in its package fails the build — so a new repository joins
+> it by existing. The per-field judgement is still not expressible by `check-consistency.mjs`: deciding
+> it needs the spec's nullability for the schema the mapper targets, which is not line-local. What is
+> mechanical is the presence of a pin, plus rule 1's numeric-zero coercions. Rule and rejected
 > alternatives: `patterns-mobile.md` §*"And the RESPONSE side"*; decision: **ADR-0048**, which is
 > `accepted` **with amendments B1–B6**
 > (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
@@ -755,10 +758,13 @@ offered.* A canonicalization that deletes these is worse than the defect.
 
 **Roster (descriptive — read 2026-08-11).** Limb (a), customer app under `core/`: `referral/ReferralApi.kt`,
 `disputes/DisputeApi.kt`, `recurring/RecurringBookingApi.kt`, `user/SavedAddressApi.kt`,
-`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt` — **plus `memberships/MembershipApi.kt:68`,
-which is a PARTLY migrated file** (it imports `required` from `:core` at `:12` while `:68` still runs
-the old `mapBody { list.orEmpty() … }`). **A roster row means "not every mapper in this file is
-converted", never "this file is untouched"** — sweep per mapper (ADR-0048 amendment B6).
+`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt`, `catalog/CatalogApi.kt` — each
+still calling `.orEmpty()` on a list **body** rather than on a member, so a 200 with no body reads as
+an empty page reported as Success. **A roster row means "not every mapper in this file is converted",
+never "this file is untouched"** — sweep per mapper (ADR-0048 amendment B6).
+**`memberships/MembershipApi.kt` left the roster on T-0602**: every mapper in it is now total,
+`getPlans` refuses a bodiless plan list instead of defaulting it, and the fabricated `membershipId`
+its cancel and swap responses carried is gone — the field is on neither C# record.
 Limb (b) is **closed**: T-0588 migrated `orders/OrderRepository.kt`, whose `?: return
 ApiResult.Success(Unit)` and 2xx-body `?: networkError()` sites became `wireResult { … requiredBody() }`
 (`:88-143`). The surviving `?: networkError()` calls now guard a `null` from `networkCall`, which is

@@ -286,14 +286,17 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > set **equals the spec's property set** — the field-name contract the mapper owns implicitly and would
 > otherwise lose on a rename. `PeriodPayWireTest.kt` is the model.
 >
-> **Enforced by:** the per-repository `*WireTest` suites, run by `:partner-app:testDebugUnitTest` /
-> `:customer-app:testDebugUnitTest` (`.github/workflows/android-ci.yml:79`) —
-> **`(gate pending: T-0588)`** → **`T1-CI`** when the roster is complete and the baseline is zero.
-> **Scope, stated because it is narrower than the paragraph:** the wire tests are a **closed roster** —
-> they gate the repositories that have one, and a new repository with a coercing mapper is caught by
-> nothing. The general form is not expressible by the line-based `check-consistency.mjs` (it needs the
-> spec's nullability for the schema the mapper targets), so widening the roster means adding a wire test
-> per repository. **ADR-0048 is `accepted`** (with amendments B1–B6)
+> **Enforced by:** the per-repository `*WireTest` suites **and `WireContractRosterTest`**
+> (`src/cleansia_android/core/src/test/java/cz/cleansia/core/network/WireContractRosterTest.kt`), run
+> by `:core:testDebugUnitTest` / `:partner-app:testDebugUnitTest` / `:customer-app:testDebugUnitTest`
+> (`.github/workflows/android-ci.yml:79`) — **`T1-CI`**.
+> **Scope, stated because it is narrower than the paragraph:** the roster is no longer a written-down
+> list. `WireContractRosterTest` derives it from the tree on every run — a source under either app's
+> data layer that names a generated response model and has no `*WireTest.kt` in its package fails the
+> build, so a new repository joins the roster by existing rather than by being remembered. The
+> per-field judgement is still not expressible (it needs the spec's nullability for the schema the
+> mapper targets); what is mechanical is the **presence of a pin** plus rule 1's numeric-zero
+> coercions, whose baseline is zero. **ADR-0048 is `accepted`** (with amendments B1–B6)
 > (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 

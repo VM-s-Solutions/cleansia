@@ -20,6 +20,7 @@ public class GdprDeletionService(
     IUserMembershipRepository userMembershipRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
+    ILiveActivityTokenRepository liveActivityTokenRepository,
     ICartRepository cartRepository,
     IUserConsentRepository userConsentRepository,
     IGdprRequestRepository gdprRequestRepository,
@@ -196,6 +197,12 @@ public class GdprDeletionService(
 
         var devices = await deviceRepository.GetByUserIdAsync(user.Id, ct);
         deviceRepository.RemoveRange(devices);
+
+        // The same handset's other APNs address. ADR-0029 D3 keeps activity registrations off the Device
+        // aggregate, so nothing above reaches them: the sweeps that do (the 24h janitor, the logout/revoke
+        // cascade) cover order-scoped rows and live sessions, and an erased account has neither — leaving
+        // the per-install push-to-start row with no reaper at all.
+        await liveActivityTokenRepository.RemoveForSubjectAsync(user.Id, ct);
 
         var notifications = await userNotificationRepository
             .GetFiltered(n => n.UserId == user.Id)

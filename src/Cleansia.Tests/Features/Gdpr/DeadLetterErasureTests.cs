@@ -205,6 +205,7 @@ public sealed class DeadLetterErasureTests : IDisposable
             new UserMembershipRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
+            new LiveActivityTokenRepository(ctx),
             new CartRepository(ctx),
             new UserConsentRepository(ctx),
             new GdprRequestRepository(ctx),

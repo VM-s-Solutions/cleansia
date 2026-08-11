@@ -12,12 +12,20 @@ namespace Cleansia.Config.Database;
 
 public static class DbContextBindingExtensions
 {
+    /// <summary>
+    /// How long composition will wait for the eager type-catalog probe before giving up on it — the whole
+    /// attempt, connect and reload together. Enough headroom for a cold TLS + SCRAM handshake to a managed
+    /// Postgres an order of magnitude over, and short enough that a boot where the database is not up yet
+    /// costs seconds rather than Npgsql's 15s default. Exceeding it is not a failure: the probe is
+    /// best-effort and <see cref="NpgsqlTypeCatalogInitializer"/> is the retrying path behind it.
+    /// </summary>
+    public static readonly TimeSpan EagerTypeCatalogProbeTimeout = TimeSpan.FromSeconds(3);
+
     /// <param name="eagerlyReloadNpgsqlTypeCatalog">
     /// Opt in to the SYNCHRONOUS type-catalog probe below. Only the isolated Functions worker needs it
     /// (see <see cref="TryEagerlyReloadTypeCatalog"/>); for an API host it is pure cold-start latency —
-    /// a blocking Postgres connect inside ConfigureServices, with Npgsql's 15s default timeout and no
-    /// retry, on a path where <see cref="NpgsqlTypeCatalogInitializer"/> already covers the same need
-    /// without blocking startup.
+    /// a blocking Postgres connect inside ConfigureServices, on a path where
+    /// <see cref="NpgsqlTypeCatalogInitializer"/> already covers the same need without blocking startup.
     /// </param>
     public static IServiceCollection AddDbContextBindings(
         this IServiceCollection services,
@@ -71,7 +79,31 @@ public static class DbContextBindingExtensions
         return services;
     }
 
+    /// <summary>
+    /// Blocking on purpose — the ordering guarantee IS this method (a timer trigger can fire before
+    /// IHostedService start, so the catalog has to be seeded before composition returns). What is bounded is
+    /// only how long that guarantee is allowed to cost when the database does not answer.
+    /// </summary>
     private static void TryEagerlyReloadTypeCatalog(NpgsqlDataSource dataSource)
+    {
+        // The ceiling has to be applied HERE, over the whole attempt, and the two obvious alternatives were
+        // measured and rejected. Npgsql's own connect deadline is a connection-string property, and that
+        // string belongs to the data source every runtime query uses — shortening it there shortens those
+        // too, while a probe on a SEPARATE data source would seed a different catalog and buy nothing (the
+        // cache is per data source, which is the whole premise above). And OpenConnectionAsync's
+        // CancellationToken is not a seam either: against a peer that accepts and then never answers — the
+        // Aspire cold-start shape, since the proxy binds the port before Postgres is ready — a 2s token did
+        // not cut the call, which still returned at the connection string's own 6s.
+        //
+        // A dedicated background thread rather than the pool: a saturated pool at worker startup could
+        // otherwise delay the probe past its own ceiling and silently skip the seeding while the database
+        // was fine, and an abandoned probe must never hold the process open.
+        var probe = new Thread(() => SeedTypeCatalog(dataSource)) { IsBackground = true };
+        probe.Start();
+        probe.Join(EagerTypeCatalogProbeTimeout);
+    }
+
+    private static void SeedTypeCatalog(NpgsqlDataSource dataSource)
     {
         try
         {

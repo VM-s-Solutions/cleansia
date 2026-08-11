@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Cleansia.Config;
@@ -12,14 +13,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Cleansia.Tests.Startup;
 
 /// <summary>
-/// Boot cost, pinned at the only two places it is observable without a deployed host: whether composing
-/// the DI graph touches the database, and whether the EF model warm-up stays off the startup path.
+/// Boot cost, pinned at the three places it is observable without a deployed host: whether composing the DI
+/// graph touches the database, what that touch is allowed to COST when the database does not answer, and
+/// whether the EF model warm-up stays off the startup path.
 ///
 /// <para>The probe is a loopback listener that accepts and immediately closes, so a connection attempt is
 /// COUNTED rather than timed out. Counting is not by itself enough to make these assertions sound: the
-/// connect is synchronous (<c>OpenConnection</c> inside <c>AddDbContextBindings</c>) and so is complete
-/// before composition returns, but the accept that RECORDS it runs on the listener's own loop. A naked
-/// read of the counter therefore races the observation — not the IO — and on a loaded machine loses.</para>
+/// connect is synchronous (<c>OpenConnection</c> inside <c>AddDbContextBindings</c>, awaited up to a bounded
+/// ceiling) and against this listener it fails in milliseconds, so it is complete before composition
+/// returns — but the accept that RECORDS it runs on the listener's own loop. A naked read of the counter
+/// therefore races the observation — not the IO — and on a loaded machine loses.</para>
 ///
 /// <para>Both directions of that race are closed by ONE primitive, which may not be "simplified" away:
 /// after composing, the test opens a deliberate CONTROL connection and blocks until the accept loop has
@@ -72,7 +75,7 @@ public class BootDatabaseIoTests
     /// The counter-leg, and the reason the test above is not vacuous: the SAME composition with the
     /// Functions worker's opt-in does connect, synchronously, inside ConfigureServices. Flipping the
     /// default back turns the assertion above red rather than leaving five API hosts silently paying a
-    /// blocking Postgres round trip (Npgsql's default connect timeout, 15s) on every cold start.
+    /// blocking Postgres round trip on every cold start.
     /// </summary>
     [Fact]
     public void ComposingTheFunctionsWorkerGraphDoesOpenOne()
@@ -88,6 +91,45 @@ public class BootDatabaseIoTests
             "The eager type-catalog probe opened no connection while composing — either the opt-in stopped " +
             "working or the loopback probe is no longer being reached, which would also make the API-host " +
             "assertions vacuous. Only the test's own control connection was counted.");
+    }
+
+    /// <summary>
+    /// What that connect is allowed to cost when the database does not answer — which under Aspire is the
+    /// ordinary cold-start ordering, not an edge case: the proxy binds the port before Postgres is ready, so
+    /// the connect is ACCEPTED and then stalls rather than being refused.
+    ///
+    /// <para>The listener reproduces exactly that: it accepts and never speaks. Its connection string then
+    /// carries a connect timeout far above the probe's ceiling, so the two are separable — the elapsed wait
+    /// tells you WHICH of them ended the probe, and only the ceiling gives an answer in single-digit seconds.
+    /// Both bounds are asserted, and the lower one is the anti-vacuity fact: a fixture that failed fast
+    /// (a refused port, a listener that closed) would satisfy the upper bound while proving nothing, so it
+    /// reddens here instead of passing quietly.</para>
+    ///
+    /// <para>The unprobed composition is measured first and subtracted, so what is asserted is the probe's
+    /// own wait rather than the cost of building the graph — and it warms the JIT for the measured leg.</para>
+    /// </summary>
+    [Fact]
+    public void TheEagerTypeCatalogProbeStopsAtItsOwnCeilingNotTheConnectionStrings()
+    {
+        using var listener = new StallingLoopbackListener();
+
+        var withoutProbe = TimeComposition(listener.ConnectionString, eagerlyReload: false);
+        var withProbe = TimeComposition(listener.ConnectionString, eagerlyReload: true);
+        var probeWait = withProbe - withoutProbe;
+
+        Assert.True(listener.WaitForFirstAccept(ObservationTimeout),
+            "The stalling loopback listener never accepted a connection, so nothing here measured a stalled " +
+            "connect and both bounds below would be met vacuously.");
+
+        Assert.True(probeWait >= DbContextBindingExtensions.EagerTypeCatalogProbeTimeout - CeilingTolerance,
+            $"The probe gave up after {probeWait.TotalSeconds:0.00}s against a peer that accepts and never " +
+            $"answers, well short of its own {DbContextBindingExtensions.EagerTypeCatalogProbeTimeout.TotalSeconds:0}s " +
+            "ceiling. Either the fixture stopped stalling or the probe stopped waiting for the catalog at all.");
+
+        Assert.True(probeWait < StalledConnectTimeout / 2,
+            $"The probe waited {probeWait.TotalSeconds:0.00}s — the connection string's own " +
+            $"{StalledConnectTimeout.TotalSeconds:0}s connect timeout ended it, not the ceiling. The ceiling must " +
+            "hold whatever the connection string says, because that string is the one every runtime query uses.");
     }
 
     [Fact]
@@ -167,6 +209,21 @@ public class BootDatabaseIoTests
     }
 
     private static readonly TimeSpan ObservationTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>What the stalling listener's connection string asks Npgsql for — deliberately far above the
+    /// probe's ceiling, so the elapsed wait says which of the two ended it.</summary>
+    private static readonly TimeSpan StalledConnectTimeout = TimeSpan.FromSeconds(25);
+
+    private static readonly TimeSpan CeilingTolerance = TimeSpan.FromMilliseconds(500);
+
+    private static TimeSpan TimeComposition(string connectionString, bool eagerlyReload)
+    {
+        var services = NewServiceCollection(connectionString, out var configuration);
+
+        var started = Stopwatch.GetTimestamp();
+        services.AddCoreBindings(configuration, ProbeEnvironment, eagerlyReload);
+        return Stopwatch.GetElapsedTime(started);
+    }
 
     /// <summary>
     /// Returns as soon as the control connection comes back, so the generous timeout is paid only when the
@@ -308,6 +365,72 @@ public class BootDatabaseIoTests
             cancellation.Cancel();
             listener.Dispose();
             cancellation.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Accepts and then says nothing, holding every socket open for the life of the test — the shape an
+    /// Aspire proxy presents while its Postgres container is still starting, and the one that costs a whole
+    /// connect timeout. Deliberately the opposite of <see cref="ClosingLoopbackListener"/>: a peer that
+    /// closes makes Npgsql fail fast (and retry the attempt once), which measures nothing about a ceiling.
+    /// </summary>
+    private sealed class StallingLoopbackListener : IDisposable
+    {
+        private readonly TcpListener listener;
+        private readonly CancellationTokenSource cancellation = new();
+        private readonly ManualResetEventSlim firstAccept = new();
+        private readonly List<TcpClient> held = [];
+
+        public StallingLoopbackListener()
+        {
+            listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            Port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            _ = Task.Run(AcceptLoopAsync);
+        }
+
+        public int Port { get; }
+
+        public string ConnectionString =>
+            $"Host=127.0.0.1;Port={Port};Database=cleansia;Username=probe;Password=probe;" +
+            $"Timeout={StalledConnectTimeout.TotalSeconds:0};Command Timeout=2";
+
+        public bool WaitForFirstAccept(TimeSpan timeout) => firstAccept.Wait(timeout);
+
+        private async Task AcceptLoopAsync()
+        {
+            while (!cancellation.IsCancellationRequested)
+            {
+                try
+                {
+                    var client = await listener.AcceptTcpClientAsync(cancellation.Token);
+                    lock (held)
+                    {
+                        held.Add(client);
+                    }
+
+                    firstAccept.Set();
+                }
+                catch (OperationCanceledException) { return; }
+                catch (ObjectDisposedException) { return; }
+                catch (SocketException) { }
+            }
+        }
+
+        public void Dispose()
+        {
+            cancellation.Cancel();
+            listener.Dispose();
+            lock (held)
+            {
+                foreach (var client in held)
+                {
+                    client.Dispose();
+                }
+            }
+
+            cancellation.Dispose();
+            firstAccept.Dispose();
         }
     }
 

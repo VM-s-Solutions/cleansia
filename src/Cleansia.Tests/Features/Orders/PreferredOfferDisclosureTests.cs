@@ -107,6 +107,55 @@ public class PreferredOfferDisclosureTests
         Assert.Equal(expected, PreferredOffer.IsDisclosable(state, currentStatus, availableSpots));
 
     /// <summary>
+    /// T-0601 — a new <see cref="OrderStatus"/> member must not inherit a verdict by silence.
+    ///
+    /// <para>Limb (a) is a NEGATIVE test — <c>not (Completed or Cancelled)</c> — so a status added to
+    /// the enum defaults to DISCLOSABLE with nobody having reasoned about it. <b>That default is kept
+    /// deliberately.</b> Inverting it to an allow-list would withhold, on any unrecognised status, the
+    /// customer's only record of what became of their request — the harm the <c>Closed</c> sentence
+    /// exists to prevent — and it would do so at the moment the platform understands the new status
+    /// least. What is not acceptable is that the default is taken <i>silently</i>.</para>
+    ///
+    /// <para>So the forcing function lives here rather than in the rule: one literal verdict per
+    /// member, checked for totality against the enum, in the same shape
+    /// <c>ErasureBlockingOrderStatusTests</c> uses. Adding a status reddens this and the ruling gets
+    /// stated once. Putting the enumeration in <see cref="PreferredOffer.IsDisclosable"/> instead would
+    /// buy the same signal by turning a three-input expression into the status grouping ADR-0049 §D7
+    /// refuses — the cost lands on the rule, the benefit is available from a test.</para>
+    /// </summary>
+    [Fact]
+    public void Every_OrderStatus_Carries_A_Stated_Concluded_Verdict()
+    {
+        var stated = new Dictionary<OrderStatus, bool>
+        {
+            [OrderStatus.New] = true,
+            [OrderStatus.Pending] = true,
+            [OrderStatus.Confirmed] = true,
+            [OrderStatus.OnTheWay] = true,
+            [OrderStatus.InProgress] = true,
+            [OrderStatus.Completed] = false,
+            [OrderStatus.Cancelled] = false,
+        };
+
+        var unruled = Enum.GetValues<OrderStatus>().Except(stated.Keys).ToList();
+        Assert.True(
+            unruled.Count == 0,
+            $"OrderStatus gained {string.Join(", ", unruled)}, and nobody has said whether the customer's "
+            + "preferred-offer block is still true of a booking in that state. Limb (a) is a negative "
+            + "test, so it defaults to DISCLOSABLE — safe, but it must be chosen rather than inherited. "
+            + "Add the row here with the verdict, or change the rule.");
+        Assert.Empty(stated.Keys.Except(Enum.GetValues<OrderStatus>()));
+
+        // Held at a state and a seat count where limb (b) cannot fire, so each row is limb (a) alone.
+        Assert.All(
+            stated,
+            row => Assert.Equal(
+                row.Value,
+                PreferredOffer.IsDisclosable(
+                    PreferredOfferState.AwaitingConfirmation, row.Key, availableSpots: 1)));
+    }
+
+    /// <summary>
     /// A 1-of-2 booking whose reservation closed is the row the CH-2 defect would have silenced: the
     /// second seat really is on the open board, so <i>"open to our whole team"</i> is still true. This
     /// reddens the moment limb (b) is written as an assignment count.

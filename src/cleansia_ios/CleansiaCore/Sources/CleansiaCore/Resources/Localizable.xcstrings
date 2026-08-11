@@ -1191,6 +1191,40 @@
         }
       }
     },
+    "error.device.revoke_failed" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zařízení se nepodařilo odhlásit. Zkuste to prosím znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That device could not be signed out. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось отключить это устройство. Попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zariadenie sa nepodarilo odhlásiť. Skúste to prosím znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося від'єднати цей пристрій. Спробуйте ще раз."
+          }
+        }
+      }
+    },
     "error.dispute.already_exists" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6291,6 +6325,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Введіть дійсний номер ПДВ для обраної країни."
+          }
+        }
+      }
+    },
+    "error.wire.contract_violation" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server odeslal neúplná data. Zkuste to prosím znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server sent incomplete data. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер прислал неполные данные. Попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server odoslal neúplné údaje. Skúste to prosím znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер надіслав неповні дані. Спробуйте ще раз."
           }
         }
       }

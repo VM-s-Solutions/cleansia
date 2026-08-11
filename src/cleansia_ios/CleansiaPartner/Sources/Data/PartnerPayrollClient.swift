@@ -17,11 +17,7 @@ protocol PartnerPayrollClient: AnyObject {
 final class LivePartnerPayrollClient: PartnerPayrollClient {
     func currentEmployeeId() async -> ApiResult<String> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            let employee = try await PartnerEmployeeAPI.employeeGetCurrentEmployee()
-            guard let id = employee.id, !id.isEmpty else {
-                throw ApiError(code: "payroll.employee_id_missing")
-            }
-            return id
+            try await PartnerEmployeeAPI.employeeGetCurrentEmployee().id.requireNonBlank("id")
         }
     }
 

@@ -26,6 +26,16 @@ final class ApiErrorLocalizerTests: XCTestCase {
         XCTAssertEqual(localizer.message(for: error), "definitely.not_in_catalog")
     }
 
+    /// A refusal a client invents survives `apiResult` intact now, so every such code needs a catalog
+    /// entry or the user reads it verbatim.
+    func testClientInventedRefusalCodesAreCatalogued() {
+        for code in ["device.revoke_failed", ApiError.wireContractCode] {
+            let resolved = localizer.message(for: ApiError(code: code, httpStatus: 200))
+            XCTAssertNotEqual(resolved, code, "\(code) surfaces raw — add error.\(code) to the catalog")
+            XCTAssertFalse(resolved.isEmpty)
+        }
+    }
+
     func testUndottedCodeFallsThroughToServerMessage() {
         let error = ApiError(code: "ValidationError", message: "Something specific", httpStatus: 400)
 

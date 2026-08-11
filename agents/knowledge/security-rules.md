@@ -290,8 +290,9 @@ re-creates the cross-tenant existence oracle the composite index was chosen to r
 **The re-pin may not be an appeal to a uniqueness property the schema does not enforce.** Permitted pins:
 an unguessable server-issued secret, the caller's own id from their JWT, or a row id read out of an
 already-pinned row. *Not* permitted: "the email is unique across the platform" — email uniqueness is
-`(TenantId, Email)` by design and, while `TenantId` is dormant, is enforced by nothing at all
-(`consistency.md` §*"Tenant-scoped unique indexes"*, the `Users` deviation). Where the true pin is a
+`(TenantId, Email)` by design and, while `TenantId` is dormant, is enforced by nothing at all until the
+owner-run migration emits `NULLS NOT DISTINCT` (`consistency.md` §*"Tenant-scoped unique indexes"*, the
+`Users` arming note; the C# builder call has landed and the DDL has not). Where the true pin is a
 **caller obligation** the method cannot verify (`GetActiveByUserIdAsync`'s "the `UserId` comes from the
 caller's own JWT"), say so in those words rather than dressing it as an invariant.
 

@@ -61,7 +61,7 @@ struct AccessCard: View {
 }
 
 /// Shows the name and whichever location the server released to this caller — a street address,
-/// or the coarse zone a browsing cleaner gets. Phone + SMS chips appear once the order is mine.
+/// or the coarse zone a browsing cleaner gets. Phone + SMS chips appear once a phone arrives.
 ///
 /// Navigate is offered only against a street address: a maps app opened on a city name is worse
 /// than no button.
@@ -92,13 +92,10 @@ struct CustomerCard: View {
 
     @ViewBuilder
     private var contactActions: some View {
-        // Contact PII gated to the assignee (server-side PII gating parity).
-        let showContact = order.isAssignedToCurrentUser
-            && !(order.customerPhone ?? "").isEmpty
         let navigateTo = order.location.navigationTarget
-        if showContact || navigateTo != nil {
+        if order.showsCustomerContact || navigateTo != nil {
             HStack(spacing: Spacing.xs) {
-                if showContact {
+                if order.showsCustomerContact {
                     ContactChip(
                         icon: "phone",
                         label: L10n.Orders.actionCall,

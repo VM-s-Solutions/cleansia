@@ -5,9 +5,10 @@ import SwiftUI
 /// Notes + issues block. Lists existing notes/issues (read from the parent
 /// order payload), with per-row edit/delete shown only to the author (a client
 /// UI gate; the backend enforces author-scoping). Add buttons appear only when
-/// `canAdd` (OnTheWay/InProgress); the section is read-only on terminal and
-/// hides entirely when there's nothing to show and nothing to add.
-/// Mutations push through the VM, which signals the parent to re-fetch.
+/// `canAdd` (OnTheWay/InProgress) and the section is read-only on terminal;
+/// whether it appears at all is `OrderDetail.showsNotesAndIssues`, so the gate is
+/// drivable without a UI harness. Mutations push through the VM, which signals
+/// the parent to re-fetch.
 struct NotesAndIssuesSection: View {
     let notes: [OrderNoteDto]
     let issues: [OrderIssueDto]
@@ -18,45 +19,39 @@ struct NotesAndIssuesSection: View {
     @State private var entry: EntryContext?
     @State private var deletion: DeletionContext?
 
-    private var hidden: Bool {
-        !canAdd && notes.isEmpty && issues.isEmpty
-    }
-
     var body: some View {
-        if !hidden {
-            OrderSectionCard(title: L10n.Orders.notesAndIssues, systemImage: "note.text") {
-                VStack(alignment: .leading, spacing: Spacing.s) {
-                    ForEach(notes, id: \.id) { note in
-                        EntryRow(
-                            text: note.content ?? "",
-                            accent: CleansiaColors.primary,
-                            showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: note.employeeId),
-                            isMutating: vm.mutatingId == note.id,
-                            onEdit: { startEdit(noteId: note.id, text: note.content) },
-                            onDelete: { deletion = .note(id: note.id ?? "") }
-                        )
-                    }
-                    ForEach(issues, id: \.id) { issue in
-                        EntryRow(
-                            text: issue.description ?? "",
-                            accent: CleansiaColors.error,
-                            showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: issue.reportedByEmployeeId),
-                            isMutating: vm.mutatingId == issue.id,
-                            onEdit: { startEditIssue(issueId: issue.id, text: issue.description) },
-                            onDelete: { deletion = .issue(id: issue.id ?? "") }
-                        )
-                    }
-                    if !isReadOnly, canAdd {
-                        addButtons
-                    }
+        OrderSectionCard(title: L10n.Orders.notesAndIssues, systemImage: "note.text") {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                ForEach(notes, id: \.id) { note in
+                    EntryRow(
+                        text: note.content ?? "",
+                        accent: CleansiaColors.primary,
+                        showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: note.employeeId),
+                        isMutating: vm.mutatingId == note.id,
+                        onEdit: { startEdit(noteId: note.id, text: note.content) },
+                        onDelete: { deletion = .note(id: note.id ?? "") }
+                    )
+                }
+                ForEach(issues, id: \.id) { issue in
+                    EntryRow(
+                        text: issue.description ?? "",
+                        accent: CleansiaColors.error,
+                        showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: issue.reportedByEmployeeId),
+                        isMutating: vm.mutatingId == issue.id,
+                        onEdit: { startEditIssue(issueId: issue.id, text: issue.description) },
+                        onDelete: { deletion = .issue(id: issue.id ?? "") }
+                    )
+                }
+                if !isReadOnly, canAdd {
+                    addButtons
                 }
             }
-            .task { await vm.resolveCurrentEmployeeId() }
-            .sheet(item: $entry) { context in
-                TextEntrySheet(context: context, vm: vm) { entry = nil }
-            }
-            .overlay { deletionDialog }
         }
+        .task { await vm.resolveCurrentEmployeeId() }
+        .sheet(item: $entry) { context in
+            TextEntrySheet(context: context, vm: vm) { entry = nil }
+        }
+        .overlay { deletionDialog }
     }
 
     private var addButtons: some View {

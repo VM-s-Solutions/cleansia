@@ -16,12 +16,6 @@ struct OrderDetailContent: View {
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
 
-    private var showAccessCard: Bool {
-        order.isAssignedToCurrentUser
-            && !(order.accessInstructions ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-            && (order.status == ._3 || order.status == ._4)
-    }
-
     private var showFromCustomerCard: Bool {
         !(order.customerNotes ?? "").trimmingCharacters(in: .whitespaces).isEmpty
             || !(order.specialInstructions ?? "").trimmingCharacters(in: .whitespaces).isEmpty
@@ -33,11 +27,6 @@ struct OrderDetailContent: View {
 
     private var isTerminal: Bool {
         order.status == ._5 || order.status == ._6
-    }
-
-    /// Adds for notes/issues are allowed once the cleaner is OnTheWay/InProgress.
-    private var canAddNotes: Bool {
-        order.status == ._3 || order.status == ._4
     }
 
     /// Before photos upload once OnTheWay/InProgress; after photos only once
@@ -105,7 +94,7 @@ struct OrderDetailContent: View {
                         OrderTrackerHero(status: order.status)
                     }
                     OrderMetadataRow(order: order, locale: locale)
-                    if showAccessCard, let access = order.accessInstructions {
+                    if order.showsAccessCard, let access = order.accessInstructions {
                         AccessCard(instructions: access)
                     }
                     CustomerCard(order: order)
@@ -121,11 +110,11 @@ struct OrderDetailContent: View {
                             onToggle: checklistVM.setChecked
                         )
                     }
-                    if order.isAssignedToCurrentUser {
+                    if order.showsNotesAndIssues {
                         NotesAndIssuesSection(
                             notes: order.orderNotes,
                             issues: order.orderIssues,
-                            canAdd: canAddNotes,
+                            canAdd: order.canAddNotes,
                             isReadOnly: isTerminal,
                             vm: notesVM
                         )

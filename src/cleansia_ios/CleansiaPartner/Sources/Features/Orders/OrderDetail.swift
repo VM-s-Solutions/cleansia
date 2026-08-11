@@ -126,6 +126,33 @@ extension OrderDetail {
         isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
     }
 
+    /// The fields `OrderPiiRedaction` blanks by caller class are rendered off their **own arrival**.
+    /// The server decides disclosure on `CanAccessOrderAsync`; `isAssignedToCurrentUser` counts the
+    /// assignment list. They disagree for the employee who booked this cleaning for their own home,
+    /// and gating the render on the flag hides that person's own data from them. A blank is a
+    /// redaction, not a value: the server sends `""` and `[]`, so the test is never `!= nil`.
+    var showsCustomerContact: Bool {
+        !(customerPhone ?? "").isBlank
+    }
+
+    /// The lifecycle conjunct answers *when is a door code useful*, not *may this caller see it*, so
+    /// it stays — without it the code sits on screen forever on a finished job.
+    var showsAccessCard: Bool {
+        !(accessInstructions ?? "").isBlank && (status == ._3 || status == ._4)
+    }
+
+    /// The record of what was reported during the job outlives the job, so there is no lifecycle
+    /// term here — only the arrival of the record, or a live invitation to start one.
+    var showsNotesAndIssues: Bool {
+        !orderNotes.isEmpty || !orderIssues.isEmpty || canAddNotes
+    }
+
+    /// Writing is an action, so it fails closed on the assignment, and only while the job is under
+    /// way — nothing is added before the cleaner is on their way.
+    var canAddNotes: Bool {
+        isAssignedToCurrentUser && (status == ._3 || status == ._4)
+    }
+
     /// The formatted sum the cleaner takes in cash, or nil when the wire carried no
     /// total — the cash-collection confirmation then asks without naming an amount
     /// rather than guessing one.

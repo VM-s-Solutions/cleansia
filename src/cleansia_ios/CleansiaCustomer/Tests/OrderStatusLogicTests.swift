@@ -275,19 +275,8 @@ final class CancellationQuoteTests: XCTestCase {
         XCTAssertEqual(CancellationTier(wire: ._4), .lastMinute)
     }
 
-    /// Every field on a generated model is optional, so a body whose tier failed to decode arrives as a
-    /// well-formed response with a nil tier. There is no tier to fall back to — an unreadable quote is a
-    /// failed quote, never a guessed one.
-    func testAResponseWithoutATierIsNotAQuote() {
-        XCTAssertNil(CancellationQuote(GetCancellationFeePreviewResponse(
-            feeAmount: 250,
-            refundAmount: 750,
-            currencyCode: "CZK"
-        )))
-    }
-
-    func testTheServersAmountsAndWaiverFlagSurviveTheMapping() {
-        let quote = CancellationQuote(GetCancellationFeePreviewResponse(
+    func testTheServersAmountsAndWaiverFlagSurviveTheMapping() throws {
+        let quote = try CancellationQuote(GetCancellationFeePreviewResponse(
             orderId: "o1",
             tier: ._3,
             feeRate: 0.25,
@@ -298,11 +287,24 @@ final class CancellationQuoteTests: XCTestCase {
             expressWaiverForfeitedOnCancel: true
         ))
 
-        XCTAssertEqual(quote?.tier, .partial)
-        XCTAssertEqual(quote?.feeAmount, 250)
-        XCTAssertEqual(quote?.refundAmount, 750)
-        XCTAssertEqual(quote?.currencyCode, "CZK")
-        XCTAssertEqual(quote?.forfeitsExpressWaiver, true)
+        XCTAssertEqual(quote.tier, .partial)
+        XCTAssertEqual(quote.feeAmount, 250)
+        XCTAssertEqual(quote.refundAmount, 750)
+        XCTAssertEqual(quote.currencyCode, "CZK")
+        XCTAssertTrue(quote.forfeitsExpressWaiver)
+    }
+
+    /// The sheet already falls back to the order's own currency, so a null here has an equally
+    /// authoritative replacement — refusing it would strand a customer on a booking they want gone.
+    func testAQuoteWithNoCurrencyStillMapsBecauseTheSheetHasASecondSource() throws {
+        let quote = try CancellationQuote(GetCancellationFeePreviewResponse(
+            tier: ._0,
+            feeAmount: 0,
+            refundAmount: 1000,
+            expressWaiverForfeitedOnCancel: false
+        ))
+
+        XCTAssertNil(quote.currencyCode)
     }
 }
 

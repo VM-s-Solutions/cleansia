@@ -268,12 +268,12 @@ final class OrderDetailViewModelTests: XCTestCase {
     func testEnsurePhotosLoadsLazilyAndFreshEachOpen() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
-        client.photosResults = [.success(GetOrderPhotosResponse(beforePhotoCount: 1, afterPhotoCount: 2))]
+        client.photosResults = [.success(OrderFixtures.photos(before: 1, after: 2))]
         let vm = makeVM(client: client)
         await vm.load()
 
         await vm.ensurePhotosLoaded()
-        XCTAssertEqual(vm.photos.loadedResponse?.afterPhotoCount, 2)
+        XCTAssertEqual(vm.photos.loadedResponse?.afterCount, 2)
 
         // Second call once loaded is a no-op (still one fetch).
         await vm.ensurePhotosLoaded()
@@ -285,7 +285,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
         client.photosResults = [
             .failure(ApiError(httpStatus: 500)),
-            .success(GetOrderPhotosResponse(beforePhotoCount: 0, afterPhotoCount: 0))
+            .success(OrderFixtures.photos())
         ]
         let vm = makeVM(client: client)
         await vm.load()

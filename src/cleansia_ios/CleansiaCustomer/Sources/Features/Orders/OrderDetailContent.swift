@@ -46,8 +46,8 @@ struct OrderDetailContent: View {
 
                     OrderInstructionsCard(order: order)
 
-                    if let response = photos.loadedResponse, !(response.photos ?? []).isEmpty {
-                        OrderPhotosSection(response: response, onViewPhotos: onViewPhotos)
+                    if let gallery = photos.loadedResponse, !gallery.photos.isEmpty {
+                        OrderPhotosSection(gallery: gallery, onViewPhotos: onViewPhotos)
                     }
 
                     if !order.assignedEmployees.isEmpty {

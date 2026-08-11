@@ -6,12 +6,12 @@ import Foundation
 enum PhotosUiState {
     case idle
     case loading
-    case loaded(GetOrderPhotosResponse)
+    case loaded(OrderPhotos)
     case error
 }
 
 extension PhotosUiState {
-    var loadedResponse: GetOrderPhotosResponse? {
+    var loadedResponse: OrderPhotos? {
         if case let .loaded(response) = self { return response }
         return nil
     }

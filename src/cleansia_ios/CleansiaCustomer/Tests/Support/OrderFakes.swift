@@ -24,7 +24,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var receiptResult: ApiResult<URL> = .success(URL(fileURLWithPath: "/tmp/receipt.pdf"))
     private(set) var receiptCallCount = 0
 
-    var photosResults: [ApiResult<GetOrderPhotosResponse>] = []
+    var photosResults: [ApiResult<OrderPhotos>] = []
     private(set) var photosCallCount = 0
 
     var confirmRecurringResult: ApiResult<RecurringConfirmation> =
@@ -66,7 +66,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         return receiptResult
     }
 
-    func getPhotos(orderId _: String) async -> ApiResult<GetOrderPhotosResponse> {
+    func getPhotos(orderId _: String) async -> ApiResult<OrderPhotos> {
         defer { photosCallCount += 1 }
         let index = min(photosCallCount, photosResults.count - 1)
         guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
@@ -244,6 +244,14 @@ enum OrderFixtures {
             currencyCode: "CZK",
             forfeitsExpressWaiver: forfeitsExpressWaiver
         )
+    }
+
+    static func photos(
+        _ photos: [GetOrderPhotosOrderPhotoDto] = [],
+        before: Int = 0,
+        after: Int = 0
+    ) -> OrderPhotos {
+        OrderPhotos(photos: photos, beforeCount: before, afterCount: after)
     }
 
     static func track(statusValue: Int, createdOn: Date) -> OrderStatusTrackDto {

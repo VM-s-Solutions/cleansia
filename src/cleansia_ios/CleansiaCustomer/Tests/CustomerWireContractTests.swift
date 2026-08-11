@@ -193,6 +193,70 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(try CustomerOrderSummary(.wireComplete())?.total, 1590)
     }
 
+    // MARK: the cancellation quote — the only numbers the customer reads and THEN decides
+
+    /// Each of these pushes the customer toward the outcome that costs them: a defaulted fee reads
+    /// "free" over a charge, a defaulted refund reads "nothing comes back" over money that does, and a
+    /// defaulted waiver flag promises a free express booking they are about to spend.
+    /// `GetCancellationFeePreview.Response` is a positional record of non-nullable members with one
+    /// success path, so there is no state this sheet can be in where any of them is legitimately absent.
+    func testEveryFigureOnTheCancelSheetIsRefusedRatherThanDefaulted() {
+        for (field, break_) in [
+            ("tier", { (dto: inout GetCancellationFeePreviewResponse) in dto.tier = nil }),
+            ("feeAmount", { dto in dto.feeAmount = nil }),
+            ("refundAmount", { dto in dto.refundAmount = nil }),
+            ("expressWaiverForfeitedOnCancel", { dto in dto.expressWaiverForfeitedOnCancel = nil })
+        ] {
+            var payload = cancellationPayload()
+            break_(&payload)
+            assertRefused(field) { try CancellationQuote(payload) }
+        }
+    }
+
+    func testAFullyPopulatedCancellationQuoteMaps() throws {
+        let quote = try CancellationQuote(cancellationPayload())
+        XCTAssertEqual(quote.tier, .partial)
+        XCTAssertEqual(quote.feeAmount, 250)
+        XCTAssertEqual(quote.refundAmount, 750)
+        XCTAssertTrue(quote.forfeitsExpressWaiver)
+    }
+
+    private func cancellationPayload() -> GetCancellationFeePreviewResponse {
+        GetCancellationFeePreviewResponse(
+            orderId: "o1",
+            tier: ._3,
+            feeRate: 0.25,
+            feeAmount: 250,
+            refundAmount: 750,
+            totalPrice: 1000,
+            currencyCode: "CZK",
+            expressWaiverForfeitedOnCancel: true
+        )
+    }
+
+    // MARK: the photo counts — a figure the server computes beside the rail, not from it
+
+    /// `GetOrderPhotos` runs a dedicated count query per type rather than tallying the list it ships,
+    /// so the count is a second statement about the order. Coerced, the pill reads "0 before photos"
+    /// above a rail that is showing them.
+    func testThePhotoCountsAreRefusedRatherThanReportedAsNone() {
+        for (field, break_) in [
+            ("beforePhotoCount", { (dto: inout GetOrderPhotosResponse) in dto.beforePhotoCount = nil }),
+            ("afterPhotoCount", { dto in dto.afterPhotoCount = nil })
+        ] {
+            var payload = GetOrderPhotosResponse(photos: [], beforePhotoCount: 3, afterPhotoCount: 4)
+            break_(&payload)
+            assertRefused(field) { try OrderPhotos(payload) }
+        }
+    }
+
+    /// A genuine zero is not a refusal, and an absent list is the same fact as an empty gallery.
+    func testAnOrderWithNoPhotosIsNotARefusal() throws {
+        let gallery = try OrderPhotos(GetOrderPhotosResponse(beforePhotoCount: 0, afterPhotoCount: 0))
+        XCTAssertEqual(gallery.photos, [])
+        XCTAssertEqual(gallery.beforeCount, 0)
+    }
+
     // MARK: the express-waiver quota — a claim, not a number
 
     /// The one case where the coerced value is the OPPOSITE of what the server's null means:

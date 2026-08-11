@@ -3,13 +3,13 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderPhotosSection: View {
-    let response: GetOrderPhotosResponse
+    let gallery: OrderPhotos
     let onViewPhotos: () -> Void
 
     private var previewThumbs: [GetOrderPhotosOrderPhotoDto] {
         // A few previews that fit the card width without a horizontal scroll — the whole card is a
         // button into the full gallery, so the row is just a teaser, not a scroller.
-        Array((response.photos ?? []).prefix(4))
+        Array(gallery.photos.prefix(4))
     }
 
     var body: some View {
@@ -28,8 +28,8 @@ struct OrderPhotosSection: View {
                         .foregroundColor(CleansiaColors.primary)
                 }
                 HStack(spacing: Spacing.xs) {
-                    PhotoCountPill(text: L10n.OrderPhotos.summaryBefore(response.beforePhotoCount ?? 0))
-                    PhotoCountPill(text: L10n.OrderPhotos.summaryAfter(response.afterPhotoCount ?? 0))
+                    PhotoCountPill(text: L10n.OrderPhotos.summaryBefore(gallery.beforeCount))
+                    PhotoCountPill(text: L10n.OrderPhotos.summaryAfter(gallery.afterCount))
                 }
                 // Plain, non-scrolling row (clipped) — a horizontal ScrollView here captured the
                 // pan gesture and broke the edge-swipe-back on completed orders.

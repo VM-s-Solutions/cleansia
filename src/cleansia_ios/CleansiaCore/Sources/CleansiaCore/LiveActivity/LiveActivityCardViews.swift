@@ -165,9 +165,22 @@ public struct LiveActivityClock: View {
             }
             // Tabular figures rather than a monospaced FACE: the clock must not jitter as the digits
             // change, but a monospaced colon sets the two halves an em apart and reads as "17 : 35".
+            //
+            // ⚠️ `lineLimit(1)` is load-bearing in the COMPACT slot and is not styling. `Text(_, style:
+            // .time)` is rendered by the system in the DEVICE's locale, so a 12-hour region draws
+            // "5:33 PM" where a 24-hour one draws "17:33" — measurably wider. In the island's ~52pt
+            // compact slot the 12-hour string wrapped to a second row (30.5pt against 14.5pt), and the
+            // system clips that slot, so a US-locale cleaner saw a broken clock. It survived because
+            // every simulator we ran it on resolved to 24-hour: the dev machine's region is
+            // `en_US@rg=czzzzz` — US language, Czech regional formats.
+            //
+            // Scale rather than truncate: a clipped time is a wrong time, and losing "PM" is worse
+            // than a slightly smaller readout.
             Text(instant, style: .time)
                 .font(.system(compact ? .caption : .title3, design: .rounded).weight(.bold).monospacedDigit())
                 .foregroundColor(CleansiaColors.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(compact ? 0.7 : 1)
         }
     }
 }

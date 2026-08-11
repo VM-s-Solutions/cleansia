@@ -118,6 +118,12 @@ const CONNECTORS = new Set([
     "and", "a", "an", "as", "at", "by", "of", "on", "in", "to", "per", "see", "over", "under",
     "adr", "row", "rows", "ruling", "panel", "verdict", "dated", "date", "owner", "since", "from",
     "already", "here", "today", "above", "below",
+    // Relative pronouns. Added 2026-08-11 after a live miss: an entry reading
+    // "**ADR-0049**, which is `proposed`" was NOT parsed as a status claim, so the ADR was
+    // stamped `accepted` mid-ticket and the stale sentence sailed through a BLOCKING gate.
+    // The identical claim phrased "ADR-0049 is `proposed`" one file over WAS caught, which is
+    // what makes this a parser gap rather than a judgement call.
+    "which", "whose",
 ]);
 /** The REVERSE form is only a claim behind an article: "an `accepted` ADR-0039". */
 const REVERSE_ARTICLES = new Set(["a", "an", "the"]);

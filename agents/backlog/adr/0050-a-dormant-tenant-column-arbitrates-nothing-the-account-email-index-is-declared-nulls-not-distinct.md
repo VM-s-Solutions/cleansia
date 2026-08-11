@@ -152,25 +152,38 @@ the constraint name, never on a substring of the driver's message text, and it m
 unique violations on the same commit. A single pipeline-level `DbUpdateException` translator is
 acceptable *only* if it can name the constraint; otherwise it is per-writer.
 
-### D3 — The migration is gated on a census, and the census is not assumed
+### D3 — The census is VACUOUS pre-prod, and saying so is the decision
 
-Index creation with `NULLS NOT DISTINCT` **fails on pre-existing duplicates**. The pack therefore
-sequences: census → de-duplicate if non-empty → owner-run `Initial` regen → the roster row in D4.
+Index creation with `NULLS NOT DISTINCT` **fails on pre-existing duplicates**, so on any database that
+survives a migration this ADR would owe a census first. **This project has no such database.**
 
-The census is three queries against DEV and, when it exists, production
-(`Email` is `citext`, so equality here is already case-insensitive and matches the index exactly):
+Pre-prod there is exactly one `Initial` migration and it is **regenerated**, not stacked
+(owner ruling 2026-08-09). Regeneration changes the migration id, `__EFMigrationsHistory` keys on the
+id, and an existing database therefore reports "up to date" while silently missing every new column —
+so **DEV is dropped and re-seeded on every regen**. A census over a database that is about to be
+dropped measures nothing, and a gate that cannot fail is not a gate.
 
-```sql
-SELECT "Email", COUNT(*) FROM "Users" GROUP BY "Email" HAVING COUNT(*) > 1;
-SELECT "TenantId", "Email", COUNT(*) FROM "Users" GROUP BY "TenantId", "Email" HAVING COUNT(*) > 1;
-SELECT COUNT(*) FROM "Users" WHERE "TenantId" IS NOT NULL;
-```
+**The owner's step is therefore the one that already existed** — drop DEV, regenerate `Initial`,
+re-seed — with no census in front of it. The arming of this index is one more column-level fact folded
+into that regen, not a sequenced operation of its own.
 
-**No agent may report the result of these from reasoning.** The expected result is zero rows on all
-three; the third is included because a non-zero answer would mean a tenant-stamped account exists in an
-environment whose whole read path assumes none does, which is a finding in its own right and belongs in
-ADR-0051's world, not this one. If the first query returns rows, de-duplication is an owner decision
-per pair (which row keeps the orders) and this ADR does not pre-empt it.
+> ⚠️ **This becomes load-bearing the day a database survives a migration** — the first production
+> deploy, or the first stacked migration after pre-prod ends. At that moment the sequence is
+> census → de-duplicate → migrate, and de-duplication is an **owner decision per pair**, because the
+> losing row may own orders, invoices or a payout destination. The three queries, kept for that day:
+>
+> ```sql
+> SELECT "Email", COUNT(*) FROM "Users" GROUP BY "Email" HAVING COUNT(*) > 1;
+> SELECT "TenantId", "Email", COUNT(*) FROM "Users" GROUP BY "TenantId", "Email" HAVING COUNT(*) > 1;
+> SELECT COUNT(*) FROM "Users" WHERE "TenantId" IS NOT NULL;
+> ```
+>
+> `Email` is `citext`, so equality already matches the index case-insensitively. The third is not about
+> duplicates: a non-zero answer means a tenant-stamped account exists in an environment whose entire
+> read path assumes none does — an ADR-0051 finding, not this one's.
+>
+> **Retires when:** a migration other than `Initial` exists under
+> `src/Cleansia.Infra.Database/Migrations/`.
 
 ### D4 — The guard's roster gains `Users`, and the roster's hand-maintenance is stated where it is claimed
 

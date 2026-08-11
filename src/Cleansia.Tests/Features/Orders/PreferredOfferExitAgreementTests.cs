@@ -113,7 +113,11 @@ public class PreferredOfferExitAgreementTests
         var detail = await CreateDetailHandler().Handle(new GetOrderDetails.Query(OrderId), default);
         var (serverAccepted, refusal) = await AttemptTheReOfferAsync();
 
-        var flag = detail.Value!.PreferredOffer!.CanChooseAnother;
+        // ADR-0049 withholds the WHOLE block on a concluded booking, so on the cancelled row the
+        // customer's answer is the block's absence. Reading that as "no exit offered" is exactly the D5
+        // theorem — ¬IsDisclosable ⇒ ¬IsOpen — which PreferredOfferDisclosureTests proves rather than
+        // assumes, so this stays an agreement assertion about what the customer can actually see.
+        var flag = detail.Value!.PreferredOffer?.CanChooseAnother ?? false;
 
         Assert.Equal(expectedOpen, flag);
         Assert.Equal(flag, serverAccepted);

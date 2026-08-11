@@ -736,32 +736,34 @@ those: `orders/OrderRepository.kt:84` and `:110` (a refused page reported as `Ap
 ## A disclosure block shipped past its sentence's truth — the deviating form (2026-08-11)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`
-> (`.github/workflows/backend-ci.yml:69-71`) — **`(gate pending: T-0595)`** → **`T1-CI`**.
-> **Retires when:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` exists.
+> (`.github/workflows/backend-ci.yml:69-71`) — **`T1-CI`**.
 > Rule, scope and rejected alternatives: `patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the
 > server when its sentence stops being true"*; decision: **ADR-0049**, which is `proposed`
 > (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
 > **Retires when:** that status line stops reading `proposed`.
 >
-> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
-> test 1). **The baseline is read from the tree, not counted** — and unusually it is a *single*
-> producer, because the block has one producer.
+> **This entry exists because the rule put code that existed at the time in violation** (ADR-0033
+> routing test 1). **The baseline is read from the tree, not counted** — and unusually it was a
+> *single* producer, because the block has one producer. **T-0595 repaired that producer**, so the
+> entry is now a mutation guard rather than a sweep: it exists to name the shape so the next block
+> does not repeat it.
 
 **The deviating form (normative — it decides the next case):** *a read handler that populates a block
 of DTO fields whose only job is to select a customer-facing sentence, without evaluating whether that
 sentence is still true of the row it is about.*
 
-The live instance: `GetOrderDetails.ResolvePreferredOfferAsync`
-(`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:146-173`) derives
+The instance it was written from, **now repaired**: `GetOrderDetails.ResolvePreferredOfferAsync`
+(`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:150-182`) derives
 `PreferredOfferState` from four columns that contain no fulfilment status and no seat count
-(`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`). So the customer's order detail says
-*"The request for the cleaner you asked for has ended. This booking is now open to our whole team."*
-(`src/Cleansia.App/apps/cleansia.app/src/assets/i18n/en.json:1740-1741`) on a cancelled booking, on a
-finished one, **and on a live booking a different cleaner already took**.
+(`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`) — so until T-0595 the customer's order
+detail said *"The request for the cleaner you asked for has ended. This booking is now open to our
+whole team."* (`src/Cleansia.App/apps/cleansia.app/src/assets/i18n/en.json:1740-1741`) on a cancelled
+booking, on a finished one, **and on a live booking a different cleaner already took**. The repair is
+`PreferredOffer.IsDisclosable` conjoined at the resolver, not a fifth input to the derivation.
 
 **Explicitly NOT a deviation, and this is a ruling rather than an omission:**
 
-- **`RespondByUtc`'s suppression** (`GetOrderDetails.cs:169-171`) is the *correct* form of this rule
+- **`RespondByUtc`'s suppression** (`GetOrderDetails.cs:178-180`) is the *correct* form of this rule
   already shipping in the same method — a field withheld because its sentence is not being said.
 - **A client-side status conjunct is not the remedy** and adding one to the web facade would collide
   with the guard `d5ba1484` left behind

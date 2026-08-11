@@ -393,11 +393,10 @@ and the entity path emit identical DTO values.
 ## A DISCLOSURE BLOCK is withheld by the server when its sentence stops being true (ADR-0049)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` (backend CI,
-> `.github/workflows/backend-ci.yml:69-71`) — **`(gate pending: T-0595)`** → **`T1-CI`** on landing.
-> The baseline is **not zero**: one live violation, `GetOrderDetails.ResolvePreferredOfferAsync`
-> (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:146-173`), which sends the block
-> on a concluded booking today. **Retires when:**
-> `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` exists.
+> `.github/workflows/backend-ci.yml:69-71`) — **`T1-CI`**. The baseline is **zero as of T-0595**, which
+> landed the enforcer and the one violation's fix in the same change: `ResolvePreferredOfferAsync`
+> (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:150-182`) now returns `null` rather
+> than shipping the block on a concluded or fully-staffed booking.
 > Decision: **ADR-0049**, which is `proposed`
 > (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
 > **Retires when:** that status line stops reading `proposed`.
@@ -412,10 +411,11 @@ written entirely in terms of what the customer is *told*.
 client renders the block off the block's **own arrival** and composes nothing — it must never have to
 conjoin a second server field (a status, a count) to work out whether the server's own sentence still
 holds. Three clients composing that themselves is three chances to get it wrong, and the platform
-already paid for it: the customer web card renders *"This booking is now open to our whole team"* on
-every past order the customer ever named a cleaner for
-(`src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.facade.ts:61-63`
-reads no status at all).
+already paid for it: until T-0595 the customer web card rendered *"This booking is now open to our
+whole team"* on every past order the customer ever named a cleaner for. The facade was never the
+defect and is still correct —
+`src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.facade.ts:61-63`
+reads no status at all, and **must not start**; the server stopped sending the block instead.
 
 **Scope — the load-bearing half, and it is why this could not be written as *"the server does not send
 stale data"*.** That framing sweeps in the whole order-detail payload on a completed order and would

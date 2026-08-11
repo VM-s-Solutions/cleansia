@@ -142,8 +142,12 @@ public class GetOrderDetails
         /// <summary>
         /// ADR-0045 D7.2. Customer-only by its one call site: a cleaner must never learn that an order
         /// is reserved for somebody else, and nobody is ever told they were passed over.
+        ///
+        /// <para>ADR-0049 — and null once the block's sentence has stopped being true of this booking.
+        /// The whole block goes rather than a fifth state, so no client is left holding a value it has
+        /// to be told to render as nothing.</para>
         /// </summary>
-        private async Task<PreferredOfferDetails> ResolvePreferredOfferAsync(
+        private async Task<PreferredOfferDetails?> ResolvePreferredOfferAsync(
             Order order, DateTime nowUtc, CancellationToken cancellationToken)
         {
             var beneficiaryIsAssigned = !string.IsNullOrEmpty(order.PreferredEmployeeId)
@@ -151,6 +155,11 @@ public class GetOrderDetails
 
             var state = PreferredOffer.StateOf(
                 order.PreferredEmployeeId, order.PreferredHoldUntilUtc, beneficiaryIsAssigned, nowUtc);
+
+            if (!PreferredOffer.IsDisclosable(state, order.CurrentStatus, order.AvailableSpots))
+            {
+                return null;
+            }
 
             var cleanerName = string.IsNullOrEmpty(order.PreferredEmployeeId)
                 ? null

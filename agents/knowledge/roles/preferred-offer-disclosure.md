@@ -1,12 +1,13 @@
 # Role — `PreferredOffer` (`StateOf` + `IsDisclosable`) and the customer's offer block (CRC card)
 
-> **PROPOSED — not yet the standard.** The `IsDisclosable` half is introduced by **ADR-0049**, which is
+> **Both halves are SHIPPED; the decision behind one of them is not yet ratified.** `StateOf` is
+> ADR-0045 §D7.1 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`), unchanged. `IsDisclosable`
+> landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:56-83`, enforcer
+> `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), but its **ADR-0049** is still
 > `proposed`
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`)
+> — a lead rules and the PM stamps.
 > **Retires when:** that status line stops reading `proposed`.
-> The `StateOf` half is **shipped** and unchanged by that ADR
-> (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`, ADR-0045 §D7.1).
-> **Retires when:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` exists.
 
 This card covers **two** responsibilities that must not be collapsed, plus the mapper that joins them.
 They were one responsibility until 2026-08-11, and the defect T-0595 records is exactly what that
@@ -92,7 +93,7 @@ already uses for every non-customer caller
 ## Watch-list
 
 - **A fourth consumer of `StateOf` is the moment to reconsider the shape.** Today there is one
-  production consumer (`GetOrderDetails.cs:152`). If the state starts being rendered on a list row, a
+  production consumer (`GetOrderDetails.cs:156`). If the state starts being rendered on a list row, a
   push body or an admin screen, "remember to conjoin `IsDisclosable`" stops being a reviewable rule and
   the two functions should merge behind one entry point returning `PreferredOfferState?`.
 - **If the product ever wants the reservation on order history** — *"Jana, your favourite, cleaned for

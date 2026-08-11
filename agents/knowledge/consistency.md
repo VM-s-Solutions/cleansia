@@ -757,10 +757,26 @@ offered.* A canonicalization that deletes these is worse than the defect.
 > **Without the exception the rule puts these in violation and the "fix" degrades the booking flow.**
 
 **Roster (descriptive — read 2026-08-11).** Limb (a), customer app under `core/`: `referral/ReferralApi.kt`,
-`disputes/DisputeApi.kt`, `recurring/RecurringBookingApi.kt`, `user/SavedAddressApi.kt`,
-`promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt`, `catalog/CatalogApi.kt` — each
+`disputes/DisputeApi.kt`, `promo/PromoCodeApi.kt`, `notifications/NotificationPreferencesApi.kt` — each
 still calling `.orEmpty()` on a list **body** rather than on a member, so a 200 with no body reads as
-an empty page reported as Success. **A roster row means "not every mapper in this file is converted",
+an empty page reported as Success.
+
+**Three left the roster on the T-0602 follow-up, and the fourth surface it ruled is the one to read
+first.** `catalog/CatalogApi.kt`, `user/SavedAddressApi.kt` and `recurring/RecurringBookingApi.kt` now
+refuse a bodiless list — but `getExtras` **keeps** `.orEmpty()` as a ratified B1 exception, alongside
+the three above, because it clears all three conditions **on its own reading** rather than inheriting
+the file's: `selectedExtraSlugs` goes **up** to the server and the price comes **back** on the quote,
+so no client-side figure moves. That is the load-bearing difference from services and packages in the
+same file, which `ConfirmStep.kt:103-104` sums itself. Its helper is named `degrading` so the exception
+has to be asked for by name rather than reached by habit.
+
+⚠️ **Ruling the adapter is worth much less than following the body one layer up, and this is the case
+that proves it.** `AddressRepository.kt:83` fed `response.body().orEmpty()` straight into
+`writeCache(…)`, so a 2xx with no body did not merely render as *"you have no saved addresses"* — **it
+wrote that answer to DataStore and deleted the customer's saved homes off the handset**, reporting
+`Success`. `RecurringBookingRepository.kt:52` latched the same empty answer into `_loaded = true`, so
+the manage screen rendered it as a settled fact. Ask what the empty answer **becomes**: persisted,
+latched, or merely rendered. **A roster row means "not every mapper in this file is converted",
 never "this file is untouched"** — sweep per mapper (ADR-0048 amendment B6).
 **`memberships/MembershipApi.kt` left the roster on T-0602**: every mapper in it is now total,
 `getPlans` refuses a bodiless plan list instead of defaulting it, and the fabricated `membershipId`

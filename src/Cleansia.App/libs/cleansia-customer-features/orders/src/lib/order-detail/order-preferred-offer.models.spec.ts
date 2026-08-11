@@ -7,6 +7,14 @@ import {
 } from '@cleansia/customer-services';
 import { resolvePreferredOfferView } from './order-preferred-offer.models';
 
+/** Read off the enums so a member added by a later regen joins the sweep without an edit here. */
+const ALL_ORDER_STATUSES = Object.values(OrderStatus).filter(
+  (value): value is OrderStatus => typeof value === 'number'
+);
+const ALL_OFFER_STATES = Object.values(PreferredOfferState).filter(
+  (value): value is PreferredOfferState => typeof value === 'number'
+);
+
 function buildOrder(fields: {
   orderStatus?: OrderStatus;
   paymentType?: PaymentType;
@@ -161,29 +169,38 @@ describe('resolvePreferredOfferView', () => {
     });
   });
 
+  // A sweep read off an enum passes vacuously if the read ever returns nothing.
+  it('sweeps every fulfilment state and every offer state, both ends included', () => {
+    expect(ALL_ORDER_STATUSES.length).toBeGreaterThanOrEqual(7);
+    expect(ALL_ORDER_STATUSES).toEqual(
+      expect.arrayContaining([OrderStatus.Completed, OrderStatus.Cancelled])
+    );
+    expect(ALL_OFFER_STATES.length).toBeGreaterThanOrEqual(4);
+    expect(ALL_OFFER_STATES).toEqual(
+      expect.arrayContaining([PreferredOfferState.Closed, PreferredOfferState.Accepted])
+    );
+  });
+
   /**
-   * The mutation guard for the deleted narrowing: the flag is the whole answer on EVERY fulfilment
-   * state. Re-introducing a status veto here reddens the Cancelled and Completed rows.
+   * The mutation guard for the deleted narrowing: the BLOCK is the whole answer on EVERY fulfilment
+   * state, on `state` as well as on the flag. Re-introducing a status veto over either field reddens
+   * the Cancelled and Completed rows. `Completed` × `Accepted` is here because it is the one true
+   * sentence the server's own limb (a) withholds — a client that reproduces that judgement is the
+   * second copy ADR-0049 refuses.
    */
-  it.each([
-    OrderStatus.New,
-    OrderStatus.Pending,
-    OrderStatus.Confirmed,
-    OrderStatus.OnTheWay,
-    OrderStatus.InProgress,
-    OrderStatus.Completed,
-    OrderStatus.Cancelled,
-  ])('re-derives no rule of its own on status %i', (status) => {
+  it.each(
+    ALL_ORDER_STATUSES.flatMap((status) =>
+      ALL_OFFER_STATES.map((state) => [status, state] as const)
+    )
+  )('re-derives no rule of its own on status %i in state %i', (status, state) => {
     const view = resolvePreferredOfferView(
       buildOrder({
         orderStatus: status,
-        preferredOffer: {
-          state: PreferredOfferState.Closed,
-          canChooseAnother: true,
-        },
+        preferredOffer: { state, canChooseAnother: true },
       })
     );
 
+    expect(view.state).toBe(state);
     expect(view.canChooseAnother).toBe(true);
   });
 });

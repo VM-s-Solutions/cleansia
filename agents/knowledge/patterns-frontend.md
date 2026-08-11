@@ -509,16 +509,24 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
 
 ## A server-authored disclosure block is rendered off its own ARRIVAL — the facade composes nothing (ADR-0049)
 
-> **Enforced by:** the mutation guard in
-> `src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-preferred-offer.models.spec.ts:164-188`,
-> extended from `canChooseAnother` to `state`, run by `npx nx affected -t test`
-> (`.github/workflows/frontend-ci.yml:85-87`) — **`(gate pending: T-0595)`** → **`T1-CI`** on landing.
+> **Enforced by:** a mutation guard in **each** of the two files the rule names, run by
+> `npx nx affected -t test` (`.github/workflows/frontend-ci.yml:85-87`) — **`T1-CI`**.
+> `…/order-detail/order-preferred-offer.models.spec.ts:184-205` sweeps every `OrderStatus` × every
+> `PreferredOfferState` over the resolver, on `state` as well as `canChooseAnother`;
+> `…/order-detail/order-preferred-offer.facade.spec.ts:160-219` sweeps the same statuses over
+> `visible()` in both directions — block present ⇒ renders, block absent ⇒ renders nothing.
+> **Both are needed and neither substitutes for the other**, measured not assumed: a status veto
+> written into `visible()` leaves the models spec **green**, because that spec never constructs the
+> facade. Naming only the resolver's guard would have gated the file the veto does not go in.
 > **Scope, stated because the token overstates it otherwise:** `affected` gates changes that touch the
 > customer-orders lib — which is every change that could violate it — not the whole workspace. The
 > baseline **is** zero: neither `order-preferred-offer.facade.ts` nor `order-preferred-offer.models.ts`
-> reads an order status today. Decision: **ADR-0049**, which is `proposed`
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
-> **Retires when:** that status line stops reading `proposed`.
+> reads an order status today. Decision: **ADR-0049**
+> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md`),
+> whose own status line is the ratification record; this entry restates no value from it, so the two
+> cannot drift apart.
+> **Retires when:** `preferredOffer` stops being a nested optional on `OrderItem` — that optionality is
+> the channel the withholding travels on, and without it "render off the block's arrival" is unstatable.
 
 When the server sends a **block of fields that exist to say a sentence** — `preferredOffer` is the
 reference instance — the facade's "should I render this" answer is **the block arrived**, and nothing

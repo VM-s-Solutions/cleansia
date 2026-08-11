@@ -17,6 +17,17 @@ import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
 
 const ORDER_ID = 'ord-1';
 
+/** Read off the enums so a member added by a later regen joins the sweep without an edit here. */
+const ALL_ORDER_STATUSES = Object.values(OrderStatus).filter(
+  (value): value is OrderStatus => typeof value === 'number'
+);
+/** The states that carry a sentence; `None` says nothing on its own and is pinned separately. */
+const SENTENCE_STATES = [
+  PreferredOfferState.AwaitingConfirmation,
+  PreferredOfferState.Accepted,
+  PreferredOfferState.Closed,
+];
+
 function cleaner(
   employeeId: string,
   fullName: string,
@@ -55,6 +66,19 @@ function buildOrder(fields: {
       cleanerName: 'Anna Nováková',
       canChooseAnother: fields.canChooseAnother ?? true,
     },
+  });
+}
+
+/** What the server now sends once the block's sentence has stopped being true (ADR-0049 D4). */
+function buildOrderWithheldOffer(orderStatus: OrderStatus): OrderItem {
+  return OrderItem.fromJS({
+    id: ORDER_ID,
+    orderStatus: { value: orderStatus },
+    paymentType: { value: PaymentType.Cash, name: 'Cash' },
+    paymentStatus: { value: PaymentStatus.Paid, name: 'Paid' },
+    cleaningDateTime: '2026-09-01T08:00:00Z',
+    selectedServices: [{ id: 'svc-1' }],
+    selectedPackages: [],
   });
 }
 
@@ -130,6 +154,67 @@ describe('OrderPreferredOfferFacade', () => {
 
       expect(facade.visible()).toBe(true);
       expect(facade.canChooseAnother()).toBe(true);
+    });
+  });
+
+  /**
+   * ADR-0049 D4/D6. `visible()` answers one question — did the block arrive — and the server is the
+   * only judge of whether its sentence is still true. These two sweeps are the mutation guard for
+   * that split, and they are the pair `order-preferred-offer.models.spec.ts` cannot provide: it
+   * exercises the resolver, while the veto a lane reaches for goes here, in `visible()`.
+   */
+  describe('renders off the arrival of the block and nothing else', () => {
+    // A sweep read off an enum passes vacuously if the read ever returns nothing.
+    it('sweeps every fulfilment state, both concluded ends included', () => {
+      expect(ALL_ORDER_STATUSES.length).toBeGreaterThanOrEqual(7);
+      expect(ALL_ORDER_STATUSES).toEqual(
+        expect.arrayContaining([OrderStatus.Completed, OrderStatus.Cancelled])
+      );
+    });
+
+    it.each(
+      ALL_ORDER_STATUSES.flatMap((status) =>
+        SENTENCE_STATES.map((state) => [status, state] as const)
+      )
+    )('renders a block the server sent on status %i in state %i', (status, state) => {
+      order.set(buildOrder({ orderStatus: status, state, canChooseAnother: false }));
+
+      expect(facade.visible()).toBe(true);
+      expect(facade.offer().state).toBe(state);
+    });
+
+    // `None` plus an open exit is how the feature is first offered — no reservation yet, and the
+    // invitation to make one. Nothing else here fails if `visible()` loses its second disjunct.
+    it('renders the invitation on an order with no reservation that can still take one', () => {
+      order.set(
+        buildOrder({ state: PreferredOfferState.None, canChooseAnother: true })
+      );
+
+      expect(facade.visible()).toBe(true);
+    });
+
+    // The arrival pin: the server may now send no block at all, and the absence IS the answer.
+    it.each(ALL_ORDER_STATUSES)(
+      'renders nothing at all when the server withheld the block on status %i',
+      (status) => {
+        order.set(buildOrderWithheldOffer(status));
+
+        expect(facade.visible()).toBe(false);
+        expect(facade.offer().state).toBe(PreferredOfferState.None);
+        expect(facade.offer().cleanerName).toBe('');
+        expect(facade.offer().respondByUtc).toBeNull();
+        expect(facade.canChooseAnother()).toBe(false);
+      }
+    );
+
+    // The withheld block takes the exit with it, and the picker must not reopen it (ADR-0049 D5).
+    it('opens no picker for an order whose block the server withheld', () => {
+      order.set(buildOrderWithheldOffer(OrderStatus.Completed));
+
+      facade.openPicker();
+
+      expect(facade.picking()).toBe(false);
+      expect(orderClient.myServingCleaners).not.toHaveBeenCalled();
     });
   });
 

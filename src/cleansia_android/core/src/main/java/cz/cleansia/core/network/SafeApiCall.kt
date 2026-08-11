@@ -19,13 +19,24 @@ import java.net.UnknownHostException
  * propagated (not turned into a "failure") so coroutine teardown after a
  * fast nav-away doesn't surface a phantom snackbar. Backend ProblemDetails
  * + bespoke error shapes both decode via [ApiErrorResponse].
+ *
+ * Reified so a 2xx with no body can be answered by [T]: only the endpoints
+ * that genuinely return nothing succeed on it, and everyone else is refused
+ * here rather than crashing at whatever mapper or composable reads first.
  */
-suspend fun <T> safeApiCall(
+suspend inline fun <reified T> safeApiCall(
     json: Json,
+    crossinline apiCall: suspend () -> Response<T>,
+): ApiResult<T> = safeApiCallExpecting(json, bodyless = T::class == Unit::class) { apiCall() }
+
+@PublishedApi
+internal suspend fun <T> safeApiCallExpecting(
+    json: Json,
+    bodyless: Boolean,
     apiCall: suspend () -> Response<T>,
 ): ApiResult<T> = withContext(Dispatchers.IO) {
     try {
-        handleResponse(apiCall(), json)
+        handleResponse(apiCall(), json, bodyless)
     } catch (ce: CancellationException) {
         throw ce
     } catch (e: SocketTimeoutException) {
@@ -39,14 +50,18 @@ suspend fun <T> safeApiCall(
     }
 }
 
-private fun <T> handleResponse(response: Response<T>, json: Json): ApiResult<T> {
+private fun <T> handleResponse(response: Response<T>, json: Json, bodyless: Boolean): ApiResult<T> {
     if (response.isSuccessful) {
         val body = response.body()
-        return if (body != null) {
-            ApiResult.Success(body)
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            ApiResult.Success(Unit as T)
+        return when {
+            body != null -> ApiResult.Success(body)
+            bodyless -> {
+                @Suppress("UNCHECKED_CAST")
+                ApiResult.Success(Unit as T)
+            }
+            else -> ApiResult.Error(
+                ApiError.Server(response.code(), emptyBodyMessage(response)),
+            )
         }
     }
 
@@ -78,6 +93,16 @@ private fun <T> handleResponse(response: Response<T>, json: Json): ApiResult<T> 
     }
 
     return ApiResult.Error(error)
+}
+
+/**
+ * The path only — a query string on these endpoints carries order ids and email addresses, and this
+ * string outlives the request in whatever log or crash report reads it.
+ */
+private fun emptyBodyMessage(response: Response<*>): String {
+    val request = response.raw().request
+    return "${request.method} ${request.url.encodedPath} answered ${response.code()} with no body " +
+        "but the mobile API contract declares one"
 }
 
 /**

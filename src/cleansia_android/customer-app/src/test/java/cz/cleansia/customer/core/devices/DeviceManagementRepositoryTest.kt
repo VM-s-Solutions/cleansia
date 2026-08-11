@@ -89,15 +89,15 @@ class DeviceManagementRepositoryTest {
     }
 
     @Test
-    fun getMyDevices_given200NullBody_returnsEmptySuccess() = runTest {
-        // Legacy `resp.body().orEmpty()` rendered an absent/null 200 body as the
-        // empty 'no devices' success state, not an error.
+    fun getMyDevices_given200NullBody_refusesRatherThanRenderingNoDevices() = runTest {
+        // Legacy `resp.body().orEmpty()` rendered an absent/null 200 body as the empty 'no devices'
+        // state — on the screen a user revokes a session they don't recognise from.
         coEvery { api.mine("device-current") } returns Response.success(null)
 
         val result = newRepo().getMyDevices()
 
-        assertTrue(result.isSuccess)
-        assertEquals(emptyList<UserDeviceDto>(), result.getOrNull())
+        assertTrue(result.isError)
+        assertTrue(result.errorOrNull() is ApiError.Server)
     }
 
     // -- revoke() --
@@ -124,15 +124,15 @@ class DeviceManagementRepositoryTest {
     }
 
     @Test
-    fun revoke_given200NullBody_returnsSuccessUnit() = runTest {
-        // Legacy `resp.body()?.success ?: true` treated an absent/null 200 body
-        // as success (no snackbar), so the migrated form must yield Success(Unit).
+    fun revoke_given200NullBody_refusesRatherThanConfirmingTheRevoke() = runTest {
+        // Legacy `resp.body()?.success ?: true` treated an absent/null 200 body as success, which
+        // tells the user a session died on a response that claimed nothing.
         coEvery { api.revoke("row-2") } returns Response.success(null)
 
         val result = newRepo().revoke("row-2")
 
-        assertTrue(result.isSuccess)
-        assertEquals(Unit, result.getOrNull())
+        assertTrue(result.isError)
+        assertTrue(result.errorOrNull() is ApiError.Server)
     }
 
     @Test

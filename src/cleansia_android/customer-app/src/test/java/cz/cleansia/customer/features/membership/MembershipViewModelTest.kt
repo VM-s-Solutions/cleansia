@@ -149,7 +149,7 @@ class MembershipViewModelTest {
     @Test
     fun `cancel success runs callback and returns to Idle`() = runTest {
         coEvery { repository.cancel() } returns ApiResult.Success(
-            CancelMembershipSubscriptionResponse(membershipId = "mem-1", effectiveEndDate = "2026-07-01"),
+            CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-07-01"),
         )
 
         var endDate: String? = null
@@ -194,7 +194,6 @@ class MembershipViewModelTest {
     fun `swapPlan success runs callback`() = runTest {
         coEvery { repository.swapPlan("plus_yearly") } returns ApiResult.Success(
             SwapMembershipPlanResponse(
-                membershipId = "mem-1",
                 newPlanCode = "plus_yearly",
                 currentPeriodEnd = "2026-12-01",
             ),

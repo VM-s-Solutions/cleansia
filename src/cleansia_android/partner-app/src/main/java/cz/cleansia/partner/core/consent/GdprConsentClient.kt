@@ -4,7 +4,8 @@ import cz.cleansia.core.consent.ConsentGrantOutcome
 import cz.cleansia.core.consent.SignupConsentClient
 import cz.cleansia.core.consent.SignupConsentType
 import cz.cleansia.core.consent.toConsentGrantOutcome
-import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.GdprApi
 import cz.cleansia.partner.api.model.ConsentType as ApiConsentType
@@ -21,15 +22,23 @@ class GdprConsentClient @Inject constructor(
     private val json: Json,
 ) : SignupConsentClient {
 
+    /**
+     * `UserConsentDto.ConsentType` is non-nullable in C#, so a null one is a broken row and the whole
+     * answer is refused — a dropped row reads as "never answered", which re-asks for a consent the
+     * user has since withdrawn and re-grants it. `fromWireValue` returning null is a different fact,
+     * a `ConsentType` this app has no name for, and stays a drop.
+     *
+     * Deliberately not filtered by `isGranted`: a withdrawn row is an answer.
+     */
     override suspend fun answeredTypes(): Set<SignupConsentType>? =
-        when (val result = safeApiCall(json) { gdprApi.gdprGetMyConsents() }) {
-            // Deliberately not filtered by `isGranted`: a withdrawn row is an answer, and
-            // re-granting it would resurrect a consent the user has since taken back.
-            is ApiResult.Success -> result.data
-                .mapNotNull { SignupConsentType.fromWireValue(it.consentType?.value ?: return@mapNotNull null) }
-                .toSet()
-            is ApiResult.Error -> null
-        }
+        safeApiCall(json) { gdprApi.gdprGetMyConsents() }
+            .mapWire { consents ->
+                consents
+                    .map { it.consentType.required("consentType") }
+                    .mapNotNull { SignupConsentType.fromWireValue(it.value) }
+                    .toSet()
+            }
+            .getOrNull()
 
     override suspend fun grant(type: SignupConsentType): ConsentGrantOutcome {
         val apiType = ApiConsentType.entries.firstOrNull { it.value == type.wireValue }

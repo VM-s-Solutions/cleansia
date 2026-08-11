@@ -1,5 +1,7 @@
 package cz.cleansia.customer.core.payments
 
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import cz.cleansia.customer.api.client.PaymentApi as GenPaymentApi
 import cz.cleansia.customer.api.model.CreatePaymentIntentCommand as GenCreatePaymentIntentCommand
 import cz.cleansia.customer.api.model.CreatePaymentIntentResponse as GenCreatePaymentIntentResponse
@@ -17,28 +19,23 @@ class PaymentApi(
         val raw = paymentApi.paymentCreatePaymentIntent(
             createPaymentIntentCommand = GenCreatePaymentIntentCommand(orderId = body.orderId),
         )
-        return raw.mapBody { it?.toAppDto() }
+        return raw.mapWire { it.toAppDto() }
     }
 }
 
-private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Response<R> =
-    if (isSuccessful) Response.success(transform(body()), raw())
-    else @Suppress("UNCHECKED_CAST") (this as Response<R>)
-
 /**
- * Stripe PaymentSheet treats any of the four fields below as a hard failure
- * if missing, so a malformed payload is better dropped here than surfaced as
- * partial nulls.
+ * All four are non-nullable on `CreatePaymentIntent.Response`, and each is a credential the
+ * PaymentSheet is opened with. Dropping the body instead said "the server sent nothing" for a body it
+ * did send, on the screen where a customer is trying to pay — the refusal names the missing
+ * credential instead. The spec calls all four `nullable: true`, as it does every string on this wire;
+ * the C# record is the contract.
  */
-private fun GenCreatePaymentIntentResponse.toAppDto(): CreatePaymentIntentResponse? {
-    val clientSecret = clientSecret ?: return null
-    val paymentIntentId = paymentIntentId ?: return null
-    val stripeCustomerId = stripeCustomerId ?: return null
-    val ephemeralKey = ephemeralKey ?: return null
+private fun GenCreatePaymentIntentResponse?.toAppDto(): CreatePaymentIntentResponse {
+    val intent = required("CreatePaymentIntentResponse")
     return CreatePaymentIntentResponse(
-        clientSecret = clientSecret,
-        paymentIntentId = paymentIntentId,
-        stripeCustomerId = stripeCustomerId,
-        ephemeralKey = ephemeralKey,
+        clientSecret = intent.clientSecret.required("clientSecret"),
+        paymentIntentId = intent.paymentIntentId.required("paymentIntentId"),
+        stripeCustomerId = intent.stripeCustomerId.required("stripeCustomerId"),
+        ephemeralKey = intent.ephemeralKey.required("ephemeralKey"),
     )
 }

@@ -131,10 +131,7 @@ class MembershipWireTest {
     @Test
     fun aMissingPlanPriceRefusesTheListRatherThanSellingASubscriptionForNothing() = runTest {
         PLAN_REQUIRED_MONEY.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the plan rather than price it at zero",
-                plans(plansWithFirstRow { it - field })?.firstOrNull(),
-            )
+            refuses(field) { plans(plansWithFirstRow { it - field }) }
         }
     }
 
@@ -144,24 +141,50 @@ class MembershipWireTest {
      */
     @Test
     fun aMissingBillingIntervalRefusesThePlanRatherThanCallingItMonthly() = runTest {
-        assertNull(plans(plansWithFirstRow { it - "billingInterval" })?.firstOrNull())
+        refuses("billingInterval") { plans(plansWithFirstRow { it - "billingInterval" }) }
     }
 
     @Test
     fun aMissingTrialLengthRefusesThePlanRatherThanDeletingTheFreeTrial() = runTest {
-        assertNull(plans(plansWithFirstRow { it - "trialPeriodDays" })?.firstOrNull())
+        refuses("trialPeriodDays") { plans(plansWithFirstRow { it - "trialPeriodDays" }) }
     }
 
     @Test
     fun aMissingCancellationWindowRefusesThePlanRatherThanPromisingNone() = runTest {
-        assertNull(plans(plansWithFirstRow { it - "freeCancellationWindowHours" })?.firstOrNull())
+        refuses("freeCancellationWindowHours") {
+            plans(plansWithFirstRow { it - "freeCancellationWindowHours" })
+        }
+    }
+
+    /**
+     * A 200 with no plan list in it is not "Plus is unavailable today" — defaulted to empty it took
+     * the subscribe CTA off the screen with nothing saying why.
+     */
+    @Test
+    fun aBodylessPlanListRefusesRatherThanDeletingTheSubscribeCta() = runTest {
+        refuses("GetMembershipPlansResponse") {
+            val server = MockWebServer()
+            server.start()
+            try {
+                server.enqueue(MockResponse().setResponseCode(204))
+                MembershipApi(
+                    Retrofit.Builder()
+                        .baseUrl(server.url("/"))
+                        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                        .build()
+                        .create(GenMembershipApi::class.java),
+                ).getPlans()
+            } finally {
+                server.shutdown()
+            }
+        }
     }
 
     // --- rule 2: booleans follow the money rule ---------------------------------
 
     @Test
     fun aMissingExpressUpgradeFlagRefusesThePlanRatherThanDeletingTheBenefit() = runTest {
-        assertNull(plans(plansWithFirstRow { it - "allowsExpressUpgrade" })?.firstOrNull())
+        refuses("allowsExpressUpgrade") { plans(plansWithFirstRow { it - "allowsExpressUpgrade" }) }
     }
 
     /**
@@ -170,8 +193,8 @@ class MembershipWireTest {
      */
     @Test
     fun aMissingMembershipVerdictRefusesTheAnswerRatherThanReadingNotAMember() = runTest {
-        assertNull(mine(withoutKey(CAPTURED_MINE, "hasMembership")))
-        assertNull(mine(withoutKey(CAPTURED_MINE, "cancelRequested")))
+        refuses("hasMembership") { mine(withoutKey(CAPTURED_MINE, "hasMembership")) }
+        refuses("cancelRequested") { mine(withoutKey(CAPTURED_MINE, "cancelRequested")) }
     }
 
     @Test
@@ -185,12 +208,22 @@ class MembershipWireTest {
 
     @Test
     fun aPlanWithoutItsCodeIsRefusedBecauseTheCodeIsWhatSubscribeSends() = runTest {
-        assertNull(plans(plansWithFirstRow { it - "code" })?.firstOrNull())
+        refuses("code") { plans(plansWithFirstRow { it - "code" }) }
     }
 
+    /**
+     * `MembershipStatus?` in C#, and the handler's non-member branch sends it null beside every other
+     * plan field. Refusing on it turned "you are not a member yet" into an error screen for everyone
+     * who has never subscribed — the exact audience the upgrade CTA exists for.
+     */
     @Test
-    fun aMembershipWithoutAStatusIsRefusedRatherThanGivenAPlaceholderOne() = runTest {
-        assertNull(mine(withoutKey(CAPTURED_MINE, "status")))
+    fun aCustomerWhoHasNeverSubscribedGetsTheNonMemberAnswerRatherThanAnError() = runTest {
+        val answer = mine(CAPTURED_NON_MEMBER)
+
+        assertEquals(false, answer?.hasMembership)
+        assertNull(answer?.status)
+        assertNull(answer?.planCode)
+        assertEquals(false, answer?.cancelRequested)
     }
 
     @Test
@@ -365,6 +398,25 @@ class MembershipWireTest {
                 "savingsPercentVsMonthly": 0.5
               }
             ]
+        """.trimIndent()
+
+        /** The handler's non-member branch verbatim: every plan field null, both verdicts present. */
+        val CAPTURED_NON_MEMBER = """
+            {
+              "hasMembership": false,
+              "planCode": null,
+              "planName": null,
+              "monthlyPriceCzk": null,
+              "discountPercentage": null,
+              "freeCancellationWindowHours": null,
+              "allowsExpressUpgrade": null,
+              "status": null,
+              "currentPeriodEnd": null,
+              "cancelRequested": false,
+              "billingInterval": null,
+              "monthlyEquivalentPriceCzk": null,
+              "trialEligible": true
+            }
         """.trimIndent()
 
         val CAPTURED_MINE = """

@@ -81,12 +81,10 @@ class MembershipRepositoryTest {
     )
 
     private fun cancelResponse() = CancelMembershipSubscriptionResponse(
-        membershipId = "mem-1",
         effectiveEndDate = "2026-07-01",
     )
 
     private fun swapResponse() = SwapMembershipPlanResponse(
-        membershipId = "mem-1",
         newPlanCode = "plus_yearly",
         currentPeriodEnd = "2026-12-01",
     )

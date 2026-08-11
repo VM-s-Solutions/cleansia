@@ -62,7 +62,6 @@ data class CreateMembershipSubscriptionResponse(
 
 @Serializable
 data class CancelMembershipSubscriptionResponse(
-    val membershipId: String,
     /** ISO-8601 instant — last day benefits apply before status flips to Cancelled. */
     val effectiveEndDate: String,
 )
@@ -76,7 +75,6 @@ data class CancelMembershipSubscriptionResponse(
 @Serializable
 data class GetMyMembershipResponse(
     val hasMembership: Boolean,
-    val membershipId: String? = null,
     val planCode: String? = null,
     val planName: String? = null,
     val monthlyPriceCzk: Double? = null,
@@ -130,7 +128,6 @@ data class SwapMembershipPlanRequest(
 
 @Serializable
 data class SwapMembershipPlanResponse(
-    val membershipId: String,
     val newPlanCode: String,
     val currentPeriodEnd: String,
 )

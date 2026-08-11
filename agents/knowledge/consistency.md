@@ -464,10 +464,41 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
     state you can read and assert on before writing. Live instances: `UserMemberships` (at most one
     active row per user), `LoyaltyTransactions` (the serial-replay fast-path read).
 
+  **Which bullet you are on is decided by one question, not by how the pre-check reads
+  (ADR-0050 §D1/§CH-3):** *is there a lock, an `ON CONFLICT`, or a serializable boundary between the
+  read and the write?* If there is none, the read and the insert cross a snapshot boundary with nothing
+  in between, the pre-check is a **courtesy**, and the index is the sole arbiter however carefully the
+  pre-check is written. "We read it first" is not an authoritative assert. *(This test also puts the
+  second bullet's own instances back in play — `UserMemberships` is rostered as a backstop behind
+  `GetActiveForUserAsync`, which is itself a read-then-write; that is a known soft spot in this entry,
+  recorded rather than relied on, and re-examining it is out of ADR-0050's scope.)*
+
   The **reviewer checks the emitted DDL, not the C# builder call.** Deviating form: a comment declining
   the option on consistency grounds — `AreNullsDistinct(false)` has shipped in the committed `Initial`
   migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
   comment is worse than none because it stops the next reviewer checking.
+
+  **Live deviation — `Users (TenantId, Email)` is a declared sole arbiter that does not fire.**
+  `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:96-97` states that
+  DB-level uniqueness, *not* the app pre-check, is what closes the register/update TOCTOU race; the index
+  at `:106-107` is `.IsUnique()` with no `.AreNullsDistinct(false)`. All four `User`-creating writers
+  (`Register`, `RegisterEmployee`, `CreateAdminUser`, social provisioning) are read-then-insert with no
+  lock, so by the test above the index is the arbiter — and while every `TenantId` is `NULL` it admits
+  unlimited duplicate `(NULL, email)` rows. The second worst part is the comment: it is the exact
+  "confidently-wrong comment" form named above. **ADR-0050 is `proposed`**
+  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`)
+  and decides to arm the index rather than withdraw the claim, gated on a duplicate census.
+  **Retires when:** that status line stops reading `proposed`.
+
+  **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
+  negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
+  **`T1-CI`** over the **four indexes currently on its `[InlineData]` roster** (`FiscalCounter`,
+  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`), **baseline 0**: all four
+  green today. The roster is **hand-maintained** and is therefore a closed roster — a new sole-arbiter
+  index is not caught until someone adds a row, and `LiveActivityTokens` is named in the first bullet
+  above without being on it. The `Users` row is **`(gate pending: T-0604)`**, **baseline 1** (`Users`
+  itself): adding the `[InlineData]` goes red until the owner-run migration lands, so the tier promotes
+  to `T1-CI` in the same change that arms the index — not before.
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

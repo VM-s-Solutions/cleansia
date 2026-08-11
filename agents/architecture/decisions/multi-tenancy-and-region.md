@@ -78,6 +78,22 @@ is single-tenant** — two otherwise-identical rows both insert and `ON CONFLICT
   a reader that answers `false` for everything. It runs in `backend-ci.yml`'s *"Unit tests
   (Cleansia.Tests)"* step, which has no `continue-on-error`, so dropping the option goes red in CI.
   Its roster is **hand-maintained** — a new sole-arbiter index is not caught until someone adds a row.
+- **The instance the roster was missing, and it is the biggest one: `Users (TenantId, Email)`.**
+  `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:106-107` is
+  `.IsUnique()` with no `.AreNullsDistinct(false)`, while `:96-97` **declares that index to be the
+  guarantee that closes the register/update TOCTOU race**. All four `User`-creating writers are
+  read-then-insert with no lock, so the declaration is right about the *role* and the index cannot
+  play it: duplicate `(NULL, email)` rows are insertable **today**, and the downstream cost is silent
+  account loss (login's `FirstOrDefaultAsync` picks arbitrarily;
+  `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:157-172` charges every matching row). This is the case
+  that shows the section's own warning is not hypothetical — the reverse direction bites *now*, in the
+  mode the platform actually runs in. Decided by **ADR-0050 is `proposed`**
+  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`):
+  arm the index, map the resulting `23505` to the business error, gate the migration on a duplicate
+  census. **Retires when:** that status line stops reading `proposed`.
+- **The arbiter test, so the two bullets above stop being a judgment call** (ADR-0050 §D1): *is there a
+  lock, an `ON CONFLICT`, or a serializable boundary between the read and the write?* If not, the
+  pre-check is a courtesy and the index is the sole arbiter, however carefully the pre-check reads.
 
 ### (2) The query-filter half — the sharper defect, and it has no guard at all
 
@@ -127,6 +143,68 @@ a tenant sees its own override falling back to the platform row), pinned by a te
 
 **Nothing here changes an index, an entity or the filter.** This is a note; any index change is a
 separate ticket with an owner-run `ef-migration`.
+
+### (3) The read half — which reads stand OUTSIDE the filter, and why the other two halves needed it
+
+The two halves above are about rows. This one is about readers, and it is the half that produces the
+recurring bug reports, because until ADR-0051 the answer lived as three war stories in
+`security-rules.md` §S8 rather than as a test.
+
+**The test (ADR-0051 §D1):** *can the ambient tenant at the moment a row was **written** differ from the
+ambient tenant at the moment it is **read**?* If not, the read stays inside the filter. If so, it
+bypasses **and re-pins on a predicate bound to the caller**. Four cells, every shipped bypass and every
+shipped filtered read sorts into one, and the matrix itself lives in the catalog rather than here.
+
+**What this half adds to the other two, and it is the reason it is written down as a third half rather
+than folded in:**
+
+- **It closes the "which cell is my case?" gap that the war-story form left open.** The catalog's own
+  §S8 mis-filed `EmployeeRepository.GetByUserEmailIgnoringTenantAsync` under the *sweep* story, which
+  has a loop and a write-back; that read has neither. A reader matching against narratives will keep
+  making that error; a reader answering one question cannot.
+- **It is the half with the fewest defects and the most fear.** Unlike the filter half, this one has
+  guards: `UserRepositoryTokenLookupTenantTests` confines every `UserRepository` bypass to an
+  enumerated roster and pins the confirm family filtered; `EmployeeRepositoryTenantTokenLookupTests`
+  pins the write-authenticated / read-anonymous cell with a **non-null** seed. Both are `T1-CI`. The
+  exposure is not the shipped sites — it is the *next* one.
+- **It is where dormancy cuts the other way.** Halves (1) and (2) say a dormant `TenantId` under-enforces
+  and over-hides. Here dormancy makes the *symmetric* cells trivially correct and permanently so, which
+  is why ADR-0051 §D3 keeps the confirm-family lookups filtered and spends no S8 exception on them.
+
+| | Index half | Filter half | **Read half** |
+|---|---|---|---|
+| Today (`TenantId == null`) | the constraint does nothing — **and `Users` proves that is not harmless** | the filter does nothing | symmetric cells are correct; asymmetric cells are already bypassed |
+| On activation | starts **rejecting** writes | starts **hiding** rows | the symmetric cells acquire a population and become asymmetric |
+| Guard that exists | `NullsNotDistinctIndexModelTests` (T1-CI, hand-rostered, **missing `Users`**) | **none** | two roster/pin tests (T1-CI) over **two repositories only** |
+
+## Where multi-tenancy actually stands — dormancy, and what it is owed
+
+The owner declined the activation pack (**ADR-0028 is `DECLINED`**,
+`agents/backlog/adr/0028-multi-tenant-activation-pack.md:3` — **retires when:** that status line stops
+reading `DECLINED`) and separately recorded, on Q-VS-03, *"we won't have franchises, DON'T
+OVERCOMPLICATE THINGS"* as a **standing instruction**
+(`agents/backlog/questions/open.md:2324-2337`). Read together, multi-tenancy is a **dormant seam on no
+roadmap**, and that is the frame every future tenancy decision starts from.
+
+**What a dormant seam is owed, and what it is not:**
+
+- **Owed: it may not be cited as an enforcement mechanism.** A dormant column in a unique index
+  arbitrates nothing; a dormant tenant in a query filter hides nothing. Any design whose safety argument
+  runs through `TenantId` is, today, unguarded — half (1)'s `Users` instance is the worked example, and
+  it was missed precisely because "it's in the unique index" reads like a guarantee.
+- **Owed: the cheap, meaning-preserving corrections.** Arming an index (`.AreNullsDistinct(false)`) and
+  naming a read's cell cost one builder call and one comment, change no behaviour in the dormant world,
+  and keep the seam reopenable. These get done.
+- **NOT owed: machinery for the activation event.** Host→tenant registries, chooser UIs, per-tenant DNS,
+  written-down index flips — Q-VS-03's second consequence is the rule: **ask whether the hedge's premise
+  is real before pricing the hedge.** A written-down contingency is not free; it is a thing every future
+  reader has to read.
+- **NOT owed: a backfill.** The founding tenant's identity stays `NULL`, permanently. The filter's
+  middle clause *is* its scoping.
+
+**The trigger that reopens all of this** is a real second brand, and if it ever fires the first thing to
+re-read is ADR-0028's appended 2026-08-11 challenge section, not its body — two of its claims do not
+survive.
 
 ## Axis (b) — physical region placement: NEW, purely infra/config
 

@@ -266,6 +266,49 @@ filter applies to `Set<T>()` reads but **not** to raw SQL (`FromSqlRaw`/`Execute
 `IQueryable` exposed from the wrong layer, or joins where only one side carries the filter — audit
 those paths.
 
+### The one question that decides every bypass (ADR-0051)
+
+**The filter is the default. A bypass is owed exactly one demonstration and must pay exactly one price.**
+The demonstration: *can the ambient tenant at the moment this row was **written** differ from the ambient
+tenant at the moment it is **read**?* The price: a **re-pinning predicate bound to the caller**. The
+three named forms below are elaborations of this one question, not independent rules — reach for the
+question first and the form second.
+
+|  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
+|---|---|---|
+| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
+| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150` | **symmetric → FILTERED.** `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:105-118`; the register / resend admission pre-checks |
+
+**Two things this is deliberately NOT.** *"The endpoint is anonymous"* is not the test — the bottom-right
+cell is anonymous and stays filtered, and widening the register/resend pre-checks across tenants
+re-creates the cross-tenant existence oracle the composite index was chosen to remove
+(`UserEntityConfiguration.cs:99-105`). *"The key is an unguessable secret"* is not the test either —
+`GetByConfirmationCodeAsync` and `GetByTokenHashAsync` key on the same kind of SHA-256 hash and land on
+**opposite** sides, because their cells differ. A secret makes a bypass *safe*; it never makes one
+*necessary*.
+
+**The re-pin may not be an appeal to a uniqueness property the schema does not enforce.** Permitted pins:
+an unguessable server-issued secret, the caller's own id from their JWT, or a row id read out of an
+already-pinned row. *Not* permitted: "the email is unique across the platform" — email uniqueness is
+`(TenantId, Email)` by design and, while `TenantId` is dormant, is enforced by nothing at all
+(`consistency.md` §*"Tenant-scoped unique indexes"*, the `Users` deviation). Where the true pin is a
+**caller obligation** the method cannot verify (`GetActiveByUserIdAsync`'s "the `UserId` comes from the
+caller's own JWT"), say so in those words rather than dressing it as an invariant.
+
+**Enforced by:** `src/Cleansia.Tests/Features/Auth/UserRepositoryTokenLookupTenantTests.cs` (bypass
+sites confined to an enumerated roster; confirm-family pinned filtered) +
+`src/Cleansia.Tests/Features/Auth/EmployeeRepositoryTenantTokenLookupTests.cs` (the write-authenticated /
+read-anonymous cell, seeded with a **non-null** tenant so it can fail), both run by
+`.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
+the **closed scope of those two repositories only**. For the repository-wide scope the tier is
+**`(gate pending: T-0606)`**: the gate is the same roster-confinement shape applied across
+`src/Cleansia.Infra.Database/Repositories/**`, and its **baseline is every unrostered bypass site,
+because the roster does not exist yet** — writing it is the ticket. No count is stated here; derive it
+with `grep -rn "IgnoreQueryFilters(\|GetQueryableIgnoringTenant()" src/Cleansia.Infra.Database/Repositories/`.
+**ADR-0051 is `proposed`**
+(`agents/backlog/adr/0051-a-reads-tenancy-posture-is-decided-by-the-write-tenant-read-tenant-asymmetry-not-by-the-endpoints-anonymity.md:3`).
+**Retires when:** that status line stops reading `proposed`.
+
 **Anonymous-write / authenticated-read asymmetry (the silent-zero-rows trap).** A row written on an
 **anonymous** path (no tenant claim → stamped `TenantId = null`) but later read/updated on an
 **authenticated** request (JWT carries `tenant_id`) is **hidden by the global filter** — the
@@ -286,10 +329,13 @@ guard reads `if (x is null) return;`, so the job's *effect* still happens and on
 silently doesn't. **A sweep must be tenant-ignoring on BOTH sides of the loop, not just the selection**
 — audit the write-back of every `GetQueryableIgnoringTenant()` sweep, and the pattern is invisible in
 single-tenant mode, so **the pinning test must seed a non-null `TenantId`** (a fixture wired
-`tenantId: null` proves nothing here). References: `NewJobsDigestService.StampWatermarkAsync` →
+`tenantId: null` proves nothing here). Reference: `NewJobsDigestService.StampWatermarkAsync` →
 `GetByIdIgnoringTenantAsync`, which left the watermark frozen and re-notified tenanted cleaners on every
-sweep, forever (T-0529); `EmployeeRepository.GetByUserEmailIgnoringTenantAsync` on the token-minting
-paths (T-0361). Both keep the entity **change-tracked** — `IgnoreQueryFilters()` on the tracked set, never
+sweep, forever (T-0529). *(`EmployeeRepository.GetByUserEmailIgnoringTenantAsync` (T-0361) used to be
+listed here and is **not** an instance of this case — it has no loop, no write-back and no sweep. It is
+the write-authenticated / read-anonymous cell of the matrix above. Re-filed by ADR-0051; the mis-filing
+is kept visible because matching a case against a war story instead of the question is exactly the
+failure the matrix exists to stop.)* A sweep keeps the entity **change-tracked** — `IgnoreQueryFilters()` on the tracked set, never
 `ExecuteUpdateAsync`, which would commit outside the caller's unit of work and break the job's atomicity.
 Where the mutation creates **child** rows, prefer the `SetTenantOverride`/clear-per-iteration shape
 (`CleanupStalePendingOrders`, `MaterializeRecurringBookings`) so the children inherit the right tenant —

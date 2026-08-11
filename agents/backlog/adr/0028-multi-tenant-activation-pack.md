@@ -537,3 +537,50 @@ each make the *next* tenant more expensive; this makes it a config + DNS operati
 
 **No code, no INDEX edit, no living-doc edit ships with this draft** (the living-doc/catalog edits
 are enumerated above and land at acceptance, per the ADR-0024/0026/0027 precedent).
+
+---
+
+## 2026-08-11 — Independent challenge, post-decline (architect, T-0365 second pass)
+
+*Appended per `agents/backlog/adr/README.md:9-12` (dated appended section). **Nothing above this line is
+rewritten.** This ADR is `DECLINED` and stays declined; this section exists because the 2026-07-17 panel
+was a single-author-plus-self-challenge pass, the owner's decline was a product-timing call rather than a
+technical review, and the body above is still the artifact a future reader would revive. Two of its
+claims should not be revived as written.*
+
+**PC-1 — the premise of D1 is factually wrong, and it is the load-bearing one.** D1 states that under
+host resolution the anonymous flows *"resolve exactly the `(tenant(H), email)` account — **deterministic
+by the unique index**"*, and the Context calls the composite index the thing that made email identity
+per-tenant. **`IX_Users_TenantId_Email` carries no `.AreNullsDistinct(false)`**
+(`src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:106-107`), `TenantId` is
+nullable, and PostgreSQL treats NULLs in a UNIQUE index as DISTINCT — so the index arbitrates nothing in
+the mode the platform runs in, and would arbitrate nothing for the founding tenant even *after*
+activation, because D1.5 keeps the founding tenant's identity `NULL` forever. The determinism D1
+promises is therefore unavailable to the founding tenant under D1's own design. The whole ADR frames
+duplicate emails as a *future, second-tenant* hazard; the same nondeterminism — arbitrary-row login, and
+`RecordFailedLoginAsync` charging every matching row — is reachable **today**, under one tenant, through
+a concurrent registration. This is decided in **ADR-0050**, on the opposite premise: arm the index first,
+because that is true regardless of whether a second tenant ever exists.
+
+**PC-2 — D3's conclusion survives; D3's argument does not.** D3 keeps the confirm-family lookups
+filtered on the strength of D2 (*"with D2's fail-closed rule, wrong resolution is … a 421 … not a quiet
+per-user dead end"*), and the same appeal answers CH-6. **D2 was declined**, so that defence is gone —
+without host resolution nothing is loud, and a tenant-stamped user's confirm link would zero-match in
+silence. The conclusion is nonetheless right, for a reason available to the 2026-07-17 panel from facts
+it already cited: a confirmation code is written anonymously and read anonymously, so the write tenant
+and the read tenant are both null and the filter's middle clause matches — there is no asymmetry to
+compensate for. Re-derived and decided in **ADR-0051 §D3**, which also records that a shipped guard
+(`src/Cleansia.Tests/Features/Auth/UserRepositoryTokenLookupTenantTests.cs:36-79`) already pins this and
+is cited nowhere above.
+
+**What of this ADR survives the decline, unchanged.** The breakage inventory (the flow-by-flow table) is
+accurate and was re-verified; the rejection of a client-declared tenant (Alt (b)) and of
+credential-resolved tenancy (Alt (d)) are sound and should not be re-litigated; the claim-outranks-host
+precedence (Alt (f)) is right. **What must not be revived as written:** D1's appeal to the index as the
+determinism mechanism (see PC-1 — ADR-0050 is the prerequisite, not a corollary), and D3's rationale
+(see PC-2).
+
+**Owner context added since.** Q-VS-03 (`agents/backlog/questions/open.md:2324-2337`) — *"we won't have
+franchises, DON'T OVERCOMPLICATE THINGS"* — is now a standing instruction, which strengthens the decline
+rather than merely explaining it: reviving this pack needs a real second brand **and** a re-read of PC-1,
+in that order.

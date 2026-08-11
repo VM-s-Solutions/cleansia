@@ -34,7 +34,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         paymentType: Int? = nil,
         paymentStatus: Int? = nil
     ) -> OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.id = id
         item.displayOrderNumber = "ORD-1"
         item.orderStatus = Code(value: status)

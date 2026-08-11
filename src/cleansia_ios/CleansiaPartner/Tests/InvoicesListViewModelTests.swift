@@ -36,7 +36,7 @@ final class InvoicesListViewModelTests: XCTestCase {
 
     func testOnAppearResolvesOwnEmployeeIdAndMapsToLoaded() async {
         client.employeeIdResult = .success("emp-1")
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1", totalAmount: 4200)])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1", totalAmount: 4200)])
 
         let vm = makeViewModel()
         await vm.onAppear()
@@ -76,7 +76,7 @@ final class InvoicesListViewModelTests: XCTestCase {
     }
 
     func testUserRefreshFailureKeepsPriorLoaded() async {
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1", totalAmount: 100)])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1", totalAmount: 100)])
         let vm = makeViewModel()
         await vm.onAppear()
         XCTAssertEqual(vm.state.loadedValue?.count, 1)
@@ -90,7 +90,7 @@ final class InvoicesListViewModelTests: XCTestCase {
     /// A warm cache makes the next on-appear (resume) a silent no-op —
     /// no second network round-trip while inside the freshness window.
     func testOnAppearSkipsNetworkWhileCacheIsWarm() async {
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1")])
         let vm = makeViewModel()
         await vm.onAppear()
         XCTAssertEqual(client.invoicesCallCount, 1)
@@ -103,7 +103,7 @@ final class InvoicesListViewModelTests: XCTestCase {
     /// Once the watermark goes stale, the next on-appear silently
     /// re-fetches (the silent-stale resume).
     func testOnAppearRefetchesAfterWatermarkGoesStale() async {
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1")])
         let vm = makeViewModel()
         await vm.onAppear()
         XCTAssertEqual(client.invoicesCallCount, 1)
@@ -115,7 +115,7 @@ final class InvoicesListViewModelTests: XCTestCase {
 
     /// Invalidating the watermark forces a re-fetch even while warm.
     func testInvalidateForcesRefetchEvenWhileWarm() async {
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1")])
         let vm = makeViewModel()
         await vm.onAppear()
         XCTAssertEqual(client.invoicesCallCount, 1)
@@ -127,7 +127,7 @@ final class InvoicesListViewModelTests: XCTestCase {
 
     /// A user pull always re-fetches, bypassing the warm watermark.
     func testUserRefreshAlwaysFetchesEvenWhileWarm() async {
-        client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
+        client.invoicesResult = .success([Invoice.stub(id: "inv-1")])
         let vm = makeViewModel()
         await vm.onAppear()
         XCTAssertEqual(client.invoicesCallCount, 1)

@@ -14,7 +14,7 @@ enum PdfState: Equatable {
 
 @MainActor
 final class InvoiceDetailViewModel: ViewModel {
-    @Published private(set) var state: UiState<EmployeeInvoiceDetailDto> = .loading
+    @Published private(set) var state: UiState<InvoiceDetail> = .loading
     @Published private(set) var pdfState: PdfState = .idle
 
     /// One-shot: a downloaded local PDF URL ready for the view to present via
@@ -35,7 +35,7 @@ final class InvoiceDetailViewModel: ViewModel {
     /// "Open invoice PDF" affordance — a failed generation has nothing to open.
     var canOpenPdf: Bool {
         guard let invoice = state.loadedValue else { return false }
-        return !(invoice.pdfGenerationFailed ?? false)
+        return !invoice.pdfGenerationFailed
     }
 
     func load() async {

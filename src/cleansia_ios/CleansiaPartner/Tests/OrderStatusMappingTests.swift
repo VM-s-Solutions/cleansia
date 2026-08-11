@@ -34,7 +34,7 @@ final class OrderStatusMappingTests: XCTestCase {
     }
 
     func testOrderItemStatusReadsThroughTheCodeEnvelope() {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.orderStatus = Code(value: 5)
         XCTAssertEqual(item.status, ._5)
     }

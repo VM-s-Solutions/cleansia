@@ -3,7 +3,7 @@ import CleansiaPartnerApi
 import SwiftUI
 
 struct PeriodPayContent: View {
-    let summary: PeriodPaySummaryDto
+    let summary: PeriodPaySummary
     let currencyCode: String?
 
     var body: some View {
@@ -11,7 +11,7 @@ struct PeriodPayContent: View {
             VStack(spacing: Spacing.m) {
                 HeroCard(summary: summary, currencyCode: currencyCode)
                 BreakdownCard(summary: summary, currencyCode: currencyCode)
-                JobsCard(orderPays: summary.orderPays ?? [], currencyCode: currencyCode)
+                JobsCard(orderPays: summary.orderPays, currencyCode: currencyCode)
             }
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.m)
@@ -20,7 +20,7 @@ struct PeriodPayContent: View {
 }
 
 private struct HeroCard: View {
-    let summary: PeriodPaySummaryDto
+    let summary: PeriodPaySummary
     let currencyCode: String?
 
     var body: some View {
@@ -30,7 +30,7 @@ private struct HeroCard: View {
                 Text(L10n.PeriodPay.heroLabel)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
-                Text(EarningsFormat.decimalMoney(summary.grandTotal ?? 0, currencyCode: currencyCode))
+                Text(EarningsFormat.decimalMoney(summary.grandTotal, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if let label = summary.payPeriodLabel, !label.isEmpty {
@@ -38,8 +38,8 @@ private struct HeroCard: View {
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
-                if let count = summary.totalOrders, count > 0 {
-                    Text(L10n.PeriodPay.jobsCount(count))
+                if summary.totalOrders > 0 {
+                    Text(L10n.PeriodPay.jobsCount(summary.totalOrders))
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -51,7 +51,7 @@ private struct HeroCard: View {
 }
 
 private struct BreakdownCard: View {
-    let summary: PeriodPaySummaryDto
+    let summary: PeriodPaySummary
     let currencyCode: String?
 
     var body: some View {
@@ -60,25 +60,29 @@ private struct BreakdownCard: View {
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.primary)
 
-            MoneyRow(label: L10n.PeriodPay.base, amount: summary.totalBasePay ?? 0, currencyCode: currencyCode)
-            if let extras = summary.totalExtrasPay, extras != 0 {
-                MoneyRow(label: L10n.PeriodPay.extras, amount: extras, currencyCode: currencyCode)
+            MoneyRow(label: L10n.PeriodPay.base, amount: summary.totalBasePay, currencyCode: currencyCode)
+            if summary.totalExtrasPay != 0 {
+                MoneyRow(label: L10n.PeriodPay.extras, amount: summary.totalExtrasPay, currencyCode: currencyCode)
             }
-            if let expenses = summary.totalExpensesPay, expenses != 0 {
-                MoneyRow(label: L10n.PeriodPay.expenses, amount: expenses, currencyCode: currencyCode)
+            if summary.totalExpensesPay != 0 {
+                MoneyRow(label: L10n.PeriodPay.expenses, amount: summary.totalExpensesPay, currencyCode: currencyCode)
             }
-            if let bonus = summary.totalBonusPay, bonus != 0 {
-                MoneyRow(label: L10n.PeriodPay.bonus, amount: bonus, currencyCode: currencyCode)
+            if summary.totalBonusPay != 0 {
+                MoneyRow(label: L10n.PeriodPay.bonus, amount: summary.totalBonusPay, currencyCode: currencyCode)
             }
-            if let deduction = summary.totalDeductionPay, deduction != 0 {
-                MoneyRow(label: L10n.PeriodPay.deductions, amount: -deduction, currencyCode: currencyCode)
+            if summary.totalDeductionPay != 0 {
+                MoneyRow(
+                    label: L10n.PeriodPay.deductions,
+                    amount: -summary.totalDeductionPay,
+                    currencyCode: currencyCode
+                )
             }
 
             EarningsDivider().padding(.vertical, Spacing.xs)
 
             MoneyRow(
                 label: L10n.PeriodPay.total,
-                amount: summary.grandTotal ?? 0,
+                amount: summary.grandTotal,
                 currencyCode: currencyCode,
                 bold: true
             )
@@ -88,7 +92,7 @@ private struct BreakdownCard: View {
 }
 
 private struct JobsCard: View {
-    let orderPays: [OrderEmployeePayDto]
+    let orderPays: [OrderPayLine]
     let currencyCode: String?
 
     var body: some View {
@@ -102,7 +106,7 @@ private struct JobsCard: View {
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             } else {
-                ForEach(Array(orderPays.enumerated()), id: \.offset) { index, line in
+                ForEach(Array(orderPays.enumerated()), id: \.element.id) { index, line in
                     if index > 0 {
                         EarningsDivider().padding(.vertical, Spacing.xs)
                     }
@@ -116,7 +120,7 @@ private struct JobsCard: View {
 
 private struct JobRow: View {
     @Environment(\.locale) private var locale
-    let line: OrderEmployeePayDto
+    let line: OrderPayLine
     let currencyCode: String?
 
     var body: some View {
@@ -135,7 +139,7 @@ private struct JobRow: View {
                 }
             }
             Spacer()
-            Text(EarningsFormat.decimalMoney(line.totalPay ?? 0, currencyCode: currencyCode))
+            Text(EarningsFormat.decimalMoney(line.totalPay, currencyCode: currencyCode))
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onSurface)
         }

@@ -39,8 +39,8 @@ struct DashboardData: Equatable {
     }
 
     static func from(
-        stats: DashboardStatsDto,
-        preview: AvailableJobsPreviewResponse?,
+        stats: DashboardStats,
+        preview: AvailableJobsPreview?,
         firstName: String?
     ) -> DashboardData {
         let payPeriod: PayPeriod? = {
@@ -48,7 +48,7 @@ struct DashboardData: Equatable {
             return PayPeriod(
                 start: start,
                 end: end,
-                earnings: stats.currentPeriodEarnings ?? 0,
+                earnings: stats.currentPeriodEarnings,
                 nextPayoutDate: stats.nextPayoutDate
             )
         }()
@@ -56,23 +56,27 @@ struct DashboardData: Equatable {
         return DashboardData(
             firstName: firstName,
             currencyCode: stats.currencyCode,
-            weekEarnings: stats.weekEarnings ?? 0,
-            weekCompletedCount: stats.weekCompletedCount ?? 0,
-            todayEarnings: stats.todayEarnings ?? 0,
+            weekEarnings: stats.weekEarnings,
+            weekCompletedCount: stats.weekCompletedCount,
+            todayEarnings: stats.todayEarnings,
             payPeriod: payPeriod,
-            lastMonthEarnings: stats.lastMonthEarnings ?? 0,
-            lastMonthCompletedOrders: stats.lastMonthCompletedOrders ?? 0,
-            thisMonthCompletedOrders: stats.thisMonthCompletedOrders ?? 0,
+            lastMonthEarnings: stats.lastMonthEarnings,
+            lastMonthCompletedOrders: stats.lastMonthCompletedOrders,
+            thisMonthCompletedOrders: stats.thisMonthCompletedOrders,
             averageRating: stats.averageRating,
-            ratingCount: stats.ratingCount ?? 0,
+            ratingCount: stats.ratingCount,
             hero: hero(from: preview)
         )
     }
 
-    private static func hero(from preview: AvailableJobsPreviewResponse?) -> DashboardHero {
-        let jobCount = preview?.totalAvailableCount ?? 0
-        guard jobCount > 0 else { return .empty }
-        return .availableWork(jobCount: jobCount, potentialEarnings: preview?.totalPotentialEarnings ?? 0)
+    /// A preview the caller never got is no jobs to show, not zero jobs available — the hero is
+    /// simply absent. That is the optionality of the call, not a coerced field.
+    private static func hero(from preview: AvailableJobsPreview?) -> DashboardHero {
+        guard let preview, preview.totalAvailableCount > 0 else { return .empty }
+        return .availableWork(
+            jobCount: preview.totalAvailableCount,
+            potentialEarnings: preview.totalPotentialEarnings
+        )
     }
 }
 

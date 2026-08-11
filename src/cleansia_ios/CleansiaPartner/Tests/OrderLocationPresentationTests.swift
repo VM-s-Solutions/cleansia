@@ -24,7 +24,7 @@ final class OrderLocationPresentationTests: XCTestCase {
     private let preciseLine = "Korunní 810/104, Praha, 12000"
 
     private func item(address: OrderAddress?, zone: String? = "Praha · 120") -> OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.address = address
         item.customerAddressApproximate = zone
         return item
@@ -118,15 +118,15 @@ final class OrderLocationPresentationTests: XCTestCase {
 
     // MARK: - What the screen reads
 
-    func testDetailHandsTheBrowsingCleanerTheZoneAndNoMap() {
-        let detail = OrderDetail(browsing)
+    func testDetailHandsTheBrowsingCleanerTheZoneAndNoMap() throws {
+        let detail = try OrderDetail(browsing)
         XCTAssertEqual(detail.location.line, "Praha · 120")
         XCTAssertNil(detail.location.navigationTarget)
         XCTAssertNil(detail.mapCoordinate)
     }
 
-    func testDetailHandsTheEntitledReaderTheStreetAddressAndTheMap() {
-        let detail = OrderDetail(entitled)
+    func testDetailHandsTheEntitledReaderTheStreetAddressAndTheMap() throws {
+        let detail = try OrderDetail(entitled)
         XCTAssertEqual(detail.location.line, preciseLine)
         XCTAssertEqual(detail.location.navigationTarget?.coordinate, preciseCoordinate)
         XCTAssertEqual(detail.mapCoordinate, preciseCoordinate)

@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class PeriodPayViewModel: ViewModel {
-    @Published private(set) var state: UiState<PeriodPaySummaryDto> = .loading
+    @Published private(set) var state: UiState<PeriodPaySummary> = .loading
 
     let currencyCode: String?
 

@@ -119,22 +119,24 @@ private struct EarningsErrorView: View {
                 EarningsContent(stats: sample, onOpenInvoices: {})
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded")
-                EarningsContent(stats: DashboardStatsDto(), onOpenInvoices: {})
+                EarningsContent(stats: .previewEmpty, onOpenInvoices: {})
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded · empty")
             }
         }
 
-        private static var sample: DashboardStatsDto {
-            DashboardStatsDto(
-                thisMonthCompletedOrders: 26,
-                lastMonthCompletedOrders: 22,
+        private static var sample: DashboardStats {
+            DashboardStats(
                 todayEarnings: 1238,
                 todayCompletedCount: 1,
                 weekEarnings: 6262,
                 weekCompletedCount: 4,
                 lastMonthEarnings: 18450,
+                lastMonthCompletedOrders: 22,
+                thisMonthCompletedOrders: 26,
                 currentPeriodEarnings: 9500,
+                ratingCount: 12,
+                averageRating: 4.8,
                 currentPayPeriodStart: Date(timeIntervalSinceNow: -6 * 86400),
                 currentPayPeriodEnd: Date(timeIntervalSinceNow: 8 * 86400),
                 nextPayoutDate: Date(timeIntervalSinceNow: 8 * 86400),

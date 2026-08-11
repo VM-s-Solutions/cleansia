@@ -8,9 +8,9 @@ protocol PartnerPayrollClient: AnyObject {
     /// never echoes a screen-supplied one.
     func currentEmployeeId() async -> ApiResult<String>
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummaryDto>
-    func getPagedInvoices(employeeId: String) async -> ApiResult<[EmployeeInvoiceDto]>
-    func getInvoice(id: String) async -> ApiResult<EmployeeInvoiceDetailDto>
+    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary>
+    func getPagedInvoices(employeeId: String) async -> ApiResult<[Invoice]>
+    func getInvoice(id: String) async -> ApiResult<InvoiceDetail>
     func downloadInvoicePdf(id: String) async -> ApiResult<URL>
 }
 
@@ -21,16 +21,16 @@ final class LivePartnerPayrollClient: PartnerPayrollClient {
         }
     }
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummaryDto> {
+    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerEmployeePayrollAPI.employeePayrollGetPeriodPays(
+            try await PeriodPaySummary(PartnerEmployeePayrollAPI.employeePayrollGetPeriodPays(
                 employeeId: employeeId,
                 payPeriodId: payPeriodId
-            )
+            ))
         }
     }
 
-    func getPagedInvoices(employeeId: String) async -> ApiResult<[EmployeeInvoiceDto]> {
+    func getPagedInvoices(employeeId: String) async -> ApiResult<[Invoice]> {
         await apiResult(mapError: ApiError.fromGenerated) {
             let paged = try await PartnerEmployeePayrollAPI.employeePayrollGetPagedInvoices(
                 filterEmployeeId: employeeId,
@@ -38,13 +38,13 @@ final class LivePartnerPayrollClient: PartnerPayrollClient {
                 offset: 0,
                 limit: 50
             )
-            return paged.data ?? []
+            return try (paged.data ?? []).map(Invoice.init)
         }
     }
 
-    func getInvoice(id: String) async -> ApiResult<EmployeeInvoiceDetailDto> {
+    func getInvoice(id: String) async -> ApiResult<InvoiceDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerEmployeePayrollAPI.employeePayrollGetInvoiceById(invoiceId: id)
+            try await InvoiceDetail(PartnerEmployeePayrollAPI.employeePayrollGetInvoiceById(invoiceId: id))
         }
     }
 

@@ -3,7 +3,7 @@ import CleansiaPartnerApi
 import SwiftUI
 
 struct EarningsContent: View {
-    let stats: DashboardStatsDto
+    let stats: DashboardStats
     let onOpenInvoices: () -> Void
 
     var body: some View {
@@ -23,7 +23,7 @@ struct EarningsContent: View {
 }
 
 private struct HeadlineEarningsCard: View {
-    let stats: DashboardStatsDto
+    let stats: DashboardStats
 
     private var isEstimate: Bool {
         stats.latestInvoiceStatus?.isEmpty ?? true
@@ -36,7 +36,7 @@ private struct HeadlineEarningsCard: View {
                 Text(L10n.Earnings.currentPeriod)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
-                Text(EarningsFormat.wholeMoney(stats.currentPeriodEarnings ?? 0, currencyCode: stats.currencyCode))
+                Text(EarningsFormat.wholeMoney(stats.currentPeriodEarnings, currencyCode: stats.currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 if isEstimate {
@@ -52,33 +52,33 @@ private struct HeadlineEarningsCard: View {
 }
 
 private struct BreakdownGrid: View {
-    let stats: DashboardStatsDto
+    let stats: DashboardStats
 
     var body: some View {
         VStack(spacing: 0) {
             BreakdownRow(
                 label: L10n.Earnings.today,
                 value: money(stats.todayEarnings),
-                secondary: L10n.Earnings.jobsDoneCount(stats.todayCompletedCount ?? 0)
+                secondary: L10n.Earnings.jobsDoneCount(stats.todayCompletedCount)
             )
             EarningsDivider()
             BreakdownRow(
                 label: L10n.Earnings.thisWeek,
                 value: money(stats.weekEarnings),
-                secondary: L10n.Earnings.jobsDoneCount(stats.weekCompletedCount ?? 0)
+                secondary: L10n.Earnings.jobsDoneCount(stats.weekCompletedCount)
             )
             EarningsDivider()
             BreakdownRow(
                 label: L10n.Earnings.lastMonth,
                 value: money(stats.lastMonthEarnings),
-                secondary: L10n.Earnings.jobsDoneCount(stats.lastMonthCompletedOrders ?? 0)
+                secondary: L10n.Earnings.jobsDoneCount(stats.lastMonthCompletedOrders)
             )
         }
         .cardPadding()
     }
 
-    private func money(_ amount: Double?) -> String {
-        EarningsFormat.wholeMoney(amount ?? 0, currencyCode: stats.currencyCode)
+    private func money(_ amount: Double) -> String {
+        EarningsFormat.wholeMoney(amount, currencyCode: stats.currencyCode)
     }
 }
 
@@ -112,7 +112,7 @@ struct PayPeriodWindow {
     let nextPayout: Date?
     let currencyCode: String?
 
-    init?(stats: DashboardStatsDto) {
+    init?(stats: DashboardStats) {
         guard let start = stats.currentPayPeriodStart, let end = stats.currentPayPeriodEnd else { return nil }
         self.start = start
         self.end = end

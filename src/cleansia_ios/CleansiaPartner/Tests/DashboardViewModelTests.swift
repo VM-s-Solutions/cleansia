@@ -6,18 +6,20 @@ import XCTest
 @MainActor
 final class DashboardViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
-        var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
+        var statsResult: ApiResult<DashboardStats> = .success(.stub())
         var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
-        var previewResult: ApiResult<AvailableJobsPreviewResponse> = .success(AvailableJobsPreviewResponse())
+        var previewResult: ApiResult<AvailableJobsPreview> = .success(
+            AvailableJobsPreview(totalAvailableCount: 0, totalPotentialEarnings: 0)
+        )
         private(set) var statsEmployeeId: String??
         private(set) var previewLimit: Int?
 
-        func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto> {
+        func getStats(employeeId: String?) async -> ApiResult<DashboardStats> {
             statsEmployeeId = .some(employeeId)
             return statsResult
         }
 
-        func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreviewResponse> {
+        func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreview> {
             previewLimit = limit
             return previewResult
         }
@@ -57,12 +59,12 @@ final class DashboardViewModelTests: XCTestCase {
 
     func testStatsSuccessMapsToLoaded() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana"))
-        client.statsResult = .success(DashboardStatsDto(
-            thisMonthCompletedOrders: 5,
-            lastMonthCompletedOrders: 4,
+        client.statsResult = .success(.stub(
             weekEarnings: 6262,
             weekCompletedCount: 4,
             lastMonthEarnings: 18000,
+            lastMonthCompletedOrders: 4,
+            thisMonthCompletedOrders: 5,
             currencyCode: "CZK"
         ))
 
@@ -89,7 +91,7 @@ final class DashboardViewModelTests: XCTestCase {
 
     func testFirstNameSubCallFailureStillLoadsWithFallbackGreeting() async {
         client.employeeResult = .failure(ApiError(code: "network.unreachable"))
-        client.statsResult = .success(DashboardStatsDto(weekEarnings: 100, currencyCode: "CZK"))
+        client.statsResult = .success(.stub(weekEarnings: 100, currencyCode: "CZK"))
 
         let vm = makeViewModel()
         await vm.load()
@@ -100,8 +102,11 @@ final class DashboardViewModelTests: XCTestCase {
         XCTAssertEqual(client.statsEmployeeId, .some(.none))
     }
 
-    func testEmptyStatsUseZeroFallbacks() async {
-        client.statsResult = .success(DashboardStatsDto())
+    /// A genuinely quiet week is zeros the server sent, and it renders. What must NOT render as a
+    /// quiet week is a payload that carried no figures at all — that case is refused one layer down
+    /// and is driven in `PartnerWireContractTests`.
+    func testAnHonestlyEmptyWeekStillRenders() async {
+        client.statsResult = .success(.stub())
 
         let vm = makeViewModel()
         await vm.load()
@@ -114,9 +119,9 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testAvailableJobsPreviewMapsToAvailableWorkHero() async {
-        client.previewResult = .success(AvailableJobsPreviewResponse(
-            totalPotentialEarnings: 650,
-            totalAvailableCount: 2
+        client.previewResult = .success(AvailableJobsPreview(
+            totalAvailableCount: 2,
+            totalPotentialEarnings: 650
         ))
 
         let vm = makeViewModel()
@@ -128,9 +133,9 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testZeroAvailableJobsMapsToEmptyHero() async {
-        client.previewResult = .success(AvailableJobsPreviewResponse(
-            totalPotentialEarnings: 0,
-            totalAvailableCount: 0
+        client.previewResult = .success(AvailableJobsPreview(
+            totalAvailableCount: 0,
+            totalPotentialEarnings: 0
         ))
 
         let vm = makeViewModel()
@@ -205,7 +210,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func testPreviewFailureStillLoadsWithEmptyHero() async {
-        client.statsResult = .success(DashboardStatsDto(weekEarnings: 100))
+        client.statsResult = .success(.stub(weekEarnings: 100))
         client.previewResult = .failure(ApiError(httpStatus: 500))
 
         let vm = makeViewModel()

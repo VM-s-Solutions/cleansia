@@ -26,7 +26,7 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
     }
 
     private func loadedOrder() -> OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.id = orderId
         item.orderStatus = Code(value: 2)
         item.displayOrderNumber = "CL-order-1"

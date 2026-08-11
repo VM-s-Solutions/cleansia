@@ -82,8 +82,8 @@ private struct InvoicesErrorView: View {
             }
         }
 
-        private static var sample: [EmployeeInvoiceDto] {
-            [
+        private static var sample: [Invoice] {
+            (try? [
                 EmployeeInvoiceDto(
                     id: "inv-1",
                     payPeriodLabel: "1 – 15 Jun 2026",
@@ -104,7 +104,7 @@ private struct InvoicesErrorView: View {
                     status: ._1,
                     generatedAt: Date()
                 )
-            ]
+            ].map(Invoice.init)) ?? []
         }
     }
 #endif

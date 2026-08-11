@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class InvoicesListViewModel: ViewModel {
-    @Published private(set) var state: UiState<[EmployeeInvoiceDto]> = .loading
+    @Published private(set) var state: UiState<[Invoice]> = .loading
     @Published private(set) var refreshPhase: RefreshPhase = .idle
 
     private let client: PartnerPayrollClient

@@ -178,8 +178,8 @@ final class OrderDetailViewModel: ViewModel {
         // O2: always acts on the orderId this VM was constructed with (the id
         // the list/detail response carried) — never a synthesized/echoed id.
         switch await client.getById(orderId: orderId) {
-        case let .success(item):
-            state = .loaded(OrderDetail(item))
+        case let .success(order):
+            state = .loaded(order)
         case let .failure(error):
             snackbar.showApiError(error)
             // Stay .loaded through a background-refetch failure — only the

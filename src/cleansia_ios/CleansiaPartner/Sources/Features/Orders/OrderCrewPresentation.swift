@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
 
@@ -20,11 +21,14 @@ enum OrderCrew: Equatable {
 }
 
 extension OrderCrew {
-    /// Nil when the wire carried no seat block — a server that predates it.
-    init?(_ item: OrderItem) {
+    /// Nil when the wire carried no seat block at all — a server that predates it, where the crew
+    /// line simply does not render and nothing is claimed. Once the block IS present the rest of it
+    /// is refused rather than defaulted: `0` open seats and `false` both read as "this job is full",
+    /// which is a claim about whether the cleaner can take it.
+    init?(_ item: OrderItem) throws {
         guard let crewSize = item.requiredEmployees, crewSize > 0 else { return nil }
-        let openSpots = item.availableSpots ?? 0
-        if item.hasAvailableSpots == true, openSpots > 0 {
+        let openSpots = try item.availableSpots.require("availableSpots")
+        if try item.hasAvailableSpots.require("hasAvailableSpots"), openSpots > 0 {
             self = .spotsOpen(crewSize: crewSize, openSpots: openSpots)
         } else {
             self = .full(crewSize: crewSize)

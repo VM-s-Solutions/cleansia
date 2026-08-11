@@ -7,7 +7,7 @@ import Foundation
 final class FakePartnerOrderClient: PartnerOrderClient {
     var employeeIdResult: ApiResult<String> = .success("emp-self")
     var pagedResult: ApiResult<[OrderListItem]> = .success([])
-    var byIdResult: ApiResult<OrderItem> = .success(OrderItem())
+    var byIdResult: ApiResult<OrderItem> = .success(.wireComplete())
     var commandResult: ApiResult<Void> = .success(())
 
     private(set) var queries: [OrderPageQuery] = []
@@ -71,10 +71,17 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         return pagedResult
     }
 
-    func getById(orderId _: String) async -> ApiResult<OrderItem> {
+    /// Holds the WIRE shape and maps it through the real initializer, so a fixture that breaks the
+    /// contract produces exactly the refusal production would.
+    func getById(orderId _: String) async -> ApiResult<OrderDetail> {
         onGetById?()
         getByIdCallCount += 1
-        return byIdResult
+        switch byIdResult {
+        case let .success(item):
+            return await apiResult { try OrderDetail(item) }
+        case let .failure(error):
+            return .failure(error)
+        }
     }
 
     func resumeCommand() {

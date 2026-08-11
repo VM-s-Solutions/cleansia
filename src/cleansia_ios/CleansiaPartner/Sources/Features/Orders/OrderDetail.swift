@@ -163,9 +163,18 @@ extension OrderDetail {
 }
 
 extension OrderDetail {
-    init(_ item: OrderItem) {
-        id = item.id ?? ""
-        orderNumber = item.displayOrderNumber ?? item.id?.prefix(8).description ?? "—"
+    /// **Refuse.** One order, so there is no page to refuse and no row to drop. Identity is refused
+    /// rather than synthesized because every action on this screen — take, start, complete, the
+    /// photo fetch — is keyed by it, so a blank id produces a detail whose every button writes to
+    /// nothing. `rooms`/`bathrooms` are the scope the cleaner sizes the job by and
+    /// `isAssignedToCurrentUser`/`hasAfterPhotos` decide what is offered, so a coerced `0` or
+    /// `false` is a claim, not a fallback.
+    ///
+    /// The collections keep `?? []`: an absent list and an empty one render identically here and
+    /// falsify no arithmetic, because this screen sums nothing over them.
+    init(_ item: OrderItem) throws {
+        id = try item.id.requireNonBlank("id")
+        orderNumber = try item.displayOrderNumber.requireNonBlank("displayOrderNumber")
         status = item.status
         cleaningDateTime = item.cleaningDateTime
         completedAt = item.completedAt
@@ -177,9 +186,9 @@ extension OrderDetail {
         customerName = item.customerName
         customerPhone = item.customerPhone
 
-        rooms = item.rooms ?? 0
-        bathrooms = item.bathrooms ?? 0
-        crew = OrderCrew(item)
+        rooms = try item.rooms.require("rooms")
+        bathrooms = try item.bathrooms.require("bathrooms")
+        crew = try OrderCrew(item)
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
                 .map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }
@@ -208,8 +217,8 @@ extension OrderDetail {
             statusCode: item.paymentStatus?.value
         )
 
-        isAssignedToCurrentUser = item.isAssignedToCurrentUser ?? false
-        hasAfterPhotos = item.hasAfterPhotos ?? false
+        isAssignedToCurrentUser = try item.isAssignedToCurrentUser.require("isAssignedToCurrentUser")
+        hasAfterPhotos = try item.hasAfterPhotos.require("hasAfterPhotos")
 
         orderNotes = item.orderNotes ?? []
         orderIssues = item.orderIssues ?? []

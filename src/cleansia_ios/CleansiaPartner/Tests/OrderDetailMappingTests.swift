@@ -5,7 +5,7 @@ import XCTest
 
 final class OrderDetailMappingTests: XCTestCase {
     private func makeItem() -> OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.id = "order-1"
         item.displayOrderNumber = "ORD-2026-007"
         item.orderStatus = Code(value: 4)
@@ -45,8 +45,8 @@ final class OrderDetailMappingTests: XCTestCase {
         return item
     }
 
-    func testMapsCoreIdentityFields() {
-        let detail = OrderDetail(makeItem())
+    func testMapsCoreIdentityFields() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertEqual(detail.id, "order-1")
         XCTAssertEqual(detail.orderNumber, "ORD-2026-007")
         XCTAssertEqual(detail.status, ._4)
@@ -54,19 +54,19 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertEqual(detail.currencySymbol, "Kč")
     }
 
-    func testCompletedAtMapsThrough() {
-        XCTAssertEqual(OrderDetail(makeItem()).completedAt, Date(timeIntervalSince1970: 1_700_007_200))
-        XCTAssertNil(OrderDetail(OrderItem()).completedAt)
+    func testCompletedAtMapsThrough() throws {
+        XCTAssertEqual(try OrderDetail(makeItem()).completedAt, Date(timeIntervalSince1970: 1_700_007_200))
+        XCTAssertNil(try OrderDetail(.wireComplete()).completedAt)
     }
 
-    func testMapsStatusThroughCodeEnvelope() {
+    func testMapsStatusThroughCodeEnvelope() throws {
         var item = makeItem()
         item.orderStatus = Code(value: 6)
-        XCTAssertEqual(OrderDetail(item).status, ._6)
+        XCTAssertEqual(try OrderDetail(item).status, ._6)
     }
 
-    func testMapsAddressAndCoordinate() {
-        let detail = OrderDetail(makeItem())
+    func testMapsAddressAndCoordinate() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertEqual(detail.location.line, "Vinohradská 12, Praha, 120 00")
         XCTAssertEqual(
             detail.location.navigationTarget?.coordinate,
@@ -74,14 +74,14 @@ final class OrderDetailMappingTests: XCTestCase {
         )
     }
 
-    func testNilCoordinateWhenAddressLacksLatLon() {
+    func testNilCoordinateWhenAddressLacksLatLon() throws {
         var item = makeItem()
         item.address = OrderAddress(street: "X", city: "Y", zipCode: "Z")
-        XCTAssertNil(OrderDetail(item).location.navigationTarget?.coordinate)
+        XCTAssertNil(try OrderDetail(item).location.navigationTarget?.coordinate)
     }
 
-    func testMapsScopeServicesPackagesAndActiveExtrasOnly() {
-        let detail = OrderDetail(makeItem())
+    func testMapsScopeServicesPackagesAndActiveExtrasOnly() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertEqual(detail.rooms, 3)
         XCTAssertEqual(detail.bathrooms, 2)
         XCTAssertEqual(detail.services, [
@@ -102,8 +102,8 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertEqual(detail.extras, ["inside-oven", "interior-windows"]) // false dropped, sorted
     }
 
-    func testMapsCustomerAndAccessAndNotes() {
-        let detail = OrderDetail(makeItem())
+    func testMapsCustomerAndAccessAndNotes() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertEqual(detail.customerName, "Jana")
         XCTAssertEqual(detail.customerPhone, "+420 777 111 222")
         XCTAssertEqual(detail.accessInstructions, "Code 1234.")
@@ -111,8 +111,8 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertEqual(detail.specialInstructions, "Eco products only.")
     }
 
-    func testMapsPaymentBreakdown() {
-        let detail = OrderDetail(makeItem())
+    func testMapsPaymentBreakdown() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertTrue(detail.payment.hasBreakdown)
         XCTAssertEqual(detail.payment.subtotal, 1400)
         XCTAssertEqual(detail.payment.total, 1200)
@@ -123,55 +123,59 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertFalse(detail.payment.isCash)
     }
 
-    func testPaymentHasNoBreakdownWhenSubtotalEqualsTotal() {
+    func testPaymentHasNoBreakdownWhenSubtotalEqualsTotal() throws {
         var item = makeItem()
         item.originalSubtotal = 1200
         item.totalPrice = 1200
-        XCTAssertFalse(OrderDetail(item).payment.hasBreakdown)
+        XCTAssertFalse(try OrderDetail(item).payment.hasBreakdown)
     }
 
-    func testMapsOwnershipAndAfterPhotos() {
-        let detail = OrderDetail(makeItem())
+    func testMapsOwnershipAndAfterPhotos() throws {
+        let detail = try OrderDetail(makeItem())
         XCTAssertTrue(detail.isAssignedToCurrentUser)
         XCTAssertTrue(detail.hasAfterPhotos)
     }
 
-    func testDefaultsForMissingFields() {
-        let detail = OrderDetail(OrderItem())
-        XCTAssertEqual(detail.rooms, 0)
+    /// Collections default; the scalars the mapper refuses are supplied by the fixture. What must
+    /// never happen — a missing scalar becoming a rendered `0`/`false` — is driven in
+    /// `PartnerWireContractTests`.
+    func testAbsentCollectionsRenderAsEmptyOnes() throws {
+        let detail = try OrderDetail(.wireComplete())
         XCTAssertEqual(detail.services, [])
+        XCTAssertEqual(detail.packages, [])
         XCTAssertEqual(detail.extras, [])
-        XCTAssertFalse(detail.isAssignedToCurrentUser)
-        XCTAssertFalse(detail.hasAfterPhotos)
+        XCTAssertEqual(detail.orderNotes, [])
+        XCTAssertEqual(detail.orderIssues, [])
+        XCTAssertEqual(detail.statusHistory, [])
         XCTAssertFalse(detail.payment.hasBreakdown)
     }
 
-    func testMapCoordinateResolvesWithCoordsAndNotCancelled() {
-        XCTAssertEqual(OrderDetail(makeItem()).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
+    func testMapCoordinateResolvesWithCoordsAndNotCancelled() throws {
+        XCTAssertEqual(try OrderDetail(makeItem()).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
     }
 
-    func testMapCoordinateIsNilWhenCancelled() {
+    func testMapCoordinateIsNilWhenCancelled() throws {
         var item = makeItem()
         item.orderStatus = Code(value: 6)
-        XCTAssertNil(OrderDetail(item).mapCoordinate)
+        XCTAssertNil(try OrderDetail(item).mapCoordinate)
     }
 
-    func testMapCoordinateIsNilWhenNoCoordinate() {
+    func testMapCoordinateIsNilWhenNoCoordinate() throws {
         var item = makeItem()
         item.address = OrderAddress(street: "X")
-        XCTAssertNil(OrderDetail(item).mapCoordinate)
+        XCTAssertNil(try OrderDetail(item).mapCoordinate)
     }
 
-    func testCashDueLabelFormatsTheOrderTotalWithItsCurrency() {
-        XCTAssertEqual(OrderDetail(makeItem()).cashDueLabel, OrdersFormat.money(1200, symbol: "Kč"))
+    func testCashDueLabelFormatsTheOrderTotalWithItsCurrency() throws {
+        XCTAssertEqual(try OrderDetail(makeItem()).cashDueLabel, OrdersFormat.money(1200, symbol: "Kč"))
     }
 
-    func testCashDueLabelIsNilWithoutATotal() {
+    func testCashDueLabelIsNilWithoutATotal() throws {
         var item = makeItem()
         item.totalPrice = nil
-        XCTAssertNil(OrderDetail(item).cashDueLabel)
+        XCTAssertNil(try OrderDetail(item).cashDueLabel)
 
         item.totalPrice = 0
-        XCTAssertNil(OrderDetail(item).cashDueLabel)
+        XCTAssertNil(try OrderDetail(item).cashDueLabel)
     }
 }

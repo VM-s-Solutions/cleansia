@@ -54,7 +54,7 @@ final class EarningsOwnershipTests: XCTestCase {
     // E1: period pay sends ONLY the caller's server-derived id.
     func testPeriodPaySendsOnlyOwnServerDerivedEmployeeId() async {
         client.employeeIdResult = .success("emp-own")
-        client.periodPaysResult = .success(PeriodPaySummaryDto())
+        client.periodPaysResult = .success(.stub())
 
         let vm = PeriodPayViewModel(
             payPeriodId: "pp-1",
@@ -71,7 +71,7 @@ final class EarningsOwnershipTests: XCTestCase {
     // the VM received, never a synthesized/foreign one.
     func testDownloadActsOnlyOnTheLoadedInvoiceId() async {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("own.pdf")
-        client.invoiceResult = .success(EmployeeInvoiceDetailDto(id: "inv-own"))
+        client.invoiceResult = .success(.stub(id: "inv-own"))
         client.downloadResult = .success(fileURL)
 
         let vm = InvoiceDetailViewModel(invoiceId: "inv-own", client: client, snackbar: snackbar)

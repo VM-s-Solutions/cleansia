@@ -126,8 +126,8 @@ final class OrderPhotosViewModel: ViewModel {
             .success([])
         }
 
-        func getById(orderId _: String) async -> ApiResult<OrderItem> {
-            .success(OrderItem())
+        func getById(orderId _: String) async -> ApiResult<OrderDetail> {
+            .success(.preview)
         }
 
         func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {

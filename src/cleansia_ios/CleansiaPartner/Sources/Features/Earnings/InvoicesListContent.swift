@@ -3,7 +3,7 @@ import CleansiaPartnerApi
 import SwiftUI
 
 struct InvoicesListContent: View {
-    let invoices: [EmployeeInvoiceDto]
+    let invoices: [Invoice]
     let onOpenInvoice: (String) -> Void
 
     var body: some View {
@@ -13,10 +13,7 @@ struct InvoicesListContent: View {
             ScrollView {
                 VStack(spacing: Spacing.m) {
                     InvoicesSummaryCard(invoices: invoices)
-                    // Explicit `id:` — the CI-pinned openapi-generator (7.10.0, Android-matching) does not
-                    // emit Identifiable on generated models; newer local generators do. Relying on the
-                    // conformance compiles locally and breaks CI.
-                    ForEach(invoices, id: \.id) { invoice in
+                    ForEach(invoices) { invoice in
                         InvoiceCard(invoice: invoice, onOpen: onOpenInvoice)
                     }
                 }
@@ -28,10 +25,10 @@ struct InvoicesListContent: View {
 }
 
 private struct InvoicesSummaryCard: View {
-    let invoices: [EmployeeInvoiceDto]
+    let invoices: [Invoice]
 
     private var total: Double {
-        invoices.reduce(0) { $0 + ($1.totalAmount ?? 0) }
+        invoices.reduce(0) { $0 + $1.totalAmount }
     }
 
     private var currencyCode: String? {
@@ -60,7 +57,7 @@ private struct InvoicesSummaryCard: View {
 
 private struct InvoiceCard: View {
     @Environment(\.locale) private var locale
-    let invoice: EmployeeInvoiceDto
+    let invoice: Invoice
     let onOpen: (String) -> Void
 
     private var dateLine: String? {
@@ -86,11 +83,10 @@ private struct InvoiceCard: View {
             .cardPadding()
         }
         .buttonStyle(.plain)
-        .disabled(invoice.id == nil)
     }
 
     private func open() {
-        invoice.id.map(onOpen)
+        onOpen(invoice.id)
     }
 
     private var header: some View {
@@ -117,7 +113,7 @@ private struct InvoiceCard: View {
                 Text(L10n.Invoices.cardTotal)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primary)
-                Text(EarningsFormat.decimalMoney(invoice.totalAmount ?? 0, currencyCode: invoice.currencyCode))
+                Text(EarningsFormat.decimalMoney(invoice.totalAmount, currencyCode: invoice.currencyCode))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.onSurface)
             }
@@ -129,7 +125,7 @@ private struct InvoiceCard: View {
 
     @ViewBuilder
     private var footerLine: (some View)? {
-        let jobs = invoice.totalOrders ?? 0
+        let jobs = invoice.totalOrders
         let date = dateLine
         if jobs > 0 || date != nil {
             HStack {

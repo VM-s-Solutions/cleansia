@@ -148,19 +148,19 @@ final class OrderPhotosGateTests: XCTestCase {
     func testWorkSectionsNeedBothTheAssignmentAndALiveStatus() {
         for status in [0, 2, 3, 4, 5, 6] {
             XCTAssertFalse(
-                OrderDetail(item(status: status, isMine: false)).showsWorkSections,
+                try OrderDetail(item(status: status, isMine: false)).showsWorkSections,
                 "status \(status) must stay closed for a cleaner who has not taken the order"
             )
         }
         for status in [2, 3, 4] {
             XCTAssertTrue(
-                OrderDetail(item(status: status, isMine: true)).showsWorkSections,
+                try OrderDetail(item(status: status, isMine: true)).showsWorkSections,
                 "status \(status) is live work for the assignee"
             )
         }
         for status in [0, 5, 6] {
             XCTAssertFalse(
-                OrderDetail(item(status: status, isMine: true)).showsWorkSections,
+                try OrderDetail(item(status: status, isMine: true)).showsWorkSections,
                 "status \(status) is not live work"
             )
         }
@@ -181,7 +181,7 @@ final class OrderPhotosGateTests: XCTestCase {
     }
 
     private func item(status: Int, isMine: Bool) -> OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.id = "order-1"
         item.displayOrderNumber = "ORD-1"
         item.orderStatus = Code(value: status)

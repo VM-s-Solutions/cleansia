@@ -11,7 +11,7 @@ import XCTest
 final class OrderCrewPresentationTests: XCTestCase {
     /// 2 required, 2 max, 1 assigned ⇒ 1 available.
     private var partiallyCrewed: OrderItem {
-        var item = OrderItem()
+        var item = OrderItem.wireComplete()
         item.requiredEmployees = 2
         item.maxEmployees = 2
         item.assignedEmployeesCount = 1
@@ -28,14 +28,14 @@ final class OrderCrewPresentationTests: XCTestCase {
         return item
     }
 
-    func testPartiallyCrewedOrderNamesTheCrewAndTheOpenSeat() {
-        let crew = OrderCrew(partiallyCrewed)
+    func testPartiallyCrewedOrderNamesTheCrewAndTheOpenSeat() throws {
+        let crew = try OrderCrew(partiallyCrewed)
         XCTAssertEqual(crew, .spotsOpen(crewSize: 2, openSpots: 1))
         XCTAssertEqual(crew?.crewSize, 2)
     }
 
-    func testFullCrewWarnsThatNoSeatIsLeft() {
-        let crew = OrderCrew(fullyCrewed)
+    func testFullCrewWarnsThatNoSeatIsLeft() throws {
+        let crew = try OrderCrew(fullyCrewed)
         XCTAssertEqual(crew, .full(crewSize: 2))
         XCTAssertEqual(crew?.crewSize, 2)
     }
@@ -43,43 +43,43 @@ final class OrderCrewPresentationTests: XCTestCase {
     /// The server owns the seat arithmetic and sends both shapes; the client reads them and
     /// computes neither. When they disagree the flag — the same one behind the take's refusal —
     /// decides.
-    func testServerFlagDecidesNotTheCount() {
+    func testServerFlagDecidesNotTheCount() throws {
         var flagCleared = partiallyCrewed
         flagCleared.hasAvailableSpots = false
-        XCTAssertEqual(OrderCrew(flagCleared), .full(crewSize: 2))
+        XCTAssertEqual(try OrderCrew(flagCleared), .full(crewSize: 2))
 
         var countCleared = partiallyCrewed
         countCleared.availableSpots = 0
-        XCTAssertEqual(OrderCrew(countCleared), .full(crewSize: 2))
+        XCTAssertEqual(try OrderCrew(countCleared), .full(crewSize: 2))
     }
 
-    func testSoloJobIsStillReported() {
-        var item = OrderItem()
+    func testSoloJobIsStillReported() throws {
+        var item = OrderItem.wireComplete()
         item.requiredEmployees = 1
         item.maxEmployees = 1
         item.assignedEmployeesCount = 1
         item.availableSpots = 0
         item.hasAvailableSpots = false
-        XCTAssertEqual(OrderCrew(item), .full(crewSize: 1))
+        XCTAssertEqual(try OrderCrew(item), .full(crewSize: 1))
     }
 
     /// A build talking to a server that predates the seat block says nothing.
-    func testAbsentCrewSizeRendersNoSeatFacts() {
-        var item = OrderItem()
+    func testAbsentCrewSizeRendersNoSeatFacts() throws {
+        var item = OrderItem.wireComplete()
         item.availableSpots = 1
         item.hasAvailableSpots = true
-        XCTAssertNil(OrderCrew(item))
+        XCTAssertNil(try OrderCrew(item))
 
         item.requiredEmployees = 0
-        XCTAssertNil(OrderCrew(item))
+        XCTAssertNil(try OrderCrew(item))
     }
 
     // MARK: - What the screen reads
 
-    func testDetailCarriesTheSeatFacts() {
-        XCTAssertEqual(OrderDetail(partiallyCrewed).crew, .spotsOpen(crewSize: 2, openSpots: 1))
-        XCTAssertEqual(OrderDetail(fullyCrewed).crew, .full(crewSize: 2))
-        XCTAssertNil(OrderDetail(OrderItem()).crew)
+    func testDetailCarriesTheSeatFacts() throws {
+        XCTAssertEqual(try OrderDetail(partiallyCrewed).crew, .spotsOpen(crewSize: 2, openSpots: 1))
+        XCTAssertEqual(try OrderDetail(fullyCrewed).crew, .full(crewSize: 2))
+        XCTAssertNil(try OrderDetail(.wireComplete()).crew)
     }
 
     // MARK: - The line the scope card renders

@@ -21,7 +21,7 @@ protocol PartnerOrderClient: AnyObject {
     func currentEmployeeId() async -> ApiResult<String>
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
-    func getById(orderId: String) async -> ApiResult<OrderItem>
+    func getById(orderId: String) async -> ApiResult<OrderDetail>
 
     /// The orders reserved for this cleaner alone until their deadline (ADR-0045).
     func myPendingOffers() async -> ApiResult<[PendingOfferItem]>
@@ -56,6 +56,10 @@ protocol PartnerOrderClient: AnyObject {
 
 /// Domain photo mapped from `GetOrderPhotosOrderPhotoDto` — the rail list reads
 /// these; `blobUrl` is rendered via `AsyncImage`.
+///
+/// **Drop the row.** A photo with no id cannot be deleted or previewed, and the rail counts what it
+/// shows rather than reporting a server figure, so a dropped frame falsifies nothing — while
+/// refusing the response would blank a rail the server answered correctly for every other photo.
 struct OrderPhoto: Equatable, Identifiable {
     let id: String
     let photoType: PhotoType?
@@ -102,9 +106,9 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    func getById(orderId: String) async -> ApiResult<OrderItem> {
+    func getById(orderId: String) async -> ApiResult<OrderDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await PartnerOrderAPI.orderGetById(orderId: orderId)
+            try await OrderDetail(PartnerOrderAPI.orderGetById(orderId: orderId))
         }
     }
 

@@ -35,7 +35,7 @@ final class PeriodPayViewModelTests: XCTestCase {
 
     func testLoadResolvesOwnEmployeeIdAndMapsToLoaded() async {
         client.employeeIdResult = .success("emp-1")
-        client.periodPaysResult = .success(PeriodPaySummaryDto(payPeriodId: "pp-1", grandTotal: 4200))
+        client.periodPaysResult = .success(.stub(grandTotal: 4200))
 
         let vm = makeViewModel()
         await vm.load()

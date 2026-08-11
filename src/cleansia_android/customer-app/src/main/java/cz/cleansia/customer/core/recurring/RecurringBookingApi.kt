@@ -16,15 +16,15 @@ import retrofit2.Response
  *
  * The hand-written [RecurringBookingTemplateDto] keeps id / frequency /
  * dayOfWeek / timeOfDay / savedAddressId / paymentType / startsOn / isActive
- * non-null because the schedule list and edit screens read them directly. We
- * drop wire items missing any of those.
+ * non-null because the schedule list and edit screens read them directly. A
+ * wire item missing any of those refuses the list.
  */
 class RecurringBookingApi(
     private val recurringBookingApi: GenRecurringBookingApi,
 ) {
     suspend fun getMine(): Response<List<RecurringBookingTemplateDto>> {
         val raw = recurringBookingApi.recurringBookingGetMine()
-        return raw.mapBody { list -> list?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.mapBody page@{ list -> list.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 
     suspend fun create(body: CreateRecurringBookingRequest): Response<RecurringBookingTemplateDto> {
@@ -84,6 +84,17 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
     if (isSuccessful) Response.success(transform(body()), raw())
     else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
+/**
+ * Refuses the list rather than dropping the row, and the reason is not arithmetic: a template is a
+ * standing instruction to charge. A silently absent one is a schedule that keeps materialising orders
+ * while the only screen that can pause or delete it says it does not exist — the customer is billed
+ * for a booking whose off-switch has been hidden. That is a different failure from a shorter history,
+ * and it is why this list refuses where the orders list drops.
+ *
+ * `rooms` and `bathrooms` are refused with the rest because `CreateRecurringViewModel` copies them
+ * straight into the edit form, so a coerced zero is not merely displayed — the next Update writes it
+ * back and the client's invention becomes the server's record.
+ */
 private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateDto? {
     val id = id ?: return null
     val frequency = frequency ?: return null
@@ -98,8 +109,8 @@ private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateD
         frequency = frequency,
         dayOfWeek = dayOfWeek,
         timeOfDay = timeOfDay,
-        rooms = rooms ?: 0,
-        bathrooms = bathrooms ?: 0,
+        rooms = rooms ?: return null,
+        bathrooms = bathrooms ?: return null,
         savedAddressId = savedAddressId,
         addressLine = addressLine,
         selectedServiceIds = selectedServiceIds.orEmpty(),

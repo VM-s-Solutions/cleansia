@@ -28,8 +28,17 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
     if (isSuccessful) Response.success(transform(body()), raw())
     else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
-private fun GenValidatePromoCodeResponse?.toAppDto(): ValidatePromoCodeResponse = ValidatePromoCodeResponse(
-    isValid = this?.isValid ?: false,
-    discountAmount = this?.discountAmount,
-    errorCode = this?.errorCode,
-)
+/**
+ * `isValid = false` is the verdict that rejects the code, so defaulting to it charges the customer
+ * full price for a discount the server just granted, and the sheet states a reason the server never
+ * sent. `discountAmount` stays nullable — `nullable: true` in the spec, since an invalid code has no
+ * discount — and `BookingViewModel` already requires it to be non-null before applying one.
+ */
+private fun GenValidatePromoCodeResponse?.toAppDto(): ValidatePromoCodeResponse? {
+    if (this == null) return null
+    return ValidatePromoCodeResponse(
+        isValid = isValid ?: return null,
+        discountAmount = discountAmount,
+        errorCode = errorCode,
+    )
+}

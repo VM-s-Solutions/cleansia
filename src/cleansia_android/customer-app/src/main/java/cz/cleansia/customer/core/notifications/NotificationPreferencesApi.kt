@@ -35,22 +35,33 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
     if (isSuccessful) Response.success(transform(body()), raw())
     else @Suppress("UNCHECKED_CAST") (this as Response<R>)
 
-private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload =
-    NotificationPreferencesPayload(
-        orderUpdates = this?.orderUpdates ?: true,
-        cleanerOnTheWay = this?.cleanerOnTheWay ?: true,
-        orderCompleted = this?.orderCompleted ?: true,
-        orderCancelled = this?.orderCancelled ?: true,
-        refundIssued = this?.refundIssued ?: true,
-        membershipExpiring = this?.membershipExpiring ?: true,
-        membershipCancelled = this?.membershipCancelled ?: true,
-        tierUpgrade = this?.tierUpgrade ?: true,
-        // Promo is opt-in — server-side default is false so the user has to
-        // explicitly turn it on. Mirror that here.
-        promo = this?.promo ?: false,
-        disputeReply = this?.disputeReply ?: true,
-        recurringScheduled = this?.recurringScheduled ?: true,
+/**
+ * Every toggle is refused, and this surface is the one where a coerced value does not stay a display
+ * bug: `update` is a replace-all PUT of the whole payload, so the next toggle the customer touches
+ * writes back all eleven — the client's invention becomes the server's record. A defaulted `promo`
+ * of `false` silently unsubscribes someone who opted in, and a defaulted `true` on any of the other
+ * ten re-subscribes someone who opted out, which is a consent decision the app has no standing to
+ * make on their behalf.
+ *
+ * A null body is refused rather than being read as a complete set of server-side defaults: the
+ * backend lazy-creates the row on read, so "no preferences exist" is not a state this endpoint has.
+ */
+private fun GenNotificationPreferencesDto?.toAppDto(): NotificationPreferencesPayload? {
+    if (this == null) return null
+    return NotificationPreferencesPayload(
+        orderUpdates = orderUpdates ?: return null,
+        cleanerOnTheWay = cleanerOnTheWay ?: return null,
+        orderCompleted = orderCompleted ?: return null,
+        orderCancelled = orderCancelled ?: return null,
+        refundIssued = refundIssued ?: return null,
+        membershipExpiring = membershipExpiring ?: return null,
+        membershipCancelled = membershipCancelled ?: return null,
+        tierUpgrade = tierUpgrade ?: return null,
+        promo = promo ?: return null,
+        disputeReply = disputeReply ?: return null,
+        recurringScheduled = recurringScheduled ?: return null,
     )
+}
 
 private fun NotificationPreferencesPayload.toWire(): GenUpdateNotificationPreferencesCommand =
     GenUpdateNotificationPreferencesCommand(
@@ -75,15 +86,15 @@ private fun NotificationPreferencesPayload.toWire(): GenUpdateNotificationPrefer
  */
 @Serializable
 data class NotificationPreferencesPayload(
-    val orderUpdates: Boolean = true,
-    val cleanerOnTheWay: Boolean = true,
-    val orderCompleted: Boolean = true,
-    val orderCancelled: Boolean = true,
-    val refundIssued: Boolean = true,
-    val membershipExpiring: Boolean = true,
-    val membershipCancelled: Boolean = true,
-    val tierUpgrade: Boolean = true,
-    val promo: Boolean = false,
-    val disputeReply: Boolean = true,
-    val recurringScheduled: Boolean = true,
+    val orderUpdates: Boolean,
+    val cleanerOnTheWay: Boolean,
+    val orderCompleted: Boolean,
+    val orderCancelled: Boolean,
+    val refundIssued: Boolean,
+    val membershipExpiring: Boolean,
+    val membershipCancelled: Boolean,
+    val tierUpgrade: Boolean,
+    val promo: Boolean,
+    val disputeReply: Boolean,
+    val recurringScheduled: Boolean,
 )

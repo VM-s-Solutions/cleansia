@@ -4,7 +4,6 @@ import cz.cleansia.customer.api.client.OrderApi as GenOrderApi
 import cz.cleansia.customer.api.model.AssignedEmployeeDto as GenAssignedEmployeeDto
 import cz.cleansia.customer.api.model.CancelOrderCommand as GenCancelOrderCommand
 import cz.cleansia.customer.api.model.CancelOrderResponse as GenCancelOrderResponse
-import cz.cleansia.customer.api.model.Code as GenCode
 import cz.cleansia.customer.api.model.ConfirmRecurringOrderCommand as GenConfirmRecurringOrderCommand
 import cz.cleansia.customer.api.model.ConfirmRecurringOrderResponse as GenConfirmRecurringOrderResponse
 import cz.cleansia.customer.api.model.CurrencyDetailDto as GenCurrencyDetailDto
@@ -26,7 +25,7 @@ import cz.cleansia.customer.api.model.PagedDataOfOrderListItem as GenPagedDataOf
 import cz.cleansia.customer.api.model.ServiceDetails as GenServiceDetails
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
 import cz.cleansia.customer.api.model.SubmitOrderReviewCommand as GenSubmitOrderReviewCommand
-import cz.cleansia.customer.core.user.CodeDto
+import cz.cleansia.customer.core.user.toAppDto
 import okhttp3.ResponseBody
 import retrofit2.Response
 
@@ -234,18 +233,6 @@ private fun GenOrderItem.toAppDto(): OrderDetailDto? {
         orderNotes = orderNotes?.map { it.toAppDto() },
         orderIssues = orderIssues?.map { it.toAppDto() ?: return null },
         review = review?.toAppDto() ?: return null,
-    )
-}
-
-/**
- * `value` is the ordinal every status decision is made from, and `0` is a real status (`New`) rather
- * than an absence — a defaulted code tells the screen the order has not started yet.
- */
-private fun GenCode.toAppDto(): CodeDto? {
-    return CodeDto(
-        type = type.orEmpty(),
-        name = name.orEmpty(),
-        value = `value` ?: return null,
     )
 }
 

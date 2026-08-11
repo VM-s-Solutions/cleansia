@@ -13,14 +13,14 @@ import retrofit2.Response
  *
  * The hand-written [SavedAddressDto] keeps `id`, `label`, `street`, `city`,
  * `zipCode`, `countryId` as non-null so the address list view can render
- * without null-guards. We drop wire items missing any of these.
+ * without null-guards. A wire item missing any of these refuses the list.
  */
 class SavedAddressApi(
     private val savedAddressApi: GenSavedAddressApi,
 ) {
     suspend fun getMine(): Response<List<SavedAddressDto>> {
         val raw = savedAddressApi.savedAddressGetMine()
-        return raw.mapBody { list -> list?.mapNotNull { it.toAppDto() }.orEmpty() }
+        return raw.mapBody page@{ list -> list.orEmpty().map { it.toAppDto() ?: return@page null } }
     }
 
     suspend fun add(command: AddSavedAddressCommand): Response<SavedAddressDto> {
@@ -71,8 +71,12 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
 
 // ─── Generated → app DTO mappers ───
 //
-// Drop list items missing a load-bearing field. The list view's row component
-// reads id/label/street/city/zipCode/countryId directly without null-guards.
+// Refuses the list rather than dropping the row. Both `HomeTab` and `BookingBottomSheet` preselect
+// `addresses.firstOrNull { it.isDefault } ?: addresses.firstOrNull()`, so a dropped default does not
+// leave the picker empty — the fallback chain guarantees a plausible substitute, and the customer
+// books a cleaning to a different home than the one the screen has always defaulted to. `isDefault`
+// is refused for the same reason: at `false` on every row the same fallback picks whichever address
+// happens to be first.
 
 private fun GenSavedAddressDto.toAppDto(): SavedAddressDto? {
     val id = id ?: return null
@@ -92,6 +96,6 @@ private fun GenSavedAddressDto.toAppDto(): SavedAddressDto? {
         country = country,
         latitude = latitude,
         longitude = longitude,
-        isDefault = isDefault ?: false,
+        isDefault = isDefault ?: return null,
     )
 }

@@ -1,10 +1,12 @@
 package cz.cleansia.customer.core.notifications
 
+import android.content.Context
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.R
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -30,17 +32,33 @@ import retrofit2.Response
 class NotificationPreferencesRepositoryTest {
 
     private lateinit var api: NotificationPreferencesApi
-
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private lateinit var appContext: Context
 
     @Before
     fun setUp() {
         api = mockk()
+        appContext = mockk(relaxed = true)
+        every { appContext.getString(R.string.error_generic_network) } returns "network"
+        every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
+        every { appContext.packageName } returns "cz.cleansia.customer"
     }
 
-    private fun newRepo() = NotificationPreferencesRepository(api, json)
+    private fun newRepo() = NotificationPreferencesRepository(api, appContext)
 
-    private fun payload(promo: Boolean = false) = NotificationPreferencesPayload(promo = promo)
+    /** Every toggle carries a value; none of them may come from a constructor default. */
+    private fun payload(promo: Boolean = false) = NotificationPreferencesPayload(
+        orderUpdates = true,
+        cleanerOnTheWay = true,
+        orderCompleted = true,
+        orderCancelled = true,
+        refundIssued = true,
+        membershipExpiring = true,
+        membershipCancelled = true,
+        tierUpgrade = true,
+        promo = promo,
+        disputeReply = true,
+        recurringScheduled = true,
+    )
 
     private fun errorBody() = "{}".toResponseBody("application/json".toMediaType())
 

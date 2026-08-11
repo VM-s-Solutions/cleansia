@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.user
 
+import cz.cleansia.customer.api.model.Code as GenCode
 import cz.cleansia.customer.api.model.MyProfileDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,6 +24,22 @@ data class CodeDto(
     val name: String,
     val value: Int,
 )
+
+/**
+ * `value` is the ordinal every status decision is made from, and `0` is a real status (`New`) rather
+ * than an absence — a defaulted code tells the screen the order has not started yet. `type` and
+ * `name` are display labels the app never branches on, so they blank rather than refuse.
+ *
+ * Shared because `Code` is one wire type reached from several surfaces: a second copy of this mapper
+ * is a second ruling on the same field, and the order and dispute copies had already diverged.
+ */
+internal fun GenCode.toAppDto(): CodeDto? {
+    return CodeDto(
+        type = type.orEmpty(),
+        name = name.orEmpty(),
+        value = `value` ?: return null,
+    )
+}
 
 @Serializable
 data class BlobFileDto(

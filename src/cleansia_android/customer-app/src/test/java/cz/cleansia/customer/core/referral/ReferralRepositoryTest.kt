@@ -70,14 +70,24 @@ class ReferralRepositoryTest {
 
     private fun newRepo() = ReferralRepository(api, appContext)
 
+    private fun account(acceptedCount: Int = 3) = ReferralAccountDto(
+        code = "ABC123",
+        timesUsed = 4,
+        qualifiedCount = 2,
+        acceptedCount = acceptedCount,
+        pointsPerReferral = 200,
+    )
+
     // ── refresh() ──
 
     @Test
     fun refresh_givenSuccess_cachesAccountAndReferralsAndReturnsSuccess() = runTest {
-        val account = ReferralAccountDto(code = "ABC123", acceptedCount = 2)
+        val account = account(acceptedCount = 2)
         val referrals = ReferralListResponseDto(
+            pageNumber = 1,
+            pageSize = 20,
             total = 1,
-            data = listOf(ReferralListItemDto(id = "r1", status = 1)),
+            data = listOf(ReferralListItemDto(id = "r1", status = 2)),
         )
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(referrals)
@@ -130,7 +140,7 @@ class ReferralRepositoryTest {
     fun refresh_whenAccountSucceedsButReferralsFail_stillSucceedsWithEmptyList() = runTest {
         // Referrals-page errors are swallowed inside refresh — a list failure must
         // not fail the whole refresh (the stats row falls back to account counters).
-        val account = ReferralAccountDto(code = "ABC123")
+        val account = account()
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } throws java.io.IOException("boom")
 
@@ -185,10 +195,12 @@ class ReferralRepositoryTest {
 
     @Test
     fun clear_resetsAccountReferralsAndLoaded() = runTest {
-        val account = ReferralAccountDto(code = "ABC123")
+        val account = account()
         val referrals = ReferralListResponseDto(
+            pageNumber = 1,
+            pageSize = 20,
             total = 1,
-            data = listOf(ReferralListItemDto(id = "r1")),
+            data = listOf(ReferralListItemDto(id = "r1", status = 2)),
         )
         coEvery { api.getMy() } returns Response.success(account)
         coEvery { api.getMyReferrals(offset = 0, limit = 20) } returns Response.success(referrals)

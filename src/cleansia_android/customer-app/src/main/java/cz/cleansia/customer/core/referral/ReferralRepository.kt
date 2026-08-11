@@ -69,14 +69,16 @@ class ReferralRepository @Inject constructor(
             if (!accountResp.isSuccessful) {
                 return httpError(accountResp.errorBody(), accountResp.code())
             }
-            _account.value = accountResp.body()
+            _account.value = accountResp.body() ?: return emptyBodyError()
 
             // Best-effort — most users have <20 referrals; a failure here just
             // leaves the cached list as-is and the stats row falls back to the
-            // counters from `account`.
+            // counters from `account`. A refused page leaves it as-is too: an
+            // empty list here would report "you have invited nobody" over a
+            // breakdown the server answered.
             val referralsResp = networkCall { api.getMyReferrals(offset = 0, limit = 20) }
             if (referralsResp?.isSuccessful == true) {
-                _referrals.value = referralsResp.body()?.data ?: emptyList()
+                referralsResp.body()?.let { _referrals.value = it.data }
             }
 
             _loaded.value = true
@@ -101,11 +103,19 @@ class ReferralRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return resp.body()?.let { ApiResult.Success(it) } ?: emptyBodyError()
     }
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    /**
+     * A 2xx whose body did not survive [ReferralApi]'s contract refusal. Deliberately not
+     * [ApiError.Network]: that channel is the silent one and the network is the one thing that did
+     * not fail.
+     */
+    private fun emptyBodyError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)

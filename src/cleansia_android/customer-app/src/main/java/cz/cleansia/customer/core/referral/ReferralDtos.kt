@@ -20,21 +20,21 @@ import kotlinx.serialization.Serializable
 /** Mirrors backend `GetMyReferral.Response`. */
 @Serializable
 data class ReferralAccountDto(
-    val code: String = "",
-    val timesUsed: Int = 0,
-    val qualifiedCount: Int = 0,
-    val acceptedCount: Int = 0,
-    val pointsPerReferral: Int = 0,
+    val code: String,
+    val timesUsed: Int,
+    val qualifiedCount: Int,
+    val acceptedCount: Int,
+    val pointsPerReferral: Int,
 )
 
 /** Mirrors backend `GetMyReferrals` paged list item. */
 @Serializable
 data class ReferralListItemDto(
-    val id: String? = null,
+    val id: String,
     /** First name only — backend anonymises last names. */
     val referredUserName: String? = null,
-    /** 1=Accepted, 2=Qualified, 3=Expired. */
-    val status: Int = 1,
+    /** 1=Accepted, 2=Qualified, 3=Expired, 4=Reversed. */
+    val status: Int,
     val acceptedOn: String? = null,
     val firstQualifyingOrderOn: String? = null,
     val pointsAwardedToReferrer: Int? = null,
@@ -42,9 +42,9 @@ data class ReferralListItemDto(
 
 @Serializable
 data class ReferralListResponseDto(
-    val pageNumber: Int = 0,
-    val pageSize: Int = 0,
-    val total: Int = 0,
+    val pageNumber: Int,
+    val pageSize: Int,
+    val total: Int,
     val data: List<ReferralListItemDto> = emptyList(),
 )
 
@@ -55,7 +55,7 @@ data class ValidateReferralRequest(
 
 @Serializable
 data class ValidateReferralResponse(
-    val isValid: Boolean = false,
+    val isValid: Boolean,
     val referrerFirstName: String? = null,
     /** Backend `ReferralValidationError` enum stringified. Null when isValid=true. */
     val errorCode: String? = null,
@@ -65,7 +65,8 @@ data class ValidateReferralResponse(
 enum class ReferralStatus(val value: Int) {
     Accepted(1),
     Qualified(2),
-    Expired(3);
+    Expired(3),
+    Reversed(4);
 
     companion object {
         fun fromValue(v: Int?): ReferralStatus? = entries.firstOrNull { it.value == v }

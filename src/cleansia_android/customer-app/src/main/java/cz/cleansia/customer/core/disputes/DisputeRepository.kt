@@ -80,7 +80,7 @@ class DisputeRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.body() ?: return emptyBodyError()
             _disputes.value = body.data
             _totalRecords.value = body.total
             _loaded.value = true
@@ -105,7 +105,7 @@ class DisputeRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return ApiResult.Success(Unit)
+            val body = resp.body() ?: return emptyBodyError()
             _disputes.value = _disputes.value + body.data
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
@@ -120,7 +120,7 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return resp.body()?.let { ApiResult.Success(it) } ?: emptyBodyError()
     }
 
     /**
@@ -136,7 +136,7 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return resp.body()?.let { ApiResult.Success(it) } ?: emptyBodyError()
     }
 
     /**
@@ -176,11 +176,19 @@ class DisputeRepository @Inject constructor(
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return resp.body()?.let { ApiResult.Success(it) } ?: emptyBodyError()
     }
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    /**
+     * A 2xx whose body did not survive [DisputeApi]'s contract refusal. Deliberately not
+     * [ApiError.Network]: that channel is the silent one and the network is the one thing that did
+     * not fail. Reporting it as `Success` would end pagination while claiming there is nothing more.
+     */
+    private fun emptyBodyError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)

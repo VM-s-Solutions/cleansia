@@ -22,7 +22,7 @@ data class ValidatePromoCodeRequest(
 /** Mirrors backend `ValidatePromoCode.Response`. */
 @Serializable
 data class ValidatePromoCodeResponse(
-    val isValid: Boolean = false,
+    val isValid: Boolean,
     val discountAmount: Double? = null,
     /** Backend returns the PromoCodeError enum stringified, e.g. "NotFound", "Expired". Null when isValid=true. */
     val errorCode: String? = null,

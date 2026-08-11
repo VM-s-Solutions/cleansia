@@ -2,7 +2,6 @@ package cz.cleansia.customer.core.disputes
 
 import cz.cleansia.customer.api.client.DisputeApi as GenDisputeApi
 import cz.cleansia.customer.api.model.AddDisputeMessageCommand as GenAddDisputeMessageCommand
-import cz.cleansia.customer.api.model.Code as GenCode
 import cz.cleansia.customer.api.model.CreateDisputeCommand as GenCreateDisputeCommand
 import cz.cleansia.customer.api.model.DisputeDetails as GenDisputeDetails
 import cz.cleansia.customer.api.model.DisputeEvidenceDto as GenDisputeEvidenceDto
@@ -11,7 +10,7 @@ import cz.cleansia.customer.api.model.DisputeMessageDto as GenDisputeMessageDto
 import cz.cleansia.customer.api.model.DisputeReason as GenDisputeReason
 import cz.cleansia.customer.api.model.PagedDataOfDisputeListItem as GenPagedDisputes
 import cz.cleansia.customer.api.model.UploadDisputeEvidenceResponse as GenUploadDisputeEvidenceResponse
-import cz.cleansia.customer.core.user.CodeDto
+import cz.cleansia.customer.core.user.toAppDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -83,63 +82,90 @@ private inline fun <T, R : Any> Response<T>.mapBody(transform: (T?) -> R?): Resp
 
 // ─── Generated → app DTO mappers ───
 
-private fun GenPagedDisputes?.toAppDto(): DisputeListResponseDto = DisputeListResponseDto(
-    pageNumber = this?.pageNumber ?: 0,
-    pageSize = this?.pageSize ?: 0,
-    total = this?.total ?: 0,
-    data = this?.`data`?.map { it.toAppDto() }.orEmpty(),
-)
+/**
+ * `total` is both the count `DisputesListScreen` renders and the stop condition
+ * [DisputeRepository.loadNextPage] pages against, so a defaulted zero ends pagination while claiming
+ * the customer has no disputes.
+ *
+ * The two rulings compose as they do on the orders list, and for the same reason: nothing here sums
+ * the rows — `total` is the server's own count and `refundAmount` is `nullable: true`, since an
+ * unresolved dispute has no refund — so an unidentifiable row is dropped rather than costing the
+ * customer every other dispute the server answered, while a surviving row whose own content is broken
+ * refuses, and because the row is an element of the page that refuses the page.
+ */
+private fun GenPagedDisputes?.toAppDto(): DisputeListResponseDto? {
+    if (this == null) return null
+    return DisputeListResponseDto(
+        pageNumber = pageNumber ?: return null,
+        pageSize = pageSize ?: return null,
+        total = total ?: return null,
+        data = `data`.orEmpty()
+            .filter { it.id != null }
+            .map { it.toAppDtoOrRefuse() ?: return null },
+    )
+}
 
-private fun GenDisputeListItem.toAppDto(): DisputeListItemDto = DisputeListItemDto(
-    id = id,
-    orderId = orderId,
-    displayOrderNumber = displayOrderNumber,
-    customerName = customerName,
-    customerEmail = customerEmail,
-    reason = reason?.toAppDto(),
-    status = status?.toAppDto(),
-    createdOn = createdOn?.toString(),
-    resolvedOn = resolvedOn?.toString(),
-    refundAmount = refundAmount,
-)
+private fun GenDisputeListItem.toAppDtoOrRefuse(): DisputeListItemDto? {
+    return DisputeListItemDto(
+        id = id,
+        orderId = orderId,
+        displayOrderNumber = displayOrderNumber,
+        customerName = customerName,
+        customerEmail = customerEmail,
+        reason = reason?.toAppDto() ?: return null,
+        status = status?.toAppDto() ?: return null,
+        createdOn = createdOn?.toString(),
+        resolvedOn = resolvedOn?.toString(),
+        refundAmount = refundAmount,
+    )
+}
 
-private fun GenDisputeDetails.toAppDto(): DisputeDetailsDto = DisputeDetailsDto(
-    id = id,
-    orderId = orderId,
-    displayOrderNumber = displayOrderNumber,
-    userId = null, // not on generated DTO
-    customerName = customerName,
-    customerEmail = customerEmail,
-    reason = reason?.toAppDto(),
-    description = description,
-    status = status?.toAppDto(),
-    resolutionNotes = resolutionNotes,
-    refundAmount = refundAmount,
-    resolvedBy = null, // not on generated DTO
-    resolvedOn = resolvedOn?.toString(),
-    stripeDisputeId = null, // not on generated DTO
-    messages = messages?.map { it.toAppDto() },
-    evidence = evidence?.map { it.toAppDto() },
-    createdOn = createdOn?.toString(),
-    createdBy = null,
-    updatedOn = updatedOn?.toString(),
-    updatedBy = null,
-)
+/**
+ * One dispute, so there is no rest of the page to keep: the detail refuses outright. The thread is
+ * the content rather than decoration over it, so a message that cannot be attributed refuses the
+ * dispute with it.
+ */
+private fun GenDisputeDetails.toAppDto(): DisputeDetailsDto? {
+    return DisputeDetailsDto(
+        id = id,
+        orderId = orderId,
+        displayOrderNumber = displayOrderNumber,
+        userId = null, // not on generated DTO
+        customerName = customerName,
+        customerEmail = customerEmail,
+        reason = reason?.toAppDto() ?: return null,
+        description = description,
+        status = status?.toAppDto() ?: return null,
+        resolutionNotes = resolutionNotes,
+        refundAmount = refundAmount,
+        resolvedBy = null, // not on generated DTO
+        resolvedOn = resolvedOn?.toString(),
+        stripeDisputeId = null, // not on generated DTO
+        messages = messages?.map { it.toAppDto() ?: return null },
+        evidence = evidence?.map { it.toAppDto() },
+        createdOn = createdOn?.toString(),
+        createdBy = null,
+        updatedOn = updatedOn?.toString(),
+        updatedBy = null,
+    )
+}
 
-private fun GenCode.toAppDto(): CodeDto = CodeDto(
-    type = type.orEmpty(),
-    name = name.orEmpty(),
-    value = `value` ?: 0,
-)
-
-private fun GenDisputeMessageDto.toAppDto(): DisputeMessageDto = DisputeMessageDto(
-    id = id,
-    message = message,
-    authorId = authorId,
-    authorName = authorName,
-    isStaffMessage = isStaffMessage ?: false,
-    createdOn = createdOn?.toString(),
-)
+/**
+ * `isStaffMessage` decides which side of the thread a message is drawn on, so `false` renders
+ * Cleansia's reply as something the customer wrote themselves — on the one screen where they are
+ * waiting to hear whether their money is coming back, the answer arrives and reads as their own
+ * words.
+ */
+private fun GenDisputeMessageDto.toAppDto(): DisputeMessageDto? {
+    return DisputeMessageDto(
+        id = id,
+        message = message,
+        authorId = authorId,
+        authorName = authorName,
+        isStaffMessage = isStaffMessage ?: return null,
+        createdOn = createdOn?.toString(),
+    )
+}
 
 private fun GenDisputeEvidenceDto.toAppDto(): DisputeEvidenceDto = DisputeEvidenceDto(
     id = id,

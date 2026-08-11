@@ -79,3 +79,15 @@ jobs:
       # heuristic in the blocking path and teach everyone to route around the gate.
       - name: Catalog claim liveness (ADR status · retirement banners · citations)
         run: node agents/tools/check-catalog-claims.mjs
+
+      # BLOCKING from day one, because its baseline is zero by construction: the reconciliation that
+      # closed all 44 divergences landed in the same commit that added this step. Same host workflow
+      # as the checker above because it is the same failure one level up — a claim about the tree that
+      # was true when written and was falsified by work landing where the claim could not see it.
+      #
+      # WHY IT EARNS A GATE: on 2026-08-11 four lanes in one day were dispatched to implement 24
+      # tickets that were already shipped, because INDEX.md records each ticket twice with independent
+      # statuses and only the close-out row gets updated. One of the 24 would have been actively
+      # harmful to re-implement. A reviewer cannot hold 385 rows in their head; this can.
+      - name: Backlog self-consistency (duplicate rows · ticket-file agreement)
+        run: node agents/tools/check-backlog-consistency.mjs

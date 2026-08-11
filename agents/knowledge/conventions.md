@@ -1,5 +1,25 @@
 # Conventions & Quality Bars
 
+> ## ⚠️ FOUR CI GATES WERE REMOVED — 2026-08-11, owner instruction. Any `T1-CI` token naming one of them is now FALSE.
+>
+> Deleted: `catalog-claims.yml`, `module-boundaries.yml`, `offerability-parity.yml`,
+> `nx-project-registration.yml`. **The checker scripts survive** under `agents/tools/` and still run on
+> demand — what is gone is the thing that made them able to fail a build.
+>
+> §*"The price of a law"* below is explicit that **a tier naming a mechanism that cannot fail a build is
+> `T2-ADVISORY`**, not `T1-CI`. Every entry citing one of those four workflows therefore overstates its
+> enforcement, and those rules are now **conventions a human upholds**, not gates. The tokens are not
+> individually rewritten — that would assert a tier nobody has re-decided — so this banner is the
+> correction and it applies to all of them at once.
+>
+> **What the four were catching, so the trade is visible rather than implied:** citation and ADR-status
+> rot in `agents/**`; customer→partner module-boundary regressions; offerability-status drift between
+> the C# source of truth and eight client literals across three languages; and libraries becoming
+> invisible to Nx. Each had a measured, non-zero baseline before its gate existed.
+>
+> **Retires when:** any workflow file names one of the four checkers again.
+
+
 The shared "what clean means here" reference, across all stacks. Every developer reads this plus
 their stack catalog. The Reviewer enforces it. Where this references concrete .NET / Angular /
 Compose patterns, the per-stack catalogs (`patterns-backend.md`, `patterns-frontend.md`,

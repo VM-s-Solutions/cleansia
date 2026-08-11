@@ -5,6 +5,27 @@ plan and the current state for turning the team's conventions into **machine-che
 consistency survives even when an agent (or human) doesn't read carefully. The principle:
 **deterministic beats diligent.** Anything a tool can check, a tool should check.
 
+> ## ⚠️ FOUR CI GATES WERE REMOVED — 2026-08-11, owner instruction. Any `T1-CI` token naming one of them is now FALSE.
+>
+> Deleted: `catalog-claims.yml`, `module-boundaries.yml`, `offerability-parity.yml`,
+> `nx-project-registration.yml`. **The checker scripts survive** under `agents/tools/` and still run on
+> demand — what is gone is the thing that made them able to fail a build.
+>
+> `conventions.md` §*"The price of a law"* is explicit that **a tier naming a mechanism that cannot fail
+> a build is `T2-ADVISORY`**, not `T1-CI`. So every entry below that cites one of those four workflows
+> now overstates its enforcement, and a reader must treat those rules as **conventions a human upholds**,
+> rather than as gates. The tokens are not individually rewritten here — that would be a large edit
+> asserting a tier nobody has re-decided — so this banner is the correction, and it applies to all of
+> them at once.
+>
+> **What is actually lost, so the trade is visible rather than implied:** citation and ADR-status rot in
+> `agents/**` (the catalog gate caught a live instance the same day it was promoted), customer→partner
+> module-boundary regressions, offerability-status drift between the C# source of truth and eight client
+> literals across three languages, and libraries becoming invisible to Nx. Each was a real defect class
+> with a measured baseline before its gate existed.
+>
+> **Retires when:** a workflow under `.github/workflows/` runs any of the four checkers again.
+
 ## What's mechanical today
 
 | Layer | Tool | Covers | Status |

@@ -293,29 +293,41 @@ going away — not just by deleting a key.
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
-> **A spec asserting a translated refusal must polyfill `Blob.prototype.text` first, or it proves
-> nothing.** The generated clients read errors with `responseType: 'blob'`, so a real refusal arrives as
-> a Blob and `parseBlobToJson` is what turns it into a key. **jsdom ships no `Blob.prototype.text`**, so
-> under jest that rejects and the interceptor takes its `.catch` — every locale silently renders
-> `api.common.error_occurred`. A locale assertion written without the polyfill therefore passes on the
-> *fallback* rather than on the message, and passes just as well when the key is wrong, missing, or
-> renamed.
+> **A spec asserting a translated refusal needs `Blob.prototype.text`, or it proves nothing — and the
+> workspace now supplies it, so write no `beforeAll` of your own.** The generated clients read errors
+> with `responseType: 'blob'`, so a real refusal arrives as a Blob and `parseBlobToJson` is what turns it
+> into a key. **jsdom 20 ships no `Blob.prototype.text`**, so unpolyfilled that rejects and the
+> interceptor takes its `.catch` — every locale silently renders `api.common.error_occurred`. A locale
+> assertion written that way passes on the *fallback* rather than on the message, and passes just as well
+> when the key is wrong, missing, or renamed.
 >
-> Measured, not argued: disabling the polyfill in the customer preferred-offer spec turns **all five
-> locale cases red**, and the partner radius spec's locale cases were green-for-the-wrong-reason until
-> one was added. The interceptor's own spec exercises only the **non-blob** branch — the one production
-> does not take. Two lanes hit this independently on 2026-08-09; a sweep of the other six specs touching
-> `HttpErrorInterceptorFn` found none asserting a translated refusal, so nothing else is currently green
-> for this reason.
+> The polyfill is `src/Cleansia.App/jest.polyfills.ts`, loaded into **every** project by `setupFiles` in
+> the shared `jest.preset.js`, and declared as an input on the jest target — `nx.json` `targetDefaults`
+> → `@nx/jest:jest`. Both halves are load-bearing for the same reason the shared-client glob is further
+> down this page: undeclared, a warm-cache `nx test services` **replays green over a disabled polyfill**
+> — measured, then measured again as red once declared.
 >
-> **Enforced by:** `libs/cleansia-customer-features/orders/…/order-preferred-offer.refusal.spec.ts` and
-> `libs/cleansia-partner-features/profile/…/profile-job-radius.refusal.spec.ts` — **T2-spec**. A shared
-> jest-setup polyfill plus a test of the blob branch itself would raise this to T1-CI and retire the
-> per-spec form; that is filed, not done.
+> **Membership test for the declaration:** a `project.json` that gives its own `test` target an `inputs`
+> list *replaces* `targetDefaults` rather than extending it, so it must repeat the entry.
+> `libs/shared/models/project.json` does; find the rest with
+> `grep -l '"inputs"' libs/*/*/project.json`.
+>
+> Measured, not argued: unloading the shared polyfill turns the customer preferred-offer spec's **five
+> locale cases** and the partner radius spec's **five** red, plus the interceptor's own blob-branch
+> cases. Making `parseBlobToJson` stop resolving the key reddens the blob-branch cases alone. The
+> non-blob branch — the one production does not take — is still covered beside them.
+>
+> **Enforced by:** the *"a refusal that arrives as a Blob"* cases in
+> `libs/core/services/src/lib/interceptors/http-error.interceptor.spec.ts`, which exercise the branch
+> production takes and go red if the shared setup stops being loaded — **T1-CI**, `frontend-ci.yml`'s
+> *"Unit tests (affected)"* step (`nx affected -t test`), which unlike that workflow's lint step is not
+> `continue-on-error`. The two feature-level refusal specs remain as locale coverage; neither carries a
+> polyfill any more, and a new one must not.
 
 The single canonical mechanism for surfacing a backend `BusinessErrorMessage` to the user is the
 shared `HttpErrorInterceptorFn` (`libs/core/services/.../interceptors/http-error.interceptor.ts`). It
-fires for **every** non-404/non-403 error, pulls the first `BusinessErrorMessage` dot-value out of the
+fires for every non-404/non-403 error **except a request that opted out**, pulls the first
+`BusinessErrorMessage` dot-value out of the
 response body (`order.cancellation_window_closed`), and resolves it as **`api.${dotValue}`** — i.e. it
 looks up `api.order.cancellation_window_closed` against the deeply-nested `api.*` block. So when the
 backend adds a customer-reachable `BusinessErrorMessage` constant, add the matching `api.*` key (the
@@ -323,6 +335,26 @@ backend adds a customer-reachable `BusinessErrorMessage` constant, add the match
 
 Note the canonical namespace is **`api.*`**, not `errors.*`. `conventions.md` historically phrased the
 rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow the code: `api.*`.**
+
+**Opting a request out of the toast — `SUPPRESS_ERROR_TOAST`.** Some requests are made *on the user's
+behalf but not at their request*, and a toast for one is noise about something they never asked for.
+The live case is the language-preference push: it fires off a picker the user has already seen take
+effect, so a failed push produces an error about an action that visibly succeeded. The opt-out is an
+`HttpContextToken` defaulting to `false` (`interceptors/error-toast-suppression.ts`) — **per request,
+never per interceptor**, so the default stays "everything toasts" and each silence is a call site that
+had to ask for it.
+
+⚠️ **The generated clients build their own request options and expose no `HttpContext` seam**, so you
+cannot stamp the token at a normal call site. The idiom is to inject a *different client*:
+`SilentFailurePartnerClient` sits beside `PartnerClient` in the hand-written `base-client.ts` and builds
+its sub-clients over an `HttpClient` that wraps `inject(HttpHandler)`, stamps the token, and delegates
+to the same chain — so auth, retry and loading are untouched. It deliberately exposes only the
+sub-clients that have a call site; add one only together with the call site that needs it, or the
+silence spreads by availability rather than by decision.
+
+This is a narrower thing than `ABSENT_RESOURCE_ERROR_CODES`, which grants silence to a **set of error
+codes** wherever they occur. This grants it to **one request**. Neither is a licence to silence a
+failure the user is waiting on.
 
 **Hard parity rule** (tier and enforcer declared at the foot of this list):
 - Every customer-reachable backend error key must have a non-empty translation under `api.*` in all
@@ -858,7 +890,9 @@ available one.
 
 **A file a spec only `readFileSync`s is a file Nx cannot see, and an unseen input makes a green run
 worthless.** Nx derives *both* "is this project affected" *and* the task's cache key from **declared**
-inputs: `nx.json` gives `@nx/jest` `["default", "^production", "{workspaceRoot}/jest.preset.js"]`,
+inputs: `nx.json` gives `@nx/jest` `["default", "^production", "{workspaceRoot}/jest.preset.js",
+"{workspaceRoot}/jest.polyfills.ts"]` — the fourth element is the **second** instance of this same
+defect, found and closed the same way (see the jsdom-blob entry below) —
 `default` is `{projectRoot}/**/*`, `sharedGlobals` is **empty**, and `models` has no dependency edge to
 any `*-services` lib — nor may it have one. Undeclared, the three clients are inputs to nothing, which is
 two independent holes; the second one is the one nobody expects. Measured by renumbering `OnTheWay = 3`
@@ -878,8 +912,16 @@ lib arrives covered:
 
 ```jsonc
 "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js",
+           "{workspaceRoot}/jest.polyfills.ts",
            "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"]
 ```
+
+⚠️ **A project-level `inputs` array REPLACES the `targetDefaults` one — it does not extend it.** So a
+workspace-wide input added to `nx.json` alone silently misses every project that declares its own list,
+and `models` is exactly such a project *because of the rule above*. That is why the polyfill entry
+appears twice in this section: adding it in one place and measuring the warm cache is how you discover
+the second place, and adding it in one place while measuring only `--skip-nx-cache` is how you ship a
+hole that reads as closed.
 
 **An input is a hashing declaration, not a dependency — and that distinction is the only reason this is
 available here.** `nx graph` still reports `models → types` and nothing else. The alternative that looks

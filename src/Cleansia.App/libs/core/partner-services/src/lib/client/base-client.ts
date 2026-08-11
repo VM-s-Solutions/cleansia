@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { errorToastSuppressingHttpClient } from '@cleansia/services';
 import {
   APIBASEURL,
   AuthClient,
@@ -32,6 +33,8 @@ import {
   UserClient,
 } from './partner-client';
 
+const FALLBACK_API_BASE_URL = 'http://localhost:5000';
+
 interface IPartnerClient {
   authClient: IAuthClient;
   codeClient: ICodeClient;
@@ -55,7 +58,7 @@ interface IPartnerClient {
 export class PartnerClient implements IPartnerClient {
   private readonly httpClient: HttpClient = inject(HttpClient);
   private readonly apiBaseUrl: string =
-    inject(APIBASEURL, { optional: true }) ?? 'http://localhost:5000';
+    inject(APIBASEURL, { optional: true }) ?? FALLBACK_API_BASE_URL;
 
   authClient: IAuthClient = new AuthClient(this.httpClient, this.apiBaseUrl);
   codeClient: ICodeClient = new CodeClient(this.httpClient, this.apiBaseUrl);
@@ -101,4 +104,21 @@ export class PartnerClient implements IPartnerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+}
+
+/**
+ * The same generated sub-clients over an `HttpClient` that stamps `SUPPRESS_ERROR_TOAST`, for calls
+ * the caller promises the user will never see fail. Inject this instead of `PartnerClient` at that
+ * call site; everything else keeps the shared snackbar. Add a sub-client here only together with
+ * the call site that needs it.
+ */
+@Injectable({
+  providedIn: 'root',
+})
+export class SilentFailurePartnerClient {
+  private readonly httpClient: HttpClient = errorToastSuppressingHttpClient();
+  private readonly apiBaseUrl: string =
+    inject(APIBASEURL, { optional: true }) ?? FALLBACK_API_BASE_URL;
+
+  userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
 }

@@ -15,6 +15,7 @@
         "default",
         "^production",
         "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/jest.polyfills.ts",
         "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"
       ],
       "outputs": [

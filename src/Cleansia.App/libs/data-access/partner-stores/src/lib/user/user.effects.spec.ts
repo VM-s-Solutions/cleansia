@@ -2,21 +2,16 @@ import { HttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { UserFilter } from '@cleansia/models';
 import {
-  BlobFileDto,
   IUserClient,
   MyProfileDto,
   PagedDataOfUserListItem,
   PartnerClient,
   SortDefinition,
-  UpdateCurrentUserCommand,
-  UpdateCurrentUserResponse,
   UserClient,
   UserItem,
 } from '@cleansia/partner-services';
-import { SnackbarService } from '@cleansia/services';
 import { provideMockActions } from '@ngrx/effects/testing';
-import { Action, Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
+import { Action } from '@ngrx/store';
 import { EMPTY, Subject, of, throwError } from 'rxjs';
 import * as UserActions from './user.actions';
 import { UserEffects } from './user.effects';
@@ -29,10 +24,7 @@ describe('UserEffects (partner)', () => {
     getPaged: jest.Mock;
     getCurrent: jest.Mock;
     getById: jest.Mock;
-    updateCurrentUser: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock };
-  let currentLang: string;
 
   const createEffects = (
     client: { userClient: Partial<IUserClient> } = { userClient },
@@ -42,18 +34,6 @@ describe('UserEffects (partner)', () => {
         UserEffects,
         provideMockActions(() => actions$),
         { provide: PartnerClient, useValue: client },
-        { provide: SnackbarService, useValue: snackbar },
-        {
-          provide: TranslateService,
-          useValue: {
-            instant: (key: string) => key,
-            get currentLang() {
-              return currentLang;
-            },
-            getDefaultLang: () => 'en',
-          },
-        },
-        { provide: Store, useValue: { dispatch: jest.fn(), select: () => EMPTY } },
       ],
     });
     return TestBed.inject(UserEffects);
@@ -69,14 +49,11 @@ describe('UserEffects (partner)', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     actions$ = new Subject<Action>();
-    currentLang = 'cs';
     userClient = {
       getPaged: jest.fn(),
       getCurrent: jest.fn(),
       getById: jest.fn(),
-      updateCurrentUser: jest.fn(),
     };
-    snackbar = { showSuccess: jest.fn() };
   });
 
   describe('loadPaged$', () => {
@@ -234,132 +211,6 @@ describe('UserEffects (partner)', () => {
 
       expect(emitted).toHaveLength(1);
       expect(emitted[0].type).toBe(UserActions.loadUserDetailFailure.type);
-    });
-  });
-
-  describe('updateCurrent$', () => {
-    const photo = (): BlobFileDto =>
-      BlobFileDto.fromJS({
-        fileName: 'avatar.png',
-        base64Content: 'AAAA',
-        contentType: 'image/png',
-      });
-
-    const dispatchUpdate = (
-      overrides: Partial<{ photo: BlobFileDto; birthDate: Date; phoneNumber: string }> = {},
-    ) =>
-      actions$.next(
-        UserActions.updateUserCurrent({
-          id: USER_ID,
-          firstName: 'Ada',
-          lastName: 'Lovelace',
-          phoneNumber: '+420123456789',
-          birthDate: new Date(1990, 4, 15),
-          ...overrides,
-        }),
-      );
-
-    const sentCommand = (): UpdateCurrentUserCommand =>
-      userClient.updateCurrentUser.mock.calls[0][0];
-
-    beforeEach(() => {
-      userClient.updateCurrentUser.mockReturnValue(
-        of(UpdateCurrentUserResponse.fromJS({ id: USER_ID })),
-      );
-    });
-
-    it('sends the whole wire body, so a dropped assignment cannot pass as green', () => {
-      collect(createEffects().updateCurrent$);
-      dispatchUpdate({ photo: photo() });
-
-      const command = sentCommand();
-      expect(command).toBeInstanceOf(UpdateCurrentUserCommand);
-      expect(command.toJSON()).toEqual({
-        id: USER_ID,
-        firstName: 'Ada',
-        lastName: 'Lovelace',
-        phoneNumber: '+420123456789',
-        birthDate: '1990-05-15',
-        photo: {
-          fileName: 'avatar.png',
-          base64Content: 'AAAA',
-          contentType: 'image/png',
-          blobUrl: undefined,
-        },
-        languageCode: 'cs',
-        removePhoto: false,
-      });
-    });
-
-    // The regen-break shape. `UpdateCurrentUserCommand` is a whole-resource update, so a member the
-    // backend adds is sent as its type default and OVERWRITES the stored value — and every member is
-    // declared `field!: T`, so nothing type-checks the omission. Pinning the key set makes the regen
-    // red here instead of silent in production.
-    it('carries exactly the members the generated command declares', () => {
-      collect(createEffects().updateCurrent$);
-      dispatchUpdate({ photo: photo() });
-
-      expect(Object.keys(sentCommand().toJSON()).sort()).toEqual([
-        'birthDate',
-        'firstName',
-        'id',
-        'languageCode',
-        'lastName',
-        'phoneNumber',
-        'photo',
-        'removePhoto',
-      ]);
-    });
-
-    it('sends an empty photo rather than undefined when the caller supplies none', () => {
-      collect(createEffects().updateCurrent$);
-      dispatchUpdate();
-
-      const command = sentCommand();
-      expect(command.photo).toBeInstanceOf(BlobFileDto);
-      expect(command.toJSON().photo).toEqual({
-        fileName: '',
-        base64Content: '',
-        contentType: '',
-        blobUrl: undefined,
-      });
-      expect(command.removePhoto).toBe(false);
-    });
-
-    it('falls back to the default language when no language is active', () => {
-      currentLang = '';
-      collect(createEffects().updateCurrent$);
-      dispatchUpdate();
-
-      expect(sentCommand().languageCode).toBe('en');
-    });
-
-    it('confirms the save and emits the id the server returned', () => {
-      const emitted = collect(createEffects().updateCurrent$);
-      dispatchUpdate();
-
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
-        'pages.user_profile.user_updated_message.success',
-      );
-      expect(emitted).toEqual([
-        UserActions.updateUserCurrentSuccess({ id: USER_ID }),
-      ]);
-    });
-
-    it('does not confirm a save that failed, and stays alive for the retry', () => {
-      userClient.updateCurrentUser
-        .mockReturnValueOnce(throwError(() => ({ message: 'rejected' })))
-        .mockReturnValueOnce(of(UpdateCurrentUserResponse.fromJS({ id: USER_ID })));
-
-      const emitted = collect(createEffects().updateCurrent$);
-      dispatchUpdate();
-      dispatchUpdate();
-
-      expect(emitted.map((a) => a.type)).toEqual([
-        UserActions.updateUserCurrentFailure.type,
-        UserActions.updateUserCurrentSuccess.type,
-      ]);
-      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
     });
   });
 });

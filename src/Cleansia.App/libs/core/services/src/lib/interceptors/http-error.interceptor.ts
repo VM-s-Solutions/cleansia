@@ -8,6 +8,7 @@ import { getObjectValues, parseBlobToJson } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { ABSENT_RESOURCE_ERROR_CODES, SnackbarService } from '../services';
+import { SUPPRESS_ERROR_TOAST } from './error-toast-suppression';
 
 const GENERIC_ERROR_KEY = 'api.common.error_occurred';
 
@@ -28,7 +29,8 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
   const translate = inject(TranslateService);
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (!error.ok && error.status !== HttpStatusCode.NotFound) {
+      const suppressed = req.context.get(SUPPRESS_ERROR_TOAST);
+      if (!suppressed && !error.ok && error.status !== HttpStatusCode.NotFound) {
         if (error.status === HttpStatusCode.Forbidden) {
           snackbarService.showError(
             translate.instant('api.common.unauthorized')

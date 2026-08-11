@@ -28,24 +28,6 @@ const GENERIC_FALLBACK_KEY = 'api.common.error_occurred';
 const bundleFor = (locale: string): Record<string, unknown> =>
   JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8'));
 
-/**
- * jsdom ships no `Blob.prototype.text`, and the generated clients read errors as blobs
- * (`responseType: 'blob'`), so without this the interceptor's real branch takes its `.catch` and
- * every refusal reads as the generic fallback — a test that agrees with the bug it is checking for.
- */
-beforeAll(() => {
-  if (typeof Blob.prototype.text !== 'function') {
-    Blob.prototype.text = function (this: Blob): Promise<string> {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsText(this);
-      });
-    };
-  }
-});
-
 /** The blob read resolves on the FileReader's load event, which is a macrotask behind the flush. */
 const flushAsyncErrorHandling = async (): Promise<void> => {
   for (let tick = 0; tick < 5; tick++) {

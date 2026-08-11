@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, Subscription, catchError, switchMap } from 'rxjs';
-import { PartnerClient } from '../client/base-client';
+import { SilentFailurePartnerClient } from '../client/base-client';
 import { buildLanguagePushCommand } from './language-preference-sync.models';
 import { PartnerAuthService } from './partner-auth.service';
 
@@ -23,7 +23,7 @@ import { PartnerAuthService } from './partner-auth.service';
   providedIn: 'root',
 })
 export class PartnerLanguagePreferenceSyncService {
-  private readonly partnerClient = inject(PartnerClient);
+  private readonly partnerClient = inject(SilentFailurePartnerClient);
   private readonly auth = inject(PartnerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
@@ -40,7 +40,8 @@ export class PartnerLanguagePreferenceSyncService {
    * The session is answered locally rather than by letting the call 401: the switcher is on the
    * login and registration screens too, and a 401 there hands the refresh coordinator a refresh it
    * cannot perform. Silent on failure by design — a language tap is not a save anyone is waiting
-   * on, and the local switch has already happened.
+   * on, and the local switch has already happened. Both requests therefore travel on
+   * `SilentFailurePartnerClient`, or the shared error interceptor would toast what this swallows.
    */
   private push(languageCode: string): void {
     if (!this.auth.isLoggedIn()) return;

@@ -5,7 +5,7 @@ import {
   TranslateService,
 } from '@ngx-translate/core';
 import { Observable, config, of, throwError } from 'rxjs';
-import { PartnerClient } from '../client/base-client';
+import { SilentFailurePartnerClient } from '../client/base-client';
 import { MyProfileDto, UpdateCurrentUserCommand } from '../client/partner-client';
 import { PartnerAuthService } from './partner-auth.service';
 import { PartnerLanguagePreferenceSyncService } from './language-preference-sync.service';
@@ -66,7 +66,7 @@ describe('PartnerLanguagePreferenceSyncService', () => {
       ],
       providers: [
         {
-          provide: PartnerClient,
+          provide: SilentFailurePartnerClient,
           useValue: { userClient: { getCurrent, updateCurrentUser } },
         },
         { provide: PartnerAuthService, useValue: { isLoggedIn } },

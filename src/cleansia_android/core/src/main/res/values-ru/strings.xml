@@ -4,4 +4,9 @@
     <string name="core_snackbar_dismiss">Закрыть</string>
     <string name="core_consent_toggle">Принять условия и политику конфиденциальности</string>
     <string name="core_error_server">Сервер временно недоступен. Попробуйте позже.</string>
+    <string name="core_error_timeout">Время ожидания подключения истекло. Попробуйте еще раз.</string>
+    <string name="core_error_no_connection">Проверьте подключение к интернету и попробуйте снова.</string>
+    <string name="core_error_not_found">Запрашиваемый ресурс не найден.</string>
+    <string name="core_error_unauthorized">Ваша сессия истекла. Войдите снова.</string>
+    <string name="core_error_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>
 </resources>

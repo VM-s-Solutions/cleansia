@@ -1,5 +1,6 @@
 package cz.cleansia.core.network
 
+import cz.cleansia.core.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -46,13 +47,17 @@ internal suspend fun <T> safeApiCallExpecting(
         // answer was wrong.
         ApiResult.Error(wireViolationError(violation))
     } catch (e: SocketTimeoutException) {
-        ApiResult.Error(ApiError.Network("Connection timeout. Please try again."))
+        // Kept apart from the two below: the connection is fine and the action is "try again",
+        // where no-connection asks the customer to go and fix something.
+        ApiResult.Error(ApiError.Network(TIMEOUT, R.string.core_error_timeout))
     } catch (e: UnknownHostException) {
-        ApiResult.Error(ApiError.Network("Unable to connect to server. Please check your internet connection."))
+        ApiResult.Error(ApiError.Network(NO_CONNECTION, R.string.core_error_no_connection))
     } catch (e: IOException) {
-        ApiResult.Error(ApiError.Network("Network error: ${e.message ?: "unknown"}"))
+        // Deliberately folded into no-connection: a reset or a broken pipe is the same fact to the
+        // customer, and `e.message` is host/port detail they cannot act on — it stays as triage.
+        ApiResult.Error(ApiError.Network("IO failure: ${e.message ?: "unknown"}", R.string.core_error_no_connection))
     } catch (e: Exception) {
-        ApiResult.Error(ApiError.Unknown(e.message ?: "An unexpected error occurred"))
+        ApiResult.Error(ApiError.Unknown(e.message ?: UNEXPECTED, R.string.core_error_unknown))
     }
 }
 
@@ -66,7 +71,13 @@ private fun <T> handleResponse(response: Response<T>, json: Json, bodyless: Bool
                 ApiResult.Success(Unit as T)
             }
             else -> ApiResult.Error(
-                ApiError.Server(response.code(), emptyBodyMessage(response)),
+                // The endpoint that broke the contract is triage; the customer reads the resource.
+                ApiError.Server(
+                    statusCode = response.code(),
+                    message = emptyBodyMessage(response),
+                    diagnostic = emptyBodyMessage(response),
+                    messageRes = R.string.core_error_server,
+                ),
             )
         }
     }
@@ -84,18 +95,30 @@ private fun <T> handleResponse(response: Response<T>, json: Json, bodyless: Bool
             ?.takeIf { BUSINESS_ERROR_KEY.matches(it) }
             ?.let { ApiError.AuthRejected(errorKey = it) }
             ?: ApiError.Unauthorized
-        404 -> ApiError.NotFound(errorResponse?.effectiveMessage ?: "Resource not found")
+        // Each arm: the server's own line passes through with no `messageRes`, because whoever
+        // sent it owns the wording; only the `:core` floor beneath it carries a resource.
+        404 -> errorResponse?.effectiveMessage
+            ?.let { ApiError.NotFound(it) }
+            ?: ApiError.NotFound(NOT_FOUND, R.string.core_error_not_found)
         400 -> ApiError.BadRequest(
-            message = errorResponse?.effectiveMessage ?: "Bad request",
+            message = errorResponse?.effectiveMessage ?: BAD_REQUEST,
             code = errorResponse?.code ?: errorResponse?.type,
             validationErrors = validationErrors,
             errorKey = firstErrorKey,
+            // Folded into the generic line on purpose, and it is the one fold here: a 400 whose body
+            // we could not parse has no specific thing to tell the customer, so "Bad request" would
+            // be developer-speak dressed as copy. The ordinary keyed 400 never reaches this floor —
+            // `errorKey` is set above and the app localizers resolve it to its own sentence.
+            messageRes = R.string.core_error_unknown.takeIf { errorResponse?.effectiveMessage == null },
         )
         in 500..599 -> ApiError.Server(
             statusCode = response.code(),
-            message = errorResponse?.effectiveMessage ?: "Server error. Please try again later.",
+            message = errorResponse?.effectiveMessage ?: ApiError.SERVER_USER_MESSAGE,
+            messageRes = R.string.core_error_server.takeIf { errorResponse?.effectiveMessage == null },
         )
-        else -> ApiError.Unknown(errorResponse?.effectiveMessage ?: "An unexpected error occurred")
+        else -> errorResponse?.effectiveMessage
+            ?.let { ApiError.Unknown(it) }
+            ?: ApiError.Unknown(UNEXPECTED, R.string.core_error_unknown)
     }
 
     return ApiResult.Error(error)
@@ -122,6 +145,14 @@ private fun emptyBodyMessage(response: Response<*>): String {
  * misdiagnosis this split exists to prevent.
  */
 private val BUSINESS_ERROR_KEY = Regex("^[a-z0-9_]+(\\.[a-z0-9_]+)+$")
+
+// English floors. Each is paired with the resource that replaces it at render; the string itself is
+// what reaches a log, and the fallback for any path that has no Context at all.
+private const val TIMEOUT = "Connection timeout. Please try again."
+private const val NO_CONNECTION = "Unable to connect to server. Please check your internet connection."
+private const val NOT_FOUND = "Resource not found"
+private const val BAD_REQUEST = "Bad request"
+private const val UNEXPECTED = "An unexpected error occurred"
 
 private fun parseValidationErrors(element: JsonElement): Map<String, List<String>>? = runCatching {
     element.jsonObject.entries.associate { (key, value) ->

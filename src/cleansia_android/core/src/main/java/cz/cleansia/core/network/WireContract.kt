@@ -76,6 +76,7 @@ internal fun wireViolationError(violation: WireContractViolation): ApiError.Serv
     statusCode = HTTP_OK,
     message = ApiError.SERVER_USER_MESSAGE,
     diagnostic = violation.message,
+    messageRes = cz.cleansia.core.R.string.core_error_server,
 )
 
 /**

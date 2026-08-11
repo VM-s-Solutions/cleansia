@@ -4,4 +4,9 @@
     <string name="core_snackbar_dismiss">Закрити</string>
     <string name="core_consent_toggle">Прийняти умови та політику конфіденційності</string>
     <string name="core_error_server">Сервер тимчасово недоступний. Спробуйте пізніше.</string>
+    <string name="core_error_timeout">Час очікування з\'єднання вичерпано. Будь ласка, спробуйте ще раз.</string>
+    <string name="core_error_no_connection">Перевірте підключення до Інтернету та спробуйте знову.</string>
+    <string name="core_error_not_found">Запитаний ресурс не знайдено.</string>
+    <string name="core_error_unauthorized">Ваша сесія завершилася. Увійдіть знову.</string>
+    <string name="core_error_unknown">Щось пішло не так. Спробуйте ще раз.</string>
 </resources>

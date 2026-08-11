@@ -1,6 +1,5 @@
 package cz.cleansia.core.snackbar
 
-import cz.cleansia.core.R
 import cz.cleansia.core.network.ApiError
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -79,15 +78,12 @@ enum class Severity { Error, Success, Info, Warning }
  * The decision [SnackbarController.showError] makes, as a value so it can be asserted on directly
  * rather than through a replay-less [SharedFlow].
  *
- * A wire-contract violation is the only [ApiError] built without a `Context` — `:core` has none —
- * so its `message` can only ever be an English floor. Emitting it as a resource defers the lookup to
- * the render, which is the one place that knows the locale. Every other arm already carries copy the
- * layer that built it localized, and passes through untouched: collapsing those into one generic
- * line would delete every backend message the customer needs.
+ * [ApiError.messageRes] is set exactly when `:core` built the string, and `:core` has no `Context`
+ * so that string can only ever be English. Emitting it as a resource defers the lookup to the
+ * render, which is the one place that knows the locale. An error whose text the calling layer
+ * already localized passes through untouched: collapsing those into one generic line would delete
+ * every backend message the customer needs.
  */
 fun ApiError.toErrorSnackbar(): SnackbarMessage =
-    if (this is ApiError.Server && diagnostic != null) {
-        SnackbarMessage.FromRes(R.string.core_error_server, Severity.Error)
-    } else {
-        SnackbarMessage.FromString(getUserMessage(), Severity.Error)
-    }
+    messageRes?.let { SnackbarMessage.FromRes(it, Severity.Error) }
+        ?: SnackbarMessage.FromString(getUserMessage(), Severity.Error)

@@ -4,4 +4,9 @@
     <string name="core_snackbar_dismiss">Zavřít</string>
     <string name="core_consent_toggle">Souhlasit s podmínkami a zásadami ochrany soukromí</string>
     <string name="core_error_server">Server je dočasně nedostupný. Zkuste to později.</string>
+    <string name="core_error_timeout">Časový limit připojení. Zkuste to prosím znovu.</string>
+    <string name="core_error_no_connection">Zkontrolujte připojení k internetu a zkuste to znovu.</string>
+    <string name="core_error_not_found">Požadovaný zdroj nebyl nalezen.</string>
+    <string name="core_error_unauthorized">Vaše přihlášení vypršelo. Přihlaste se prosím znovu.</string>
+    <string name="core_error_unknown">Něco se pokazilo. Zkuste to prosím znovu.</string>
 </resources>

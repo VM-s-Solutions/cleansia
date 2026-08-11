@@ -1,5 +1,6 @@
 package cz.cleansia.core.network
 
+import cz.cleansia.core.R
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -25,7 +26,21 @@ data class ApiErrorResponse(
 
 sealed class ApiError : Exception() {
 
-    data class Network(override val message: String) : ApiError()
+    /**
+     * Set when [message] is a floor `:core` built rather than copy anyone localized — `:core` has no
+     * `Context`, so a string it constructs can only ever be English. Non-null means *render this
+     * resource and treat [message] as triage*; null means the layer that built the error already
+     * resolved the customer's language and its text passes through untouched.
+     *
+     * The tell is **who built the string**, never which arm it arrived on: the same `NotFound` is
+     * localized copy when the server sent a body and a `:core` floor when it did not.
+     */
+    open val messageRes: Int? get() = null
+
+    data class Network(
+        override val message: String,
+        override val messageRes: Int? = null,
+    ) : ApiError()
 
     /**
      * [message] is rendered. [diagnostic] is not, ever.
@@ -46,11 +61,13 @@ sealed class ApiError : Exception() {
         val statusCode: Int,
         override val message: String,
         val diagnostic: String? = null,
+        override val messageRes: Int? = null,
     ) : ApiError()
 
     data object Unauthorized : ApiError() {
         private fun readResolve(): Any = Unauthorized
         override val message: String = "Session expired. Please login again."
+        override val messageRes: Int = R.string.core_error_unauthorized
     }
 
     /**
@@ -72,9 +89,13 @@ sealed class ApiError : Exception() {
     data class AuthRejected(
         val errorKey: String,
         override val message: String = Unauthorized.message,
+        override val messageRes: Int? = R.string.core_error_unauthorized,
     ) : ApiError()
 
-    data class NotFound(override val message: String = "Resource not found") : ApiError()
+    data class NotFound(
+        override val message: String = "Resource not found",
+        override val messageRes: Int? = null,
+    ) : ApiError()
 
     /**
      * 400 with optional structured validation errors. `errorKey` is the first
@@ -86,9 +107,13 @@ sealed class ApiError : Exception() {
         val code: String? = null,
         val validationErrors: Map<String, List<String>>? = null,
         val errorKey: String? = null,
+        override val messageRes: Int? = null,
     ) : ApiError()
 
-    data class Unknown(override val message: String = "An unexpected error occurred") : ApiError()
+    data class Unknown(
+        override val message: String = "An unexpected error occurred",
+        override val messageRes: Int? = null,
+    ) : ApiError()
 
     /**
      * The render path. Every arm's [message] is copy a person can act on — which is an invariant of

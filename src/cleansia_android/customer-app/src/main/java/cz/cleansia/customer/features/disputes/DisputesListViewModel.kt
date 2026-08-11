@@ -55,6 +55,6 @@ class DisputesListViewModel @Inject constructor(
     }
 
     private fun surfaceError(error: ApiError) {
-        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+        if (error !is ApiError.Network) snackbar.showError(error)
     }
 }

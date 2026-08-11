@@ -191,6 +191,6 @@ class MembershipViewModel @Inject constructor(
     }
 
     private fun <T> ApiResult<T>.showErrorUnlessNetwork(): ApiResult<T> = onError { error ->
-        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+        if (error !is ApiError.Network) snackbar.showError(error)
     }
 }

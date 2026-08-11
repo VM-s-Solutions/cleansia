@@ -1,5 +1,8 @@
 package cz.cleansia.core.network
 
+import cz.cleansia.core.R
+import cz.cleansia.core.snackbar.toErrorSnackbar
+import cz.cleansia.core.snackbar.SnackbarMessage
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -31,6 +34,11 @@ class WireViolationDisclosureTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun violation() = WireContractViolation("totalPrice")
+
+    /** Stands in for a device running in Czech; :core has no Robolectric. */
+    private val localizedContext: android.content.Context = io.mockk.mockk(relaxed = true) {
+        io.mockk.every { getString(R.string.core_error_server) } returns CZECH_SERVER_LINE
+    }
 
     private fun serverErrorFrom(result: ApiResult<*>): ApiError.Server {
         assertTrue("expected an Error, got $result", result is ApiResult.Error)
@@ -136,11 +144,64 @@ class WireViolationDisclosureTest {
         assertEquals("This job is no longer available.", error.getUserMessage())
     }
 
+    // --- the localized path, which is where the leak could reappear -----------------
+
+    /**
+     * The snackbar bus is where 28 of the customer app's 34 render sites go. It emits the violation
+     * as a RESOURCE rather than a string so the lookup happens at render, in the locale the customer
+     * is actually reading — the property `SnackbarMessage.FromRes` exists for.
+     */
+    @Test
+    fun `a violation reaches the snackbar as a localizable resource, never as its diagnostic`() {
+        val error = serverErrorFrom(wireResult<Unit> { throw violation() })
+
+        val message = error.toErrorSnackbar()
+
+        assertTrue("expected a resource message, got $message", message is SnackbarMessage.FromRes)
+        assertEquals(R.string.core_error_server, (message as SnackbarMessage.FromRes).stringRes)
+    }
+
+    /**
+     * The other direction on the same path: an error whose copy the repository already localized
+     * must pass straight through, or every backend message collapses into one generic line.
+     */
+    @Test
+    fun `an already-localized error passes through the snackbar as its own text`() {
+        val error = ApiError.BadRequest(message = "Tato zakázka již není dostupná.")
+
+        val message = error.toErrorSnackbar()
+
+        assertTrue("expected the server's own text, got $message", message is SnackbarMessage.FromString)
+        assertEquals("Tato zakázka již není dostupná.", (message as SnackbarMessage.FromString).text)
+    }
+
+    /** `userMessage(context)` is the same rule for the call sites that need a String immediately. */
+    @Test
+    fun `the context-resolved message is the localized resource and never the diagnostic`() {
+        val error = serverErrorFrom(wireResult<Unit> { throw violation() })
+
+        val shown = error.userMessage(localizedContext)
+
+        assertEquals(CZECH_SERVER_LINE, shown)
+        LEAKS.forEach { leak ->
+            assertTrue("\"$shown\" must not contain \"$leak\"", !shown.contains(leak, ignoreCase = true))
+        }
+    }
+
+    @Test
+    fun `the context-resolved message leaves an already-localized error alone`() {
+        val error = ApiError.BadRequest(message = "Tato zakázka již není dostupná.")
+
+        assertEquals("Tato zakázka již není dostupná.", error.userMessage(localizedContext))
+    }
+
     private companion object {
         /**
          * The field name and the contract wording that identifies a violation. Every one of these
          * appeared in a customer-facing snackbar before this split.
          */
+        const val CZECH_SERVER_LINE = "Server je dočasně nedostupný. Zkuste to později."
+
         val LEAKS = listOf("totalPrice", "contract", "nullable", "null but")
     }
 }

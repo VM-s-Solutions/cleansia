@@ -120,7 +120,8 @@ class BankSectionViewModelTest {
         assertEquals("", form.iban)
         // The bank is presumed to be in the country the cleaner lives in until they say otherwise.
         assertEquals("country-cz", form.bankCountryId)
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     @Test

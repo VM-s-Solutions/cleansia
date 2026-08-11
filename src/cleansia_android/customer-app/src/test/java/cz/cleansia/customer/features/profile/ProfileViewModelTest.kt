@@ -153,7 +153,7 @@ class ProfileViewModelTest {
         assertFalse(saved)
         assertTrue(vm.saveState.value is ActionState.Error)
         assertEquals("save failed", (vm.saveState.value as ActionState.Error).message)
-        verify { snackbar.showError("save failed") }
+        verify { snackbar.showError(match<ApiError> { it.getUserMessage() == "save failed" }) }
     }
 
     @Test

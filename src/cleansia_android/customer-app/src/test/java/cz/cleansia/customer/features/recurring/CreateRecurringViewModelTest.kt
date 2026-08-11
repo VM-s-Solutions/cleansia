@@ -69,6 +69,7 @@ class CreateRecurringViewModelTest {
             catalogRepo = catalogRepo,
             addressRepo = addressRepo,
             snackbar = snackbar,
+            appContext = mockk(relaxed = true),
         )
 
     private fun fillValidForm(vm: CreateRecurringViewModel) {
@@ -295,7 +296,7 @@ class CreateRecurringViewModelTest {
         vm.submit()
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError(plusRefusal) }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == plusRefusal }) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
     }
 
@@ -311,7 +312,7 @@ class CreateRecurringViewModelTest {
         vm.submit()
         advanceUntilIdle()
 
-        verify(exactly = 1) { snackbar.showError(plusRefusal) }
+        verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == plusRefusal }) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
     }
 

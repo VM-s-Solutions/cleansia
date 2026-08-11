@@ -3,4 +3,5 @@
     <string name="core_search">Hľadať</string>
     <string name="core_snackbar_dismiss">Zavrieť</string>
     <string name="core_consent_toggle">Súhlasiť s podmienkami a zásadami ochrany súkromia</string>
+    <string name="core_error_server">Server je dočasne nedostupný. Skúste to neskôr.</string>
 </resources>

@@ -311,7 +311,7 @@ private fun SheetContent(
         lastRebookedFrom = target
 
         val order = orderRepo.getById(target)
-            .onError { error -> if (error !is ApiError.Network) snackbarController.showError(error.getUserMessage()) }
+            .onError { error -> if (error !is ApiError.Network) snackbarController.showError(error) }
             .getOrNull()
             ?: return@LaunchedEffect
 

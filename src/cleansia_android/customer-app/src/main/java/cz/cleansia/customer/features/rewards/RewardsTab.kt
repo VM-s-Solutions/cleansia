@@ -144,7 +144,7 @@ fun RewardsTab(
             loyaltyRepo.loadActivity(offset = 0, limit = 5)
                 .onSuccess { activityPreview = it.data }
                 .onError { error ->
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }
@@ -153,18 +153,18 @@ fun RewardsTab(
     val refresh: () -> Unit = {
         scope.launch {
             loyaltyRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
             // Pull-to-refresh also re-fetches the referral snapshot so the stats
             // counters stay current after a friend qualifies.
             referralRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
             // Re-prime the preview after a manual refresh — the repo doesn't cache it.
             loyaltyRepo.loadActivity(offset = 0, limit = 5)
                 .onSuccess { activityPreview = it.data }
                 .onError { error ->
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }

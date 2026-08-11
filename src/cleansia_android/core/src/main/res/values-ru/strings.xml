@@ -3,4 +3,5 @@
     <string name="core_search">Поиск</string>
     <string name="core_snackbar_dismiss">Закрыть</string>
     <string name="core_consent_toggle">Принять условия и политику конфиденциальности</string>
+    <string name="core_error_server">Сервер временно недоступен. Попробуйте позже.</string>
 </resources>

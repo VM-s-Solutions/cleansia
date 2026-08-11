@@ -89,7 +89,7 @@ class MembershipViewModelTest {
         val outcome = vm.startSubscribe("plus_monthly")
 
         assertEquals(SubscribeOutcome.Failed, outcome)
-        verify { snackbar.showError("server boom") }
+        verify { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
@@ -172,7 +172,7 @@ class MembershipViewModelTest {
         vm.cancel { }
         advanceUntilIdle()
 
-        verify { snackbar.showError("server boom") }
+        verify { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 

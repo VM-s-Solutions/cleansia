@@ -60,6 +60,6 @@ class AddressManagerViewModel @Inject constructor(
     }
 
     private fun surface(error: ApiError) {
-        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+        if (error !is ApiError.Network) snackbar.showError(error)
     }
 }

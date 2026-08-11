@@ -601,6 +601,6 @@ class OrderDetailViewModel @Inject constructor(
      * the result so callers can `.getOrNull()` for the success branch.
      */
     private fun <T> ApiResult<T>.surfaceError(): ApiResult<T> = onError { error ->
-        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+        if (error !is ApiError.Network) snackbar.showError(error)
     }
 }

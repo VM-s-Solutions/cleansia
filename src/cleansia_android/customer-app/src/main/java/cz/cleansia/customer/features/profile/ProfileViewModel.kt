@@ -11,6 +11,7 @@ import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.media.ImageCompressor
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
@@ -215,8 +216,8 @@ class ProfileViewModel @Inject constructor(
                     onSaved()
                 }
                 .onError { error ->
-                    _saveState.value = ActionState.Error(error.getUserMessage())
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    _saveState.value = ActionState.Error(error.userMessage(appContext))
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }
@@ -253,8 +254,8 @@ class ProfileViewModel @Inject constructor(
                     onCompleted()
                 }
                 .onError { error ->
-                    _saveState.value = ActionState.Error(error.getUserMessage())
-                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    _saveState.value = ActionState.Error(error.userMessage(appContext))
+                    if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
     }

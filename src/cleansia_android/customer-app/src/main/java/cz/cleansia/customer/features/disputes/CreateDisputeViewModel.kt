@@ -70,7 +70,7 @@ class CreateDisputeViewModel @Inject constructor(
                     _createdDisputeId.emit(result.data)
                 }
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error)
                     _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
                 }
             }

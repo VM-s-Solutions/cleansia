@@ -154,7 +154,8 @@ class OrderDetailPreferredOfferTest {
         )
         assertEquals(OfferAction.Confirm, vm.offerRefusal.value?.action)
         assertEquals("You've reached your weekly order limit.", vm.offerRefusal.value?.reason)
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     /**
@@ -174,7 +175,8 @@ class OrderDetailPreferredOfferTest {
         advanceUntilIdle()
 
         assertEquals(OfferAction.Decline, vm.offerRefusal.value?.action)
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     @Test

@@ -169,7 +169,8 @@ class PendingOffersViewModelTest {
         assertEquals("translated error", vm.offerRefusal.value?.reason)
         assertEquals("CL-a", vm.offerRefusal.value?.displayOrderNumber)
         assertEquals(listOf("a"), (vm.uiState.value as PendingOffersUiState.Loaded).offers.map { it.id })
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     /**
@@ -265,7 +266,8 @@ class PendingOffersViewModelTest {
         vm.confirm(row)
         advanceUntilIdle()
 
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     @Test

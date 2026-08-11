@@ -13,6 +13,7 @@ import cz.cleansia.partner.api.client.CountryApi
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -178,7 +179,8 @@ class AddressSectionViewModelTest {
                 longitude = 17.11,
             )
         }
-        verify(exactly = 0) { snackbar.showError(any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
     }
 
     @Test

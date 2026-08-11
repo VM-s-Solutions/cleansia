@@ -3,7 +3,10 @@ package cz.cleansia.customer.features.recurring
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.userMessage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -62,6 +65,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val catalogRepo: CatalogRepository,
     private val addressRepo: AddressRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     /** Optional source order id for Path B pre-fill. Null → Path A blank slate. */
@@ -87,7 +91,7 @@ class CreateRecurringViewModel @Inject constructor(
         // entry; safe no-op if already loaded.
         viewModelScope.launch {
             catalogRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
         if (editingTemplateId != null) {
@@ -206,9 +210,9 @@ class CreateRecurringViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     if (result.error !is ApiError.Network) {
-                        snackbar.showError(result.error.getUserMessage())
+                        snackbar.showError(result.error)
                     }
-                    _submitState.value = ActionState.Error(result.error.getUserMessage())
+                    _submitState.value = ActionState.Error(result.error.userMessage(appContext))
                 }
             }
         }
@@ -248,7 +252,7 @@ class CreateRecurringViewModel @Inject constructor(
     private fun prefillFromOrder(orderId: String) {
         viewModelScope.launch {
             val order = orderRepo.getById(orderId)
-                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error.getUserMessage()) }
+                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error) }
                 .getOrNull()
                 ?: return@launch
             val timeOfDay = order.cleaningDateTime?.let { iso ->

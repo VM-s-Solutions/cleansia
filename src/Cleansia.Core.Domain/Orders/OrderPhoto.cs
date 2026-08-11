@@ -86,4 +86,19 @@ public class OrderPhoto : Auditable, ITenantEntity
             Height = height
         };
     }
+
+    /// <summary>
+    /// The free text an erasure has to reach on a row it KEEPS. The order aggregate is retained and
+    /// anonymized rather than deleted, and its own walk already blanks the review, note and issue text; the
+    /// photo row was simply not in that walk, so the uploader's own file name — which routinely carries the
+    /// person's name — and the free-text note survived alongside a blob the erasure had already deleted.
+    /// <see cref="BlobUrl"/> and <see cref="FileName"/> stay: they are the platform's own storage keys, not
+    /// the subject's text, and blanking them would leave the deleted blob unnameable.
+    /// </summary>
+    public OrderPhoto Anonymize()
+    {
+        OriginalFileName = AnonymizationMarker.Value;
+        Notes = null;
+        return this;
+    }
 }

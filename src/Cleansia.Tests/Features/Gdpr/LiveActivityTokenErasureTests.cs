@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Devices;
@@ -149,6 +150,7 @@ public sealed class LiveActivityTokenErasureTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
             NullLogger<GdprDeletionService>.Instance);

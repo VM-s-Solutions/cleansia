@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -31,6 +32,7 @@ public class GdprDeletionService(
     IUserNotificationRepository userNotificationRepository,
     IDeadLetterRepository deadLetterRepository,
     IOutboxMessageRepository outboxMessageRepository,
+    IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<GdprDeletionService> logger)
@@ -158,6 +160,10 @@ public class GdprDeletionService(
                     logger.LogWarning(ex, "Failed to delete document blob {FilePath} for user {UserId}", doc.FilePath, user.Id);
                 }
             }
+
+            // Ordered, not adjacent by accident, for the same reason the dispute-evidence pair below is:
+            // FilePath is the only place the blob's name is stored, so the rows go after the blobs.
+            await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
         }
 
         var customerOrderIds = await orderRepository.GetFiltered(o => o.UserId == user.Id)
@@ -179,6 +185,11 @@ public class GdprDeletionService(
                 {
                     logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", orderId);
                 }
+
+                // The row survives the blob because the order does — and it carries the uploader's own file
+                // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
+                // reached (photos are not a navigation on the aggregate it loads).
+                photo.Anonymize();
             }
         }
 
@@ -195,8 +206,10 @@ public class GdprDeletionService(
             order.CustomerAddress?.Anonymize();
         }
 
-        var devices = await deviceRepository.GetByUserIdAsync(user.Id, ct);
-        deviceRepository.RemoveRange(devices);
+        // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
+        // a later login can reclaim the tombstone, and the stale-device retention sweep filters on IsActive
+        // too — so a logged-out handset's id and push token were reachable by neither path.
+        await deviceRepository.RemoveForSubjectAsync(user.Id, ct);
 
         // The same handset's other APNs address. ADR-0029 D3 keeps activity registrations off the Device
         // aggregate, so nothing above reaches them: the sweeps that do (the 24h janitor, the logout/revoke
@@ -216,6 +229,14 @@ public class GdprDeletionService(
         // The same wire body one table over, before it poisons anything: an undrained or retry-exhausted
         // send-email outbox row holds the address and real name just as verbatim, and no prune reaches it.
         await outboxMessageRepository.RemoveForSubjectAsync(user.Id, ct);
+
+        // Not a session cut — the refresh path already refuses a deactivated user — but a retention start.
+        // RefreshTokenCleanupService hard-deletes only tokens that are revoked OR expired, so an untouched
+        // live token keeps the subject's IP address, device label and device id until its own natural
+        // expiry before the 90-day forensic window even begins. ADR-0027's directory is untouched: its poll
+        // predicate reads the password_reset reason alone.
+        await refreshTokenService.RevokeAllForUserAsync(
+            user.Id, GdprAuditReasons.RefreshTokenRevocation, exceptRawToken: null, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);

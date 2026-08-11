@@ -1,11 +1,14 @@
 package cz.cleansia.customer.core.orders
 
+import cz.cleansia.core.network.WireContractViolation
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +81,10 @@ class OrderApiTest {
 
         // Tier 0 is FreeNotAccepted, so any default here would quote a customer
         // a free cancellation on the strength of a field the server never sent.
-        assertNull(OrderApi(generated).getCancellationPreview("order-1").body())
+        val violation = assertThrows(WireContractViolation::class.java) {
+            runBlocking { OrderApi(generated).getCancellationPreview("order-1") }
+        }
+        assertTrue("expected the field name in \"${violation.message}\"", violation.message!!.startsWith("tier "))
     }
 
     @Test

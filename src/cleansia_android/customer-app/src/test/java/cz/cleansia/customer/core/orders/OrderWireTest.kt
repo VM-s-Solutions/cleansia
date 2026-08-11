@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.orders
 
+import cz.cleansia.core.network.WireContractViolation
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -18,6 +19,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -73,26 +75,34 @@ class OrderWireTest {
         }
     }
 
-    private suspend fun list(body: String) = serving(body) { it.getMyOrders() }.body()
+    private suspend fun listed(body: String): OrderListResponseDto =
+        serving(body) { it.getMyOrders() }.body()!!
 
-    private suspend fun listed(body: String): OrderListResponseDto {
-        val page = list(body)
-        assertNotNull("expected the captured payload to map", page)
-        return page!!
-    }
-
-    private suspend fun detail(body: String) = serving(body) { it.getById("o-1") }.body()
-
-    private suspend fun detailed(body: String): OrderDetailDto {
-        val order = detail(body)
-        assertNotNull("expected the captured payload to map", order)
-        return order!!
-    }
+    private suspend fun detailed(body: String): OrderDetailDto = serving(body) { it.getById("o-1") }.body()!!
 
     private suspend fun cancelled(body: String) =
-        serving(body) { it.cancel(CancelOrderRequest(orderId = "o-1", reason = "plans changed")) }.body()
+        serving(body) { it.cancel(CancelOrderRequest(orderId = "o-1", reason = "plans changed")) }.body()!!
 
-    private suspend fun preview(body: String) = serving(body) { it.getCancellationPreview("o-1") }.body()
+    private suspend fun preview(body: String) = serving(body) { it.getCancellationPreview("o-1") }.body()!!
+
+    /**
+     * The refusal is a throw carrying the offending field name, which is the whole point of the
+     * idiom: a mapping that answered `null` told triage only that *something* on this payload was
+     * wrong.
+     */
+    private suspend fun refuses(field: String, mapping: suspend () -> Any?) {
+        val violation = try {
+            mapping()
+            null
+        } catch (v: WireContractViolation) {
+            v
+        }
+        assertNotNull("a missing $field must refuse the mapping", violation)
+        assertTrue(
+            "the refusal must name $field, but said \"${violation!!.message}\"",
+            violation.message!!.startsWith("$field "),
+        )
+    }
 
     // --- the field-name contract ------------------------------------------------
 
@@ -145,18 +155,15 @@ class OrderWireTest {
     @Test
     fun aMissingListRowPriceRefusesThePageRatherThanShowingAFreeOrder() = runTest {
         LIST_ROW_REQUIRED_MONEY.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the page rather than price the order at zero",
-                list(pageWithFirstRow { it - field }),
-            )
+            refuses(field) { listed(pageWithFirstRow { it - field }) }
         }
     }
 
     @Test
     fun aMissingExchangeRateRefusesThePageRatherThanAssumingParity() = runTest {
-        assertNull(
-            list(pageWithFirstRow { row -> row + ("currency" to (row["currency"]!!.jsonObject - "exchangeRate")) }),
-        )
+        refuses("exchangeRate") {
+            listed(pageWithFirstRow { row -> row + ("currency" to (row["currency"]!!.jsonObject - "exchangeRate")) })
+        }
     }
 
     @Test
@@ -172,24 +179,21 @@ class OrderWireTest {
     @Test
     fun aMissingDetailPriceRefusesTheOrderRatherThanShowingAFreeOne() = runTest {
         DETAIL_REQUIRED_MONEY.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the order rather than price it at zero",
-                detail(withoutKey(CAPTURED_ORDER, field)),
-            )
+            refuses(field) { detailed(withoutKey(CAPTURED_ORDER, field)) }
         }
     }
 
     @Test
     fun aMissingPackagePriceRefusesTheOrderRatherThanIncludingItForFree() = runTest {
-        assertNull(
-            detail(
+        refuses("price") {
+            detailed(
                 mutating(CAPTURED_ORDER) { root ->
                     root + ("selectedPackages" to JsonArray(
                         root["selectedPackages"]!!.jsonArray.map { it.jsonObject - "price" },
                     ))
                 },
-            ),
-        )
+            )
+        }
     }
 
     @Test
@@ -210,20 +214,14 @@ class OrderWireTest {
     @Test
     fun aMissingCancellationFeeRefusesTheQuoteRatherThanPromisingAFreeCancellation() = runTest {
         PREVIEW_REQUIRED_MONEY.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the quote rather than promise a free cancellation",
-                preview(withoutKey(CAPTURED_PREVIEW, field)),
-            )
+            refuses(field) { preview(withoutKey(CAPTURED_PREVIEW, field)) }
         }
     }
 
     @Test
     fun aMissingRefundAmountRefusesTheCancelReceiptRatherThanReportingNoRefund() = runTest {
         CANCEL_REQUIRED_MONEY.forEach { field ->
-            assertNull(
-                "a missing $field must refuse the receipt rather than report a zero refund",
-                cancelled(withoutKey(CAPTURED_CANCEL, field)),
-            )
+            refuses(field) { cancelled(withoutKey(CAPTURED_CANCEL, field)) }
         }
     }
 
@@ -240,7 +238,7 @@ class OrderWireTest {
 
     @Test
     fun aMissingRefundInitiatedRefusesTheReceiptRatherThanReadingFalse() = runTest {
-        assertNull(cancelled(withoutKey(CAPTURED_CANCEL, "refundInitiated")))
+        refuses("refundInitiated") { cancelled(withoutKey(CAPTURED_CANCEL, "refundInitiated")) }
     }
 
     /**
@@ -249,7 +247,9 @@ class OrderWireTest {
      */
     @Test
     fun aMissingWaiverForfeitureWarningRefusesTheQuoteRatherThanDeletingTheWarning() = runTest {
-        assertNull(preview(withoutKey(CAPTURED_PREVIEW, "expressWaiverForfeitedOnCancel")))
+        refuses("expressWaiverForfeitedOnCancel") {
+            preview(withoutKey(CAPTURED_PREVIEW, "expressWaiverForfeitedOnCancel"))
+        }
     }
 
     @Test
@@ -262,7 +262,7 @@ class OrderWireTest {
 
     @Test
     fun aMissingSpotAvailabilityRefusesTheListRatherThanReadingFalse() = runTest {
-        assertNull(list(pageWithFirstRow { it - "hasAvailableSpots" }))
+        refuses("hasAvailableSpots") { listed(pageWithFirstRow { it - "hasAvailableSpots" }) }
     }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
@@ -288,7 +288,7 @@ class OrderWireTest {
 
     @Test
     fun aDetailWithoutAnIdIsRefusedRatherThanRenderedAsAnOrderNothingCanActOn() = runTest {
-        assertNull(detail(withoutKey(CAPTURED_ORDER, "id")))
+        refuses("id") { detailed(withoutKey(CAPTURED_ORDER, "id")) }
     }
 
     // --- rule 4: collections do default -----------------------------------------
@@ -325,6 +325,29 @@ class OrderWireTest {
         assertNull(order.selectedPackages)
         assertNull(order.selectedServices)
         assertEquals(4380.00, order.totalPrice, 0.0)
+    }
+
+    /**
+     * `review = review?.toAppDto() ?: return null` refused every order nobody had reviewed yet,
+     * which is most of them — the `?:` fired on the absent review, not on a broken one.
+     */
+    @Test
+    fun anUnreviewedOrderStillOpens() = runTest {
+        val order = detailed(withoutKey(CAPTURED_ORDER, "review"))
+
+        assertNull(order.review)
+        assertEquals(4380.00, order.totalPrice, 0.0)
+    }
+
+    @Test
+    fun anOrderWhoseReviewHasNoRatingIsStillRefused() = runTest {
+        refuses("rating") {
+            detailed(
+                mutating(CAPTURED_ORDER) { root ->
+                    root + ("review" to (root["review"]!!.jsonObject - "rating"))
+                },
+            )
+        }
     }
 
     // --- rule 5: nullable-by-design fields stay nullable ---------------------------

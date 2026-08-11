@@ -26,8 +26,8 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
-import cz.cleansia.partner.data.mapWire
-import cz.cleansia.partner.data.required
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

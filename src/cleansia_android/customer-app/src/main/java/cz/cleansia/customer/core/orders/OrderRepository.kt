@@ -9,6 +9,8 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.requiredBody
+import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
@@ -72,7 +74,7 @@ class OrderRepository @Inject constructor(
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
      */
-    suspend fun refresh(): ApiResult<Unit> {
+    suspend fun refresh(): ApiResult<Unit> = wireResult {
         if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
@@ -81,7 +83,7 @@ class OrderRepository @Inject constructor(
             if (!resp.isSuccessful) {
                 return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return refusedPageError()
+            val body = resp.requiredBody()
             _orders.value = body.data
             // Backend PagedData wrapper exposes total under `total`; expose it as
             // totalRecords in the repo API to keep consumers agnostic of the wire name.
@@ -99,7 +101,7 @@ class OrderRepository @Inject constructor(
      * [totalRecords]. Silent on failure — the caller ignores the
      * [ApiResult.Error] and the user can trigger another load by scrolling again.
      */
-    suspend fun loadNextPage(): ApiResult<Unit> {
+    suspend fun loadNextPage(): ApiResult<Unit> = wireResult {
         if (_loadingMore.value) return ApiResult.Success(Unit)
         if (_orders.value.size >= _totalRecords.value) return ApiResult.Success(Unit) // nothing more to load
         _loadingMore.value = true
@@ -107,7 +109,7 @@ class OrderRepository @Inject constructor(
             val resp = networkCall { api.getMyOrders(offset = _orders.value.size, limit = pageSize) }
                 ?: return networkError()
             if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
-            val body = resp.body() ?: return refusedPageError()
+            val body = resp.requiredBody()
             _orders.value = _orders.value + body.data
             _totalRecords.value = body.total
             return ApiResult.Success(Unit)
@@ -117,25 +119,25 @@ class OrderRepository @Inject constructor(
     }
 
     /** Fetch a single order's detail. */
-    suspend fun getById(id: String): ApiResult<OrderDetailDto> {
+    suspend fun getById(id: String): ApiResult<OrderDetailDto> = wireResult {
         val resp = networkCall { api.getById(id) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
      * Cancel an order. Returns the parsed response (fee rate / refund details)
      * on success.
      */
-    suspend fun cancel(orderId: String, reason: String?): ApiResult<CancelOrderResponse> {
+    suspend fun cancel(orderId: String, reason: String?): ApiResult<CancelOrderResponse> = wireResult {
         val resp = networkCall { api.cancel(CancelOrderRequest(orderId = orderId, reason = reason)) }
             ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -144,12 +146,12 @@ class OrderRepository @Inject constructor(
      * only true for the instant it was computed, so callers re-ask rather than
      * cache it.
      */
-    suspend fun getCancellationPreview(orderId: String): ApiResult<CancellationFeePreviewDto> {
+    suspend fun getCancellationPreview(orderId: String): ApiResult<CancellationFeePreviewDto> = wireResult {
         val resp = networkCall { api.getCancellationPreview(orderId) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -158,25 +160,25 @@ class OrderRepository @Inject constructor(
      * should refetch + show success. Card response carries the Stripe
      * PaymentIntent fields the mobile PaymentSheet needs.
      */
-    suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> {
+    suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> = wireResult {
         val resp = networkCall {
             api.confirmRecurring(ConfirmRecurringOrderRequest(orderId = orderId))
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /** Submit (or update) a review on a completed order. Returns the persisted review on success. */
-    suspend fun submitReview(orderId: String, rating: Int, comment: String?): ApiResult<OrderReviewDto> {
+    suspend fun submitReview(orderId: String, rating: Int, comment: String?): ApiResult<OrderReviewDto> = wireResult {
         val resp = networkCall {
             api.submitReview(SubmitReviewRequest(orderId = orderId, rating = rating, comment = comment))
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -212,12 +214,12 @@ class OrderRepository @Inject constructor(
     }
 
     /** Fetch the before/after photos for an order. Fetcher pattern — mirrors [getById]. */
-    suspend fun getPhotos(orderId: String): ApiResult<OrderPhotosResponse> {
+    suspend fun getPhotos(orderId: String): ApiResult<OrderPhotosResponse> = wireResult {
         val resp = networkCall { api.getPhotos(orderId) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+        return ApiResult.Success(resp.requiredBody())
     }
 
     /**
@@ -227,7 +229,7 @@ class OrderRepository @Inject constructor(
      * shows an empty state so the booking proceeds without a preference
      * (backend matching algorithm picks normally).
      */
-    suspend fun getMyServingCleaners(): ApiResult<List<ServingCleanerDto>> {
+    suspend fun getMyServingCleaners(): ApiResult<List<ServingCleanerDto>> = wireResult {
         val resp = networkCall { api.getMyServingCleaners() } ?: return networkError()
         if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
         return ApiResult.Success(resp.body().orEmpty())
@@ -235,18 +237,6 @@ class OrderRepository @Inject constructor(
 
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
-
-    /**
-     * A 2xx whose body did not survive [OrderApi]'s contract refusal. `mapBody` rewraps a refusal as a
-     * 200 with a null body, so `isSuccessful` stays true — and reporting that as `Success` reproduces,
-     * one layer up, the exact failure the refusal exists to prevent: the page ends and the customer's
-     * older orders stop existing rather than fail to load.
-     *
-     * Deliberately not [ApiError.Network]: that channel is the silent one and the network is the one
-     * thing that did not fail.
-     */
-    private fun refusedPageError(): ApiResult<Nothing> =
-        ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
         // Carry the message [ApiErrorParser] already resolved from the body so

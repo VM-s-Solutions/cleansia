@@ -406,10 +406,9 @@ class OrderRepositoryTest {
     // ── a refused page is not an empty one ──
 
     /**
-     * [OrderApi]'s `mapBody` rewraps a contract refusal as a 200 with a null body, so `isSuccessful`
-     * stays true. Reading that as `Success` reproduced, one layer up, the exact failure the refusal
-     * exists to prevent — the page ends and the customer's older orders stop existing rather than
-     * fail to load.
+     * A bodiless 2xx is refused by the mapper, not read as an empty page: reading it as `Success`
+     * reproduced, one layer up, the exact failure the refusal exists to prevent — the page ends and
+     * the customer's older orders stop existing rather than fail to load.
      */
     @Test
     fun refresh_givenARefusedBody_reportsAnErrorRatherThanAnEmptySuccess() = runTest {
@@ -419,7 +418,7 @@ class OrderRepositoryTest {
         val result = repo.refresh()
 
         assertTrue("a refused page must not read as Success", result is ApiResult.Error)
-        assertEquals(unknownMessage, (result as ApiResult.Error).error.message)
+        assertTrue((result as ApiResult.Error).error is ApiError.Server)
         assertFalse("a refused page must not latch first-paint", repo.loaded.value)
         assertTrue("a refused page must not pass as fresh", repo.staleness.isStale())
     }

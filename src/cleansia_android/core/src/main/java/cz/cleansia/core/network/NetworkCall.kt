@@ -25,6 +25,10 @@ import kotlinx.coroutines.CancellationException
  * Contract:
  *  - `CancellationException` is re-thrown immediately (cooperative cancel must
  *    propagate, never be silently turned into a "failure" return).
+ *  - `WireContractViolation` is re-thrown for [wireResult] to attribute: an
+ *    adapter that maps inside its `Response` raises the refusal at the call, and
+ *    folding it into `null` here reports a broken contract as a network failure
+ *    — the one thing that did not fail — through the silent channel.
  *  - Any other `Throwable` returns `null` after a single `Log.w` for crash
  *    triage. The user-facing toast is the interceptor's job — repos must NOT
  *    snackbar from catch.
@@ -54,6 +58,8 @@ suspend inline fun <T> networkCall(
         // Catching this is what produced the spurious "internet connection"
         // toast on Home/Profile when the user nav'd away mid-request.
         throw ce
+    } catch (violation: WireContractViolation) {
+        throw violation
     } catch (t: Throwable) {
         Log.w(tag, "Network call failed: ${t.message}")
         null

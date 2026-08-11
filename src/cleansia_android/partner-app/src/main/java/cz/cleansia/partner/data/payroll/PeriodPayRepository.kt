@@ -5,8 +5,8 @@ import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.OrderEmployeePayDto
 import cz.cleansia.partner.api.model.PeriodPaySummaryDto
-import cz.cleansia.partner.data.mapWire
-import cz.cleansia.partner.data.required
+import cz.cleansia.core.network.mapWire
+import cz.cleansia.core.network.required
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton

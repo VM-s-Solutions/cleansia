@@ -10,10 +10,10 @@ import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
-import cz.cleansia.partner.data.mapWire
+import cz.cleansia.core.network.mapWire
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.toDomainOrNull
-import cz.cleansia.partner.data.required
+import cz.cleansia.core.network.required
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
 import javax.inject.Inject

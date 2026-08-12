@@ -9,6 +9,13 @@ missing, or names work you did not agree to, **stop me**. It is a canary, not a 
 silent, it gets likelier the longer a session runs, and it is only ever visible in hindsight
 otherwise.
 
+**Every** means every — including one-line answers, mid-investigation updates, and messages that are
+mostly tool output. **There is no "this one is just a quick note" exemption**, and asking for one is
+itself the signal. Measured within an hour of this rule being written: it was dropped exactly once,
+on a message reporting a mid-investigation finding — i.e. on the message where the scope was actually
+moving. That is not a coincidence, it is the mechanism: the anchor gets skipped precisely when
+attention is on the problem rather than on the agreement, which is when drift starts.
+
 ### 1. Scope is agreed before work starts, and it has a NOT list
 
 Before anything non-trivial I state three things and wait:

@@ -34,19 +34,19 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-001 | Cleanup track + INDEX scaffolding | S | done | — |
-| CL-002 | Baseline census — build, checkers, LOC/comment/test counts | S | done | — |
-| CL-003 | E2E walk — auth & identity | M | done | — |
-| CL-004 | E2E walk — booking & pricing | M | done | — |
-| CL-005 | E2E walk — payment & fiscal | M | done | — |
-| CL-006 | E2E walk — offerability, preferred-cleaner hold, take | M | done | — |
-| CL-007 | E2E walk — execution & completion | M | done | — |
-| CL-008 | E2E walk — cancellation, refund, dispute | M | done | — |
-| CL-009 | E2E walk — pay, pay periods, invoices, payouts | M | done | — |
-| CL-010 | E2E walk — loyalty, memberships, metered benefits, referrals | M | done | — |
-| CL-011 | E2E walk — GDPR, retention, audit, admin override | M | done | — |
-| CL-012 | E2E walk — cross-cutting: tenancy, outbox, idempotency, notifications, rate limiting | M | done | — |
-| CL-013 | Gap register — triage every finding into fix / accept / not-a-risk | M | done | — |
+| CL-001 | Cleanup track + INDEX scaffolding | S | done | #192 |
+| CL-002 | Baseline census — build, checkers, LOC/comment/test counts | S | done | #192 |
+| CL-003 | E2E walk — auth & identity | M | done | #192 |
+| CL-004 | E2E walk — booking & pricing | M | done | #192 |
+| CL-005 | E2E walk — payment & fiscal | M | done | #192 |
+| CL-006 | E2E walk — offerability, preferred-cleaner hold, take | M | done | #192 |
+| CL-007 | E2E walk — execution & completion | M | done | #192 |
+| CL-008 | E2E walk — cancellation, refund, dispute | M | done | #192 |
+| CL-009 | E2E walk — pay, pay periods, invoices, payouts | M | done | #192 |
+| CL-010 | E2E walk — loyalty, memberships, metered benefits, referrals | M | done | #192 |
+| CL-011 | E2E walk — GDPR, retention, audit, admin override | M | done | #192 |
+| CL-012 | E2E walk — cross-cutting: tenancy, outbox, idempotency, notifications, rate limiting | M | done | #192 |
+| CL-013 | Gap register — triage every finding into fix / accept / not-a-risk | M | done | #192 |
 
 > **P1 complete.** All thirteen flows walked; findings triaged in `gap-register.md` — **2 to fix, 4 accepted-and-recorded, 19 checked and closed**. G-15's mechanism is decided: **seat ordinal** (owner, 2026-08-12).
 

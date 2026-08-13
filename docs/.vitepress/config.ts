@@ -50,13 +50,21 @@ export default withMermaid(
         '/product/': [
           {
             text: 'Product',
-            items: [{ text: 'Overview', link: '/product/' }],
+            items: [
+              { text: 'Overview', link: '/product/' },
+              { text: 'Business rules', link: '/product/business-rules' },
+            ],
           },
         ],
         '/domain/': [
           {
             text: 'Domain',
-            items: [{ text: 'Overview', link: '/domain/' }],
+            items: [
+              { text: 'Overview', link: '/domain/' },
+              { text: 'Domain model', link: '/domain/model' },
+              { text: 'Order lifecycle', link: '/domain/order-lifecycle' },
+              { text: 'Offerability', link: '/domain/offerability' },
+            ],
           },
         ],
         '/flows/': [

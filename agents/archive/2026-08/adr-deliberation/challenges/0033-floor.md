@@ -219,7 +219,7 @@ tiers.
 
 T-0471 AC4 demands a **case** or a plain statement of what was searched. Both, then.
 
-**What I searched.** Every `agents/backlog/tickets/*.md` mentioning `patterns-{mobile,frontend,backend}.md`
+**What I searched.** Every `agents/archive/2026-08/backlog/tickets/*.md` mentioning `patterns-{mobile,frontend,backend}.md`
 (60 files); every backlog file matching `clarification to an existing rule|not a new archetype|new
 canonical archetype|Harvest good patterns` (returns T-0274 `:133`, ADR-0021 `:98`, the two ADRs, and
 T-0473); and the two tickets whose titles are literally architect ratifications of a catalog harvest —

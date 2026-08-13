@@ -330,7 +330,7 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
   - **The named T3-HUMAN enforcers, by id.** A T3-HUMAN enforcer lives in exactly one file and nothing
     goes red when it is deleted, so removing one has to be legible *here* as a regression against an
     accepted ADR rather than as tidying. This list records existing enforcers; it declares no new rule.
-    - **Gate-DP §G** of `agents/backlog/ios-app-review-checklist.md` (+ reviewer-check #22) — ADR-0018's
+    - **Gate-DP §G** of `agents/archive/2026-08/backlog/ios-app-review-checklist.md` (+ reviewer-check #22) — ADR-0018's
       design-parity gate, on every iOS screen/feature ticket.
     - ⚠️ **There is no named T3-HUMAN enforcer for catalog-claim *decay*, and one cannot be invented.**
       Measured 2026-08-09: six `agents/knowledge/` + `agents/process/` artifacts asserted the opposite

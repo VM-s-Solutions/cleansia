@@ -413,7 +413,7 @@ because it had no authority to be in conflict with.
 | `consistency.md` "Judgment calls" deviation entry | `agents/knowledge/` | **does not land** until acceptance. Required by `conventions.md:143-146` test 1 — five shipped declarations become deviations |
 | `quality-gates.md` Gate 4 named item **WE-1** (a new `export enum` under `src/Cleansia.App/` is declared a wire mirror or not) | `agents/process/` | **does not land** until acceptance. It is the `T3-HUMAN` half: a *renamed* mirror has no mechanical witness, so the alias roster is closed by construction and the catalog must say so |
 | ~~`CLAUDE.md` repo-map correction~~ | ~~`CLAUDE.md`~~ | **WITHDRAWN** — `CLAUDE.md:34-35` already says the right thing; no owner step is owed |
-| `Q-ENUM-01` in `questions/open.md` | `agents/backlog/questions/` | ✅ **already corrected and correct at HEAD** — it records the owner's half as settled, the mechanism as returned, and stays open. No edit owed until the second panel rules |
+| `Q-ENUM-01` in `questions/open.md` | `agents/archive/2026-08/backlog/questions/` | ✅ **already corrected and correct at HEAD** — it records the owner's half as settled, the mechanism as returned, and stays open. No edit owed until the second panel rules |
 | ADR filename still carries round 1's slug | `docs/decisions/` | **deliberate.** Rename only in the commit that accepts it, together with the three pointers that name it (ADR-0042 §9) |
 
 ### Trade-off space — the axes, and what round 2 chose on each *(chosen ≠ accepted; the panel has not ruled)*

@@ -5,7 +5,7 @@
 # Severity policy (deliberate, pre-PROD): the rules that map to the team's hard conventions are set
 # to `warning` or `error`. We do NOT flip warnings-as-errors globally yet — a 1000-file codebase with
 # no prior analyzer history would explode. The rollout to `error` + TreatWarningsAsErrors is a tracked
-# ticket (see agents/backlog/audits/consistency-violations.md and the enforcement plan). Until then
+# ticket (see agents/archive/2026-08/backlog/audits/consistency-violations.md and the enforcement plan). Until then
 # these surface as build warnings the Reviewer treats as blocking for NEW/changed code.
 
 root = true

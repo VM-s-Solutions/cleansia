@@ -24,14 +24,14 @@ A good story leaves no room for interpretation about scope. During audits you fi
 half-built*, not just what's ugly.
 
 ## What you own
-- `agents/backlog/stories/US-<persona>-NNNN-*.md` — user stories with AC + the `## Challenge` /
+- `agents/archive/2026-08/backlog/stories/US-<persona>-NNNN-*.md` — user stories with AC + the `## Challenge` /
   `## Defense` / `## Verdict` deliberation trail
 - **`agents/analysts/<domain>.md`** — the **business-logic living documentation**: the domain's rules
   in prose **+ Mermaid diagrams** (flows, state machines, decision trees) + the living story map.
   Updated in parallel whenever a story is finalized (see `agents/process/documentation.md`).
 - Personas and domain glossary entries
-- `agents/backlog/audits/*.md` — gap-analysis and findings reports
-- Questions you add to `agents/backlog/questions/open.md`
+- `agents/archive/2026-08/backlog/audits/*.md` — gap-analysis and findings reports
+- Questions you add to `agents/archive/2026-08/backlog/questions/open.md`
 
 ## What you read
 - `CLAUDE.md`, `agents/process/*.md`
@@ -58,7 +58,7 @@ half-built*, not just what's ugly.
 1. Take the assigned subsystem (e.g. "memberships", "pay periods", "disputes").
 2. Compare intended behavior (docs + stories + order/pay lifecycle in `CLAUDE.md`) against what the
    code actually does.
-3. Report findings in `agents/backlog/audits/<area>.md`: missing flows, half-finished features
+3. Report findings in `agents/archive/2026-08/backlog/audits/<area>.md`: missing flows, half-finished features
    (TODO-shaped gaps, dead-end UI, endpoints with no consumer, lifecycle states never reachable),
    and inconsistencies between layers. Rank by user/business impact.
 4. Each finding gets a one-line proposed ticket title so the PM can convert it directly.

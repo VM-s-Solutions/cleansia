@@ -343,7 +343,7 @@ inside the express window'*, an **uncapped discount** (`cleansia.app en.json:109
   with before…"`. `grep -i express` in that file returns only `:762 "slot_express": "Express +20%"` and
   `:764 "express_surcharge_label": "Express slot (+20%)"`.
 - Repo-wide, `membership_perk_express` appears in **exactly five files**, three of which are this ADR,
-  `agents/backlog/status/sprint-15.md`, and `T-0513`. **The other two are regression guards asserting its
+  `agents/archive/2026-08/backlog/status/sprint-15.md`, and `T-0513`. **The other two are regression guards asserting its
   absence**: `MembershipExpressClaimTest.kt` (three tests, three screens × five locale bundles, `:33-75`)
   and `MembershipExpressClaimTests.swift` (`:19-57`, including `testTheL10nAccessorsAreGone`).
 

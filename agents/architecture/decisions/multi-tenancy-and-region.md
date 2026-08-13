@@ -187,7 +187,7 @@ The owner declined the activation pack (**ADR-0028 is `DECLINED`**,
 `docs/decisions/adr-0028.md:3` — **retires when:** that status line stops
 reading `DECLINED`) and separately recorded, on Q-VS-03, *"we won't have franchises, DON'T
 OVERCOMPLICATE THINGS"* as a **standing instruction**
-(`agents/backlog/questions/open.md:2324-2337`). Read together, multi-tenancy is a **dormant seam on no
+(`agents/archive/2026-08/backlog/questions/open.md:2324-2337`). Read together, multi-tenancy is a **dormant seam on no
 roadmap**, and that is the frame every future tenancy decision starts from.
 
 **What a dormant seam is owed, and what it is not:**

@@ -525,7 +525,7 @@ artifacts. **If you are coordinating multi-agent or multi-step work, start here:
   `docs/architecture/security-rules.md`, the per-component contracts are `docs/domain/roles/`, and
   platform expandability is `docs/architecture/platform-expandability.md`. Filenames are unchanged, so
   a reference by name still reads. See `agents/knowledge/README.md`.
-- **`agents/backlog/`** — tickets, stories, sprint status, questions, audits, test-plans.
+- **`agents/archive/2026-08/backlog/`** — tickets, stories, sprint status, questions, audits, test-plans.
 - **`docs/decisions/`** — the ADRs. Migrated out of the backlog on 2026-08-13 and **published**:
   a record is `docs/decisions/adr-NNNN.md` and resolves at `/decisions/adr-NNNN`. The `ADR-NNNN`
   id is the reference, so a retitle breaks no citation. Panel challenges and drafts are the
@@ -540,18 +540,18 @@ point, which invokes the PM end-to-end — plus the direct escape hatches `/back
 > command file backs any of them** — `.claude/commands/` holds exactly the seven above. Use `/feature`
 > for coordinated work, or invoke the PM directly with the `Agent` tool
 > (`subagent_type: "pm"`); for an audit, invoke the relevant charter yourself and have the PM convert
-> the findings into `agents/backlog/INDEX.md` rows (`agents/WAY-OF-WORKING.md:151`).
+> the findings into `agents/archive/2026-08/backlog/INDEX.md` rows (`agents/WAY-OF-WORKING.md:151`).
 
 The previous YAML prompt system is archived under `agents/_legacy/` (its knowledge was folded into
 `agents/knowledge/`).
 
 ## Active Bug/Improvement Tracker
 
-**The live backlog is [`agents/backlog/INDEX.md`](agents/backlog/INDEX.md), managed by the PM. It is
+**The live backlog is [`agents/archive/2026-08/backlog/INDEX.md`](agents/archive/2026-08/backlog/INDEX.md), managed by the PM. It is
 the only source of truth for ticket state — this file deliberately does not enumerate it.** Ticket
 state turns over several times per sprint; a copy here is stale within days and has misled agents
-before. The per-sprint narrative lives in `agents/backlog/status/sprint-*.md`, open owner questions in
-`agents/backlog/questions/open.md`.
+before. The per-sprint narrative lives in `agents/archive/2026-08/backlog/status/sprint-*.md`, open owner questions in
+`agents/archive/2026-08/backlog/questions/open.md`.
 
 Two corrections to what this section used to claim, so nobody re-derives them from an old checkout:
 

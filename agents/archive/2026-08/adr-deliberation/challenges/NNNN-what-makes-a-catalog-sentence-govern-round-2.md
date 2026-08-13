@@ -169,10 +169,10 @@ rejects position-widening on three grounds, the first being:
 
 But R10's own row reads:
 
-> *"**UNESTABLISHED — no `T-0432-*.md` exists in `agents/backlog/tickets/`. Excluded from the agreement
+> *"**UNESTABLISHED — no `T-0432-*.md` exists in `agents/archive/2026-08/backlog/tickets/`. Excluded from the agreement
 > count**"* … *"⚪ **determinate; unscored**"*
 
-**Verified:** I globbed `agents/backlog/tickets/T-04*` — there is no `T-0432-*.md` (there are
+**Verified:** I globbed `agents/archive/2026-08/backlog/tickets/T-04*` — there is no `T-0432-*.md` (there are
 `T-0427`, `T-0441`, `T-0447`, `T-0448`, `T-0449`, `T-0451`, `T-0473`, `T-0479`, `T-0497`). The
 exclusion is correct. **A row with no establishable history cannot be flipped against history.** Ground
 (i) is void, and Alternative F is the alternative the author says it is least comfortable rejecting.

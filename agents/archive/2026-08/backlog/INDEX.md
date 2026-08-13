@@ -1,0 +1,2739 @@
+# Backlog Index
+
+The manifest of every ticket. The **PM owns this file** and updates it on every state transition.
+One row per ticket. Source of truth for "what's the team doing right now".
+
+> ## ⚠️ A ticket has TWO rows here, and only one of them ever gets updated
+>
+> **This is the single most expensive defect in this file and it burned four lanes in one day.** A
+> ticket is recorded twice: a **filing** row in a wave's *"close follow-ups"* table, and a **close-out**
+> row in the wave table. The two carry **independent status strings**. Shipping a wave updates the
+> close-out row and leaves the filing row reading `draft`.
+>
+> A lane greps for open work, finds the filing row, believes it, and re-implements shipped code. On
+> 2026-08-11 that happened to **24 tickets across four lanes** — two Android, six frontend, sixteen
+> backend — and in the backend batch the brief called one of them *"the most serious row here"* when
+> its subject had not existed for weeks. One ticket, T-0242, would have been actively **harmful** to
+> re-implement: its described "fix" was tried in Wave 6, leaked the standard tier to an all-free
+> cancellation window, and was reverted by a reviewer.
+>
+> **So: a filing row must not carry a status.** It is a record that a ticket was *created*; the
+> close-out row is the record of what happened to it. Two sources of truth for one fact is the same
+> defect this project refuses everywhere else — it is `Order.CurrentStatus` versus a history walk, one
+> level up, in Markdown.
+>
+> **Enforced by:** `agents/tools/check-backlog-consistency.mjs` (CI: `catalog-claims.yml`) — **`T1-CI`**,
+> baseline **zero** as of the 2026-08-11 reconciliation, which closed **44** divergences (C1 11 · C2 33).
+> It checks the two things a human cannot hold across 2500 lines: a ticket whose rows disagree with each
+> other, and a ticket whose file says `done` while no row records it. **It cannot check whether a `done`
+> row is TRUE** — that needs the tree — so a lane's first move stays *verify the defect still exists*,
+> never *read the row*.
+>
+> ## ⚠️ A commit SHA on a closed row usually resolves to NOTHING, and that is not fabrication
+>
+> Measured 2026-08-11: **18 distinct short SHAs cited across roughly 105 rows resolve to no object in
+> this repository** — `b8f89202` alone appears on 16 rows, `5d631f8c` on 17, `8ddfef9d` on 13.
+>
+> **The cause is squash-merge, not invention.** `master` has exactly one merge commit in its whole
+> history (the initial import); every PR lands as a single squashed commit titled `… (#NNN)`. So a lane
+> that records the SHA it committed on its feature branch is recording an object that **ceases to exist
+> the moment the PR merges**. The row was true when written and was falsified by a process, which is the
+> same decay `conventions.md` §*"A claim about the tree carries its own retirement condition"* exists to
+> stop — one level up, in the backlog, where no checker looks.
+>
+> **So: cite the PR number, which survives the squash, not the branch SHA, which does not.** A SHA is
+> still useful *within* an unmerged branch — every reference in this sprint's rows resolves today,
+> because `docs/sprint-15-decisions` has not merged yet — and every one of them will die on merge too.
+> Do not "fix" the ~105 dead references by deleting them: they are the only record of which lane did the
+> work, and the PR number beside most of them still resolves. **Do not read a dead SHA as evidence a
+> closure is false** — that inference is exactly what this note exists to prevent, and it is the reason
+> a lane nearly re-implemented two already-shipped tickets.
+
+## Legend
+- **Status:** draft · ready · in_progress · in_review · qa · done · blocked
+- **Size:** S · M · L
+- **Layers:** analyst, architect, db, backend, frontend, android, ios, docs
+
+## Active
+
+> ## 🧾 FILING PASS — 2026-08-05. **Eleven new rows for work that existed only in ADR text, commit messages and one lane's report.** Adds rows; supersedes nothing below except the **T-0537** correction it names.
+>
+> ### The finding is the absence
+>
+> **ADR-0033 is `accepted` and NOT IN FORCE.** It named Block D — the reviewer-check that enforces it —
+> as **its own condition of acceptance**, and was accepted with that condition unmet. Its §Consequences
+> claims in the present tense that the check *"moves"*. That is false at HEAD. PM-verified before filing:
+>
+> | | State at HEAD (`0e1af548`) |
+> |---|---|
+> | `.claude/agents/reviewer.md:105-110` — what a **reviewer** runs | still the **superseded** axis, verbatim |
+> | `agents/knowledge/conventions.md:122-127` — what an **author** applies | still the superseded axis. **The first adversarial round measured only the reviewer's page and missed this second site** |
+> | `agents/process/quality-gates.md` Gate 1 (`:92`) | no catalog-edit pointer |
+> | **FT-11 / FT-12 / FT-8 as `INDEX.md` rows** | **none existed.** The follow-through the ADR's own acceptance depended on was never filed at all |
+>
+> By ADR-0032 D2's own line (*"T3-HUMAN requires a **named** checklist item"*), ADR-0033 is
+> `(guidance — no gate)` today and its three routing tests bind nothing. **FT-11 is not a follow-up — it
+> is the remainder of the decision.** The living doc `agents/architecture/decisions/catalog-governance.md:61-76`
+> already recorded this; **these rows are the backlog catching up to it.**
+>
+> ### The ADR-0033 remainder — five rows
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0549** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0549-*.md` (`status: done`); this row was never updated.** **FT-11 — land the named enforcer (reviewer-check 5 "Catalog-edit routing") and stop BOTH pages teaching the superseded axis.** `.claude/agents/reviewer.md:105-110` + `quality-gates.md` Gate 1 + **`agents/knowledge/conventions.md:122-127`** | XS | **`ready`** | T-0553 *(**AC3 only** — AC1/AC2 dispatch now)* | architect, docs | no | **The condition of acceptance.** Scope **widened** to the author's page per finding **L2** — fixing one page leaves the rule half-taught, which looks done |
+> | **T-0550** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0550-*.md` (`status: done`); this row was never updated.** **FT-12 — record reviewer-check 5's id in `agents/process/enforcement.md`** (`:161-163`) so a charter edit that drops it is a visible regression, not a silent one | XS | `ready` | T-0549 | architect, docs | no | Nothing to record until T-0549 AC1 lands |
+> | **T-0551** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0551-*.md` (`status: done`); this row was never updated.** **FT-8 — Block C into `agents/knowledge/conventions.md`** | XS | ⛔ **`blocked`** | **T-0549, T-0553** | architect, docs | no | **Blocked twice, and filed `blocked` on purpose.** Applied **as specified** it installs a contradiction: Block C says only *"insert after the existing numbered list"* and never amends `:122-127`, whose **first limb the floor reverses** — one page would instruct both (finding **L3**). A `ready` row here invites exactly that literal application |
+> | **T-0552** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0552-*.md` (`status: done`); this row was never updated.** **F1 — ADR-0032 carries TWO stale statements and is `accepted`: one signed erratum, not a quiet edit.** `:23-25` (0031 **is** on `master` — `acf2f0bc`, PR #175) **and `:14`** (*"ADR-0033 is `proposed`"* — made stale by this very round) | XS | `ready` | — | architect, docs | no | Only the architect signs (`adr/README.md:16-26`); the living doc moves in the same change (`:31-32`) |
+> | **T-0553** | **Architect panel — L1 ("governs" is undefined) + L3 (the reversed limb) + F4 (the missing trade-off limb) → a new ADR refining ADR-0033 D1** | S | **`in_progress`** | — | architect | no | **Running now; filed after it spawned** — which is the same defect as FT-11 going unfiled, recorded rather than smoothed over. Blocks T-0549 AC3 and T-0551. AC1 = author ≠ challenger ≠ lead, declared. **ADR number allocated at write time; highest at HEAD is 0042, `T-0547` reserved** |
+>
+> ⚠️ **`agents/knowledge/conventions.md` §"Harvest good patterns back into the catalog" is a serialized
+> lane: T-0549 AC3 → T-0551. Never concurrent** — two instances in that section is how a page acquires
+> two incompatible forms, which is the exact disease under repair.
+>
+> ### Two Nx-guard findings — pinned by CI so they cannot grow, neither fixed
+>
+> Both were reported by **T-0537**'s guard (`e78fb619`) into its own recorded sets and had no ticket.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0554** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0554-*.md` (`status: done`); this row was never updated.** **Three dangling `tsconfig.base.json` aliases** — `@cleansia.app/order-details` (`:45-47`, **missing the `libs/` prefix entirely**), `@cleansia/cleansia-services` (`:177`), `@cleansia/stores` (`:193`). All three targets absent; **zero importers** (verified) | XS | `ready` | — | frontend | no | Closes the guard's **NX-4** recorded set (`check-nx-project-registration.mjs:99-104`) — the entry must be deleted **in the same change**, or the guard goes red *"stale entry"* |
+> | **T-0555** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0555-*.md` (`status: done`); this row was never updated.** **`libs/cleansia` is invisible to Nx** — no `index.ts`, no `project.json`, no alias | XS | `ready` | — | frontend | no | 🔎 **The guard's description is wrong and the correction is what makes deletion safe:** it is **not** a generator scaffold but a **superseded copy of the live landing page** — `CleansiaComponent` imports **ten** sub-components that exist only under the registered `libs/cleansia-customer-features/home`, so the file **cannot compile**, and its template is an *older* copy. Closes **NX-5** (`:106-109`) |
+>
+> ⚠️ **T-0554 and T-0555 are a serialized lane on `agents/tools/check-nx-project-registration.mjs`** —
+> different constants, one file. Run them one after the other.
+>
+> ### Four findings from lanes that landed while this pass ran
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Note |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0556** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0556-*.md` (`status: done`); this row was never updated.** 🔴 **`SaveMyDocuments` accepts an unbounded upload with no content check.** `SaveMyDocuments.cs:74-77` asserts **the same predicate twice** (`NotEmpty()` then `Must(!IsNullOrWhiteSpace)`) and nothing else; the handler decodes straight to blob upload; content type is inferred from the **file extension**, not the bytes; the document **list** has no count cap | S | `ready` | — | backend | **yes** | Reachable on **two hosts** (`Web.Partner` + `Web.Mobile.Partner` `EmployeeController`). Same defect class as the avatar path just fixed in `97bb7265` (T-0548) — **the highest-severity row in this pass** |
+> | **T-0557** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0557-*.md` (`status: done`); this row was never updated.** **No `MaxRequestBodySize` anywhere in the solution** — Kestrel's ~28.6 MB default is the real ceiling on every intake path. Decide the host-level, config-driven shape in `CleansiaStartupBase` | S | `ready` | — | architect, backend | **yes** | **Architect, not backend.** The number is **not derivable from the avatar path**: three intake paths take unbounded arrays with **no count cap**, so a host-wide limit silently sets their policy too. Explicitly **not** a per-endpoint attribute — an attribute is what the next endpoint forgets, which is how the avatar gap happened |
+> | **T-0558** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0558-*.md` (`status: done`); this row was never updated.** **Two dead commands** — `UploadEmployeeDocument`, `UploadNewDocumentVersion`: no controller, no dispatcher | XS | `ready` | — | backend | no | The only remaining hits are the **identically-named policy constant** `Policy.CanUploadEmployeeDocument` (`Policy.cs:75`), which guards the **live** route — AC3 forbids deleting it. They cap a *client-declared* `FileSizeBytes` next to a *client-supplied* `FilePath`: **must not be revived as-is.** Dead code that looks like a working validation example is worse than dead code |
+> | **T-0559** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0559-*.md` (`status: done`); this row was never updated.** **Finish the generated-DTO literal sweep — 46 left in 9 admin libs — and rule on the ratchet's `(Command\|Request\|Dto\|Query)$` blind spot** (`eslint.generated-dto.config.mjs:24`) | M | **`draft`** | T-0535 | frontend, architect | no | **T-0535's remainder, filed separately because T-0535 is a live lane whose file must not be edited underneath it.** Widening the regex starts matching **hand-written** classes → an Architect call. **Three of the nine libs have no spec files at all** — pinning their bodies from scratch is the real cost, not the conversion. `draft` until AC5's ruling exists and the count is re-derived |
+> | **T-0566** | **Admin and partner download all 18 weights of a font no stylesheet references** (`Kanit`, requested in both `index.html`s, **0** `font-family` hits across every scss/css/ts); the customer app also requests a Poppins weight nothing sets (`wght@500`; measured usage is 600/700/800) | XS | **`ready`** | — | frontend | no | Found while fixing T-0472's web half, **reported not swept in**. Render-blocking on every cold visit to two apps, for nothing. **AC1 first**: `git log -S Kanit` decides whether this is a leftover loader or a design never wired — if the second, the fix is a **missing stylesheet**, not a deleted link. AC3 is the value: T-0472's guards already compile the stylesheets AND parse each `index.html`, so "requested but referenced nowhere" is one more assertion in a file that already holds both inputs. Do **not** invert it — system stacks are legitimately unrequested |
+> | **T-0565** | **Five error keys are bare string literals, so the parity guards cannot see them** — `CreatePaymentIntent.cs:47` + `ConfirmRecurringOrder.cs:93` (`order.payment.already_paid`, the **customer money path**), and four partner-profile sites (`validation.{registration_number,vat_number}.invalid_format`). All five resolve to *"An error occurred"* today | S | **`ready`** | — | backend, frontend | no | **The guards are not failing, they are not looking**: `error-contract-parity.spec.ts` asserts against `BusinessErrorMessage.cs` directly, so a key that never becomes a constant is invisible **by construction**. Verified 2026-08-06 — the leaf keys exist in **no** locale of **any** app; the apparent `registration_number`/`vat_number` hits are field *labels*. **AC5 is the ticket**: extend the source scan so a dot-notation literal in a message slot fails the build. Fixing five call sites is twenty minutes; the sixth gets written next sprint without it |
+> | **T-0564** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0564-*.md` (`status: done`); this row was never updated.** **Two iOS customer view models retain themselves through their Combine bindings** — `MembershipViewModel.swift:29-30`, `RecurringBookingsViewModel.swift:63-64`. `assign(to:on: self)` holds the target **strongly**, so `self → cancellables → subscription → Assign → self` and neither ever deallocates | S | **`draft`** | — | ios | no | **Split out of `9c9b32e5` deliberately.** That fix introduced the same cycle, was caught in review, and is now pinned by a release test — but its view model has a `deinit` that cancels a poller with no other stop path, so it was a **live recurring network call per screen open**. These two have **no `deinit`** (verified), so they leak memory only. Fix is the `assign(to: &$…)` form already used at ten sites in `HomeTabViewModel.swift:53-62`. **The mutation is the hard part**: storing the reverted binding in a cancellable a later `init` line overwrites *cancels* the subscription, so no cycle forms and the test passes green — a mutation that doesn't reproduce the defect proves nothing |
+>
+> ### Backlog integrity — three corrections found while filing
+>
+> | ID | Correction |
+> |----|----|
+> | **T-0546** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0546-*.md` (`status: done`); this row was never updated.** **Row added — the ticket existed on disk with no `INDEX.md` row.** `draft`, `S`, frontend. Four customer libs extend `tsconfig.base.json` **one level too deep** and cannot compile a test; with no spec Jest prints *"No tests found, exiting with code 0"* and Nx reports success, so the lib sits silently outside the suite. `gdpr`/`orders` fixed in `6bd3b0c6`; **`checkout`, `home`, `legal-pages`, `services-catalog` still broken** (+ `legal-pages` has no `test` target). **PM added the four full paths to the ticket** — a ticket that names no path cannot be detected as stale by anything. Status untouched; AC3's "where does the workspace-wide check live" call still gates it |
+> | **T-0548** | **Row added — ticket existed on disk with no `INDEX.md` row.** `in_review`, `S`, backend, `security_touching: true`. Avatar upload had no server-side size cap; the fix shipped in **`97bb7265`** (*"rejects before it decodes"*). **Not `done`: its `## Review` is still the empty template** — no reviewer verdict, no MANUAL-GATE block |
+> | **T-0537** | ⚠️ **The pass-4 row above is STALE.** It says `ready` because *"AC1–AC5 are the GUARD, and no guard exists"* — **the guard shipped in `e78fb619`** (`agents/tools/check-nx-project-registration.mjs` + `.test.mjs` + its own `.github/workflows/nx-project-registration.yml`, 5 rules over 3 witnesses), and the **ticket file now reads `done` with AC1–AC5 ticked**. Corrected here to **`done` ⚠️ *(unreviewed)*: its `## Review` is the empty template**, so per `ticket-lifecycle.md:165-179` it owes a reviewer pass or a MANUAL-GATE block before `done` is legitimate. **Ticket file not edited — the frontend lane is live in this tree** |
+>
+> ### How these were filed, and the one thing it changes for the next pass
+>
+> Applying `status/sprint-15.md` §D3's two measured corrections:
+>
+> - **Every ticket names the specific product files it touches.** That is the only staleness signal shown
+>   to work (candidate 3: 10 of 12 real hits, resolved by **suffix match against `git ls-files`**).
+> - **But five of these eleven tickets are structurally undetectable by it** — T-0549/0550/0551/0552/0553
+>   touch only `.claude/agents/**`, `agents/knowledge/**`, `agents/process/**`, `agents/architecture/**`
+>   and `docs/decisions/**`, and the *first three of those are deliberately excluded* from the path
+>   rule (counting shared knowledge docs takes it from **11 flags to 29** on this corpus). **Each of those
+>   five carries a `### Staleness detectability` section naming the one hand-check that substitutes for
+>   it.** The remaining six name `src/` paths and are covered.
+> - **Candidate 1 has a proven recall gap** (T-0448/T-0450: 0 ticked boxes, template-only `## Review`, both
+>   already shipped), so an empty `## Review` on a `ready` row proves nothing on its own. **Its inverse
+>   found something here:** T-0537 and T-0548 are `done`/`in_review` **with** empty review blocks.
+
+> ## ✅ RECONCILIATION PASS 4 — 2026-08-05. **This block SUPERSEDES every row below for the tickets it names.**
+>
+> The third pass closed 15 tickets; this one closes 9 more, and **every one of them had been sitting in
+> `ready` while its code was already at HEAD.** That is now three passes with the same failure, so this pass
+> also proposes the mechanism that ends it (**`status/sprint-15.md § ADDENDUM D`**) rather than just doing
+> the sweep a fourth time.
+>
+> **Method — the same as pass 3, and the reason two rows below disagree with the brief that ordered this
+> pass.** Every verdict was established by reading the **tree at HEAD**, using `git log master..HEAD`
+> (72 commits) only to locate the change. A commit message saying a thing shipped is a lead, not evidence.
+> **Two of the eleven tickets the brief listed as shipped were not**, and one ticket the brief did not
+> mention was.
+>
+> ### 9 tickets CLOSED — each verified at HEAD, file by file
+>
+> | ID | What actually shipped | Commit | Verified at HEAD |
+> |----|----|----|----|
+> | **T-0457** | PII redacted **by shape** on all five hosts, plus a DTO-walking guard that reads the token list out of the **live compiled regex** | `b9753e85` | `ContactIdentityFieldRegex` ×5 hosts; `WireSurface.ReadTokens()` reflects the private static member and parses `regex.ToString()`; `RequestLogPiiSurfaceGuardTests` has an `InRange(1000,20000)` anti-vacuity floor |
+> | **T-0464** | `ServedContentType` as a **closed value type** — the "decoy" was load-bearing and the naive fix was **stored XSS**, so it went via the SAS `rsct`/`rscc` override | `b9753e85` | `Core.Blobs.Abstractions/ServedContentType.cs`; `ServedContentTypeTests` (26 cases, `text/html` + `image/svg+xml` → opaque) |
+> | **T-0509** | The sweep ran; the live hole was the **admin** GDPR route — `Contains("/gdpr")` never matched `AdminGdpr` (no slash before "gdpr") | `b9753e85` | all five hosts test `Contains("gdpr/")`; `RequestLogPayoutPathSuppressionTests:19-22`, whose **derived** guard found it and whose `[InlineData]` list could not have |
+> | **T-0520** | Payout details UI, partner web **and** admin — masked read + audited reveal as two different operations | `cf24a74c` `3a4c18a9` | `profile-bank.*` (partner) + `employee-payout-section.*` (admin); the facade spec pins *"nothing unmasked until a reveal happens"* and *"goes through the POST reveal command, never a second read"* |
+> | **T-0526** | Cancellation-fee preview sharing **one assessor** with the cancel path | `03c3ba43` `20a0c592` | `Features/Orders/CancellationAssessor.cs`, called from `CancelOrder.cs:81` and `:91`; `CancellationPreview` on **both** customer hosts at `OrderController.cs:174` |
+> | **T-0538** | All **five** Web SDK hosts disable the default content glob, plus a regression guard | `0c76f94a` | `EnableDefaultContentItems=false` ×5 `.csproj`; `Cleansia.Tests/Configuration/WebSdkContentGlobTests.cs` goes red on a **new** host that reintroduces it |
+> | **T-0539** | **Per-template DI scope** in the recurring sweep — the durable fix, not the `Rollback()` one | `0c76f94a` | `MaterializeRecurringBookings.cs:87` `CreateScope()` **inside** the loop; `RecurringSweepPerTemplateIsolationTests` |
+> | **T-0545** | ⛔ **`retired` — OBSOLETE, not done.** The owner drops the DEV database before any repair would run, so the corrupt counters go with it. DEV is the only environment the drift exists in | — | The cause is fixed and stays fixed (`da88b695` + `d78b816b`). ⚠️ **ADR-0038 §D6.4 now names a repair with no ticket behind it** — an architect-lane doc fact, listed in ADDENDUM D |
+> | **T-0508** | ⏭️ **`superseded` by T-0522.** The spec's questions were answered by the build shipping first; T-0522 is `in_review` with **AC0–AC15 checked** | `8ca77412` `946200c1` `3a4c18a9` `53d0bfab` | `InvoicePdfData.Supplier` = the cleaner + `InvoiceLabels` `Dodavatel`/`Odběratel` (AC3) · `IsVatPayer` → `QuestPdfService.cs:80` (AC4) · `InvoiceLineItem` now has `Quantity`/`UnitPrice`/`LineTotal` (AC6) · `DueDate` + `ConstantSymbol` (AC7). **AC11's boundary survives outside the ticket:** `Q-PAYOUT-01` is still open for **SK** |
+>
+> ### ❌ 2 tickets the brief listed as shipped that are NOT — they stay open, and this is why the pass was worth running
+>
+> | ID | Status | What is actually true at HEAD |
+> |----|----|----|
+> | **T-0537** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0537-*.md` (`status: done`); this row was never updated.** stays **`ready`** | The brief described *"the dashboard lib registered in Nx"* — **that is this ticket's OUT-OF-SCOPE half.** The registration did land (`libs/cleansia-partner-features/dashboard/project.json`, with tags and a jest target). **AC1–AC5 are the GUARD, and no guard exists:** `grep -rln "src/index.ts" --include=*.mjs --include=*.ts --include=*.yml` returns **nothing**, and `agents/tools/` holds only the two `check-*` pairs. The silent state is still reachable. Sweep re-run per AC5: **64 lib roots, 0 missing** |
+> | **T-0514** · **T-0544** | both **`ready` → `in_progress`** | **Web leg shipped (`4984c2eb`); Android and iOS did not.** Android `strings.xml:568` still reads `booking_slot_express` = *"Express +20%"* with no waived variant and no quota string; `:852-855` still carries the comment *"No express perk anywhere… Restore this perk only together with the code that waives the surcharge"* — **that code shipped in T-0493.** iOS `MembershipPerks.swift:6-9` says the same and its enum still has three cases, so **Plus advertises four perks on mobile and five on web.** Moved out of `ready` so nobody rebuilds the web leg; `owner` → `android`, iOS in parallel |
+>
+> ### 🔎 1 ticket this pass found that the brief did not name
+>
+> **T-0527** moved `draft` → **`in_review`**. It said `draft` while **both** halves had shipped (`ab077504`):
+> Android `OrderApi.kt:70` and iOS `OrderClient.swift:92` both call the preview, **`CancellationFeePreview.swift`
+> is deleted**, and the committed iOS suite that pinned the *wrong* ladder was **corrected rather than
+> weakened** (`OrderStatusLogicTests.swift:182`). Not `done`: **AC10 (cross-platform parity QA)** is open and
+> the customer Android app has no `androidTest` source set. `owner` → `qa`.
+>
+> ### ✅ 3 architect dispositions from 2026-08-04, accepted and now reflected in the rows below
+>
+> | ID | Disposition | Re-verified fact it turns on |
+> |----|----|----|
+> | **T-0531** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0531-*.md` (`status: done`); this row was never updated.** **RESCOPED** — `ready`, `S` → **`XS`**, **AC1′ only** (the *activation* consequence into `multi-tenancy-and-region.md`). AC2/AC3/AC4 withdrawn — landed elsewhere, or withdrawn on principle/decay | that file still contains no "unique index" / "NULLS" / "DISTINCT". **AC5 stands: nothing is fixed, no migration, no index change** |
+> | **T-0532** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0532-*.md` (`status: done`); this row was never updated.** **STANDS**, `ready`, unblocked, three AC sharper | `PromoCodeRedemptionRepository.cs:22` **still** carries `// INTERIM(ADR-0038 §D3 → T-0532)` — live interim, non-orphan marker. **Now the highest-value unshipped `ready` ticket in the queue** |
+> | **T-0471** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0471-*.md` (`status: done`); this row was never updated.** **STANDS UNCHANGED**, `ready`, `S` | ADR-0033 `:3` still `proposed`; `adr/challenges/` still has **no** 0033 file while 0034–0042 all got one. **Now the oldest `ready` ticket in the queue** |
+>
+> **T-0522** stays **`in_review`** and is **not** closed by this pass. Its `manual_steps: [ef-migration]` is
+> **real and back on** — the konstantní symbol is one nullable `varchar(4)` on `CountryInvoiceConfigs`, and
+> because the domain declares it now, the invoice path is down until the migration is regenerated. **The
+> owner's drop-and-reseed is the window.**
+>
+> ---
+
+> ## ✅ SPRINT-15 RECONCILIATION — 2026-08-04. **Superseded above for T-0508 · T-0509 · T-0514 · T-0520 · T-0522 · T-0526 · T-0527 · T-0531 · T-0532 · T-0537 · T-0538 · T-0539 · T-0544 · T-0545.** Authoritative for everything else it names.
+>
+> The sprint moved faster than the backlog. `master..HEAD` is **56 commits** with detailed messages, and
+> the rows below them described a repository that no longer existed — the same failure the docs sweep
+> found in `CLAUDE.md`, which was wrong in **seven** separate ways for the same reason. **Every state
+> below was established from the git history and then re-verified against the tree at HEAD**, not taken
+> from a ticket and not taken on anyone's say-so. Where a claim could not be verified it is marked as
+> such. Full narrative: **`agents/archive/2026-08/backlog/status/sprint-15.md § ADDENDUM C`**.
+>
+> ### 15 tickets CLOSED — verified against the tree, one by one
+>
+> | ID | What shipped | Commit(s) | Verified at HEAD |
+> |----|----|----|----|
+> | **T-0525** | Cancellation fee no longer charges for a cleaner who never took the job | `8f447258` | `CancelOrder.cs:110` — `order.AssignedEmployees.Count > 0` |
+> | **T-0528** | The digest re-offers a job you were busy for once the conflict clears | `efee2853` | `FindReleasedCommitmentWindowAsync` + the disjunctive freshness term |
+> | **T-0529** | The digest watermark can advance under a tenant | `28763fe6` | `StampWatermarkAsync` → `GetByIdIgnoringTenantAsync`, null branch logs |
+> | **T-0530** | One offerability rule, read by every surface, enforced at the take | `37756936` (+ADR-0037) | `Core.Domain/Orders/OrderAvailability.cs`; parity gate workflow committed |
+> | **T-0513** | The false express promise removed from all three clients | `0c665c08` | scripted walk of 15 web bundles + both mobile catalogs — no perk copy anywhere |
+> | **T-0517 · T-0511 · T-0495** | The three architect panels → **ADR-0034 · ADR-0035 · ADR-0036/0039** | `7fc2935e` · `15d80faa` · `cfcadce5`+`182a5660` | all four ADR headers read `accepted` |
+> | **T-0518 · T-0512** | The payout + benefit-usage schema, folded into ONE regenerated `Initial` | `7e1cf7f5` | all six changes present in `20260723182623_Initial.cs`; still exactly one migration |
+> | **T-0519** | Payout capture, real validation, masked reads, id-keyed erasure | `3092abc1`+`077b7e8a` | the validator, three features, the erasure test |
+> | **T-0521** | Partner bank section on Android **and** iOS | `d0c08e24`·`532d98f5`·`9c13b2c7` | both `BankSectionViewModel`s + generated payout models |
+> | **T-0493** | The express waiver: resolved, metered, consumed, all four owner rulings enforced | `3092abc1` | `IExpressWaiverResolver`, `CreateOrder.cs:320` |
+> | **T-0515** | The preferred-cleaner hold enforced at **all six** surfaces + the push that ADR-0036 D10 gates it on | `3092abc1`→`22eeaec4`→`b9cb6d0f`/`532d98f5`→`eb37fdab` | `PreferredHoldSurfaceAgreementTests`, 30 push keys = 15 events × 2 |
+> | **T-0516** | Favourite-cleaner feed rate-limited, Plus-gated **on the flag**, active-filtered | `b6f1c2a2` | `GetMyServingCleaners.cs:45`, `[EnableRateLimiting("auth")]` |
+>
+> **T-0523** moved `rejected` → **`retired`** — the owner rejected the work (`579eff8f`); `rejected` is not
+> a state in `ticket-lifecycle.md` and `retired` is.
+>
+> ### 5 tickets RE-OPENED or UNBLOCKED — the work is real and nothing is stopping it
+>
+> | ID | Status | Why |
+> |----|----|----|
+> | **T-0520** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0520-*.md` (`status: done`); this row was never updated.** `draft` → **`ready`** | 🚨 **This is a live regression, not a feature gap.** `c968cbf9` correctly deleted partner web's `iban` control (it was `Validators.required` on a field the DTO no longer carries — **every cleaner would have been permanently unable to save their profile**, on a green build). It left partner web with **no bank capture at all**, while Android and iOS both have it. The regen it waited on **landed** (`37440bbc`). |
+> | **T-0514** | `draft` → **`ready`** | Both deps `done`, regen landed. A Plus member's express surcharge **is being waived today and no client says so** — zero consumers of `expressSurchargeWaivedByMembership` / `expressUpgradesRemaining` across web, Android and iOS. |
+> | **T-0526** | `draft` → **`ready`** | T-0525 is `done`. It is now the only thing between the corrected server rule and **T-0527**, where both mobile clients still show 50% where the backend charges 25%. |
+> | **T-0531** | `draft` → **`ready`** | Verified **not** done — the rule is absent from `multi-tenancy-and-region.md` at HEAD. |
+> | **T-0532** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0532-*.md` (`status: done`); this row was never updated.** `draft` → **`ready`** | 🔓 **AC0 cleared** — ADR-0038 accepted (`f7828fb8`), CH-2 ruled and did not delete the premise. |
+>
+> **T-0509** stays `ready` but was **re-aimed**: its target moved. `Employee.Iban` is gone from
+> `EmployeeItem`, `UpdateEmployeeCommand` and `EmployeeListItem`, so the admin-paged-list exposure — its
+> headline — is closed as a side-effect. The logs and GDPR-export legs are untouched and the sweep should
+> now cover `EmployeePayoutDetails` and the three new read paths.
+> **T-0522** stays `blocked` but is **partly shipped and the row said nothing**: `8ca77412` inverted the
+> invoice parties (a wrong legal category, not a field gap) and `946200c1` added the late-payment interest
+> clause. It is blocked **only** on `Q-PAYOUT-02` / `Q-PAYOUT-03`, which are legal and owner-only.
+>
+> ### 📗 The seven ADRs this sprint produced — six `accepted`, one `proposed`
+>
+> | ADR | Subject | Status | Tickets citing it |
+> |----|----|----|----|
+> | **0034** | Payout details as a scheme-discriminated record | `accepted` `7fc2935e` | T-0517 T-0518 T-0519 T-0520 T-0521 T-0522 T-0509 |
+> | **0035** | Metered membership benefits (express waiver) | `accepted` `15d80faa` | T-0511 T-0512 T-0513 T-0514 T-0493 T-0531 T-0544 |
+> | **0036** | Preferred cleaner gets **first refusal**, not priority | `accepted` `cfcadce5` | T-0495 T-0515 T-0516 T-0528 |
+> | **0037** | Offerability is a **payment-qualified status rule**, enforced at the take | `accepted` | T-0530 T-0540 T-0543 |
+> | **0038** | The promo redemption reservation runs **after** the UoW commit | `accepted` `f7828fb8` | T-0532 T-0545 |
+> | **0039** | Cleaner availability is checked **when choosing**; a busy cleaner never earns a hold | `accepted` `182a5660` | T-0495 T-0515 T-0516 T-0540 |
+> | **0040** | `Order.CurrentStatus` is **non-nullable** | 🟡 **`proposed`**, challenged `44d1b64d` — **no blocker**, two findings that change how it deploys | T-0540 |
+>
+> ⚠️ **ADR-0040 is `proposed`, and its code has already shipped** (`7e1cf7f5`), by design: the change was
+> time-boxed to the `Initial` regeneration window. Its challenger found **no** reachable production path
+> that persists a status-less `Order` — the write-time guarantee stands — but raised **CH-W3**, which is
+> the single most operationally important line in this sprint: **the regenerated migration will NEVER
+> APPLY to an already-migrated database.** See the owner block below.
+>
+> ### 12 findings filed that existed only in commit messages — `T-0533`…`T-0545`
+>
+> | ID | Finding | Owner | Status |
+> |----|----|----|----|
+> | **T-0533** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0533-*.md` (`status: done`); this row was never updated.** A live cross-app client import — the customer auth service imports four types from `@cleansia/partner-services`. Generated types from **two different OpenAPI documents**: the day they diverge, customer login/register/refresh compile against a shape their own server does not send | frontend | **`in_progress`** (a lane is on it; the ticket gives the diff a home and the reviewer ACs) |
+> | **T-0534** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0534-*.md` (`status: done`); this row was never updated.** **The module-boundary guard is mostly OFF.** `eslint.base.config.mjs:18-23` sets `'*' → ['*']`, and **44 libs** spread it — so only libs *without* a local config are governed. The catalog claims general enforcement; it has none | frontend | **`in_progress`** |
+> | **T-0535** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0535-*.md` (`status: done`); this row was never updated.** **97 generated-DTO object literals remain** (131 → 97 after `libs/core` and `libs/data-access` were cleared to zero). ADR-0031 predicted monotonic growth and has been right twice. The ratchet built this sprint is correctly labelled **T2-ADVISORY** because lint runs `continue-on-error` | frontend | `ready` |
+> | **T-0536** | **The lint baseline is 25 failing projects** — mostly circular dependencies and escape sequences. This is the "lint-cleanup ticket" `frontend-ci.yml:71` has promised in a comment and that never existed | pm | 🔴 **`draft` — it is an `L` and MUST be split.** It measures and splits; it does not run |
+> | **T-0537** ⚠️ **STILL `ready` — the GUARD is the ticket; only the registration shipped (pass 4)** | A library was **invisible to Nx entirely** — no `project.json`, so outside test, lint AND the boundary guard at once. **PM ran the recommended sweep: 64 lib roots, 0 others.** Remaining work is a guard, not a cleanup | frontend | `ready` |
+> | **T-0538** ✅ **DONE `0c76f94a` (pass 4) — all five hosts + `WebSdkContentGlobTests`** | **Four Web SDK hosts** still carry the recursive content glob behind the build-output nesting; only the EF startup project was fixed | backend | `ready` |
+> | **T-0539** ✅ **DONE `0c76f94a` (pass 4) — `CreateScope()` per template at `:87`** | `MaterializeRecurringBookings` has no per-template isolation — **and the naive fix is unsafe**: `Rollback()` sets tracked entries to `Unchanged`, and **Added → Unchanged is NOT Detached**, so a half-built order survives as a phantom row. The durable answer is one DI scope per template | architect | `ready` |
+> | **T-0540** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0540-*.md` (`status: done`); this row was never updated.** Two status `Contains` sites close over **different shapes** (a runtime `IEnumerable` vs a `static readonly` array) and may not emit the same SQL. Both carry comments asserting an index-seek nothing verifies | db | `ready` |
+> | **T-0541** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0541-*.md` (`status: done`); this row was never updated.** `docs/mobile-app/**` is **structurally behind** — a single-module Android layout that no longer exists, and **zero** iOS. Its own banner calls the rewrite "tracked work"; it was not tracked | docs | `ready` |
+> | **T-0542** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0542-*.md` (`status: done`); this row was never updated.** **There is no changelog**, though `documentation.md`, `quality-gates.md`, `routing.md` and the docs charter all say the docs agent owns one. **Gate 7 has been passing on a step nobody could perform** | docs | `ready` |
+> | **T-0543** | 🆕 **PM-found, in no commit message.** `077b7e8a` added `order.take.already_cancelled` / `_completed`. **At HEAD, Android has both in all five locales and partner web and iOS have neither** — a cleaner tapping a dead job reads the generic error on two of three clients | frontend | **`in_progress`** — the working tree already carries the web + iOS-core halves, uncommitted. iOS **partner** coverage and the parity-guard blind spot are still open |
+> | **T-0545** ⛔ **RETIRED as OBSOLETE (pass 4) — the DB drop comes first, the corrupt counters go with it** | The ADR-0038 §D6.4 counter-repair script does not exist. **Every promo attempt during the outage burnt a global slot with no row behind it, so campaigns may already be dead on DEV.** Named as owed in three commits and never ticketed | backend | `ready` (owner **runs** it) |
+>
+> Plus **T-0544** — closing T-0493 *created* a gap: `0c665c08` deferred the affirmative express copy to
+> T-0493, whose thirteen ACs are all mechanism and none of them copy. So **Plus advertises four perks
+> instead of five** while the waiver quietly works. `ready`.
+>
+> ⚠️ **Tree-state discipline — read this before dispatching T-0533 / T-0534 / T-0543.** Every finding
+> above was established against **HEAD (committed)**. A web lane is **live in this working tree** and has
+> already landed, **uncommitted**, the T-0533 import removal, real `scope:`/`type:` constraints in a new
+> untracked `eslint.module-boundaries.config.mjs` with tags across the lib graph (T-0534), and the web +
+> iOS-core halves of T-0543. **All three are therefore `in_progress`, not `ready`** — filing them `ready`
+> would have invited a second instance into files that are already being edited. **A citation is only
+> true against the tree state you name**, and this is the one place in this reconciliation where HEAD and
+> the working tree disagree. Every other finding here is identical in both.
+>
+> ### 🔴 OWNER-ONLY — one item genuinely blocks work, and one item is now CLEARED
+>
+> 1. 🚨 **DROP THE DEV DATABASE.** The six schema changes were folded into a **regenerated** `Initial`
+>    with its **timestamp preserved** (`7e1cf7f5`), so `20260723182623_Initial` is **already in
+>    `__EFMigrationsHistory`** on any migrated environment. `MigrationService/Program.cs:31` reads
+>    `GetPendingMigrationsAsync()` and `:39` calls `MigrateAsync()` — **pending only** — so the new
+>    columns are **skipped silently** and the service prints "up to date" and exits **0**. Both test
+>    fixtures build **fresh** schemas, so 2807 unit / 132 integration green **proves nothing about a
+>    deployed database**. ADR-0040 CH-P3 makes it worse than cosmetic: on a drifted schema the overlap
+>    check **fails OPEN and permits a double booking**, and nothing raises an error — **it would be
+>    silent.** One query settles the state: `SELECT count(*) FROM "Orders" WHERE "CurrentStatus" IS NULL`.
+> 2. ✅ **The NSwag regens are DONE — this is a correction to the record.** Three surfaces were owed
+>    (`3092abc1`) and the owner regenerated **all three web clients plus both mobile OpenAPI documents** in
+>    `37440bbc`, with the `isAvailableForRequestedSlot` leg at `53f887b6`. **PM-verified at HEAD:**
+>    `updateBankDetails`/`getMyPayoutDetails` in the partner client, the payout DTOs in the admin client,
+>    the express-waiver fields and all **three** `MyServingCleaners` query parameters in the customer
+>    client, and the same three parameters in `customer-mobile-api.json`. **T-0520 is therefore NOT
+>    blocked on a regen.** Every remaining `nswag-regen` / `mobile-spec-redump` in the backlog (T-0526,
+>    T-0527) is **created by** future work, not pending today.
+>
+> **`.AreNullsDistinct(false)` on the promo per-user index is also off the owner list** — it was folded
+> into the regenerated `Initial` (5 occurrences in the committed migration) and lands with the drop.
+
+> ## 🟥 LIVE OUTAGE FIX SHIPPED (ADR-0038 §D3 interim) — and the ticket that retires it, **`T-0532`**
+>
+> Filed 2026-08-03. **Every order placed with a promo code threw `23503` and no order was created**:
+> `CreateOrder.cs:315` → `OrderPromoApplier` → `PromoCodeService.ApplyAsync` → a raw **self-committing**
+> INSERT against `FK_PromoCodeRedemptions_Orders_OrderId`, for an `Orders` row the UnitOfWork pipeline
+> commits **after the handler returns**. ADR-0038 §D3 is `proposed` but **binding on the fix now**; the
+> three parts shipped as one PR by ruling (§D3 + §D5.1 + §D6): the reservation became a **change-tracked**
+> insert that rides the order's own commit; the apply gate moved off `preview.DiscountAmount` onto
+> `order.PromoCodeId`/`PromoDiscountAmount` (the factory may **discard** a previewed promo for a larger
+> membership+tier combination — that defect was unreachable only because everything threw first, and went
+> live the moment the fix landed) and now passes `rawSubtotal` instead of the re-gross, which is provably
+> wrong on express orders; and the compensating `DecrementGlobalRedemptionsAsync` now fires on **any**
+> reservation non-success, not only the `null` return, so a throw no longer permanently burns a global
+> slot. Acceptance evidence is `CreateOrderPromoRedemptionPersistenceTests` against real PostgreSQL —
+> **it must never be edited to accommodate a fix.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0532** | **Move the promo redemption reservation strictly POST-COMMIT onto `IPostCommitEffects`** — retires the ADR-0038 §D3 interim. The interim trades the single-statement atomic per-user cap for an app-level pre-read, and under a **non-null tenant** a genuine same-user race now surfaces as a `DbUpdateException` that rolls back a paid order instead of a clean `null`. End state restores `TryReserveRedemptionSlotAsync`'s SQL **byte-for-byte** and runs it after the pipeline's commit, on a new scoped seam registered between `PostCommitDispatchBehavior` and `ValidationPipelineBehavior`. **The code carries `INTERIM(ADR-0038 §D3 → T-0532)` and this row is what makes that marker non-orphan (§D4)** | M | **`ready`** | — | architect, backend | no | 🔓 **AC0 CLEARED — ADR-0038 was accepted in `f7828fb8`, zero blocking challenges.** CH-2 was ruled and did NOT delete the premise. Carries a new binding condition: the one-call-site tripwire lands **inside this PR** (CH-6 + ADR-0032 D3) |
+>
+> ### ⚠️ Two follow-ups the fix does NOT do — **both resolved by the 2026-08-04 reconciliation**
+> 1. ✅ **`.AreNullsDistinct(false)`** on `(TenantId, PromoCodeId, UserId, SlotOrdinal)` (ADR-0038 §D5.2)
+>    — **DONE, and it is no longer an owner item.** It was folded into the regenerated `Initial` at
+>    `7e1cf7f5` (the committed migration now carries `NULLS NOT DISTINCT` **5×**) and it lands with the
+>    database drop. The de-duplication this row warned about evaporates for the same reason: the database
+>    is being dropped, so there is no population to de-duplicate. The *constraint* it reasons from is
+>    still real and still unwritten — that is **T-0531**, now `ready`.
+> 2. 📋 **The §D6.4 counter repair** — a `sql-scripts/` script (NOT a migration, NOT a job) reconciling
+>    `PromoCodes.CurrentRedemptionsCount` to the ledger. **Every promo attempt since the bug shipped burnt
+>    a global slot with no row to show for it, so campaigns may be ALREADY DEAD in DEV.** Run it **after**
+>    the fix deploys and during low traffic — before the fix it repairs a state the next booking re-breaks.
+>    **Named as owed in three commits and never ticketed → now `T-0545` (`ready`).** An agent writes it;
+>    the owner runs it. ⚠️ Its `CH-7` trap: `AnonymizeCustomerData` nulls `PromoCodeId` while keeping
+>    `PromoDiscountAmount`, so the reconciliation must key on the **amount instead of** the id — "in
+>    addition" re-blinds it.
+
+> ## 🟥 CHALLENGER-ROUND FALLOUT — **7 live defects that belong to no ADR**, `T-0525`…`T-0531`
+>
+> Filed 2026-08-02 from the challenger round on **ADR-0034 / 0035 / 0036**
+> (`agents/archive/2026-08/adr-deliberation/challenges/*.md`, 8 lanes). These are **not** ADR work. They are defects the
+> challengers found *underneath* the designs they were attacking, on shipped code, and they were filed
+> immediately so they are not lost when the three ADRs are adjudicated. **Three architects are live in
+> `docs/decisions/**` — nothing in this block touches that directory.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0525** | 🚨 **Cancellation fee charges the customer for a cleaner who never took the job — real money, shipping now.** `BookingPolicy.cs:121-125` short-circuits to free with *"No cleaner has taken the order yet"*, on a `hasBeenAccepted` computed at `CancelOrder.cs:103-104` as *"an `OrderStatusHistory` entry of `Confirmed` exists"*. **`Confirmed` has four writers and one involves a cleaner** — `TakeOrder.cs:194` (real), `HandlePaymentNotification.cs:261` (the Stripe webhook), `ConfirmRecurringOrder.cs:111` (cash auto-confirm), `AdminOverrideOrderStatus.cs:56-64` (generic lifecycle writer). So **every card order is "accepted" seconds after payment** and the free arm never fires. Card + 20 min later + cleaning tomorrow → **25% charged, 75% refunded, refund actually issued** (`CancelOrder.cs:137-145`); inside 4 h it is **50%**. The web already promises the correct rule (`en.json:807-808` *"Before a cleaner accepts — Free"*). **PM recommends the assignment-row predicate** (`order.AssignedEmployees.Count > 0`) over a status-model change — already `Include`d at `CancelOrder.cs:62-63`, and strictly more correct: `TakeOrder.cs:188` adds the assignment **unconditionally** while the `Confirmed` track at `:194` is written **only** from `New`/`Pending`, so a cleaner taking an already-webhook-Confirmed order writes **no track at all** | S | **`done`** | — | architect, backend | **yes** | ✅ shipped `8f447258` — the signal is now `order.AssignedEmployees.Count > 0` |
+> | **T-0526** ✅ **DONE `03c3ba43`+`20a0c592` (pass 4) — one `CancellationAssessor`, both customer hosts** | **Server-side cancellation-fee preview — contract + backend.** `CalculateCancellationFeeRate` has **exactly one** production caller and `CancelOrder.cs:171-176` returns `FeeRate` **after** the cancel, the refund and the loyalty revoke. That is a receipt, not a disclosure. No client can be made right locally: the Plus window is per-member (**seeded 4**, not 24), acceptance is a history fact, the oops window is server-side | M | **`ready`** | **T-0525** | architect, backend | **yes** | 🟩 **unblocked — T-0525 is `done`.** architect contract lock = step 1. Its `nswag-regen` + `mobile-spec-redump` are FUTURE (created BY this ticket), not pending on the owner |
+> | **T-0527** ➡️ **`draft` → `in_review` (pass 4) — BOTH halves shipped `ab077504`; only AC10 parity QA is open** | **Android AND iOS cancel sheets lie about the fee.** `CancelOrderSheet.kt:344-404` shows **50%** where the backend charges **25%**, and **100% / "no refund available"** where it charges **50%**; hardcodes a 24 h window a Plus member does not have. 🚨 **iOS is the same defect and the challenge did not name it** — `CancellationFeePreview.swift` mirrors the Kotlin faithfully (its own comment says so), consumed at `CancelOrderSheet.swift:220`. 🚨 **A committed iOS suite pins the wrong ladder** — `OrderStatusLogicTests.swift:175-225` goes red on the fix and is **in scope**. **Web is CORRECT and out of scope** (no cancel action at all; its wizard policy block already reads 25%/50% with a Plus-aware tier) | M | **`draft`** | T-0525, **T-0526** | android, ios | no | ⏳ waits on T-0526 only. **The owner is NOT blocking it** — `mobile-spec-redump` is created by T-0526. Also carries T-0530's surviving half (the `CancelOrderSheet.kt` false comment, AC11) |
+> | **T-0528** | **The new-jobs digest permanently drops a job the cleaner was busy for.** `NewJobsDigestService.cs:135-143` filters overlaps per order; if ≥1 order is notifiable, `:182` stamps the watermark past **all** candidates, so the skipped ones can never satisfy `s.CreatedOn > sinceUtc` again — **the conflict clearing does not bring them back**. The `takeable == 0` no-stamp branch (`:145-149`) is correct but is a **deferral, not a mitigation**. **Narrow in logic, broad in incidence:** it fires whenever the cleaner was free for even one job. 🚨 The muted branch at `:158-166` stamps **deliberately** for a different reason and a naive fix will delete it | M | **`done`** | — | architect, backend | no | ✅ shipped `efee2853` — a second, upper-bounded freshness source; the correlated top-N subquery was DELETED |
+> | **T-0529** | **The digest watermark can never advance under multi-tenancy** *(latent now, fatal later)*. `StampWatermarkAsync` (`:216`) loads via `EmployeeRepository.GetByIdAsync` — **tenant-scoped** — inside a sweep that deliberately uses `GetQueryableIgnoringTenant` (`:63`) with no override. Non-null `TenantId` → null → `:217` returns **silently**, *after* the push at `:168` was enqueued → the same cleaner re-notified every 30 min forever. **One-line fix already in the class:** `GetByIdIgnoringTenantAsync` (`EmployeeRepository.cs:53-57`) — still change-tracked, so the `:179-181` atomicity holds; **do not** use `ExecuteUpdateAsync`. Existing coverage cannot see it (`ColdPathCurrentStatusQueryTests.cs:53` wires `tenantId: null`). AC5 walks for siblings — **`HasOverlappingOrderAsync` (`OrderRepository.cs:281`) is the known second one; file it, don't fix it here.** Cross-ref **ADR-0028** | S | **`done`** | — | backend | **yes** (tenancy scoping) | ✅ shipped `28763fe6` — `GetByIdIgnoringTenantAsync` + the warning log. Its AC5 walk found `HasOverlappingOrderAsync`, which was then fixed in `003b5379` |
+> | **T-0530** | **Two false "mirrors X" comments — and a three-way divergence behind one.** `NewJobsDigestService.cs:48-53` claims its status set *"Mirrors `DashboardSpecifications.CreateAvailableOrdersSpec`"*; it does not (`{New, Pending, Confirmed}` vs `{Pending, Confirmed}` at `DashboardSpecifications.cs:24`). 🚨 **Scoping found it is three-way, not two-way:** `TakeOrder`'s validator (`:38-60`) has **no status rule at all**, so a `New` order is **pushed**, **absent from the board**, and **takeable**. The second false comment (`CancelOrderSheet.kt:74-79`, *"BookingPolicy tiers … 50% 4–24h / 100% <4h"*) is owned by **T-0527 AC11** — shared-file lane | S | **`done`** | — | architect, backend | no | ✅ ruling = **ADR-0037**, shipped `37756936` (`Core.Domain/Orders/OrderAvailability.cs`). Layer-2 parity gate followed in `01b21746`+`e4dd27f5`. **AC11 (the Kotlin comment) moved to T-0527** |
+> | **T-0531** | 📝 **KNOWN-CONSTRAINT NOTE, not a fix.** `TenantId` is nullable and Postgres treats NULLs as DISTINCT, so **9** unique indexes that include `TenantId` enforce nothing in single-tenant mode. `UserMembershipEntityConfiguration.cs:100-109` documents the tradeoff deliberately and names the compensating guards — **that decision is sound and is not reopened.** The rule being recorded: **no design may treat such an index as its sole arbiter** — ADR-0035 D3 tried to, which is how this surfaced. **AC5: nothing is fixed, no migration, no index change** | S | **`ready`** | — | architect, docs | no | 🟩 dispatchable. **Verified NOT done** — `multi-tenancy-and-region.md` has no such rule at HEAD. `NULLS NOT DISTINCT` now ships **5×** in the committed `Initial`, so the two "one-off" comments are also wrong |
+>
+> ### 🔴 Two corrections this filing makes to the challengers' own evidence — both matter to panels running RIGHT NOW
+>
+> The PM verified the counts while scoping T-0531 and **two load-bearing premises are wrong**. Neither
+> changes a finding's conclusion; both change what a panel should conclude *from* it. **Relay these to the
+> three architects — no agent may write them into a live ADR:**
+>
+> 1. **`0034-db.md` CH-D2: *"all ~40 `.IsUnique()` sites … not one includes `TenantId`; `(TenantId,
+>    EmployeeId)` would be the first."*** → **REFUTED. Nine do**, so the proposed index would be the
+>    **tenth**: `PromoCode:63` · `LoyaltyTransaction:91` · `UserMembership:112` · `PromoCodeRedemption:66` ·
+>    `LoyaltyTierConfig:33` · `ReferralCode:38` · `User:106` · `TenantConfiguration:27` · `FiscalCounter:26`.
+>    CH-D2's *conclusion* stands; its "no precedent" premise — which its recommendation leans on — does not.
+> 2. **`UserMembershipEntityConfiguration.cs:106-109`: adopting `NULLS NOT DISTINCT` would *"introduce a
+>    one-off."*** → **False. It already ships TWICE**, in the committed Initial migration, on real
+>    PostgreSQL: `FiscalCounterEntityConfiguration.cs:28` → `Initial.cs:2649-2653`, and
+>    `LiveActivityTokenConfiguration.cs:28` → `Initial.cs:2680-2685`. **ADR-0035 CH-C1's option 1 is
+>    precedented, not novel** — the "we'd be introducing a one-off" argument is unavailable to either side.
+>
+> ### ✅ CLOSED-OUT 2026-08-04 — the shared-file lane worked exactly as planned
+> **`T-0529` → `T-0530` → `T-0528`** all edited `NewJobsDigestService.cs` in that order, serialized, and
+> **all three are `done`.** The lane note is kept because it is the record of a sequencing call that paid
+> off: three concurrent instances in that file would have collided on the freshness expression, which
+> `efee2853` rewrote wholesale after `28763fe6` had already changed the stamp beneath it.
+>
+> ### 🟩 What is actually dispatchable from this block today (2026-08-04)
+> **`T-0531`** (`ready` — the rule is still unwritten; verified absent from
+> `multi-tenancy-and-region.md` at HEAD) · **`T-0526`** (`ready` — T-0525 is `done`).
+> **`T-0527`** waits on T-0526 **only**. ⚠️ The old line here said it also waited on *"the owner's
+> `mobile-spec-redump`"* — **that was wrong then and is wrong now**: the redump is **created by** T-0526's
+> contract change, not owed by the owner. Nothing in this block is owner-blocked.
+> **T-0525 · T-0528 · T-0529 · T-0530 are `done`** — see the reconciliation block at the top of this file.
+>
+> ### 🔵 Two owner questions filed (`questions/open.md`) — both `blocking: no`, both `pre-prod`
+> **`Q-PROMISE-01`** — both mobile clients tell every customer *"Cleaner being assigned · Within 1 hour"*,
+> unconditionally, in five languages (`values/strings.xml:741-742` + iOS `Localizable.xcstrings:4799`,
+> `:4834`). **Nothing enforces it** — assignment is a pull model and the only nudge is a 30-minute digest.
+> *Is it true in practice on DEV?* If not, it is the same class as the express claim just removed.
+> **`Q-PROMISE-02`** — on the **Plus checkout page**, **cs/sk/ru** promise the favourite cleaner *"will be
+> preferentially assigned"* (`<l>.json:1095`) where **en/uk** promise only priority. Three locales sell a
+> stronger product than the design delivers. **No copy ticket is filed** — the promise must be chosen first.
+
+> ## 🟩 ADDENDUM to SPRINT-15 — the owner's **four product answers**: 14 new tickets, `T-0511`…`T-0524`
+>
+> **Baseline: `master` at `dceed4f1`.** Filed 2026-08-02. Full reasoning, the corrections, the dispatch
+> waves and the owner-decision list: **`agents/archive/2026-08/backlog/status/sprint-15.md` § ADDENDUM** — read that,
+> not this row.
+>
+> ### 🟥 The backlog below is STALE. PR #189 shipped 236 files and updated zero tickets.
+>
+> **`2012b014` (#189)** — *"order detail redesign, Plus enforcement, onboarding, cost and cold start"* —
+> merged **+10,728 lines** across a large slice of `T-0476`…`T-0510` **without touching one ticket
+> file**. **#186 / #187 / #188** did the same for T-0479+T-0490, T-0475 and T-0480. **Treat every
+> `draft`/`blocked` row below as unverified.** This addendum re-verified **only** the four decisions'
+> premises (all four still hold; `AllowsExpressUpgrade`, `PreferredEmployeeId`, `ValidateIban` and the
+> invoice's party direction are all unchanged post-#189).
+>
+> **✅ UPDATE 2026-08-04 — the reconciliation this row called for has RUN, and it covered `T-0493`,
+> `T-0495`, `T-0509` and `T-0511`…`T-0532`.** Every state was re-established from `git log master..HEAD`
+> and then verified against the tree; the table below now carries it. **It did NOT cover `T-0476`…`T-0492`
+> / `T-0494` / `T-0496`…`T-0508` / `T-0510`** — the #189 population. **Those rows are still unverified and
+> must still be ground-truthed in code before dispatch.** Saying which rows were checked, and which were
+> not, is the point: a reconciliation that implies more coverage than it has is the same defect it exists
+> to fix.
+>
+> ### The 14 new tickets + 4 rewrites + 2 closed — **status column reconciled 2026-08-04**
+>
+> | Owner answer | Ids (✅ = `done`, verified against the tree) |
+> |---|---|
+> | **1. Express upgrade — BUILD IT** | ✅ **T-0511** · ✅ T-0512 · ✅ **T-0493** · ✅ **T-0513** · **T-0514 `in_progress`** and **T-0544 `in_progress`** — ⚠️ **web leg SHIPPED `4984c2eb`, ANDROID + iOS OWED** (pass 4). Do not rebuild the web leg |
+> | **2. Favourite cleaner — MAKE IT WORK** | ✅ **T-0495** · ✅ T-0515 · ✅ **T-0516** (`Q-PLUS-03` answered: **Plus-only**) |
+> | **3. Bank details — CZ first, extensible** | ✅ **T-0517** · ✅ T-0518 · ✅ T-0519 · ✅ **T-0520 DONE** `cf24a74c`+`3a4c18a9` (pass 4) · ✅ T-0521 · ✅ **T-0509 DONE** `b9753e85` (pass 4 — the live hole was the **admin** GDPR route) |
+> | **4. The invoice — owner supplied a real CZ specimen** | ⏭️ **T-0508 `superseded` by T-0522** (pass 4) · **T-0522 `in_review`** — ⚠️ both owner answers landed; holds a real `ef-migration` 🚫 *(partly shipped — parties inverted `8ca77412`, interest clause `946200c1`; blocked only on Q-PAYOUT-02/03)* · ~~T-0523~~ **`retired`** (owner rejected) |
+> | **Housekeeping** | ✅ **T-0475** (`1262b8cb` #187) · ✅ **T-0474** · **T-0524** 🚫 (pre-review gate) |
+>
+> ✅ `done` · 📋 needs a panel · ✏️ rewritten after the owner's answer · 🆕 new finding, on no prior
+> ticket · 🔒 `security_touching` · ⚠️ owner-only manual step · 🚫 `blocked` on an owner answer
+>
+> ⚠️ **The ⚠️ (owner-only manual step) markers on T-0512/T-0518/T-0519/T-0514 are DISCHARGED.** The
+> `nswag-regen`s landed in `37440bbc`; the `ef-migration` was folded into the regenerated `Initial`
+> (`7e1cf7f5`) and its **only** remaining owner action is **dropping the database** — see the
+> reconciliation block at the top of this file.
+>
+> ### ✅ THE THREE ARCHITECT PANELS ALL RAN AND ALL REACHED CONSENSUS (closed 2026-08-04)
+> **`T-0511` → ADR-0035** (`accepted`, 16 binding amendments; **four of D3's five mechanisms did not
+> survive**) · **`T-0495` → ADR-0036** (`accepted`, 24 challenges, zero blocking left; the ADR's own
+> headline safety claim was **falsified** and fixed by construction) **+ ADR-0039** (`accepted`, which
+> supersedes ADR-0036 D5.1's time-conflict half) · **`T-0517` → ADR-0034** (`accepted`, 8 blocking
+> findings folded in; **the CZ mod-11 direction was corrected in the ADR text before an implementer could
+> copy it** — implemented literally it rejected ~91% of real Czech accounts, including the owner's own).
+> **All three tickets are `done`.** Two more ADRs followed from the work itself — **0037** (offerability)
+> and **0038** (the promo outage) — plus **0040**, `proposed`.
+>
+> ### 🟩 Dispatchable TODAY from this block (2026-08-04)
+> **`T-0509`** (`ready`, but **re-aimed** — its headline target, the IBAN on the admin paged list, is
+> already gone; the logs and GDPR-export legs remain and `EmployeePayoutDetails` is the new target) ·
+> **`T-0508`** (`ready`, the spec; its AC1 makes `Q-PAYOUT-02` concrete) · **`T-0514`** and **`T-0520`**
+> (both newly `ready` — see the reconciliation block; **T-0520 is a live regression**, not a feature gap).
+> **`T-0513` · `T-0511` · `T-0495` · `T-0517` · `T-0518` · `T-0519` · `T-0521` · `T-0512` · `T-0493` ·
+> `T-0515` · `T-0516` are `done`.** **`T-0523` is `retired`** (owner rejected the work).
+>
+> ### 🔴 Corrections this pass made to rows filed above
+> - **T-0509's premise was wrong.** The IBAN is **not** "read by nothing" — it gates the
+>   profile-completeness check that decides whether a cleaner may take orders (`Employee.cs:283`), it is
+>   in the **GDPR export**, and it is on the **admin paged LIST DTO** (`EmployeeListItem.cs:52`).
+> - **T-0508's "no variable symbol" was wrong.** The VS exists and prints
+>   (`EmployeeInvoice.cs:72`/`:331`, layout `:38-39`). **And IČ/DIČ already exist as validated columns**
+>   — the identity gap is *rendering*, not capture.
+> - **The real invoice finding is worse:** the current PDF makes **Cleansia the issuer and the cleaner
+>   the "Billed To"** — **the opposite direction from the owner's specimen.**
+> - **T-0493's "express = `S`" reading was right and still not `S`** — the *quota* is what nobody costed.
+> - **NEW:** the three clients advertise **three different express perks**, and *"same-day"* is not what
+>   `BookingPolicy` implements (2–4 h). → **T-0513**.
+>
+> ### 🔴 `blocking: yes` owner questions — **reconciled 2026-08-04, three of five are ANSWERED**
+> **ANSWERED and no longer blocking:** **`Q-PLUS-02`** (the quota — the owner chose **two per calendar
+> month, Plus-only**, plus the four follow-on rulings on PastDue / trial / plan swap / lapsed recurring,
+> all folded into ADR-0035 at `eefa6293`) · **`Q-PLUS-03`** (favourite cleaner is **Plus-only**, carried
+> by ADR-0036 D7; **T-0516 shipped on it**) · **`Q-AVAIL-03`** (**seats = `RequiredEmployees`**, the spare
+> seat is gone — `06159998`, shipped `305ec194`). ⚠️ **`questions/open.md` still lists Q-PLUS-02 and
+> Q-PLUS-03 as open** and its own 2026-08-03 update note says the PM should move them to `answered.md`.
+> That is backlog hygiene, not an owner action.
+> **STILL OPEN and genuinely owner-only:** **`Q-PAYOUT-02`** (*is a cleaner an employee or a
+> self-employed supplier, and who issues the document?*) · **`Q-PAYOUT-03`** (*how does the platform know
+> whether a cleaner is VAT-registered, and what does each variant print?*) — **both legal, both block
+> T-0522 and nothing else** · **`Q-PROFILE-01`** (a backend decision, not a frontend workaround; blocks
+> T-0447) · **`Q-PLUS-01`** (**narrowed** by the 2026-08-03 trial ruling — the express-waiver leg of the
+> unlimited-trial loop is closed; the discount and cancellation-window legs are not. **One Stripe
+> dashboard check settles it**).
+> **`Q-PAYOUT-01` came OFF the list** — the owner supplied a real CZ invoice; only **SK** remains.
+> **`Q-IOS-LEGAL-01`** is a **pre-submission gate** (T-0524 + `AR-PRIV-5` on the review checklist), not
+> a blocker today.
+
+> ## 🚀 SPRINT-15 — the owner's 15-remark batch + 4 investigations: **35 new tickets, `T-0476`…`T-0510`**
+>
+> **Baseline: `master` at `0e4ede1b`.** Filed 2026-08-02. Full plan, PR batches, owner-decision list
+> and urgency split: **`agents/archive/2026-08/backlog/status/sprint-15.md`** — read that, not this row.
+>
+> ### 🟥 Three of the owner's remarks name the wrong file. Do not dispatch from the remark text.
+>
+> | Remark | Reality (PM-verified at `0e4ede1b`) |
+> |---|---|
+> | *"iOS order detail has no progress bar / mascot"* | **True for PARTNER, false for CUSTOMER.** Customer iOS already has all three — `LiveProgressHero.swift:73`, `:88-94`, `:121` → **T-0482** is partner-scoped |
+> | *"hide the order panel to reveal the map, both apps"* | **There is no map on customer order detail on either platform.** It is the PARTNER screen. And it is asymmetric: iOS has a `.mapFocus` anchor at 0.30 already; Android's sheet cannot go below 0.75 → **T-0489** |
+> | *"no back button on invoice detail"* | **The button exists and is wired** (`InvoiceDetailScreen.kt:117-122`, `PartnerNavHost.kt:283`). It has **no status-bar inset** under `enableEdgeToEdge()` → **T-0490** |
+> | *"no translations for the recurring setup"* | **All keys exist in all 5 locales on both platforms.** Android's catalog *names* bypass the `translations` map (`CreateRecurringScreen.kt:977/980/998`); **iOS does it correctly and is the reference** → **T-0477**; iOS half **T-0478** is *reproduce-first* |
+>
+> ### The 35 tickets
+>
+> | Group | Ids |
+> |---|---|
+> | **Owner remarks** | T-0476 · T-0477 · T-0478 · T-0479 · T-0480 · **T-0481** 🔍 · T-0482 · T-0483 🔒 · **T-0484** 🎨 · **T-0485** 📋 · T-0486 · T-0487 · **T-0488** 🎨 · T-0489 · T-0490 |
+> | **Cleansia Plus** | **T-0491** 📋 · T-0492 · T-0493 · **T-0494** 🔒 · T-0495 · T-0496 · T-0497 🚫 · T-0498 |
+> | **Azure / observability / cold start** | T-0499 · **T-0500** 🔴 · T-0501 · T-0502 · T-0503 |
+> | **Partner onboarding** | **T-0504** 📋 · T-0505 · T-0506 · **T-0507** 🔴 · **T-0508** 🔴🚫 · T-0509 · T-0510 |
+>
+> 📋 story/decision panel · 🎨 design-first, **no implementation ticket behind it** · 🔍 discovery ·
+> 🔒 `security_touching` · 🔴 legal/consumer-protection · 🚫 `blocked` on an owner answer
+>
+> ### Dispatchable TODAY with no dependency and no panel
+> **T-0479 · T-0490 · T-0494 · T-0496** — plus the eight panels (T-0480, T-0483, T-0484, T-0485,
+> T-0488, T-0489, T-0491, T-0504), which are dispatchable with the panel as **step 1**.
+>
+> ### 🚨 PR-A goes first and it is not close
+> **`T-0475` → `T-0474`** (sprint-14). **Seven** sprint-15 iOS tickets open with *"run
+> `generate-api-clients.sh` + `xcodegen generate`"* — and **today that instruction wipes the owner's
+> Stripe key.** The regen trap has broken the build **three times** and cost one reviewer a false
+> conclusion. Order is not interchangeable: T-0475 → owner supplies values → T-0474's xcodegen leg.
+>
+> ### 🔴 Four `blocking: yes` owner questions are now open
+> **`Q-PROFILE-01`** (carried) · **`Q-PLUS-01`** (Stripe trial — the two candidate defects have
+> **opposite fixes**) · **`Q-PAYOUT-01`** + **`Q-PAYOUT-02`** (**legal — no agent may answer these**).
+> Plus `Q-OBS-01` (non-blocking, but it changes what "green on DEV" means).
+>
+> ### 🔴 The one sentence to say out loud
+> **DEV — the only live environment, the one the owner's iPhone runs against — has no error tracking
+> from any source.** No App Insights exporter in any of the five APIs (PM-verified: zero references);
+> Sentry's DSN is empty by a documented dev decision (`AZURE-DEV-RUNBOOK.md:239`); and **prod has
+> never been deployed**, so the "prod" that was going to have Sentry does not exist. → **T-0500**.
+>
+> ### New shared-file lanes added this sprint
+> `ProfileTab.kt` now has **five** claimants (T-0450 → T-0448 → **T-0476** → T-0453 → T-0472) ·
+> `CreateRecurringScreen.kt` (**T-0477** → **T-0486**) · partner `OrderDetailScreen.kt` (**T-0489** →
+> **T-0483**) · partner iOS `OrderDetailView.swift` + `SnapSheet.swift` (**T-0489** → **T-0482** →
+> **T-0483**) · `main.bicep` (**T-0500** → **T-0502**, own hunks only) · the onboarding command(s)
+> (T-0505/0506 → T-0507 → T-0508/0509 → **T-0510**).
+
+> ## ⚠️ INDEX STALENESS NOTICE (2026-07-30)
+>
+> **Everything below the SPRINT-14 block is stale for anything merged after PR #148 (2026-07-25).**
+> PRs **#149–#170** shipped outside this process (ad-hoc workflows, not routed through the PM). The
+> owner has **declined a backfill**, so those tickets will not appear here. Rows referencing work in
+> that window may claim `proposed`/`blocked` for something already shipped, or omit shipped work
+> entirely. **Ground yourself in the CODE, not in these rows**, for any question about post-#148
+> state. Routing through the PM resumes with SPRINT-14 below.
+
+> ## 🚀 SPRINT-14 — owner batch (demo-preparation): **38 tickets — 8 done (PRs #170–#176, #180), 2 MERGED-BUT-OPEN in QA, 5 ready, 23 draft/blocked**
+>
+> **Baseline: `master` at `f649c3bd`** (a docs-only commit on top of `1c8fdd00` — the fourth pass's own
+> reconcile). Updated **2026-08-01 — FIFTH PM pass: Q-I18N-02 answered, T-0450 split, two new owner
+> defects filed.** (Fourth pass: post-merge reconciliation of all six sprint-14 PRs.) Working tree
+> carries the owner's uncommitted iOS files (`Info.plist` ×3, `project.yml`, `Localizable.xcstrings` ×2,
+> `Package.resolved`) — **the live Stripe key is in them; no agent opens those files.** All worktrees
+> removed, all local branches deleted.
+>
+> ### 🟩 FIFTH PASS — **Q-I18N-02 IS ANSWERED. The demo chain has no owner blocker left.**
+>
+> 1. **`Q-I18N-02` → `answered.md`.** The owner: *"…I want just to keep 'Edit'/'Редактировать' and
+>    truncate it if it doesn't fit by the whole length."* **It was the last `blocking: yes` question in
+>    `questions/open.md`.**
+> 2. **T-0450 is SPLIT and `ready`** (size `M`→`S`). It keeps **half (A) — the label**. **Half (B) —
+>    Poppins covering 0/98 Cyrillic — moved to `T-0472`, which blocks nothing.** The filename still
+>    says `-and-poppins-cyrillic`; that is deliberate (link stability), not a leftover.
+> 3. **T-0448 and T-0449 still say `blocked` — read that correctly.** Their blocker is no longer *an
+>    owner reply*; it is **one `ready` ticket's write landing** on four shared files. They clear the
+>    moment T-0450 is `done`.
+> 4. **Two new owner defects filed: `T-0473`** ("Report an issue" → red, iOS + Android) and **two
+>    process fixes the owner approved, `T-0474` + `T-0475`**, both being implemented outside the normal
+>    dispatch and filed for reconciliation.
+> 5. **⚠️ The avatar feature is ONE-THIRD SHIPPED.** T-0446 (`done`) shipped the **read path only**.
+>    **No client has upload or removal UI.** See the callout below — do not read "T-0446 done" as
+>    "avatars work".
+>
+> ### ⚠️ AVATARS: one-third shipped. State this plainly to anyone who asks.
+>
+> | Leg | Ticket | State |
+> |---|---|---|
+> | **Read path** (API returns a resolvable 1-hour SAS instead of a bare blob name) | **T-0446** | **`done` ✅** `a63b776e` (#176) |
+> | **Web** upload + removal UI | **T-0447** | **`ready`** — never dispatched |
+> | **Android** upload + removal UI | **T-0448** | **`blocked`** on T-0450 |
+> | **iOS** upload + removal UI | **T-0449** | **`blocked`** on T-0450 |
+>
+> **No client can upload or remove an avatar today.** Android's camera pill is
+> `.clickable { /* TODO: launch photo picker */ }` (`EditProfileScreen.kt:230`); iOS has **no avatar UI
+> at all** (`HeroGradient` is initials-only); web's `updateUserCurrent` is **dead code**. The read path
+> is a spine — necessary, and on its own invisible to a user.
+>
+> ### 🟢 WAVE 2 SHIPPED — six PRs merged. Read these four lines before using anything below.
+>
+> 1. **`acf2f0bc` #175 T-0439** · **`a63b776e` #176 T-0446** · **`d6969fef` #177 (tooling, untitcketed)**
+>    · **`1d85b35f` #178 T-0441** · **`a10e1f88` #179 T-0440** · **`1c8fdd00` #180 T-0451**.
+> 2. **THE OWNER'S REGEN BUNDLE IS DONE and it shipped inside `a63b776e`.** Both halves PM-verified:
+>    `nswag-regen` (`customer-client.ts` + `partner-client.ts` carry `blobUrl`; `admin-client.ts`
+>    already did) and `mobile-spec-redump` (both `src/cleansia_android/openapi/*.json` carry it —
+>    **and iOS reads those same two committed specs**, per `src/cleansia_ios/openapi/README.md`).
+>    **T-0446's "T-0447/0448/0449 are HELD until the owner confirms this bundle" is DISCHARGED.**
+>    `master` did **not** go red after this regen — the first time that has held.
+> 3. **T-0440 and T-0441 are MERGED but NOT `done`.** Their code is on `master`; their tickets stay
+>    `qa` on **owed AC evidence** (screenshots, and T-0440's Gate 8.5 render leg). This is a deliberate
+>    lifecycle ruling, not a stale row — see the ⚠️ block below. Each ticket's frontmatter carries a
+>    `merged:` field so the two facts cannot be confused.
+> 4. **The vacuous consistency green is DEAD** (`d6969fef`). See the 🔧 block below for the two
+>    measurements and the caveat on pre-#177 evidence.
+>
+> ### ⚠️ MERGED ≠ DONE — the two tickets this applies to, and why they were not stamped
+>
+> **T-0440 and T-0441 both owe an AC1 screenshot that belongs to QA; T-0440 also owes the Gate 8.5
+> render leg.** Both reviewers **APPROVED**. Neither is a review gap: the T-0440 reviewer **proved**
+> the screenshot is not capturable in-suite — it hosted `InstructionsField` in a **real `UIWindow`**
+> and captured through **two independent mechanisms** (`drawHierarchy(afterScreenUpdates:)` and
+> `window.layer.render(in:)`); all four PNGs came back `distinctColors=1`, byte-identical empty vs
+> filled. That is evidence of impossibility, so it is a **genuine handoff to a real 16.4 device**.
+>
+> **Asked directly, the answer is no: this lifecycle does NOT allow `done` with an owed QA item.**
+> `ticket-lifecycle.md` §"Done means" (`:154-163`) lists five conditions with no exceptions clause and
+> closes *"Anything short of this stays out of `done`. We do not mark work complete on hope."* Item 1
+> (*every AC has verifiable evidence*) and item 3 (*QA executed the test plan and recorded the result*)
+> both fail. The one escape hatch — §"When the in-workflow gate did not run" (`:165-179`) — covers a
+> **dead reviewer lane** on work that landed, discharged by a MANUAL-GATE block of hand-inspected
+> evidence. **Both reviewer lanes ran and approved.** A MANUAL-GATE block cannot be written for a
+> screenshot nobody has taken; hand-gating substitutes an inspection for a dead lane, not an assertion
+> for an absent artifact.
+>
+> **Nothing downstream is gated by either.** T-0448/T-0449/T-0450 depended on these two for their
+> **shared-file lane heads plus the field itself** — `values*/strings.xml` and `Localizable.xcstrings`
+> — and both writes are on `master`. **A screenshot does not gate a code lane.** Recorded on all five
+> tickets.
+>
+> ### 🔧 `check-consistency.mjs` IS FIXED ON `master` — treat pre-#177 consistency evidence with care
+>
+> `d6969fef` (#177) fixed a false green: `dir()` did `join(REPO, rel)`, so an **absolute** `--paths`
+> became `<repo>/<abs>`, walked to nothing, and printed `OK (0 files scanned)` **exit 0** — and every
+> agent in this backlog is instructed to pass absolute paths. **PM-re-ran both legs on `1c8fdd00`:**
+>
+> | Command | Before #177 | Now |
+> |---|---|---|
+> | `--paths=<absolute>/src/Cleansia.App/libs` | `OK (0 files scanned)`, exit **0** | **32 violations**, exit **1** |
+> | `--paths=src/cleansia_ios` | `OK (0 files scanned)`, exit **0** | **`NOT RUN`**, exit **1** |
+> | *(no `--paths`, whole repo)* | — | **85 violations**, exit **1** |
+>
+> **The caveat, stated precisely rather than as a blanket warning:** any Gate 8 consistency evidence
+> recorded **before** #177 **from an absolute path** was a **non-run**, however green. The sprint-14
+> records the PM can see used **relative** paths and reported non-zero counts, so those ran (T-0439's
+> 32 under `libs/`, T-0441's 11 under `customer-app`); the two that scanned nothing (T-0439's
+> `.../tools`, T-0440's iOS leg) were **correctly recorded as non-runs at the time**. **Do not inherit
+> a baseline number from another ticket** — 47 / 65 / 85 appear in this sprint's records and are
+> scope-specific, some predating the fix. Measure, and state the command.
+>
+> **Still true and unchanged:** the checker has **no Swift coverage**, and is in **zero**
+> `.github/workflows` (PM-verified) — so **ADR-0032 D1 prices it `T2-ADVISORY` on every stack**. iOS
+> enforcement is ADR-0032's call (SwiftLint `custom_rules` or an XCTest guard, **never** the walker);
+> **do not file an "add Swift to the walker" ticket.** ADR-0032's **FT-1** is **discharged** by #177.
+>
+> **Also fixed in #177, and it closes an owner-facing unknown:** all three `*-client-formatter.sh`
+> scripts lacked `set -e` and always exited 0. They now carry `set -euo pipefail` + an input-exists
+> guard. **The other exit-code unknown survives:** `npx nswag run`'s failure exit code is still
+> unknown, so a green `generate-*-client` is still not proof the client regenerated.
+>
+> **And #177 applied one of T-0462's three `CLAUDE.md` corrections** — the six broken `npx nx`
+> commands — **adopting T-0462's npm-alias recommendation over the reported "insert the dots" fix.**
+> T-0462's Correction 3 is therefore **DISCHARGED and its literal text is now a trap** (applying it
+> would revert the owner's edit). Two corrections remain owed.
+>
+> **🔒 T-0446 SECURITY GATE RETURNED: `APPROVE-WITH-CONDITIONS`.** No live vulnerability; the read
+> path is correctly scoped and no exploit could be constructed against it. **T-0446 stays
+> `in_progress`** (per `ticket-lifecycle.md`, a ticket with change-requests does not go backwards —
+> the same developer fixes it). **Two findings folded into T-0446** as new AC (SEC-1 vacuous redaction
+> + vacuous test; SEC-4 blob-name reuse); **four tickets filed out of it** so they cannot compress the
+> demo path. Findings doc: **`agents/archive/2026-08/backlog/security/user-profile-avatar.md`**.
+>
+> **⚠️ OWNER RULING — the avatar feature IS part of the demo.** The PM's original recommendation
+> (`status/sprint-14.md` §3: ship the demo without T-0446…T-0449) has been **overruled by the owner**.
+> T-0446 is therefore the **demo critical path**: three client tickets and the demo sit behind it, and
+> it carries an **owner-run regen bundle mid-chain**. Sequencing below reflects the ruling — nothing
+> non-demo may be inserted in front of T-0446/T-0448/T-0449.
+>
+> **⚠️ The PM has no `Agent` tool.** This charter cannot dispatch; the orchestrator does. Do not plan
+> around a capability this role lacks. See `status/sprint-14.md` §Process.
+>
+> ### Wave 1 — SHIPPED (all merged to `master`)
+>
+> | ID | Title | Size | Status | Merged | Layers |
+> |----|-------|------|--------|--------|--------|
+> | **T-0438** | Unbreak `master` after the regen (3 web call sites) **+** close the order-wizard entry-instructions **data-loss** bug in the same edit | S | **done ✅** | `7c82cd2e` (PR #171) | frontend |
+> | **T-0442** | Android customer profile hero → single row, edit chip vertically centred (matches `ProfileTab.swift:296-303`) | S | **done ✅** | `ce2416a0` (PR #174) | android |
+> | **T-0443** | Android brand assets from iOS — both apps re-cut, `ic_notification` now byte-identical across apps, shared `WordmarkSplash` in `:core` | M | **done ✅** | `10d03f14` (PR #173) | android |
+> | **T-0444** | Web brand mark, all 3 apps — **reworked twice by owner ruling**: monogram **overruled** → iOS wordmark; then a **distinct stacked "Cleansia Partner" lockup** for the partner app. Also fixed "PNG served as `.webp`" | S | **done ✅** | `3c27cd5a` (PR #172) | frontend |
+> | **T-0445** | PROCESS — **Gate 0.5 Verification integrity** (mutation-prove the test · a cached run is not a run · declare what you could NOT verify). Live at `process/quality-gates.md:52-90` | S | **done ✅** | `8241d3cd` (PR #170) | architect, docs |
+>
+> Also merged in the window and **not ticketed**: the Google sign-in **sub-first** resolution fix
+> (`8241d3cd`, PR #170) — routed outside this process; recorded here so the history is honest.
+>
+> ### Wave 2 — SHIPPED 2026-08-01 (six PRs, `acf2f0bc`…`1c8fdd00`)
+>
+> | ID | Title | Size | Status | Merged | Layers |
+> |----|-------|------|--------|--------|--------|
+> | **T-0439** | **NSwag regen-drift guard.** `npm run typecheck` (`ngc --noEmit` over every app compilation unit) chained onto all four `generate-*` commands; `_nswag:*` are internal (M1) so there is **no unguarded entry point**; discovery comes from each app's `project.json` build target and hard-fails on a partial set (M2); `frontend-ci.yml` gains a `master` push trigger. ADR-0031 **accepted** after a real challenger/lead panel + a signed erratum. **Proved itself on its first live use** — the T-0446 regen one commit later did not redden `master` | S | **done ✅** | `acf2f0bc` (PR #175) | architect, frontend, docs |
+> | **T-0446** | **Avatar READ path (SPINE).** `GetCurrentUser` now returns a resolvable 1-hour `sr=b sp=r` SAS instead of a bare blob name. Security gate **APPROVE-WITH-CONDITIONS**, both conditions shipped: **AC9** (the redaction the diff added never executed — truncate ran before redact, firing **0%** of the time; composition swapped on all five hosts, its 335-byte fixture rebuilt) and **AC10** (fresh blob name on replace). Reviewer **APPROVED** at `598f09e3` after six rounds. **AC4 CLOSED by the owner on DEV.** Found **two live Stripe credentials** in logs on the way | M | **done ✅** | `a63b776e` (PR #176) | backend |
+> | **T-0451** | **iOS avatar initials WCAG.** Fixed in the **token** (`CleansiaColors.onFixedWhite`), not the call sites — `Palette`/`Color(hex:)` are internal to `CleansiaCore` so an app target cannot name `sky600`. `CleansiaColors.primary` untouched (correct in its other 293 usages). Light mode bit-identical. Test computes WCAG relative luminance rather than resolving colours, because the **16.4 floor flattens dynamic colours**. Core 519/0, Customer 677/0, Partner 527/0 **on 16.4**; three mutations, both heroes proven covered | S | **done ✅** | `1c8fdd00` (PR #180) | ios |
+> | *(untitcketed)* | **`d6969fef` (PR #177) — "three gates that reported success without doing anything."** The `check-consistency.mjs` absolute-path false green + `NOT RUN` exit 1; `set -euo pipefail` on all three `*-client-formatter.sh`; the six broken `CLAUDE.md` Nx commands. Also carried the wave-2 backlog docs, ADR-0032, ADR-0033 and T-0450…T-0469 onto `master` | — | **shipped** | `d6969fef` (PR #177) | tooling, docs |
+>
+> ### 🟡 MERGED but NOT `done` — open on owed QA evidence (see the ⚠️ block at the top)
+>
+> | ID | Title | Size | Status | Merged | What is owed, and by whom | Layers |
+> |----|-------|------|--------|--------|---------------------------|--------|
+> | **T-0440** | **iOS** — capture entry/access instructions on booking confirm. Reviewer **APPROVED**. The UTF-16 cap was proved **total, not merely tested**: 4000 fuzzed notes across every width class + a sweep forcing the cut inside every cluster kind → **2464 truncating / 332 exact-fit / 0 failures**, losslessness and no-halved-cluster as proven invariants. 694/694 on iOS 26.3 **and** on the 16.4 floor. The `ios-client-regen` blocker was **FALSE and is retracted** (see the ticket — do not re-derive it) | S | **qa** | `a10e1f88` (PR #179) | **qa:** AC1 screenshot + the **Gate 8.5 render leg**, both only reachable on a real 16.4 device (proved uncapturable in-suite). **ios:** **F-3** — record the actual test-first ordering; no `red→green` line exists. If it was implementation-first, that becomes a real Gate 6 question and the reviewer re-reviews | ios |
+> | **T-0441** | **Android** — same capture. Reviewer **APPROVED** — 321/321 tests, **53/53 Gradle tasks executed** (not `UP-TO-DATE`), 11 consistency violations = the pre-change baseline, both findings closed **and independently re-proved**. A new `booking_access_instructions_hint` ×5 was genuinely required (`order_detail_access_instructions` is the *display* label). `values-*/strings.xml` lane **clear** | S | **qa** | `1d85b35f` (PR #178) | **qa:** AC1 screenshot — the reviewer correctly deferred it rather than asserting it | android |
+>
+> ### In flight — dispatched, running now
+>
+> *(empty — wave 2 is merged. The next dispatch set is the three `ready` tickets below.)*
+>
+> ### ✅ READY — deps satisfied, DoR met, awaiting dispatch (the orchestrator dispatches, not the PM)
+>
+> | ID | Title | Size | depends_on | Layers | sec | Priority |
+> |----|-------|------|-----------|--------|-----|----------|
+> | **T-0457** ✅ **DONE `b9753e85` (pass 4)** | **S6 PII in `GetCurrent` logs.** Email, first/last name, phone, birth date at **Information** level on all five hosts, on **every** request, on the most-called authenticated endpoint. **DEV is live and the owner's iPhone points at it — this is accruing right now.** Lane released by T-0446 | S | T-0446 ✅ | backend | **yes** | **P1 — the highest-priority unblocked backend ticket** |
+> | **T-0447** | **Web** avatar upload/render/removal. **Both halves of its block are gone** — T-0446 `done` **and** the owner's regen shipped inside it. **The only one of the three avatar client tickets that is genuinely `ready`.** 🔒 binding security conditions + ⚠️ QA constraints (CORS kills any crop-or-canvas design; an `<img>` cannot see 403 vs 404) | M | T-0446 ✅, T-0438 ✅ | frontend | **yes** | demo scope |
+> | **T-0464** ✅ **DONE `b9753e85` (pass 4) — `ServedContentType`; the decoy was load-bearing and the naive fix was stored XSS** | **`MetadataName.ContentType` is a decoy codebase-wide.** SAS mint lane released by T-0446; this ticket is now its sole writer. Architect A-vs-B call is **step 1 of the dispatch**, not a precondition. 🚨 **The trap has not moved:** the naive fix activates `Cache-Control: public` on a SAS-protected private avatar | M | T-0446 ✅ | backend, architect | **yes** | post-demo — **confirmed not demo-blocking** by the owner's DEV check |
+> | **T-0471** | **ADR-0033 needs its one challenger round on the test-2 floor** before it binds. The lead **authored that floor itself** to answer a challenge that demanded one without proposing one, and **correctly declined to ratify its own repair**. One item, one round, three pre-named lines of attack | S | — | architect | no | post-demo, but do not let it rot |
+> | **T-0450** | **Profile edit chip — the label, and ONLY the label.** **Q-I18N-02 ANSWERED 2026-08-01:** the owner chose the **verb alone** (`Edit`/`Редактировать`, + the equivalent verb in cs/sk/uk) and **truncate rather than wrap or shrink**. Split: the Poppins half is now **T-0472**. Android already has `maxLines=1 + TextOverflow.Ellipsis` (`ProfileTab.kt:339-346`) so it needs **only the string**; **iOS has neither `.lineLimit` nor `.truncationMode`** (`ProfileTab.swift:332-350`) so its chip **wraps to two lines** and needs both, explicitly. **The three things the owner did NOT decide are forced as AC**, not left to invention: the truncation mode (**AC4**, default `.tail` to match Android), the accessibility label under truncation (**AC5** — *executed*, not assumed), and the surface scope (**AC6** — chip only; `profile_edit_title` and partner `edit_profile` untouched unless recorded otherwise). **Panel discharged** — an owner decision outranks the analyst panel that existed to produce one | S | — *(all four lane deps **discharged**, not dropped — see the ticket)* | android, ios | no | **P1 of the demo chain — T-0448 + T-0449 sit behind it** |
+>
+> ### 🔴 Still blocked — and on exactly one thing
+>
+> | ID | Status | Blocked on | Note |
+> |----|--------|-----------|------|
+> | **T-0448** | **blocked** | **T-0450 only — now a `ready` ticket, no longer the owner** | T-0446 ✅, the `mobile-spec-redump` ✅ (the Kotlin client generates from the committed spec at Gradle build time — no owner action), T-0441's lane + field **merged** and now **discharged from `depends_on`** (a screenshot does not gate a code lane). T-0450 writes the same `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk. **Do not "unblock" by dropping the T-0450 dep.** ⚠️ **New lane neighbour T-0472** — if its ruling touches `ProfileTab.kt:437` / `EditProfileScreen.kt:215` it is sequenced **after** this ticket |
+> | **T-0449** | **blocked** | **T-0450 only — now a `ready` ticket, no longer the owner** | T-0446 ✅, the spec ✅ (iOS reads the *same* two committed specs; `scripts/generate-api-clients.sh` is agent-authorised, **not** the owner-only NSwag step), T-0451 ✅ **done**, T-0440's lane + field **merged** and now **discharged from `depends_on`**. T-0450 adds `.lineLimit(1)` + `.truncationMode` inside the very `EditProfileChip`/`HeroGradient` region this ticket rebuilds |
+> | **T-0465** | **draft** | **T-0464** | T-0446 ✅. Lane **T-0446 ✅ → T-0464 → T-0465**; must not run concurrently with T-0464 |
+> | **T-0474** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0474-*.md` (`status: done`); this row was never updated.** **draft** | **T-0475** *(one leg only)* | The `generate-api-clients.sh` leg is **safe today and may ship first**; the **`xcodegen generate`** leg must wait, because today that command **wipes the owner's Stripe key on every run**. See the new-tickets block |
+>
+> **The demo chain, restated after the Q-I18N-02 answer:**
+> ```
+> T-0446 ✅ + owner regen ✅
+>    ├─> T-0447   READY   ← web; independent, never dispatched
+>    ├─> T-0448   blocked ─┐
+>    └─> T-0449   blocked ─┴─> T-0450  READY ← dispatch this; nothing above it
+>
+> T-0472 (Poppins/Cyrillic)  — split out of T-0450, blocks NOTHING, needs an architect panel
+>                              ⚠️ but sequence it LAST on the ProfileTab.kt lane
+> ```
+> **The owner is no longer on this chain.** The only thing between T-0448/T-0449 and `ready` is
+> T-0450's write landing.
+>
+> ### 🆕 NEW — filed at the wave-2 close-out (2026-08-01, fourth PM pass)
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0470** | **Credential-shape guard — the class T-0446 closed AROUND.** T-0446 closed two classes (a *listed* field is now redacted in behaviour; a DTO whose redaction *unmasks* free text has its route suppressed) and left one **explicitly open**: *a secret whose field name was never in the token list is caught by nothing.* **Both live Stripe credentials found this sprint were in that class**, and `ephemeralKey` was found **by luck** — it happened to sit behind an already-redacted field. Sibling guard: a name/shape heuristic (`*Secret*`/`*Token*`/`*Key*`/`*Password*`, values `sk_`/`ek_`/`seti_`) over the **same wire-DTO walk**, with the same curated-exception discipline. **The expensive half is already written and already in CI** — the route→DTO walk, the flattening, the anti-vacuity self-check. That guard found two live credentials within minutes of existing | S | **draft** | T-0446 ✅ | backend, architect | **yes** | none (no-decision — applies S6 with an existing mechanism) |
+> | **T-0471** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0471-*.md` (`status: done`); this row was never updated.** **ADR-0033's one challenger round** — see the READY table above | S | **ready** | — | architect | no | **it IS the panel** |
+>
+> ### 🆕 NEW — filed on the fifth PM pass (2026-08-01): one split + one owner defect + two owner-approved process fixes
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0472** | **Poppins covers 0 of 98 Cyrillic code points — SPLIT OUT of T-0450.** All three bundled Poppins weights: **0/98**; all three Nunito weights: **98/98** (PM parsed the `cmap`). Android and iOS TTFs are **byte-identical** (sha1-verified) → the same defect on both. Every `ru`/`uk` name in the hero falls back to Roboto/system beside Nunito body text — **three typefaces on one card**. **Untouched by the Q-I18N-02 answer**: a shorter Russian string is still Cyrillic and still falls back. **This half blocks nothing** — that is why it was split. **Three NEW AC the original ticket never carried:** the alternatives-with-why-not obligation (**AC3** — and *verify option (a) empirically first*: Compose resolves within a family by **weight/style, not coverage**, so the cheap option may simply not work), the **font-licence** question (**AC5** — a subset-merge produces a derivative binary; that is legal, not technical), and the **byte-identical-binary invariant** (**AC6**). ⚠️ **The split does NOT fully decouple the lanes** — if the ruling touches `ProfileTab.kt:437` / `EditProfileScreen.kt:215` it enters the avatar lane and must be sequenced **last** | M | **draft** | — | architect, android, ios | no | **architect** — four options, a real trade-off space, a licence dimension |
+> | **T-0473** | **"Report an issue" is `primary`; the owner wants it RED.** Order detail, **both** iOS (`OrderDetailView.swift:300-307`) and Android (`OrderDetailScreen.kt:510-535`) — one decision applied twice. **Correction to the report: the token is `primary`, not `secondary`** — the owner's "secondary" describes the button's *rank*, not its colour role. **Do not hunt for a `secondary` token.** 🚨 **Three different reds exist and they are not interchangeable:** iOS `CleansiaDangerButton` (tinted **surface**) · Android `CleansiaDestructiveButton` (**filled fixed-red container**, deliberately NOT `colorScheme.error`, with a written rank argument at `CleansiaButton.kt:80-99`) · the outlined+`error` tint **Cancel already uses on both platforms**. The two Core components are **not parity siblings**, so "adopt the component" would make the platforms **diverge** (ADR-0018) while closing a colour complaint. 🚨 **Cancel and Report issue are ADJACENT** (`OrderDetailScreen.kt:505-508` puts one 8dp spacer between them) — same colour makes them indistinguishable (**AC3**). 🚨 **A shipped test will stay GREEN through this change while its comment becomes false** — `OutlinedButtonColorsTests.swift:61-70` asserts the colour *resolver*, not the call site, and its preamble says *"Make recurring + Report issue primary"* (**AC4**) | S | **draft** | — | analyst, architect, ios, android | no | **analyst** (semantics) **+ architect** (component-vs-token, ADR-0018 parity) |
+> | **T-0474** | **PROCESS (owner-approved) — two gitignored iOS artifacts go stale on every pull, and nothing says so.** The API clients (`scripts/generate-api-clients.sh`) and both `.xcodeproj`s (`xcodegen generate`). **Cost twice:** (1) it broke the owner's build — a **Jul-25** client with no `accessInstructions`, and `BookingInstructions.swift` with **0** `project.pbxproj` references, so **new code on `master` was silently absent from the target**; (2) it cost a reviewer a false conclusion — it read the stale client and declared T-0440 owner-regen-blocked, **contradicting that ticket's own warning at its lines 34-39**. That second instance is the argument: *a warning on the ticket, in the ticket about to hit the trap, did not prevent it.* **AC2 asks the mechanism the direct question — "would this have stopped that reviewer?"** **De-dup: T-0456 AC8 owns the RULE** (regeneration destroying uncommitted state, in `shared-file-lanes.md`); **this owns the MECHANISM**, opposite direction. Neither writes the other's file | S | **draft** | **T-0475** *(the `xcodegen` leg only)* | ios, docs | no | none (no-decision — makes an already-documented step runnable; **AC3** forces an honest ADR-0032 tier, and *"(guidance — no gate)"* is acceptable) |
+> | **T-0475** | **PROCESS (owner-approved) — move the Stripe key + `DEVELOPMENT_TEAM` into a gitignored xcconfig**, the pattern `**/GoogleService-Info.plist` already uses in the same `.gitignore`. **Wiped twice this sprint; offered before and never taken up — this is the third occurrence.** **PM refinement to the brief (grounded from the COMMITTED `project.yml` via `git show`; the working copies deliberately not opened): the value has TWO homes and TWO destruction paths** — `project.yml` (`:22 DEVELOPMENT_TEAM`, `:137 STRIPE_PUBLISHABLE_KEY`), destroyed by **git** operations and **not** by xcodegen; and the generated `Info.plist`, destroyed by **`xcodegen generate`**, which rewrites it. `git status` shows **both** modified. Hence **AC1 (git-side) and AC2 (xcodegen-side) as separate criteria**. **Why this is `S`:** the `$(STRIPE_PUBLISHABLE_KEY)` indirection **already exists** at `project.yml:99` — an xcconfig only has to supply the build setting. **The one real decision is AC4:** `DEVELOPMENT_TEAM` is **not a secret**, so putting it in the gitignored file means a fresh clone **cannot build at all** rather than merely having a broken Stripe path. **AC5** requires a committed `*.xcconfig.example` + README line so a missing file is not diagnosed as a mystery signing failure | S | **draft** | — | ios, docs | **yes** | none (applies an existing pattern; the one trade-off is carried as **AC4**) |
+>
+> **Both process tickets are being implemented by the coordinating agent outside the normal dispatch.**
+> They are filed for **traceability and reconciliation** — if the implementation differs from the AC,
+> the implementation wins and the ticket is corrected to match.
+>
+> **⚠️ Sequencing that must not be got backwards:** T-0474 prescribes running `xcodegen generate` after
+> every pull; **today that command wipes the owner's Stripe key.** Shipping T-0474's xcodegen leg before
+> T-0475 lands (and before the owner drops their values into the new file) converts an **occasional**
+> key loss into one on **every single pull** — strictly worse than the staleness being fixed.
+>
+> ### In flight — dispatched, running now (historical rows below; superseded by the tables above)
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0446** | **Avatar READ path (SPINE) — DEMO CRITICAL PATH.** API returns `{fileName:"<guid>", base64Content:null, contentType:null}` (`Mappers/BlobMappers.cs:12-18`), so no client can render an avatar even after a successful upload. **🔒 SECURITY GATE: APPROVE-WITH-CONDITIONS** — cleared (no IDOR · `sr=b sp=r` 1h asserted against a real client · container private on two switches · no SAS on any paged list); **+AC9** (SEC-1: the redaction added by this diff never executes — truncate runs before redact, so it fires **0%** of the time here, and its test uses a 335-byte fixture vs a real ~786-byte response) and **+AC10** (SEC-4: mint a fresh blob name on replace — the **only** blob in the codebase that reuses one). `## Out of scope` **amended** to admit `UpdateCurrentUser` for AC10 | M | **done ✅ `a63b776e` (#176)** | T-0438 ✅ | backend | **yes** | **nswag-regen + mobile-spec-redump — BOTH DONE by the owner, shipped inside `a63b776e`** |
+> | **T-0439** | NSwag regen-drift guard (2nd occurrence; first was `specialInstructions`, PR #166). `quality-gates.md` lane now clear — T-0445 merged | S | **done ✅ `acf2f0bc` (#175)** | T-0438 ✅ | architect, frontend, docs | no | `claude-md-generate-clients-line` — **flagged, still owed; T-0462 owns the corrected text** |
+> | **T-0440** | **iOS** — capture entry/access instructions on booking confirm. **✅ REVIEWER APPROVED** (verdict `c23b26e7` — **on `fix/tooling-false-green-and-broken-docs`, NOT on `master`**). The earlier `ios-client-regen` blocker was **FALSE and is retracted** — `CleansiaCustomerApi/` is gitignored/untracked, the local copy was merely stale, and the committed spec already carried the field. **THREE items open before `done`:** **F-3** (test-first ordering unverifiable — one squashed commit, no `red→green` log entry; reviewer explicitly declined to assert it was written after the fact → **developer records it**, and if it was implementation-first the reviewer re-reviews), plus **AC1 screenshot** + **Gate 8.5 render leg** at QA — a **genuine handoff, proven not deferred** (reviewer hosted the field in a real window, captured via two independent mechanisms, both blank) | S | **qa — MERGED `a10e1f88` (#179), NOT `done`** | — | qa | no | **none** (retracted) |
+> | **T-0441** | **Android** — same capture. A **new** `booking_access_instructions_hint` key ×5 **is** required (`order_detail_access_instructions` is the display label only). **✅ REVIEWER APPROVED** — 321/321 tests, **53/53 Gradle tasks executed** (not cached), no new consistency violations, both findings closed **and independently re-proved**. Only AC1's screenshot is open and it is **QA's**, correctly deferred. `values-*/strings.xml` lane now **clear for T-0450** | S | **qa — MERGED `1d85b35f` (#178), NOT `done`** | — | qa | no | — |
+>
+> ### Behind the spine — demo scope by owner ruling
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec |
+> |----|-------|------|--------|-----------|--------|-----|
+> | **T-0447** | **Web** avatar upload/render/removal. `updateUserCurrent` is **still dead code** (re-verified post-#171); the only live caller is `profile.component.ts:224`. **🔒 binding conditions attached**: never `RenderMode.Server` on an authenticated profile route (a live SAS in a proxy-cacheable HTML doc); cache on `fileName` not `blobUrl` | M | **READY ✅** | T-0446 ✅ + owner `nswag-regen` ✅ | frontend | yes |
+> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }`. T-0442 dep **cleared**; **T-0441 discharged 2026-08-01** (lane write merged; its owed screenshot does not gate a code lane). **🔒 binding conditions attached**: never raise OkHttp to `Level.BODY` (`HEADERS` debug / `NONE` release today); cache on `fileName` not `blobUrl`; S11 session-wipe set | M | **blocked — on T-0450 ONLY, and T-0450 is now `ready`** | T-0446 ✅, **T-0450** ⛔ | android | yes |
+> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI; `HeroGradient` is initials-only. **T-0440 discharged 2026-08-01** (lane write merged). **🔒 binding conditions attached**: Kingfisher `cacheKey` = `fileName` not `blobUrl`; S11 registry; never persist the URL | M | **blocked — on T-0450 ONLY, and T-0450 is now `ready`** | T-0446 ✅, T-0451 ✅, **T-0450** ⛔ | ios | yes |
+>
+> ### NEW — wave-1 findings that had no home (filed 2026-07-30, second PM pass)
+>
+> Each was surfaced by real work in wave 1 and **re-grounded by the PM against the code** before
+> ticketing — the measurements below are the PM's own, not the reporting agent's.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0451** | **iOS avatar initials fail WCAG in dark mode** — sky400 on a hardcoded white circle = **2.14:1** (floor is 3:1); light mode is 4.10:1. **Two** call sites (`ProfileTab.swift:276-282`, `ProfileHubContent.swift:156-162`). Android already deviated to Sky600 with the reasoning written in (`ProfileTab.kt:279-284`); iOS is the unfixed side | S | **done ✅ `1c8fdd00` (#180)** | — | ios | no | none (no-decision) |
+> | **T-0452** | **No social-preview card on the public SSR customer site** — no `og:*`, no `twitter:card`, no `apple-touch-icon`, no manifest (verified: zero `og:` in `index.html`, zero `Meta` service usage). T-0444's 1024 master makes it cheap. apple-touch-icon + manifest **ruled in-scope** (same master, same `<head>`, and **no service worker** exists so a manifest is metadata, not installability) | S | **draft** | T-0444 ✅ | architect, frontend | no | **architect** — static `<head>` vs per-route SSR meta |
+> | **T-0450** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0450-*.md` (`status: done`); this row was never updated.** ⚠️ **SPLIT 2026-08-01 — this row is superseded by the READY table above.** Was two defects on one surface; **Q-I18N-02 is answered** and it now carries **half (A), the label, only** (`ready`, `S`). **Half (B) — Poppins/Cyrillic — is `T-0472`.** The filename keeps `-and-poppins-cyrillic` for link stability | ~~M~~ **S** | **ready** | ~~T-0440, T-0441, T-0451~~ **discharged** | ~~analyst, architect~~ **android, ios** | no | ~~analyst + architect~~ **none — discharged by the owner's answer** |
+> | **T-0453** | **Android hero does not bleed under the status bar; iOS does.** iOS gives the inset to the hero (`ProfileTab.swift:306` `.padding(.top, 48 + topInset)`); Android gives it to the scroll container (`ProfileTab.kt:135` `.windowInsetsPadding(...)` + a deliberate 12dp spacer at `:141`). Reviewers: the most visible remaining phone-to-phone delta. Converging it changes **who owns the top inset for the whole tab**, and the status-bar **icon** appearance is set globally at `Theme.kt:84` | M | **draft** | **T-0448** | architect, android | no | **architect** — inset ownership |
+> | **T-0454** | **Compose weight-starvation consistency rule** — flag a `Row`/`Column` holding both a `Modifier.weight(` child and an unbounded non-weighted `Text`. The bug class that nearly shipped on T-0442 (see its own comment at `ProfileTab.kt:266-268`). `check-consistency.mjs` already has the `add()`/`warn()` two-tier seam at `:36`/`:44`. **Routed, not written by the PM** | S | **draft** | — | architect, android, docs | no | **architect** — a new rule is an architect call |
+> | **T-0455** | **`partner-stores` ↔ `partner-services` circular dependency** — **33 errors** re-derived by the PM (`partner-stores` 19 · `services` 6 · `partner-services` 5 · `pipes` 3), all `@nx/enforce-module-boundaries`, in **two distinct cycles**: one caused by a **single import** (`loading.interceptor.ts:3-6`), one a type-location problem through `pipes`. Invisible because lint is `continue-on-error: true` (`frontend-ci.yml:40-42`) | M | **draft** | — | architect, frontend | no | **architect** — two seams |
+> | **T-0456** | **PROCESS — worktrees share one repo-global `git stash` stack.** A reviewer's `git stash -u` in a developer's worktree hard-reset it mid-ticket (~50 min lost). `shared-file-lanes.md:40-42` bans `git restore` for the same class but enumerates *commands*, not the class. Verified: `worktree` appears in **0** process/charter docs and `git stash` in **none at all**. **⚠️ SCOPE EXTENDED 2026-08-01 — two MORE incidents of the same class, both hit for real this sprint:** (a) **`cd X && <destructive git>` silently redirects to the MAIN checkout when `X` is missing** — an agent detached HEAD in the **owner's** repo this way, and nothing errors (`cd` complains, the git succeeds, the compound exits **0**, so it reads as a clean run); (b) **`xcodegen generate` regenerates `Info.plist` from `project.yml`**, wiping the owner's **working-tree-only Stripe key** — safe in a scratch worktree, never in the main checkout. **AC7 + AC8 added.** Routed here, not forked, for this ticket's own reason: the rule must describe the **class** (tree-wide state ops that discard work an agent does not own), and forking two command-specific tickets would commit that error a third time. Hazard 2 shows the class reaches past the tree the agent *meant* to touch; hazard 3 shows it reaches past `git` entirely. Size still **S** | S | **draft** | — | architect, docs | no | **architect + docs** (T-0445 precedent) |
+>
+> ### 🔒 NEW — filed OUT of the T-0446 security gate (2026-07-30, third PM pass)
+>
+> Findings **SEC-1** and **SEC-4** were folded **into** T-0446 (they are that ticket's own defects).
+> These four are the findings that are **not** T-0446's, filed separately so a pre-existing problem
+> cannot compress a demo-path ticket. Every file:line below was **re-verified by the PM against the
+> code on the T-0446 branch** before ticketing. Full write-up:
+> **`agents/archive/2026-08/backlog/security/user-profile-avatar.md`**.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel | Demo |
+> |----|-------|------|--------|-----------|--------|-----|-------|------|
+> | **T-0457** ✅ **DONE `b9753e85` (pass 4) — redaction by shape ×5 hosts + a DTO-walking guard reading the LIVE regex** | **S6 — `GET /api/User/GetCurrent` writes the caller's `email`, `firstName`, `lastName`, `phoneNumber`, `birthDate` to the **Information**-level log on all five hosts.** All five close by index **~264–302** (PM's own measurement), **inside** the 500-byte `ResponseBodyLimit`, on **every** request. `IsSensitivePath` covers `/auth/`, `/login`, `password`, `/order/lookup` — **not** this route. Arguably the **largest S6 exposure in the codebase**: it is the most-called authenticated endpoint. **Pre-existing — does NOT block T-0446** | S | **READY ✅ (2026-08-01)** | **T-0446 ✅** — the five-file middleware lane is released; T-0457 is now its sole writer | backend | **yes** | none (no-decision — enforcing an existing law) | **P1 — the highest-priority unblocked backend ticket. DEV is live and the owner's iPhone points at it** |
+> | **T-0458** | **Image-upload sanitization — decide the policy + build the shared seam** (EXIF strip · size cap · resize), piloted on the avatar. `ImageFileValidator` is a **3–4 byte magic-prefix** check and `UpdateCurrentUser:160-164` stores bytes verbatim; JPEG/TIFF carry GPS. **No per-image size limit exists anywhere** beyond Kestrel's 30 MB default. Panel must rule on library (**ImageSharp licence** is a legal question, not a technical one), strip-vs-re-encode, seam location (a FluentValidation validator **cannot** mutate), and **EXIF `Orientation`** — strip it naively and photos ship rotated | M | **draft** | — | architect, backend | **yes** | **architect** (new dependency + new cross-cutting policy → ADR) | post-demo · **HARD PRECONDITION for cross-user avatar display** |
+> | **T-0459** | **Apply the sanitizer to order photos + dispute evidence** (`SaveOrderPhotos.cs`, `UploadOrderPhoto.cs`, `UploadDisputeEvidence.cs`). **These are the actually-exposed instances** — already **cross-user visible today**: a cleaner's photos of a customer's home carry the customer's coordinates and customer + cleaner + admin can all fetch them. The avatar is the *least* exposed instance. Split from T-0458 so neither is an **`L`** | M | **`in_review`** | — (ADR-0043 accepted; the scrub is merged in `541b8c0f`) | backend | **yes** | none | post-demo |
+> | **T-0460** | **SECURITY RULE — user-supplied artifacts served back by URL are sanitized at upload; magic-byte validation is an accept/reject check, not a sanitizer.** A **gap in the rule set, not a violation of it**: S4 governs DTO *fields*, S6 governs *logs*, nothing reaches bytes inside a stored artifact — which is why SEC-3 sat in **three** shipped pipelines uncaught. Panel also rules on scope (images only? PDFs carry author metadata and employee documents are a PDF pipeline) and whether it is mechanically checkable | S | **draft** | — | architect, docs | no | **architect** (a new S-series law — T-0445 / T-0456 precedent) | post-demo |
+>
+> ### 📐 NEW — filed from the **ADR-0031 panel** (accepted, 2026-07-30)
+>
+> Two code changes were mandated before **T-0439** merges and are **already dispatched to its
+> developer** — they are not tickets here. The panel lead handed the PM the findings below. Every
+> file:line was **re-verified by the PM**, and two of the three reports were found to be
+> **understated** — corrections are in the tickets.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel | Demo |
+> |----|-------|------|--------|-----------|--------|-----|-------|------|
+> | **T-0461** | **M3 — consistency rule pinning `strictTemplates: true` per app.** Flipping it off in one app's `tsconfig.json` leaves T-0439's guard suite **5/5 green** while the **template half** silently stops catching what it was proven to catch — and because the flag also weakens the **production build**, this is a **repo-wide** gate weakening, not a guard-local one. PM-verified: all three apps carry it today (`apps/*/tsconfig.json:20`), so the rule pins a correct state rather than fixing a broken one; libs are **59/65**, the two gaps being `data-access/{admin,partner}-stores`. Rule goes in `check-consistency.mjs`; **this ticket owns the `knowledge/consistency.md` entry** — the lead deliberately left it untouched to avoid a lane collision. **⚠️ 2026-08-01 — `depends_on: [T-0439]` is SATISFIED (merged `acf2f0bc` #175) but the PREMISE MOVED TWICE. Re-read the scope before anyone starts; do NOT promote to `ready` yet.** (1) **ADR-0032 (accepted) prices this ticket's chosen enforcer `T2-ADVISORY`** — `check-consistency.mjs` is in **zero** `.github/workflows` (PM-verified), so it cannot *prevent* the de-fang this ticket exists to prevent; meanwhile T-0439 shipped `tools/typecheck-apps.test.mjs`, an 8-case suite **already run by `frontend-ci.yml` as a named step** = **T1-CI** under ADR-0032 D1. **AC6 added:** choose the enforcer against the tier table and write the reasoning; "both" is legitimate, "checker rule described as a gate" is not. (2) **`check-consistency.mjs` itself changed on `master`** (`d6969fef`) — the `T-0454 → T-0461` lane note is stale (a third writer landed ahead of both) and AC5's "lands green" premise is void (the checker does **not** exit 0 on this repo: **85** violations full-repo). **AC7** (ADR-0032 D2 `**Enforced by:** <enforcer> — <tier>` declaration — this is the FIRST new entry after ADR-0032) and **AC8** (the apps/libs split is now **decidable**: apps 3/3 → zero baseline → T1-CI legal; libs 59/65 → non-zero → `enforcement.md:104-106` forbids gating it) added | S | **draft — premise changed, re-scope first** | **T-0439 ✅** | architect, frontend, docs | no | none (enforces accepted ADR-0031 + ADR-0032) | post-demo |
+> | **T-0462** | **"Code no gate can see" — three instances, one class.** (1) `libs/core/services/src/lib/client/admin-client.ts` is a **second, stale generated admin client** — PM-verified that no `nswag-*.json` writes it (`nswag-admin.json:39` targets `admin-**services**`), no barrel exports it, nothing imports it, no build typechecks it. (2) The app-unreachable `email-template-form.facade.ts` (T-0439 finding 3), caught by **nothing** because lint is `continue-on-error` (`frontend-ci.yml:41` on master / `:63` in T-0439's tree). (3) **THREE `CLAUDE.md` corrections** — owner-gated, ticket proposes literal text: the repo map calls `core/services/` "NSwag-generated" (`:29`), `generate-clients` is undocumented (`:93-96`), and **all six Nx commands at `:84-91` FAIL** — real names are `cleansia.app` / `cleansia-partner.app` / `cleansia-admin.app`, a **dot** not a hyphen. **🔁 2026-08-01 — `depends_on: [T-0439]` SATISFIED (merged `acf2f0bc` #175) and THE RE-VERIFICATION AC5 DEMANDED HAS NOW BEEN RUN** (PM, parsed from the merged `package.json`, not eyeballed). Results: `generate-clients` **exists** ✅ · the three `generate-*-client` names **survived** M1's restructure ✅ · **the text's `nswag:*` warning is WRONG** — M1 renamed them `_nswag:*` (internal); never propose or document those · **⛔ Correction 3 is DISCHARGED AND ITS TEXT IS NOW A TRAP** — the owner already fixed the six Nx commands in `d6969fef` (#177) **using this ticket's own npm-alias recommendation**, so the block it tells the owner to replace no longer exists and applying it would **revert the owner's edit**. **Scope: 3 corrections → 2** (`CLAUDE.md:29` repo map still wrong; `generate-clients` still undocumented at `:97-100`). AC5a's prove-a-command obligation is discharged with Correction 3. **AC5b added:** re-quote the two surviving corrections against the file as it stands after `d6969fef`. **Both code instances still live, PM-verified** — the stale 280 KB `libs/core/services/.../admin-client.ts` and the unreachable `email-template-form.facade.ts`. **De-dup ruling: this ticket owns the `CLAUDE.md` `generate-clients` line, NOT T-0439** (whose M6 text is stale for the same reason) — one edit, one owner, one proposal | S | **draft — not on a dependency; on AC5b** | **T-0439 ✅** | frontend, architect, docs | no | none (mechanical + owner-gated doc) | post-demo |
+> | **T-0463** | **All three data-access libs have NO `test` target** — `nx test partner-stores` → `Cannot find configuration for task`. **Reported as `partner-stores`; PM verified and widened — `admin-stores` and `customer-stores` are `lint`-only too.** So the partner app's NgRx effects are **entirely untested**, including `user.effects.ts`, which broke in **T-0438**, is **one of the three regen call sites**, and is **being edited right now** for T-0446. **Two of the last three regen breaks landed in a project with no test target.** Ranked above the cosmetic items by the panel lead, and the PM agrees | M | **draft** | — | frontend, architect | no | scope only — escalate if AC3's bound is contested | post-demo, **highest value of the three** |
+>
+> **⚠️ Lane corrections this block forces:** `agents/tools/check-consistency.mjs` and
+> `agents/knowledge/consistency.md` are **no longer T-0454 sole-writer** — both become
+> **T-0454 → T-0461**. And `libs/data-access/partner-stores/**` is now contested **three ways**
+> (T-0455 rewrites its imports · T-0446's frontend leg edits `user.effects.ts` · T-0463 adds its test
+> target): safe order **T-0446 → T-0455 → T-0463**.
+>
+> **Also from this panel:** **Q-CI-01** (branch protection) filed in `questions/open.md` as
+> **`post-prod`, non-blocking** — ADR-0031 does not depend on it, because the prod deploy is
+> `workflow_dispatch`-only behind the `prod-weu` Environment (`deploy-pro.yml:19-29`), so **an unbuilt
+> `master` push cannot ship itself**. And a **free owner experiment** is attached to the T-0446 regen
+> bundle — see the MANUAL_STEPS note below.
+>
+> ### 🧪 NEW — filed from **QA's T-0446 AC4 run** and the **T-0441 review** (2026-07-30)
+>
+> **AC4 PASSES.** Executed against Azurite with the app's **own** `BlobContainerClientFactory` and the
+> **real** `UpdateCurrentUser.Handler` (only the two repositories mocked): **Chromium 140** rendered
+> the JPEG at 800×600 and the PNG at 48×48 from a bare-GUID URL served as
+> `Content-Type: application/octet-stream`; **WebKit** did the same; **`CGImageSource`** sniffed
+> `public.jpeg`/`public.png` from the bytes. `nosniff` absent, SAS fetch 200 with sha256-identical
+> bytes, wire grant exactly `sr=b sp=r` 1h, container-list → **403**. **No content-type work is needed
+> in T-0446.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Demo |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0464** ✅ **DONE `b9753e85` (pass 4)** | **`MetadataName.ContentType` is a DECOY across the whole codebase — the root cause behind AC4.** All five `MetadataName.*` constants are named as if they map to `BlobHttpHeaders`; `BlobContainerClient.cs:64-67` routes them to **`SetMetadataAsync`** (`x-ms-meta-*`). QA proved it: `x-ms-meta-ContentType: image/jpeg` **alongside** `Content-Type: application/octet-stream`. **So every order photo and dispute-evidence file in production is already served as octet-stream.** Fix via **SAS response-header override** (`rsct`/`rscc`) — QA fetched an **already-stored** blob and got `image/jpeg` + `max-age=3600, private`: **zero migration, one file, retro-fixes every existing blob.** 🚨 **PM-found trap (not in the QA report): `Metadata.CacheMetadata` hardcodes `"public, max-age=31536000"` and the AVATAR uses it — the naive fix ACTIVATES `Cache-Control: public` on a SAS-protected avatar, violating the recorded security condition.** Downloads cleared — all four read the DB record. **2026-08-01: post-demo CONFIRMED by evidence, not prediction** — the owner checked DEV order-detail photos and they **render**, so real Azure does not send `nosniff` and sniffing carries every render today; the one scenario that would have promoted this to demo-blocking did not happen | M | **READY ✅ (2026-08-01)** | **T-0446 ✅** — SAS-mint lane released; sole writer. The architect A-vs-B call is **step 1 of the dispatch**, not a precondition | backend, architect | **yes** | post-demo |
+> | **T-0465** 🟩 **UNBLOCKED (pass 4) — T-0464 is `done`; this is now the lane's next writer** | **Avatars are not cached at all — over-determined.** No `Cache-Control` **and** the SAS query (`se`+`sig`) changes on every mint, so the HTTP cache key changes every profile read. T-0464's override fixes **half**; the changing-key half is **inherent to the per-read-SAS design** and must be **stated as accepted, not silently carried**. Gate 5 | S | **draft** | T-0446 ✅, **T-0464** ⛔ (now `ready`, not `done`) — lane **T-0446 ✅ → T-0464 → T-0465**; must not run concurrently. **Do not fold into T-0464:** that is a codebase-wide correctness fix (`security_touching`), this is a Gate 5 design acceptance — merging them lets the accepted-limitation half ride in unexamined | backend, architect | no | post-demo |
+> | **T-0466** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0466-*.md` (`status: done`); this row was never updated.** **Test infra** — obsolete parameterless `PostgreSqlBuilder()` (`PostgresContainerFixture.cs:15`, `UserMembershipCancellationSweepIndexPlanTests.cs:29`) that Testcontainers 4.10.0 says **will be removed**, plus `xUnit2031` at `RefreshTokenFlowTests.cs:327`. Not cosmetic — the fixture backs **every** integration/host test, so it is a future-blocked upgrade | S | **draft** (ready on merit) | — | backend | no | post-demo filler |
+> | **T-0467** | **Android booking draft is lost on process death** — plain in-memory `StateFlow`, **no `SavedStateHandle` in any `customer-app` source** (PM-verified: all hits are `build/generated/**`). Address, promo, slot, services and both instruction fields all lost. **Medium, and deliberately not inflated:** `BookingBottomSheet.kt:301` already `reset()`s on every fresh non-rebook open, so persisting is a **product behaviour change**, not a bug fix → `analyst` panel first. 🔒 **Constraint written in UP FRONT:** `accessInstructions` can hold a **key-box/alarm code** — never unencrypted at rest, must clear on sign-out via `SessionScopedCache` (S11). T-0441 is what made that material | M | **draft** | **T-0441** | analyst, android | **yes** | post-demo |
+> | **T-0469** | **Instructions-field validation + labelling — THREE findings, one surface. Reframed 2026-08-01 by the T-0440 review.** **(A) DIRECTION INVERTED:** converge **Android → iOS**, not the reverse. Android's `.take(2000)` can leave a **lone high surrogate — a broken glyph at the end of a field that may hold a gate/key-box code**; iOS drops a cluster whole, costing **≤10 of 2000 units (0.5%)**. The UTF-16-vs-grapheme unit gap is still real (no client may exceed the server's budget), but the **cluster-severing defect is Android's**. **⚠️ One leg OPEN: what Android's serializer emits for an orphan surrogate was TRACED, NOT EXECUTED** — AC1a. **(B) STRONGEST ARGUMENT IS WITHIN-ANDROID, not cross-platform:** Android caps `accessInstructions` and **not** `specialInstructions` **on the same screen** — two customers on one flow get different treatment at 2001 chars depending only on which box they used. Strictly worse than a cross-platform split; the case for **"cap both, everywhere"**. **(C) F-1 — two adjacent, visually identical, UNLABELED boxes:** the iOS hint vanishes when non-empty and there is **no `.accessibilityLabel`**, so VoiceOver reads two unnamed fields and a returning user cannot tell them apart. Diverges from Android's float label **and from iOS's own Core text field**. T-0440's AC1 as worded is satisfied — one-line fix, but a three-platform label ruling | S | **draft** | T-0440, T-0441 | architect, ios, android, docs | no | post-demo |
+> | **T-0468** | **PROCESS — Gate 0.5 does not name the case where a build cache serves the mutation proof itself.** The T-0441 reviewer caught its own evidence cache-served mid-mutation and re-ran with `--no-build-cache`; *"it still compiles"* was the load-bearing half. **A mutation that reproduces a previous mutation byte-for-byte will legitimately hit cache** — the build system is behaving *correctly*, which is why leg 2's general "a cached run is not a run" did not prevent it. Panel must give the **flag per stack** (Gradle/Nx/dotnet/Xcode/Jest), not just Gradle. **2026-08-01: the LANE is clear** (`quality-gates.md` → T-0445 ✅ → T-0439 ✅ → T-0468, sole remaining writer); stays `draft` on the **panel**, which is DoR item 2, not a dependency — dispatchable today. **One more instance for the panel, and it is not a cache:** `check-consistency.mjs` printed `OK (0 files scanned)` exit **0** for every absolute `--paths` while Gate 0.5 leg 2 already said zero-files-scanned is a non-run — worth ruling whether the rule should oblige the **tool** to make a non-run un-representable as a pass, not just oblige the human to notice | S | **draft** | T-0439 ✅ (lane) | architect, docs | no | post-demo |
+>
+> **Known-not-fixed, recorded deliberately (no ticket)** — in the findings doc:
+> **(1)** the managed-identity SAS branch (`BlobContainerClient.cs:99-111`) is **dead code in every
+> environment** (PM-verified: `AccountUrl` is set in **no** config file in the repo) and untested — it
+> **must be re-reviewed before managed identity is switched on**, which also adds a **blocking
+> synchronous `GetUserDelegationKey` round-trip to every profile read**.
+> **(2)** `user-files` is a **flat container shared by all tenants** — the only thing preventing
+> cross-tenant enumeration is the `sr=b` grant, which makes `ProfilePhotoSasGrantScopeTests` a
+> **tenant-isolation control**: **it must not be softened.**
+>
+> ### Shared-file lanes — RE-REVALIDATED 2026-08-01 against merged `master` (`process/shared-file-lanes.md`)
+>
+> **All four lane heads that gated the demo chain have MERGED.** Heads marked ✅ below are released.
+>
+> - Android customer `values-*/strings.xml` ×5 → **T-0441 ✅ (merged `1d85b35f`) → T-0450 `ready` → T-0448**
+> - Android `customer-app/.../profile/ProfileTab.kt` → T-0442 ✅ → **T-0450 → T-0448 → T-0453 → T-0472**
+>   *(**T-0450 may not need to touch this file at all** — the `maxLines=1 + TextOverflow.Ellipsis` it
+>   needs is already there at `:339-346`. A lane head that writes nothing releases the lane sooner; the
+>   T-0450 dev should say so explicitly. **T-0472 is appended LAST** — if its ruling reaches the
+>   hard-coded Poppins call site at `:437` it is a writer, and the split does not decouple it.)*
+> - Android `customer-app/.../profile/EditProfileScreen.kt` → **T-0448** (`:230`, the photo-picker TODO)
+>   **→ T-0472** (`:215`, a hard-coded Poppins call site) — **new cluster, added 2026-08-01**
+> - iOS `CleansiaCustomer/Resources/Localizable.xcstrings` → **T-0440 ✅ (merged `a10e1f88`) → T-0450 `ready` → T-0449**
+> - iOS `CleansiaCustomer/.../Profile/ProfileTab.swift` → **T-0451 ✅ (merged `1c8fdd00`) → T-0450 → T-0449**
+> - **🆕 iOS `CleansiaCustomer/.../Orders/OrderDetailView.swift` → T-0473** sole writer
+> - **🆕 Android `customer-app/.../orders/OrderDetailScreen.kt` → T-0473** sole writer
+> - **🆕 `CleansiaCore/Tests/CleansiaCoreTests/OutlinedButtonColorsTests.swift` → T-0473** sole writer (AC4)
+> - **🆕 `core/.../ui/theme/Type.kt` + the six bundled font binaries (both platforms) → T-0472** sole writer
+> - **🆕 `src/cleansia_ios/.gitignore` + the new `*.xcconfig` / `*.xcconfig.example` → T-0475** sole writer
+> - **🆕 `src/cleansia_ios/openapi/README.md` → T-0474** sole writer (its §"Regenerate" is the likely AC5 home)
+> - **🚫 `src/cleansia_ios/**/project.yml` and `**/Info.plist` → OWNER ONLY, and T-0475 by explicit
+>   exception, in a scratch worktree.** The owner's live Stripe key is in the working copies. **No other
+>   ticket opens these files** — T-0472 in particular must **write up** any needed `UIAppFonts` entry as
+>   a note for the owner rather than editing either file
+>
+> ⚠️ **T-0440 and T-0441 are still `qa`, and that does NOT hold their lanes.** What a lane serializes is
+> **writes to the file**, and both writes are on `master`. What those tickets still owe is a screenshot.
+> - customer-web i18n bundle → **T-0447** sole writer
+> - `apps/cleansia.app/src/index.html` + `project.json` → **T-0452** sole writer
+> - `libs/core/partner-services` + `libs/core/services` + `libs/data-access/partner-stores` + `libs/shared/pipes` → **T-0455** sole writer (**new cluster — add the row to `shared-file-lanes.md`, T-0456 or T-0455 to carry it**)
+> - `agents/tools/check-consistency.mjs` → ⚠️ **T-0454 is NOT sole writer, and never was after 2026-08-01** — `d6969fef` (#177) edited this file **directly on `master`, outside the ticket flow**. Current lane: **`d6969fef` ✅ → T-0454 → T-0461.** Read the file before writing against it; do not diff from `ce2416a0`
+> - `agents/process/quality-gates.md` → T-0445 ✅ → **T-0439 ✅ (merged `acf2f0bc`) → T-0468** (sole remaining writer)
+> - `agents/process/shared-file-lanes.md` → **T-0456** sole writer
+> - **`src/Cleansia.Web.{Admin,Customer,Mobile.Customer,Mobile.Partner,Partner}/Middleware/RequestLoggingMiddleware.cs`** → **T-0446 ✅ → T-0457 ✅ (`b9753e85`, pass 4) → T-0470** (T-0470 is the lane's next writer) (**5 copies of one file; all five must change together, four-of-five is a hole.** Line offsets differ: `Cleansia.Web.Customer` is +4 vs the other four). **T-0470 should stay OUT of this lane by reading the token list from the compiled regex** rather than the source — which is what the existing `RedactionUnmaskedFreeTextGuardTests` already does
+> - **`src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs`** → **T-0446 ✅ (merged) → T-0464** (the `Metadata.CacheMetadata` trap is in this file) → then **T-0458** (sanitizer pilot).
+> - **`src/Cleansia.Core.AppServices/Features/{Orders,Disputes}/*Photo*.cs` + `UploadDisputeEvidence.cs`** → **T-0459** sole writer
+> - **`docs/architecture/security-rules.md`** → **T-0460** sole writer
+> - **`agents/tools/check-consistency.mjs`** → **T-0454 → T-0461** (**correction: T-0454 is NO LONGER sole writer**)
+> - **`agents/knowledge/consistency.md`** → **T-0454 → T-0461** (T-0461 owns its own entry; the ADR-0031 lead deliberately left this file untouched to avoid the collision)
+> - **`libs/data-access/partner-stores/**`** → **T-0446's frontend leg has MERGED** (`user.effects.ts`, +14 lines in `a63b776e`), so the three-way contention is down to two. **Safe order: T-0446 ✅ → T-0455 → T-0463.** T-0461 is explicitly told **not** to touch this lib's `tsconfig.json`
+> - **`libs/core/services/**`** → **T-0462**, but T-0455's cluster **overlaps** on this lib — serialize if both are dispatched
+> - **`CLAUDE.md`** → **OWNER ONLY**. T-0462 proposes text; no agent edits it
+> - **`src/Cleansia.Infra.Azure.Storage.Blobs/BlobContainerClient.cs`** (the shared SAS mint — used by order photos, dispute evidence **and** the avatar) → **T-0446 ✅ → T-0464 ✅ (`b9753e85`, pass 4) → T-0465.** The lane is **released**; **T-0465 is now its next writer**
+> - **`agents/process/quality-gates.md`** → T-0445 ✅ → **T-0439 ✅ → T-0468** *(duplicate of the row above; kept so a reader following either path lands on the same answer)*
+> - **🆕 `agents/knowledge/patterns-*.md` — PM LANE RULING 2026-07-30: this family IS a shared-file lane, effective now.** It is **not** in `process/shared-file-lanes.md` (which enumerates only `consistency.md`, `INDEX.md`, the 15 i18n bundles, the Policy trio and root `CLAUDE.md` — PM-verified at `:19-23`). The table's own rationale for `consistency.md` — *"every ticket appends its note; two concurrent writers destroy each other's hunks"* — applies **verbatim**, and **three of these files were written this sprint by three different tickets**: `patterns-mobile.md` (T-0441), `patterns-backend.md` (T-0446), `patterns-frontend.md` (T-0439's dev). **Serialize per file** (the four are independent, exactly as the i18n bundles serialize per app). The durable edit to `shared-file-lanes.md` is routed through **T-0456** (already that file's sole writer — extended, not forked). Live lane: `patterns-mobile.md` → T-0441 ✅ → T-0440 ✅ → **T-0451 ✅** — **all three have now written it** (`1d85b35f` +12, `1c8fdd00` +14, plus T-0446's `patterns-backend.md` +73 and `patterns-frontend.md` +26). The lane is **clear**, and **T-0451's hunk is what produced ADR-0032 and ADR-0033** — a reviewer refused to ratify a "the ONE way" entry inline. **Next writer of any `patterns-*.md` must apply ADR-0032 D2:** a constraining entry carries `**Enforced by:** <named enforcer> — <tier token>`. The durable `shared-file-lanes.md` edit is still routed through **T-0456**
+> - `INDEX.md` → PM only
+>
+> ### ✅ MANUAL_STEPS — the regen bundle is DONE. What the owner still owes, in full.
+>
+> **DISCHARGED 2026-08-01, both items, shipped inside `a63b776e` (#176)** — PM-verified, not relayed:
+> 1. ~~`nswag-regen`~~ ✅ `customer-client.ts` + `partner-client.ts` carry `blobUrl` (4 lines each);
+>    `admin-client.ts` already did, so it needed no delta. **No consumer broke** — the first regen since
+>    T-0439's guard shipped, and `master` stayed green.
+> 2. ~~`mobile-spec-redump`~~ ✅ `src/cleansia_android/openapi/customer-mobile-api.json` (4 hits) and
+>    `partner-mobile-api.json` (6). **iOS reads those same two committed specs**
+>    (`src/cleansia_ios/openapi/README.md` §"Source of truth"), so **both** mobile platforms are served.
+>
+> **⏳ STILL OWED BY THE OWNER — the complete list, shortest first:**
+>
+> | # | Item | Blocks | Where |
+> |---|---|---|---|
+> | ~~1~~ | ~~**Answer `Q-I18N-02`**~~ ✅ **DONE 2026-08-01.** The owner answered: verb-only label + truncate, don't wrap. **It was the last `blocking: yes` question in the backlog.** T-0450 → `ready`; T-0448/T-0449 clear when it lands | ~~T-0450 → T-0448 + T-0449~~ **nothing** | `questions/answered.md` |
+> | **1a** | **Supply the xcconfig values** once **T-0475** lands — the Stripe publishable key and (if AC4 puts it there) `DEVELOPMENT_TEAM`, in **both** app directories. **Until you do, your own build has no key.** This is the `manual_step: xcode-project` on T-0475 | **T-0474's `xcodegen` leg** — prescribing "regenerate after every pull" is unsafe until this is in place | `tickets/T-0475-…md` AC2 + AC5 |
+> | 2 | **Two `CLAUDE.md` lines** (owner-gated; no agent edits that file) — the repo map at `:29` still calls `core/services/` "NSwag-generated" (it is not; that lib holds a **stale 280 KB client no regen writes**), and `generate-clients` is still undocumented at `:97-100`. **The third correction is already done — you applied it in `d6969fef`**, using the npm aliases T-0462 recommended | nothing; it costs every agent a cycle | **T-0462 owns the corrected text (AC5b).** T-0439's M6 text is stale — do not use it |
+> | 3 | *(optional, expired)* the `markOptionalProperties: true` scratch experiment | nothing | The window was the T-0446 regen and it has passed. Costs a whole regen cycle now |
+>
+> **One exit-code unknown CLOSED, one still open:**
+> - ~~all three `*-client-formatter.sh` always exit 0 (no `set -e`, ending in an `echo`)~~ **FIXED on
+>   `master` by `d6969fef` (#177)** — `set -euo pipefail` + an input-exists guard on each.
+> - **`npx nswag run`'s failure exit code is STILL UNKNOWN.** A generator that exits 0 on a failed
+>   generation would let `generate-*-client` typecheck a **stale** tree and report success.
+>   **Do not read a green `generate-*-client` as proof the client regenerated.**
+>
+> **❌ `ios-client-regen` was added to this bundle on 2026-07-30 and RETRACTED the same day — the
+> blocker was FALSE.** Kept visible rather than deleted so nobody re-derives it. `src/cleansia_ios/CleansiaCustomerApi/`
+> is **gitignored and untracked** (`git ls-files` → **0 files**; `.gitignore` calls it *"machine-owned,
+> never committed"*); the local copy was simply **stale (Jul 25)**, and the **committed** spec at
+> `HEAD` already carries `accessInstructions`. Regenerating it is `./scripts/generate-api-clients.sh`
+> — **offline codegen from the committed spec, authorised for agents, NOT an owner step.**
+> **T-0440 is not owner-gated in any respect.**
+>
+> After the regen, **build all three web apps before pushing** — skipping that is what produced
+> T-0438, and T-0439 (the mechanical guard) will not have landed in time to catch it.
+>
+> **➕ FREE EXPERIMENT to ride along with that regen (ADR-0031 panel).** The owner is regenerating
+> anyway. **One extra run with `markOptionalProperties: true` into a scratch output, diffed and
+> discarded** — nothing committed, nothing overwritten — empirically settles whether
+> `removePhoto: boolean` would even become **optional** under **Option D**, which is *currently the
+> unverified premise the whole D rejection rests on*. Cheap, decisive, and it expires the moment the
+> regen is done. **The result is recorded by the `architect` in the living doc
+> `agents/architecture/decisions/generated-client-contract.md` — NOT in the ADR** (that doc currently
+> exists only in T-0439's worktree, so the recording waits for T-0439 to merge). The lead's revisit
+> trigger for D is **call-site-count-shaped**: *one regen breaking >10 call sites for a single added
+> **optional** field.*
+>
+> **A third `manual_step` now exists:** **`owner-claude-md`** on **T-0462** — three corrections to the
+> owner-gated `CLAUDE.md`, proposed as literal text. It is **not** part of the regen bundle and must
+> not be batched with it: T-0462 is post-demo and its text is only final **after T-0439 merges**.
+>
+> **Open owner questions — UPDATED 2026-08-01:** ~~**Q-I18N-02**~~ ✅ **ANSWERED and moved to
+> `answered.md`**; it was the **last `blocking: yes` entry in the backlog**. Still open, all
+> **non-blocking**: **Q-BRAND-01** (Poppins/Cyrillic strategy platform-wide — now fed by **T-0472**),
+> **Q-CI-01** (branch protection, `post-prod`) and **🆕 Q-DESIGN-01** (does the danger/error role gain a
+> second sanctioned meaning, or is "Report an issue" a named exception — `post-prod`, default = named
+> exception; it does **not** gate T-0473).
+>
+> **⚠️ Owner-visible, non-blocking (from the security gate):** the demo will run against a DEV
+> environment that is **writing real people's email, name, phone and birth date into Information-level
+> logs on every profile read** (T-0457). Nothing needs an owner *decision* — it needs an owner
+> *awareness* that the log store is PII-bearing until T-0457 lands. See `status/sprint-14.md` §6.
+
+> ## 📱 PHASE/IOS-FIX1 — on-device iOS-16 shakeout (sprint-12): **16 owner-reported issues → 4-cluster diagnosis → 6 slices + 1 process ticket — ALL 6 SLICES DONE · PHASE GATE PASS · PR DRAFTED** (2026-07-03, `phase/ios-fix1`, 11 commits pushed; **remaining acceptance: the OWNER DEVICE PASS**)
+>
+> **The device-verification phase.** The owner tested BOTH iOS apps on a real **iOS 16** iPhone for the first
+> time and reported **16 issues**; a 4-cluster diagnosis (**booking-ux · brand-assets · navigation-shell ·
+> data-layer**, 2026-07-02) grounded ALL of them with file:line evidence — the diagnosis workflow is
+> **verified** (every finding cause-rooted, several empirically reproduced on a booted iOS 16.4 simulator, the
+> "non-optional field" suspicion DISPROVEN by an executed decode test). **Key structural lesson:** the
+> crash/⚠️/island defects were **invisible on the latest-runtime simulator** (iOS 17+ nav-authority rework +
+> system tab-bar styling masked them) and the brand misses were invisible to a gate whose citation unit is the
+> `.kt` screen file — hence the T-0374 process ticket. **T-0314 addendum below: feature-complete ≠
+> device-verified — this phase is the device-verification debt.** Filed **T-0368…T-0374** (each ticket embeds
+> its cluster's evidence):
+>
+> | ID | Slice | Title | Size | Status | depends_on | Layers | sec | manual_step | Cluster |
+> |----|-------|-------|------|--------|-----------|--------|-----|-------------|---------|
+> | **T-0368** | **A** | **Customer shell RESTRUCTURE** — single shell `NavigationStack` + page-style pager + the custom pill-bar/FAB composite; fixes the iOS-16 `comparisonTypeMismatch` **CRASH** (Plus route), the yellow-⚠️ placeholder pushes, the never-ported island bar, the FAB overlap/Rewards clipping, and tab-swipe parity. iOS-16-specific, **SHIP-BLOCKER**. **Architect ruling IN FLIGHT** (changes the ADR-0020 customer-shell pattern; fallback = minimal outer-stack delete + `NavigationPath` conversion) | M | **done ✅** `d34eaf5e` (ruling ACCEPTED as **ADR-0022** `987f85f0`; reviewer workflow-verified, findings ROUTED → folded in `fef5745c`; 16.4 smoke 0 NavigationAuthority/comparisonTypeMismatch hits; signed-in walk = owner device pass) | — | architect, ios | no | — | navigation-shell (+ the nested-stack finding of data-layer) |
+> | **T-0369** | **B** | **Partner nav-crash MIRROR** — `PartnerRootView.swift:17` identical outer-`NavigationStack` topology; minimal fix (delete the outer stack + `NavigationPath` conversion; NO restructure, ADR-0020 preserved) | S | **done ✅** `4e38a93f` (reviewer **APPROVE clean**; FIVE path sites converted incl. the unlisted RegistrationLockView one — gate #24 byte-unchanged; Partner 366/366; 16.4 smoke 0 hits. Ride-along: the Slice-B lint run exposed the ios-ci master-push bypass → closed `197352a9`, no ticket) | — | ios | no | — | navigation-shell (NOTES) |
+> | **T-0370** | **C** | **Data-layer fixes** — `MembershipStatus` `[SwaggerEnumAsInt]` + spec re-dump + BOTH-client regen + the Android `IntEnumSerializersModule` entry (the contract lie kills `GetMyMembership` for any subscribed user, both platforms); `apiResponseQueue` off main (both apps) + parallel prefetch (the "lag"); offset-less date-decoder hardening; `ApiError.fromGenerated` → ProblemDetails code extraction (24/25 call sites showed raw JSON — **ABSORBS T-0367**) | M | **done ✅** `5252bfb9`+fold `ebf2fcfd` (reviewer PASSED on substance, 3 test/guard CHANGES folded red→green; **the manual steps ran IN-BRANCH** — disposable-postgres spec re-dump + Kotlin client regen, Android compile green, iOS client CI-regenerated; dotnet **1714/1714** incl. `MobileSpecEnumGuardTests` pinning every mobile enum schema to integer; closes T-0367) | — | backend, ios, android | no | **owner: VERIFY the committed spec diff at the PR (or re-run `scripts/refresh-mobile-spec.sh` + regens) — executed in-branch, see the ticket's AC2 deviation** | data-layer |
+> | **T-0371** | **D** | **Booking wizard UX** — SlideToConfirm was NEVER implemented (static + tap w/ silent guard) → hoist the partner's working control to `CleansiaCore` + `resetTrigger`; in-sheet snackbar host (the root host is occluded by EVERY modal sheet — also promo/referral/Stripe-cancel) + `.profileIncomplete` → dismiss+edit-profile (Android parity); `BookingViewModel` hoisted out of the sheet so the draft survives dismissal. Serialize `CustomerShellView.swift` edits with T-0368 | M | **done ✅** `fef5745c`+fold `bfb1ca7a` (reviewer CHANGES: the **D-1 adversarial-verify catch** — the session-lived draft opened a DUPLICATE-ORDER path via sheet-swipe-over-success → fixed clear-first at the success outcome, test-pinned; also carried the Slice-A routed findings: `SnackbarController.bottomInset` shell lift + the 74pt FAB/ADR transcription fix → ratification T-0379; slide FEEL = owner device pass) | — | ios | no | — | booking-ux |
+> | **T-0372** | **E** | **Brand/asset parity** — 6 mascot imagesets + the Core `Mascot` enum + `AnimatedMascotView` (ImageIO webp); mascots in auth/splash/success/hero/empty-states/membership (+ `BusyMascotOverlay`); **app icons BOTH apps** (`ASSETCATALOG_COMPILER_APPICON_NAME` was `""`); **branded launch screens BOTH apps**; category icon meaning + tints (no-broom Gate-DP note) | M | **done ✅** `62d9495b`+fold `0be26d5d` (reviewer CHANGES folded: animator restart Coordinator, the 33.6k-line xcstrings churn REVERTED + `SWIFT_EMIT_LOC_STRINGS: NO` pinned, BusyMascotOverlay attached — booking half via carrier T-0371. Recorded deviations: AC5 launch COLOR-ONLY → re-probe **T-0377**; AC6 no-broom → `bubbles.and.sparkles`. Partner splash follow-up **T-0378**) | — | ios | no | — | brand-assets |
+> | **T-0373** | **F** | **Home upsell carousel** — the Android `HorizontalPager` of gradient mascot upsell slides was never ported (`HomeTab` is a flat stack — the largest visual gap on the most-seen screen); `TabView(.page)` + `BrandGradients` in Core | M | **done ✅** `e69a0283`+fold `bfb1ca7a` (shell wiring landed IN-slice — pre-seeded recurring path; reviewer CHANGES: the **F-1 floor catch** — `BrandGradientTests` red ONLY on the 16.4 runtime, the suggested `performAsCurrent` fix empirically WRONG on iOS 16 → hex stops as single source of truth, OS-independent; CTAs made REQUIRED. Android's hardcoded ", Michael" greeting → **T-0375**, not ported) | T-0368✓, T-0372✓ | ios | no | — | brand-assets (delta #1) |
+> | **T-0374** | proc | **PROCESS: iOS 16 floor verification leg** — every iOS slice must smoke on the **iOS 16.4 simulator** (runtime now installed locally; devices under `-- iOS 16.4 --`), since ALL crash/⚠️/island issues were invisible on the latest-runtime sim; + the **Gate-DP §G hardening the architect is folding in** (the AR-DP-1 asset-counterpart sub-check — SF-symbol substitution only for Material ICONS, never brand raster art — + the one-time per-app app-chrome item: AppIcon + launch + splash) | S | **done ✅** (AC2 ✓ §G `987f85f0` [AR-DP-1a + AR-DP-4]; AC3 ✓ every slice smoked on 16.4 — the F-1 catch is the leg's proof-of-value; AC1/AC4 ✓ 2026-07-19 — codified as **Gate 8.5 — iOS 16.4 floor smoke** + the Gate 8 "iOS touched" bullet in `quality-gates.md`, WHY paragraph recorded; doc-only) | — | architect, qa, docs | no | — | cross-cluster NOTES |
+>
+> **PHASE CLOSE (2026-07-03) — ALL 6 SLICES DONE; PHASE GATE PASS on the final tree:** swiftformat 0.60.1
+> **0/528** + swiftlint --strict clean TREE-WIDE · **CleansiaCore 272/272 on BOTH iPhone 17 (iOS 26.3) AND
+> the iOS 16.4 floor sim** · Partner + Customer suites green (**Customer 406**) · **dotnet 1714/1714**
+> (incl. the new `MobileSpecEnumGuardTests` spec-enum guard) · Android compile green (Kotlin client regen
+> from the new spec) · the iOS 16.4 **boot-install-launch smoke of BOTH apps with 0
+> NavigationAuthority/comparisonTypeMismatch hits**. Reviewer-per-developer held on every slice: B **APPROVE
+> clean** · C **CHANGES folded** (`ebf2fcfd`) · A **workflow-verified, findings routed** (→ `fef5745c`) ·
+> E **CHANGES folded** (`0be26d5d`) · D+F **CHANGES folded** (`bfb1ca7a` — the adversarial-verify catches:
+> **D-1** the duplicate-order path, **F-1** the floor-runtime-red gradient tests, i.e. the T-0374 leg paying
+> for itself). **ADR-0022 ACCEPTED** (`987f85f0`). **REMAINING ACCEPTANCE: the OWNER DEVICE PASS** on the
+> iOS 16 iPhone (signed-in navigation, slide feel, visuals, subscribed-user membership, perceived lag — the
+> full checklist is in the PR body). **OWNER note on the T-0370 manual steps:** executed IN-BRANCH
+> (disposable-postgres spec re-dump; Kotlin regen, Android compile green; the iOS generated client is
+> CI-regenerated) — verify the committed spec diff at the PR or re-run your pipeline;
+> `MobileSpecEnumGuardTests` pins the representation either way. **Phase-level hardenings (no ticket):**
+> `197352a9` ios-ci now also gates master PUSHES (the direct-push bypass that let `6bf55f14` land unlinted);
+> `SWIFT_EMIT_LOC_STRINGS: NO` pinned in both project.ymls (kills the xcstrings catalog-sync churn at the
+> source, SHA-proven). **Follow-ups filed 2026-07-03 (`proposed`, NOT dispatched):**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0375** | **Android BUG** — customer `home_hero_greeting` bakes the hardcoded name ", Michael" into EVERY user's greeting (`strings.xml:116`, ×5 locales; consumed `HomeTab.kt:489`; iOS deliberately shipped name-less). Fix name-less or a real placeholder | S | **DONE ✅ (row was stale — shipped `13431f2b` PR #123: name-less greeting ×5 locales; re-verified 2026-07-19)** | — | android | no | — | T-0373 Slice-F Gate-DP divergence (1) |
+> | **T-0376** | **iOS partner pill-bar/pager parity** — the **ADR-0022 D4-mandated** follow-up (dedup-checked: not previously filed): Android partner HAS the pill (`FloatingIslandBottomBar.kt`) + `HorizontalPager`; iOS partner still ships the stock `TabView` (the ADR-recorded interim). Adopt D2/D3 with the partner pill variant (4 even slots, no FAB, no center gap) + harvest the shared pill to Core (the ≥2-call-sites rule) | M | **retired ✅ (cancelled by supersede)** (2026-07-17: the 2026-07-08 owner-directed ADR-0022 amendment (`365fd221`, PR #107) retired the pill/pager family after it rendered corrupted on the owner's real iPhone — the customer shell was restored to the stock TabView, and the amendment's own closing line cancels this follow-up. Both apps are ALREADY converged on the stock bar (the harvest source `CustomerBottomBar` pill is deleted; only `BookFab` survives), so building the partner pill would create the divergence this ticket existed to remove. Ticket file carries the dated block record. The surviving D2-topology half is re-scoped as **T-0429** (owner approved 2026-07-17)) | — | ios | no | — | ADR-0022 D4 |
+> | **T-0377** | **iOS launch-screen re-probe** — `UILaunchScreen` `UIImageName` on REAL hardware (known-broken on the 16.4 SIMULATOR: scaled-to-fill or silently blank; COLOR-ONLY shipped by T-0372; the in-app splash is branded, so the gap is one launch frame) | S | **blocked (OWNER — real-iPhone probe; code already at the color-only baseline, probe asset present)** | — | ios | no | **owner: real-device probe** | T-0372 AC5 deviation |
+> | **T-0378** | **iOS partner in-app splash branding** — partner `SplashGateView` is a bare `ProgressView`; the customer got the full branded splash (T-0372 AC5). Styling-only port; the fail-closed gate logic byte-untouched | S | **done ✅** on `feature/i18n-cluster-3` (customer splash visuals ported into a shared-look `SplashBrandingView` — waving mascot, Poppins wordmark, new partner-voice `splash_tagline` ×5 locales, gradient + fade-in; the fail-closed gate logic byte-untouched; preview renders the branding without constructing the resolve VM; swiftformat/swiftlint clean, partner BUILD SUCCEEDED) | — | ios | no | — | T-0372 review-fold note |
+> | **T-0379** | **Architect ratification** — (a) `fef5745c` ANNOTATED the accepted ADR-0022 body in place (the 74pt transcription correction) — ADRs are supersede-never-edit; ratify as a signed erratum or reverse in **[+2026-07-17: also ratify/sweep the post-supersede stale rows — `ios-app-architecture.md` ~79-80/895 and any doc still describing the pre-supersede pill mandate]**to a proper supersede; (b) the T-0371 harvest (rode `e69a0283`) REPLACED the `patterns-mobile.md` SnackbarInsetState canonical-mapping row (view-local `bottomInset:` param → the published `SnackbarController.bottomInset` + pin-vs-follow) — a "one way" REDEFINITION to ratify. Dispatch BEFORE T-0376 (it cites both artifacts) | S | **done ✅ 2026-07-19** (architect ruling: (a) the 74pt note ratified as a SIGNED ERRATUM — block appended to ADR-0022, convention recorded in `adr/README.md`, no supersede needed for a cited-source transcription digit; post-supersede stale pill rows swept in `ios-app-architecture.md` + `patterns-mobile.md` + `ios-app-review-checklist.md`; (b) the SnackbarInset row RATIFIED against the landed code with one wording fix (pill-era "bar-composite" → stock-bar+FAB chrome); the 2026-07-04 `format: date` row addition ratified — both yaml configs verified) | — | architect, docs | no | — | D+F review flags |
+> | **T-0392** | **Mobile profile stats placeholder (iOS+Android)** — the customer Profile hero stats card ships hardcoded `3 bookings / 320 Kč saved / "Feb 2025" member-since / "Regular" tier` to EVERY user on BOTH platforms (`ProfileTab.kt:97-99`, iOS `ProfileStats.androidParity`); `"Feb 2025"` is also an untranslated English literal. No per-user source exists on the mobile contract (no `createdOn`, no savings, no orders VM on the tab). Wire bookings from the orders count, hide saved/member-since until a backend field lands (locale-format the date), reconcile `tier` to real membership — cross-platform to avoid drift | M | **done ✅ 2026-07-19** (backend `MyProfileDto.memberSince/totalBookings/totalSavings/savingsCurrencyCode` + Android wiring landed PR #121/#122; Android tier-literal + iOS half closed 2026-07-19 — v1 contract: all three stats SHOWN with real values, saved formatted in the savings currency (symbol-less when null), member-since app-locale "MMM yyyy" with "—" when null, tier from real membership state; iOS gaps fixed were the null-currency CZK default and the system-locale (not in-app-language) month formatting; +8 iOS tests, customer suite green on iPhone 17 + the iOS 16 floor, partner builds, lint clean; both platforms converged — the fix-round-5 divergence is resolved) | — | backend, ios, android | no | — | phase/ios-fix2 fix-round-4 S3 review (major) |
+> | **T-0393** | **Mobile home notifications inbox (iOS+Android)** — owner remark #7: the Home bell is a dead tap. Confirmed faithful parity — Android `onNotificationClick = {}` (`HomeTab.kt:228`) is a no-op too and no notifications-feed exists on either platform (only prefs toggles). Build a cross-platform inbox (or an interim "no notifications" empty-state sheet), decision-first; needs a mobile notifications-list endpoint if a real feed. **iOS interim empty-state sheet SHIPPED in fix-round 5** (owner re-flagged); **Android interim SHIPPED** `a3633bce` (hardening-cluster-2, merged: bell opens `NotificationsInboxSheet` — mascot empty state, 3 strings ×5). Remaining: the REAL cross-platform feed (analyst decision + mobile notifications-list endpoint) | L | **DONE ✅ UMBRELLA COMPLETE 2026-07-19 — customer scope + partner UIs (T-0430 ✓) + partner events (T-0431 ✓ assignment_cancelled + invoice_paid); nothing remains.** Prior state: (backend on `feature/i18n-cluster-3`, adversarial review held on every attack class: `UserNotification` entity (jsonb args, partial unread index); ONE producer seam over the 18 former `SendPushNotificationMessage` sites — feed row + outbox row ride the caller's transaction, grep-tripwire pinned; dual-host NotificationController (paged/unread-count/mark-read/watermarked-mark-all, audience-keyset hard-enriched server-side, `auth`-rate-limited POSTs); 90d+cap-500 retention + GDPR erasure; 31 new tests, suite 1973/1973; review's 3 minor items closed (D3/FD-AC7 blessed to `general.not_found` — zero new i18n keys; A2 internal handler). **MANUAL_STEP (owner): fold `UserNotifications` into the Initial migration + re-dump both mobile specs/clients.** Customer inbox UIs SHIPPED `555a9807` (both apps in parallel to the same FD-ACs: badge with keyset-gated push +1 + wipe-set membership, watermarked mark-all pinned fetched-not-now, one-source template rendering — Android extracted the FCM map into shared NotificationTemplates, iOS resolves the ADR-0025 push loc-keys; unknown-key drop-parity; deep-link taps with optimistic mark-read; 19+32 new tests, all gates green). Remaining: T-0430 partner UIs, T-0431 partner events (real feed: one `UserNotification` row per targeted send written by the PRODUCER in the domain transaction (not the fire-and-forget consumer); NotificationController on both mobile hosts (Paged/UnreadCount/MarkRead/MarkAllRead, audience-keyset scoped); watermarked mark-all; 90d+cap-500 retention; loc-key+args storage (ADR-0025 model). v1 customer = 11 dispatched events, partner = order.new_available only. 12 FD-AC Given/When/Then + living doc + Mermaid. **Owner Q-FEED-01** promos in customer feed (default: excluded v1), **Q-FEED-02** more partner events (default: follow-up ticket) | — | analyst, backend, ios, android | no | — | phase/ios-fix2 fix-round-4 owner remark #7 |
+> | **T-0394** | **Backend: order-DETAIL snapshot carries no translations** — order-list localizes client-side (its DTOs carry `translations`), but `ServiceDetails`/`PackageDetails` on the order-detail projection do not, so order-detail service/package names render frozen-English in cs/sk/uk/ru. Add `translations` (or `serviceId` to re-localize, or server-side localize) to the order snapshot + wire both clients | M | **resolved-as-shipped ✅** (verified 2026-07-17: the backend half landed in `Phase/ios fix2 #107` — `ServiceDetails`/`PackageDetails` gained `Translations`, `MapToDetails` populates from the Service/Package JSON `Translations` column which loads with the entity (no Include needed — checked all 4 detail read paths: `GetByIdAsync`, `GetByIdIgnoringTenantAsync`, `LookupOrder`, `LookupOrderBatch`); the committed customer-mobile spec (`248e3c47`) already declares the fields; iOS consumes them on the detail cards via `OrdersFormat.localizedCatalogName/Description` (fix-round-5) and Android via T-0395's detail-card wiring. Nothing left to build) | — | backend, db, ios, android | no | — | phase/ios-fix2 fix-round-5 C-review (CASE b) |
+> | **T-0395** | **Android: catalog-name localization parity** — iOS fix-round-5 localized Home "Popular packages" (`HomeTab.kt:915` raw `pkg.name`) + order-list summary (`OrdersTab.kt:521` raw `it.name`); Android has the `localizedName(translations,name)` helper (booking) but doesn't apply it on these two surfaces → English in non-English Android builds. Two call-site swaps | S | **done ✅** on `feature/hardening-cluster-2` (unblocked by the owner's customer-mobile spec regen `248e3c47` — `OrderListItem.selectedServices/Packages` now ref the translation-carrying `ServiceListItem`/`PackageListItem` schemas. Added `translations` to the 4 hand-written order wire DTOs (`OrderService/PackageSummaryDto` + `OrderService/PackageDetailsDto`); localized ALL THREE surfaces iOS localizes: order-list `servicesSummary`, Home `recentBookingTitle` (also swapped its hardcoded English "+ N more" for the existing 5-locale `orders_services_more`), and the order-DETAIL Services/Packages cards incl. descriptions via `localizedDescription` (iOS `localizedCatalogName/Description` parity). Wire-shape proven — same backend schemas the catalog surfaces already consume; orders cache is in-memory only, no serialization compat risk. Local gradle compile + customer-app unit tests green) | — | android | no | — | phase/ios-fix2 fix-round-5 A+C reviews |
+> | **T-0396** | **iOS token: `errorContainer` dark = blue** — `CleansiaColors.errorContainer` resolves to `Palette.sky800` (blue) in dark mode, so any destructive "container" surface is blue-on-dark. Fix-round-5 delete/dialog routed around it with `.error.opacity`; the token itself is a latent trap. Make the dark value an error-family red (architect owns palette) | S | **DONE ✅ 2026-07-19** — dark `errorContainer` finalized to the Material3 baseline **#8C1D18** (what Android actually renders — neither Android theme overrides the slot, matching the `tertiaryContainer` baseline-mirror precedent; supersedes the `8c8f96e8` interim #7F1D1D) + `onErrorContainer` dark corrected to #F9DEDC; all 4 call sites destructive, none relied on blue; both schemes build; baseline-mirror rule harvested to `patterns-mobile.md`. Follow-up candidates noted in ticket: fix-round-5 `.error.opacity` workarounds can now adopt the token; light-mode value slightly off-baseline | — | ios | no | — | phase/ios-fix2 fix-round-5 D-review |
+> | **T-0397** | **Architect: ratify fix-round-6 patterns harvest** — two new `patterns-mobile.md` "one way" rows (full-bleed header-to-top via GeometryReader + `.ignoresSafeArea(.container,.top)` + threaded top-inset; self-sizing short-entry-sheet detent) need Architect sign-off per the reviewer charter. Header idiom verified on-sim in the fix-round-6 fold; keep the mascot factual correction | S | **done ✅ 2026-07-19** (architect ruling: BOTH rows RATIFIED — header idiom verified at 3 call sites (ProfileTab + SubscribePlusScreen + partner ProfileHubContent) and extended with the fix-round-8 `.animation(nil, value: topInset)` settle pin; sheet detent verified at `CodeSheetShell` + second adopter `PackageDetailsSheet`; AC2 = not mechanically checkable (modifier attachment is structural, T-0417 E9 precedent); mascot correction confirmed against `AnimatedMascotView` + playback tests and kept) | — | architect, ios, docs | no | — | phase/ios-fix2 fix-round-6 B/C/D reviews |
+> | **T-0398** | **iOS customer device registration not wired (+ APNs-gated)** — the customer app constructs NONE of the Core Push stack (partner has registrar+observer+client+startPush+delegate; customer has zero), so the install never POSTs Device/Register and the owner's Devices page is genuinely empty (page code verified correct; regression test pins empty≠error). Even wired, registration is APNs-token-gated = paid Apple account (T-0342/T-0344). Wire the stack like partner + decide tokenless registration so Devices works pre-APNs | M | **done ✅ (code; on-device verification APNs-gated)** on `feature/i18n-cluster-3` (ticket premise was stale — the customer wiring landed with T-0403; the REAL gap was shared Core: `PushSessionObserver` only fired on a non-nil APNs token, so NEITHER app ever POSTed Device/Register pre-provisioning. Owner picked fork (a) token-less registration: backend `RegisterDevice.DeviceToken` now optional, blank normalizes to "" (canonical token-less form — column stays non-null, NO migration; the dispatcher already skips empty tokens), a token-less re-register never wipes a stored real token, a real token always upgrades the row (3 new handler tests); Core observer maps a live session with nil token → register "" (one line + 5 test-first Core tests + forwarder-chain updates), so the Devices page fills at session start on BOTH apps pre-APNs. Partner + customer BUILD SUCCEEDED; Core 328/328; customer suite green minus the 2 known local Stripe-key artifacts; backend suite 1930/1930; patterns-mobile.md harvested. **MANUAL_STEP (non-blocking):** next mobile-spec regen picks up the now-nullable deviceToken — clients work pre-regen via "". AC3 (real push delivery) stays gated on owner T-0342) | T-0342 | ios | no | owner: paid Apple Program + APNs key | phase/ios-fix2 fix-round-8 slice E |
+> | **T-0405** | **Security: revoked device keeps API access up to 24 h** — revocation IS wired (RevokeDevice deactivates + `RevokeByDeviceAsync` kills the device's refresh tokens, tested), but `AccessTokenExpMinutes=1440` on every host and NO per-request device/session check → the outstanding JWT works until natural expiry. Architect picks: shorten TTL to 15–60 min (recommended, config-only) / per-request check / push-driven force-logout (needs T-0404 infra). Owner-observed: revoked iPhone from sim, iPhone stayed in | S | **done ✅** `c198a275` (**ADR-0024 accepted**: 30 min on the two mobile hosts ONLY, config-only; web sessions carry no DeviceId → separate follow-up T-0409; pins: raw-file config test red-proven at 1440 + real-host 3s-TTL expiry 401 + revoked-A/sibling-B Postgres integration; reviewer APPROVE on own runs) | — | architect, backend | yes | — | owner report + revoke-session audit (wf_88de1ca0) |
+> | **T-0406** | **Android partner: no forced-signout collector** — AuthAuthenticator emits ForcedSignOut on refresh failure and customer's NavHost routes to SignIn, but the partner app never collects `SessionManager.events` → token-dead partner UI stays on screen until cold start. Mirror the customer collector (iOS is correct in both apps) | S | **done ✅** `26d2d6df` (SessionViewModel + nav-root collector; review hardening made ALL sign-out navigations graph-clearing, closing a mid-logout [Login,Login] back-stack race; 54/54; reviewer APPROVE after 1 fix round) | — | android | no | — | revoke-session audit byproduct |
+> | **T-0404** | **iOS order-status pushes never surface** — after registration works, iOS still shows nothing: the backend sends **data-only** FCM (`FcmPushDispatcher.cs:64` — no `Notification`/`Apns`/`content-available`) and lets clients render locally (Android does; **iOS has NO receive-side** — no data-message handler, NSE, or `UIBackgroundModes`), and data-only FCM doesn't wake/display on iOS. Architect picks per-platform APNs alert (recommended) vs iOS NSE + ADR on the no-PII trade-off; then backend apns block + iOS tap→deep-link. Found by the push-chain adversarial audit | M | **code done ✅** `e956529e`+`d937de0f` (**ADR-0025 accepted**: loc-key APNs alert via pure FcmMessageFactory, 12-event map, {orderNumber,count} allowlist, Android byte-pinned, 36 red-proven tests; both iOS catalogs +24 keys ×5 locales + customer tap trio incl. membership/loyalty Android-parity routes; reviewers APPROVE ×2). **REMAINING: Mac lane** (xcodegen + both test schemes + device matrix — a Firebase-console test push is a FALSE positive; real events only) + **D5 release-train gate**: the Functions deploy activating the map must NOT precede the first catalog-carrying public build of both apps; delivery still needs T-0403 (FCM tokens) + the Firebase credential (push runbook §0) | T-0403 | architect, backend, ios | yes | — | phase/ios-fix3 push-chain audit (wf_a1afcd54) |
+> | **T-0403** | **iOS Firebase Messaging / FCM-token integration** — the backend dispatches via FCM (needs FCM registration tokens) but the iOS apps have NO Firebase SDK and register a RAW APNs token FCM can't target, so iOS push cannot deliver even with the APNs key uploaded. Add FirebaseCore+Messaging (both apps) + GoogleService-Info.plist, register the FCM token instead of raw APNs, and fold the T-0398 customer push wiring. Depends on T-0342 (owner APNs key). **HIGH** | M | **done ✅** (`bb30cd1f` integration + `22bb7beb` the didFinishLaunching call-site fix that actually made it register — deferred-register was silently dropped by iOS; owner-confirmed on a real device. Delivery still needs the Functions Firebase credential + T-0404 display) | T-0342 | ios | no | owner plists dropped ✅ | phase/ios-fix3 push-enablement investigation |
+> | **T-0402** | **Partner order-detail DTO carries no translations** — the T-0394 analogue for the PARTNER app: `ServiceDetails`/`PackageDetails` lack `translations`, so partner order-detail service/package names render frozen-English in cs/sk/uk/ru. Add `translations` + mapper + spec re-dump + partner client regen + wire `ScopeCard`; historical orders degrade to snapshot English | M | **done ✅ 2026-07-19** (backend `bcd375d5` — premise superseded, the wire already emitted translations; owner regen delivered the field-carrying partner clients; **Android half** `ce067ca5` + checklist fix — `resolveTranslatedName`/`localizedScopeName` seam wired at `ScopeCard` + `CleaningChecklist`, 7 resolution/fallback tests, partner 122/25 green; **iOS half** closed same-day — `ScopeTranslation` seam + `localizedName(for:)` extensions, `translations` threaded through the `OrderDetail` domain mapping, `ScopeCard` + `CleaningChecklistView` rows resolve app-language → `translations[lang].name` → snapshot-English (checklist tick keys stay raw-name so ticks survive a language switch); 8 tests mirroring the 7 Android cases, partner suite 463/465 on iPhone 17 + the iOS 16 floor (2 known TCC locals), both schemes build, swiftformat/swiftlint clean) | — | backend, ios, android | no | partner spec re-dump + client regen ✅ (owner) | phase/ios-fix3 partner localization round |
+> | **T-0401** | **Backend: overlap check ignores status → false time_conflicts** — `HasOverlappingOrderAsync` (OrderRepository.cs:216) counts ALL assigned orders in the window regardless of status, so stale/blocked/past orders reject takes with `order.time_conflict` (hit empirically by the round-9 gate on dev). Count only real future/active work (status-set decision + tests) | S | **done ✅** `a415a3d2` (rule: non-terminal assigned orders block, Completed/Cancelled free the slot; persisted CurrentStatus with FAIL-CLOSED null-fallback — excluding NULL would double-book; 11 red-proven tests; catalog carve-out architect-ratified; NOTE: real enum has OnTheWay=3, root CLAUDE.md lifecycle corrected) | — | backend, db | no | — | phase/ios-fix3 round-9 gate finding |
+> | **T-0400** | **Deployed web cookie auth needs same-site custom domains** — SameSite=Strict cookies cannot cross the Azure default hostnames (all PSL-separated), so deployed-dev web auth is impossible by design; owner chose the shipped local devremote proxy for dev (no SWA Standard spend). This ticket = the enabler for ANY deployed web URL: cleansia.cz subdomains per env (bicep customDomains + certs + DNS) then same-site cookies just work; prod appsettings already assume this shape | M | **PARKED (owner 2026-07-19 — domains not bought; possible rebrand; explicitly not a concern now)** — enabler stays authored + verified dormant (`customDomains = {}` default, commented in both bicepparams); un-park by filling the param | — | architect, backend, frontend | yes | owner: DNS + Google OAuth origins | phase/web-fix1 root cause + owner decision |
+> | **T-0399** | **Android partner: null birthDate vs required DateOnly** — `PersonalSectionViewModel.kt:115` sends `birthDate.takeIf { isNotBlank() }` (null when blank) against the backend's REQUIRED `DateOnly` (`UpdatePersonalInfo.cs:38-42`) → the same opaque `validation.invalid_date` the owner hit on iOS, for any partner without a stored birth date. Android has the field UI but no required check; add the inline required error before save (mirror the iOS fix + firstName/lastName checks) | S | **done ✅** `caef1854` (inline required error before save mirroring the shipped iOS fix; null no longer reaches the wire; key in all 5 locales; 69/69) | — | android | no | — | phase/ios-fix2 iOS partner birth-date fix |
+> | **T-0407** | **Security: password change revokes NO sessions** — `ChangePassword.cs` rotates the hash but leaves every refresh token + outstanding JWT alive; device revoke is currently the account holder's only kill switch. Revoke all (or all-other) refresh tokens on password change + tests | S | **done ✅** `7a0daabf` (change→revoke all-OTHER sparing the caller via cookie; reset→revoke ALL; atomic with the hash; 1855 unit +2 Postgres proofs; reviewer APPROVE). **owner manual_step: nswag-regen (admin client — ChangeOwnPassword.Command gained CurrentRefreshToken, additive)** | — | backend | yes | — | ADR-0024 panel challenge (D4.6) |
+> | **T-0408** | **Mobile clients conflate transport failure/429 with refresh rejection** — Android `AuthAuthenticator.kt:75-87` catch(Throwable)→sign-out; iOS `Auth.swift:221-239` nil on network.unreachable→forced sign-out. With 30-min TTL (ADR-0024) refresh events ×48/day: a synchronized wake of ~10 co-located devices can trip the anonymous 10/min/IP auth bucket and force-sign-out the overflow. Classify retryable (timeout/5xx/429) vs terminal (401/invalid_grant); URGENCY TRIGGER: forced-signout complaints or the D8 counter spiking post-TTL-rollout | M | **done ✅** `3e2d4447` (one cross-platform rule: terminal=401/403/parseable-reject, retryable=transport/5xx/429/unknown fail-open; conflation now uncompilable; android core 54 + partner 69 + customer 221; iOS Mac-deferred; reviewers APPROVE ×2 → hardening folded to T-0415) | — | android, ios | yes | — | ADR-0024 panel challenge C3 |
+> | **T-0409** | **Web/admin access-token TTL follow-up** — web hosts stay at 1440 min (structurally unrevocable by device — no web client sends X-Device-Id). ADR-0024 ruling: the ADMIN host is the priority, separable case (SPA, short TTL viable today); customer-SSR needs its rotating-cookie refresh path verified first; interacts with T-0400 custom domains | M | **done ✅ (code); prod cut-over gated on T-0400** on `feature/i18n-cluster-3` (architect panel: Web.Admin TTL 1440→**15 min** — on web the TTL IS the whole revocation bound (no directory reaches cookie sessions); session UX untouched (access-cookie Expires pinned to refresh expiry). Panel found a LIVE prod defect en route: the admin 401→refresh→replay carried the PRE-refresh `X-CSRF-Token` with the post-refresh cookie → 403 `csrf.header_mismatch` at the TTL boundary today, ×96 under 15 min — fixed the interceptor to restamp CSRF on both replay branches (3 jest pins). Config: 2 appsettings lines + the pin-test move; ADR-0030 supersedes-in-part ADR-0024 for the admin host. **Owner/T-0400 gate:** `environment.prod.ts` admin `authApiBaseUrl` points at the PARTNER API host — the prod flip is inert until that pairing is fixed. Backend 1942/1942, admin jest green) | — | architect, backend | yes | — | ADR-0024 amendment A3 |
+> | **T-0410** | **Token-minting time hygiene** — `TokenService.cs:74` and `RefreshToken.cs:125` mint from raw `DateTime.UtcNow` (duplicated); migrate to `TimeProvider` so expiry boundaries become testable without real waits | S | **DONE ✅ (row was stale — landed via PR #124/#125)** — re-verified 2026-07-19: TokenService whole clock + refresh-path access-token mint ride injected `TimeProvider`, StubTimeProvider test pins it. Residual: `RefreshTokenService.Issue:34` refresh-ROW expiry still raw UtcNow → filed **T-0432** | — | backend | no | — | ADR-0024 panel C5 |
+> | **T-0411** | **Android partner: UserProfileStore survives forced sign-out** — the `SessionScopedCache` multibinding wipes only PushTokenRepository + NotificationFeedCache (`NotificationsModule.kt:74-79`); authenticator-driven sign-out leaves the prior user's profile (incl. `employeeId`, reused at `AuthRepository.kt:258`) on device — cross-user local-state bleed on shared devices. Add UserProfileStore to the multibinding | S | **done ✅** `caef1854` (UserProfileStore + customer UserRepository join the session-wipe set; redundant explicit clear removed; 69/69 + 221/221; reviewer APPROVE — the class is NOT fully closed, stragglers → T-0416) | — | android | yes | — | T-0406 review carry-over |
+> | **T-0412** | **promo.new_sitewide display on iOS** — deliberately OUT of the ADR-0025 loc-key map (no fixed template exists; Android renders server-authored title/body from the wire). Needs a literal ApsAlert pass-through + product decisions (apns-priority, interruption-level, Promo opt-in default). iOS customers get no promo pushes until then | S | **done ✅** on `feature/i18n-cluster-3` (event-scoped literal `aps.alert` branch for `promo.new_sitewide` ONLY — the challenger killed the generic any-unmapped-event fallback; blank title/body → no alert (Android drop-parity); apns-priority 5 + interruption-level passive + no sound (Android IMPORTANCE_LOW promo-channel mirror, App-Review-safe marketing posture). Promo opt-in was ALREADY server-side default-off (nothing built). iOS resolver already returns nil for promo (Home landing) and was already test-pinned. 4 new factory tests incl. the whole-catalog tripwire + a 4096-byte Cyrillic budget pin; ADR-0025 Amendment A1 records the supersede-in-part) | T-0403 | architect, backend, ios | no | — | ADR-0025 panel CH-1 |
+> | **T-0413** | **ResolveDispute refund push lacks orderNumber** — the alert body renders with an empty arg (tolerated by design). `DisputeRepository.GetForUpdateAsync` has no `.Include(d => d.Order)`, so the producer can't read `DisplayOrderNumber` without a repo/query change | S | **done ✅** `c654a392` (read-only Order Include, caller-audited; DisplayOrderNumber resolved after the refund succeeds, degrades to empty on missing nav; 1847→; reviewer APPROVE, red reproduced at clean HEAD) | — | backend, db | no | — | T-0404 backend lane skip note |
+> | **T-0414** | **Immediate device revocation** — a deleted device kept API access until token expiry (≤30 min, ADR-0024). Owner: revoke IMMEDIATELY | M | **done ✅** `4645c510` (**ADR-0026 accepted** — challenger caught + fixed the re-registration blocker: poll keys on DeactivatedOn alone. device_id claim [login header / refresh persisted-record]; per-host polled RevokedDeviceDirectory ≤30s; OnTokenValidated 401→existing forced-signout chain; un-killable refresher, fail-open+TTL-bounded, config-gated; no migration; web byte-untouched; 1873 unit + 7/7 host enforcement; reviewer APPROVE, iat/A1 both verified; owner chose ≤30s over per-request) | — | architect, backend | yes | — | owner directive 2026-07-15 |
+> | **T-0415** | **iOS refresh classification hardening** (T-0408 review folds) — (a) iOS business-key match reads `ApiError.code` only; add a `?? problem.type`/message-field fallback + a fixture with the real wire shape so a non-401 rejection still classifies terminal (parity with Android's body substring match); (b) align the patterns-mobile.md Android paragraph to also state the locally-expired-refresh-token terminal arm; (c) `Auth.swift:323` can persist `refreshToken:""` → treat empty-stored-refresh as locally-expired-terminal in `performRefresh` | S | **resolved-as-shipped ✅** (verified 2026-07-17: all 3 parts landed with the T-0408 fix rounds — (a) `decodeError` falls back `firstErrorKey ?? errorCode ?? type` and `RefreshCallResult.classify` also substring-matches `message`, pinned by `testAuthRejectionStatusesAreTerminal`/`testRefreshTokenBusinessRejectionsAreTerminal`/`testRejectionKeyBorneOnMessageBodyIsTerminal`; (b) patterns-mobile.md §refresh documents the locally-dead-before-any-call arm incl. the empty-token case and both platforms' matching mechanisms; (c) `SessionRefresher.performRefresh` short-circuits `refreshToken.isEmpty` as terminal, pinned by `testEmptyStoredRefreshTokenSignsOutWithoutCallingServer`) | — | ios | yes | — | T-0408 iOS review F1/F3/Q1 |
+> | **T-0416** | **Session-wipe class not fully closed** (T-0411 review sweep) — per-user `@Singleton` state still outside the SessionScopedCache set: partner `DashboardRepository` (MEDIUM — earnings/orders bleed to next user on a shared device, 60s window no-ops the refresh), customer `NotificationPreferencesRepository` (LOW-MED — replace-all PUT of prior user's payload), partner `OrderChecklistRepository` + the watermark-only `Staleness` holders (LOW), and `deleteAccount()`'s hand-maintained 5-of-9 clear list. Add each to the wipe set; iOS `SessionScopedCacheRegistry` membership audit for the profile stores | M | **done ✅ (Android)** `eb14a63e` (all 5 stragglers session-scoped incl. the DashboardRepository earnings/orders bleed + 60s-window no-op; customer deleteAccount iterates the injected Set; DataStore names preserved; 77/223; reviewer verified the set is EXHAUSTIVE). iOS SessionScopedCacheRegistry parity audit → follow-up | — | android, ios | yes | — | T-0411 review completeness sweep |
+> | **T-0417** | **Architect: codify the session-wipe rule** — "per-user `@Singleton` state MUST implement SessionScopedCache" has recurred 4+ times (PushToken, NotificationFeed, UserProfileStore, customer UserRepository + T-0416 stragglers). A `check-consistency.mjs` rule needs an allowlist for legit device-level/public caches (state the exclusion reason). Also file the standing catalog ratify-harvest for the two patterns-mobile.md refresh-classification rows (T-0379/T-0397 precedent) | S | **done ✅** `19ec8d7b` (security law **S11** + wipe-triggers + reason-annotated allowlist E9; warn-only E9 check in check-consistency.mjs — a hard gate needs Kotlin/Swift type resolution the scanner lacks, roster-assertion test specced as follow-up; S2 harvest for ADR-0026/0027; class re-confirmed closed) | — | architect | no | — | T-0411 + T-0408 review Gate-4d |
+> | **T-0418** | **Immediate access-token cutoff on password reset (ADR-0026 X1)** — reset kills refresh tokens (T-0407) but the outstanding access token still rides ≤30 min after an account-takeover recovery. Extend: drop the reset'd user's devices into the RevokedDeviceDirectory (user-keyed entries), or a userId-scoped iat cutoff. Needs its own short ADR (pre-analyzed in ADR-0026 CH-13) | M | **done ✅** `f7c89d5e` (**ADR-0027 accepted**: sibling RevokedUserDirectory keyed on userId, reuses T-0407 password_reset rows — zero migration; keys on sub so no claim-transition; RESET only, same-second self-heals; GroupBy+MAX proven on real Postgres; RED-proven by reviewer; web untouched; 1899/75/108) | T-0414 | architect, backend | yes | — | ADR-0026 X1 |
+> | **T-0419** | **RefreshToken rotation↔revoke TOCTOU (ADR-0026 X2/D9.7)** — a rotation racing a revoke's read→commit window escapes the chain and then passes the directory (its iat postdates the revoke), invisible in the Devices list. Milliseconds-wide, `auth`-bucket-capped, defeats today's revocation identically. Fix: `xmin` concurrency token on RefreshToken (no migration) and/or set-based conditional revocation | S | **done ✅** `ffc0d19a` (xmin optimistic-concurrency token on RefreshToken, no migration; all 4 revoke paths retry-on-conflict RE-READ so a rotation-inserted child is caught — airtight kill switch, stronger than last-writer-wins; reviewer caught+fixed a blocker where xmin 500-d the revoke paths; red-proven maxAttempts=1). **owner: EF model-snapshot regen (schema-empty)**. Non-blocking notes → T-0421 | — | backend | yes | — | ADR-0026 X2/D9.7 |
+> | **T-0420** | **Headerless mobile-login observability (ADR-0026 X3) + consistency debt** — (a) WARN-log mobile-host logins missing `X-Device-Id` to evidence-gate a future required-header login validator (claim-less tokens currently pass the directory check by design); (b) consolidate the two mobile hosts' near-identical `AddJwt`/`OnTokenValidated` bodies (ADR-0026 CH-10 deferral, flagged by 2 reviewers); (c) baseline the pre-existing B10 test-file consistency hits (Dispute/Fiscal seam tests) into `consistency-violations.md` or carve out test files | S | **parts a+b done ✅** (a: `ffc0d19a` headerless mobile-login WARN, audience-only no PII; b: `672546eb` hardening-cluster-2, merged — both mobile hosts' AddJwt now delegate to the shared `AddCleansiaMobileJwt(configuration, audience)` in Cleansia.Config, byte-identical behavior, wiring-pin tests follow the indirection + forbid web hosts calling it). Part c verified MOOT 2026-07-17: `check-consistency.mjs` reports 0 B10 hits on the current tree (the Dispute/Fiscal seam-test hits no longer fire), so there is nothing to baseline — ticket complete | — | architect, backend | yes | — | ADR-0026 X3 + review ledger notes |
+> | **T-0421** | **Revocation exhaustion + theft-chain edges (T-0419 review non-blocking)** — (a) after 5 consecutive xmin collisions on the same rows the revoke retry helper propagates the exception → 500 + rollback = technically fail-OPEN for a kill switch; add a final bulk ExecuteUpdate revoke that ignores concurrency for strict fail-closed semantics; (b) CommitStagedChainRevokeWithRetryAsync re-revokes only ex.Entries (not a full re-read like the other paths), so a legit rotation of a DIFFERENT token racing a theft-chain revoke can leave its new child alive — pre-existing (pre-xmin it also survived), bounded by the ≤30s directory/TTL; make it re-read for parity | S | **done ✅** on `feature/hardening-cluster-2` ((a) exhaustion now runs `FailClosedBulkRevokeAsync`: detach stale tracked revoke marks → set-based revoke via new `BulkRevokeIgnoringConcurrencyAsync(RefreshTokenRevocationScope)` re-expressing each path's exact predicate in SQL (hash / user+device with null-guard / user+spared-hash / user-wide chain) → THEN commit sibling staged changes (deliberately non-atomic in the safe direction: "tokens dead + caller retries", never "tokens alive"); (b) chain revoke now reloads conflicted rows then RE-RUNS the full `RevokeChainAsync` walk so a race-inserted child can't escape — red-proven. **Adversarial security review found F1**: a rotation whose flush statement-OVERLAPS the bulk UPDATE (parent locked, child snapshot-invisible) beat the naive two-sided race argument → repaired with a revoke-then-VERIFY loop (fresh snapshot per pass, exit only when a verification read proves zero live rows in scope, cap 8 then throw — residual failure mode is availability, never a silently-live session); F2 hardened (null deviceId now a loud ArgumentException tripwire instead of tracked-matches-nothing/bulk-widens-to-user inversion); F3 documented (bulk stamps expired-but-unrevoked rows; security-neutral); F4 filed as T-0428. Also repaired the 2 `UserRevocationWiringPinTests` broken by T-0420's AddCleansiaMobileJwt consolidation — pin follows the indirection + forbids web hosts calling it. 6 new fail-closed tests; suite 1923/1923) | — | backend | yes | — | T-0419 review notes 4/theft-chain |
+> | **T-0422** | **Self-revoke should sign out the CURRENT device instantly** — deleting YOUR OWN device from the Devices page leaves a brief zombie session until ADR-0026's ≤30s directory catches it; the client already knows it revoked its own deviceId, so it can sign out at 0s. Client-side complement to T-0414: on a successful revoke where revoked deviceId == local deviceId, run local sign-out + route to login; badge "This device" + confirm copy. Both platforms, both apps | S | **done ✅** on `feature/hardening-cluster-2` (all 4 surfaces, adversarial review round 2 clean. Archaeology: the iOS VMs ALREADY shipped the D7b sign-out path but all four UIs hid the revoke control on the isCurrent row, making it unreachable — the fix is the AFFORDANCE (sign-out icon + distinct `devices_self_revoke_*` dialog copy, 4 keys ×5 locales ×4 catalogs) + the missing Android plumbing, LOCAL-ONLY per AC1/AC2 after the reviewer caught round 1 calling the full `logout()` (redundant uncapped round trips against an already-dead session — offline a bounded zombie-window rerun): iOS Views → `authClient.signOutLocal()`; Android customer → new `AuthRepository.signOutLocal()` (wipe + ForcedSignOut → nav-root routes to SignIn); Android partner → existing `signOutLocal()` + emit on the shared `SessionManager` riding the never-unmounting root observer (no per-screen wiring, kills the back-press drop race). Sign-out ONLY on the Success branch — a failed self-revoke never wipes locally (pinned by tests, mutation-verified). Ledger candidates from review: partner clients discard `RevokeDeviceResponse.success` (unreachable today); iOS shows the success snackbar before self-sign-out where Android suppresses it. Both Android apps compile + unit tests green, both iOS apps BUILD SUCCEEDED, swiftformat/swiftlint clean; full log in the ticket file) | — | ios, android | no | — | owner self-revoke report; companion logout-hang fix (this branch) |
+> | **T-0423** | **iOS: cold-launch order-notification tap is dropped** — tapping an order push from a TERMINATED app lands on Home, not the order. Payload/resolver/nav all verified correct; the break is the AppDelegate→SwiftUI bridge: `onTap` is wired in the SwiftUI `.task` which runs AFTER iOS calls `didReceive` on cold launch → the resolved destination fires into a nil closure, silently dropped (both apps; PartnerAppDelegate has the same race). Fix: buffer the destination in the delegate, flush on `onTap` didSet | S | **DONE ✅ (closed 2026-07-19 — was already shipped)** — the exact specced fix landed in `4ab99d80` PR #120: Core `PushTapBuffer` (buffer-before-onTap, flush-on-didSet, latest-wins) in BOTH AppDelegates, 4 Core tests pin AC3; the ticket row was stale, not the fix | — | ios | no | — | owner remark + remarks-sweep (wf_064232d3) |
+> | **T-0424** | **iOS: Booking-Confirmed shows only the code** — Android shows arrival/address/total + a 4-step progress tracker; iOS shows just the confirmation pill. iOS-only, no backend change: add BookingSuccessViewModel (getById(orderId)), an OrderSummaryCard + progress timeline reusing the existing OrdersFormat/price/LiveProgressLogic helpers, wired in BookingSheetView; degrade to the code on fetch failure; 5-locale copy | M | **done ✅ 2026-07-19** on `feature/payroll-invoice-paid-notify` (premise PARTIALLY stale — `8c8f96e8` had landed a minimal VM + icon rows + a 5-dot LiveProgress row; this pass closed the parity gap: sealed Loading/Loaded/Error VM + Android's orderRepository.refresh() warm + server-code-wins pill; labeled Arrival/Address/Total rows; the REAL 4-step Done/Active/Pending vertical timeline ported from computeTimelineSteps over status+assignedEmployees with the "just placed" fallback — the 5-dot reuse was the wrong semantic, Android parity won over the ticket's LiveProgressLogic hint; spinner + "what's next" note; 13 keys ×5. 16 new VM/timeline tests; both schemes build; 578 customer tests / 2 known Stripe-key locals on iPhone 17 AND the 16.4 floor; lint clean at CI pins) | — | ios | no | — | owner remark + remarks-sweep |
+> | **T-0425** | **iOS SwiftUI jank cluster** — 4 complaints, 3 root causes: (BIG) 6 mascots are 1024² PNGs decoded on the MAIN thread every render (`Mascot.swift:11-13`) → Plus-header drag + "animations slow everything"; Home pop-in (skeleton gate too narrow + late independent catalog/recurring loads + bare `if` sections shove layout); floating-label input drag + cursor delay (`CleansiaTextField.swift:56` animates on `floating` not `focused`). Fix ROI-ordered: downsample/cache mascots → parallel Home prefetch + crossfades → focus-driven float | L | **DONE ✅ 2026-07-19** — causes 1+3 (mascot 1024²→600² assets, focus-keyed float) had already landed `dfd81d99` PR #119; this pass closed cause 2: shell prefetch widened to recurring+catalog in the parallel burst, 6-input firstPaintReady gate (FirstPaintSources), every conditional Home section crossfades on a SectionVisibility fingerprint, and loadCatalog made SINGLE-FLIGHT (fixed a real double-fetch race the new prefetch would have hit — red-then-green test). Both schemes build; 563 tests (2 known Stripe-key locals); 16.4 floor smoke run (Gate 8.5); lint clean at CI pins; idioms harvested to patterns-mobile.md. AC4 device Instruments measurement remains owner-hardware | — | ios | no | — | owner perf remarks + remarks-sweep |
+> | **T-0426** | **iOS Bolt/Wolt-style launch screen + app icon** — current OS launch screen is color-only (UIImageName scaling bug workaround); the branded splash exists only as an in-app SwiftUI view. Replace with a Launch Screen storyboard (brand full-bleed + centered logo/wordmark) + swap the 1024² app-icon masters + align both SplashGateViews (upgrade the partner spinner). Small dev work, GATED on owner artwork (icon + wordmark + brand hex) | S | **proposed** (medium) | — | ios | no | owner: icon + wordmark + brand-hex artwork | owner remark + remarks-sweep |
+> | **T-0427** | **iOS Live Activity for an in-progress clean** — Wolt/Uber-style lock-screen + Dynamic Island live status. Real feature: a Widget Extension + ActivityKit (16.1) client, AND a SEPARATE APNs Live-Activity push channel (distinct from the T-0403/04 FCM alert path — likely direct-APNs, FCM can't target activity tokens) driven by order-status transitions + a per-order activity-token registration. ADR-gated | L | **IN PROGRESS — owner RATIFIED ADR-0029 2026-07-19.** Defaults: OnTheWay=start / InProgress=update / terminal=end (+30m linger, immediate Cancelled dismiss), customer-only v1. Backend LA-1..LA-4 in flight (ships inert, APNS:Enabled=false); iOS LA-5 widget gated on owner project.yml target + spec regen | T-0403, T-0404 | architect, ios, backend | no | — | owner remark + remarks-sweep |
+> | **T-0428** | **Logout of a rotated token should chain-revoke (T-0421 review F4, pre-existing)** — `RevokeAsync` silently succeeds when the target is already revoked (deliberate anti-probing + idempotent-logout design), so a thief who rotates stolen token H just before the victim's logout lands keeps child H′ alive while the victim believes they logged out — on both the tracked path AND the bulk `{TokenHash}` scope (which faithfully mirrors it). Consider: when logout hits a token with `RevokedReason == "rotated"`, treat it as the same theft signal the refresh path uses and chain-revoke (`RevokeChainAsync` = all user tokens). Weigh against the anti-probing property (an unauthenticated logout probe learning a token WAS valid via side effects); password change/reset/device-revoke remain the recovery paths meanwhile | S | **done ✅** on `feature/i18n-cluster-3` (security panel narrowed the INDEX row's all-user-tokens leaning: logout of a `rotated` token walks its SUCCESSOR chain only (`ReplacedByTokenId` to the live tip, reason `logout_chain`), ownership-gated in the handler (caller's sub == token's UserId; else today's silent no-op), byte-identical responses (no oracle), userId+count LogWarning; full user-wide revoke survives only as the xmin-exhaustion fail-closed fallback. Panel proved BOTH extremes wrong on code evidence — 'do nothing' leaves an indefinite invisible persistence gap no directory bounds; full-chain converts a proven benign client race into an all-device sign-out. 7 TC-LOGOUT-CHAIN tests + 90 existing revocation/logout tests green; no migration, no client change) | — | backend, security | yes | — | T-0421 adversarial review F4 |
+> | **T-0429** | **iOS partner — D2 single-NavigationStack/ShellRoute topology on the STOCK bar** — the surviving half of retired T-0376 (owner approved the re-scope 2026-07-17): the ADR-0022 supersede killed the pill/pager but only retired the D2 topology by association; the partner still carries the crash-fix interim per-tab NavigationPath stacks. Converge on ONE shell-level stack + merged ShellRoute UNDER the stock TabView; deep links + the cold-launch buffered-tap path must survive; architect signs the ADR status-log entry (AC4) | M | **closed — premise void, no refactor (architect AC4 ratification)** (the D2 single-shell-`NavigationStack` was structurally required by the retired `.page` PAGER, not the pill; the supersede restored the stock non-swiping `TabView`, under which per-tab `NavigationStack`s are the IDIOMATIC and already-ratified end state (§7.7 D1 / §7.9 / §7.12). Merging would (a) import the customer's accidental complexity — the swipe-back `InteractivePopGestureEnabler` shim + depth-based snackbar insets that per-tab stacks don't need — with none of the customer's justifying drivers (the iOS-16 sibling-typed-path crash is already fixed on partner by D4; there's no cross-tab route de-dup on partner), and (b) is STRUCTURALLY ILL-DEFINED — `ProfileRoute` is shared with `RegistrationLock`, a root audience state OUTSIDE the shell a shell-level `ShellRoute` cannot own. No code, no device test. Panel flagged one non-defect loose end (the `deepLinkOrderId` two-hop @State→@Binding push handoff is fragile-by-construction) → conditional S-fix folded into the T-0423 partner device pass, needing no topology swap) | — | ios, architect | no | — | re-scope of T-0376, owner-approved |
+> | **T-0430** | **Partner apps — notifications feed UI** — the T-0393 v1 backend ships the partner-host endpoint so rows accumulate from day one; this lands the partner UIs: Android partner migrates its Room feed to the server inbox (delete Room after parity), partner iOS gains the inbox (mirror the customer feed UI). Badge + watermarked mark-all per FD-AC5/6 | M | **done ✅** on `feature/i18n-cluster-3` (both partner apps to the same FD-ACs as the shipped customer feed `555a9807`. Android: migrated OFF the local Room feed onto the server inbox — DELETED NotificationDao/Database/Record + NotificationFeedCache + its test, removed the 3 Room gradle deps (grep-confirmed nothing else used them), extracted the shared NotificationTemplates object (one source for push + feed), dashboard bell badge upgraded dot→count. iOS: FIRST inbox for partner iOS (surfaced on the Dashboard greeting bar — partner has no Home tab), NotificationFeedClient + badge + inbox sheet + VM mirroring customer. Both: keyset = order.new_available only, watermark = newest FETCHED row, keyset-gated push +1, session-wipe membership, deep-link taps + optimistic mark-read. Android 117/0; iOS 441/443 (2 = the local ~/Desktop TCC catalog-read artifact, verified passing on CI — JSON valid, no %N\$s, 6 keys ×5). Also fixed a T-0340 regression: `OrderDetailMappingTests` still built the pre-`id` order shape and took the partner test target down — 2-line forward-fix) | T-0393 | android, ios | no | — | T-0393 panel rebuttal condition |
+> | **T-0431** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0431-*.md` (`status: done`); this row was never updated.** **Partner-targeted notification events** — feed v1 ships partner = order.new_available only (the only dispatch that exists). Add accepted-job cancellation (highest impact — a cleaner learns nothing today when their accepted job is cancelled), assignment confirmation, invoice-ready: catalog key + producer + loc-keys ×5 + feed rows via the shared notify seam; analyst keyset/copy first | M | **DONE ✅ v1 — both partner events shipped.** (1) `order.assignment_cancelled` on `feature/i18n-cluster-3` (a cleaner is now told when a job they ACCEPTED is cancelled — shared notifier in CancelOrder + AdminCancelOrder gated on assigned crew, non-mutable, distinct partner key; loc-keys ×5 all 4 catalogs client-first, render+deep-link both apps). (2) **`payroll.invoice_paid`** ("You've been paid") on `feature/payroll-invoice-paid-notify` — owner resolved the forks (OPEN-3 = PAID → renamed from invoice_ready, OPEN-2 = push+feed): fires from MarkInvoicePaid on the invoice's Employee.UserId via the producer seam in the command UoW, non-mutable, argless (invoiceId in data only), deep-link → invoice detail (Earnings-summary fallback) now that the target exists both platforms; loc-keys ×5 all 4 catalogs. 14-event pins, backend 1983/1983, Android 122+244, iOS partner green; 5-dimension adversarial review (backend+push-pipeline clean, 1 low test-parity gap fixed, 1 documented nit). | T-0393 | analyst, backend, android, ios | no | — | T-0393 Q-FEED-02 default |
+>
+> **Full-platform review tickets (filed 2026-07-06) — `proposed`, from AUDIT-2026-07-06-full-platform-review (20-agent review, crit/high adversarially verified, 0 refuted); NOT dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0380** | **Web MONEY-UX (CONFIRMED high)** — order wizard double-counts the express surcharge: the server quote already folds +20% into TotalPrice, `order-pricing.facade.ts:114` re-adds it client-side → customers see ~+44% at checkout (the charge itself is correct — server-authoritative). Render the server's `ExpressSurchargeAmount`; delete the client gross-up; pin with a facade test | S | **done ✅** `ac7aa79d` (server-verbatim money lines; EXPRESS_SURCHARGE_RATE deleted; red-proven pin; 116/116 lib tests; reviewer APPROVE) | — | frontend | no | — | AUDIT-2026-07-06 #1 |
+> | **T-0381** | **Web enum-as-int contract pair (CONFIRMED high ×2)** — admin fiscal-failures page CRASHES (`FiscalErrorKind` string enum vs int wire, `fiscal-failures-list.component.ts:118` `.toLowerCase()` throws → admins blind to fiscal registration failures) and membership-plans list throws/edit form blanks (`BillingInterval`, `membership-plan-list.models.ts:44`). Apply `[SwaggerEnumAsInt]` + regen admin client; ALSO extend the T-0370 `MobileSpecEnumGuardTests` to the three WEB specs (this exact class is live because the guard pins mobile only) + refresh the stale customer `MembershipStatus` | S | **done ✅** `4fb7aa80` (enum guard now sweeps ALL 5 hosts by reflection, red-proven vs the two offenders; admin libs int-wire-correct pre+post regen; 141/141 + 16/16 + 7/7) — **regen landed + verified ✅** `90480666` (2026-07-07: BillingInterval {1,2}, FiscalErrorKind {0..4}, MembershipStatus {1..4} all numeric; fiscal-failures 7/7 + membership-plan-management 16/16 re-run green against the regenerated client) | — | backend, frontend | no | ~~owner: admin+customer NSwag regen~~ **done** | AUDIT-2026-07-06 #2-3 |
+> | **T-0382** | **Backend AUTH (medium)** — `RegisterEmployee.cs:82-90` leaves an existing unconfirmed Customer's `Profile=Customer`; partner login then refuses the account FOREVER (`PartnerLogin.cs:57` profile gate). `User.UpgradeToEmployee()` exists with zero callers — call it on the existing-user branch + pin with a test | S | **done ✅** `77958e9c` (UpgradeToEmployee wired on the reuse branch, red-proven; admin no-op pinned; CONFIRMED-customer widening = open product question; 1738/1738) | — | backend | **yes** | — | AUDIT-2026-07-06 #4 |
+> | **T-0383** | **S4/S6 leak cluster (security, medium)** — (a) `SendEmailHandler.cs:41,50` logs the RAW queue payload at Warning: email + LIVE confirmation/reset code into App Insights (account-takeover material for log readers) — log EmailType + missing-field names only; (b) `RequestLoggingMiddleware.cs:78,179,195` logs guest order-lookup emails + every caller's JWT email at Information — add /order/lookup to sensitive paths, drop `{UserEmail}`; (c) `OrderMappers.cs:159-165` sends customers the cleaner's FULL name + personal phone via `AssignedEmployeeDto` — mirror the first-name-only rule GetOrderPhotos already enforces; (d) `CreatePaymentIntent.cs` StripeCustomerId at Information | M | **done ✅** `206b448e` (all four leak points closed across ALL 5 hosts’ middleware; masking tests 4/4; DTO shape unchanged — no regen; 1738/1738) | — | backend | **yes** | — | AUDIT-2026-07-06 #5-6,9 |
+> | **T-0384** | **ISO/service-area rollout completion (CONFIRMED/PARTIAL ×3 + fail-closed class)** — finish what the Android customer fix started, ONE canonical normalizer per platform Core: (a) Android partner `AddressSectionViewModel.kt:201` still on the alpha-3 prefix hack (saved addresses render CountryNotServiced; SK/UA/PL saves blocked); (b) iOS customer `CountryResolver.swift:17` compares alpha-2 to alpha-3 — never matches; (c) iOS partner `AddressSectionViewModel.swift:122` same prefix heuristic; (d) iOS partner AddressSection FAILS CLOSED on fetch failure (the UNKNOWN≠empty class Android fixed in bc56d4d7) + hard `[cz,sk]` searchBias filter on geocode results; (e) pinning tests on ALL platforms (both Android service-area fixes shipped testless) | M | **done ✅** `013d62ff` (Android 83/83 incl. red-proven pins + blank-ISO latent fix; iOS IsoCountryCodes 249/249 vs JDK table + 41/41 seed pins, tri-state + bias-not-filter — Swift DEFERRED-TO-MAC; residuals: per-app bias-provider wiring; iOS city-level indicator needs a partner serviced-cities endpoint) | — | android, ios | no | — | AUDIT-2026-07-06 #7-9 |
+> | **T-0385** | **iOS partner L10n printf garbage (CONFIRMED high)** — `invoice_card_paid_on`/`generated_on` carry Android-style `%1$s` in ALL 5 locales (`L10n+Earnings.swift:134` renders literal `%1$s`); the T-0373 sweep fixed only the customer catalog and shipped no guard. Transpose to `%1$@` + add a `$s`-scan test over both xcstrings catalogs | S | **done ✅** `6abe725a` (%1$@ ×5 locales; catalog-scan guard test added; 0 printf-$s residue repo-wide; Swift test run DEFERRED-TO-MAC) | — | ios | no | — | AUDIT-2026-07-06 #11 |
+> | **T-0386** | **Android device hygiene (security, medium)** — (a) partner release APK allows cleartext HTTP to ANY host (`usesCleartextTraffic="true"` in src/main manifest; customer app does it right) → flip false + debug-only overlay; (b) partner notification feed (Room) SURVIVES sign-out — next account on the device sees the prior account's order/dispute history + unread badge (`NotificationDao.kt:9` no delete; store not session-scoped); (c) partner `allowBackup=true` backs up DataStore PII; customer backup exclusion rules name nonexistent files; (d) Bearer in debug logcat / full URLs at Log.w | M | **done ✅** `74885bb7` (cleartext off aapt2-verified + debug-only netsec config; Room feed wiped on sign-out via the session seam; backup rules point at REAL files both apps; Authorization redacted; SAS-URL log debug-gated — customer AuthModule sibling → T-0389) | — | android | **yes** | — | AUDIT-2026-07-06 #7-8 |
+> | **T-0387** | **Backend perf: persist Order.CurrentStatus (CONFIRMED high, L)** — no persisted status forces per-row latest-OrderStatusHistory correlated subqueries: partner dashboard available-orders count scans the WHOLE Orders table per load (`OrderSpecification.cs:111`, no date bound), the 288×/day fiscal sweep seq-scans (`OrderRepository.cs:256` OR-predicate defeats the index), dashboards issue ~25 sequential round trips. Denormalize `CurrentStatus` (T-0341's Sequence work is the natural base) + index (Status, CleaningDateTime) + batch the dashboard stats; fold the smaller wins (StripePaymentIntentId index, CustomerPhone scan, GetAverageRating in-memory avg, order-list projections) | L | **done ✅ (code) — OWNER MIGRATION PENDING** `de6dd281` (persisted CurrentStatus denormalized at the single Order.AddOrderStatus seam, history authoritative + NULL fallback; hot reads migrated: OrderSpecification counts/lists + fiscal sweep restructured to index-served Cash/Paid UNION; 4 indexes; dashboard ~25→~13 round trips, DTO byte-unchanged; seed backfills in-tx; 35 equivalence/regression pins, suite 1759/1759; reviewer APPROVE). **OWNER MANUAL_STEP:** (1) `dotnet ef migrations add AddOrderCurrentStatusAndPerfIndexes --project src/Cleansia.Infra.Database --startup-project src/Cleansia.Web`; (2) in Up() after the column+index ops add `migrationBuilder.Sql(@"UPDATE ""Orders"" o SET ""CurrentStatus"" = h.""Status"" FROM (SELECT DISTINCT ON (""OrderId"") ""OrderId"", ""Status"" FROM ""OrderStatusHistory"" ORDER BY ""OrderId"", ""CreatedOn"" DESC, ""Sequence"" DESC) h WHERE h.""OrderId"" = o.""Id"";")`; (3) re-run that same idempotent UPDATE via psql ONCE after deploy (catches rows written in the migrate→deploy window); (4) apply the migration BEFORE running insert_seed_data.sql (its new backfill references CurrentStatus); (5) then run IntegrationTests (Docker) — blocked by PendingModelChangesWarning until the migration exists, by design. **Follow-ups (mustTell → T-0390):** cold-path latest-history subqueries (NewJobsDigestService, StartOrder validator, GetMyServingCleaners, GdprExportService), the deferred order-list full-graph projection refactor (GetCustomerOrders/GetPagedOrders), and the diverged Infra.Scripts startup-seed copy re-sync. | db, backend | no | **owner: EF migration (5 steps in-row)** | AUDIT-2026-07-06 #12 |
+> | **T-0388** | **CI delta hygiene (infra, medium)** — backend-ci push-to-master runs the full Testcontainers suite on EVERY push with no paths filter or concurrency group and gates nothing (advisory beside the auto-deploy); ios-ci paths filters omit the shared OpenAPI spec dir its codegen consumes; openapi-generator installed unpinned via brew while now wire-load-bearing; android-ci missed the push-gate fix. One pass over the four workflow files | S | **done ✅** `327b79aa` (backend-ci paths+concurrency; ios-ci spec-dir paths + openapi-generator pinned 7.10.0 sha256-verified matching the Android toml; android-ci aligned; deploy gating stays an owner decision) | — | backend | no | — | AUDIT-2026-07-06 infra-delta |
+> | **T-0389** | **Android customer log redaction** — customer-app `core/auth/AuthModule.kt:69-72` carries the same unredacted debug `HttpLoggingInterceptor` the partner app just fixed (Bearer tokens in debug logcat). Add `redactHeader("Authorization")` (+ mirror any release-path URL trimming) | S | **done ✅** `b796799c` (one-line parity port; the single interceptor feeds both auth/no-auth clients; reviewer sibling-sweep found no other URL/header leak site in the customer app; 216/216) | — | android | **yes** | — | T-0386 review fold |
+> | **T-0390** | **Order status/query cleanup (T-0387 follow-ups)** — (a) migrate the remaining COLD-path latest-OrderStatusHistory derived-rule subqueries onto CurrentStatus: NewJobsDigestService.cs:112, StartOrder.cs:110 validator, GetMyServingCleaners.cs:28, GdprExportService.cs:46 (rule-equivalent, low-traffic — not blocking); (b) the deferred order-list projection refactor — GetCustomerOrders/GetPagedOrders materialize full entity graphs (7-8 split queries/page) instead of projecting to the list DTO; (c) re-sync the diverged startup-seed copy in Infra.Scripts (CleansiaStartupBase.cs:263, pre-existing broken); (d) IntegrationFailureMetricsTests flake (file hygiene). Dispatch AFTER the T-0387 migration lands | M | **done ✅** `3b97c29e` (all four parts: cold paths on CurrentStatus with null-fallback + Sequence-tiebreak equivalence pins; GetCustomerOrders/GetPagedOrders project to OrderListRow, DTO byte-identical, pay math funneled into the one existing implementation; Infra.Scripts seed re-synced + drift-guard test; meter flake fixed at the root via a serialized IntegrationFailureMeter collection + shared ConcurrentQueue capture; suite 1768/1768 ×3 runs; reviewer APPROVE after 1 fix round) | T-0387 | db, backend | no | — | T-0387 mustTell + review |
+> | **T-0391** | **Review-fold hygiene (2026-07-07 batch)** — (a) `:core` `NetworkErrorInterceptor.kt:35,39,45` logs full request URLs without debug-gating (pre-existing, both apps); (b) codify a check-consistency rule: every `HttpLoggingInterceptor` provider must call `redactHeader("Authorization")` (2nd occurrence of the class); (c) baseline or canonicalize the 13 pre-existing B10 direct Dispute state-writes in tests (not in consistency-violations.md); (d) strip ticket-ID doc comments from IntegrationFailureClassifier/Registration/RetryBehavior tests; (e) confirm-email `setEmail()` should validate the query param before hiding the email field (customer + partner twins); (f) partner web resendCode is a bare subscribe — add success/error snackbars once the partner app gains the auth.confirm_email.* keys (mirror customer handlers); (g) Nx lib naming/tagging canonicalization: partner feature libs are untagged and named bare (`confirm-email`) vs the customer `cleansia-customer-*` + scoped tags; (h) Android partner ConfirmEmailViewModel flags success on ANY ApiResult.Success but the repo can return Success(UnverifiedEmail(hasToken=false)) on a 200-without-token — match on LoginOutcome.Authenticated like the customer app (pre-existing, contained) | S | **done ✅ (all parts)** on `feature/i18n-cluster-3` (a: the shared NetworkErrorInterceptor logs `url.encodedPath` only — query params could carry emails/codes into release logs; b: NEW blocking scanner rule **E10** — every `HttpLoggingInterceptor` must `redactHeader("Authorization")`, red-proven, documented in consistency.md, both existing providers comply; c: the 13 B10 test-file hits baselined in consistency-violations.md as sanctioned guard-testing writes (default roots exclude tests); d: ticket-id doc comments stripped from the 3 Integration test files; h: partner ConfirmEmailViewModel now matches on `LoginOutcome.Authenticated` — a 200-without-token no longer flags success and strands a sessionless user; core+partner compile, both apps' tests green. Web parts in the follow-up commit — e: BOTH confirm-email facades validate the caller-controlled email query param before hiding the field (a mangled link no longer locks the user behind an invisible invalid control); f: partner resendCode mirrors the customer's success/error snackbar handlers + cooldown reset, `auth.confirm_email.resend_success/_error` harvested into the partner i18n ×5; g: the 6 bare-named untagged partner feature libs renamed `cleansia-partner-*` + `scope:partner/type:feature` tags (CI uses `nx affected`, no bare-name references existed). Both confirm-email jest suites green with 4 new pins; lint clean; scanner baseline unchanged | — | android, frontend, reviewer | no | — | T-0363/T-0389/T-0390 review folds |
+> (Standing notes: **T-0367 ABSORBED into T-0370** — row updated below; T-0366 stays separate/unchanged;
+> the T-0314-recorded "customer brand asset + Google-G fidelity" note is delivered by **T-0372**.
+> **T-0314 record ADDENDUM:** *feature-complete ≠ device-verified* — this phase paid the
+> device-verification debt; **T-0374** makes the floor leg permanent once its `quality-gates.md`
+> codification lands. **No-decision note:** T-0369/T-0370/T-0371/T-0372/T-0373 composed accepted ADRs
+> (0011/0014/0018/0019/0020/0021), panel skipped; the ONE decision — the T-0368 shell-pattern change — ran
+> the architect ruling and is now **ADR-0022, accepted**, folded into the living docs per AC8.)
+> Do NOT commit — the owner commits the phase edits (the PM never commits; backlog edits left unstaged).
+> Full phase status-log: **`status/sprint-12.md`** (STATUS-LOG 2026-07-03 — PHASE CLOSE).
+
+> ## 🧱 HARDENING-1 — post-iOS-port cleanup/hardening (sprint-12): **8 follow-ups DONE · PR drafted** (2026-06-30)
+>
+> **HARDENING-1 IS DONE — `phase/hardening-1` (5 commits, pushed; off master `3e7ce52` = the merged Phase-8 PR
+> #100). The PR is drafted; the owner commits the backlog edits + opens it (the PM does not commit).** This is the
+> first post-iOS-port phase — it does NOT add features; it lands the deferred follow-ups the iOS port surfaced
+> (the `proposed`/`draft`/`ready` tail) across backend / iOS / Android, plus a CI/tooling pin. **8 tickets →
+> `done`** in 5 commits:
+> - **`239323b` — CI/tooling hardening (NO ticket):** pinned SwiftFormat to **0.60.1** (the GitHub release
+>   binary) to stop the recurring local-vs-CI version drift — CI's brew-latest kept adding default rules
+>   (`docComments`, `redundantEmptyView`) that failed CI on locally-clean code. Lint clean at 0.60.1. Recorded
+>   here as a CI hardening; no ticket needed.
+> - **`d834e92` — T-0349** (iOS harvest) — hoist the address-picker VM into `CleansiaCore` (public, framework-pure,
+>   `searchBias=["cz","sk"]` default; both apps repoint + delete copies; Views stay app-local). Core 218 /
+>   Partner 366 / Customer 362 green; reviewer **APPROVE**; **no new ADR** (home change via the ADR-0013 escape
+>   clause); harvest in `patterns-mobile.md` + `ios-app-architecture.md`.
+> - **`64f6525` — the backend trio: T-0346 + T-0348 + T-0350.** **T-0346** gate `GoogleAuth` on `email_verified`
+>   (parity with `AppleAuth`, fail-closed). **T-0348** PaymentIntent refund path for mobile card orders + extend
+>   the refundable-surface gate to the two CANCEL paths so a cancelled paid mobile/recurring card order refunds
+>   (a money-correctness fix; `Order.HasRefundableChargeSurface`; **NO schema change** — `StripePaymentIntentId`
+>   already existed). **T-0350** rate-limit `NotificationPreferences` GetMine+Update on **both** hosts + a
+>   coverage-guard for the lazy-create GET. **Security review CLEAN**; correctness/test findings folded
+>   (cancel-refund coverage + stale-test retarget + GetMine guard); the architect "both-surfaces" finding
+>   **refuted/dropped** (one charge surface per card order, by T-0347). Build 0 errors; **`Cleansia.Tests` 1685**.
+> - **`e4e00b0` — T-0341** (backend) — deterministic order status-history "current status": new
+>   `OrderStatusTrack.Sequence` (`int`) + canonical `Order.CurrentStatus`
+>   (`OrderByDescending(CreatedOn).ThenByDescending(Sequence)`) routed through **all** in-memory + SQL call sites.
+>   **Pre-prod Initial migration REGENERATED** (owner-authorized class; `Sequence` folded, timestamp preserved).
+>   De-flake **20/20**; **IntegrationTests 97/97 + HostTests 60/60**.
+> - **`1d99333` — the android parity-hygiene commit: T-0351 + T-0333 + T-0337.** **T-0351** wire the dead
+>   customer `SecurityScreen` "Update password" stub to the existing reset-code flow. **T-0333** i18n the partner
+>   Register/Forgot validation strings. **T-0337** migrate the 7 partner profile VMs to sealed
+>   `Loading`/`Error`/`Loaded` + `ActionState` + i18n + a `BankSectionViewModelTest`. **Verified by a LOCAL
+>   gradle build** (JDK21/SDK35 — partner+customer compile + the new test pass) since `android-ci` runs only on
+>   PR; reviewer **APPROVE**.
+>
+> **Tickets reconciled to `done` (with verification + sha):** **T-0333, T-0337, T-0341, T-0346, T-0348, T-0349,
+> T-0350, T-0351** (these were the Phase-8 / earlier follow-ups). **OWNER / manual note:** the **T-0341 pre-prod
+> Initial-migration regeneration is ALREADY DONE in-branch** (owner-authorized regen class; `Sequence` folded
+> into `20260623112626_Initial`) — there is **no pending migration step** for this phase. No NSwag regen needed
+> (no DTO/endpoint surface changed). **Two NEW non-blocking follow-ups filed `proposed` (the android review
+> surfaced them):** **T-0352** (cross-app password min-length policy drift — customer ≥12 vs partner ≥8; pick one
+> canonical policy, ideally aligned with the backend `BaseAuthValidator`; low) · **T-0353** (the partner profile
+> section-form `Error` state renders an empty form with no retry affordance — the screens consume the sealed
+> state via `is Loading` + `as? Loaded` not an exhaustive `when`; behavior-preserved from before T-0337, a small
+> UX enhancement; low). **NOT committed by the PM — the owner commits these backlog edits with the phase PR.**
+> Full per-item verification in each ticket's status log; the phase status-log is appended to **`status/sprint-12.md`**.
+>
+> --- (iOS Wave-10 banner below — kept for traceability) ---
+>
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (merged #95)** · **PHASE 4 — T-0307 + T-0308 DONE (merged #96)** · **PHASE 5 — T-0309 + T-0311 DONE (merged #97) → the iOS PARTNER APP is FEATURE-COMPLETE** · **PHASE 6 — T-0343 (backend AppleAuth) + T-0312 (customer shell + auth) DONE (merged) → the iOS CUSTOMER AUTH FOUNDATION** · 🍎 **PHASE 7 — T-0313 (customer booking wizard + Stripe PaymentSheet) + T-0347 (backend money-safety) + T-0332 (dual-use Bearer carve-out) DONE (merged) → HARD AREA #1 CLEARED** · 🎉 **PHASE 8 — T-0314 (customer TAIL, the LAST customer feature, L→split into 6 slices A–F) DONE (PR drafted) → the iOS PORT [partner + customer] is FEATURE-COMPLETE** (2026-06-30)
+>
+> **iOS PHASE 8 IS DONE — `phase/ios-phase8` (7 commits, pushed; off master `8d90104`); the Phase-8 PR is drafted.
+> This phase delivers T-0314 — the customer TAIL, the LAST customer feature ticket and the BROADEST in the port
+> (`L → split` into 6 slices A–F) — and so COMPLETES the customer app AND the entire iOS port** (partner: Phases
+> 0–5; customer: Phases 6–8). 🎉 **The FEATURE port of both Kotlin/Compose apps to Swift/SwiftUI is DONE.** It fills
+> the four placeholder tabs T-0312 scaffolded plus every remaining customer surface that is neither the booking
+> wizard (T-0313) nor auth (T-0312). The verified workflow ran: the **§7.17 Understand-pass** (parallel Android
+> customer-tail + backend tail-contracts/security + cross-cutting iOS-mechanisms surveys) → architect cluster plan
+> (§7.17, every choice composes an accepted ADR — NO new ADR) → the security design gate **PASS-WITH-REQUIREMENTS**
+> (GDPR-delete verdict **PASS**) → 6 dev slices each with a concurrent reviewer + Gate-SEC on the security-touching
+> C/D/F; **§7.17 is now CONFIRMED-AS-SHIPPED**. **T-0350** (the one LOW backend finding) was filed `proposed`.
+> **T-0314 → `done`** (`phase/ios-phase8`, off master `8d90104`; 6 slices): **A** (`6a587cf`) Home + Orders/
+> OrderDetail (the paged list, the 7-state OrderStatus incl. OnTheWay=3, lifecycle timeline/LiveProgressHero,
+> cancel/review/receipt-via-QuickLook, the 5-min poller) + the T-0313 success→OrderDetail fold; **B** (`035c211`)
+> Rewards/Loyalty/Referrals (tier/progress/perks + paged activity + referral copy/share); **C** (`cae96dc`,
+> **Gate-SEC**) Membership/Plus (the two-phase Stripe **SetupIntent** via the T-0313 `StripePaymentController` seam
+> extended with `PaymentIntentKind` — still the **sole Stripe importer**) + Recurring + the deferred ConfirmRecurring
+> on OrderDetail — reviewer **APPROVE** + security **PASS**; **D** (`c10d819`, **Gate-SEC**) Disputes (list/create/
+> detail + the generated **multipart** evidence upload, EXIF-strip, fail-closed file validation) + the customer's
+> first camera/photo permission strings + `PrivacyInfo` — reviewer **APPROVE** + security **PASS**; **E** (`58d9d35`)
+> Addresses (AddressManager 3-pane + saved-address CRUD on the Core map seam); **F** (`4a15fbf`, **Gate-SEC**)
+> Profile/Settings hub + **GDPR DeleteAccount** (`signOutLocal`-not-`logout`; blocked→stay-signed-in; the SIWA-revoke
+> owner-deferred + the "remove in Settings" note) + Devices (T-0310 D6-8) + NotificationPreferences (optimistic +
+> debounced) + the REAL change-password flow + Language/Appearance/Help — reviewer **APPROVE** (after the Profile-
+> Subscribe-CTA fix) + security **PASS** (GDPR verdict **PASS**). **Security posture (all PASS vs code,
+> `security/ios-customer-auth.md`):** the membership money path (`.completed` UX-only / webhook-authoritative /
+> fail-closed / idempotency-token replay); the dispute multipart upload (own-dispute server-scoped / fail-closed
+> validation / EXIF-strip / no-secret); the GDPR delete (anonymize-not-resurrect / own-account-only / signOutLocal /
+> SIWA-revoke deferred per §7.14 D4 + TN3194). **The Slice-F review caught an iOS-right/Android-stub parity gap** →
+> the NEW follow-up **T-0351** (the Android customer `SecurityScreen` "Update" is a dead no-op — wire it to the
+> existing reset-code flow). **Tests: CleansiaCore 216 + CleansiaCustomer 362** (+ the CleansiaPartner 366
+> non-regression) on the iPhone 17 simulator; swiftformat + swiftlint --strict clean. **OWNER / manual steps (for
+> go-live/App Store — NOT code blockers; the PM never runs these):** the **Stripe publishable key** (`pk_`, now live
+> card AND membership); **T-0344** (Apple SIWA capability); **T-0345** (Google client ids/IMP-1); the
+> **customer-mobile spec + client regen** (the membership `idempotencyToken` is cross-platform only after it — iOS
+> already carries the field); the **camera/photo + customer-brand plist WORDING** sign-off; the **App Store
+> compliance pass** — the `ios-app-review-checklist.md` (ADR-0016) must go green per app: 5.1.1 in-app delete ✓
+> (shipped), SIWA ✓, Stripe-not-IAP framing, the ASC privacy answers + a demo account. **Follow-ups kept proposed
+> (NOT dispatched):** **T-0348** (mobile PaymentIntent refund) · **T-0349** (address-picker→Core harvest) · **T-0350**
+> (NotificationPreferences rate-limit) · **T-0351** (the Android `SecurityScreen` catch-up); + the recorded notes
+> (the customer brand asset to replace the SF-Symbol `AuthHeaderImage` + the Google-"G" pre-submission fidelity check;
+> the `LiveCountryResolver`/country-bias → T-0334; the membership `idempotencyToken` customer-mobile NSwag regen — iOS
+> already carries the field; the dead `CreateOrderResponse.stripeSessionId` DTO cleanup at the next regen, S9
+> hygiene). **Remaining iOS scope after this merges:** the App Store compliance/release pass + the owner provisioning
+> + the deferred follow-ups (T-0334/0337/0338/0340/0348/0349/0350/0351 + the brand assets) — **the FEATURE port is
+> done.** The owner commits these backlog edits + opens the Phase-8 PR (the PM does not commit). **Reconciliation
+> note (the squash-merge caveat):** the prior phases were squash-merged to master (master is now `8d90104`) — verify
+> any prior-phase status by master **TREE** content, not `git merge-base --is-ancestor` (a squash flattens the
+> original commits). Full plan + the §3 ticket table + the §7.17 ruling + the Phase-8 status-log:
+> **`status/sprint-12.md`** (top banner reconciled 2026-06-30).
+>
+> **--- (Phase-7 banner — kept for traceability) ---**
+> **iOS PHASE 7 IS DONE — `phase/ios-phase7` (7 commits, pushed; off master `c47f34a`); merged.
+> This phase delivers ADR-0013's named HARD AREA #1 — the customer booking wizard + Stripe PaymentSheet — the single
+> hardest feature in the port AND the customer PRIMARY flow, plus the T-0347 backend money-safety fix it surfaced.**
+> Commits: `f2113da` (the §7.16 Understand-pass + the T-0332 resolution + T-0347/0348/0349 docs), `afaa920` (T-0347
+> backend), `db4a12f`/`67f12e2`/`c42679d`/`4e30aff`/`8a2b4c7` (T-0313 Slices A–E). The verified workflow ran (parallel
+> Android/backend/Stripe survey → architect ruling §7.16 → security design gate → 5 dev slices each with a concurrent
+> reviewer + Gate-SEC on D+E). **T-0347 (backend money-safety) → `done`** (`afaa920`): **one charge surface per card
+> order** — a per-host `IOrderChannelProvider` so `OrderPaymentDispatcher` suppresses the Stripe Checkout Session for
+> the mobile PaymentSheet channel (the mobile order's single surface is the PaymentIntent). Closes a **pre-existing
+> double-capture defect** — the live **Android** card flow had it too. Host-based discriminator; NO contract change,
+> NO regen, NO EF migration. Reviewer **APPROVE** + security **PASS**. **T-0313 (customer booking wizard + Stripe) →
+> `done`** (5 slices): **A** (`db4a12f`) the 3-step modal anchored sheet (`.sheet`/`.presentationDetents`) + the
+> shared `BookingViewModel` + the Book FAB action; **B** (`67f12e2`) Step 1 Services + the server-authoritative
+> pricing engine (debounced live `Quote` + the `BookingPricing` display port) + the first customer generated-client
+> auth spine (`CustomerCoreSpineRequestBuilderFactory`, the ADR-0019 twin); **C** (`c42679d`) Step 2 When&Where (the
+> Core-map-seam address picker + lead-time time slots) + the Confirm extras/promo/referral FSMs; **D** (`4e30aff`)
+> Step 3 Confirm + the CASH submit + the **T-0332 dual-use Bearer carve-out** (`HeaderAdapter` attaches the Bearer on
+> the 3 booking endpoints **iff a token exists**; guest tokenless; pure-anon never; `CreatePaymentIntent` always
+> authed) + the server-authoritative price echo + the double-submit debounce — the cash success screen is
+> status-accurate ("Booking received", Pending+New, NOT "Confirmed"). Reviewer **APPROVE** + **SECURITY PASS** (no
+> pure-anon Bearer leak; no under-charge; guest path + partner non-regression preserved); **E** (`8a2b4c7`) the CARD
+> branch + Stripe **PaymentSheet** (`StripePaymentSheet` SPM dep, customer target only @25.17.0; the
+> `PaymentSheetPresenting`/`StripePaymentController` seam = the **sole Stripe importer**; publishable-key fail-closed).
+> Reviewer **APPROVE** + **SECURITY PASS** (`.completed` is UX-only — the webhook is the sole paid authority; no
+> secret leak; fail-closed; single charge surface). **Resolves T-0332** (`draft` → `done`/RESOLVED — the dual-use
+> carve-out shipped in Slice D). **New seams:** the customer ADR-0019 spine; the
+> `PaymentSheetPresenting`/`StripePaymentController` Stripe seam; the `BookingPricing` display port. **Gate-DP
+> divergences:** the Android anchored bottom-sheet → native `.sheet`/`.presentationDetents`; the official Stripe
+> PaymentSheet; the address picker on the Core map seam. **Security posture (all PASS vs code,
+> `security/ios-customer-auth.md`):** price-tampering NO; the dual-use Bearer scoping verified; `.completed`-is-UX-only
+> / webhook-authority; no-secret-leak; fail-closed; single charge surface. **Tests: CleansiaCore 213 + CleansiaCustomer
+> 156** (+ partner 366 non-regression) on iPhone 17; swiftformat + swiftlint --strict clean. The customer generated
+> client is gitignored (CI regenerates). **OWNER / manual steps (the PM never runs these):** the **Stripe publishable
+> key** (`pk_`, the sole LIVE-card provisioning; the code ships fail-closed; the T-0347 fix is landed); the standing
+> owner items carry forward (**T-0344** Apple, **T-0345** Google, the **customer-mobile regen**, the **camera/photo
+> plist wording** ×5). **Follow-ups kept proposed:** **T-0348** (mobile PaymentIntent refund path), **T-0349**
+> (address-picker→Core harvest), + the **T-0314** items (success→OrderDetail nav + the lifecycle timeline/
+> `OrderSummaryCard` when the customer Orders feature lands; the customer brand asset to replace the Phase-6 SF-Symbol
+> `AuthHeaderImage` + the Google "G" brand-fidelity check; saved-address CRUD; the `LiveCountryResolver` fold into the
+> T-0334 `ServiceAreaProvider` seam; a minor backend DTO cleanup — `CreateOrderResponse.stripeSessionId` is a dead
+> legacy field iOS never reads, drop at the next NSwag/spec regen, S9 hygiene). The owner commits these backlog edits +
+> opens the Phase-7 PR (the PM does not commit). Full plan + the §3 ticket table + the §7.16 ruling + the Phase-7
+> status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-29). With T-0313 done, the customer app's
+> primary flow is complete; the remaining Wave-10 scope is the **T-0314** parity tail. **Reconciliation note (the
+> squash-merge caveat):** prior phases were squash-merged to master (master is now `c47f34a`) — verify any prior-phase
+> status by master **TREE** content, not `git merge-base --is-ancestor` (Phase 6's AppleAuth + customer-auth files
+> confirmed present in the master tree this session).
+>
+> **--- (Phase-6 banner — kept for traceability) ---**
+> **iOS PHASE 6 IS DONE — `phase/ios-phase6` (6 commits, pushed; off master `c898e79` = the merged Phase-5 PR #97);
+> the Phase-6 PR is drafted. This phase opens the CUSTOMER app — the FIRST customer feature** (the partner app
+> shipped feature-complete in Phases 0–5). It stands up the customer app's root + shell scaffold + the complete auth
+> front door incl. **Sign in with Apple** + **Google**. Both tickets passed the full workflow (architect
+> Understand-pass → dev slices → reviewer/Gate-DP + security on the touching slices). **T-0343 (backend AppleAuth —
+> Sign in with Apple) → `done`** (`a689d03`): a new `AppleAuth` CQRS + `IAppleTokenVerifier`/`AppleTokenVerifier`
+> (**RS256-PINNED** JWKS via `JsonWebTokenHandler` + `ConfigurationManager`; `aud == Apple:BundleId` native,
+> iss/exp/nonce, fail-closed, no SSRF) + `AppleConfig` + `User.AppleId`/`AuthenticationType.Apple`/`CreateWithApple`
+> + `[AllowAnonymous] POST /api/Auth/AppleAuth` on the Customer Mobile host + `InvalidAppleUserToken` ×5 i18n.
+> **Mirrors GoogleAuth 1:1.** Reviewer **APPROVE**; **SECURITY PASS** (account-takeover **NO** — the RS256-pin + the
+> handler takeover-guard verified vs code). Ships **fail-closed**; LIVE Apple sign-in is gated on **T-0344** + the
+> owner EF migration (`User.AppleId`) + the `customer-mobile-api` regen. **T-0312 (iOS customer shell + auth — 3
+> slices, §7.15) → `done`** (`2cf0f1e`+`6f9c1de`+`2ae5982`): **Slice A** = `CustomerRootView` (flat-enum, COPIES the
+> ADR-0020 pattern, the simpler customer gate — no RegistrationLock) + the 4-tab shell + the inert Book FAB (the
+> FAB-as-overlay Gate-DP swap) + the new `CleansiaCustomerTests` target; ios-ci now `build test`s CleansiaCustomer.
+> **Slice B** = the email auth chain (SignIn/SignUp/EmailVerify/Forgot) + the event-driven `CustomerAuthViewModel`
+> (emits `AuthOutcome`, the router maps) + the **Core spine `RegisterEndpoint` fix** (a construction-time param:
+> customer→`/api/Auth/Register`, partner→`RegisterEmployee`, byte-equivalent). **Security PASS** (no parallel write
+> path; partner non-regression). **Slice C** = social — the official `ASAuthorizationAppleIDButton` + the real
+> multicolor Google "G"; the **`SocialSignInProviding` Core seam** (the Apple nonce flow + GoogleSignIn-iOS, the
+> sole framework consumers); two spine methods `googleAuth`/`appleAuth` (reuse the one empty-token gate + the single
+> Keychain persist; appleauth anon-allow-listed); the GoogleSignIn SPM dep + the `com.apple.developer.applesignin`
+> entitlement + the reversed-client-id placeholder; fail-safe when unconfigured. Reviewer **APPROVE**; **SECURITY
+> PASS** (the iOS↔backend nonce-encoding **ALIGNED** — live SIWA won't silently fail; no parallel write path).
+> **Gate-DP divergences:** the Android pager + floating-pill `CustomBottomBar` → native `TabView` + FAB-overlay; the
+> official Apple button + the recreated Google "G"; the `AuthHeaderImage` SF-Symbol PLACEHOLDER → T-0314 brand
+> asset. **T-0314 follow-ups recorded** (so they aren't lost): (a) ship the customer brand asset to replace the
+> SF-Symbol `AuthHeaderImage` + add the Android SignIn brand wordmark; (b) a brand-fidelity check of the recreated
+> Google "G" vs Google's official asset before App Store submission — both folded into the T-0314 §3 row/notes.
+> **Tests:** **CleansiaCore 202 + CleansiaCustomer 42** (+ the CleansiaPartner 366 non-regression) on the iPhone 17
+> simulator; swiftformat + swiftlint --strict clean. **CI:** ios-ci now `build test`s CleansiaCustomer; backend-ci
+> runs the AppleAuth tests. The build-time security verifications are in `security/ios-customer-auth.md`. **OWNER /
+> manual steps (all gate LIVE social sign-in; the code ships fail-closed):** T-0344 (Apple capability +
+> `Apple:BundleId`), T-0345 (Google client ids + `Google:ClientId` / IMP-1), the **EF migration for `User.AppleId`**,
+> the **customer-mobile-api spec + client regen** (also needed for the T-0314 business endpoints + the live social
+> e2e). **Follow-up:** T-0346 (backend Google `email_verified` hardening, dep T-0343 now ✓). The owner commits these
+> backlog edits + opens the Phase-6 PR (the PM does not commit). **Reconciliation note (the squash-merge caveat):**
+> Phase 5 merged to master as the squash commit `c898e79` (PR #97); `git merge-base --is-ancestor` would misread the
+> original Phase-5 commits — verify any prior-phase status by master **TREE** content, not the ancestor check. Full
+> plan + the §3 ticket table + the §7.14/§7.15 rulings + the Phase-6 status-log: **`status/sprint-12.md`** (top
+> banner reconciled 2026-06-28). The remaining Wave-10 scope is the customer tail (**T-0313** booking+Stripe →
+> **T-0314** the parity tail).
+>
+> **--- (Phase-5 banner — kept for traceability) ---**
+> **iOS PHASE 5 IS DONE — `phase/ios-phase5` (8 commits, pushed); merged via #97. This phase makes the
+> iOS PARTNER APP FEATURE-COMPLETE** — every partner surface is now ported (auth → shell → dashboard → orders+photos
+> → profile/devices/prefs → earnings/invoices → push); the remaining Wave-10 scope is the customer app
+> (T-0312…T-0314). Both Phase-5 tickets passed the full workflow (ios dev → reviewer/Gate-DP + security on the
+> touching slices). **T-0309 (partner earnings + invoices + PeriodPay) → `done`** (`59be42b`+`e4e7793`+`7daa412`):
+> Slice A = the Earnings summary (reuses `getStats`) + PeriodPay (E1/E2 own-id) over the generated
+> `PartnerEmployeePayrollAPI` + a Core `EarningsFormat`; the `.invoices` tab is now the Earnings surface (in-tab
+> `NavigationStack`/`EarningsRoute`). Slice B = the invoices list/detail + the new Core `QuickLookPreview` seam
+> (PDF) + the InvoicesStaleness silent-stale resume; **`RefreshPhase` LIFTED to `CleansiaCore/State`** (shared by
+> Orders+Invoices). Reviewer **APPROVE**; **SECURITY PASS** (§7.11 E1–E4 + TC-IOS-EARNINGS-OWNERSHIP — backend
+> EmployeePayroll already JWT-scoped, **no T-0339-class gap, no backend follow-up**; E4 PDF deleted from cache on
+> dismiss). **T-0311 (partner APNs push registration) → `done`** (`f2a999f`+`8d53b18`+`b4fb556`): Slice A = the
+> `PushRegistrar` Core seam + `PushTokenRegistrar` (`SessionScopedCache`) + the `Device/Register` client. Slice B =
+> the `PushSessionObserver` (register on session×token) + the `@UIApplicationDelegateAdaptor` AppDelegate + the new
+> `Auth.setPreLogout` hook (logout unregisters BEFORE the token wipe) + the `aps-environment` entitlement +
+> tap→OrderDetail. Reviewer **APPROVE**; **SECURITY PASS** (§7.11 rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS; the
+> `setPreLogout` hook safe/non-regressing; no T-0339-class backend gap). **End-to-end push DELIVERY is OWNER-gated
+> → T-0342** (the APNs `.p8` key + Push capability; code ships complete + the entitlement without it). **PLUS a CI
+> hardening (`1eb346f`):** ios-ci now runs the CleansiaPartner test suite (`build test`), not just `build` — the
+> partner VM + security tests (366) now actually gate in CI for the first time. Tests: **CleansiaCore 194 +
+> CleansiaPartner 366** (iPhone 17); swiftformat + swiftlint --strict clean. **T-0339 reconciliation (RESOLVED — it IS in master):**
+> PR #96 was SQUASH-merged (single parent `7055ef4`), so `merge-base --is-ancestor d688d30` reads NO (a squash
+> flattens the original commits) — but master's TREE contains the T-0339 fix:
+> `GetPagedOrdersScopeIntegrationTests.cs` + `RestrictToEmployeeId` + the GetPagedOrders caller-pin are all
+> present in `origin/master` (verified by tree content). NO action needed. Full plan + the §3 ticket
+> table + the Phase-5 status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-28).
+>
+> **--- (Phase-4 banner — kept for traceability) ---**
+> **iOS PHASE 4 IS DONE — `phase/ios-phase4` (9 commits, pushed); merged via #96.** Both tickets
+> passed the full workflow (ios dev → reviewer/Gate-DP + security on the touching slices). **T-0307 (partner order
+> work-loop — OrdersList + OrderDetail + the OnTheWay lifecycle + checklist/notes/issues/timeline; `L → split` into
+> 5 slices; HARD AREA #3) → `done`** (`4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402`): **A** = Core
+> `SnapSheet` (**ADR-0021** non-modal 3-snap) + `fullBleedMap(coordinate:)` (single-pin `MKMapView`); **B** = the
+> 3-pane OrdersList (sealed per-pane `UiState` + `RefreshPhase` + the ported staleness cache + the Code→OrderStatus
+> one-mapper; **security O3** own-id-only); **C** = the OrderDetail shell (SnapSheet over fullBleedMap + content
+> cards); **D** = the lifecycle actions + the shared **pure `OrderPrimaryAction` machine** (**SECURITY PASS
+> O1/O2/O4**, TC-IOS-ORDERS-OWNERSHIP); **E** = checklist (local store) / author-scoped notes+issues / status
+> timeline. Reviewer **APPROVE** on all 5; security **PASS** — the one backend `GetPaged` D2b gap → **T-0339**
+> (iOS proceeded in parallel). **T-0308 (partner photo upload — camera/library → base64-over-JSON; 2 slices) →
+> `done`** (`c216392`+`cf6ea6d`+`a2a2184`): **A** = Core `CameraOrLibraryPicker` (the repo's first
+> `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, **EXPLICIT EXIF strip**, TC-IOS-PHOTOS-EXIF-STRIP);
+> **B** = the `PhotosSection` (before/after rails, capture → upload) + the upload/delete VM + the Complete-unblock +
+> the bootstrapped `PrivacyInfo.xcprivacy` + the NSCamera/NSPhotoLibrary usage strings ×5. Reviewer **APPROVE**;
+> **SECURITY PASS** (P1–P5, TC-IOS-PHOTOS-OWNERSHIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED
+> safe, no backend change). Tests: **CleansiaCore 163 + CleansiaPartner 320** (iPhone 17); swiftformat + swiftlint
+> --strict clean. **REQUIRED backend follow-up T-0339** (GetPagedOrders employeeId over-read — SECURITY, high, gates
+> the GetPaged contract for go-live). **Owner items:** the camera/photo plist WORDING sign-off ×5 (T-0308 shipped en
+> + cs/sk/uk/ru); T-0325 location string (owner, unused by Phase 4). Next runnable = **T-0309** (earnings/invoices,
+> deps T-0304✓) ∥ **T-0311** (APNs push) ∥ the customer batch (T-0312…T-0314). Full plan + the §3 ticket table +
+> the Phase-4 status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-27).
+>
+> **--- (Phase-3 banner — kept for traceability) ---**
+> **iOS PHASE 3 IS DONE — `phase/ios-phase3` (7 commits, pushed); the Phase-3 PR is drafted.** Both tickets
+> passed the full workflow (ios dev → reviewer/Gate-DP, + security on Devices). **T-0306 (iOS map seam + MapKit +
+> partner AddressPicker) → `done`** (`480f5c4`+`03a00f3`+`199916b`): Slice A = the Core `MapProvider`/
+> `GeocodingService` seam + `Coordinate`/`GeocodedAddress` + `CLGeocoderGeocodingService` + the **iOS-16
+> `MapKitMapProvider`** (125 CleansiaCore tests); Slice B = the partner `AddressPickerView`/`VM` (pan + search,
+> full-bleed map + static center-pin, 300/500ms debounce verbatim, NO `UiState`/`ActionState` — reviewer #27,
+> returns `GeocodedAddress`). D2 current-location FAB DEFERRED → **T-0335** (recorded Gate-DP divergence).
+> Reviewer **APPROVE**. **T-0310 (iOS partner Profile + Devices + Preferences) → `done`**
+> (`ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c`, 3 slices): Slice A = the profile hub + 6 section editors + onboarding
+> chain + the now-live RegistrationLock Fix-CTAs (the lock owns its OWN stack, **fail-closed gate #24 byte-unchanged
+> + verified**); Slice B = Devices (list + revoke) — **SECURITY PASS on all binding rules** (D6 single device-id
+> source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend;
+> TC-IOS-DEVICES-SELF-REVOKE green); Slice C = Preferences (language [+ a System/follow-device row] + theme via
+> `.preferredColorScheme`, the **first runtime in-app language switch**). D3 `ServiceAreaRow`→**T-0334**, D5
+> sealed-state (Android E1 NOT replicated)→**T-0337**, Notifications DROPPED→spike **T-0336**. Reviewer **APPROVE**
+> (incl. a re-review of the System-row fix); **CleansiaCore 125 + CleansiaPartner 185** tests pass. **Reviewer Slice-C
+> MINOR → new follow-up T-0338** (CleansiaCore-owned strings ship en-only behind `bundle: .module` + Core
+> `defaultLocalization: en`, so the in-app language switch doesn't reach the Core toasts — localize ×5 + a swappable
+> Core bundle). **Standing latent SECURITY item (NOT a Phase-3 regression):** the multi-tenant asymmetry in
+> `RefreshTokenService.RevokeByDeviceAsync`/`GetActiveByUserIdAsync` the device-revoke kill rides on
+> (`security/auth-sessions.md`) is tracked by **T-0236** (`done` `b8f89202` — the read-side `IgnoreQueryFilters` fix
+> covers it) + carried in `security/ios-devices.md`; dormant in single-tenant prod, **re-verify before onboarding any
+> non-null-`TenantId` user**. Next runnable = **T-0307** (partner order work-loop) ∥ **T-0309** (earnings/invoices).
+> Full plan + the §3 ticket table + the Phase-3 status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-27).
+>
+> **--- (Phase-1/2 banner — kept for traceability) ---**
+> **iOS PHASE 1 IS DONE — the proving vertical (T-0303) is green on `phase/ios-phase1`.** Both owner
+> blockers that held T-0303 are **CLEARED**: the dev mobile API is **live** and the owner ran the
+> **mobile-spec-regen** (post-T-0272 specs committed `9232335`), so the T-0302 first real generation ran
+> (`8d4cfe3`). T-0303 ships in **2 commits** — `8996df9` (Slice A: partner login spine) + `2a57f70`
+> (Slice B: read-only Dashboard) — preceded by `d965c5b` (ADR-0019 + the §7.2 scope record). **The vertical
+> works end-to-end:** partner login (hand-written auth, empty-token/unverified gate, router gates
+> verified→dashboard vs unverified→`verifyEmail` placeholder) → authed read-only Dashboard (greeting +
+> Weekly-earnings / Pay-period / Last-month cards + the 3-state hero) via the generated `dashboardGetStats`
+> through the **ADR-0019 Core-spine-backed `RequestBuilderFactory`**. **Gates green:** reviewer **#13-gen
+> PASS** + **TC-IOS-GEN** green (Bearer + device/time-zone headers despite `requiresAuthentication:false`; a
+> 401 → single-flight refresh + exactly one retry with the rotated token); the required router-gate test
+> (`requiresEmailConfirmation`→`verifyEmail`) present; `swiftformat --lint` + `swiftlint --strict` clean;
+> **CleansiaCore 93 + CleansiaPartner 17** tests pass on the iPhone 17 simulator; **reviewer AND security
+> APPROVE both slices.** Two security forward-notes recorded for the later authed waves (sprint-12 §7.3). The
+> owner commits these backlog edits to the phase branch (the PM does not commit).
+>
+> **--- (Phase-0 foundation banner — kept for traceability) ---**
+> **iOS Phase 0 (the foundation behind T-0296…T-0301 + the T-0302 codegen *wiring*) is implemented,
+> committed, and MAC-VERIFIED this session, and the iOS CI gate (T-0323) is merged.** The foundation was
+> authored earlier on Windows; this session **compile-verified + fixed it on a Mac** (Xcode 26.3, iOS-16
+> simulator): **CleansiaCore builds + all 68 unit tests pass on the simulator; both app schemes
+> (`CleansiaPartner`/`CleansiaCustomer`) build AND launch in the simulator; `swiftlint --strict` +
+> `swiftformat --lint` are both clean.** A launch-crash blocker (`API_BASE_URL` never reaching
+> `Info.plist` → `fatalError`) was **found, fixed, and proven by launching the app** — NOT tracked open
+> (audit `audits/AUDIT-2026-06-26-ios-phase0-foundation.md`). **Merged:** `8220f4c` "ci: add iOS
+> build/test/lint workflow (macOS runner) (#90)" + `6628172` "Fix/ios phase0 verification (#91)"
+> (foundation commit `c1009c6`). Full plan + the §3 ticket table + the §7.1 blocker detail:
+> **`status/sprint-12.md`** (top banner reconciled 2026-06-26).
+>
+> **Done + verified (6):** T-0296 (workspace+package+2 targets), T-0297 (tokens+components), T-0298 (DI
+> root), T-0299 (snackbar/error center), T-0300 (auth/session/header spine — 68 CleansiaCore tests green),
+> T-0301 (header-parity spec doc). **T-0323 done via CI** (`.github/workflows/ios-ci.yml`, **#90** —
+> macOS, path-filtered `src/cleansia_ios/**`, **BLOCKING** `swiftformat --lint` + `swiftlint lint
+> --strict`, then build+test CleansiaCore + both schemes on a simulator). **T-0302 DONE** — the codegen
+> toolchain's **first real generation** ran against the regenerated post-T-0272 spec (`9232335`) on
+> `phase/ios-phase1` (`8d4cfe3`); the earlier WIRING check (159 Swift files from the committed spec,
+> throwaway output removed) proved the pipeline.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0296** | Xcode workspace + `CleansiaCore` SPM package + 2 app targets (iOS-16 floor) | M | **done ✅ (verified)** `c1009c6` | — | ios | no | — |
+> | **T-0297** | Design tokens + `Cleansia*` SwiftUI components (`ObservableObject`/`@Published`) | M | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0298** | DI composition root (`AppContainer` per app) | S | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0299** | Global snackbar bus + error center (`ApiError→String` seam) | S | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0300** | Auth/session/header spine (Keychain, single-flight 401-refresh, header adapter, anon allow-list) | L→split | **done ✅ (verified)** `c1009c6` (68 tests; 2 dormant findings → T-0331/T-0332) | T-0296✓, T-0298✓ | ios | no | — |
+> | **T-0301** | Header-parity spec document (`docs/header-parity-contract.md`) | S | **done ✅ (verified)** `c1009c6` | — | ios, docs | no | — |
+> | **T-0302** | Swift codegen toolchain (openapi-generator swift5+urlsession) | M | **done ✅** wiring `c1009c6` / first real gen `8d4cfe3` (regen `9232335`) | T-0296✓ | ios | no | **mobile-spec-regen (owner) ✓** |
+> | **T-0323** | SwiftLint + SwiftFormat **BLOCKING** iOS CI gate (macOS) | S | **done ✅ (via CI)** `8220f4c` (**#90**) | T-0296✓ | ios | no | — |
+> | **T-0303** | Phase-1 partner login → read-only Dashboard (the proving vertical) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both owner blockers CLEARED; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + Partner 17 pass; reviewer+security APPROVE both slices) | T-0300✓, T-0302✓ | ios | no | rides regen ✓ + dev-API-live ✓ |
+> | **T-0304** | Phase-2 partner shell (`TabView` Dashboard·Orders·Invoices·Profile) + RegistrationLock (fails CLOSED) + SplashGate + ADR-0020 router | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate AND-predicate any-nil→LOCKED + BOTH error paths fail closed — reviewer #24 + TC-IOS-REGLOCK green, security APPROVE; ADR-0020 router #23 reseed `.dashboard`→`.splash` closed a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B native `TabView` Gate-DP APPROVE. CleansiaCore 93 + Partner 61 pass on iPhone 17 sim. §7.4: contact-support INERT, silent-stale cache DEFERRED; Fix CTAs→T-0310, onboarding→T-0305) | T-0303✓ | ios | no | — |
+> | **T-0305** | Phase-2 partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain (+ Core `AppSettingsStore` + `PasswordPolicy`/`PasswordRuleList`) | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / A ConfirmEmail / B Register / C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced backend `ConfirmUserEmail` (CODE-resolved → anon double-skip SAFE), C+D gate-safety SAFE. ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405), no new anon entry, Logout authed, positive-control proves the double-skip non-tautological; `.verifyEmail(email:)` carries the email (no `UserProfileStore`); F1 iOS localizes ×5, Android bug NOT replicated → follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). CleansiaCore 114 + Partner 96 pass on iPhone 17 sim) | T-0303✓, T-0304✓ | ios | no | — |
+> | **T-0306** | **Phase-3** map seam + MapKit default — Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` + `CLGeocoderGeocodingService` + iOS-16 `MapKitMapProvider` + the partner `AddressPickerView`/`VM` (returns `GeocodedAddress`; not wired into AddressSection — that's T-0310) | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A Core seam + iOS-16 MapKit — 125 CleansiaCore tests; Slice B partner AddressPicker pan+search, full-bleed map + static center-pin, 300/500ms debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27). D2 current-location FAB DEFERRED → T-0335 (recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | T-0300✓ | ios | no | — |
+> | **T-0310** | **Phase-3** partner Profile tab (hub + 6 section editors + onboarding chain + the now-live RegistrationLock Fix-CTAs) + **Devices** (Device/Mine list + revoke, SECURITY-ruled D6–D8) + **Preferences** (Language/Theme) over a new `PartnerProfileClient` (ADR-0019 spine) | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. A = hub + 6 editors + onboarding chain + Fix-CTAs (the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set `onboarding==true`, fail-CLOSED, gate #24 byte-unchanged + verified). B = Devices — **SECURITY PASS** (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs backend; TC-IOS-DEVICES-SELF-REVOKE green). C = Preferences (language [+ System/follow-device row] + theme via `.preferredColorScheme`, the first runtime in-app language switch). D3 `ServiceAreaRow`→T-0334; D5 sealed-state, Android E1 NOT replicated→T-0337; current-location FAB→T-0335; Notifications DROPPED→T-0336. Reviewer-MINOR (Slice C Core i18n)→T-0338. Reviewer **APPROVE** (incl. System-row re-review); 185 CleansiaPartner tests; swiftformat/swiftlint clean) | T-0304✓, T-0306✓ | ios | **sec** (Devices D6–D8 PASS) | — |
+> | **T-0307** | **Phase-4** partner order work-loop (`L → split` into 5 slices, HARD AREA #3) — OrdersList (3-pane sealed per-pane `UiState`+`RefreshPhase`+ported staleness cache) + OrderDetail (SnapSheet over fullBleedMap + content cards) + the OnTheWay lifecycle (Take→NotifyOnTheWay→Start→Complete) via the shared pure `OrderPrimaryAction` machine + checklist/notes/issues/timeline + **ADR-0021** non-modal 3-snap sheet + the additive `MapProvider.fullBleedMap` | L→split | **done ✅** `4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402` (`phase/ios-phase4`; **5 slices A–E**, reviewer **APPROVE** all 5; **SECURITY PASS** §7.8 O1–O4, TC-IOS-ORDERS-OWNERSHIP — the one backend `GetPaged` D2b gap → **T-0339** (pre-existing, iOS proceeds in parallel). E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap; deferred checklist stable-id→T-0340; current-location FAB→T-0335. CleansiaCore 163 + CleansiaPartner 320 pass on iPhone 17 sim; swiftformat/swiftlint --strict clean) | T-0304✓, T-0306✓ | ios | **sec** (O1–O4 PASS) | — |
+> | **T-0308** | **Phase-4** partner photo upload (2 slices) — Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) + the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + NSCamera/NSPhotoLibrary usage strings ×5 | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices A–B**, reviewer **APPROVE**; **SECURITY PASS** §7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP + TC-IOS-PHOTOS-EXIF-STRIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change. Owner sign-off pending on the camera/photo plist WORDING ×5) | T-0307✓ | ios | **sec** (P1–P5 PASS) | **owner: camera/photo plist WORDING sign-off ×5** |
+> | **T-0309** | **Phase-5** partner earnings + invoices + PeriodPay (2 slices) — A Earnings summary (reuses `getStats`) + PeriodPay over the generated `PartnerEmployeePayrollAPI` (ADR-0019 spine) + a Core `EarningsFormat`; the `.invoices` tab is now the Earnings surface (in-tab `NavigationStack`/`EarningsRoute`). B invoices list/detail + the new Core `QuickLookPreview` seam (PDF) + the InvoicesStaleness silent-stale resume; `RefreshPhase` LIFTED to `CleansiaCore/State` (shared by Orders+Invoices) | M | **done ✅** `59be42b`+`e4e7793`+`7daa412` (`phase/ios-phase5`; reviewer **APPROVE**; **SECURITY PASS** §7.11 E1–E4 + TC-IOS-EARNINGS-OWNERSHIP — backend EmployeePayroll already JWT-scoped for non-admins (`GetPeriodPaysOwnershipTests` green 4/4), **NO T-0339-class gap, NO backend follow-up**; E4 PDF deleted from cache on dismiss; latent S5 rate-limit → BSP-4d. Android E1 invoices flag-bag NOT replicated → T-0337) | T-0304✓ | ios | **sec** (E1–E4 PASS) | — |
+> | **T-0311** | **Phase-5** partner APNs push registration (2 slices) — A the Core `PushRegistrar` seam + `PushTokenRegistrar` (`SessionScopedCache`) + the `Device/Register` client (generated `PartnerDeviceAPI`, ADR-0019 spine; `deviceId`==`DeviceIdProvider`, `platform=="ios"`). B the Core `PushSessionObserver` (register on session×token) + the `@UIApplicationDelegateAdaptor` AppDelegate (`willPresent`+`didReceive` tap→OrderDetail via the `PartnerNotificationDeepLink` port) + the new `Auth.setPreLogout` hook (logout unregisters BEFORE the token wipe) + the `aps-environment` entitlement | M | **done ✅** `f2a999f`+`8d53b18`+`b4fb556` (`phase/ios-phase5`; reviewer **APPROVE**; **SECURITY PASS** §7.11 `security/ios-push.md` rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS — verified vs code; the `setPreLogout` hook safe/non-regressing; no token in any DTO/log; no T-0339-class backend gap (`RegisterDevice`/`UnregisterDevice` JWT-scoped + soft-delete stops APNs delivery). FCM→APNs over the SAME `Device/*` contract = Gate-DP divergence (ADR-0013 D8). End-to-end DELIVERY OWNER-gated → **T-0342**. **CI hardening:** ios-ci's partner step is now `build test` (366 partner tests gate for the first time — `1eb346f`)) | T-0302✓, T-0303✓, T-0310✓, T-0331 | ios | **sec** (rules 1–4 PASS) | **owner: T-0342 (APNs `.p8` key + Push capability) — end-to-end-DELIVERY gate** |
+> | **T-0312** | 🍎 **Phase-6** iOS CUSTOMER shell SCAFFOLD + FULL auth (the FIRST customer feature; 3 slices, §7.15) — **A** `CustomerRootView` (flat-enum, COPIES the ADR-0020 pattern, the simpler customer gate — NO RegistrationLock) + the 4-tab `TabView` shell + the inert Book FAB (FAB-as-overlay Gate-DP swap) + the new `CleansiaCustomerTests` target; ios-ci now `build test`s CleansiaCustomer. **B** the email auth chain (SignIn/SignUp/EmailVerify/Forgot) + the event-driven `CustomerAuthViewModel` (emits `AuthOutcome`, the router maps) + the Core spine **`RegisterEndpoint` fix** (construction-time param: customer→`/api/Auth/Register`, partner→`RegisterEmployee`, byte-equivalent). **C** social — the official `ASAuthorizationAppleIDButton` + the real multicolor Google "G"; the **`SocialSignInProviding` Core seam** (Apple nonce flow + GoogleSignIn-iOS, sole framework consumers); two spine methods `googleAuth`/`appleAuth` (reuse the one empty-token gate + the single Keychain persist; appleauth anon); the GoogleSignIn SPM dep + the `com.apple.developer.applesignin` entitlement + the reversed-client-id placeholder; fail-safe when unconfigured | M (3 slices) | **done ✅** `2cf0f1e`+`6f9c1de`+`2ae5982` (`phase/ios-phase6`, off master `c898e79`; the §7.15 ruling. Reviewer **APPROVE** all 3; **SECURITY PASS** on the security-touching B+C — no parallel write path, partner non-regression, the iOS↔backend nonce-encoding ALIGNED. Gate-DP divergences: pager+floating-pill → native `TabView`+FAB-overlay; the official Apple button + the recreated Google "G"; the `AuthHeaderImage` SF-Symbol PLACEHOLDER → T-0314 brand asset. **CleansiaCore 202 + CleansiaCustomer 42** (+ partner 366 non-regression) on iPhone 17; swiftformat/swiftlint --strict clean; build-time verifications in `security/ios-customer-auth.md`. T-0314 follow-ups recorded: ship the customer brand asset + the Android SignIn wordmark; brand-fidelity check the Google "G" pre-submission. LIVE social sign-in is OWNER-gated, code ships fail-closed) | T-0302✓, T-0306✓, T-0343✓ | ios | **sec** (B+C PASS) | **owner (gates LIVE social): EF migration (`User.AppleId`) + customer-mobile spec+client regen + T-0344 (Apple) + T-0345 (Google/IMP-1)** |
+> | **T-0313** | 🍎 **Phase-7** customer booking wizard + Stripe PaymentSheet (**HARD AREA #1** — the single hardest feature in the port AND the customer PRIMARY flow; **L→split into 5 slices A–E**, §7.16) — **A** the 3-step modal anchored sheet (`.sheet`/`.presentationDetents`, ADR-0018 D3 modal mapping — NOT the ADR-0021 SnapSheet) + the shared `BookingViewModel` + the Book FAB action (replaces the inert T-0312 FAB). **B** Step 1 Services + the **server-authoritative pricing engine** (debounced live `Quote` + the `BookingPricing` display port; iOS echoes the raw `TotalPrice` verbatim, `PriceMatchesAsync` re-validates, the charge reads `order.TotalPrice` — NO client-trusted price) + the first **customer generated-client auth spine** (`CustomerCoreSpineRequestBuilderFactory`, the ADR-0019 twin). **C** Step 2 When&Where (the Core-map-seam address picker + lead-time time slots) + the Confirm extras/promo/referral FSMs. **D** Step 3 Confirm + the CASH submit + the **T-0332 dual-use Bearer carve-out** (Bearer on the 3 booking endpoints iff a token exists; guest tokenless; pure-anon never; `CreatePaymentIntent` always authed) + the server-authoritative price echo + double-submit debounce; the status-accurate cash success ("Booking received", Pending+New — NOT "Confirmed"). **E** the CARD branch + Stripe **PaymentSheet** (`StripePaymentSheet` SPM dep customer-only @25.17.0; the `PaymentSheetPresenting`/`StripePaymentController` seam = the sole Stripe importer; publishable-key fail-closed) | **L→split (5 slices)** | **done ✅** `db4a12f`+`67f12e2`+`c42679d`+`4e30aff`+`8a2b4c7` (`phase/ios-phase7`, off master `c47f34a`; the §7.16 ruling. **HARD AREA #1 CLEARED.** Reviewer **APPROVE** on all 5; **SECURITY PASS** on the money slices D+E — price-tampering NO (server-authoritative; iOS echoes raw `TotalPrice`, `PriceMatchesAsync` re-validates); the dual-use Bearer scoping verified (no pure-anon Bearer leak; guest path + partner non-regression preserved); `.completed` is UX-only / the webhook is the sole paid authority; no secret leak; fail-closed; single charge surface. **Resolves T-0332** (Slice D) + the backend money-safety prerequisite **T-0347** (`afaa920`, reviewer APPROVE + security PASS). Gate-DP divergences: the Android anchored bottom-sheet → native `.sheet`/`.presentationDetents`; the official Stripe PaymentSheet; the address picker on the Core map seam. **CleansiaCore 213 + CleansiaCustomer 156** (+ partner 366 non-regression) on iPhone 17; swiftformat + swiftlint --strict clean; the customer generated client is gitignored (CI regenerates); build-time verifications in `security/ios-customer-auth.md`. **LIVE card is OWNER-gated on the Stripe publishable key (`pk_`); the code ships fail-closed.** Follow-ups: **T-0348** (mobile PaymentIntent refund) + **T-0349** (address-picker→Core harvest) + the T-0314 items) | T-0312✓, T-0302✓ | ios | **sec** (D+E PASS) | **owner (gates LIVE card): Stripe publishable key (`pk_`) — the code ships fail-closed; the T-0347 fix is landed** |
+>
+> | **T-0314** | 🎉 **Phase-8** customer TAIL — the **LAST customer feature ticket** and the **broadest** in the port (`L → split into 6 slices A–F`, §7.17); fills the four T-0312 placeholder tabs + every remaining customer surface (neither booking nor auth). **A** Home + Orders/OrderDetail (paged list, the 7-state OrderStatus incl. OnTheWay=3, lifecycle timeline/LiveProgressHero, cancel/review/receipt-via-QuickLook, the 5-min poller) + the T-0313 success→OrderDetail fold. **B** Rewards/Loyalty/Referrals (tier/progress/perks + paged activity + referral copy/share). **C** Membership/Plus — the two-phase Stripe **SetupIntent** via the T-0313 `PaymentSheetPresenting`/`StripePaymentController` seam extended with a `PaymentIntentKind` SetupIntent path (still the **sole Stripe importer**; fail-closed) + Recurring + the deferred ConfirmRecurring PaymentIntent on OrderDetail. **D** Disputes (list/create/detail) + the **generated multipart** evidence upload (`disputeUploadEvidence(file:URL)`, EXIF/GPS strip via the T-0308 `ImageCompressor`, write-to-temp + fail-closed validation) + the customer target's first `NSCamera`/`NSPhotoLibrary` strings ×5 + `PrivacyInfo`. **E** Addresses (AddressManager 3-pane + saved-address CRUD on the Core map seam). **F** Profile/Settings hub + **GDPR DeleteAccount** (`gdprDeleteMyAccount` → `signOutLocal`-not-`logout`; blocked→stay-signed-in; SIWA-revoke owner-deferred per §7.14 D4 + TN3194 + the "remove in Settings → Apple ID" note ×5) + Devices (T-0310 D6-8 verbatim) + NotificationPreferences (optimistic+debounced) + the REAL change-password flow + Language/Appearance/Help | **L→split (6 slices)** | **done ✅** `6a587cf`+`035c211`+`cae96dc`+`c10d819`+`58d9d35`+`4a15fbf` (`phase/ios-phase8`, off master `8d90104`; the §7.17 ruling — **CONFIRMED-AS-SHIPPED**; every choice composes an accepted ADR, NO new ADR. **🎉 THE LAST CUSTOMER FEATURE → the iOS PORT [partner + customer] is FEATURE-COMPLETE.** Reviewer **APPROVE** on all 6 (Slice F after a Profile-Subscribe-CTA fix); **SECURITY PASS** on the security-touching C/D/F — membership money path (`.completed` UX-only / webhook-authoritative / fail-closed / idempotency-token replay / own-membership-only); dispute multipart upload (own-dispute server-scoped via `DisputeNotOwnedByUser` / fail-closed validation ≤10 MiB + jpeg|png|webp+pdf / EXIF-strip / server-controlled blob name / no-secret); **GDPR delete verdict PASS** (anonymize-not-resurrect, own-account-only parameterless command, the no-resurrect test green, `signOutLocal`-not-`logout`, blocked-mid-transaction→stay-signed-in, SIWA-revoke correctly DEFERRED). **The Slice-F review caught an iOS-right/Android-stub parity gap → the NEW follow-up T-0351** (the Android customer `SecurityScreen` "Update" is a dead no-op). **CleansiaCore 216 + CleansiaCustomer 362** (+ partner 366 non-regression) on iPhone 17; swiftformat + swiftlint --strict clean; build-time verifications in `security/ios-customer-auth.md`. **OWNER / manual steps (for go-live/App Store, not code blockers):** the Stripe publishable key (live card + membership); **T-0344** (Apple) + **T-0345** (Google/IMP-1); the customer-mobile spec+client regen (the membership `idempotencyToken` is cross-platform only after it — iOS already carries the field); the camera/photo + customer-brand plist WORDING sign-off; the **App Store compliance pass** (`ios-app-review-checklist.md`, ADR-0016 — 5.1.1 in-app delete ✓, SIWA ✓, Stripe-not-IAP framing, ASC privacy + demo account). Follow-ups: **T-0348** + **T-0349** + **T-0350** + **T-0351**; + notes (the customer brand asset + Google-"G" fidelity; the `LiveCountryResolver`/country-bias → T-0334; the membership `idempotencyToken` regen; the dead `CreateOrderResponse.stripeSessionId` DTO cleanup at the next regen). **Remaining iOS scope after merge:** the App Store compliance/release pass + the owner provisioning + the deferred follow-ups (T-0334/0337/0338/0340/0348/0349/0350/0351 + brand assets) — the FEATURE port is done. **ADDENDUM 2026-07-03 (phase/ios-fix1):** feature-complete ≠ **device-verified** — the owner's first real-device run (iOS 16 iPhone) surfaced 16 issues; the phase/ios-fix1 banner (T-0368…T-0374) is the device-verification debt) | T-0312✓, T-0306✓, T-0313✓ | ios | **sec** (C/D/F PASS) | **owner: Stripe pk_ (live card + membership) + T-0344 (Apple) + T-0345 (Google/IMP-1) + customer-mobile spec+client regen + camera/photo + customer-brand plist WORDING + the App Store compliance/ASC pass** |
+>
+> **Phase-8 follow-up tickets (filed 2026-06-29/30) — `proposed`, surfaced by the T-0314 Gate-SEC + the Slice-F review; NOT dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0350** | **Backend (S5 consistency)** — add `[EnableRateLimiting("auth")]` to NotificationPreferences GetMine/Update (Update is a side-effecting replace-all that lacks the per-JWT-subject window its siblings carry). Own-prefs-only (JWT subject, no wire id) → **no cross-user leak**; the exposure is an un-throttled per-user write. No contract/DTO change, no regen, no migration | S | **done ✅** `64f6525` (HARDENING-1, off master `3e7ce52`; backend trio with T-0346+T-0348. Both hosts' `NotificationPreferencesController` GetMine+Update now carry `[EnableRateLimiting("auth")]` + a `RateLimitCoverageGuardTests` guard for the lazy-create GET; security review CLEAN; `Cleansia.Tests` 1685; reviewer APPROVE) | — | backend | **yes** (CLEAN) | — | T-0314 Gate-SEC §7.17 (LOW) |
+> | **T-0351** | **Android** — the customer `SecurityScreen` is a DEAD STUB: the "Update" button calls `onChangePassword` which defaults to a no-op `{}` (`SecurityScreen.kt:38,66`) and the sole call site `CleansiaNavHost.kt:432` never passes one, so the typed password is discarded. Wire it to the existing reset-code change-password flow (`AuthViewModel.requestPasswordChange`/`changePassword`, already serving the forgot-password path) — the iOS-right/Android-stub parity catch-up | S | **done ✅** `1d99333` (HARDENING-1, off master `3e7ce52`; android parity-hygiene commit with T-0333+T-0337. Stub wired to the existing reset-code flow; the `CleansiaNavHost.kt:432` call site now passes the action; success/error via the existing snackbar bus; strings `R.string.*`; no backend change. Verified by a LOCAL gradle build [JDK21/SDK35]; reviewer APPROVE) | — | android | no | — | T-0314 Slice-F review §7.17 |
+>
+> **HARDENING-1 follow-up tickets (filed 2026-06-30) — `proposed`, surfaced by the HARDENING-1 android review; NON-blocking, NOT dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0352** | **Cross-app password min-length policy drift** — customer-app enforces ≥12, partner-app ≥8 (each app's `register_pw_min_length` string matches its own threshold). Pick ONE canonical policy, ideally aligned with the backend `BaseAuthValidator`; align both apps + the surfaced strings ×5. layers `[android]` (+ maybe `ios`/`backend` if elevated to the canonical platform policy) | S | **resolved-as-shipped ✅** (INDEX was stale — verified 2026-07-17 in code: the owner's "both apps → 12" decision is implemented; partner `RegisterViewModel.kt:40` and customer `SignUpScreen.kt:94`/`ForgotPasswordScreen.kt:185` all enforce `length >= 12`, and both apps' `register_pw_min_length` strings say "At least 12 characters") | — | android | no | — | HARDENING-1 T-0333 android review |
+> | **T-0353** | **Partner profile section-form Error state has no retry affordance** — after T-0337 the section screens (Personal/Address/Identification/Emergency/Bank) consume the sealed state via `is Loading` + `as? Loaded` (not an exhaustive `when`), so the `Error` state renders an empty editable form with no retry. Behavior-preserved from before T-0337; a small UX enhancement (render the `Error(canRetry)` branch). layers `[android]` | S | **done ✅** `91fbe1eb` (hardening-cluster-2, merged: `SectionScaffold` gained `isError`/`onRetry` and renders a message + retry instead of the empty editable form; all 5 section VMs expose `retry()`; local gradle build green) | T-0337✓ | android | no | — | HARDENING-1 T-0337 android review |
+
+**Audit-sweep follow-up tickets (filed 2026-07-02) — `proposed`, surfaced by the three-analyses audit (infra/agentic/codebase) + the approved-fixes sweep (commits `732dc9da`…`be087ae3`); NOT dispatched:**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0354** | **Backend (money)** — the refund RE-DRIVE branch skips the refundable-ceiling recheck: `RefundService.cs:50-56` re-drives a Pending/Failed row's frozen amount without re-reading `TotalPrice - consumed`; RefundKeys are per-purpose so a cross-key sequence (Pending cancel + Succeeded admin refund + retry) can over-refund. Clamp/fail the re-drive against the live ceiling + a characterization test (the existing re-drive test arranges `ArrangeConsumed(0m)` — the gap is untested) | S | **DONE ✅ (row was stale — landed via PR #124/#125)** — re-verified 2026-07-19: re-drive re-reads `TotalPrice - consumed`, clamps (mirrors fresh-path `Math.Min` semantics), fails `RefundNothingRefundable` only at zero; nonzero-consumed characterization test present + green | — | backend | **yes** | — | Codebase audit 2026-07-02 |
+| **T-0355** | **Backend (money, 1-cent class)** — customer cancellation refund is unrounded and Stripe TRUNCATES: `CancelOrder.cs:113` `TotalPrice * (1 - feeRate)` (3-4 dp reachable), `StripeClient.cs:93/111` `(long)(amount * 100)` truncates toward zero, while `Refund.Amount` persists `numeric(18,2)` rounded — the ledger and Stripe can differ by 1 cent, feeding the Refunded/PartiallyRefunded comparison. `Math.Round(…, 2, AwayFromZero)` at the source + a truncation-boundary test | S | **DONE ✅ 2026-07-19** — source half had landed via PR #124/#125 (CancelOrder rounds 2dp; Refund seam-rounds); batch completed the STRIPE BOUNDARY: `StripeClient.ToMinorUnits` (round-away-from-zero) replacing all 5 truncating `(long)(amount*100)` sites (checkout, both refunds, PaymentIntent amount + idempotency-key cents) + 8 boundary tests incl. the fractional-fee round-trip (ledger==Stripe to the cent) | — | backend | no | — | Codebase audit 2026-07-02 |
+| **T-0356** | **Backend (defense-in-depth)** — the CSRF token is a stable per-user HMAC that never rotates: no issuer ever emits a `jti` claim, so `CsrfTokenService.GetSessionKey` always falls back to the user id (its own docstring promises per-jti rotation). Emit `jti` in `SetClaims`/both token issuers + key the CSRF derivation off it (the fallback code already exists); update `AuthCookieConfig.SessionKeyForCsrf` | S | **DONE ✅ (row was stale — landed via PR #124/#125)** — re-verified 2026-07-19: `SetClaims` emits jti (covers both issuers), `SessionKeyForCsrf`/`GetSessionKey` prefer jti with user-id fallback; rotation tests existed, batch added the legacy jti-less fallback pin | — | backend | **yes** | — | Codebase audit 2026-07-02 |
+| **T-0432** | **Backend — refresh-ROW expiry still minted from raw `DateTimeOffset.UtcNow`** (`RefreshTokenService.Issue:34`) — the T-0410 sweep deliberately stopped at its named paths (TokenService + refresh access-token mint); the refresh-row expiry/rotation timestamps are interwoven with the race-retry logic and need their own careful `TimeProvider` migration | S | **DONE ✅ 2026-07-19** — all 5 raw UtcNow reads in RefreshTokenService swapped to the injected TimeProvider (semantics byte-identical, rotation/retry untouched); 2 StubTimeProvider clock pins added; 11 call sites updated | — | backend | no | — | T-0410 residual (batch 2026-07-19) |
+| **T-0433** | **Backend — `DeletePayConfig` validator over-blocks**: `BeNoOrderPaysUsingConfigAsync` does an UNFILTERED `GetAll().AnyAsync()` — once ANY `OrderEmployeePay` row exists anywhere, NO pay config can ever be deleted (should filter by the config/employee actually referenced) | S | **DONE ✅ 2026-07-19** — no PayConfigId FK exists on OrderEmployeePay, so the closest-correct scoped rule shipped: block when a pay row's Order carries the config's ServiceId/PackageId, narrowed to the config's EmployeeId for per-employee configs (global stays conservative on shadowing — documented in the validator); 8 tests, red-then-green on the 3 over-block cases | — | backend | no | — | T-0280 comment-strip surfaced smell (batch 2026-07-19) |
+| **T-0434** | **Build hygiene — recursive `bin/Debug/net10.0/bin/...` self-nesting** in `Cleansia.Web.Partner`, `Cleansia.Tests`, `Cleansia.HostTests` build output accumulates one level per build until the OS path-length limit breaks the test build (csproj clean; root cause unidentified — likely a content-copy glob catching its own output). Cleared once 2026-07-19; recurs | S | **proposed** (low) | — | backend | no | — | T-0432/33 batch environment note (2026-07-19) |
+| **T-0435** | **Infra secret hygiene trio** (from the 2026-07-19 KV wiring audit — all verified, spec'd, not implemented): (1) `DB_CONNECTION_STRING` GH secret duplicates KV `ConnectionStrings--cleansia-db` — migrate-database should read KV so a rotation touches ONE place; (2) `Fiscal__CzechEet2__{ApiKey,CertificatePassword}` are literal empty placeholders — MUST become KV refs before fiscal enables; (3) `Jwt--Issuer`/`Jwt--Audience` KV secrets are dead weight (no app setting references them; hosts use the code fallback) — drop or wire | S | **done-authored ✅ 2026-07-19** — (1) migrate-database now `az keyvault secret show`s `ConnectionStrings--cleansia-db` (masked; existing OIDC login; CI principal already holds Secrets Officer via the Bicep `ciPrincipalId` grant + the provision self-grant — no new Bicep grant needed); (2) fiscal ApiKey/CertificatePassword gated behind new `fiscalSecretProvisioned` param mirroring the `fcmSecretProvisioned` precedent (flag derived from the two new `FISCAL_CZECH_EET2_*` GH secrets' presence, pushed by the same set_secret step; machine-checked: flag=false compiles to the byte-identical 8-key placeholder object at both consumption sites); (3) `Jwt--Issuer`/`Jwt--Audience` no longer written by `derivedSecrets`/`keyVault` inventory — issuer/audience stay code-side (`?? "cleansia"`; wiring KV values would invalidate every live JWT). Bicep + both bicepparams compile; workflow YAML parses. **OWNER**: changes apply on the next deploy dispatch; delete the `DB_CONNECTION_STRING` GH Environment secret when ready (nothing reads it anymore; `DB_CONNECTION_STRING_DEV/_PRO` for execute-sql.yml stay); optionally purge the two dead KV secrets (`az keyvault secret delete … Jwt--Issuer / Jwt--Audience` — ARM incremental mode won't remove them) | — | backend | **yes** | owner: deploy dispatch; delete `DB_CONNECTION_STRING` GH secret | KV wiring audit (batch 2026-07-19) |
+| **T-0436** | **Backend — User-typed audit rows have ONE producer** (`gdpr.user.delete`), so the T-0295 employee-detail audit drill-in renders empty for any never-deleted employee (the FE filter pair is correct; the content doesn't exist). Add `RecordChange("User", userId, …)` / `[AuditAction]` coverage to the other employee-affecting admin actions (deactivate/update/contract transitions — enumerate against the sensitive-five list) | S | **DONE ✅ 2026-07-19** — 4 producers added, all Web.Admin-only commands: `employee.approve`/`employee.reject` (ContractStatus before→after + WorkCountryId), `employee.update`/`employee.availability.update` (ids-only snapshots — the edited values ARE the subject's PII/schedule, D4.1); each keys the row on `employee.UserId` (never Employee.Id), non-Sensitive (frozen five untouched); excluded: document approve/reject (EmployeeDocument-typed aggregate per the loyalty precedent), AdminUsers (AdminUser-typed, frozen), self-service partner edits (S1 — pinned not-enrolled). 11 tests (labels, snapshots+no-PII, no-snapshot-on-failure, partner-role-no-row); suite 2014/2014 | — | backend | **yes** | — | round-3 review finding on T-0295 (2026-07-19) |
+| **T-0437** | **Functions host /api/health + HealthCheckStatus alert + startup-graph guard** (dev-outage RCA) — `func-cleansia-weu-dev` 503'd since 2026-07-18, killing all background processing incl. notifications. RCA: the committed startup graph is CLEAN (verified — every crash vector swallowed/lazy; new FunctionsHostStartupGuardTests resolves all 27 handlers with deployed-shape config), so the 503 is ENVIRONMENTAL (stuck/failed 2026-07-18 deploy). Shipped: anonymous `GET /api/health` (DB+queue probes, S6-safe), `healthCheckPath` auto-recycle, metric alert to the action group (dev+prod), + the CI guard. **Owner MANUAL_STEP: redeploy Functions (merge → Deploy to DEV) — recovers the 503 AND lands the observability** | S | **DONE ✅ (code); owner redeploy pending** | — | backend | no | **owner: Deploy to DEV** | T-0320 outage finding |
+| **T-0357** | **Backend+infra** — `/health` is liveness-only (`AddCheck("self")` → 200 while Postgres/Storage are dead), so App Service never recycles a broken instance. Split liveness (`/alive`) from readiness: `AddDbContextCheck<CleansiaDbContext>` + a light blob check on `/health`, keep `healthCheckPath` pointed at readiness | M | **done ✅** on `feature/i18n-cluster-3` (`AddCleansiaReadinessChecks` wired in the shared startup base: `/health` — already the appService Bicep module's DEFAULT probe path for all 5 API sites, no bicep change needed — now runs `AddDbContextCheck<CleansiaDbContext>` (Unhealthy on failure → route-away/recycle) + a light blob HEAD probe (Degraded ceiling — a storage outage must not recycle the fleet; hosts without the blob factory report Healthy); `/alive` stays liveness-only via the `live` tag. New pinned `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 10.0.3. 3 new tests incl. the dead-database → Unhealthy arm; suite 1927/1927; full solution builds) | — | backend | no | — | Infra audit 2026-07-02 |
+| **T-0358** | **CI cost/speed** — every master push full-rebuilds both stacks: no NuGet cache, `--skip-nx-cache` on all 3 Angular builds, migrate-database re-restores the whole solution for the EF bundle, no path filters (a docs-only push runs the full Azure deploy). Cache NuGet + Nx, artifact-reuse the bundle, add path filters — now ONE place to fix (deploy-azure.yml) | M | **done ✅** on `feature/i18n-cluster-3` (NuGet cache — `~/.nuget/packages` keyed on Directory.Packages.props + csprojs — added to backend-ci AND deploy-azure's build-dotnet; the EF migrations bundle now builds in build-dotnet (already-restored solution, deploy-mode-gated) and ships to migrate-database as an artifact, killing that job's full solution re-restore; Nx computation cache (`.nx/cache` via actions/cache, per-env keyed with SHA save + prefix restore) added and `--skip-nx-cache` dropped from all 3 Angular builds. The path-filter item is MOOT: both deploy callers went dispatch-only in the earlier CI fix, so a docs-only push can no longer trigger the Azure pipeline. YAML validated; behavior verified on the next real deploy run) | — | backend | no | — | Infra audit 2026-07-02 |
+| **T-0359** | **Prod reliability seam (pre-go-live)** — author the prod posture the dev Bicep deliberately skips: deployment slots + swap (S1 supports them; drop any stop/start), Postgres `highAvailability`/`geoRedundantBackup` params (env-switched), autoscale rule, ACR retention (images accumulate one per sha forever), App Insights sampling ratio + prod ingestion cap, and the VNet/private-endpoint seam for Postgres+Storage (Q-INFRA-03; the 0.0.0.0 Azure-services rule is dev-accepted only) | L | **done ✅ (AUTHORED 2026-07-19 — NOT deployed; deploy/apply is the owner's step)** — all 6 seams env-switched off-by-default (dev byte-unchanged under `weu.dev.bicepparam`, verified on the compiled template): staging slots on the 6 web hosts w/ slot MIs pre-granted KV/Storage before first swap (no stop/start anywhere; Functions deliberately slot-less — a warm staging container would double-consume the queues); Postgres HA/geo-backup/retention params (geo-backup is IMMUTABLE-at-create → set in the prod param NOW); CPU autoscale 1..3 (+1 @>70% / −1 @<30%, 10-min windows) on the shared plan; nightly ACR purge task (the built-in retentionPolicy is Premium-only AND untagged-only — wrong tool for sha-TAGGED images); AppInsights prod 50% sampling + 5 GB/day cap (dev keeps 1 GB); the Q-INFRA-03 VNet/private-endpoint seam (`modules/privateNetworking.bicep`, pg+blob+queue+table PEs; PE-not-VNet-injection so the live server is never replaced) behind `privateNetworkingEnabled` — deliberately NOT flipped in `weu.prod.bicepparam` (CI-migration + admin-psql paths break first; the documented flag). Prod-only `alwaysOn` ride-along. Doc: `deploy/AZURE-PROD-POSTURE.md` (+ runbook §11 pointer; the prod slot-swap step in deploy-azure.yml recorded there as the owner/CI follow-up — workflows outside this ticket's surface). Compile-verified: Bicep CLI 0.45.15 (main + 11 modules + both param files, 0 new warnings; no cloud call) | — | architect, backend | **yes** | **owner: prod deploy/apply (az)** | Infra audit 2026-07-02 |
+| **T-0360** | **Infra (observability)** — poison-queue depth alert: needs storage diagnostic settings + a scheduled-query rule over the queue logs; deliberately deferred out of `alerts.bicep` (which exports `actionGroupId` for exactly this attachment) | S | **done ✅ (AUTHORED 2026-07-19 — deploy/apply is the owner's step: the next `Deploy to DEV/PRO` dispatch applies it)** — new `modules/queueAlerts.bicep`: queue-service diagnostic settings into Log Analytics (StorageWrite + StorageDelete ONLY — StorageRead deliberately off, the always-on Functions poll loop would flood the dev 1 GB/day cap for zero alerting value) + scheduled-query rule `alert-poison-queue-cleansia-<region>-<env>` firing on any successful `PutMessage` into a `*-poison` queue (event-based, not depth-sampled — the poison consumer drains depth to 0 within seconds, the log row is the durable signal), attached to the exported `actionGroupId`, same `!empty(alertEmail)` gate + severity/window convention as alerts.bicep (prod sev 1 / PT5M, dev sev 3 / PT15M); `skipQueryValidation` so first provision can't fail before StorageQueueLogs exists; alerts.bicep's stale deferral note updated + the infrastructure.md poison warning box now points at the landed Bicep. Compile-verified: Bicep CLI 0.45.15 | — | backend | no | **owner: deploy dispatch** | alerts lane 2026-07-02 |
+| **T-0361** | **Backend (tenant residual)** — `EmployeeRepository.GetByUserEmailAsync` is tenant-filtered but called on ANONYMOUS login (`TokenService.cs:60`) and refresh (`RefreshToken.cs:97`): a tenant-stamped EMPLOYEE gets a JWT **missing `employee_id`** — the same bug class the `e406584f` fix closed for User reads, left open because the file was outside that lane. Mirror the tenant-ignoring anonymous-path pattern + extend the pin test | S | **proposed** | — | backend | **yes** | — | tenant lane residual 2026-07-02 |
+| **T-0362** | **Backend (latent money trap)** — `OrderEmployeePay.AddBonus/AddDeduction/UpdatePay` recompute `TotalPay` WITHOUT re-applying the min/max clamp (dead code today; the moment an admin adjust-pay feature wires them, the clamped base silently un-clamps). Re-apply the clamp inside the mutators + tests | S | **done ✅ (code) — OWNER MIGRATION PENDING** on `feature/hardening-cluster-2` (persist the calc-time clamp bounds `MinPay`/`MaxPay` on OrderEmployeePay — 0==unbounded, mirrors the `>0` guard; the 3 mutators now route through one `RecomputeTotalPay()` = `max(0, clamp(base+extras+expenses, MinPay, MaxPay) + bonus − deduction)`, reusing the now-public `PayCalculatorExtensions.ApplyMinMaxClamp` so the >0-guard + min>max-throw stay identical to calc time; new `AggregateBounds()` extension feeds `CalculateOrderPay.Create` the SAME floor/ceiling that produced the initial TotalPay. Side-benefit: `EmployeeInvoice.SumPayAmounts` now recovers the CLAMPED core, not the raw one (except the pre-existing floored-at-0 edge, where the backed-out subtotal is `Deduction − Bonus` — display-only, `TotalAmount == Σ TotalPay` still holds); invariant untouched. 8 exact-decimal clamp tests + 150 EmployeePayroll suite green; adversarial reviewer APPROVE — 6/6 break-attempts refuted, deletion-test verified; no production caller yet — defensive for the pending admin adjust-pay feature. **Residual (reviewer note, conscious decision):** pre-migration rows backfill `MinPay=MaxPay=0` = unbounded, so a future adjust-pay mutation on a LEGACY row that was historically capped re-un-clamps it (equals pre-fix behavior, no trigger today; a true backfill is infeasible — source configs drift). When the adjust-pay feature ships it must either backfill bounds or refuse to mutate default-0-bounds legacy rows). **OWNER MANUAL_STEP:** regenerate the EF migration/model-snapshot so OrderEmployeePay gains 2 columns `MinPay` + `MaxPay` `decimal(18,2)` default `0` (per the pre-prod single-Initial-migration approach — fold into the `Initial` migration; startup `src/Cleansia.Web.Partner`). Nullable-safe: default 0 backfills existing rows as unbounded, matching pre-fix behavior. | S | backend | no | **owner: EF migration (2 columns)** | invoice lane residual 2026-07-02 |
+| **T-0363** | **Clients: send email with the 6-digit confirm code** (after `be087ae3` the OTP branch REQUIRES email; Android-customer already sends it) — (a) web customer+partner confirm-email facades pass the email after the NSwag regen; (b) Android partner after the mobile-partner OpenAPI spec regen (`ConfirmUserEmailCommand` is a generated model; thread `state.email` in `AuthRepository.confirmEmail` + the VM); (c) iOS parity on the Mac. Until each client sends email, its confirm of NEW codes fails validation (old long-token emails unaffected) | S | **partial ✅ — customer web done** `44cf8c99` (register + unconfirmed-login carry the email via query param; direct navigation renders an email input, key in all 5 locales; ALSO fixed the auth service importing the PARTNER client's code-only command — would have silently dropped email on the wire — and resend sending undefined on direct nav; facade spec red-proven, 8/8; SSR AOT build green). iOS done earlier `09901f29`. **Partner halves done after the owner regen (2026-07-07):** partner WEB `6572ed4a` (mirror of the customer fix; also fixed resend-undefined on direct nav + a latent forever-disabled resend button; spec red-proven 7/7; partner AOT build green) and Android PARTNER `f73bf472` (repo+VM thread the persisted unconfirmed-login email with a blank guard; new VM test; 52/52 with codegen from the regenerated spec) — **ALL FOUR CLIENTS NOW SEND {code, email}; ticket CLOSED** (residual: iOS suites still run on the Mac only) | — | frontend, android, ios | **yes** | — | OTP fix `be087ae3` |
+| **T-0364** | **Backend (ADR-0010 revision, OWNER DECISION pending)** — `SendEmailHandler` claims idempotency BEFORE the send (at-most-once): any send that fails after the claim is PERMANENTLY lost on retry (bit during the broken-config window). Proposal: claim AFTER the successful send for the email consumer (a rare duplicate email beats a lost confirmation); keep claim-before-act where the effect is not safely repeatable | S | **done ✅** `fd0a9d40` (owner APPROVED 2026-07-08; **ADR-0023** ratifies the per-consumer claim-ordering rule, partially supersedes ADR-0010 header-pointer-only; email consumer now check→send→claim with two additive guard members HasProcessedAsync/MarkProcessedAsync; push + AlreadyProcessedAsync byte-unchanged — push→Mode B would need its own ruling; failed-send-retries + claim-failure-acks red-proven; suite 1776/1776; reviewer: only 2 doc-wording minors, fixed in-commit) | — | architect, backend | **yes** | — | SendEmail incident 2026-07-02 |
+| **T-0365** | **Architect (multi-tenant activation pack)** — the decisions the tenant fixes deliberately did NOT make: registration semantics under the composite `(TenantId, Email)` unique index (same email in two tenants → anonymous email-keyed login/reset resolve nondeterministically and `RecordFailedLoginAsync` hits ALL rows), host/subdomain tenant-resolution middleware for anonymous requests, and whether confirm-family lookups stay filtered. Blocks multi-tenant go-live; single-tenant behavior is unaffected today | M | **ADR drafted — awaiting owner ratification** (ADR-0028 multi-tenant activation pack, `draft` in docs/decisions/: (1) host names the tenant / email the account / secret proves possession — every anonymous email-keyed flow scopes to the resolved tenant, failed-login charges stop hitting all-tenant rows; (2) host→tenant registry + gate middleware, precedence override>claim>host>null, EMPTY registry = byte-identical single-tenant mode, unmapped host under a non-empty registry fails closed 421; (3) confirm-family lookups stay tenant-filtered. No schema/client change. **Owner gates:** O-1 host/DNS scheme per tenant, O-2 mobile tenant acquisition, O-3 config→DB registry trigger) | — | architect, backend | **yes** | — | architect, backend | **yes** | — | tenant lane mustTell 2026-07-02 |
+| **T-0366** | **i18n gap on BOTH mobile platforms** — 144 of the 250 `BusinessErrorMessage` keys have NO `error_*` string resource in either Android app (grep-verified: the whole `promo.*`, `membership.*`, `recurring_booking.*` families + `referral.not_accepted/not_qualified/reason_required`), so Android AND the new iOS localizer show the raw key. Translate the user-reachable subset ×5 locales in the Android apps + harvest into the iOS Core catalog (same pipeline as the 106 done). Also: 3 iOS entries were hand-translated (`snackbar.dismiss`, `error.not_found`, `error.request` cs/sk/uk/ru) — owner translation review | M | **done ✅** on `feature/i18n-cluster-3` (the raw "144 missing" was mostly noise — a full reachability analysis (key → constant → handler → transitive service closure → mobile-host controllers) shows only **41 keys can surface in the mobile apps**: 35 customer, 17 partner. The `promo.*`/referral-validation families are DEAD for mobile — rejections travel as structured `ErrorCode` in 200-responses with their own localized enum mapping, never through the error-key localizer; webhook-only keys excluded. 21 keys harvested verbatim from the web apps' shipped 5-locale `errors.*` translations (cross-platform copy consistency), 20 authored ×5 matching app terminology; injected as `error_*` ×5 locales into both Android apps + 31 `error.<key>` entries into the iOS Core catalog. Translation review (adversarial): cs clean, 4 wording fixes applied (sk balíček, uk існ. «є», ru «есть», uk «Вибраний»), plus its find: **5 pre-existing iOS entries had divergent copy — two semantically WRONG** (partner-voice "not eligible to take this order" on the customer preferred-cleaner error; "pick on the map" vs the correct "select from the suggestions") — all 5 overwritten with the authored copy so the same backend code reads the same on both platforms. All runtime lookups verified (`error_`+underscores Android customer/partner, `error.`+key iOS); both Android apps compile, iOS builds. The 3 hand-translated iOS entries flagged for owner review remain flagged) | — | android, ios | no | **owner: review the 3 hand-translated entries** | iOS error-l10n lane 2026-07-02 |
+| **T-0367** | **iOS residual** — `ApiError.fromGenerated` (`CustomerGeneratedError.swift:6`, `PartnerDashboardClient.swift:25`) maps most GENERATED-client failures with `code: nil` + the raw body as message, bypassing the new key-based localizer (only paths routed through `ProblemDetailsError.map` get catalog lookups). Route the generated-client error mapping through the shared ProblemDetails parse so booking/disputes/earnings errors localize too | S | **ABSORBED → T-0370 ✅ done** (2026-07-03 — phase/ios-fix1 Slice C carried this exact fix; landed in `5252bfb9`, T-0370 done at phase close) | — | ios | no | — | iOS error-l10n lane 2026-07-02 |
+>
+> **Phase-7 follow-up tickets (filed 2026-06-28/29) — `proposed`/`done`, surfaced by T-0313/T-0347; T-0348/T-0349 NOT dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0347** | **Backend (money-safety)** — one charge surface per card order: a per-host `IOrderChannelProvider` so `OrderPaymentDispatcher` suppresses the Stripe Checkout Session for the mobile PaymentSheet channel (the mobile order's single charge surface is the PaymentIntent). Closes a **pre-existing double-capture defect** (the live Android card flow had it too). Host-based discriminator; NO contract change, NO regen, NO EF migration | M | **done ✅** `afaa920` (`phase/ios-phase7`; reviewer **APPROVE** + security **PASS**; the audience couldn't tell web from mobile — both register `JwtAudiences.Customer` — so a new per-host `IOrderChannelProvider` mirrors the `IHostAudienceProvider` seam: shared Web default, `Web.Customer`=Web, `Web.Mobile.Customer`=Mobile; mobile→`StripeSessionId==null`, web non-regressing; cash unaffected. Residual follow-up T-0348) | — | backend | **yes** (PASS) | — | T-0313 Gate-SEC §7.16 (HIGH double-capture) |
+> | **T-0348** | **Backend** — add a PaymentIntent refund path for mobile-paid (PaymentSheet) card orders (after T-0347, a mobile card order has `StripeSessionId==null`; the only refund path keys off the Checkout Session → a mobile-paid order can't be refunded). Admin-host-only refund surface → latent, not a live breach | M | **done ✅** `64f6525` (HARDENING-1, off master `3e7ce52`; backend trio with T-0346+T-0350. `RefundPaymentIntentAsync` on `IStripeClient`/`StripeClient`; `RefundService` routes by charge surface (Session→web XOR `StripePaymentIntentId`→mobile); **NO schema change** (`StripePaymentIntentId` already existed). Money-correctness fold-in: extended the refundable-surface gate to the two CANCEL paths via `Order.HasRefundableChargeSurface` so a cancelled paid mobile/recurring card order refunds. The architect "both-surfaces" finding **refuted/dropped** (one charge surface per card order). Security review CLEAN; `Cleansia.Tests` 1685; reviewer APPROVE) | T-0347✓ | backend | no (CLEAN) | — | T-0347 Gate-SEC §7.16 residual (refund-coverage gap) |
+> | **T-0349** | **Harvest (architect "one way")** — hoist the address-picker ViewModel into `CleansiaCore` (unify partner + customer; both ride the Core `MapProvider`/`GeocodingService` seam). NOT a reuse-fail (no Core VM existed); edits the committed partner surface + declares the one way | S | **done ✅** `d834e92` (HARDENING-1, off master `3e7ce52`. Public framework-pure `CleansiaCore/Location/AddressPickerViewModel` (`searchBias=["cz","sk"]` default, load-bearing for partner non-regression); both app-local copies deleted, both apps repoint; Views stay app-local (the sanctioned `pickerMap`/`fullBleedMap` MapKit binding). Core 218 / Partner 366 / Customer 362 green; swiftformat 0.60.1 + swiftlint --strict clean; **no new ADR** (home change via the ADR-0013 escape clause); harvest in `patterns-mobile.md` + `ios-app-architecture.md`; reviewer APPROVE) | T-0313✓ | ios, architect | no | — | T-0313 Slice C reviewer (address-picker VM duplicated partner↔customer) |
+>
+> **Phase-3/4 follow-up tickets (filed 2026-06-26/27) — all `draft`/`proposed`, deferred out of T-0306/T-0307/T-0308/T-0310; not dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0334** | iOS `ServiceAreaProvider` Core seam + the advisory `ServiceAreaRow` (+ forward-geocode country-bias) | M | **ACTIVE — owner greenlit the city tier 2026-07-19.** Backend serviced-cities endpoint was ALREADY shipped (`1d154849`, on both mobile hosts; Android client consumes it) — agent added the missing 5 tests (2021/2021). Country advisory + geocode bias already on iOS. **ONLY gate left: owner regenerates the iOS customer+partner mobile clients** → then I wire ServiceAreaProvider.loadCities()/isCityServiced() + the city-level ServiceAreaRow (AC2) | T-0310✓, T-0306✓ | ios | no | **owner: partner-mobile spec+client regen (serviced-cities) for the AC2 row** | sprint-12 §7.7 D3 (architect) |
+> | **T-0325** | **OWNER TASK** — iOS location-permission purpose string `NSLocationWhenInUseUsageDescription` ×5 (do-it-later; proposed copy in the ticket; agent does the mechanical `project.yml` add once the wording is approved) | S | **done ✅** (owner approved the proposed copy ×5 verbatim 2026-07-19; mechanical add landed — the key in BOTH apps' `project.yml` `info.properties` + ×5 `InfoPlist.strings`, `xcodegen` re-run; unblocked T-0335 same batch) | — | ios | no | — | T-0306 §7.6 D2 + T-0310 §7.7 Scope A |
+> | **T-0335** | iOS `LocationProvider` Core seam + the my-location FAB + picker auto-center — **gated on owner T-0325** (`NSLocationWhenInUseUsageDescription`) | M | **done ✅** (Core `LocationProvider` + `CLLocationManagerLocationProvider` — the sole CoreLocation consumer besides geocoding — behind the `\.locationProvider` env key; `AddressPickerViewModel.autoCenterOnOpen`/`recenterOnMyLocation` + one-shot `locationFailed`; FAB + auto-center on BOTH pickers, silent-when-already-denied (no nag); `PreciseLocation` privacy-manifest entry ×2 apps. 18 new tests test-first; Core 358/358 + partner/customer suites green (known locals only) on iPhone 17 + the iOS-16 floor; swiftformat/swiftlint --strict clean) | T-0310✓, T-0325✓ | ios | no | — | sprint-12 §7.6 D2 + §7.7 Scope A |
+> | **T-0336** | SPIKE — iOS partner in-app notifications feed (persistence choice + push-receipt contract + bell badge) | S | **SUPERSEDED ✅ 2026-07-19** — the shipped T-0430 partner feed answered every spike question (server-backed persistence, dual-host NotificationController contract, badge with keyset-gated push +1); nothing left to spike | T-0311✓ | ios, analyst | no | — | sprint-12 §7.7 Scope B |
+> | **T-0333** | **Android (E8/F1)** — localize the partner Register/Forgot ViewModel validation strings (move the hardcoded English literals to `R.string.*` across all 5 locales; inject `@ApplicationContext Context`). iOS does it right (T-0305); this is the Android-side parity fix | S | **done ✅** `1d99333` (HARDENING-1, off master `3e7ce52`; android parity-hygiene commit with T-0337+T-0351. Both auth VMs inject `@ApplicationContext Context` + source every validation string from `R.string.*` ×5; behavior identical except language; no rule/DTO change. Verified by a LOCAL gradle build [JDK21/SDK35]; reviewer APPROVE. **Review surfaced a cross-app policy drift → new follow-up T-0352** (customer ≥12 vs partner ≥8 password min-length)) | — | android | no | — | sprint-12 §7.5 D5 / consistency.md §E8 (F1 deviation, surfaced on T-0305) |
+> | **T-0337** | Android partner profile VMs — flag-bag `UiState`→sealed (E1) + hardcoded validation/error strings→`R.string.*` (E8) | S | **done ✅** `1d99333` (HARDENING-1, off master `3e7ce52`; android parity-hygiene commit with T-0333+T-0351. The 7 partner profile VMs (Profile + the 6 section VMs) migrated to sealed `Loading`/`Error`/`Loaded` + `ActionState` + `R.string.*` ×5; behavior-preserved; added `BankSectionViewModelTest`. Verified by a LOCAL gradle build [JDK21/SDK35]; reviewer APPROVE. **Review surfaced a residual UX gap → new follow-up T-0353** (the section screens consume `is Loading`+`as? Loaded` not an exhaustive `when`, so the Error state renders an empty form with no retry)) | — | android | no | — | sprint-12 §7.7 D5 (consistency.md E1/E8) |
+> | **T-0338** | Localize the CleansiaCore catalog ×5 + route Core localization through a swappable bundle (the Slice-C reviewer MINOR) | S | **done ✅** on `feature/payroll-invoice-paid-notify` (AC1 pre-landed with the business-error catalog `6bf55f14` — the Core `Localizable.xcstrings` already ×5/145 keys; this pass closed AC2+AC3: the `CoreL10n` swappable-bundle seam (`apply(languageTag:)` repoints at the selected `.lproj` inside `Bundle.module`; no-feed default stays `.module`) mirroring the T-0310 `L10n.bundle` mechanism, fed from the one `AppSettingsStore` by both apps' preferences models; `ApiErrorLocalizer` + `GlobalSnackbarHost` re-pointed; `CoreL10nCatalogTests` resolves ALL keys ×5 non-empty + differs-from-en + the no-restart switch contract. Core 340 / Partner 457 / Customer 578 on iPhone 17 + the 16.4 floor (only the known TCC/Stripe-key ignorables); swiftformat + swiftlint --strict clean) | T-0310✓ | ios | no | — | T-0310 Slice C reviewer MINOR |
+> | **T-0339** | **SECURITY (backend)** — scope `GetPagedOrders` "mine" views to the JWT caller (client `Filter.EmployeeId` over-read leaks foreign-assigned order coords/codes/pay). Reachable, MEDIUM; pre-existing | S | **done ✅** — landed in master via the PR #96 **SQUASH-merge** (reviewer APPROVE + security PASS, closes D2b). The original commit `d688d30` (+ test-seed fix `fbe21e8`) isn't a master *ancestor* (a squash flattens originals — which is why `merge-base --is-ancestor` misreads NO), but master's TREE contains the fix: `GetPagedOrdersScopeIntegrationTests.cs` + `RestrictToEmployeeId` + the GetPagedOrders caller-pin all present (verified by tree content 2026-06-28) | — | backend | **yes** | — | T-0307 security gate §7.8 (`security/ios-orders.md` D2b) |
+> | **T-0340** | Order-detail parity nits — iOS checklist stable-id keying (vs positional index) + Android status-label casing convergence ("On the way"/"In progress") + the stale placeholder-preview literal sweep | S | **done ✅** on `feature/i18n-cluster-3` (nit 1: `OrderDetail` services/packages now carry the stable backend ids (`OrderDetailService`/`id` on `OrderDetailPackage`) and the checklist keys by them — Android `CleaningChecklist.kt` parity, persisted ticks survive a reorder (old index-keyed ticks orphan once, dormant); nit 2: `labelForStatusName` lowercases the camel-boundary words so Android renders "On the way"/"In progress" as its own comment always claimed — converged with the iOS pinned form, new `StatusTimelineLabelTest`; nit 3: the stale "coming in T-0307" preview literal swept. Partner BUILD SUCCEEDED, Android tests green) | T-0307✓ | ios, android | no | — | T-0307 Slice E reviewer (Findings 2 + 3) |
+> | **T-0341** | **Backend (flaky test)** — deterministic order status-history "current status" ordering (same-tick `CreatedOn` tie in `OrderByDescending(CreatedOn).First()` makes `AdminOverrideOrderStatusHandlerTests` flake 1–2/7); add a tiebreaker / canonical derivation + de-flake. Pre-existing on master (NOT from T-0339) | M | **done ✅** `e4e00b0` (HARDENING-1, off master `3e7ce52`; the architect ruling shipped verbatim. New `OrderStatusTrack.Sequence` (`int`) assigned at append from the aggregate history + canonical `Order.CurrentStatus` (`OrderByDescending(CreatedOn).ThenByDescending(Sequence)`) routed through all in-memory handlers + the mapper + the 2 SQL sites; the `.Any()`-existence checks untouched (out of scope). **manual_step done in-branch: pre-prod Initial-regen** (owner-authorized; `Sequence` folded into `20260623112626_Initial`, timestamp preserved); NO NSwag impact. De-flake **20/20**; **IntegrationTests 97/97 + HostTests 60/60**; `Cleansia.Tests` 1685; reviewer APPROVE) | — | backend, architect | **done in-branch (pre-prod Initial-regen, owner-authorized)** | found during the local backend-suite run for T-0339 |
+> | **T-0342** | **OWNER TASK** — iOS APNs auth key (`.p8`) in the backend push provider + Push Notifications capability/provisioning on the App ID (gates end-to-end push DELIVERY; **T-0311 now `done` ships the code + the `aps-environment` entitlement without it** — this is the live-delivery gate) | S | **DONE ✅ (owner-confirmed 2026-07-19 — .p8 uploaded, push works vs DEV; same key serves Live Activity)** | T-0311✓ | ios | no | **owner: APNs key + Push capability** | T-0311 §3B |
+> | **T-0343** | **Backend — AppleAuth (Sign in with Apple)** — `AppleAuth` CQRS + `IAppleTokenVerifier`/`AppleTokenVerifier` (JWKS + **RS256-pinned** + iss/aud=bundle-id/exp/nonce + fail-closed) + `AppleConfig` + `User.AppleId`/`AuthenticationType.Apple`/`CreateWithApple` + `[AllowAnonymous] POST /api/Auth/AppleAuth` on the Customer Mobile host + `InvalidAppleUserToken` ×5 i18n + stubbed-verifier tests. **Mirrors GoogleAuth 1:1**; ships fail-closed (no provisioning). Resolves Q-IOS-04 (§7.14) | M | **done ✅** `a689d03` (`phase/ios-phase6`, off master `c898e79`; the RS256-PINNED JWKS via `JsonWebTokenHandler`+`ConfigurationManager`, `aud == Apple:BundleId` native, iss/exp/nonce, fail-closed, no SSRF; reviewer **APPROVE**; **SECURITY PASS** — account-takeover **NO**: the RS256-pin + the handler takeover-guard against `claims.Email` (covers Internal + Google) verified vs code; provision only on `claims.EmailVerified`. Ships fail-closed) | — | backend, db | **yes** (PASS) | **owner: EF migration (`User.AppleId`) + customer-mobile spec+client regen — gate LIVE Apple sign-in (code ships fail-closed)** | Q-IOS-04 §7.14 / blocked T-0312 |
+> | **T-0344** | **OWNER TASK** — Apple SIWA provisioning: enable Sign in with Apple on the `cz.cleansia.customer` App ID (primary) + the Xcode entitlement + `Apple:BundleId` config. **No `.p8`/Services-ID/domain** (identity-token-only). Gates LIVE Apple sign-in (the code shipped in T-0343/T-0312) | S | **proposed** (owner — **now ACTIVE: T-0343+T-0312 have landed; this is a LIVE-Apple-sign-in gate; the code ships fail-closed without it — the T-0311-gated-by-T-0342 pattern**) | — | ios, backend | no | **owner: Apple capability + `Apple:BundleId`** | Q-IOS-04 §7.14 |
+> | **T-0345** | **OWNER TASK** — Google Sign-In provisioning for iOS (concretizes **IMP-1**): Cloud Console project + iOS OAuth client id (+ reversed-client-id Info.plist scheme) + web/server client id + set `Google:ClientId`=iOS `serverClientID`=web client id. **Zero backend code** (GoogleAuth already live). Gates LIVE Google sign-in | S | **proposed** (owner — **now ACTIVE: T-0312 Slice C has landed; this is a LIVE-Google-sign-in gate; the code/SPM dep/reversed-client-id slot ship without it**) | — | ios, backend | no | **owner: Google client ids + `Google:ClientId`** | Q-IOS-04 §7.14 D5 |
+> | **T-0346** | **Backend (security hardening)** — gate `GoogleAuth` provisioning on `email_verified` (parity with the new AppleAuth gate; the existing Google flow doesn't check it). Deliberately separate from T-0343 (changes live Google behavior) | S | **done ✅** `64f6525` (HARDENING-1, off master `3e7ce52`; backend trio with T-0348+T-0350. `IGoogleTokenVerifier`/`GoogleTokenVerifier` surface `email_verified`; `GoogleAuth.Handler` provisions/links **only** on `email_verified==true` (fail-closed, parity with AppleAuth); the `AuthenticationType != Google` takeover guard stays; added the unverified-token-rejected test. Security review CLEAN (account-takeover NO); `Cleansia.Tests` 1685; reviewer APPROVE) | T-0343✓ | backend | **yes** (CLEAN) | — | Q-IOS-04 security gate §7.14 (medium finding) |
+>
+> **OWNER / manual-step gates surfaced by Phase 6 (the PM never runs these — all gate LIVE social sign-in + the
+> next customer wave; the Phase-6 code ships fail-closed without them):**
+> - **EF migration for `User.AppleId`** (the new nullable column T-0343 added to `User`) — the owner creates + applies
+>   it; until then the AppleAuth provisioning path can't persist an Apple user. **Gates LIVE Apple sign-in.**
+> - **`customer-mobile-api` spec + client regen** — regenerate `customer-mobile-api.json` + the iOS `CleansiaCustomerApi`
+>   (+ the Android customer client) after T-0343's `AppleAuth` endpoint/DTOs landed. **Needed for** (a) the T-0314
+>   customer business endpoints and (b) the LIVE social e2e (the generated `AppleAuthCommand` confirms the wire shape
+>   the hand-written spine DTO matches). The bulk of T-0312 was built ahead of it against the documented §7.14
+>   contract; only the live Apple POST round-trip waits on it.
+> - **T-0344** (Apple SIWA capability + `Apple:BundleId`) + **T-0345** (Google client ids + `Google:ClientId`, IMP-1)
+>   — the per-provider LIVE-sign-in capability/config gates (rows above).
+>
+> **The standing latent backend SECURITY item — TRACKED, not new:** the multi-tenant asymmetry in
+> `RefreshTokenService.RevokeByDeviceAsync` / `RefreshTokenRepository.GetActiveByUserIdAsync` that the iOS remote
+> device-revoke session-kill (T-0310 Slice B) rides on (`security/auth-sessions.md` 2026-06-10) is **owned by
+> T-0236** (`done ✅` `b8f89202`, Wave-6 6A — the read-side `IgnoreQueryFilters()` fix that covers
+> `GetActiveByUserIdAsync` + `GetByTokenHashAsync` + `RevokeChainAsync`). It is **NOT a Phase-3 regression** —
+> pre-existing class, correct in today's null-`TenantId` single-tenant mode. The T-0310 Devices Gate-SEC carries it
+> as the standing dependency (`security/ios-devices.md` S8). **Standing gate: re-verify T-0236's fix before
+> onboarding any non-null-`TenantId` user**, alongside the sibling go-live blockers T-0245 (Stripe webhook tenant
+> scope, `done`) and the multi-tenant readiness checklist.
+>
+> **T-0303's two owner blockers are now BOTH CLEARED** (they previously held T-0303 + every generated-client
+> ticket): (1) the owner ran the **mobile-spec-regen** — the formerly-stale committed
+> `src/cleansia_android/openapi/{partner,customer}-mobile-api.json` (was 2026-05-31, `1d15484`, pre-T-0272)
+> are regenerated to the post-T-0272 contract and committed (`9232335`), so iOS codegen ran against the
+> current contract (T-0302 `8d4cfe3`); and (2) the **dev mobile-API hosts are live** (the
+> `-partner-mobile-weu-dev` + `-customer-mobile-weu-dev` azurewebsites hosts that returned HTTP 000 on
+> 2026-06-26 are up — Wave-11 provisioning T-0317/T-0318/T-0320). With both clear, **T-0303 is `done`** and
+> the **ADR-0019 generated-client auth seam is proven** for the later authed waves to copy (sprint-12 §7.3
+> records two security forward-notes: the customer wave installs its OWN host-specific factory + allow-list;
+> the server-derived `employeeId` round-trip is safe only because the backend overrides the client
+> `EmployeeId` for non-admin callers). **PHASE 2 — T-0304 (partner shell + RegistrationLock + SplashGate)
+> AND T-0305 (partner auth completeness) are both `done`** on `phase/ios-phase2`. **T-0304** (3 commits —
+> `55b39aa` ADR-0020 docs, `c269360` Slice A fail-closed gate, `df71181` Slice B shell; reviewer #23 + #24 +
+> TC-IOS-REGLOCK green, security + Gate-DP APPROVE; CleansiaCore 93 + CleansiaPartner 61 pass). The ADR-0020
+> router reseed (`.dashboard`→`.splash`) **closed a latent T-0303 fail-OPEN** (an authed-but-incomplete
+> partner no longer lands on the authed area). **T-0305** (4 commits — `ccd25cd` §7.5 docs, `e232147` Slice A
+> ConfirmEmail, `3e70cdb` Slice B Register, `84d38bc` Slices C+D Forgot+Onboarding; every slice
+> reviewer-APPROVE, **Slice A also security-APPROVE** — security traced the backend `ConfirmUserEmail`
+> handler, which resolves the user from the confirmation **CODE alone**, so the anon **double-skip** (Bearer
+> withheld on the confirm path even with a token stored) is **SAFE**; Slices C+D got an explicit gate-safety
+> review — **SAFE**). All four flows shipped: **Register** (+ Core `PasswordPolicy`/`PasswordRuleList`),
+> **Forgot** (single-phase), **ConfirmEmail** (replaces the placeholder, **reuses the LIVE empty-token gate**:
+> 200+empty → no app entry, 200+token → authenticated), **Onboarding** (2-page pre-auth intro + the SplashGate
+> onboarding branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`). #25: `send()` gained an
+> `httpMethod:` param (ConfirmUserEmail **PUT**, no silent 405); **no new anon allow-list entry; Logout stays
+> authed**; a positive-control test proves the double-skip is non-tautological. `.verifyEmail(email:)` carries
+> the email (**no `UserProfileStore`**). **F1:** iOS **localizes ×5** the validation strings the Android
+> partner Register/Forgot VMs hardcode in English — **iOS does it right; the Android bug is NOT replicated** —
+> the android fix is the **PM-filed follow-up T-0333** (independent of the iOS wave). **Seed refinement:** the
+> `PartnerRootView` launch seed is now **UNCONDITIONALLY `.splash`** (was `hasValidSession ? .splash : .login`)
+> so the SplashGate is the sole launch resolver — recorded as an **ADR-0020 living-doc fold-in** (refines D2;
+> the fail-closed gate #24 is byte-unchanged, no bypass — the no-session branch resolves only to
+> `.unauthenticated`/`.needsOnboarding`, never `.authenticated`). `swiftformat`/`swiftlint` clean;
+> **CleansiaCore 114 + CleansiaPartner 96** pass on the iPhone 17 sim. **The rest of Phase 2+ (T-0306…T-0314,
+> and compliance T-0324…T-0329) remain `proposed`** in `status/sprint-12.md`; the next runnable tickets are
+> **T-0306** (map seam + MapKit, deps T-0300✓), **T-0309** (earnings/invoices, deps T-0304✓), and **T-0310**
+> (profile/devices, deps T-0304✓ + T-0306). The Phase-0 audit's 2 deferred findings (**T-0331** unblocked,
+> **T-0332** booking checkpoint) are in the audit banner directly below; the **android F1 follow-up T-0333**
+> (partner Register/Forgot VM validation i18n, `ready`, independent) is filed in `tickets/`.
+>
+> --- (iOS Phase-0 audit banner below) ---
+>
+> ## 🍎 iOS PHASE 0 FOUNDATION AUDIT — 2 deferred findings logged (2026-06-26) — NOT dispatched
+> **The now-compiling iOS Phase 0 foundation (`CleansiaCore` + both app targets) passed an
+> adversarially-verified multi-agent audit (analyst author + 2 adversarial verifiers), run 2026-06-26.**
+> Build / tests / lint are **green**. The audit's **one blocker** — `API_BASE_URL` never reaching
+> `Info.plist` → launch `fatalError` — was **already fixed + verified by launching the app in the
+> simulator**, so it is NOT tracked here. The **two remaining findings** below are **low / latent severity
+> and fully dormant** (no shipping screen exercises the affected code yet — only the auth spine + its tests
+> reference it). **Logged ONLY — not for implementation now;** each is folded into its natural suggested-home
+> ticket on the upcoming auth + booking waves, to be fixed via the normal workflow. Full audit:
+> **`audits/AUDIT-2026-06-26-ios-phase0-foundation.md`** (F1/F2).
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source / suggested home |
+> |----|-------|------|--------|-----------|--------|-----|-------------|-------------------------|
+> | **T-0331** | iOS `DeviceIdProvider` — persist own generated UUID (IDFV as seed only) + verify Keychain write `OSStatus` before caching | S | **DONE ✅ (row was stale — verified in code 2026-07-19: own-UUID mint, IDFV gone, OSStatus-verified Keychain write + retry-until-success, full test suite)** | T-0300 (proposed) | ios | no | — | AUDIT-2026-06-26 **F1** → auth spine **T-0300** / partner-login **T-0303** |
+> | **T-0332** | iOS booking-flow design checkpoint — send `Bearer` on dual-use `Order`/`Payment` endpoints when a session exists (withhold only for true guest) | S | **done ✅ / RESOLVED** — the dual-use Bearer carve-out shipped in **T-0313 Slice D** (`4e30aff`, `phase/ios-phase7`): `HeaderAdapter` attaches the Bearer on the 3 booking endpoints iff a token exists (signed-in→authed order; guest→tokenless; pure-anon→never; `CreatePaymentIntent`→always authed). AC1–AC4 satisfied, cross-referenced to ADR-0013 §D4.4 + header-parity §3; reviewer **APPROVE** + security **PASS** (no pure-anon Bearer leak; guest + partner non-regression). Recorded in `security/ios-customer-auth.md` | T-0313✓ | ios | no | — | AUDIT-2026-06-26 **F2** (DISPUTED→checkpoint) → booking-wizard **T-0313** (ADR-0013 §D4.4 / header-parity §3) |
+>
+> **F1 (T-0331):** `DeviceIdProvider.swift:42` persists IDFV as the `X-Device-Id` value (contract §2 says
+> persist your **own** UUID, IDFV is "optional seed" only — "the single most breakable rule"), and
+> `KeychainStore.write` (`KeychainTokenStore.swift:99-112`) discards the `SecItemAdd`/`SecItemUpdate`
+> `OSStatus` so a pre-first-unlock write failure caches a value that diverges on the next launch — both
+> break the `X-Device-Id` == `Device/Register` `deviceId` revoke invariant. **F2 (T-0332):** the customer
+> `AnonymousAllowList` (`:28-39`) correctly no-Bearers the **guest**-booking surface, but those `Order`/
+> `Payment` endpoints are **dual-use** — a signed-in customer's in-app booking would be sent with no Bearer
+> (`HeaderAdapter.swift:29`) and the server (`CreateOrder` reads `GetUserId() ?? string.Empty`) would
+> silently create a guest/empty-`UserId` order. **DISPUTED** in the audit → a booking-port **design
+> checkpoint** (send Bearer iff a session exists; withhold only for true guests), attached as an AC on
+> T-0313. **Both ids next-free after T-0330; both `draft`, dormant, awaiting their suggested-home wave.**
+>
+> --- (Wave-11 banner below) ---
+>
+> ## 🟦 WAVE 11 — Azure DEV deployment: Bicep IaC + region seam (ADR-0015/0017) — AGENT AUTHORING DONE; OWNER PROVISIONING PENDING (2026-06-23)
+> **The agent-authorable half of Wave 11 is DONE, reviewed/verified, committed + pushed (`38a10375` on
+> `feature/wave8-pre-ios-cleanup`).** The whole platform now has a clean-slate Bicep source-of-truth at
+> `deploy/bicep/` (the iOS-pivot enabler — a stable dev API the Mac points at instead of running all five
+> hosts + Functions + Postgres + Azurite locally). **6 tickets `done`** (T-0315, T-0316, T-0319, T-0321,
+> T-0322, T-0330); **3 OWNER-provisioning tickets `blocked`** on the owner (T-0317, T-0318, T-0320). Full
+> plan + the agent-vs-owner split + the OWNER PROVISIONING CHECKLIST: **`status/sprint-13.md`**.
+>
+> **What shipped (`38a10375`):** `main.bicep` (386 lines) + **10 modules** (appServicePlan B2 Linux,
+> reusable appService, staticWebApp, functionApp container/ACR, acr, postgres B1ms, storage LRS, keyVault
+> RBAC, roleAssignments, appInsights + Log Analytics) — **FIVE** API hosts incl.
+> `api-cleansia-customer-mobile-weu-dev` (the host the old YAML omitted, the iOS customer app needs); **no
+> secret value committed** (Key Vault refs + a `@secure()` Postgres password from a CI secret);
+> least-priv MI (KV Secrets User / Storage data roles / AcrPull; CI = Secrets Officer); HTTPS-only +
+> firewalled Postgres + mobile-host CORS closed; the **ADR-0017 region seam** (`region` param default
+> `weu`, the `weu` token in every name, a region→location map). `weu.dev.bicepparam` + `weu.prod.bicepparam`
+> (**prod authored, NOT deployed**). `deploy-dev.yml` rewritten (Bicep provision gate: what-if on PR /
+> create on push; OIDC + the EF-migration bundle preserved; parallelized deploys behind the migrate edge;
+> `matrix.region:[weu]`; `dev-weu` Environment; all five hosts). The **T-0330** region connection-string
+> resolver (`IRegionConnectionStringResolver` + `RegionConnectionStringResolver`, the ADR-0017 data seam —
+> one resolution point, behavior-preserving, **tenancy filter untouched**, no schema change).
+>
+> **Security gate PASSED on the module set (T-0315).** Reviewer-per-developer held — **except** the
+> in-workflow StructuredOutput report tool failed (retry cap) on the **T-0319** and **T-0330** dev agents;
+> that is a **REPORTING** failure, not a work failure (the work landed on disk), so the orchestrator
+> **gated those two BY HAND** (read the resolver + CI; built `Cleansia.Config` 0 errors; secret-scanned;
+> confirmed tenancy untouched + 5 hosts + OIDC/migration/provision gate). T-0319 + T-0330 are
+> **verified-done** despite their in-workflow reviewer not running. Process lesson reinforced in
+> `quality-gates.md` (3 occurrences across 2 waves now → standing rule + keep `buildEvidence`/`verifyEvidence` SHORT).
+>
+> | ID | Title | Size | Status | Phase | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0315** | Bicep skeleton + 10 reusable modules (`main.bicep`; five hosts incl. customer-mobile; KV-ref only; region-token names) | M (filed L→split) | **done ✅** `38a10375` | 0 FIRST | — | infra, backend, db | **yes** (PASS) | — |
+> | **T-0316** | `weu.dev.bicepparam` + region/env-param wiring (five host names, dev SKUs, CORS, firewall) | M | **done ✅** `38a10375` (PASS-WITH-NOTES) | 0 | T-0315✓ | infra | no | — |
+> | **T-0317** | **OWNER** — GitHub Environments (`dev-weu`/`prod-weu`) + flat-secret migration into per-env scopes | S | **done ✅** (owner-completed; reconciled 2026-07-19 — live dev hosts prove the env-scoped secrets flow) | 1 | — | infra, docs | yes | **gh-environments + secret-migration** |
+> | **T-0318** | **OWNER** — Key Vault values + RBAC grants + run/approve the first dev `az deployment` | M | **done ✅** (owner-completed; reconciled 2026-07-19 — 5×`/health`=200 "Healthy", KV refs resolving via MI) | 2 | T-0315✓, T-0316✓, T-0317✓ | infra | yes | **kv-secret-values + rbac-grants + az-deployment** |
+> | **T-0319** | Rewrite `deploy-dev.yml` — Bicep-gated, OIDC + EF-bundle preserved, parallelized, 5 hosts, `dev-weu` | M | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 2 | T-0315✓, T-0316✓ | infra, backend | no | — |
+> | **T-0320** | Dev smoke + verification (5 APIs + SSR + 2 SPAs + Functions; queue→Functions live) — **needs the env up** | M | **in_progress** — dev smoke: 5 APIs + SSR healthy (DB round-trips OK); Functions 503 root-caused + health check/alert shipped as **T-0437** (recovers on owner redeploy); remaining: the 2 SWA URLs (need az) + the authenticated blob/receipt round-trip | 2 | T-0318✓, T-0319✓ | infra, backend, qa | no | — |
+> | **T-0321** | Catalog + living-doc edits (deployment/IaC pattern + tenancy=app/region=infra orthogonality) | S | **done ✅** `38a10375` | 2 | T-0315✓ | docs, architect | no | — |
+> | **T-0322** | Author prod Bicep — `weu.prod.bicepparam` — **NOT DEPLOYED** | M | **done ✅** `38a10375` (authored, not deployed) | 3 | T-0315✓, T-0316✓ | infra, db | no | — |
+> | **T-0330** | Connection-string resolver indirection (ADR-0017 data seam — one place, behavior-preserving, tenancy untouched) | S | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 0 ∥ | — | backend | no | — |
+>
+> **Owner provisioning prerequisites (the path to a live dev env):** **T-0317** (create the `dev-weu`
+> auto + `prod-weu` protected Environments, migrate the flat `*_DEV`/`*_PRO` secrets) → **T-0318**
+> (populate the Key Vault values, grant CI = Secrets Officer + the MI roles, run the dev
+> `az deployment group create`) → **T-0320** runs once the env is live (the smoke that confirms the five
+> `api-cleansia-*-weu-dev` hosts are up — the iOS-pivot enabler). The agent **never** runs these — the
+> exact ordered owner steps are on the OWNER PROVISIONING CHECKLIST (`status/sprint-13.md` §7 + the PM's
+> checkpoint relay). **Q-INFRA-01/02/03 + Q-REGION-01/02/03 are all non-blocking for the dev provision**
+> (tracked with their defaults in `questions/open.md`); prod (T-0322) is authored-not-deployed.
+>
+> --- (Wave-9 banner below) ---
+>
+> ## 🟣 WAVE 9 PLANNED — Admin Action Audit Log (ADR-0012, planned 2026-06-22) — backlog only, not yet dispatched
+> **ADR-0012 (`adr/0012-admin-action-audit-log.md`) is `accepted`.** Owner approved building the **full**
+> audit-log feature now (backend + admin UI + tests). **7 tickets filed (T-0282…T-0288).** Full plan —
+> wave table, the 6-piece→5-ticket mapping, dependency-ordered batches, lanes (the Policy.cs/PolicyBuilder
+> cluster = one writer), the owner manual-steps bundle B1, and the Q-AUDIT-01 default resolution:
+> **`status/sprint-11.md`**. No code, no commits yet.
+>
+> **Q-AUDIT-01 RESOLVED (owner's "default now, ratify before prod"):** retention = **keep audit rows
+> indefinitely, no auto-prune** (a window is a separate pre-prod call); PII = snapshots store **ids +
+> changed fields only, never raw subject PII**; the GDPR-delete audit keeps **actor + scope + subject id**
+> and **legitimately survives** the subject's erasure (legal-basis exception). Moved open→answered; the
+> exact window + redaction list is a **pre-PROD readiness-checklist** ratification, not a blocker. Baked
+> into T-0282 / T-0284 / T-0287.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0283 / T-0284 / T-0285** (the compliance/
+> authz seam). QA on all. No `L` tickets (the ADR's 6-piece outline → 5 feature tickets; the test bundle
+> is test-first inside each per the ADR test list).
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0282** | `AdminActionAudit` entity + EF config (TenantId + global filter + 4 indexes) + migration | M | **DONE ✅ (row was stale — ticket `done`; entity+EF config+repo+spec in code, folded into the Initial migration `20260718083848`)** | **9A FIRST/ALONE** | — | db, backend | no | **ef-migration** |
+> | **T-0283** | `AuditLogBehavior` (inner-to-UoW, atomic) + `IAuditContext` + `IAuditFailureSink` + `[AuditAction]` + generic capture | M | **DONE ✅ (row was stale — ticket `done`; AuditLogBehavior + IAuditContext + IAuditFailureSink + [AuditAction] shipped, AuditLogBehaviorTests green)** | 9B | **T-0282** | backend | **yes** | — |
+> | **T-0284** | Sensitive-five before/after snapshots via `IAuditContext` (typed, pre-redacted, no raw subject PII) | M | **DONE ✅ (row was stale — ticket `done`; sensitive-five snapshots via IAuditContext shipped)** | 9C | **T-0283** | backend | **yes** | — |
+> | **T-0285** | `GetPagedAdminActionAudits` query (canonical `PagedData`) + new `AdminOnly` view policy (**owns Policy.cs/PolicyBuilder**) | M | **DONE ✅ (row was stale — ticket `done`; GetPagedAdminActionAudits + AdminOnly policy shipped, handler tests green)** | 9B | **T-0282** | backend | **yes** | **nswag-regen** |
+> | **T-0286** | Admin `audit-log` feature lib (facade+signals+`cleansia-table`, filters, 5 locales, per-resource history) | M | **DONE ✅ (row was stale — ticket `done`; admin audit-log feature lib shipped)** | 9D | **T-0285** + regen | frontend | no | **nswag-regen** |
+> | **T-0287** | Outbox retention-prune timer — Dispatched `OutboxMessage` + old `ProcessedMessage` rows (config-driven) | S | **DONE ✅ (row was stale — landed Sprint 10, reviewer-approved)** — re-verified 2026-07-19: PruneOutbox + timer function (daily 04:00), `OutboxRetention` config (enabled/14d/14d/500), 8/8 prune tests green | independent | — | backend | no | — |
+> | **T-0288** | Fix latent broken `order-management.component.spec.ts` (HttpClient inject — no test provider) | S | **DONE ✅ (row was stale — ticket closed 2026-06-23)** — canonical standalone providers (`provideHttpClient()`+`provideHttpClientTesting()`+`provideRouter([])`) in place; re-verified 2026-07-19: `nx test order-management` 43/43 green | independent | — | frontend | no | — |
+>
+> **Lanes/serialization:** **9A (T-0282) lands FIRST/ALONE** on the schema — the `AdminActionAudit` table
+> is the spine; hold 9B/9C/9D until the owner confirms the migration. **9B = T-0283 ∥ T-0285** (disjoint
+> files — behavior vs query+policy). **9C = T-0284** after T-0283 (serialize per sensitive-handler file,
+> one writer each). **9D = T-0286** after T-0285 **and** the owner admin nswag-regen (facade authored
+> test-first, held from `done` until regen + admin prod-build clean). **T-0285 is the SOLE writer of
+> Policy.cs/PolicyBuilder.cs this wave** (both move together or `AssertComplete` fails boot). **T-0287 +
+> T-0288 are independent** — fan out from day 1. **Owner manual-steps BUNDLE B1** (run once): the T-0282
+> ef-migration (table + 4 indexes; PROD = `CONCURRENTLY`), then the T-0285 admin nswag-regen + all-three
+> prod-builds → releases T-0286. **T-0281 (E2E sibling smokes) stays in Wave 8's close, NOT this wave.**
+>
+> --- (Wave-8 banner below) ---
+>
+> ## ✅ WAVE 8 CLOSED — Pre-iOS Cleanup (closed 2026-06-23) — 9/10 done; T-0280 + T-0279 carried
+> **The E2E layer is decided + green; the pre-iOS contract surface is deduplicated + canonical.** The
+> last two open items — **T-0271** (customer booking→checkout smoke) + **T-0281** (partner/admin sibling
+> smokes) — are now **`done`** (real Playwright specs driving the actual UIs, network-stub seam @ the
+> `/api/**` boundary, new `e2e-smoke` job in `frontend-ci.yml`; owner re-ran the customer smoke green
+> `1 passed, 42.1s`). They join T-0272–T-0278 (8 earlier closures). **Honest caveats (non-blocking):**
+> **T-0281's smokes were narrowed to login-and-land** — the partner job-accept transition (its AC1) and
+> the admin seeded-row (its AC2) were not asserted under the empty-list stub → depth carried to **T-0293**,
+> not silently passed. **T-0280** (FE comment cleanup, `ready`, deps satisfied) was **never dispatched** —
+> it is a genuine open Wave-8 leftover and the **top of the next batch**. **T-0279** stays `blocked` on the
+> separate IMP-3 regen. Per `status/sprint-10.md` §7 neither gates close. Full close summary +
+> reconciled final states + the close-out follow-ups: **`status/sprint-10.md` 🏁 WAVE 8 CLOSE**.
+>
+> **Close-out follow-ups filed 2026-06-23 (the un-ticketed audit-log follow-ups + the E2E nit/depth):**
+> **T-0289** (audit drill-in entry points, S, ready) · **T-0290** (single-row before/after audit diff +
+> new endpoint, M, **sec**, **nswag-regen**, ready) · **T-0291** (consistency.md disputes-archetype note,
+> XS, docs, ready) · **T-0292** (NG8102 dead `?? 0` cleanup, XS, ready) · **T-0293** (E2E partner
+> accept-job + admin seeded-row depth, S, ready). Rows in the close-out table below this banner.
+>
+> **The audit-driven program (Waves 0–7) is closed + merged. Wave 8 is a discrete pre-iOS cleanup wave.**
+> Scope = `audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4. **10 tickets
+> filed (T-0272…T-0281).** Full plan — wave table, dependency-ordered batches, lanes, the owner
+> manual-steps bundle, the reconciliation notes: **`status/sprint-10.md`**.
+>
+> **Reconciliation headlines (honest):** `GetPagedDisputes` **REFUTED** as a paged offender (it is
+> canonical A1–A8). `GetPagedMembershipPlans` **IS** an offender the audit MISSED but the tool flags →
+> added to T-0273; net genuine paged offenders = **7 live** (not 6). P4's "add an A* rule" → **already
+> satisfied** by the existing A1/A5 rules; the real gap was the offenders were never ticketed +
+> `consistency-violations.md` was stale (the **meta-finding**, now recorded in F1b). Findings #12→T-0273,
+> #13→T-0275 folded. Nothing else refuted.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0272 only. QA on all.** No `L` tickets.
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0272** | Auth wire-contract shrink — `trustedDeviceToken` mobile-only + drop `RefreshToken` server fields (P1 + #9) | M | **done ✅** | **8A FIRST/ALONE** | — | architect, backend | **yes** | **nswag-regen** (all clients) ✓ |
+> | **T-0273** | Canonicalize 7 bespoke paged queries → DataRangeRequest+Spec+Sort+PagedData (P4, #4/#5/#6/#12 + missed GetPagedMembershipPlans) | M | **done ✅** | 8B | — | backend | no | — |
+> | **T-0274** | Dedup API error-key extractor across 8 facades → shared `@cleansia/services` helper (#1) | M | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0275** | Delete dead paged dups (GetAllEmployees, GetUserByEmail) + LOW drift cluster (#7/#8/#13) | S | **done ✅** | 8B | — | backend | no | — |
+> | **T-0276** | Extract `SitewidePushFormFacade` → generated client + UnsubscribeControlDirective (#10) | S | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0277** | Hoist partner-app order formatters onto `:core` (#2) | S | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0278** | Hoist push-token cluster into `:core` behind `DeviceRegistrationClient` (#3) | M | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0279** | admin-pay-config.service → generated `AdminPayConfigClient` (#11) | S | **done ✅** (2026-07-19 — both pay-config facades → `AdminClient.adminPayConfigClient`, hand-rolled service + duplicate `PayConfigListItem` deleted; new facade specs 16/16, admin prod-build clean) | — | — | frontend | no | **nswag-regen** (IMP-3 regen landed ✓) |
+> | **T-0280** | Strip comment noise (FE auth services + audit pockets) (P2) | S | **DONE ✅ (row was stale — ticket `done`, shipped via squash-merged cleanup)** — re-verified 2026-07-19: `trustedDeviceToken` 0 hits, named noise classes 0 hits outside generated clients; auth services carry only keep-the-why comments | 8C | **T-0272** ✓ + regen ✓ | frontend, backend | no | — |
+> | **T-0281** | E2E sibling smokes — partner accept-job + admin login-and-land (P3) | M | **done ✅** (narrowed → T-0293) | 8C | **T-0271** ✓ | frontend, backend | no | — |
+>
+> **Lanes/serialization:** **8A (T-0272) landed FIRST/alone** — shrank the wire contract; the owner regen
+> bundle B1 was confirmed. **8B fanned out concurrently** (T-0273–T-0278, all `done`; T-0277↔T-0278
+> serialized on `:core`). **8C:** **T-0281 `done`** (on T-0271); **T-0280 stayed `ready` and was never
+> dispatched** (its T-0272+regen deps are satisfied — it is the runnable Wave-8 leftover, top of the next
+> batch). **T-0279 stays `blocked`** on the separate IMP-3 regen — does NOT gate Wave-8 close. **T-0271**
+> (customer E2E smoke) is the foundation T-0281 reused; both `done` 2026-06-23.
+>
+> **Wave-8 CLOSE-OUT follow-ups — POST-ADMIN-REGEN BATCH CLOSED 2026-06-23 (2 more commits on
+> `feature/wave8-pre-ios-cleanup`: `093ed944` FE + `7097d837` BE, pushed; orchestrator-verified on the
+> combined tree). T-0290 is now FULLY `done` — BOTH halves end-to-end (the FE before/after diff view
+> shipped against the regenerated `AdminAuditLogClient.getById`; `nx build cleansia-admin.app` prod clean,
+> `nx test audit-log` 24/24, `nx build cleansia-partner.app` clean — **ADR-0012 follow-up (b) CLOSED**).
+> T-0294 `done`. T-0295 BACKEND half `done`+verified (additive `AdminEmployeeDetail.UserId` + mapper +
+> test 2/2); its FE half (employee-page drill-in) is HELD on a **2nd** owner admin nswag-regen for the new
+> `UserId` field (mirrors how T-0286 / T-0290-FE were held). All six close-out follow-ups (T-0289…T-0293)
+> `done`; of the two batch-close follow-ups T-0294 `done`, T-0295 `in_review`. A StructuredOutput-vs-on-disk
+> process lesson recorded in `quality-gates.md` (a failed final-report call ≠ failed work — gate the tree
+> by hand; keep buildEvidence concise).**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0289** | Per-detail-page drill-in → per-resource audit-history view (additive wiring of T-0286's shipped route) | S | **done ✅** `916014cb` | T-0286✓ | frontend | no | — | ADR-0012 follow-up (a) (T-0286 close) |
+> | **T-0290** | Single-row before/after audit diff view + **new single-row backend endpoint** (snapshots off the PII-min list cut) | M | **done ✅** `093ed944` (BE `516e71c9` + FE `093ed944`; both halves, sec **PASS**) | T-0284✓, T-0285✓, T-0286✓ | backend, frontend | **yes** | **nswag-regen (admin) — DONE ✓** | ADR-0012 follow-up (b) (T-0286 close; ADR-0012 D4.1) — **CLOSED** |
+> | **T-0291** | consistency.md note — prefer the disputes-management list archetype for new admin lists | XS | **done ✅** `916014cb` | — | docs | no | — | ADR-0012 follow-up (c) |
+> | **T-0292** | Remove dead `?? 0` on non-nullable `extra.price` in `wizard-summary-step` (NG8102) | XS | **done ✅** `916014cb` | — | frontend | no | — | Wave-8 8C E2E dev-server boot |
+> | **T-0293** | E2E depth — partner accept-job transition + admin seeded-row (the T-0281 narrowed slice) | S | **done ✅** `916014cb` | T-0281✓ | frontend, backend | no | — | T-0281 close (AC1/AC2 narrowed) |
+>
+> **Batch-close follow-ups (filed 2026-06-23):**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0294** | Remove now-unused `private readonly router` + `Router` import in `confirm-email.component.ts` (lint doesn't flag unused private members) | XS | **done ✅** `093ed944` | T-0280✓ | frontend | no | — | T-0280 latent smell (comment removal orphaned the injection) |
+> | **T-0295** | Add `UserId` to `AdminEmployeeDetail` → enable the User-typed audit drill-in from the employee page | XS | **done ✅** (BACKEND `7097d837`; FE half shipped 2026-07-19 after the owner's 2nd admin regen — employee-page drill-in via `buildAuditResourceHistoryRoute(User, UserId)`, i18n key reused, admin prod-build clean) | T-0289✓ | backend, frontend | no | **nswag-regen (admin) — DONE ✓ (2nd regen landed)** | T-0289 deviation (employee page exposes `Employee.Id`, audit keys on `User.Id`) |
+>
+> **Parallel-shared-file lesson recorded** (`quality-gates.md` §"Serialize shared-file lanes …" + cross-ref
+> in `routing.md` rule 3): in this batch T-0291 + T-0289 both edited `consistency.md` in parallel and
+> T-0292's fix-agent ran `git restore consistency.md`, wiping T-0291's note (orchestrator restored it by
+> hand). Future batches **serialize shared-file lanes** (`consistency.md`, `INDEX.md`, i18n bundles,
+> `Policy.cs`/`PolicyBuilder.cs`) and **ban shared-file `git restore` in parallel agents**.
+>
+> ⚠️ **OWNER — admin nswag-regen PENDING (1 left):** the **T-0290** regen (the
+> `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint) **LANDED** and released T-0290's FE
+> half (now `done`). What remains is a **2nd admin nswag-regen for T-0295** — the new
+> `AdminEmployeeDetail.UserId` field (added in the later backend commit `7097d837`, after the first regen)
+> → it releases T-0295's FE half (the employee-page audit drill-in). After the regen run all three web
+> prod-builds per quality-gates §after-regen. **Separately, `T-0279` still waits on the unrelated IMP-3
+> admin regen** (a distinct, pre-existing owner item — not the same as the T-0295 regen).
+>
+> --- (Waves 0–7 close banner below, kept for traceability) ---
+>
+> ## 🏁 ALL WAVES (0–7) COMPLETE — the entire audit-driven program backlog is DONE (2026-06-21)
+> **Every ticketed wave is closed.** Waves 0–6 + the T-0197 mobile slice + T-0264/T-0265 are merged to
+> `master` (tip `b9e91cd8`, PR #81). **Wave 7 (Android consistency debt) is now COMPLETE** — 4 tickets
+> done, committed + pushed (`9c1989e4`) on `feature/wave7-android-consistency`; PR to `master` is the
+> owner's call (PM never merges). The **consistency audit (`audits/consistency-violations.md`) is
+> essentially fully resolved** — all backend (F1–F8), frontend (F10–F12), and Android §E rules
+> (E1/E2/E5/E6/E7) closed.
+>
+> **What remains across the WHOLE program — TWO open engineering follow-ups + standing owner items:**
+> - **Engineering follow-ups (the open tickets):**
+>   - **T-0270** (E2 residual — 3 post-Wave-5 one-shot-action VMs onto `ActionState`; S, `[android]`,
+>     draft, sprint 8; behavior-preserving, non-blocking).
+>   - **T-0271** (Phase-0 E2E smoke — customer **booking → checkout-intent** critical path in a real
+>     browser, run in seeded CI; M, `[frontend]`+`[backend]`, **ready**, sprint 8). **Closes the no-E2E
+>     gap** a retrospective surfaced: unit/integration/host tests cover the API seams but **nothing**
+>     verified the rendered customer journey end-to-end — a dead CTA / broken route / wizard step that
+>     won't advance is invisible to API-level tests. The Nx Playwright harness already exists but holds
+>     only the scaffold `example.spec.ts`; this is the thin "decide the E2E layer early" smoke (one
+>     spec + CI seed/boot wiring, no new framework), expandable later.
+> - **Every other follow-up is `done`:** T-0263 (admin failed-PDF render — the owner's
+>   admin nswag-regen WAS confirmed and the frontend half shipped: 34/34 + 12/12 green; Q-W3-3 now
+>   reconciled-closed), T-0264 (vestigial locale keys), T-0265 (Android email-validation test-env gap —
+>   why the partner suite is green on plain JVM) are all **`done`** on `master`/the Wave-7 branch.
+> - **Standing OWNER items (PM never runs these):** the two ops tasks — **Mapbox key rotation** +
+>   **Functions app restart**; the queued **owner manual steps** still pending merge/apply (the Wave-6
+>   ef-migrations: T-0261 UserMembership index + T-0237 catalog FK → in PROD apply the new indexes
+>   `CONCURRENTLY` by hand; and the two open PRs to `master`); and the **optional product / external-config
+>   items** (IMP-1 Google OAuth needs a Google Cloud project; BUG-22 email-badge CSS). Full consolidated
+>   owner list: `status/sprint-9.md` §close-out.
+>
+> --- (Wave-7 close detail below; mobile-slice + Wave-6 history kept for traceability) ---
+>
+> ## ✅ WAVE 7 COMPLETE — Android consistency debt (deferred E1/E2/E6/E7) (closed 2026-06-21)
+> **Wave 7 is COMPLETE — all work committed + pushed on `feature/wave7-android-consistency` (`9c1989e4`).**
+> PR to `master` is the owner's call (PM never merges). It cleared the **last** engineering debt: the
+> deferred Android consistency-sweep rules **E1/E2/E6/E7** filed STILL-OPEN in
+> `audits/consistency-violations.md` (F13/F14/F15/F16). T-0197 had closed **E5/ApiResult** only. All four
+> were **Android-only, mobile-only, behavior-preserving** — no go-live / money / correctness impact. **No
+> new ADR** (E5/E7 ratified by ADR-0011; E1/E2/E6 are §E rules). **No deliberation panel** (each a
+> mechanical canonicalization against a ratified rule → one-line no-decision note). Plan + execution
+> lanes + the E6 real-vs-raw count: **`status/sprint-9.md`**.
+>
+> **Orchestrator-verified on the real Android tree:** `:core` + partner-app + customer-app **all compile**;
+> **partner-app 37/37** (was 26 — T-0267 added 11 E1 characterization tests), **customer-app 201/201**,
+> **`:core` 13/13**; **92 changed files encoding-clean**; the **E6 re-grep confirms only the scoped
+> exclusions remain** (Singleton-repo flows, the 2 NavHosts, `:core` `GlobalSnackbarHost`).
+>
+> **DONE (4):** **T-0266** (E7 — partner dir/naming collapsed to inline-singular `features/<name>/`; pure
+> move + package/import rewrite, 0 body diffs; `Details`→`Detail` singular rename) · **T-0267** (E1 —
+> residual partner page-state flag-bags `InvoiceDetailsViewModel` + `OrderPhotosViewModel` → sealed
+> `*UiState`; +11 characterization tests) · **T-0268** (E2 — **verify-and-close, NO production edits**;
+> the audit-named F14 set confirmed canonical on the shared `ActionState`, F14 cleared — **surfaced 3
+> genuine post-Wave-5 E2 residuals → carried as T-0270**) · **T-0269** (E6 —
+> `collectAsStateWithLifecycle()` sweep over the filtered ≈56 screen/VM-flow collections across both apps).
+>
+> **Audit closed:** `audits/consistency-violations.md` — **F13 (E1), F14 (E2), F15 (E6), F16-E7
+> RESOLVED**; F14 carries the **small T-0270 residual**. The consistency sweep is essentially complete.
+>
+> **NEW follow-up filed:** **T-0270** (S, `[android]`, draft, sprint 8) — convert the 3 one-shot-action
+> VMs that postdate T-0252 (`CreateRecurringViewModel`, `DisputeDetailViewModel`, `DeleteAccountViewModel`)
+> off loose `_submitting`/`_loading` booleans onto the shared `ActionState` + `SharedFlow` pattern.
+> Behavior-preserving. The per-row/per-button in-flight discriminators
+> (`OrderDetailsViewModel._inFlightAction`, `OrdersListViewModel.inFlightActionOrderId`,
+> `RecurringBookingsViewModel._mutating`) are **recorded NON-violations** (a single `ActionState` can't
+> express which-row/which-button) — **NOT** in T-0270's scope.
+>
+> | ID | Rule | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|------|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0266** | **E7** | Unify partner-app dir/naming → inline-singular `features/<name>/` (structural move, no logic) | M | **done ✅** `9c1989e4` | — | android | no | — |
+> | **T-0267** | **E1** | Convert residual partner flag-bag `*UiState` → sealed (`InvoiceDetails`+`OrderPhotos`; T-0252 did the rest) | M | **done ✅** `9c1989e4` | T-0266✓ | android | no | — |
+> | **T-0268** | **E2** | Verify-and-close shared `ActionState` coverage (done by T-0252) — no production edits; surfaced T-0270 | S | **done ✅** `9c1989e4` (verify-close) | — | android | no | — |
+> | **T-0269** | **E6** | `collectAsStateWithLifecycle()` sweep — filtered ≈56 screen/VM-flow violations (both apps) | M | **done ✅** `9c1989e4` | T-0266✓, T-0267✓ | android | no | — |
+>
+> **Wave-7 close follow-up (filed 2026-06-21):**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0270** | Convert 3 post-Wave-5 one-shot-action VMs (`CreateRecurring`/`DisputeDetail`/`DeleteAccount`) off loose `_submitting`/`_loading` booleans → shared `ActionState` + `SharedFlow` | S | **DONE ✅ (row was stale — shipped `a5617826` PR #83: all 3 VMs on ActionState+SharedFlow, tests in new shape; re-verified 2026-07-19)** | — | android | no | — | T-0268 E2 verify-close AC4 residual |
+>
+> **Quality-foundation follow-up (filed 2026-06-21) — closes the no-E2E gap a retrospective surfaced:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0271** | **Phase-0 E2E smoke** — customer **booking → checkout-intent** critical path in a real browser, run in seeded CI (one Playwright spec replacing the scaffold `example.spec.ts` + CI seed/boot wiring; reuses the existing Nx Playwright harness — no new framework). Thin "decide the E2E layer early" smoke; partner/admin/full-regression are explicit follow-ups. | M | **DONE ✅ (row was stale — shipped `3fce5daf`+`184f3ddd` Wave-8, ticket PM-reconciled 2026-06-23)** — re-verified 2026-07-19: booking→checkout-intent smoke runs green (×3 deterministic) at the network-stub seam; e2e-smoke CI job present; en-route fix: cleansia.app-e2e eslint.config.mjs duplicate baseConfig import (lint was un-runnable, pre-existing on master) | — | frontend, backend | no | — | Workflow retrospective (no rendered-route/E2E coverage of the revenue path; harness = scaffold-only) |
+>
+> **T-0271 deferred-to-implementer seams:** the **Stripe handoff** (drive-to-handoff vs Stripe
+> test-mode vs network-stub — recommend drive-to-handoff; **if** test-mode needs a CI secret that's an
+> owner-only `manual_steps` flag to raise, not self-provision) and the **seed mechanism** (prefer the
+> existing `sql-scripts/insert_seed_data.sql` or a test-only seed against a disposable CI Postgres).
+> `manual_steps: []` unless the Stripe-test-mode-secret flag is raised.
+>
+> --- (mobile-slice + Wave-6 history below, kept for traceability) ---
+>
+> ## ✅ MOBILE SLICE — T-0197 `ApiResult<T>` migration COMPLETE (closed 2026-06-17, on `feature/wave-6`)
+> **T-0197 (mobile `ApiResult<T>`, the deferred ADR-first L epic) is DONE** — committed + pushed on
+> `feature/wave-6` in two phases: **Phase 1 = `dca897e1`** (ADR-0011 authored+accepted + the `:core` type
+> move: `ApiResult`/`ApiError`/`safeApiCall` hoisted into `cz.cleansia.core.network`, partner-app imports
+> re-pointed) · **Phase 2 = `7f391fdb`** (all **15 customer-app repos** migrated to `ApiResult<T>`, snackbar
+> moved repo → VM). PR to `master` is the owner's call (the `feature/wave-6` PR now also carries ADR-0011 +
+> this mobile migration on top of the Wave-6 batches). **PM never merges.**
+>
+> **ADR-0011 (`adr/0011-mobile-apiresult-contract.md`) is `accepted`** (2026-06-15) — it ratifies
+> consistency rule **E5** as the binding mobile repo contract, fixes the type's `:core` home, and fixes the
+> born-canonical iOS Swift equivalent. Living doc: `architecture/decisions/mobile-result-contract.md`.
+>
+> **Orchestrator-verified** on the real combined Android tree: `:core` + partner-app + customer-app **all
+> compile**; **customer-app 201/201 unit tests pass**; **ZERO E5 consistency violations for customer-app**
+> (`check-consistency mobile`); all **64 changed files encoding-clean**. The E5 entry for the customer-app
+> repos is **cleared** in `audits/consistency-violations.md` (F16).
+>
+> **Process note (rate-limit-resume recovery):** the run hit a provider rate-limit mid-Phase-2 and was
+> resumed; the resume was reconciled against the real tree (compile + 201/201 tests + 0 E5 + encoding) before
+> close — no partial/abandoned migration left behind.
+>
+> **STILL OPEN — separate out-of-scope mobile-consistency rules (their OWN future tickets, NOT closed by
+> T-0197):** **E1/E2** (sealed `*UiState` + shared `ActionState` — F13/F14) · **E6**
+> (`collectAsStateWithLifecycle()`, **22 instances** — F15) · **E7** (dir/naming inline-singular — F16).
+>
+> **NEW follow-up filed:** **T-0265** (S, `[android]`, draft, sprint 7) — the partner-app + customer-app
+> unit-test-env gap: `LoginViewModelTest` (×4) + `DashboardViewModelTest` fail on plain JVM because
+> `android.util.Patterns.EMAIL_ADDRESS` returns `null` without Robolectric/an Android test runtime (keeps the
+> partner suite permanently red; **proven pre-existing** — fails identically on clean `master`, independent
+> of T-0197). Scope: add Robolectric **or** extract email validation off `android.util.Patterns`. Row in the
+> follow-up table below the Wave-6 roster.
+>
+> ⚠️ **OWNER:** the `feature/wave-6` PR → `master` now carries **ADR-0011 + the mobile `ApiResult<T>`
+> migration** in addition to the Wave-6 batches. Mobile-only refactor → **no nswag-regen, no ef-migration**
+> for T-0197. Full consolidated owner list: `status/sprint-8.md` §close-out.
+>
+> --- (Wave-6 close banner below, kept for traceability) ---
+>
+> ## ✅ WAVE 6 COMPLETE — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene) (closed 2026-06-15)
+> **Wave 6 is COMPLETE — all work committed + pushed on `feature/wave-6` (`b8f89202`).** PR to `master`
+> is the owner's call (PM never merges). **12 tickets DONE this wave**, **orchestrator-verified green** on a
+> clean rebuild against real Postgres: **Cleansia.Tests 1513/1513 · IntegrationTests 79/79 · HostTests
+> 51/51 · all 3 web apps build production · 15 locale files valid.** The headline: **T-0236, the
+> MULTI-TENANT TOKEN-REVOKE GO-LIVE BLOCKER, is FIXED.** Close-out detail (per-batch landings, the two
+> regressions the real-DB gate caught, the held T-0238 frontend half, owner manual-step queue, follow-ups
+> filed): **`status/sprint-8.md` §close-out**.
+>
+> **DONE (12):** 6A — **T-0236** (multi-tenant token-revoke asymmetry — GO-LIVE BLOCKER, FIXED) · **T-0262**
+> (dead const removed) · **T-0240** (.kotlin gitignore). 6B — **T-0260** (chargeback funneled through the
+> dispute guard) · **T-0234** (ChangeOwnPassword guess bound) · **T-0238** (invoice PDF-failure DTO —
+> **BACKEND HALF ONLY**; frontend AC3 HELD on the admin nswag-regen → carried as **T-0263**) · **T-0261**
+> (UserMembership cancellation-reminder partial index). 6C — **T-0259** (nx-lib test-infra) · **T-0239**
+> (module-boundary sweep — zero `@cleansia/partner-services` imports under customer features + eslint rule)
+> · **T-0241** (admin eslint selector-prefix). 6D — **T-0237** (catalog-delete TOCTOU → FK Restrict). 6E —
+> **T-0242** (cancellation-fee per **Q-W5-1 path (B)** — unblocked + done) · **T-0233** (lockout-DoS —
+> analyst-panel-decided trusted-device mitigation). *(T-0238 is `done` for its backend half; its frontend
+> half is the new follow-up T-0263 — count of fully-closed-end-to-end = 11; "12 DONE this wave" counts
+> T-0238's backend landing.)*
+>
+> **Q-W5-1 RESOLVED:** owner answered **path (B)** — Plus members get a wider free-cancellation window;
+> T-0242 implemented + done, Q-W5-1 moved to `answered.md`.
+>
+> **TWO regressions the real-Postgres gate caught + the orchestrator fixed during verification (audit trail
+> — unit tests + reviewer PASS MISSED both):** (a) **T-0237** — an explicit `.WithMany()` on Service's
+> read-only projection navs created a duplicate shadow FK `ServiceId1` that 500'd order-with-services
+> queries; fixed by a string-named inverse nav. (b) **T-0233** — its new integration test seeded a
+> `RefreshToken` for an unseeded foreign user (FK violation); fixed by seeding the foreign user row. **Both
+> were caught ONLY by HostTests/IntegrationTests against real Postgres** — reinforces the verify-on-real-DB
+> gate (the unit suite + the per-ticket reviewer were both green and blind to them).
+>
+> **STILL OPEN / carried out of Wave 6:** ~~**T-0197** (mobile `ApiResult<T>`, L, ADR-first) — stays
+> deferred~~ → **DONE 2026-06-17** as the mobile slice on `feature/wave-6` (`dca897e1`+`7f391fdb`); ADR-0011
+> accepted. See the MOBILE SLICE banner at the top of Active. Its out-of-scope siblings (E1/E2, E6, E7) and
+> the new test-env follow-up **T-0265** carry forward.
+>
+> **NEW Wave-6 close follow-ups filed (T-0263…T-0264):** **T-0263** (admin invoice failed-PDF render + i18n
+> — the carried frontend half of T-0238, `blocked` on the admin nswag-regen) · **T-0264** (remove the
+> vestigial `api.email.sending_failed` locale keys in admin.app + partner.app, ×5 locales each, that
+> T-0262's `errors.*`/backend scope did not reach, `ready`). Detail rows in the Wave-6 close follow-up table
+> below the Wave-6 roster. Both are Wave-7 candidates.
+>
+> ⚠️ **OWNER ACTION QUEUE for Wave 6** (PM never runs these): **(1)** open the **PR `feature/wave-6` →
+> `master`** · **(2) nswag-regen — admin client** (T-0238 backend DTO fields `PdfGenerationFailed`/
+> `PdfGenerationError`; unblocks the held frontend half **T-0263**; the same shared DTOs also feed
+> partner + mobile-partner — additive/backward-compatible) · **(3)** apply the **T-0261 + T-0237
+> ef-migrations**, and in PROD apply the **new indexes `CONCURRENTLY`** by hand · **(4)** confirm the
+> **T-0197** sequencing (6M now or stay deferred). Full consolidated list: `status/sprint-8.md` §close-out.
+>
+> --- (Wave-6 planning/progress history below, kept for traceability) ---
+>
+> ## 🟢 WAVE 6 (planning + progress) — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene, mobile ApiResult) (promoted 2026-06-14) *(superseded by the WAVE 6 COMPLETE banner above)*
+> **Wave 5 merged to master: PR #78 (`7debef45`).** Owner gave the GO on **Wave 6** — the genuinely-open
+> carry-forward set after the Wave-5 close. **Branch: `feature/wave-6`** (cut from `7debef45`), committed
+> batch-by-batch. PM never merges; the PR to `master` is the owner's call. Full sequenced plan + per-ticket
+> lanes/gates/manual-steps + the owner items: **`status/sprint-8.md`**.
+>
+> **Scope = 13 genuinely-open tickets** (the recent follow-ups + deferred items), NOT the historical
+> Wave 0–3 ticket files that still read `draft` but are `done ✅` here (the **stale-status reconciliation**
+> was performed at Wave-6 close — see the close-out banner; 68 stale historical ticket files flipped to
+> `done`). **Front-loaded T-0236** (the MULTI-TENANT GO-LIVE BLOCKER, security-gated) + two safe
+> mechanical cleanups (T-0262, T-0240) as **Batch 6A**.
+>
+> **Promoted 11 `ready`:** T-0236, T-0262, T-0240, T-0260, T-0234, T-0238, T-0261, T-0241, T-0259, T-0239,
+> T-0237. **Held 1 `draft` for the deliberation PANEL** (its body mandates it): **T-0233** (lockout-DoS
+> mitigation — trusted-device vs CAPTCHA design decision). **Deferred-epic 1:** **T-0197** (mobile
+> `ApiResult<T>`, L, ADR-first) — runs as its own mini-wave **6M** or stays deferred (owner call, sprint-8
+> §4.2); the ADR may bank in parallel. **Excluded-blocked 1:** **T-0242** — was **BLOCKED on Q-W5-1**
+> (now answered path (B) → unblocked + done this wave).
+>
+> **Reviewer-per-developer on every ticket. Security gate** on T-0236, T-0260, T-0234, T-0237, T-0233.
+> **Optimizer** on T-0261.
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | **T-0236** ⚠️ MULTI-TENANT GO-LIVE BLOCKER | Token-revoke asymmetry: TenantId=null writes vs tenant-filtered revoke reads | M | **done ✅** `b8f89202` | 6A | backend | **yes** | ef-migration* (not taken) |
+> | **T-0262** | Remove dead `BusinessErrorMessage.EmailNotSentError` (zero consumers) | S | **done ✅** `b8f89202` | 6A | backend | no | — |
+> | **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | **done ✅** `b8f89202` | 6A | android | no | — |
+> | **T-0260** | Funnel `HandleChargeback` through the T-0172 `CanTransitionTo` guard (defense-in-depth) | S | **done ✅** `b8f89202` | 6B | backend | **yes** | — |
+> | **T-0234** | Bound `ChangeOwnPassword` current-password guessing | S | **done ✅** `b8f89202` | 6B | backend | **yes** | ef-migration* (not taken — reused lockout pair) |
+> | **T-0238** | Expose PdfGenerationFailed/Error on admin EmployeeInvoice DTOs (closes Q-W3-3) | S | **done ✅ (BACKEND HALF)** `b8f89202` — frontend AC3 HELD → **T-0263** | 6B | backend, frontend | no | **nswag-regen (admin) — owner** |
+> | **T-0261** | UserMembership partial index: cover the cancellation-reminder sweep arm | S | **done ✅** `b8f89202` | 6B | db, backend | no (optimizer) | **ef-migration (owner; PROD = CONCURRENTLY)** |
+> | **T-0241** | Admin-app eslint selector-prefix alignment + Nx generator default | S | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0259** | Frontend nx-lib test-infra scaffolding (tags + jest/eslint/tsconfig.spec) | M | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` + eslint rule | M | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` + template JSON check | M | **done ✅** `b8f89202` (⚠️ caught the `ServiceId1` shadow-FK regression — see close-out) | 6D | backend, db | **yes** | **ef-migration (owner)** |
+> | **T-0242** | Cancellation-fee Plus free-window override direction (Q-W5-1 path **B**) | S | **done ✅** `b8f89202` | 6E | backend | no (money-adv) | — |
+> | **T-0233** | Targeted-lockout DoS mitigation (trusted-device, panel-decided) | M | **done ✅** `b8f89202` (⚠️ caught the seed FK-violation regression — see close-out) | 6E | backend, frontend | **yes** | (panel marker; no migration taken) |
+> | **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** (epic, ran as 15 serial children) | **done ✅** `dca897e1`+`7f391fdb` (mobile slice, closed 2026-06-17; ADR-0011 accepted; 0 E5; 201/201) | 6M | architect, android, ios | no | — |
+>
+> \* `nswag-regen`/`ef-migration` flagged conditionally fire only when the diff actually changes a
+> generated-client surface or schema. **Owner manual steps this wave:** T-0238 nswag-regen (admin);
+> T-0261 ef-migration (UserMembership index, CONCURRENTLY in PROD); T-0237 ef-migration (catalog FK
+> Cascade→Restrict). Full detail: sprint-8 §close-out / §4.3. **Q-W5-1 RESOLVED (path B).** Dispatch was
+> {6A, 6B, 6C, 6D} concurrent → 6E (T-0233 panel + T-0242 once Q-W5-1 answered).
+
+**Wave-6 close follow-ups (filed 2026-06-15) — the held T-0238 frontend half + the T-0262 locale residual. Both Wave-7 candidates.**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0263** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0263-*.md` (`status: done`); this row was never updated.** Admin invoice failed-PDF render (failed-vs-pending indicator + `PdfGenerationError` text) + i18n ×5 — carried frontend half of T-0238 | S | **blocked** (admin nswag-regen) | T-0238✓ (backend) | frontend | no | **nswag-regen (admin)** | T-0238 AC3/AC4 held at Wave-6 close |
+| **T-0264** | Remove vestigial `api.email.sending_failed` locale keys (admin.app + partner.app, ×5 locales each = 10 entries) | S | **DONE ✅ (row was stale — shipped `b9e91cd8` PR #81)** — re-verified 2026-07-19: key absent from all 10 files, zero live references repo-wide | T-0262✓ | frontend | no | — | T-0262 residual (its `errors.*`/backend scope did not reach the `api.*` namespace) |
+| **T-0265** | Make email-validating VMs unit-testable off `android.util.Patterns` (Robolectric or extract) — `LoginViewModelTest`×4 + `DashboardViewModelTest` red on plain JVM | S | **DONE ✅** (PR #81) — shipped by the **extraction** route, not Robolectric: `core/validation/EmailValidator.kt` is pure `java.util.regex.Pattern` with a pure-JVM test in `:core`, consumed by partner's Login/ForgotPassword/Register view models, and zero `android.util.Patterns` references remain in production code. `PasswordPolicy.kt` already cites it as precedent, so the seam generalized. The named-red tests are green: LoginViewModelTest 9/9, DashboardViewModelTest 4/4. ⚠️ **Measured while closing this: removing `unitTests.isReturnDefaultValues` from all three modules produces 52 failures, and 100% are `android.util.Log` — zero are ViewModel tests.** So the extraction fully removed the `Patterns` dependency, and the flag now serves only fire-and-forget logging. Keep in view that **the flag is what made this defect silent**: it turned `Patterns.EMAIL_ADDRESS` into a null failing later at use, instead of the loud `Method X not mocked` that `Log` produces — so the next platform *constant* dependency will present as a mystery NPE, not a missing mock | — | android | no | — | T-0197 Phase-2 verification (pre-existing test-env gap, proven on clean `master`) |
+
+> **T-0263** carries the **frontend half of T-0238** (the admin failed-vs-pending render + error text +
+> i18n). T-0238 shipped its backend DTO fields in Wave 6; the frontend AC is **blocked on the owner's
+> admin nswag-regen** and unblocks to `ready` the moment that lands. **Q-W3-3 stays OPEN** until T-0263's
+> AC1 lands (it is NOT moved to `answered.md` yet). **T-0264** is the i18n residual T-0262 left because its
+> scope was the backend constant + the `errors.*` namespace, not the `api.*` namespace where the frontend
+> mirror lives (10 orphaned entries; the sibling `api.email.invalid_format`/`invalid_email` stay).
+>
+> --- (Wave-5 history below, kept for traceability) ---
+>
+> ## ✅ WAVE 5 COMPLETE — priority bugs + consistency/quality sweep (closed 2026-06-14)
+> **Wave 5 is functionally COMPLETE — all work committed + pushed on `feature/wave-5-consistency-bugs`**
+> (commits **`3df53ab2`** [5A bugs], **`79b0153c`**, **`226bc928`**, **`9be1f8ee`**). PR to `master` is the
+> owner's call (PM never merges). **21 tickets DONE** this wave, **orchestrator-verified green** on a clean
+> rebuild against real Postgres: **Cleansia.Tests 1472/1472 · IntegrationTests 66/66 · HostTests 51/51 ·
+> frontend order-wizard 119/119 + customer-disputes 41/41 Jest · all 3 web apps build production · S6
+> logging 9/9.** **T-0212 CreateOrder characterization gate held 20/20 unchanged** through the AUD-06
+> decomposition. Close-out detail (per-batch landings, AUD-06/AUD-07 decomposition outcomes, owner manual-step
+> queue, real bugs fixed, follow-ups filed): **`status/sprint-7.md` §close-out**.
+>
+> **DONE (21):** 5A — **T-0245** (multi-tenant webhook GO-LIVE BLOCKER — FIXED) · **T-0246** (StartOrder NRE
+> — FIXED). 5B — **T-0243 · T-0203 · T-0244 · T-0205 · T-0206**. 5C (T-0196 epic) — **T-0248 · T-0249 ·
+> T-0250 · T-0251 · T-0252**. 5D (T-0199/AUD-06 epic) — **T-0253 · T-0254 · T-0255** (CreateOrder god-handler
+> decomposed). 5E — **T-0201 · T-0198** (fixed real bugs: weak admin password, swallowed login/forgot errors).
+> 5F (T-0200/AUD-07 epic) — **T-0256 · T-0257 · T-0258** (order-wizard decomposed) · **T-0202** (disputes
+> own-client). 5G — **T-0204** (perf cluster + GDPR paging correctness fix + 4 indexes) · **T-0247**
+> (consistency-rule tooling). **The 3 parent epics T-0196 / T-0199 / T-0200 are now `done`** (all children done).
+>
+> **STILL OPEN (carried out of Wave 5):** **T-0242** (cancellation-fee Plus free-window direction) — **BLOCKED
+> on Q-W5-1** (owner product decision, still unanswered); carried to whenever the owner answers. **T-0197**
+> (mobile `ApiResult<T>` L-migration) — **DEFERRED to Wave 6** per sprint-7 §4.2 (stays `draft`, ADR-first).
+>
+> **NEW Wave-5 close follow-ups filed (T-0259…T-0262, all `draft`, Wave-6 candidates):** **T-0259** frontend
+> nx-lib test-infra scaffolding (T-0203 + T-0198 findings) · **T-0260** funnel HandleChargeback through the
+> T-0172 dispute guard (T-0247 finding, `sec`) · **T-0261** UserMembership partial-index cancellation-reminder
+> arm (T-0204 finding, ef-migration) · **T-0262** remove dead `BusinessErrorMessage.EmailNotSentError` (T-0205
+> finding). Detail rows in the Wave-5 close follow-up table below.
+>
+> ⚠️ **OWNER ACTION QUEUE for Wave 5** (PM never runs these): **(1) nswag-regen — admin client** + **customer
+> client** (T-0203 / T-0202 surfaces; the customer regen also clears the residual Wave-3 `DisputeReason.Chargeback`
+> + device-endpoints item) · **(2) the T-0204 ef-migration WAS applied; for PROD apply the 4 indexes
+> `CONCURRENTLY` by hand** (additive `CREATE INDEX CONCURRENTLY` outside the migration transaction) ·
+> **(3) answer Q-W5-1** to unblock T-0242 · **(4) confirm defer-T-0197-to-Wave-6** · **(5) the PR to `master`.**
+> Full consolidated list: `status/sprint-7.md` §close-out.
+>
+> --- (Wave-5 planning/progress history below, kept for traceability) ---
+>
+> ## 🟢 WAVE 5 (planning + progress) — priority bugs + consistency/quality sweep (promoted 2026-06-13)
+> **Wave 4 merged to master: PR #77 (`ee95a57f`).** Owner gave GO on Wave 5 and **folded the two
+> confirmed production bugs T-0245 + T-0246 to the FRONT** (fix first). Scope = the 2 bugs + the
+> consistency/quality sweep **T-0196…T-0206** + the 3 Wave-4 follow-ups **T-0242/T-0243/T-0244**. Full
+> sequenced plan + per-ticket stale-text deltas + lane/serialization notes: **`status/sprint-7.md`**.
+> **Branch:** all work on `feature/wave-5-consistency-bugs` (cut from `ee95a57f`), committed batch-by-batch.
+>
+> **Intake actions:** (1) **fixed an id collision** — two files claimed `id: T-0200`; the dispute-guard
+> `check-consistency` follow-up (`T-0200-da-2-followup.md`) was **re-id'd `T-0200 → T-0247`**; the AUD-07
+> order-wizard file keeps canonical `T-0200`. (2) sprint frontmatter re-tagged `3→5` on the swept tickets.
+> (3) **L-epics are NOT promoted `ready`** — they were split at dispatch. (4) Opened **Q-W5-1 (blocking)** —
+> Plus free-cancellation-window direction — **gates T-0242 ONLY**; the rest of the wave proceeds.
+>
+> **WAVE-5 PROGRESS (2026-06-13):** **Batch 5A DONE / committed `3df53ab2`** (T-0245 webhook tenant-scope +
+> T-0246 StartOrder NRE). Owner approved driving the rest autonomously. **The three L-epics are now SPLIT**
+> into **11 child tickets T-0248…T-0258** (T-0196→T-0248..T-0252; T-0199→T-0253..T-0255; T-0200→T-0256..T-0258);
+> the epics are `in_progress` [SPLIT/EPIC] trackers (`done` only when their children are). T-0197 (5H) stays
+> `draft`, defer-candidate. **Dependency-ordered dispatch plan: sprint-7 §2.2** — {5B,5C,5D,5E} concurrent →
+> {5F,5G} after T-0249/T-0251 land → 5H deferred. **5C must complete before 5F/5G.** T-0242 BLOCKED on Q-W5-1.
+>
+> **Critical sequencing:** **Batch 5A = T-0245 ∥ T-0246 FIRST** (disjoint files; T-0245 is the
+> **multi-tenant GO-LIVE BLOCKER**, `security_touching`, with a non-null-tenant integration test extending
+> the T-0210 webhook suite; T-0246 = null-guard + regression). **Batch 5D = T-0199/AUD-06 runs ALONE on
+> the `CreateOrder.cs` cluster** — its acceptance gate is **T-0212's Wave-4 characterization suite staying
+> green unchanged**; nothing else touching `CreateOrder.cs` parallelizes with it. **T-0196 (5C) is the
+> base** the frontend rebuilds (T-0200, T-0202) and the perf cluster (T-0204) depend on. **Reviewer-per-
+> developer on every ticket; Security gate on T-0245** (advisory on T-0198/T-0206/T-0247); adversarial
+> money review on T-0244 (and T-0242 when unblocked); optimizer on T-0204.
+>
+> | Batch | Tickets | Parallelism / lanes |
+> |---|---|---|
+> | **5A — priority bugs (FIRST) — DONE ✅ `3df53ab2`** | **T-0245** (webhook tenant-scope, M, sec gate, GO-LIVE BLOCKER) ∥ **T-0246** (StartOrder NRE→500, S) | Parallel — disjoint files. Both verified + committed. |
+> | **5B — backend micro-fixes + long tail** | **T-0243** (XS) → **T-0203** (M) *(Lane M-Membership, serial — both edit `CreateMembershipCheckoutSession.cs`)* · **T-0244** (S, money-adv) · **T-0205** (S, backend∥mobile) · **T-0206** (S, S6 sec-advisory) · **T-0242** (S, **BLOCKED Q-W5-1**, Lane BookingPolicy) | Fan out; 2 serial lanes (M-Membership, BookingPolicy). |
+> | **5C — consistency sweep base (T-0196 SPLIT → T-0248..T-0252)** | **T-0248** A* ∥ **T-0249** B1 ∥ **T-0250** B3 ∥ **T-0251** C* *(excl. `disputes.facade.ts`)* ∥ **T-0252** E1/E2 | 5 children concurrent; serialize only on same-file. **Base dep for 5F/5G (T-0249→T-0202/T-0204; T-0251→T-0200/T-0204).** |
+> | **5D — AUD-06 (T-0199 SPLIT → T-0253..T-0255) ALONE** | **T-0253**→**T-0254**→**T-0255** (serial a/b/c under the T-0212 net; T-0255 preserves the outbox seam) | **LANE-ISOLATED + SERIAL on `CreateOrder.cs`.** No other CreateOrder writer concurrent. Gate: T-0212 stays green+unmodified. |
+> | **5E — de-triplication + AddSavedAddress** | **T-0198** (M, auth/dispute/saved-address controllers + login/forgot facades, sec-advisory) · **T-0201** (M, AddSavedAddress + B9 mapper) | Separate lanes; SavedAddress controllers (T-0198) vs handlers/mappers (T-0201) vs T-0249 DeleteSavedAddress command disjoint but same area — one lane. |
+> | **5F — frontend rebuilds (after 5C)** | **[T-0256→T-0257→T-0258]** (AUD-07 order-wizard, SPLIT, serial) ∥ **T-0202** (disputes archetype, M, **regen-verify**) | Disjoint feature folders. AUD-07 chain downstream of T-0251; T-0202 downstream of T-0249 + regen-verify. |
+> | **5G — perf cluster + tooling (after 5C)** | **T-0204** (M, **ef-migration**, optimizer, BLOCKED on T-0249/T-0251) ∥ **T-0247** (S, check-consistency rule, sec) | Parallel. T-0204 internal fan-out one dev/reviewer per repo group; rebases PERF-D2 on T-0249 B1. |
+> | **5H — mobile ApiResult<T> (T-0197, L→split) — DEFER-CANDIDATE** | **T-0197** (architect ADR-first; one serial child per customer-app repo) | **Recommend defer to Wave 6** (owner call, sprint-7 §4.2). |
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | T-0245 ⚠️ GO-LIVE BLOCKER | Multi-tenant webhook validator/handler tenant-scope mismatch | M | **done ✅** `3df53ab2` | 5A | backend | **yes** | — |
+> | T-0246 | StartOrder handler NRE→500 on load divergence | S | **done ✅** `3df53ab2` | 5A | backend | no | — |
+> | T-0243 | CheckoutSession `nameof(Command)`→`nameof(userId)` B5 | XS | **done ✅** | 5B | backend | no | — |
+> | T-0244 | `GenerateVariableSymbol` deterministic stable hash | S | **done ✅** | 5B | backend | no (money-adv) | ef-migration* (not taken — stable-hash path) |
+> | T-0205 | Remove dead/unsafe code (Handlebars/SendGrid/FCM/scrap) | S | **done ✅** | 5B | backend, mobile | no | — |
+> | T-0206 | S6 logging hygiene (no PII/secrets in logs) | S | **done ✅** | 5B | backend, functions | no (advisory) | — |
+> | T-0203 | LG/DA/IA long tail (B5/B1/CQRS/magic-strings/swallowed catch) | M | **done ✅** | 5B | backend, frontend | no | **nswag-regen (admin — owner)** |
+> | T-0242 | Cancellation-fee Plus free-window override direction | S | **blocked (Q-W5-1) — CARRIED** | 5B | backend | no (money-adv) | — |
+> | T-0196 | Mechanical consistency canonicalization sweep (A*/B1/B3/C*/E1/E2) | **L** | **done ✅ (epic — T-0248..T-0252 all done)** | 5C | backend, frontend, android | no | nswag-regen* |
+> | T-0199 | AUD-06: decompose CreateOrder god-handler | **L** | **done ✅ (epic — T-0253..T-0255 all done)** | 5D | backend | no | — |
+> | T-0198 | De-triplicate Dispute/SavedAddress/Auth controllers + login/forgot facades | M | **done ✅** (fixed real bugs: weak admin password + swallowed login/forgot errors) | 5E | backend, frontend | no (advisory) | — |
+> | T-0201 | Decompose AddSavedAddress god-method + B9 mapper | M | **done ✅** | 5E | backend | no | — |
+> | T-0200 | AUD-07: split order-wizard god-facade + C3 pipe | **L** | **done ✅ (epic — T-0256..T-0258 all done)** | 5F | frontend | no | — |
+> | T-0202 | Customer disputes → own client + cleansia-table/form/error | M | **done ✅** | 5F | frontend | no | **nswag-regen (customer — owner)** |
+> | T-0204 | PERF cluster: indexes, tracked reads, eager Includes, projection-before-order | M | **done ✅** (+ GDPR paging correctness fix + 4 indexes) | 5G | backend, db | no (optimizer) | **ef-migration (done; PROD = apply 4 indexes CONCURRENTLY by hand)** |
+> | T-0247 | check-consistency rule: Dispute state-write allowlist *(re-id'd from T-0200; lives in T-0200-da-2-followup.md)* | S | **done ✅** | 5G | backend, tooling | yes | — |
+> | T-0197 | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **DEFERRED to Wave 6** (draft, ADR-first) | 5H (defer) | architect, android, ios | no | — |
+>
+> **L-epic split children (created 2026-06-13, ids T-0248…T-0258) — the three L-epics above are now
+> `in_progress` [SPLIT/EPIC] tracking tickets; each is `done` only when all its children are `done`:**
+>
+> | ID | Title | Size | Status | Batch | Parent | depends_on / blocks | Layers | manual_step |
+> |----|-------|------|--------|-------|--------|---------------------|--------|-------------|
+> | T-0248 | 5C.A A* canonical paged-query (PromoCodes/Referrals/PayConfigs/Services) | M | **done ✅** | 5C | T-0196 | — | backend | — |
+> | T-0249 | 5C.B B1 Response-wrap (CreateDispute/UpdateDisputeStatus/DeleteSavedAddress) | S | **done ✅** | 5C | T-0196 | blocks T-0202, T-0204 | backend | nswag-regen* (conditional) |
+> | T-0250 | 5C.C B3 validator-base composition (PayConfig/PayPeriod/Employee/CurrentUser) | S | **done ✅** | 5C | T-0196 | — | backend | — |
+> | T-0251 | 5C.D C* customer/partner/admin facades (**EXCL `disputes.facade.ts`**) | M | **done ✅** | 5C | T-0196 | blocks T-0200, T-0204 | frontend | — |
+> | T-0252 | 5C.E E1/E2 sealed Android UiState + shared ActionState | M | **done ✅** | 5C | T-0196 | — | android | — |
+> | T-0253 | AUD-06a address-resolution + serviced-area collaborator | M | **done ✅** | 5D | T-0199 | dep T-0118✓/T-0212✓; blocks T-0254 | backend | — |
+> | T-0254 | AUD-06b promo preview/apply collaborator | M | **done ✅** | 5D | T-0199 | blocks T-0255 | backend | — |
+> | T-0255 | AUD-06c payment-dispatcher + late-referral + slim handler (preserves outbox seam) | M | **done ✅** | 5D | T-0199 | closes T-0199 | backend | — |
+> | T-0256 | AUD-07a quote/pricing collaborator + C3-migrate stream | M | **done ✅** | 5F | T-0200 | blocks T-0257 | frontend | — |
+> | T-0257 | AUD-07b promo+referral + city-serviced collaborators + drop `firstValueFrom` | M | **done ✅** | 5F | T-0200 | blocks T-0258 | frontend | — |
+> | T-0258 | AUD-07c saved-address + slim facade (step-nav + submit) + C1/C3 submit branches | M | **done ✅** | 5F | T-0200 | closes T-0200 | frontend | — |
+>
+> \* `nswag-regen`/`ef-migration` fire **only if** the diff actually changes a generated-client surface or
+> schema (**T-0249** B1 / T-0203 SendSitewidePromo+device-error / T-0202 customer-client / T-0244 persist-path)
+> — the dev confirms at review; the PM adds the flag + holds consumers only then. **Owner manual steps this
+> wave:** T-0204 ef-migration (4 indexes, CONCURRENTLY); see sprint-7 §4.3. **Dependency-ordered dispatch
+> plan (post-split): sprint-7 §2.2** — {5B,5C,5D,5E} fan out concurrently → {5F,5G} after T-0249/T-0251 land →
+> 5H deferred; **5C must complete before 5F/5G**; T-0242 stays BLOCKED on Q-W5-1.
+
+**Wave-5 close follow-ups (filed 2026-06-14, all `draft`, Wave-6 candidates) — non-blocking findings the wave surfaced but (correctly) did NOT fold into the in-flight tickets. Sources in the rightmost column.**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0259** | **DONE ✅ — closure recorded on the row at line 1988; this is the FILING row and was never updated.** Frontend nx-lib test-infra scaffolding: tags + jest/eslint/tsconfig.spec targets for loyalty-promo-codes + customer login/forgot + partner-forgot libs | M | draft | — | frontend | no | — | T-0203 (nx config drift) + T-0198 (missing test targets) |
+| **T-0260** | **DONE ✅ — closure recorded on the row at line 1983; this is the FILING row and was never updated.** Funnel `HandleChargeback` dispute-terminal write through the T-0172 `CanTransitionTo` guard (not direct `Escalate`) — defense-in-depth | S | draft | T-0172✓, T-0247✓ | backend | **yes** | — | T-0247 finding (safe today: Pending→Escalated is legal) |
+| **T-0261** | **DONE ✅ — closure recorded on the row at line 1986; this is the FILING row and was never updated.** LG-PERF-06: UserMembership `(Status,CurrentPeriodEnd)` partial index `WHERE RenewalReminderSentAt IS NULL` doesn't cover the cancellation-reminder sweep arm | S | draft | T-0204✓ | db, backend | no | **ef-migration** (CONCURRENTLY, owner) | T-0204 finding |
+| **T-0262** | **DONE ✅ — closure recorded on the row at line 1981; this is the FILING row and was never updated.** Remove dead `BusinessErrorMessage.EmailNotSentError` constant (zero consumers) | S | draft | — | backend | no | — | T-0205 finding (no-decision mechanical cleanup) |
+| **T-0567** | **Backend (security, PII)** — `GetOrderDetails` applied NO pre-take redaction while its sibling `GetPagedOrders` applied a documented one, so one extra `GetById` returned what the list had just withheld: the customer's `AccessInstructions` **door code**, full street address with lat/long, phone, e-mail, confirmation code and the crew's personal phones — for any order with a free seat, indefinitely after completion. `GetOrderPhotos` handed a non-assignee a 1-hour SAS URL per photograph of the customer's home interior | M | **DONE ✅ 2026-08-09** (`b2a8cf62`) — new `OrderPiiRedaction` seam applied handler-side at both call sites; predicate is `CanAccessOrderAsync` re-asked AFTER the browse gate (not "is assigned" — an employee booking their own home arrives as the CUSTOMER), so it fails closed on any future widening. Photos moved to the strict gate. 17 fields redacted incl. 3 beyond the brief; `OrderRedactionSurfaceTests` classifies EVERY DTO member both ways with per-field anti-vacuity. 25 mutations, all red, each sha256-restored. Half-crewed `Completed` scenario pinned over real Postgres | — | backend | **yes** | — | Security read of the browse gate, 2026-08-09 |
+| **T-0568** | **Backend (authz parity)** — `[RequireCompleteProfile]` was class-level on 4 **web** partner controllers and on NOTHING on the mobile partner host, while `RegisterEmployee` is `[AllowAnonymous]` and `MobilePartnerLogin` gates on `IsActive`+profile with no `ContractStatus` term: a self-registered never-approved account reached the job board and order detail on `:5002` where `:5000` returns 403 | S | **DONE ✅ 2026-08-09** (`0e1a26ff`) — gate added to mobile Order/Dashboard/EmployeePayroll. NOT a login gate: an unapproved cleaner must sign in to upload documents. `EmployeeController` (feeds both apps' registration-lock screen) stays ungated on both hosts, asserted by name. Guard asserts the SHAPE — a controller on both partner hosts gates the same way on both | — | backend | **yes** | — | Security read of the browse gate, 2026-08-09 |
+| **T-0569** | **Backend (contract)** — `PUT /api/Employee/UpdateEmployee` declared `[ProducesResponseType(typeof(CreateOrder.Response))]` while returning `UpdateEmployee.Response`; the shipped NSwag client reads `updateEmployee(): Observable<CreateOrderResponse>` (`partner-client.ts:1615`) | S | **DONE ✅ 2026-08-09** (`86229699`) — attribute fixed and the CLASS closed: a source scan over all 5 hosts compares each action's declared 200 body against its return-site type (1 mismatch in ~250 actions). The 9 download endpoints are covered by a second fact (returns a file ⇒ declares `FileContentResult`) rather than excused | — | backend, frontend | no | **`nswag-regen`** (owner) — the client's return type only corrects on regeneration | Frontend lane's contract derivation, 2026-08-09 |
+| **T-0570** | **Frontend (i18n guard)** — the three `error-contract-parity.spec.ts` claimed to be "derived mechanically" and were hand-pasted arrays, so a key added to a new endpoint was invisible: the guard was not failing, it was not looking (the T-0565 class, one artifact up) | M | **DONE ✅ 2026-08-09** (`d5adab4e`) — all three now walk their host's controllers and resolve each `Mediator.Send` argument to its feature class; an UNRESOLVED site is itself a failure. **36 keys were missing** (1 partner, 16 customer, 19 admin), incl. `employee.job_radius_out_of_range`, whose refusal rendered the generic error in every locale. Admin roster 13 → full derived surface, retiring the catalog's partial-list permission | — | frontend | no | — | Locale sweep during the sprint-15 close |
+| **T-0571** | **Backend (authz guard)** — admin routes were pinned to admins by host tests alone, one named case per route somebody thought to write. `CleansiaApiController`'s bare `[Authorize]` resolves to the default policy (authenticated + JWT), so an admin action without `[Permission]` is not 401 — it opens to ANY authenticated caller | S | **DONE ✅ 2026-08-09** (`d04b421c`) — 4 reflective facts over all 5 hosts; the bare-authenticated bucket frozen as a LIST (a count stays green when one route leaves and another enters), the Admin subset asserted separately, and one fact catching a controller deriving from `ControllerBase` directly. All 24 current entries read and justified, not grandfathered | — | backend | **yes** | — | Sprint-15 guard sweep |
+| **T-0572** | **iOS + Android** — the per-employee job radius (`ae86be42`) and ADR-0045's `order.preferred_offer_closed` had NO client on either platform | M | **DONE ✅ 2026-08-09** (`b996c5d5` Android, `a21dfcc3` iOS) — radius control + one-time onboarding prompt on both partner apps (bounds 1–500 km read from `JobProximity`; "no limit" is an explicit toggle, not a slider end-stop, and clears to `null` on the wire — pinned over a real socket, since a mocked client cannot tell `null` from `0`). Closure copy in 5 locales on both platforms; the two lanes had written DIFFERENT sentences and reconciled to one, then pinned it against drift. Display map registered (`8731259a`) | — | ios, android, backend | no | **`mobile-spec-regen`** (owner) — the committed spec predates the radius by 9 h and carries neither the path nor `EmployeeItem.jobRadiusKm`, so the profile read decodes the value away | Q-FEED-03 + ADR-0045 |
+| **T-0573** | **Docs/ADR** — the payout invoice carries no payment reference of any kind, and "mark this invoice paid" records a claim nothing can reconcile | M | **ADR ACCEPTED ✅ 2026-08-09** (`6432b7d8`) — **ADR-0046**, panel-ruled REVISE on a 17-item closed list, all transcribed. Counter key is `(Year)` alone (no `Scope`); `MarkInvoicePaid` REFUSES a null-symbol invoice rather than demanding a note the UI ships `undefined`; the cap is in the SQL; D1's pigeonhole argument replaced (it proved the wrong thing and would have ruled out D9-I). Erratum E1: keys take the `payroll.invoice.*` prefix. **BUILD IN PROGRESS** | — | architect, backend | **yes** | **`ef-migration`** (owner) — one new table, `PayoutReferenceCounters`, riding nothing | Q-VS-01/03 + T-0522 residual |
+| **T-0574** | **Process (catalog integrity)** — a claim about the tree DECAYS, and nothing sees it. Ten instances found 2026-08-09 in one pass: a role card reading "NOT YET BUILT" for a component that shipped 2 h 11 m later, an enumerated "exactly two documented exceptions" where there are six, two PROPOSED banners over accepted ADRs, four backwards statements on one card, and the previous hand-written staleness patch having itself drifted three lines | S | **DONE ✅ 2026-08-11** (`c18e3b47` checker · `7f4aa09d` sweep + promotion · reviewer-check 5 extension) — all four items closed. Baseline **16 → 0**; `--warn` is off, so the corpus scan is `T1-CI` and blocking. The RULE landed (`conventions.md` §"A claim about the tree carries its own retirement condition": status claims quote the status token, "not yet built" names the retiring path, `file:line` must resolve, and a count of tree instances is never enumerated — roster + membership test instead). This ticket is its GATE: `agents/tools/check-catalog-claims.mjs`, spec in `agents/process/enforcement.md` §"The catalog-claim liveness check". Own repo-root workflow (no stack's CI watches `agents/`), triggered on `agents/**` AND the `src/` trees the citations point into — a citation rots when the CITED file changes. **Substitute this id into both `(gate pending: …)` tokens on landing.** Baseline is NOT zero: 6 fixed, ~40 role cards + 5 catalog pages unswept, which is why the rule ships marked `(gate pending)` rather than `T1-CI` | — | docs, backend | no | — | Adversarial audit of the sprint-15 branch, 2026-08-09 |
+| **T-0575** | **Backend (comment)** — `DeactivateAdminUser.cs:57-61`'s inline conditional `ExecuteUpdateAsync` is the self-commit roster's one incomplete entry: its comment satisfies S7a but not the roster's third conjunct (the three-part sanctioned-exception doc-comment). Listed rather than failed, because the design is right and unlisting a correct write would make it read as a violation | XS | **DONE ✅ 2026-08-10** (`05816e05`) — the conjunct (iii) sentence written; the write itself untouched (5 insertions, 0 deletions). `consistency.md`'s roster entry discharged in `6c555ea9` — one sentence. The write is correct; only its justification is under-documented against the roster it now appears on | — | backend | no | — | Self-commit roster rebuild, 2026-08-09 |
+| **T-0576** | **Android — collapse `PeriodPayApi` behind a `toDomain()` mapper.** The hand-written interface's own KDoc premise is stale: the regenerated spec now carries `/api/EmployeePayroll/GetPeriodPays`. But it is **not** the like-for-like swap the job-radius one was — neither schema declares a `required` array, so the Kotlin generator emits every property optional-with-null regardless of `nullable: false`, and those types feed five composables and the UI state directly | M | **DONE ✅ 2026-08-10** (`51c1311c`) — mapper landed; `@SerialName` sets matched the spec exactly, 14/14 and 16/16. Ruled DROP for an id-less pay line, because nothing rendered as money comes from the lines and failing would blank a period the server answered correctly — the mapper must assert five things, each chosen because the naive `?: 0.0` breaks it: (1) **money is never coerced** — the spec marks it `nullable: false`, so a null means a broken wire field, not zero, and "0 Kč this period" to a cleaner who earned 4,800 is the failure this prevents; (2) booleans follow the money rule, since `false` is a real payroll state and defaulting to it is a lie; (3) identity is refused, never synthesized — a line with no id is dropped; (4) collections DO default (`orEmpty()`); (5) nullable-by-design strings stay nullable. Pin: a `PeriodPayWireTest` decoding a captured payload with every member non-default, asserting a missing money key FAILS the mapping, and that the `@SerialName` set equals the spec's property set — the field-name contract the hand-written class owns implicitly and would otherwise lose silently | — | android | no | `mobile-spec-regen` (confirm the dump matches the running host first) | Client collapse after the owner's regen, 2026-08-09 |
+| **T-0577** | **Backend — `RegenerateInvoicePdf` validates a `LanguageCode` that decides nothing.** `languageRepository.GetByCodeAsync(command.LanguageCode, …)` assigns `language` and nothing reads it; the document's language is chosen downstream from `employee.Address.Country.IsoCode`. So the parameter is validated, costs a query, and has no effect | XS | **DONE ✅ 2026-08-10** (`f7eb37f0`) — **the premise was wrong**: `PayPeriodBackgroundService` declares `languageCode` and never reads it either, so the original ALSO renders from the country ISO code and there was no inconsistency. Ruled for the jurisdiction; the dead lookup and its repository dependency removed; an unknown language code was answering `InvoiceNotFound`, now `LanguageNotFound` — deleting it is a wire change; honouring it changes which language a re-render prints in. **That is a decision, not a cleanup** — the cleaner's own preferred language now reaches the server (`a215c560`/`4e229fe3`/`14c1f78f`), so "which language does a REGENERATED invoice print in" has a live answer it did not have last week | — | backend | no | — | ADR-0046 remedy lane, 2026-08-09 |
+| **T-0578** | **Backend — the pay-period job swallows the real PDF exception.** `PayPeriodBackgroundService.GenerateInvoicePdfAsync` catches, logs and returns null, so its caller throws `"PDF generation returned empty result"` and records THAT string on the row. The genuine cause reaches the log and never the row an admin reads | XS | **DONE ✅ 2026-08-10** (`8e96c7ba`) — every failure mode now records its own cause. Found a live bug beyond the swallow: on shutdown the old code stamped the error and its cancelled commit threw, leaving the stamp **dirty in the tracker to land on the next employee's invoice** — the row is the admin's only durable signal (see ADR-0046 Erratum E5), so recording a placeholder where the cause belongs is the same defect one layer up from the one `cdd3133b` just fixed | — | backend | no | — | ADR-0046 remedy lane, 2026-08-09 |
+| **T-0579** | **ADR-0045's cleaner-facing half was unreachable on every client.** `DeclinePreferredOffer` and `MyPendingOffers` shipped on both partner hosts and NO client called either — so a cleaner offered a job by name could only ignore it, and the customer waited out the full hold window for a lapse the cleaner already knew about. The ADR's own sentence is "the job releases to everyone on a decline OR on silence"; only the silence half existed | M | **DONE ✅ 2026-08-10** (`c9f28cfd` Android; iOS mirroring) — self-hiding dashboard card → pushed "Reserved for you" screen, so a cleaner with no offers sees nothing at all. **The deep link deliberately stays on the order detail**, argued from the tree: the grant and the push have DIFFERENT predicates (`OrderFactory.cs:184` grants on the resolver's deadline, `:192` pushes on its recipient), so a NotifyOnly recipient and a pre-webhook card order would both follow a link to an empty list. Confirm is `TakeOrder` and nothing else, guarded by a mutation. The capped-cleaner refusal — ADR-0045's own filed "visible broken promise" — now takes the blame in platform-owned framing. 30 mutations, 30 killed; one survived first (a re-entry guard asserting before the rival coroutine dispatched) and was disclosed rather than quietly fixed | — | android, ios | no | — | ADR-0045 client gap, 2026-08-10 |
+| **T-0580** | **Customer web had no favourite-cleaner surface**, and `choosePreferredCleaner` had no caller anywhere. The wizard carried a deliberate refusal-to-build comment that two ADRs cite as the known gap | M | **DONE ✅ 2026-08-10** (`e9815f75`, `677da8cb`) — picker at booking + the re-choose on order detail. **Improves on both mobile apps rather than copying them**: they call `MyServingCleaners` with no arguments so availability is always null and nothing is marked; web passes the slot and the selection, which is what ADR-0039 D5 built the optional parameters for and is the difference between marking a busy favourite and silently dropping the preference at submit. The pending copy attributes no conduct — the lane started with "they haven't answered", recognised it as a statement about a person, and dropped it | — | frontend | no | — | ADR-0045 customer gap, 2026-08-10 |
+| **T-0581** | **Two preferred-offer gates were missing terms, and three client lanes were carrying workarounds.** `PreferredOfferExit.IsOpen` had no offerability term and no caller term; `GetMyPendingOffers` had no "not already assigned to me" term | S | **DONE ✅ 2026-08-10** (`4fa3e63d`, client narrowings deleted in `d5ba1484`) — the offerability harm was **worse than the push it looked like**: because Q-BROWSE-01 (b) already withheld the push, the real outcome was a SILENT GRANT — hold written, the customer's one re-offer round burned, no cleaner told, and no closure message either since the lapse sweep refuses Cancelled/Completed. `StateOf` then reported `AwaitingConfirmation`, so a customer's cancelled booking said a named cleaner was considering it. **A status list cannot stand in for offerability** — proved by mutation: replacing it with `!= Cancelled && != Completed` left the money-has-not-landed row green. `GetMyPendingOffers` was an omission, not a design: both other cleaner-facing surfaces already carried the term. `OrderAvailability.cs` byte-unchanged (ADR-0045 §D9's own check) | — | backend, frontend | no | — | Confirmed independently by three lanes, 2026-08-10 |
+| **T-0582** | **The generated-DTO money-coercion class: 52 live sites and 15 unmapped repositories.** Kotlin's generator emits every property optional-with-null because neither mobile spec declares a `required` array, so `?: 0.0` on a `nullable: false` money field silently renders zero where the server sent a value it could not parse | L | **DONE ✅ 2026-08-10** (`af288efa`, `02a02957`, `f2273bab`) — all 52 named sites plus 9 adjacent; 49 mutations, 49 caught. **The rollup ruling is per surface and the catalog case is the sharpest**: refuse the page for services/packages/extras, because `ConfirmStep` sums the SELECTED rows while the selection is ids held in `BookingState` — so a dropped row keeps its id selected, is still priced by the server on Create, and vanishes only from the pre-quote subtotal. A customer would pay a price they were never shown. Membership plans refuse for a different reason: the rows are alternatives to each other, so a missing one is a different purchase. Also fixed en route: `CatalogRepository` called `.orEmpty()` on the body, so a refused price list surfaced as an **empty catalog reported as Success** — "nothing is bookable today", strictly worse than the coercion — 9 partner sites (`DashboardScreen`, `EarningsSummaryScreen`, `PendingOffersScreen`) and **43 customer** (`OrderApi` 14, `BookingApi` 7, `CatalogApi` 4, `MembershipApi` 4, `LoyaltyApi` 2, plus booking/confirm/profile/subscribe screens). **The customer app is the sharp half and looks CLEAN to a naive audit**: it HAS `toDomain()` mappers — *and the mappers coerce*. All 20 distinct coerced field names (`totalPrice`, `refundAmount`, `exchangeRate`, `feeAmount`, `finalPriceAfterDiscount`, …) verified `nullable: false` in the spec. Remedy is T-0576/`9993b956`'s: refuse the null, never default it. **The rollup ruling depends on the surface** — refuse the page where the list IS the addends, drop the row where a total is supplied independently | — | android | no | — | Sweep from the invoices mapper, 2026-08-10 |
+| **T-0583** | **GDPR erasure does not erase `DeadLetter` rows.** `GdprDeletionService` has no `DeadLetter` walk — a grep for it across every retention, GDPR, prune and purge path returns **zero**. So an erased user's e-mail and real name persist in `RawBody` **indefinitely**, in plaintext, after the platform has told them they were deleted | S | **DONE ✅ 2026-08-10** (`ccaf98d5`) — id-keyed erasure the way the payout-details erasure already works, not a navigation walk. Latent rather than live (it needs database access, not a request), but it is the one residual that makes a **compliance statement false** rather than merely risky | — | backend | **yes** | — | Poison-alert redaction ruling, 2026-08-10 |
+| **T-0584** | **`DeadLetter.RawBody` has no retention sweep.** Neither `DataRetentionTimerHandler` nor `PruneOutboxTimerHandler` touches it, and the entity's own docstring says rows are *"stored unbounded … so nothing is truncated"*. Raw reset tokens therefore accumulate in plaintext forever | S | **DONE ✅ 2026-08-10** (`d4fe774e`) — bounded in *credential* value by the 15-minute code expiry, **unbounded in PII value**. ⚠️ Unlike T-0583 this one **does** touch ADR-0002 D3's "stored unbounded" wording, so it is an Architect call first and a build second — the recovery source is not an archive, but D3 has to say so before code does | — | architect, backend | **yes** | — | Poison-alert redaction ruling, 2026-08-10 |
+| **T-0585** | **A service could be published before anyone said what a cleaner earns for it.** `OrderPayEstimator` returns null when no `EmployeePayConfig` matches the order's services or packages — **platform-wide included** — and nothing connected the features: no create, update or activate path on a `Service` or `Package` required a pay config to exist. The order then appeared on **every** cleaner's board with no pay quoted and counted as **zero** in their earnings rollup | M | **DONE ✅ 2026-08-10** (`29cbd184`, i18n in `0f13041d`) — owner ruled *"IT SHALL NOT BE POSSIBLE"* and asked for the onboarding half by name. **One predicate, two gates**: bookability (enforced at `OrderFactory`, the sole `Order.Create` caller, mirrored in the validator and withheld from the wizard) and approval (a cleaner cannot be approved unless pay resolves for them across the active catalogue, with the refusal **naming each missing entry**). `DeletePayConfig`'s back door closed on two conjuncts — the second, *still consulted = active **or** carried by an existing order*, is what a rule keyed only on `IsActive` would miss. **Two seed defects found and fixed**: the seed had **zero** `EmployeePayConfigs` rows (a fresh DEV would have had blank pay for every cleaner and no approvable cleaner at all), and the `CountryInvoiceConfigs` insert omitted a `NOT NULL` column with no default, so the whole seed aborted with `23502` and `SeedDevelopmentData` swallowed it as non-fatal — **a reseed produced an empty database and told nobody**. 18 mutations, 18 red | — | backend | no | — | Q-PAY-ROLLUP-01, owner ruling 2026-08-10 |
+| **T-0586** | **`OutboxMessage.Body` is the same defect one table over, and worse.** Byte-identical content to `DeadLetter.RawBody` — *"the already-serialized wire body, stored verbatim"* — so the same `send-email` payload with the recipient's address, real name and raw token. **No GDPR walk, and no sweep can reach it**: `PruneOutbox` prunes only `Dispatched` rows, under an explicit comment that `Pending`/`Failed` *"must never be pruned"*. So a row retired by `MarkFailed` (retry budget exhausted) sits forever, and so does a `Pending` row that never drains | S | **DONE ✅ 2026-08-11** (`8015a01a`) — found independently by the T-0584 architect ruling **and** the T-0583 build, from opposite directions. The fix is the strictly EASIER version of `ccaf98d5`: `OutboxMessage` already has a first-class `MessageKey` **column**, so no body parsing is needed at all. ⚠️ Its retention clock is **not** T-0584's: a `Failed` outbox row is genuinely re-drivable, so it has a REAL recovery role where the dead-letter row's is nominal — the erasure half is unconditional, the ageing half is its own decision (ADR-0002 §A8) | — | backend | **yes** | — | T-0583 + T-0584, 2026-08-10 |
+| **T-0587** | **`LiveActivityToken` survives erasure while its sibling `Device` rows do not.** `UserId` + `DeviceId` + the APNs push token, neither erased by `GdprDeletionService` nor swept by any retention path — while the erasure *does* remove `Device` rows for the same subject | XS | **DONE ✅ 2026-08-11** (`f46c5d2a`) — ruled **erase**, same fact as the `Device` row already deleted. The payload is pseudonymous, so this is an **inconsistency** rather than the compliance breach T-0583 was: two tables holding the same subject's device identity, one erased and one not, with no stated reason for the difference. Either erase it or record why it is retained | — | backend | **yes** | — | T-0583 adjacent-table sweep, 2026-08-10 |
+| **T-0588** | **19 money-coercion sites remain, in the repositories the T-0582 sweep did not reach** — `ReferralApi` (9), `DisputeApi` (5), `RecurringBookingApi` (2), `SavedAddressApi`, `PromoCodeApi`, `NotificationPreferencesApi` (1 each) | M | **DONE ✅ 2026-08-11** (`d0da4dc3`) — swept on the mapper's null-handling per the corrected test and found **43** sites, not 19: the original count stopped at the first coerced field per mapper. `NotificationPreferencesApi` was listed at 1 and has **11**, and its `update` is a **replace-all PUT**, so a coerced toggle writes the app's guess for the other ten back to the server. Same five rules and the same wire-pin shape as `af288efa`/`02a02957`/`f2273bab`. **The rollup ruling is per surface and must be made per surface**, not inherited: refuse where the list IS the addends, drop the row where a total is supplied independently. ⚠️ **The membership test this ticket originally stated is FALSE and would have skipped the largest surface** — *"none is partially mapped; the tell is the return type, still a generated `*Dto`"*. `ReferralApi.kt:20-23` returns a **hand-written** DTO through a **coercing** mapper, which is the audit's own finding landing on the ticket written to close it: a `toDomain()` that coerces scores clean on a *does it have a mapper?* read. The tell is the **coercion operator on a money field** — `?: 0.0`, `?: 0`, `orZero()` — never the shape of the type it lands in | — | android | no | — | T-0582 residual, 2026-08-10 |
+| **T-0589** | **Canonicalize the wire-refusal idiom onto `WireContract` in `:core`** — the two apps refuse broken money differently and one loses the field name | M | **DONE ✅ 2026-08-11** (`34831ceb` steps 1–4 · `b34d641d` step 6; iOS step 5 in `a54775f4`) — ⚠️ **the ADR's pricing was under by one import (`InvoicesRepository.kt:13`) and under by two pieces on step 3**: the customer's adapters map *inside* the Retrofit `Response`, so a refusal can only cross that boundary as a throw — `:core` needed `networkCall` to rethrow the violation and a `wireResult { }` to catch it once per repository method, not just the `Response<T>` counterpart. **A live customer-facing bug fell out of step 4**: `OrderApi.kt:235` read `review = review?.toAppDto() ?: return null`, and the elvis fires on an **absent** review, not a broken one — so order detail refused to load for any order nobody had reviewed yet, which is most of them. The decision was MADE by ADR-0048 §D5, ADR-0048 §D5 ruled `WireContract` canonical, and corrected the ticket's own premise: **three** idioms are live at HEAD, not two. Migration, priced in §*"The migration, priced"*: **(1)** move `WireContract.kt` to `cz.cleansia.core.network`, `internal` → `public` — one file, no new dependency; **(2)** repoint three partner imports, mechanical; **(3)** `:core` grows a `Response<T>` counterpart to `mapWire` — **this is the real cost and is not a drop-in**: partner adapters already return `ApiResult`, customer adapters return Retrofit `Response<T>`; converging customer onto `safeApiCall` is the ADR-0011 direction and explicitly **not** this ticket; **(4)** customer mappers become total, `toAppDto(): T?` → `T` with `.required()`, deleting the four `?: return …` sites on 2xx bodies; **(5)** iOS inherits the `:core` shape as a Swift equivalent when it ports — the reason this was filed **before** the port; **(6)** close ADR-0048 §D6 — either give `ApiError.Server` a sink on partner or correct `WireContract.kt`'s doc comment, because *"the offending field name reaches triage"* is **prose asserting a property nothing delivers**: `partner-app` contains zero Sentry (swept 2026-08-11) and `:core`'s own build file says so. Q-OBS-01 governs which closure | — | android, ios | no | — | T-0582 divergence, 2026-08-10; **ADR-0048 §D5/§D6**, 2026-08-11 |
+| **T-0590** | **Canonicalize the redaction-rendering rule (ADR-0047) on both mobile apps** — a client that re-derives entitlement to hide a field the server chose to send is a second authorization implementation living beside the server's | S | **DONE ✅ 2026-08-11** (`7fdce902` Android · `327013db` iOS) — the scope line held the violation set to exactly three rows per platform. ⚠️ **The named-property obligation earned its keep and nearly failed silently**: the Android lane's first pass left the gate as a `val` inside the composable, and the mutation reinstating `isMine` **passed green** — only moving the whole gate onto the presentation model made it red. *A named property that is only partly named is not pinnable.* Both lanes also found the ADR's wording imprecise against the server: `OrderPiiRedaction` sends `CustomerPhone = string.Empty` and `OrderNotes = []` but `AccessInstructions = null`, so a `!= null` test would have covered neither the phone nor a whitespace value. `canAddNotes` **gained** an explicit entitlement term on both platforms — it had been riding the render gate that was withdrawn. ⚠️ **The framing this ticket was nearly written from would have DELETED a live gate.** *"The client never hides a field the server populated"* sweeps in `OrderPrimaryAction.kt:59/97/113` and `showWorkSections`, which stop "Slide to start" appearing on a stranger's order. ADR-0047 narrows it to the **rendering of a redacted field**; **action** gates and **request** gates legitimately read `isAssignedToCurrentUser` and fail **closed**. That scope line cuts the violation set to **three rows**. Four obligations travel with it — chiefly that the gate is a **named property on the presentation model, never an inline `if` in a view body**, or the pin cannot be written without a UI harness; and that blank counts as absent (`OrderPiiRedaction` redacts to `string.Empty`/`[]`, not `null`). The migration is a **no-op for every caller class but the entitled non-assignee**, so it structurally cannot widen disclosure | — | android, ios | **yes** | — | ADR-0047, 2026-08-11 |
+| **T-0591** | **A refused page is reported as `Success` and the customer's order history silently ends.** `OrderRepository.kt:84` and `:110` do `val body = resp.body() ?: return ApiResult.Success(Unit)`, so a 4xx/5xx page returns success with nothing in it and pagination stops | XS | **DONE ✅ 2026-08-11** (`ee26fbe7`) — the bitter part is that the guard one layer down exists **for exactly this**: `OrderApi.kt:122-126` is annotated *"so the customer's older orders stop existing rather than fail to load"* — and its caller produces precisely that outcome. Found by the ADR-0048 panel while pricing T-0589 step 4, which deletes these same four sites; **fix it now rather than waiting**, because the failure is live and the canonicalization is not scheduled | — | android | no | — | ADR-0048 panel, 2026-08-11 |
+| **T-0592** | **Coercion sites OUTSIDE T-0588's six-repository roster, including blanked Stripe credentials.** `MembershipApi.kt:86-89,101,161-162` — `.orEmpty()` on `setupIntentClientSecret`, `stripeCustomerId` and `ephemeralKey`, plus `effectiveEndDate`/`currentPeriodEnd`, which are `date-time` **non-nullable** in the spec. Also customer `UserDto.kt:106-108` (`email`/`firstName`/`lastName`) and partner `AuthRepository.kt:303,318,319` (`hasAdminAccess ?: false`, `isEmailConfirmed ?: false`, both spec-non-nullable booleans) | S | **DONE ✅ 2026-08-11** (`3f25233f`) — read the C# for every field; the spec was useless exactly as §D4 fact 5 predicts. **Two corrections to the ticket**: `GetMyMembership.Response.CurrentPeriodEnd` is genuinely `DateTime?` in C#, so the ticket was wrong to name it — left nullable; and `HasAdminAccess`'s server default is `= true`, so `?: false` was **the opposite of the server's own answer**, not merely an unknown. The Stripe row is the sharp one: a **blanked client secret is not a display bug**, it is a payment sheet that fails with nothing to diagnose from, where a refusal would have named the field. The two boolean coercions fail **closed** and so are not a privilege hole — but `isEmailConfirmed ?: false` can lock a confirmed user out of their own account, and the direction being safe is not the same as the value being known. ⚠️ **This is exactly the residue ADR-0048 §D4 fact 5 predicts** — a spec-driven sweep reads *"nullable, the coercion is correct"* for every string on this wire, all 359 of them | — | android | **yes** | — | T-0588 out-of-roster, 2026-08-11 |
+| **T-0593** | **`safeApiCall` answers a 2xx-with-no-body with `ApiResult.Success(Unit as T)`** (`SafeApiCall.kt:49`) — an unchecked cast that throws `ClassCastException` at the **first read**, not at the call, for any caller whose `T` is not `Unit` | S | **DONE ✅ 2026-08-11** (`abdb5657`) — enumerated all **83** call sites by resolving each method to its declared `Response<T>`: exactly **four** endpoints legitimately answer bodiless, so the reified `T::class == Unit::class` test keeps those working and refuses for everyone else. **Not on the ticket**: `DeviceManagementRepository` carried the *workaround the hole forced* (`result.data as? List<…>`), which never crashed — it silently rendered a bodiless 200 from `GET /api/Device/Mine` as **"no devices"**, on the screen where a user kills a session they do not recognise. The crash it was filed for lands far from its cause, in whatever composable or mapper first touches the value, which is the worst possible place to debug it from. `@Suppress("UNCHECKED_CAST")` marks it as known and unresolved. This is `:core` and therefore the **serialized lane** — it is why the T-0588 lane routed `NotificationPreferencesRepository` around it rather than fixing it. Correct shape is a refusal naming the endpoint that returned an empty 2xx, not a cast; check whether any live caller **relies** on the `Unit` behaviour before changing it | — | android | no | — | T-0588 lane, out of roster, 2026-08-11 |
+| **T-0594** | **The drop-the-row ruling breaks pagination termination.** `loadNextPage` on both `OrderRepository` and `DisputeRepository` derives its offset from `list.size` and stops on `size >= total`, where `total` is the **server's** count — so every dropped row permanently prevents the stop condition from tripping | XS | **DONE ✅ 2026-08-11** (`d90ded0d`) — both DTOs carry `receivedCount` defaulted to `data.size`, so anything mapping totally needs no thought, and both repositories page against it for **the offset and the stop condition**. Added beyond the ticket: a page the server answers with **no rows at all** now ends paging — the counter alone cannot close that, and it is the other half of termination. The consequence of a ruling, not a mistake in it: dropping a malformed row is right, and it is what makes `size` and `total` disagree forever. Symptom is a list that keeps asking for pages it already has. Fix is to count what the server sent rather than what survived mapping, on both repositories together — they compose identically and a fix to one is a divergence | — | android | no | — | T-0588 lane, 2026-08-11 |
+| **T-0595** | **The preferred-offer card renders its closed sentence on bookings where it is false** — cancelled, completed, and orders another cleaner already took | S | **DONE ✅ 2026-08-11** (`5b85d80f` backend · `76e7a664` web pins), **decided by ADR-0049** — ⚠️ **this ticket's own premise was refuted.** It said the fix was *"a new shared grouping plus a cross-stack canonical name"*. It is not: the second harm is a **`Confirmed` order with an assignee**, and every candidate grouping contains `Confirmed`, so **no status test can express it** — the distinguishing term is the seat count. The iOS `isUpcoming` I held up as the model **has the same bug**. And web had not *lacked* the narrowing: T-0581 deleted it one day earlier and left a mutation guard against its return, which this ticket would have walked a lane straight into. Shipped as a server-side `IsDisclosable` reusing an existing nested-optional channel — **no wire change, no regen, no i18n** | — | backend, frontend | no | — | iOS lane finding; **ADR-0049**, 2026-08-11 |
+| **T-0596** | **iOS coerces the exact money fields Android now refuses — same endpoint, same DTO, opposite behaviour.** `DashboardData.swift:51-75` does `?? 0` on `currentPeriodEarnings`, `weekEarnings`, `todayEarnings` and the rest, while `DashboardRepository.kt:243-252` calls `.required()` on every one of them. `InvoicesListContent.swift:34` sums `($1.totalAmount ?? 0)` across a list; `OrderDetail.init` synthesizes identity (`id = item.id ?? ""`) and coerces quantities and booleans | M | **DONE ✅ 2026-08-11** (`a22dfc7c`) — partner app and the customer catalog. **Eight surfaces, four different rulings**, each written into its mapper: refuse the page (invoices, catalog+extras), drop the line but refuse the summary (period pay), refuse (dashboard, earnings, invoice detail, order detail identity/quantities), drop the row (order photos), silent-if-absent but refuse-if-partial (order crew, because `0` seats reads as *"this job is full"*). **Two conversions deliberately NOT made** — `generatedAt` (the card already renders its absence, so nil fabricates nothing) and `averageRating` (`double?` by design: null means never reviewed, and forcing it destroys the distinction the server drew); Android reached the same verdict on the first independently. **Two tests that asserted the defect were rewritten, not deleted.** Fixtures now start from `OrderItem.wireComplete()`, so no partner test can assert against a payload production would refuse. Customer residue is T-0598. ADR-0048 §D1 rule 1 verbatim, one stack over: **a broken wire field renders "0 K\u010d" to a cleaner who earned 4 800, and nothing goes red.** The idiom to fix it now exists (`WireContract.swift`, T-0589 step 5), which is why this is filed now rather than before. ⚠️ **The rollup ruling is per surface and must be made per surface** — the Android lane made **four different** answers across six repositories; refuse where the list IS the addends, drop the row where a total is supplied independently. The invoices sum is §D2's *refuse the page* case. Not a new law: ADR-0048 already governs the class, so this is applying a shipped rule to a stack that never got swept | — | ios | no | — | iOS lane, out of roster, 2026-08-11 |
+| **T-0597** | **An expired session and a broken wire field are indistinguishable on the payroll screen.** `PeriodPayViewModel.swift:31-35` replaces *any* `currentEmployeeId()` failure with a fixed `ApiError(code: "payroll.employee_id_missing")` | XS | **DONE ✅ 2026-08-11** (`d9c8e1f5`) — the real error is carried and surfaced; `testASessionFailureAndAWireFailureStayDistinguishable` drives a 401 and a `wire.contract_violation` through the same guard. User impact was diagnostic only (`PeriodPayView.swift:51` renders a fixed string, so no raw key reaches the screen), but **the substituted code is the less informative of the two** — it discards a real session error to assert a guess. Same family as the `ApiError.from` defect fixed in `a54775f4`, where the transport was blamed for a refusal it never made | — | ios | no | — | iOS lane, out of roster, 2026-08-11 |
+| **T-0598** | **The iOS customer app coerced the price the customer agrees to pay** — `BookingCodeStates.swift:48-58`, plus the seven clients never read line-by-line | M | **DONE ✅ 2026-08-11** (`ec343cd9`) — the quote refuses, and the reason is stronger than *"it's money"*: `BookingPricing` does arithmetic on it, so the breakdown lines are literally the addends of the figure the same screen prints. A second reason nobody predicted — `BookingOrderCommandFactory.swift:42` sends `currencyId` on the create command and maps blank to nil, so the coerced `""` was **submitting an order with no currency**. ⚠️ **`expressUpgradesRemaining` was provably backwards**: the C# says *"null = no membership; 0 = exhausted OR still in trial"*, and `(remaining ?? 0) > 0` collapsed **no membership onto used up** — the `hasAdminAccess ?: false` parallel exactly. The line above it folds null onto zero too and is **correct**, because there the outcome *is* the state the server says null means: same syntax, opposite verdict, which is why the sweep had to be per field and never per pattern. Other harms found: a Gold customer demoted to Bronze with every perk re-labelled; a referral code rendered as `""` so the invitation cannot be redeemed; a support reply drawn on the customer's side of a dispute thread so they read their own case as unanswered; and — the sharpest — `NotificationPreferences.toCommand()` writes the **whole struct** back, so a defaulted toggle is not a display guess but what **overwrites the customer's stored choice on their next save**, re-subscribing someone who opted out. Eleven clean fields stated as clean; four conversions refused on evidence. Order list/detail residue is T-0603 | — | ios | no | — | T-0596 residual, 2026-08-11 |
+| **T-0599** | **Delete iOS's now-redundant `isUpcoming` conjunct — but ONLY after the backend is DEPLOYED, not merged** | XS | **DONE ✅ 2026-08-11** (`8257b8e9`) — conjunct deleted; the block's own arrival is the gate, which makes it consistent with ADR-0047. The carrier was the live half and is fixed: `PreferredOfferPresentation.swift` had argued the **opposite** (*"the narrowing is made here"*) with no ADR reference and no precondition, and a lane deleting a conjunct reads the file, not the ADR. ⚠️ **OWNER ORDERING, still live: the backend must be DEPLOYED — not merged — before an iOS build carrying this is submitted.** Asymmetric because a shipped binary cannot be redeployed while the backend can; shipping the app first reopens the defect for an App Store review window plus the update tail. Also in the commit message. ⚠️ **The constraint is asymmetric and that is the whole ticket**: a shipped iOS binary cannot be redeployed while the backend can, so deleting early reopens the defect for an App Store review window plus the update tail. **The live risk is the CARRIER, not the deletion.** `PreferredOfferPresentation.swift:16-19` today argues the *opposite* — *"the narrowing is made here"* — with no ADR reference and no precondition, and a lane deleting a conjunct reads the file, not the ADR. So the constraint must be carried by **both** the Swift doc comment and this row. Until both exist, deleting the conjunct is a **review finding** | — | ios | no | — | ADR-0049 §D6 + C4, 2026-08-11 |
+| **T-0600** | **Three shipped doc comments carry a premise ADR-0047 got wrong** — `OrderDetail.swift:133`, `OrderDisclosurePresentation.kt:21`, `OrderDetailRedactionGateTests.swift:17` all repeat *"the server redacts to `string.Empty` and `[]`"* | XS | **DONE ✅ 2026-08-11** (`c796178e` iOS · `4b0f8728` Android) — all three comments now say the redaction is **mixed**: string scalars to `""`, free text and composites to `null`, lists to `[]`, so neither `!= null` nor `!= ""` covers the set and every gate tolerates null, empty and whitespace on the same field. Behaviour unchanged, no test repointed. The **code was correct and the reason was false**, which is the more dangerous half: the next reader derives a `!= ""` test from it. `OrderPiiRedaction.cs:40-53` **nulls** seven fields — `AccessInstructions`, `Notes`, `SpecialInstructions`, `CompletionNotes`, `Address`, `Review`, `PreferredOffer` — and `:30-31` nulls the coordinates, *inside the very line ranges the ADR cited*. Only string scalars go to `""`. So the roster spans **both** forms and neither `!= null` nor `!= ""` alone covers it | — | android, ios | no | — | ADR-0047 ratification A2, 2026-08-11 |
+| **T-0601** | **A new `OrderStatus` member does not force a disclosure decision** | S | **DONE ✅ 2026-08-11** (`4a255bcb`) — the forcing function is in the **test**, not the rule, and the reasoning is the deliverable: the erasure pin works because a literal enumeration in production is compared against a computed total over the enum, and `IsDisclosable` has no literal to diverge — limb (a) is a predicate. Getting the same signal in production would mean giving `PreferredOffer` a status grouping, which is exactly what ADR-0049 §D7 refuses. So the cost lands on the rule and the benefit was available from a test. **The negative default is kept deliberately**: inverting it would withhold, on any unrecognised status, the customer's only record of what became of their request — at the moment the platform understands that status least. The defect was never the direction of the default, only that it was taken in silence. Measured, not suspected: I added a temporary `MutationProbe = 7` to the enum and ran both suites. `ErasureBlockingOrderStatusTests` **reddened** — it states its membership positively, so a new status forces a ruling. `PreferredOfferDisclosureTests` **stayed green**: `IsDisclosable`'s limb (a) is a negative test (`not (Completed or Cancelled)`), so a new status silently defaults to *disclosable*. That is the safe direction for this rule and the wrong shape for a gate — the point of the erasure pin is that agreement is a decision **re-made on every change**, and this one is inherited | — | backend | no | — | ADR-0049 C1(v) probe, run 2026-08-11 |
+| **T-0602** | **Close ADR-0048's roster, then flip its tier to `T1-CI`** | M | **DONE ✅ 2026-08-11** (`a19f07b6` roster · `bcfd7092` token, in that order) — ⚠️ **the ticket's premise (a) was wrong: the six wire tests already existed**, landed in `d0da4dc3` alongside the sweep itself. So the lane built the thing §D3's own scope caveat says is missing — `WireContractRosterTest` walks **both** apps and fails when a source mapping a generated model has no `*WireTest.kt` beside it, plus a mechanical rule-1 ban and a non-vacuity floor. **The roster is self-closing, so §D3's caveat is retired.** It immediately found **four** defects the per-repository tests could not — chief among them a regression **this sprint introduced eight commits earlier**: T-0588's `.required("status")` on `GetMyMembership`, where `MembershipStatus? Status` is explicitly `null` for every non-member (`GetMyMembership.cs:22`, `:71`), so **every customer who had never subscribed was getting an error screen instead of the upgrade CTA**. Also: `PaymentApi` dropped the whole body when any of four Stripe credentials was null, reporting *"the server sent no body"* for a body it did send; `GdprConsentClient` (both apps) dropped a consent row with a null type, which reads as *"never answered"* and **re-asks and re-grants a consent the user withdrew** — a GDPR record they did not make; and `safeApiCall` mapped `WireContractViolation` to `ApiError.Unknown`, the same fact as amendment B4(b) on the other shared primitive. On (b): `membershipId` is **genuinely absent** from the cancel, swap and get-mine contracts, so the DTOs no longer claim it | — | android | no | — | ADR-0048 ratification, 2026-08-11 |
+| **T-0603** | **Customer order list and detail still coerce money, and the fix is a refactor rather than a mapper edit** — `OrdersTab.swift:196`, `OrderDetailSummary.swift:66-67,119-120`, `OrderDetailDetailsCards.swift:18,122`, and `estimatedTime ?? 0` in three places | M | **DONE ✅ 2026-08-11** (`b847a1eb` refactor · `0a41d667` residue) — `CustomerOrderDetail`/`CustomerOrderSummary` threaded through **27 source files**. Two judgement calls worth keeping: `estimatedTime` is a wire contract because of **the reader that fabricates** — `max(estimatedMinutes, 1) * 60` turns an absent estimate into a **one-minute cleaning** whose Live Activity counts down to an end a minute after the appointment starts — while the detail's `id` is **not** refused, because the screen is routed with it and a null has an equally authoritative replacement. The residue closed the cancel sheet (a coerced fee said *"free"* over a charge, on the screen where the customer decides) and the photo counts, where the §D2 ruling came out **opposite** to the orders list: rows are **kept**, because dropping one would make the rail disagree with the counts by exactly the number dropped. **The §D2 ruling was already settled**: refuse the row's own money, no page question, because the list total is per-row rather than a rollup. What blocks a mapper-level fix is structural: `OrderDetailViewModel` holds `UiState<OrderItem>` and both money resolvers are called **from inside view bodies**, so a `throws` has nowhere to land without threading a `CustomerOrderDetail` domain model through roughly eight view files. The T-0598 lane did the client-side half and stopped here deliberately rather than rushing the refactor as an appendix — the right call, and the reason it is its own ticket | — | ios | no | — | T-0598 residual, 2026-08-11 |
+| **T-0604** | **The unique index that is documented as the arbiter of the registration race arbitrates NOTHING.** `UserEntityConfiguration.cs:106-107` is `(TenantId, Email) UNIQUE` with **no `.AreNullsDistinct(false)`**, and every `TenantId` in production is `NULL` — which PostgreSQL treats as DISTINCT. The comment ten lines above calls it *"the real guarantee that closes the register/update TOCTOU race"* | M | **`in_review`** — **code DONE ✅ 2026-08-11** (branch `docs/sprint-15-decisions`, commit *"fix(auth): arm the account-email unique index and map its 23505"*); **the migration is NOT done and the index still does not fire in any database.** Shipped: `.AreNullsDistinct(false)` at `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:112-114`; `DbConstraintViolation.IsUniqueViolationOn`, keyed on the **constraint name** duck-typed off `PostgresException.ConstraintName` and never on the driver's message text; all four writers flush their own insert and map the `23505` — `Register`/`RegisterEmployee`/`GoogleAuth`/`AppleAuth` → `ExistingUserWithEmail`, `CreateAdminUser` → `AdminUserEmailExists` — with the two social paths flushing **before** the JWT mint, so no token is ever issued for a row the database refused. A unique violation on any OTHER index in the same commit still propagates, pinned in both directions per writer. `User` joins `NullsNotDistinctIndexModelTests` (5-row roster, `T1-CI`, baseline 0). ⚠️ **Correction to this ticket's brief and to ADR-0050 §D4: the roster row does NOT stay red until the migration lands.** It is an **EF-model** assertion — observed red on the `[InlineData]` alone, green the moment the builder call landed, both in the same session. **No test in any suite watches the emitted DDL**, so the reviewer's DDL read is the *only* gate on the other half and the catalog now says so. `MANUAL_STEP: ef-migration` — **folded into the `Initial` regen the owner already runs; the census this was gated on is WITHDRAWN as vacuous pre-prod.** `Initial` is regenerated rather than stacked, the id changes, `__EFMigrationsHistory` keys on the id, so **DEV is dropped and re-seeded on every regen** — a census over a database about to be dropped measures nothing, and a gate that cannot fail is not a gate. It becomes load-bearing the day a database survives a migration; §D3 keeps the queries for that day. Suites 3875 / 196 / 158, zero failures, zero skipped | — | backend, db | **yes** | ef-migration | ADR-0050, 2026-08-11 |
+| **T-0605** | **`IEmployeeRepository.cs:14-15` justifies its tenant bypass with a false statement** — *"the caller has already authenticated the user by email (unique across the platform)"*. Email is **not** unique across the platform; that is exactly what T-0604 establishes | XS | **DONE ✅ 2026-08-11** (branch `docs/sprint-15-decisions`, commit *"docs(auth): the employee tenant bypass is owed to a pre-auth read, not to email uniqueness"*) — **comment only; the bypass, its body and its two callers are byte-unchanged**, and `EmployeeRepositoryTenantTokenLookupTests` (both arms, non-null tenant seeded) stays green. Per ADR-0051 §TC-CELL-1 **no test is added for a comment**. The doc now names the cell in ADR-0051 D1's own terms — *written under a tenant claim, read with no claim, because the read happens BEFORE the JWT that would carry one exists* — and states the re-pin as the **caller obligation** it is (the credential check preceding the call has already authenticated the caller as the owner of that address), explicitly refusing the uniqueness appeal ADR-0051 D2 forbids. `security-rules.md:292-295` kept the same rule but pointed at *"the `Users` deviation"*, which T-0604 renamed; the pointer and the state are corrected in the same commit. **Sweep for other reliance on global email uniqueness (the ticket's open question): no other TEXTUAL claim exists** — `IUserRepository.cs:32`, `UserRepository.cs:62` and `ConfirmUserEmail.cs:135` all say per-tenant correctly — and **no production reader uses `SingleAsync`/`SingleOrDefaultAsync` on email**, so nothing throws on a duplicate. Two BEHAVIOURAL reliances remain, both already inside ADR-0050's account-loss argument and both fixed by the same migration rather than by an edit here: `UserRepository.RecordFailedLoginAsync` (`:163`) is `Where(u => u.Email == email)` + `ExecuteUpdateAsync`, so a lockout charge lands on **every** matching row, and `CartRepository.cs:18` resolves a cart by email with an unordered `FirstOrDefaultAsync`. Reported, not silently patched | — | backend | no | — | ADR-0051, 2026-08-11 |
+| **T-0606** | **The tenant-bypass rule is pinned on two repositories and unrostered everywhere else.** `IgnoreQueryFilters(` / `GetQueryableIgnoringTenant()` appear at **62 sites** under `Infra.Database/Repositories/` (measured 2026-08-11); two are guarded by named tests, the rest by nothing | M | **ready** — ADR-0051 decides the posture by the **write-tenant × read-tenant asymmetry**, not by the endpoint's anonymity, and §D4's scope line is load-bearing: *admission pre-checks stay filtered despite being anonymous*, because widening them re-creates the cross-tenant existence oracle. A rule phrased *"anonymous reads ignore tenancy"* would go red against a shipped `T1-CI` guard — the ADR-0047 *"Slide to start"* analogue. Build the roster, then claim the tier; **baseline is 62 unrostered, not zero** | — | backend | **yes** | — | ADR-0051, 2026-08-11 |
+
+>
+> ## ✅ WAVE 4 COMPLETE — tests + accessibility (11 of 11 done 2026-06-13)
+> **Wave 3 merged to master: PR #76 (`05bf567a`).** Owner gave the go signal; Wave 4 = the test+a11y
+> block **T-0210…T-0218** + carried **T-0179** (LG-07, not built in Wave 3) + **T-0235** (the T-0194
+> AC6 runtime-429 deviation). Full plan + per-ticket stale-text deltas + the 4C close-out:
+> **`status/sprint-6.md`** (§7 = 4A+4B, §8 = 4C).
+> **Branch:** all work on `feature/wave-4-tests-a11y` (cut from `05bf567a`), committed batch-by-batch.
+> **DONE: 11 of 11.** **Batch 4A** (T-0212/T-0211/T-0213/T-0214/T-0216/T-0179) + **Batch 4B**
+> (T-0218/T-0217) landed orchestrator-verified green (**Cleansia.Tests 1311/1311**, frontend Jest green,
+> customer prod build clean), committed **`6706d8d1`** + pushed. **Batch 4C** = **T-0210 / T-0215 /
+> T-0235** (integration + host-runtime tests) **DONE 2026-06-13**, orchestrator-verified green against
+> real Postgres (**HostTests 51/51, IntegrationTests 60/60, RateLimiting 65/65**). 4C surfaced **2
+> confirmed production bugs** (test-only wave, correctly NOT fixed) → new tickets **T-0245** (multi-tenant
+> webhook tenant-scope mismatch — **GO-LIVE BLOCKER**) + **T-0246** (StartOrder handler NRE→500). The 5
+> Wave-4 carried follow-ups are **T-0242…T-0246**. Close-out: `status/sprint-6.md` §7 (4A+4B) + §8 (4C).
+> **All `security_touching: false`** (tests/i18n/a11y/doc against existing behavior); adversarial/
+> security-advisory review on T-0211 (money), T-0210 (signature lock), T-0215 (tenant boundary).
+> Reviewer-per-developer on every ticket; QA = suite-green + AC↔test mapping (+ keyboard walkthrough
+> on T-0218). **Resizes on verified dedup evidence: T-0213 L→M, T-0214 L→M** (Waves 0–3 TDD already
+> shipped the bulk — both are now audit+gap-fill nets; if either regrows past M the dev stops and the
+> PM splits). **Zero open dependencies; no intra-wave edges** — batching is shared-file lanes only.
+> The consistency sweep **T-0196…T-0206 is NOT in this wave** (Wave-5 candidate, owner to confirm).
+>
+> | Batch | Tickets | Parallelism / lanes |
+> |---|---|---|
+> | **4A — backend unit nets** (`Cleansia.Tests`) | **T-0212** (CreateOrder characterization, M) ∥ **T-0211** (refund/dispute money-math gap-fill, M, adversarial review) ∥ **T-0213** (invoice/pay-period gap-fill, M) ∥ **T-0214** (per-Function coverage audit+gap-fill, M) ∥ **T-0216** (fiscal-mode matrix, M) ∥ **T-0179** (carried; doc+B5 rename+lock test, S) | All 6 parallel. Lane U1: edits to the same existing `Cleansia.TestUtilities` builder file serialize (Order builders: T-0211/T-0212). Lane U2: `Cleansia.Tests.csproj` already refs Functions(.Core) — no edit expected. |
+> | **4B — frontend (customer app)** — runs ∥ 4A | **T-0218** (a11y: cleansia-* + order wizard, M) **→ then T-0217** (error-contract parity `api.*` ×5 locales + parity guard, M) | **STRICTLY SERIAL** — both edit the 5 customer locale JSONs. T-0218 is sole editor of `libs/shared/components/**` + `order-wizard/**` this wave. |
+> | **4C — integration/host runtime** | **T-0210** (webhook integration + signature-stays-on, M) ∥ **T-0215** (cross-tenant/cross-user write-path integration, M) ∥ **T-0235** (runtime 429 flood harness, S, `Cleansia.HostTests`) | T-0210 ∥ T-0215 with Lane I1: any edit to `PostgresContainerFixture`/`BaseIntegrationTest`/`PostgresCollection` serializes. T-0235 parallel (separate project; touches no guard-test/policy/startup file). |
+>
+> **Gates/owner confirms (sprint-6 §4 — none blocks 4A/4B):** (1) confirm `Cleansia.IntegrationTests`
+> green on master — the Users-lockout migration is verified **in-repo** (`20260612134125_Initial`),
+> so 4C is not hard-blocked; the confirm formally closes **T-0193 AC4**; (2) customer nswag-regen
+> still outstanding (no Wave-4 ticket consumes it); (3) confirm T-0196…T-0206 → Wave 5.
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | T-0212 | TC-4: CreateOrder characterization tests | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0211 | TC-7: refund/dispute money-math gap-fill | M | **done ✅** `6706d8d1` | 4A | backend | no (adversarial) | — |
+> | T-0213 | TC-6: invoice/numbering/pay-period tests (resized L→M) | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0214 | TC-8: per-Function coverage audit + gap-fill (resized L→M; 26 fns) | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0216 | TC-10: fiscal-mode selection characterization | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0179 | LG-07 (carried): unify membership subscribe path | S | **done ✅** `6706d8d1` (no regen) | 4A | backend, frontend | no | nswag-regen* (none needed) |
+> | T-0218 | A11Y-1: a11y pass — cleansia-* + order wizard | M | **done ✅** `6706d8d1` | 4B (1st) | frontend | no | — |
+> | T-0217 | EP-1/2/DA-7: error-contract parity ×5 locales | M | **done ✅** `6706d8d1` | 4B (2nd, after T-0218) | frontend | no | — |
+> | T-0210 | TC-2/3: Stripe webhook integration + signature lock | M | **done ✅** | 4C | backend | no (advisory) | — |
+> | T-0215 | TC-9: authz/cross-tenant write-path integration | M | **done ✅** | 4C | backend | no (advisory) | — |
+> | T-0235 | Runtime 429 flood harness (T-0194 AC6) | S | **done ✅** | 4C | backend | no | — |
+>
+> **Batch 4C orchestrator-verified green** (real Postgres): **HostTests 51/51, IntegrationTests 60/60,
+> RateLimiting 65/65**. (T-0235's AC3 named `Cleansia.HostTests` as the home, but the runtime limiter is
+> only exercisable in `Cleansia.Tests/RateLimiting` — the existing harness home; AC3 intent satisfied,
+> deviation D1 accepted.)
+>
+> **Wave-4 carried production findings → new tickets (all `draft`, Wave-5 candidates):**
+> **T-0242** (cancellation-fee free-window override direction, from T-0211) · **T-0243**
+> (CreateMembershipCheckoutSession `nameof` B5 consistency, from T-0179) · **T-0244**
+> (EmployeeInvoice.GenerateVariableSymbol cross-process stable hash, from T-0213) · **T-0245**
+> (multi-tenant Stripe webhook validator/handler tenant-scope mismatch — **GO-LIVE BLOCKER**, from T-0210) ·
+> **T-0246** (StartOrder handler NRE→500 on validator/handler load divergence, from T-0215). Detail rows
+> in the follow-up table below the Wave-3 roster.
+>
+> ## ✅ WAVE 3 CLOSED — admin-feature block T-0170…T-0195 (2026-06-12 reconciliation)
+> **Wave 3** (26 tickets, 6 batches 3A–3F) is functionally complete on
+> `feature/wave-3a-admin-order-dispute-ops` across four commits: **`8aa7bcc1`** (Batch 3A — admin order
+> ops, dispute management, chargeback linkage + the citext runtime fix), **`5d631f8c`** (Batches
+> 3B/3D/3C/3E backend — payroll lifecycle, Functions resilience, durable idempotency, membership/referral/
+> device/profile/catalog admin ops), **`8ddfef9d`** (frontend mega-batch — payroll/membership/referral/
+> GDPR/profile/catalog admin UIs, customer self-service, partner read-only pay, Android device management),
+> **`66cc823d`** (Batch 3F — account lockout, S5 rate-limit closure, client Retry-After back-off).
+> **25 of 26 reconciled `done ✅`** in the table below (the ticket files still read `draft`/`in-review`;
+> PM reconciled status here, INDEX-side only, per the Wave-2 convention — no history rewrite).
+> **EXCEPTION: T-0179 was NOT built** — verified: `CreateMembershipSubscription.cs` untouched since Wave 1,
+> ticket file untouched since creation; it stays `draft` and **carries forward to Wave 4** (its T-0194 edge
+> was satisfied-in-substance: the Subscribe endpoints got their rate-limit windows regardless; T-0179 is
+> doc + B5-rename only). **ADR-0010 (durable consumer idempotency) was produced mid-wave** (the
+> T-0181/T-0182 consumer-idempotency line) and is in force. **Deviations on the record:** T-0194 AC6 —
+> runtime 429 flood harness deferred to the Wave-4 test slice (→ **T-0235**); T-0188 — optional AC6 admin
+> device panel deferred (backend + Android shipped); T-0193 — AC4 verification **closes only after** the
+> owner applies the Users lockout ef-migration and `Cleansia.IntegrationTests` runs green.
+> **Owner steps PENDING:** ef-migration (4 additive `Users` lockout columns) + nswag-regen (customer
+> client: `DisputeReason.Chargeback` + device endpoints) — detail in `status/sprint-5.md` §8.
+> **Review-generated follow-ups filed (all `draft`): T-0233…T-0241** — see the follow-up table below the
+> Wave-3 roster. Q-W3-1 answered (path b — no `Language.IsDefault`); T-0191 sub-(d) shipped against it.
+>
+> ## ✅ WAVE 2 CLOSED — merged to master (2026-06-09 reconciliation)
+> **Wave 2** (the refund money-path epic + per-included-service package-pricing + fiscal go-live gates +
+> fast-follows) = merged in **`8ff35d49` (PR #75).** The 12 Wave-2 ticket files still read `status: draft`
+> in their frontmatter (the plan was never marked executed); the PM reconciled them to **`done ✅`** here,
+> status-reconciliation only (no history rewrite). **Shipped & now `done`:** **T-0160** (Refund entity +
+> enums), **T-0161** (IRefundService seam + key param), **T-0163** (loyalty partial-refund clawback),
+> **T-0164** (CancelOrder/ResolveDispute migrated onto the seam), **T-0167** (admin partial-refund cmd +
+> allocator + RefundPolicy + per-country Stripe-fee config), **T-0168** (admin refund UX incl. bundled-
+> service selection), **T-0231** (PackageService.PriceWeight + the T-0231b extension exposing PriceWeight +
+> serviceWeights on the package DTO), **T-0232** (admin package-weight UX), **T-0219** (anon-catalog →
+> platform config), **T-0220** (FiscalCounter gapless allocator), **T-0221** (IFiscalService register
+> idempotency key), **T-0222** (pay-split rounding). Plus two runtime fixes folded into the PR
+> (OutboxMessageRepository non-composable FromSqlRaw; AppHost pinned Postgres password) and the new backend
+> DTO field `PackageDetails.IncludedServiceItems [{Id,Name}]`. Split epics **T-0162**/**T-0165** remain
+> `[SPLIT]` tracking epics — all four children (T-0167/T-0168/T-0231/T-0232) `done`. **Q-REFUND-03**
+> (per-bundle weights) stays open/non-blocking — owner sets weights via T-0232 or confirms even-split.
+>
+> ## 🟡 WAVE 3 PLANNED — admin-feature block T-0170…T-0195 *(superseded by the WAVE 3 CLOSED banner above; kept for traceability)*
+> Full sequenced plan: **`status/sprint-5.md`**. **No new ADR gates Wave 3** — ADR-0001 (authz, frozen
+> map), ADR-0002 (outbox/dispatch), ADR-0006/0009 (refund seam + policy) are all `accepted` and freeze
+> every decision the 26 tickets consume; Wave 3 is pure BUILD against accepted contracts.
+>
+> **Scope (26 tickets, 6 batches).** **Batch 3A — refund-seam consumers (the spine):** **T-0170** (admin
+> order ops, `L`→split), **T-0172** (dispute transition-guard), **T-0174** (chargeback linkage), then
+> **T-0173** (admin dispute mgmt + issue refund, `L`→split). **Batch 3B — payroll lifecycle:** **T-0171**
+> (`L`→split) then **T-0180** (GenerateInvoiceFunction). **Batch 3C — loyalty/membership/referral:**
+> **T-0175** (`L`→split), **T-0176**, **T-0177**, **T-0178**, **T-0179**. **Batch 3D — Functions resilience
+> fast-follows:** **T-0181**, **T-0182**, **T-0183**, **T-0184**, **T-0185**. **Batch 3E —
+> identity/GDPR/device/catalog:** **T-0186** (`L`→split), **T-0187**, **T-0188**, **T-0189**, **T-0190**,
+> **T-0191** (`L`→split), **T-0192**. **Batch 3F — rate-limit fast-follows:** **T-0193**, **T-0194**,
+> **T-0195**.
+>
+> **L-splits authorized this pass (5):** **T-0170** → 170a generalized-cancel+CancelledBy enum (folds
+> AUD-15) / 170b status-override / 170c reassign / 170d refund-only; **T-0173** → 173a backend (Admin
+> DisputeController + Partner-endpoint removal + refund/guard) / 173b admin disputes-management frontend;
+> **T-0171** → 171a invoice adjust+dispute/reject / 171b period MarkPaid+Reopen / 171c AUD-04 partner-
+> surface reconciliation / 171d admin UI / 171e partner web+Android read-only; **T-0175** → 175a backend /
+> 175b admin frontend; **T-0186** → 186a admin Data-Protection / 186b partner GDPR self-service. **T-0191**
+> stays one ticket with internal split-(a/b/c/d) sub-sequencing (CC-06 sub-(d) held on Q-W3-1).
+>
+> **Corrected/verified edges (post Wave-2):** **T-0170** `depends_on T-0161✓, T-0164✓` (refund seam +
+> migration — both now `done`, so T-0170 is **unblocked**); **T-0173** `depends_on T-0161✓, T-0164✓, T-0172,
+> T-0171` (so 3A's dispute spine + 3B's payroll spine gate it). **All other Wave-3 deps verified `done`:**
+> T-0100, T-0111, T-0112, T-0115, T-0141, T-0142(epic children), T-0143(epic children), T-0145, T-0148.
+>
+> **Open question:** **Q-W3-1** (blocking) — default-language policy for catalog translations (gates ONLY
+> T-0191 CC-06 sub-(d); the rest of T-0191 and all of Wave 3 proceed). Plus **carry-forward owner items**
+> (not Wave-3 tickets) tracked in sprint-5 §3: **T-0159 rotate-mapbox-token** (still outstanding),
+> outstanding Wave-0 nswag-regens (T-0102/0104/0111/0112 — confirm), IMP-1 Google OAuth ClientId, CZ
+> Stripe-fee figure, fiscal go-live gates DE/AT/ES.
+>
+> --- (Wave-1 history below, kept for traceability) ---
+>
+> ## ✅ WAVE 1 CLOSED — merged to master (2026-06-07 reconciliation)
+> **Wave 0** = PR #72 (`9a774435`); **Wave 1 Batch 1A** (4 ADRs) + **Batch 1B** (T-0144…T-0159) = merged in
+> `a4f14094` ("Wave-1 Batch 1B — integration resilience, outbox durability, soft-delete, loyalty/membership
+> hardening"). **Local master == origin/master == a4f14094.** The PM reconciled the 14 Batch-1B tickets that
+> still read `ready`/`draft` to **`done`** (status-log line on each); T-0166 hotfix already `done`. All four
+> Wave-1 ADRs (0005/0006+0009/0007/0008) `accepted`.
+>
+> ## 🟡 WAVE 2 PLANNED — refund epic + fiscal go-live gates (proposed; awaiting owner sign-off)
+> Full sequenced plan: **`status/sprint-4.md`**. **No new ADR gates Wave 2** — ADR-0006 (seam) + ADR-0009
+> (policy) are `accepted` and freeze every refund decision; the Wave-2 refund tickets are pure BUILD.
+>
+> **Scope (12 tickets, refund foundation = the spine):** **T-0160** entity+enums → **T-0161** seam, **T-0163**
+> loyalty revoke, **T-0231** package PriceWeight (all parallel-ish) → **T-0164** migrate cancel/dispute,
+> **T-0167** admin refund cmd (depends on **T-0231** — AUD-02p→AUD-01c cross-edge) → **T-0168** admin UX,
+> **T-0232** weight UX; plus the independent **T-0220/T-0221** fiscal go-live gates (DE/AT/ES), **T-0219**
+> anon-catalog, **T-0222** pay-split rounding.
+>
+> **L-splits (this pass):** **T-0162** (AUD-01c) → **T-0167** (backend) + **T-0168** (frontend); **T-0165**
+> (AUD-02p) → **T-0231** (db+backend) + **T-0232** (frontend). Parents T-0162/T-0165 are `[SPLIT]` tracking
+> epics. The old `T-0162 depends_on T-0165` edge is now **T-0167 depends_on T-0231**.
+>
+> **Corrected edges:** T-0170 (admin order ops) + T-0173 (admin dispute mgmt) now `depends_on` the refund
+> seam (T-0161) + seam migration (T-0164); both **deferred to Wave 3** (the admin-feature block).
+>
+> **Q-REFUND-03** (non-blocking) remains the one open item — even-split backfill ships in T-0231; owner sets
+> per-bundle weights via T-0232.
+>
+> --- (Wave-1 history below, kept for traceability) ---
+>
+> **Batch 1A — the 4 ADRs — all `done`.** T-0141 → **ADR-0005** (integration), T-0140 → **ADR-0006** (refund
+> seam) + superseding **ADR-0009** (refund policy), T-0152 → **ADR-0007** (soft-delete), T-0155 →
+> **ADR-0008** (outbox table + drainer).
+>
+> **L-splits (Q-W1-2):** T-0142 → T-0152/T-0153/T-0154 (a→{b∥c}); T-0143 → T-0155/T-0156/T-0157/T-0158
+> (a→b→c→d serial). Parents T-0142/T-0143 are `[SPLIT]` epics (tracking only). BLIND-2 = T-0159.
+
+### Wave 1 — live roster (updated 2026-06-06)
+
+**Batch 1A — the 4 ADRs — `done` ✅ (reviewer-reconciled 2026-06-06). The gate is cleared.**
+
+| ID | Title | Size | Status | ADR produced | blocks | Layers |
+|----|-------|------|--------|--------------|--------|--------|
+| **T-0141** | ADR-INTEGRATION (IHttpClientFactory + error-class + async-email) | M | **done ✅** | ADR-0005 | T-0144→T-0145, T-0146, T-0147 | architect, backend |
+| **T-0140** | ADR-REFUND (refund/dispute money path + chargeback) | M | **done ✅** | ADR-0006 + **ADR-0009** | T-0160…T-0165 (Wave-2) | architect, backend |
+| **T-0152** | ADR: soft-delete policy (Deactivate vs Remove) | M | **done ✅** | ADR-0007 | T-0153, T-0154, T-0191 | architect |
+| **T-0155** | ADR: outbox table + in-Functions drainer (ADR-0002 D1.3) | M | **done ✅** | ADR-0008 | T-0156→T-0157→T-0158 | architect |
+
+**Batch 1B — contract/plumbing code. ALL `done` ✅ (merged in `a4f14094`; PM-reconciled 2026-06-07).**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
+|----|-------|------|--------|-----------|--------|-----|-------------|
+| T-0150 | Centralize CZE/Mapbox-bounds/2000-char constants | S | **done ✅** | — | backend, frontend, android | no | — |
+| T-0149 | Refresh-token rotation re-checks profile (per host) | S | **done ✅** | T-0100✓ | backend | **yes** | — |
+| **T-0159** | BLIND-2: Mapbox token in request URL → correct auth + scrub logs + rotate | S | **done ✅** | — | frontend, config | **yes** | rotate-mapbox-token ⚠️ **still outstanding (owner)** |
+| T-0144 | Stripe + SendGrid via IHttpClientFactory (ADR-0005) | M | **done ✅** | T-0141✓ | backend | no | — |
+| T-0146 | Registration/reset email off critical path (async, ADR-0005 D3) | M | **done ✅** | T-0141✓, T-0118✓ | backend, functions | **yes** | — |
+| T-0147 | Membership commands: provider try/catch + S7 (ADR-0005 D4) | M | **done ✅** | T-0141✓ | backend | **yes** | — |
+| T-0148 | Tier-threshold config read + persist grant/revoke Reason | M | **done ✅** | T-0112✓ | backend | no | — |
+| T-0153 | SavedAddress soft-delete + IsActive filters + null-FK + migration (ADR-0007) | M | **done ✅** | T-0152✓ | backend, db | no | ef-migration |
+| T-0154 | Device soft-delete verdict (UnregisterDevice, ADR-0007) | S | **done ✅** | T-0152✓ | backend | no | — |
+| T-0156 | Outbox table + EF config + migration flag (ADR-0008) | S | **done ✅** | T-0155✓ | db | no | ef-migration |
+| T-0151 | Migrate remaining queue consumers onto Functions.Core | M | **done ✅** | T-0121✓ | functions | no | — |
+| T-0145 | Error classification across integration layer | M | **done ✅** | T-0141✓, T-0144✓ | backend | no | — |
+| T-0157 | Durable IPendingDispatch backing + drainer + host (ADR-0008) | M | **done ✅** | T-0156✓, T-0118✓ | backend, functions | no | — |
+| T-0158 | Bucket-B sweeps migrate onto per-iteration outbox row | M | **done ✅** | T-0157✓, T-0148✓ | backend | no | — |
+
+> **Batch 1B = 14 `done`** (merged `a4f14094`). Reconciled 2026-06-07 from stale `ready`/`draft`. The only
+> residual owner action is **T-0159's `rotate-mapbox-token`** — the code fix shipped (token off the URL) but
+> the exposed token still needs rotating in the Mapbox account (a live exposure until done). Surfaced in
+> `status/sprint-4.md` §3.
+
+**Wave 2 — refund BUILD from ADR-0006/0009 + fiscal go-live gates + fast-follows. ALL `done` ✅ (merged in `8ff35d49` / PR #75; PM-reconciled 2026-06-09 from stale `draft`). Plan: `status/sprint-4.md`.**
+
+| ID | Title | Size | Status | depends_on | blocks | Layers | sec | manual_step |
+|----|-------|------|--------|-----------|--------|--------|-----|-------------|
+| **T-0160** | AUD-01a: Refund entity + EF + PaymentStatus.PartiallyRefunded + RefundReason enum | M | **done ✅** | — | T-0161, T-0163, T-0164, T-0167 | backend, db | no | ef-migration |
+| **T-0161** | AUD-01b: IRefundService impl (seam, ceiling, RefundKey) + IStripeClient key param | M | **done ✅** | T-0160 | T-0164, T-0167, T-0170, T-0173 | backend, clients | **yes** | nswag-regen* |
+| **T-0231** | AUD-02p1 (split of T-0165): PackageService.PriceWeight + even-weight backfill + bundled-gross (incl. T-0231b: PriceWeight + serviceWeights on package DTO) | M | **done ✅** | — | **T-0167**, T-0232 | db, backend | no | ef-migration |
+| **T-0163** | AUD-01d: ILoyaltyService.RevokeForPartialRefundAsync (proportional, keyed) | M | **done ✅** | T-0160 | — | backend, db | no | ef-migration |
+| **T-0164** | AUD-01e: Migrate CancelOrder + ResolveDispute onto the seam | M | **done ✅** | T-0160, T-0161 | T-0170, T-0173 | backend | **yes** | — |
+| **T-0167** | AUD-01c1 (split of T-0162): admin partial-refund cmd + allocator + RefundPolicy + PartiallyRefunded + per-country Stripe-fee config | M | **done ✅** | T-0160, T-0161, **T-0231** | T-0168, T-0170, T-0173 | backend | **yes** | nswag-regen |
+| **T-0168** | AUD-01c2 (split of T-0162): admin partial-refund UX (incl. bundled-service selection) | M | **done ✅** | T-0167 | — | frontend | no | nswag-regen (consumes) |
+| **T-0232** | AUD-02p2 (split of T-0165): admin package-form weight UX | S | **done ✅** | T-0231 | — | frontend | no | nswag-regen (consumes) |
+| **T-0220** | FISCAL-SEQ: gapless fiscal sequence allocator (FiscalCounter) — **DE/AT/ES go-live gate** | M | **done ✅** | T-0119✓ | — | backend, db | **yes** | ef-migration |
+| **T-0221** | FISCAL-AUTH-IDEMP: per-provider RegisterReceiptAsync idempotency — **DE/AT/ES go-live gate** | M | **done ✅** | T-0119✓ | — | backend, clients | **yes** | — |
+| **T-0219** | Anon-catalog entities → platform config (Service/Category/Package/Extra/ServiceCity) | M | **done ✅** | T-0100✓, T-0113✓ | — | backend, db | **yes** | ef-migration |
+| **T-0222** | SplitPayForMultipleEmployees — currency-minor-unit split + remainder reconciliation | S | **done ✅** | — | — | backend | no | — |
+
+> **Wave 2 = 12 `done`** (merged `8ff35d49` / PR #75). Reconciled 2026-06-09 from stale `draft`. Plus the
+> new backend DTO field `PackageDetails.IncludedServiceItems [{Id,Name}]` and two runtime fixes folded in
+> (OutboxMessageRepository non-composable FromSqlRaw; AppHost pinned Postgres password). Split epics
+> **T-0162**/**T-0165** remain `[SPLIT]` tracking with all four children `done`. The fiscal go-live gates
+> (T-0220/T-0221) are `done` in code but only **activate** on a DE/AT/ES launch — not CZ/SK/PL (see
+> `status/sprint-5.md` §3 carry-forward).
+
+**Wave 3 — admin-feature block T-0170…T-0195. ✅ CLOSED 2026-06-12 — 25/26 `done` (T-0179 NOT built, carried forward). Commits: `8aa7bcc1` (3A) → `5d631f8c` (backend 3B/3D/3C/3E) → `8ddfef9d` (frontend/Android mega-batch) → `66cc823d` (3F). Q-W3-1 answered (b). Plan + close-out: `status/sprint-5.md`.**
+
+| ID | Title | Size | Status (commit) | depends_on (✓ = done) | Batch | Layers | sec | manual_step |
+|----|-------|------|--------|------------------------|-------|--------|-----|-------------|
+| **T-0170** | Admin order ops (cancel/reassign/refund/status-override) + generalized cancel | **L→split** | **done ✅** `8aa7bcc1` (170a–d + UI) | T-0100✓, T-0140✓, T-0161✓, T-0164✓ | 3A | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0172** | Dispute transition-guard: Close/Escalate/LinkStripe reachable + guarded | M | **done ✅** `8aa7bcc1` | T-0140✓ | 3A | backend | **yes** | — |
+| **T-0174** | Wire Stripe chargeback linkage (LinkStripeDispute) | M | **done ✅** `8aa7bcc1` | T-0140✓ | 3A | backend | **yes** | — |
+| **T-0173** | Admin dispute management + issue refund; remove dead Partner endpoints | **L→split** | **done ✅** `8aa7bcc1` (173a+173b) | T-0100✓, T-0140✓, T-0161✓, T-0164✓, T-0172✓, T-0171✓ | 3A | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0171** | Payroll adjustment + settlement lifecycle + partner payroll surface | **L→split** | **done ✅** `5d631f8c` (171a/b/c) + `8ddfef9d` (171d/e UI + Android) | T-0100✓, T-0143✓, T-0170✓ | 3B | backend, frontend, android | **yes** | nswag-regen ✓, ef-migration (none needed) |
+| **T-0180** | Implement GenerateInvoiceFunction (revive generate-invoice queue) | S | **done ✅** `5d631f8c` | T-0143✓, T-0171✓ | 3B | functions | no | — |
+| **T-0175** | Admin Membership-Plan CRUD surface | **L→split** | **done ✅** `5d631f8c` (175a) + `8ddfef9d` (175b) | T-0100✓, T-0173✓ | 3C | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0176** | Admin referral intervention + wire by-user endpoint + sidebar | M | **done ✅** `5d631f8c` + `8ddfef9d` | T-0100✓, T-0148✓, T-0175✓ | 3C | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0177** | Invoke referral expiry sweep (timer) | S | **done ✅** `5d631f8c` | T-0143✓ | 3C | backend, functions | no | — |
+| **T-0178** | /r/{code} referral landing route | M | **done ✅** `8ddfef9d` | — | 3C | frontend | no | — |
+| **T-0179** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0179-*.md` (`status: done`); this row was never updated.** Unify membership subscribe path (web/mobile) | S | **⚠️ NOT BUILT in Wave 3 — carried; now `ready` in Wave-4 Batch 4A** (verified: `CreateMembershipSubscription.cs` untouched since Wave 1) | T-0111✓ | 3C→4A | backend, frontend | no | nswag-regen* |
+| **T-0181** | SendSitewidePromo fan-out: resume cursor + idempotent enqueue | M | **done ✅** `5d631f8c` | T-0143✓ | 3D | functions, backend | **yes** | — |
+| **T-0182** | Idempotent push dispatch (per-message key; fix at-most-once) | M | **done ✅** `5d631f8c` (+ **ADR-0010** produced) | T-0143✓, T-0141✓ | 3D | functions, backend | **yes** | — |
+| **T-0183** | Fix cron cadence on 4 notification/recurring timers | S | **done ✅** `5d631f8c` | — | 3D | functions | no | — |
+| **T-0184** | FiscalRetryService per-receipt durability (no all-or-nothing batch) | S | **done ✅** `5d631f8c` | T-0143✓ | 3D | backend | no | — |
+| **T-0185** | Mapbox 429/rate-limit handling | M | **done ✅** `5d631f8c` | T-0141✓, T-0145✓ | 3D | backend | no | — |
+| **T-0186** | Admin GDPR back-office UI + partner GDPR self-service | **L→split** | **done ✅** `5d631f8c` + `8ddfef9d` (186a/b) | T-0100✓, T-0176✓ | 3E | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0187** | Customer-web notification-preferences UI (11-category API) | M | **done ✅** `8ddfef9d` | — | 3E | frontend | no | — |
+| **T-0188** | Device / active-session management (GetMyDevices + revoke UI) | M | **done ✅** `5d631f8c` (backend) + `8ddfef9d` (Android) — optional AC6 admin panel **deferred** | — | 3E | backend, frontend, mobile | **yes** | nswag-regen ⚠️ customer client pending |
+| **T-0189** | LastLoginAt tracking (field + write + surface) | M | **done ✅** `5d631f8c` | — | 3E | backend, db, frontend | no | ef-migration ✓ |
+| **T-0190** | Admin self-service profile/password; accept BirthDate/PreferredLanguageCode | M | **done ✅** `5d631f8c` + `8ddfef9d` | T-0100✓, T-0172✓ | 3E | backend, frontend | no | nswag-regen ✓ |
+| **T-0191** | Service/Package in-use guard + activate/deactivate; default-currency/-language | L (internal split a/b/c/d) | **done ✅** `5d631f8c` (a–d backend; CC-06 per Q-W3-1 path b) + `8ddfef9d` (UI) | T-0142✓ | 3E | backend, frontend | **yes** | ef-migration (none needed), nswag-regen ✓ |
+| **T-0192** | Customer dispute evidence+refund UI; status filter/unread; saved-address UI | M | **done ✅** `8ddfef9d` | — | 3E | frontend | no | — |
+| **T-0193** | Account-lockout / per-confirmation-code throttle (rate-limit fast-follow) | M | **done ✅** `66cc823d` (⚠️ **AC4 closes after owner ef-migration + `Cleansia.IntegrationTests`**) | T-0115✓, T-0189✓, T-0190✓ | 3F | backend, db | **yes** | **ef-migration ⚠️ PENDING (owner)** |
+| **T-0194** | Rate-limit coverage for uncovered money/side-effect endpoints | S | **done ✅** `66cc823d` (recorded **AC6 deviation** — runtime 429 harness → **T-0235**, Wave 4) | T-0115✓, T-0171✓, T-0173✓, T-0179 (waived — doc-only, endpoints annotated regardless), T-0188✓ | 3F | backend | **yes** | — |
+| **T-0195** | Client-side Retry-After back-off jitter (SPA + mobile) | S | **done ✅** `66cc823d` | T-0115✓ | 3F | frontend, mobile | no | — |
+
+> \* T-0179's `nswag-regen` footnote is moot until it is built (likely comment-only → no regen). The
+> T-0176/T-0190 hold-point regens were satisfied by the owner mid-wave (the `8ddfef9d` frontend slices
+> built against the regenerated admin client). **Still pending: the customer-client regen**
+> (`DisputeReason.Chargeback` + device endpoints) — flagged in the Wave-3 CLOSED banner + sprint-5 §8.
+
+**Wave-3 close follow-ups (filed 2026-06-12, all `draft`) — review/security-gate findings made tickets. T-0236 MUST land before any multi-tenant onboarding; T-0233/T-0234 are security fast-follows.**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0233** | **DONE ✅ — closure recorded on the row at line 1992; this is the FILING row and was never updated.** Targeted-lockout DoS mitigation — trusted-device bypass / CAPTCHA on locked-account login | M | draft | T-0193✓ | backend, frontend | **yes** | — | T-0193 security note N1 |
+| **T-0234** | **DONE ✅ — closure recorded on the row at line 1984; this is the FILING row and was never updated.** Bound ChangeOwnPassword current-password guessing (authenticated surface) | S | draft | T-0193✓ | backend | **yes** | — (ef-migration only if a dedicated counter is chosen) | T-0193 security note N5 |
+| **T-0235** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0235-*.md` (`status: done`); this row was never updated.** Runtime 429 flood-harness test (the T-0194 AC6 deviation; Wave-4 test slice) | S | **ready** (Wave-4 Batch 4C) | T-0194✓ | backend | no | — | T-0194 AC6 deviation |
+| **T-0236** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0236-*.md` (`status: done`); this row was never updated.** Multi-tenant token-revoke asymmetry: TenantId=null token writes vs tenant-filtered revoke reads | M | draft | T-0188✓ | backend | **yes** | ef-migration (TBD at contract-lock) | T-0188 security note; `security/auth-sessions.md` |
+| **T-0237** | **DONE ✅ — closure recorded on the row at line 1990; this is the FILING row and was never updated.** Catalog delete TOCTOU → FK Restrict + violation→`in_use` mapping; + RecurringBookingTemplate JSON-id dangling refs | M | draft | T-0191✓ | backend, db | **yes** | ef-migration | T-0191a security re-gate notes 1+2 |
+| **T-0238** | **DONE ✅ — closure recorded on the row at line 1985; this is the FILING row and was never updated.** EmployeeInvoice DTOs gain PdfGenerationFailed/PdfGenerationError + admin regen (closes Q-W3-3 / T-0171d AC4) | S | draft | T-0171✓ | backend, frontend | no | nswag-regen | Q-W3-3 |
+| **T-0239** | **DONE ✅ — closure recorded on the row at line 1989; this is the FILING row and was never updated.** Module-boundary sweep: customer features off `@cleansia/partner-services` (14 files) + eslint boundary rule | M | draft | — | frontend | no | — | Wave-3 review finding |
+| **T-0241** | **DONE ✅ — closure recorded on the row at line 1987; this is the FILING row and was never updated.** Admin-app selector-prefix eslint alignment + Nx generator default | S | draft | — | frontend | no | — | recurring 3A+ baseline noise |
+
+**Wave-4 close follow-ups (filed 2026-06-13, all `draft`, Wave-5 candidates) — production findings the test wave uncovered but (correctly) did NOT fix in a test-only wave. T-0242–T-0244 from 4A; T-0245/T-0246 from 4C. ⚠️ T-0245 is a MULTI-TENANT GO-LIVE BLOCKER (must land before any multi-tenant onboarding, alongside T-0236).**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0242** | **DONE ✅ — closure recorded on the row at line 1991; this is the FILING row and was never updated.** Cancellation-fee free-window override semantics: larger Plus override makes the free window STRICTER, contradicting "Plus = more generous" — confirm intent + fix direction (either smaller override on the Plus path or invert override semantics) + update the T-0211 pinning tests | S | draft | T-0211✓ | backend | no (money — adversarial review) | — | T-0211 (TC-7) carried finding |
+| **T-0243** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0243-*.md` (`status: done`); this row was never updated.** `CreateMembershipCheckoutSession` `UserNotFound` uses `nameof(Command)` → `nameof(userId)` (same B5 smell T-0179 fixed in the sibling handler, scoped out there); mechanical rename, pin if practical | XS | draft | T-0179✓ | backend | no | — | T-0179 (LG-07) carried finding |
+| **T-0244** | **DONE ✅ — per `agents/archive/2026-08/backlog/tickets/T-0244-*.md` (`status: done`); this row was never updated.** `EmployeeInvoice.GenerateVariableSymbol` uses per-process-randomized `string.GetHashCode()` (cross-process recompute → silent fiscal/payment-reference mismatch); replace with a deterministic stable hash (or persist-and-never-recompute) + cross-invocation determinism test | S | draft | T-0213✓ | backend | no | ef-migration (only if persist-and-never-recompute is chosen) | T-0213 (TC-6) carried finding |
+| **T-0245** ⚠️ **MULTI-TENANT GO-LIVE BLOCKER** | Multi-tenant Stripe webhook validator/handler tenant-scope mismatch: order-exists VALIDATOR rule (`BaseRepository.ExistsAsync`) is tenant-scoped while the handler read (`GetByIdIgnoringTenantAsync`) is tenant-ignoring → a non-null-tenant paid `checkout.session.completed` FAILS VALIDATION and the order is never confirmed/paid (silent money/lifecycle failure). Masked today (web Checkout is single-tenant, `TenantId==null`). Fix: tenant-ignoring existence check + non-null-tenant integration test. Sibling of T-0236. | M | draft | T-0210✓ | backend | **yes** | — | T-0210 (TC-2/3) review + Security; verified by 4C webhook suite |
+| **T-0246** | StartOrder handler NRE→500 on validator/handler load divergence: `StartOrder.cs:137` `order!.StartOrder()` derefs an unguarded Include-shaped `FirstOrDefaultAsync` while the validator (`:45`) gated existence via `ExistsAsync` (a different query path); when they disagree the handler NREs into a 500 instead of a clean business not-found. Reproduced live on the Mobile partner host with tenant-consistent seed data. Fix: guard the null load (`OrderNotFound`) + reconcile handler query with validator + regression test. | S | draft | T-0215✓ | backend | no | — | T-0215 (TC-9) Ac14 carried finding |
+>
+> **L-splits authorized (5)** — children created as part of execution intake, contract-first per
+> `routing.md`: **T-0170**→170a/b/c/d, **T-0173**→173a/b, **T-0171**→171a/b/c/d/e, **T-0175**→175a/b,
+> **T-0186**→186a/b. Parents become `[SPLIT]` tracking epics. **T-0191** keeps its id but runs as four
+> internal sub-tickets (a CC-02 / b CC-03 / c CC-04 / d CC-06); sub-(d) is **held on Q-W3-1**.
+>
+> **Build order:** 3A (refund-seam consumers — the spine) → 3B (payroll, gated by 3A's T-0170) → {3C, 3D,
+> 3E} largely parallel after their spines, with the dispute-backend serialization cluster
+> (T-0172 → T-0173) and the PolicyBuilder/admin-shell clusters serializing inside 3A/3C/3E → 3F last
+> (T-0194 depends on 3B/3A/3C consumers existing; T-0193 depends on T-0189/T-0190). Per-batch rationale +
+> serialization detail: `status/sprint-5.md`.
+
+> \* T-0161 `nswag-regen` only if a refund **response DTO** surfaces on a client; the admin refund command DTO
+> regen is on **T-0167**.
+>
+> **Split epics (tracking only):** **T-0162** (AUD-01c, `L`) → **T-0167** + **T-0168**; **T-0165** (AUD-02p,
+> `L`) → **T-0231** + **T-0232**. The old `T-0162 depends_on T-0165` edge is now **T-0167 depends_on T-0231**.
+>
+> **Load-bearing cross-edge (DAG over id order): AUD-02p1 (T-0231) → AUD-01c1 (T-0167)** — a bundled service
+> has no gross until `PriceWeight` exists; T-0231 must be `done` before T-0167 goes `ready`.
+> **Q-REFUND-03** (non-blocking) gates only T-0231's per-bundle *business* weighting (even-split default
+> ships; owner sets weights via T-0232). The admin-feature consumers **T-0170/T-0173** now depend on the
+> refund seam + seam migration and are **Wave 3**, not Wave 2.
+
+**Split epics (tracking only — do not run as one ticket):**
+
+| ID | Title | Status | Split into |
+|----|-------|--------|-----------|
+| T-0142 | [SPLIT] ADR + soft-delete sweep | draft (epic) | T-0152 → {T-0153 ∥ T-0154} |
+| T-0143 | [SPLIT] Full transactional outbox | draft (epic) | T-0155 → T-0156 → T-0157 → T-0158 |
+
+> ## 📋 FULL TICKETED BACKLOG — 87 tickets, all waves (2026-06-01)
+> Every wave is now ticketed as a file in `tickets/` (collision-checked twice; 18 serializing
+> `depends_on` edges applied). Dependency graph + shared-file serialization clusters: `TICKET-MAP.md`.
+> All 3 gating ADRs accepted (0001 authz, 0002 outbox, 0003 ratelimit). All `draft` → PM promotes to
+> `ready` wave by wave. Built **test-first (TDD)**; reviewer + security run in parallel per ticket.
+>
+> | Wave | Ids | Count | What |
+> |---|---|---|---|
+> | **0 — PROD gate** | T-0100…T-0128 | 29 | security/correctness blockers + the Wave-0 test slice |
+> | **1 — ADRs + contracts** | T-0140…T-0151 | 12 | ADR-REFUND, ADR-INTEGRATION, soft-delete, full outbox, integration plumbing |
+> | **2 — features (story-backed)** | T-0170…T-0195 | 26 | admin order ops, payroll, disputes, membership/referral/GDPR/device, catalog activate/deactivate, rate-limit fast-follows |
+> | **3 — consistency & quality** | T-0196…T-0206 | 11 | the 187 canonicalization sweep, god-unit decomposition, de-triplication, dead/unsafe code, S6 logging, perf |
+> | **4 — tests + a11y** | T-0210…T-0218 | 9 | webhook/refund/invoice/Functions/authz/fiscal integration tests, error-contract parity, accessibility |
+>
+> **Execution order:** strictly wave-by-wave (Wave N fully `done` before N+1 opens). Within a wave the
+> PM fans out by `depends_on`; the serialization clusters prevent same-file races. **Wave 0 is the PROD
+> gate — nothing ships to prod until it's green.** Per-ticket detail is in each `tickets/T-NNNN-*.md`.
+
+> ## 🔴 WAVE 0 — PROD-BLOCKING (from the COMPLETE audit, 2026-06-01)
+> The full audit overturned the earlier "no security defect" verdict: **8 of 9 criticals are security
+> defects.** **Nothing ships to PROD until Wave 0 is green.** Full plan + verdicts:
+> `audits/AUDIT-2026-06-01-execution-plan.md`. Findings: `audits/AUDIT-2026-06-01-findings.md`.
+> Stories (83): `stories/AUDIT-2026-06-01-user-stories.md`. **Everything is built test-first (TDD).**
+> **FUP-1 (the suspected webhook-signature gap) is REFUTED** — verification proved signature
+> verification is present; residual SEC-W2/W3 tracked below.
+
+| ID | Title | Wave | Sev | Size | Status | Layers | ADR |
+|----|-------|------|-----|------|--------|--------|-----|
+| BSP-1 (+BSP-6) → **T-0100** | One PolicyBuilder ticket: fail-closed fallback + complete Map + startup assertion (BSP-6 merged in) | 0 | crit | M | **done ✅** | backend, config | ADR-AUTHZ (pre-decided) |
+| IDA-SEC-01 → **T-0105** | Google sign-in trusts client email/GoogleId → verify ID-token claims server-side | 0 | crit | M | **done ✅** (⚠️ owner: IMP-1 ClientId for live OAuth) | backend | ADR-AUTHZ (S1/D5) |
+| IDA-SEC-03 → **T-0106** | Reset/confirm codes 6-digit non-crypto, looked up by code → crypto tokens + scoped lookup | 0 | crit | M | **done ✅** (migration regenerated 2026-06-03: 64-char token cols in Initial) | backend, db | — |
+| SEC-DSP-01 → **T-0102** | `IsStaffMessage` client-supplied → derive staff flag from caller role | 0 | crit | S | **done ✅** (⚠️ owner: nswag-regen) | backend, nswag | — |
+| SEC-DSP-02 → **T-0103** | CreateDispute doesn't check order ownership (S1/S3) | 0 | crit | S | **done ✅** | backend | ADR-AUTHZ |
+| SEC-EMP-01 → **T-0104** | Partner analytics IDOR (EmployeeId from query string) | 0 | crit | S | **done ✅** (⚠️ owner: nswag-regen) | backend, nswag | ADR-AUTHZ |
+| IDA-SEC-04 → **T-0101** | Any Employee reads any user's full PII by id | 0 | maj | S | **done ✅** | backend | — |
+| EMP-GAP-01 → **T-0109** | Rejected cleaners can still take/start/complete orders → gate on ContractStatus==Approved | 0 | crit | M | **done ✅** | backend | ADR-AUTHZ |
+| LG-SEC-01 → **T-0110** | Single-use promo over-redeemed via race → atomic conditional-UPDATE + tenant-scoped unique index | 0 | crit | M | **done ✅** (migration regenerated 2026-06-03: SlotOrdinal + unique index in `20260603090920_Initial`) | backend, db | — |
+| LG-SEC-02 → **T-0111** | Mobile subscribe: Stripe subscription with no idempotency key → double-charge | 0 | crit | M | **done ✅** (⚠️ owner: nswag-regen; 2 review rounds) | backend, mobile, nswag | ADR-OUTBOX |
+| LG-SEC-06 → **T-0112** | Admin loyalty grant/revoke non-idempotent → requestId + tenant-scoped filtered unique index + rate-limit | 0 | maj | M | **done ✅** (migration regenerated 2026-06-03: IdempotencyKey in Initial; ⚠️ owner: nswag-regen for admin Command) | backend, db, nswag | ADR-OUTBOX, ADR-RATELIMIT |
+| IA-1 → **T-0108** | CreateAdminUser double-hashes password → new admins can't log in | 0 | crit | S | **done ✅** | backend | — |
+| SEC-W2 → **T-0114** | Webhook auto-provision can create a 2nd active membership → active-check + filtered unique index | 0 | maj | M | **done ✅** (migration regenerated 2026-06-03: active filtered unique index in Initial) | backend, db | ADR-OUTBOX |
+| SEC-W3 → **T-0116** | Webhook endpoints not rate-limited (S5) → per-IP "webhook" policy (independent) on 3 hosts | 0 | maj | S | **done ✅** | web, backend | ADR-RATELIMIT |
+| BSP-4 / IDA-SEC-02 → **T-0115** | Global rate limiter (no partition) → partitioned per-IP/per-sub + forwarded-headers + fail-closed guard + host harness | 0 | crit | M | **done ✅** (⚠️ owner deploy gate: ForwardedHeaders config) | config, backend | ADR-RATELIMIT |
+| F11 → **T-0117** | UnitOfWork pipeline commits even on validation failure → Validation-outer reorder + IsSuccess-gated commit | 0 | crit-root | S | **done ✅** | backend | ADR-OUTBOX D4 |
+| FUNC-CORE → **T-0121** | Extract Cleansia.Functions.Core so queue consumers are unit-testable (precondition for F2/F4/F3) | 0 | — | S | **done ✅** (16/16 triggers discovered; pure move) | functions | ADR-OUTBOX D5.1 |
+| F2 / SEC-W1 → **T-0118** | Enqueue-before-commit → tactical post-commit dispatch (PostCommitDispatchBehavior + idempotent receipt consumer) | 0 | maj | L | **done ✅** | appservices, functions, queue | ADR-OUTBOX D1-D3 |
+| F3 → **T-0120** | No poison/dead-letter consumer → 5 per-queue poison consumers + DeadLetter store + classification | 0 | maj | M | **done ✅** (⚠️ owner: DeadLetter table ef-migration folds into Initial regen) | functions, db | ADR-OUTBOX D3 |
+| F4 → **T-0119** | Receipt idempotent: claim-before-register, at-most-once fiscal seq + authority registration (S7) | 0 | maj | M | **done ✅** (go-live gates → T-0220/T-0221/T-0122) | functions, backend | ADR-0004 |
+| FISCAL-RECON → **T-0122** | Reconciliation sweep: re-enqueue committed-but-unrealized fiscal work (no-receipt OR FiscalCode==null per C-B) | 0 | maj | S | **done ✅** (2 rounds; ADR-0004 outer net) | backend, functions | ADR-OUTBOX D3.4 + ADR-0004 C-B |
+| IDA-SEC-08 → **T-0107** | Admin GDPR/deactivate: no self/last-admin protection | 0 | maj | S | **done ✅** | backend | ADR-AUTHZ |
+| BLIND-1 → **T-0146** | Email synchronous on signup/reset critical path → async/queue | **1** | crit | M | **ready** (Wave 1 1B — ADR-0005/T-0141 done ✓ + T-0118 ✓; security gate) | backend, functions | ADR-0005 (T-0141) |
+| BLIND-2 → **T-0159** | Mapbox access token in request URL query → use correct Mapbox auth + scrub logs + rotate token | **1** | crit | S | **ready** (Wave 1 1B — independent; **security_touching**; ⚠️ owner: rotate-mapbox-token) | frontend, config | — |
+| PROD-CONFIG → **T-0123** | Hardening: CSRF-in-prod (BSP-3) + Swagger fail-closed + boot guard (BSP-5) + anon LookupBatch (BSP-9) | 0 | maj | S | **done ✅** (⚠️ owner: provision Csrf:Secret before prod deploy) | config | ADR-RATELIMIT |
+| PERF-IDA-01 (+PERF-IDA-05) → **T-0124** | No DB index on User.Email + lookup columns → unique Email index + filtered lookup indexes | 0 | crit | S | **done ✅** (migration folds into Initial regen) | db | — |
+| **PRE-0 ADR sprint** | ADR-AUTHZ + ADR-OUTBOX(contract) + ADR-RATELIMIT decided & accepted BEFORE the Wave-0 items that encode them | 0 | — | — | draft | architect | are the ADRs |
+| TC-PAY → **T-0125** | Pay-calc tests (must-cover #1) — 70 tests across the 4 pure surfaces; pay math was untested | 0 | crit | S | **done ✅** (split-rounding follow-up → T-0222) | backend | — |
+| TC-AUTHZ-0 → **T-0126** | Cross-tenant/cross-user write-path rejection tests + WebApplicationFactory host harness | 0 | crit | M | **done ✅** (Cleansia.HostTests; 32 e2e authz tests green) | backend | with BSP-1 |
+| TC-IDEMP-0 → **T-0127** | "Safe to run twice" idempotency tests (webhooks + 3 LG money fixes) | 0 | crit | M | **done ✅** (cases shipped inline w/ fixes; audit confirmed full coverage) | backend | with the fix |
+| TC-AUTH-TAKEOVER → **T-0128** | Token-claim binding + reset-code lookup tests | 0 | crit | M | **done ✅** (covered + GoogleTokenVerifier gap filled) | backend | with IDA-SEC-01/03 |
+| LG-SEC-05 → **T-0113** | Anonymous-but-tenant-scoped MembershipPlan read → platform config (Option A) | 0 | maj | M | **done ✅** (migration regenerated 2026-06-03: MembershipPlans Code-unique, no tenant-scoping) | backend, db | ADR-AUTHZ A1 |
+| LG-SEC-05-sibs → **T-0219** | Anon catalog entities (Service/Category/Package/Extra/ServiceCity) → platform config | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49) | backend, db | ADR-AUTHZ A1 |
+| FISCAL-SEQ → **T-0220** | Gapless-monotonic-atomic fiscal sequence allocator (FiscalCounter) — replace COUNT(*)+1 | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49; **activates on DE/AT/ES go-live**) | backend, db | ADR-0004 |
+| FISCAL-AUTH-IDEMP → **T-0221** | Per-provider RegisterReceiptAsync idempotency on ReceiptNumber (IFiscalService key) | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49; **activates on DE/AT/ES go-live**) | backend, clients | ADR-0004 |
+
+> ⚠️ **Plan corrected 2026-06-01** after a collision check (`audits/AUDIT-2026-06-01-plan-corrections.md`):
+> 3 blocking defects fixed — ADRs frozen pre-Wave-0, outbox split tactical/strategic, BSP-1+BSP-6
+> merged + PolicyBuilder edits serialized, and a real Wave-0 test slice added (TDD is now structural).
+
+> **Waves 1–4** (foundational ADRs, story-backed features, consistency cleanup, tests + a11y) are in
+> `audits/AUDIT-2026-06-01-execution-plan.md` — not duplicated here. The AUD-01…25 and T-0001…16
+> backlogs below are folded into the wave plan (referenced in place). The prior-audit sprint-3 AUD
+> tickets and the FUP passes are **superseded by this complete audit** — keep them for traceability but
+> work the wave plan.
+
+> **Prior (partial) codebase audit backlog** (sprint 3, superseded by the complete audit above; kept
+> for traceability). AUD-01/02/04 carried into Wave 2. FUP-1 RESOLVED-REFUTED.
+
+| ID | Title | Sprint | Size | Status | Owner | Depends on | Layers |
+|----|-------|--------|------|--------|-------|-----------|--------|
+| **FUP-1** | 🔴 Verify Stripe **subscription** webhook signature (suspected missing) + idempotency/replay | 2 | M | draft | — | — | backend, security |
+| FUP-2 | Re-audit the 5 under-covered domains (loyalty-growth, disputes-addresses, identity-auth, catalog-config, employees) | 2 | M | draft | — | — | analyst, reviewer, security, optimizer |
+| FUP-3 | Azure Functions trigger-graph pass — re-validate "dead lifecycle" verdicts (AUD-02/04); idempotency/poison/dead-letter | 2 | M | draft | — | — | backend, security |
+| FUP-4 | Contract-parity checker: i18n key sets ×5 locales, BusinessErrorMessage↔errors.*, NSwag drift | 2 | M | draft | — | — | backend, frontend |
+| FUP-5 | Test-coverage gap pass → prioritized must-cover backlog (orders/payments/payroll/fiscal/Functions) | 2 | M | draft | — | — | qa, backend |
+| FUP-6 | AppHost/Aspire + secrets/CORS/host-exposure pass | 2 | S | draft | — | — | architect, security |
+| FUP-7 | Migration/seed integrity pass (EF migrations vs configs; sql-scripts seeds) | 2 | S | draft | — | — | db |
+| AUD-01 | Admin order operations + generalized cancellation (cancel/reassign/refund/status-override) | 3 | L | draft | — | — | architect, backend, frontend |
+| AUD-02 | Wire up dead payroll adjustment & settlement lifecycle (bonus/deduction, Paid, Dispute/Reject, Reopen) | 3 | L | draft | — | FUP-3 | architect, backend, frontend, android |
+| AUD-03 | Build admin Extras management (CRUD + translations + pricing) | 3 | L | draft | — | — | backend, frontend |
+| AUD-04 | Reconcile partner payroll surface (my-period-pay screen, prune admin endpoints off partner host, failed-PDF invoices) | 3 | L | draft | — | FUP-3, FUP-6 | architect, backend, frontend, android |
+| AUD-05 | Add order-cancellation flow to customer **web** (parity with mobile) | 3 | M | draft | — | — | frontend |
+| AUD-06 | Decompose CreateOrder.Handler god-handler (484 lines, 15 deps) | 3 | L | draft | — | — | backend |
+| AUD-07 | Split order-wizard god-facade (1048 lines) + migrate to C3 pipe | 3 | L | draft | — | T-0010 | frontend |
+| AUD-08 | Move ownership/profile checks to handler in Take/Complete/Start order (B4/S3) | 3 | M | draft | — | — | backend |
+| AUD-09 | Add RecurringBookingTemplate.MapToDto + Address.ToSingleLine; dedupe recurring projection/validators | 3 | M | draft | — | — | backend |
+| AUD-10 | Move cleaner weekly-order-limit magic numbers into BookingPolicy | 3 | S | draft | — | — | backend |
+| AUD-11 | Convert partner OrdersListUiState to sealed UiState + ActionState (E1/E2) | 3 | M | draft | — | — | android |
+| AUD-12 | Fix off-by-one OrderStatus class/icon maps in partner web order-detail helpers | 3 | S | draft | — | — | frontend |
+| AUD-13 | Standardize order/note/issue parity & remove dead endpoints across web/mobile | 3 | M | draft | — | — | backend, frontend |
+| AUD-14 | Add OnTheWay case to admin order status badge/icon helpers | 3 | S | draft | — | — | frontend |
+| AUD-15 | Type order-status email param as OrderStatus enum + CancelledBy enum (folds into AUD-01) | 3 | M | draft | — | AUD-01 | backend |
+| AUD-16 | Type recurring-booking command enums instead of raw ints | 3 | M | draft | — | — | backend, frontend |
+| AUD-17 | Remove geocoding **write** from GetPagedOrders query (restore CQRS read-only); extract pay/PII mapper | 3 | M | draft | — | — | backend |
+| AUD-18 | Fix partner OrdersFacade cleanup/error handling + remove setTimeout(100) sequencing | 3 | M | draft | — | — | frontend |
+| AUD-19 | Move customer recurring/wizard facade calls to the C3 pipe | 3 | M | draft | — | AUD-07 | frontend |
+| AUD-20 | Refactor HandlePaymentNotification webhook (297 lines) + add tests | 3 | M | draft | — | — | backend |
+| AUD-21 | Align GetFiscalFailures to IQueryHandler + decide paging (remove hidden 200 cap) | 3 | M | draft | — | — | backend |
+| AUD-22 | Add Response records to fiscal commands (B1) | 3 | S | draft | — | — | backend |
+| AUD-23 | Fix mobile collectAsState → lifecycle-aware; make CZ/CZK config-driven | 3 | M | draft | — | — | android |
+| AUD-24 | Correct stale "no recurring UI" comment in MaterializeRecurringBookings | 3 | S | draft | — | — | backend |
+| AUD-25 | Burn down the 187 machine-detected consistency violations (T-0001…T-0016 epic) | 3 | — | draft | — | — | backend, frontend, android |
+
+---
+
+> **Consistency canonicalization backlog** (from `audits/consistency-violations.md`). These are
+> `draft` until the owner approves the setup and the PM promotes them to `ready`. Each maps to a rule
+> in `knowledge/consistency.md`. Two (T-0009, T-0016) need an Architect ADR first because they are
+> cross-cutting (soft-delete; mobile repo contract) — do not start those without the ADR.
+
+| ID | Title | Sprint | Size | Status | Owner | Depends on | Layers |
+|----|-------|--------|------|--------|-------|-----------|--------|
+| T-0001 | Canonicalize GetPagedPromoCodes + GetPagedReferrals to the paged-query pattern | 1 | M | draft | — | — | backend |
+| T-0002 | Make GetPagedPayConfigs.Filter init-only | 1 | S | draft | — | — | backend |
+| T-0003 | Align GetPagedServices to canonical read-path order | 1 | S | draft | — | — | backend |
+| T-0004 | Give CreateDispute/UpdateDisputeStatus/DeleteSavedAddress a Response record | 1 | S | draft | — | — | backend |
+| T-0005 | Move ownership checks from validators to handlers (4 features) | 1 | M | draft | — | — | backend, security |
+| T-0006 | Refactor validators to AbstractValidator + composed shared rules | 1 | M | draft | — | — | backend |
+| T-0007 | Fix Error field name in CreateMembershipSubscription | 1 | S | draft | — | — | backend |
+| T-0008 | Add idempotency + provider error handling to membership/order create | 1 | M | draft | — | — | backend, security |
+| T-0009 | ADR + sweep: soft-delete for business entities | 2 | L | draft | — | — | architect, backend, db |
+| T-0010 | Unify customer-feature facades on UnsubscribeControlDirective | 1 | M | draft | — | — | frontend |
+| T-0011 | Normalize list facades (signals, finalize, no stray NgRx) | 1 | M | draft | — | — | frontend |
+| T-0012 | Unify fiscal-failures table def + package-form builder | 1 | S | draft | — | — | frontend |
+| T-0013 | Convert partner-app flag-bag UiStates to sealed states | 1 | M | draft | — | — | android |
+| T-0014 | Standardize one-shot actions on ActionState | 1 | M | draft | — | — | android |
+| T-0015 | Fix RecurringBookingsScreen state collection (lifecycle) | 1 | S | draft | — | — | android |
+| T-0016 | ADR + migrate customer-app repos to ApiResult<T> and unify mobile structure | 2 | L | draft | — | — | architect, android, ios |
+
+## Done
+
+> ⚠️ **This table said `_(none yet)_` from sprint 0 until 2026-08-04, while several hundred tickets
+> reached `done`.** It was never maintained, and a table that is empty by neglect reads exactly like a
+> table that is empty by fact. Rather than backfill fifteen sprints from memory — which would produce
+> the same class of unverified claim this reconciliation exists to remove — it now carries a **pointer**
+> plus the sprint whose closures were actually verified against the tree.
+>
+> **The authoritative per-ticket record is the `status:` field in
+> `agents/archive/2026-08/backlog/tickets/T-NNNN-*.md`.** Each `done` ticket's status log names the commit that shipped
+> it. For anything merged in the PR **#149–#170** window, see the staleness notice above — the owner
+> declined a backfill and those tickets are not represented here at all.
+
+### Sprint 15 — closed 2026-08-04 by the reconciliation, each verified against the tree
+
+| ID | Title | Shipped in |
+|----|-------|-----------|
+| T-0525 | Cancellation fee no longer charges for a cleaner who never took the job | `8f447258` |
+| T-0528 | The digest re-offers a job you were busy for once the conflict clears | `efee2853` |
+| T-0529 | The digest watermark can advance under a tenant | `28763fe6` |
+| T-0530 | One offerability rule, read by every surface, enforced at the take | `37756936` |
+| T-0513 | The false express promise removed from all three clients | `0c665c08` |
+| T-0517 | ADR-0034 — payout details as a scheme-discriminated record | `7fc2935e` |
+| T-0511 | ADR-0035 — metered membership benefits | `15d80faa` |
+| T-0495 | ADR-0036 + ADR-0039 — preferred cleaner, first refusal, availability-aware | `cfcadce5` · `182a5660` |
+| T-0512 | Membership benefit usage — entity, config, migration | `7e1cf7f5` |
+| T-0518 | Payout details — schema, entity config, migration | `7e1cf7f5` |
+| T-0519 | Payout details — capture, real validation, masked reads | `3092abc1` · `077b7e8a` |
+| T-0521 | Payout details UI — partner Android and partner iOS | `d0c08e24` · `532d98f5` · `9c13b2c7` |
+| T-0493 | Express waiver — resolved, metered, consumed server-side | `3092abc1` |
+| T-0515 | The preferred-cleaner hold, enforced at all six surfaces + its push | `22eeaec4` · `eb37fdab` |
+| T-0516 | Favourite-cleaner feed — rate limit, Plus gate, active filter | `b6f1c2a2` |
+
+**Retired:** T-0523 (QR Platba + barcode) — the owner rejected the work, `579eff8f`.
+
+### Sprint 15 — closed 2026-08-05 by reconciliation pass 4, each verified at HEAD
+
+| ID | Title | Shipped in |
+|----|-------|-----------|
+| T-0457 | PII redacted by shape on all five hosts + a DTO-walking guard that reads the live regex | `b9753e85` |
+| T-0464 | `ServedContentType` as a closed value type, via the SAS response-header override | `b9753e85` |
+| T-0509 | Payout-value exposure sweep — the live hole was the **admin** GDPR route (`AdminGdpr`) | `b9753e85` |
+| T-0520 | Payout details UI — partner web **and** admin, masked read + audited reveal | `cf24a74c` · `3a4c18a9` |
+| T-0526 | Cancellation-fee preview sharing one assessor with the cancel path | `03c3ba43` · `20a0c592` |
+| T-0538 | All five Web SDK hosts disable the default content glob + a regression guard | `0c76f94a` |
+| T-0539 | Per-template DI scope in the recurring sweep | `0c76f94a` |
+
+**Retired:** T-0545 (promo counter-repair script) — **obsolete, not done.** The owner drops the DEV
+database before any repair would run, so the corrupt counters go with it; DEV is the only environment
+the drift exists in, and the cause is already fixed (`da88b695` + `d78b816b`).
+
+**Superseded:** T-0508 (the CZ invoice spec) — by **T-0522**, which shipped the build first and answered
+the spec's questions in the course of it. `Q-PAYOUT-01` stays open for **SK**, so the CZ-only boundary
+the spec was going to draw survives outside the ticket.
+
+**Still open, contrary to the brief that ordered pass 4:** **T-0537** (only the registration shipped; the
+guard that is the ticket does not exist) and **T-0514 / T-0544** (web leg shipped, Android + iOS owed) —
+both moved to `in_progress` so nobody rebuilds the web leg.
+
+---
+
+> First real job (pending owner approval of this setup): **a full codebase audit** across all
+> layers — backend, db, frontend, android — to surface functional gaps, half-built features,
+> spaghetti hotspots, hardcoded strings, security holes, and performance issues. The audit fans out
+> one analyst + one reviewer (and `security`/`optimizer` where relevant) per subsystem in parallel,
+> writes findings to `agents/archive/2026-08/backlog/audits/`, and the PM converts each finding into a ranked ticket
+> here. See `agents/WAY-OF-WORKING.md`.

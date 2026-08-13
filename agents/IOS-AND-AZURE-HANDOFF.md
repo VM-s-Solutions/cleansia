@@ -35,8 +35,8 @@ All accepted and committed under `docs/decisions/`:
 | **0018** | **iOS design parity (Gate-DP).** The iOS apps **look the same as Android** (same layout/flow/branding) but are built with **native SwiftUI components**; where Android & iOS conventions genuinely conflict, **iOS wins** (the "iOS component improvements") — touching only the component, never the layout/flow/branding. |
 
 **Supporting docs:**
-- iOS plan + ticket table: `agents/backlog/status/sprint-12.md`
-- iOS App Review checklist (Gate-AR + Gate-DP): `agents/backlog/ios-app-review-checklist.md`
+- iOS plan + ticket table: `agents/archive/2026-08/backlog/status/sprint-12.md`
+- iOS App Review checklist (Gate-AR + Gate-DP): `agents/archive/2026-08/backlog/ios-app-review-checklist.md`
 - Living companion (evolving iOS design notes): `agents/architecture/decisions/ios-app-architecture.md`
 - The Android reference apps to mirror: `src/cleansia_android/` (`:core`, `:partner-app`, `:customer-app`)
 
@@ -222,5 +222,5 @@ branch + push, no PR; the team operating system is in `agents/` (charters in `.c
 > (`src/cleansia_android/`), partner-app-first, iOS-16 target, `ObservableObject` state, native components
 > that look like Android (ADR-0018), MapKit-default, hand-written auth, openapi-generated business client.
 > **Start by building iOS Phase 0** (foundation — `src/cleansia_ios/`, no backend needed) per
-> `agents/backlog/status/sprint-12.md`, holding Phase 1 until the owner provisions Azure dev + regenerates
+> `agents/archive/2026-08/backlog/status/sprint-12.md`, holding Phase 1 until the owner provisions Azure dev + regenerates
 > the mobile OpenAPI specs.

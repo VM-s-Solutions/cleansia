@@ -278,7 +278,10 @@ public static class DatabaseMigrationExtensions
                 return;
             }
 
-            var seedFilePath = Path.Combine(solutionDir, "Cleansia.Infra.Scripts", "SeedData", "insert_seed_data.sql");
+            // The repo-root sql-scripts copy is the ONLY one. Until 2026-08-13 this read a second
+            // copy inside a Cleansia.Infra.Scripts project, kept byte-identical by a unit test —
+            // because it had silently drifted once and a fresh dev boot then seeded nothing.
+            var seedFilePath = Path.GetFullPath(Path.Combine(solutionDir, "..", "sql-scripts", "insert_seed_data.sql"));
             Console.WriteLine($"[SEED] Seed file path: {seedFilePath}");
             Console.WriteLine($"[SEED] File exists: {File.Exists(seedFilePath)}");
 

@@ -129,3 +129,44 @@ it is performed twice, priced twice, and takes twice as long.
 
 That is an owner ruling, not a bug, and the doubled crew size and duration follow from it correctly.
 It must not be "fixed" with a de-duplication.
+
+## Discounts, and the 12 % cap {#discount-cap}
+
+Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,
+and a **promo code**.
+
+Tier and Plus are **additive**, then capped at **12 % of the raw subtotal combined**. A promo code
+replaces the combined figure when it is larger, and is itself uncapped because it is a per-campaign
+decision.
+
+### Why 12 %
+
+It is an **owner ruling, not a tuning value**. The top loyalty tier is already 12 %, so stacking the
+5 % Plus rate on top uncapped would be a 17 % discount, which was judged too much.
+
+The consequence is uncomfortable and deliberate: **a subscriber already at the top tier gets nothing
+extra for their money.** That reads like a bug and is not one. Raising the cap is a product decision.
+
+> The consequence is also stated in member-facing copy on web, Android and iOS, in five locales each.
+> **Change this number and that copy becomes false.**
+
+### How the cap is shared out
+
+When the combined Plus + tier amount would exceed the cap, both are **pro-rated down** so their sum
+equals it — rather than zeroing one out — so each source's contribution stays visible on the receipt.
+When a promo wins, it fully replaces the combined figure and both go to zero.
+
+### The express-surcharge correction {#discount-express-correction}
+
+Discount resolution happens on the **raw, pre-surcharge** subtotal and stays there: the tier floor and
+the 12 % cap must be judged on the same base the quote judged them on, or a booking straddling the
+floor qualifies in the wizard and loses the discount at submit.
+
+But the price the discount comes off **carries the surcharge**. On an express order the raw figure
+under-states the saving: the customer would have paid `raw × 1.2` and pays `(raw − d) × 1.2`, so they
+actually saved `d × 1.2`.
+
+Every consumer composes the amount with the surcharge-inclusive price — the mappers' original-subtotal,
+the lifetime-savings sum, every client's `totalPrice − discount` — and **the order carries no express
+flag for any of them to correct with**. So the correction can only be made once, before the amount is
+persisted.

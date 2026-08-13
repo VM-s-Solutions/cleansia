@@ -187,16 +187,10 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Wire up the 3 form-reactivity subscriptions (type-validator switching,
-   * code auto-uppercasing, global-max toggle) onto the provided form group.
-   * All subscriptions are scoped to this facade's destroy lifecycle.
+   * Wire the form-reactivity subscriptions — validator switching by type, code auto-uppercasing, and
+   * the global-max toggle — onto the given form group.
    *
-   * @param form The promo-code form group (controls: code, type,
-   *   discountPercentUi, discountAmount, currencyId, globalMaxEnabled,
-   *   globalMaxRedemptions, ...).
-   * @param onTypeChange Callback invoked with the new type whenever the
-   *   `type` control changes; the component owns validator switching for
-   *   discount fields.
+   * **All subscriptions are scoped to this facade's destroy lifecycle.**
    */
   bindFormReactivity(
     form: FormGroup,

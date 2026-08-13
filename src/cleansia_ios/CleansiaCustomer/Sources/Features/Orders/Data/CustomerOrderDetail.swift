@@ -30,31 +30,12 @@ struct CustomerOrderReview: Equatable {
     let comment: String?
 }
 
-/// The order detail as the screen renders it, with the mobile API contract re-asserted at the
-/// boundary so no view is left guessing what a missing number meant.
+/// The order detail as the screen renders it, with the mobile API contract re-asserted at the boundary
+/// so no view is left guessing what a missing number meant.
 ///
-/// **Refuse the money and the scope.** One order, so there is no page to refuse and no row to drop.
-/// `totalPrice` and `originalSubtotal` are what the customer agreed to pay and the figure it was
-/// struck through from; the breakdown card prints them next to each other, so a coerced `0` renders
-/// "0 Kč" under a struck-through 2 100 and nothing anywhere goes red. `rooms` and `bathrooms` are the
-/// scope the price was quoted against, and a package line's `price` is an addend of that same total.
-///
-/// **`estimatedTime` is refused too, and that is the judgement call in here.** On the screens it is a
-/// rendered absence: `OrdersFormat.dateRange` drops the end of the window, the details row and the
-/// in-progress subhead render "—", and the progress bar resolves to nil — `0` and absent are the same
-/// fact and coercing it would cost nothing. `EtaWindow.forOrder` is where that stops being true: it
-/// takes `max(minutes, 1)`, so an absent estimate becomes a **one-minute cleaning** whose Live
-/// Activity counts down to an end a minute after the appointment starts. One field, one decision, and
-/// the reader that fabricates is the one that decides it.
-///
-/// **Identity is NOT refused, and that is a ruling rather than an omission.** This screen is routed
-/// with the order id and keeps it, so a null `id` has an equally authoritative replacement to hand;
-/// refusing would blank a screen we can navigate perfectly. The partner detail refuses its id because
-/// it has no such second source.
-///
-/// **Collections keep `?? []`.** An absent list and an empty one render identically here and falsify
-/// no arithmetic: nothing on this screen sums the lines, because the total, the subtotal and the
-/// three discount amounts each arrive as their own field.
+/// **Refuse the money and the scope.** A coerced `0` renders "0 Kč" beside a struck-through total and
+/// nothing goes red — the customer reads a price the server never quoted.
+/// → /decisions/adr-0048
 struct CustomerOrderDetail: Equatable {
     let id: String?
     let displayOrderNumber: String?

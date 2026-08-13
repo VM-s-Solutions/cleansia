@@ -12,19 +12,12 @@ import {
 import { Observable } from 'rxjs';
 
 /**
- * Shared facade for guest order lookup operations.
+ * Shared facade for guest order lookup, used by the track, lookup and guest-detail screens.
  *
- * Used by TrackOrderComponent, OrderLookupComponent, and GuestOrderDetailComponent.
- * The customer order client has no DI registration in this app — the components
- * historically built one inline from HttpClient + the customer API base URL token.
- * The facade centralizes that wiring so consumers just call lookup/lookupBatch.
- *
- * Methods return Observables so components can compose their own navigation /
- * caching / error-classification logic. The component subscribes with
- * takeUntil(facade.destroyed$) to scope cleanup to its own lifecycle.
- *
- * Provided per-component (NOT providedIn:'root') so destroyed$ fires when the
- * consuming component is destroyed.
+ * **The customer order client has no DI registration in this app** — components used to build one
+ * inline from HttpClient and the base-URL token. This centralises that wiring. Methods return
+ * observables so callers compose their own navigation and error handling.
+ * → /flows/booking-and-pricing
  */
 @Injectable()
 export class TrackOrderFacade extends UnsubscribeControlDirective {

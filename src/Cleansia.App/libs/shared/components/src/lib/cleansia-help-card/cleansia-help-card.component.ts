@@ -28,19 +28,14 @@ export interface StatusFlowItem {
 }
 
 /**
- * Cleansia Help Card Component
- *
- * A collapsible help card that displays workflow steps with icons.
- * Can be dismissed and remembers dismissal state via localStorage.
- * When dismissed, emits an event so parent can show restore button elsewhere.
+ * Collapsible help card showing workflow steps. Dismissal is remembered in localStorage and emitted so
+ * a parent can offer a restore control elsewhere.
  *
  * @example
  * <cleansia-help-card
  *   [titleKey]="'help.orders.title'"
  *   [steps]="orderSteps"
  *   [storageKey]="'orders-help-dismissed'"
- *   [statusFlow]="orderStatusFlow"
- *   [showRestoreButton]="false"
  *   (dismissedChange)="onHelpDismissed($event)"
  * />
  */

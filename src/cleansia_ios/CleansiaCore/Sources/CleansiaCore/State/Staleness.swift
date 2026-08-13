@@ -1,20 +1,12 @@
 import Foundation
 
-/// Freshness watermark for one logical cache. The owner stamps `markFresh()`
-/// after a successful fetch; screen-entry and foreground hooks ask `isStale`
-/// before spending a round-trip, so re-entering a screen inside `window` costs
-/// nothing. User-initiated pulls bypass it entirely — the user's intent
-/// outranks the cache age.
+/// Freshness watermark for one logical cache: stamp after a successful fetch, ask before spending a
+/// round-trip.
 ///
-/// This exists because a "loaded" flag cannot double as a freshness signal: it
-/// is a one-way first-paint latch, so anything that changes server-side after
-/// the first fetch sits stale for the rest of the session.
-///
-/// Orthogonal to `SessionScopedCache`. A repository that owns one must call
-/// `invalidate()` from its own `clear()`, or the watermark outlives sign-out
-/// and the next account reads the previous account's snapshot as fresh.
-///
-/// `MainActor`-isolated, like the repositories that hold one.
+/// **User-initiated pulls bypass it entirely** — the user's intent outranks cache age. **A "loaded" flag
+/// cannot double as a freshness signal**: it is a one-way first-paint latch, so anything that changes
+/// server-side after the first fetch never reaches the screen.
+/// → /mobile-app/patterns#session-wipe
 @MainActor
 public final class Staleness {
     private let window: TimeInterval

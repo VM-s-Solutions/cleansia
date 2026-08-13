@@ -9,21 +9,11 @@ import { IQuoteOrderResponse, QuoteOrderResponse } from '@cleansia/customer-serv
 type QuoteFields = Omit<IQuoteOrderResponse, 'appliedDiscountSource'>;
 
 /**
- * Quotes shaped and valued the way `QuoteOrder.Handler` composes them.
+ * Quotes shaped and valued the way the backend composes them.
  *
- * The numbers are the backend's, not a wizard author's reading of them: every figure below is the
- * arrangement in `src/Cleansia.Tests/Features/Orders/QuoteOrderExpressSurchargeDiscountBaseTests.cs`
- * — a 1000 Kč basket, a 10% Plus member, an express slot worth +200 — whose facts
- * (`TotalPrice == 1200`, `MembershipDiscountAmount == 100`, `FinalPriceAfterDiscount == 1080`,
- * `OriginalSubtotal == 1180`, and the non-express row `1000 / 100 / 900 / 1000`) are asserted there
- * against what `OrderFactory` persists.
- *
- * Typed through the generated response interface instead of an inline literal on purpose: its keys
- * are required, so a regenerated client that renames or drops a pricing field breaks these fixtures
- * at compile time rather than leaving the wizard green against a contract that moved. That guards
- * the response's SHAPE only. A server that changes a pricing VALUE without changing the shape still
- * cannot redden a client test — that needs a fixture generated from a real quote, which neither
- * stack produces today.
+ * **The numbers are the BACKEND's, taken from its own express-surcharge test** — a 1000 basket, a 10%
+ * member, an express slot worth +200. Invent figures here and the wizard's fixtures stop describing
+ * what the server actually returns. → /product/business-rules#price-stages
  */
 const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   totalPrice: 1000,

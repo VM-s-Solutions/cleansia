@@ -21,52 +21,15 @@ import {
 } from './cleansia-table.models';
 
 /**
- * Cleansia Custom Table Component
- *
- * A modern, feature-rich table component with glass morphism design.
- *
- * Features:
- * - Pagination (enabled by default)
- * - Sorting
- * - Custom templates
- * - Row actions
- * - Loading states
- * - Responsive design
+ * The shared table: pagination on by default, sorting, custom cell templates, row actions, loading and
+ * empty states.
  *
  * @example
- * // With pagination (default behavior)
- * <cleansia-table
- *   [data]="items"
- *   [columns]="columns"
- *   [actions]="actions"
- * />
+ * <cleansia-table [data]="items" [columns]="columns" [actions]="actions" />
  *
  * @example
- * // Without pagination
- * <cleansia-table
- *   [data]="items"
- *   [columns]="columns"
- *   [config]="{ paginator: false }"
- * />
- *
- * @example
- * // Custom rows per page
- * <cleansia-table
- *   [data]="items"
- *   [columns]="columns"
- *   [config]="{ rows: 20, rowsPerPageOptions: [10, 20, 50, 100] }"
- * />
- *
- * @example
- * // Server-side pagination (lazy loading)
- * <cleansia-table
- *   [data]="items"
- *   [columns]="columns"
- *   [config]="{ lazy: true, totalRecords: totalCount }"
- *   [loading]="isLoading"
- *   (pageChange)="onPageChange($event)"
- *   (sortChange)="onSortChange($event)"
- * />
+ * // pagination off
+ * <cleansia-table [data]="items" [columns]="columns" [paginated]="false" />
  */
 @Component({
   selector: 'cleansia-table',

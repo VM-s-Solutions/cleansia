@@ -165,17 +165,12 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Path B — prefill the wizard from a past Completed order. Returns the
-   * names of any services/packages that no longer exist in the catalog so
-   * the caller can show a "we dropped these from your prefill" snackbar.
+   * Prefill the wizard from a past completed order, returning the names of anything no longer in the
+   * catalog so the caller can say what was dropped.
    *
-   * Mirrors the order-wizard's rebook prefill: cross-checks against the
-   * loaded catalog, drops IDs that no longer exist, but keeps everything
-   * else (rooms, bathrooms, payment type, time slot from the source order).
-   *
-   * Address + frequency + start date are NOT pre-filled — those are the
-   * decisions the user actually has to make to convert a one-off into a
-   * recurring schedule. Same UX as mobile.
+   * **Address, frequency and start date are NOT pre-filled** — they are the decisions that make the
+   * template resolvable, and guessing them produces a schedule the materializer cannot honour.
+   * → /flows/booking-and-pricing#recurring-bookings
    */
   prefillFromOrder(params: RecurringPrefillParams): string[] {
     const catalogServiceIds = new Set(

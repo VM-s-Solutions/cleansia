@@ -117,8 +117,8 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-028 | Migrate **51** ADRs to `docs/decisions/adr-NNNN.md`; index + supersession graph | L | done | — |
-| CL-029 | Archive 29 challenges + 7 drafts to `agents/archive/2026-08/adr-deliberation/` | S | done | — |
+| CL-028 | Migrate **51** ADRs to `docs/decisions/adr-NNNN.md`; index + supersession graph | L | done | #197 |
+| CL-029 | Archive 29 challenges + 7 drafts to `agents/archive/2026-08/adr-deliberation/` | S | done | #197 |
 
 > **P6 complete.** **51** records, not 52 — the earlier count included `README.md`. Each is now
 > `adr-NNNN.md`, so `/decisions/adr-0037` resolves and the ~618 citing source files needed no edit.

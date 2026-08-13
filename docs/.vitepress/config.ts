@@ -52,6 +52,7 @@ export default withMermaid(
             text: 'Product',
             items: [
               { text: 'Overview', link: '/product/' },
+              { text: 'Features', link: '/product/features' },
               { text: 'Business rules', link: '/product/business-rules' },
             ],
           },
@@ -70,7 +71,19 @@ export default withMermaid(
         '/flows/': [
           {
             text: 'Flows',
-            items: [{ text: 'Overview', link: '/flows/' }],
+            items: [
+              { text: 'Overview', link: '/flows/' },
+              { text: 'Auth and identity', link: '/flows/auth-and-identity' },
+              { text: 'Booking and pricing', link: '/flows/booking-and-pricing' },
+              { text: 'Payment and fiscal', link: '/flows/payment-and-fiscal' },
+              { text: 'Offerability and the take', link: '/flows/offerability-and-take' },
+              { text: 'Execution and completion', link: '/flows/execution-and-completion' },
+              { text: 'Cancellation, refund and dispute', link: '/flows/cancellation-refund-dispute' },
+              { text: 'Pay, periods, invoices and payouts', link: '/flows/pay-and-payouts' },
+              { text: 'Loyalty, memberships and referrals', link: '/flows/loyalty-and-memberships' },
+              { text: 'GDPR, retention and audit', link: '/flows/gdpr-and-audit' },
+              { text: 'Cross-cutting concerns', link: '/flows/cross-cutting' },
+            ],
           },
         ],
         '/decisions/': [

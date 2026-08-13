@@ -133,15 +133,20 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 |---|---|---|---|---|
 | CL-030 | Domain model — ERDs per area, generated from the **61** EF configurations | L | done | #198 |
 | CL-031 | Order lifecycle + offerability, both diagrammed | M | done | #198 |
-| CL-032 | Thirteen flow pages — sequence diagrams + edge-case tables, from P1 | L | todo | — |
-| CL-033 | Business rules with rationale — booking, cancellation, crew, preferred, pay | L | **partial** — feature list outstanding | #198 |
-| CL-034 | Split `agents/knowledge/` by audience — domain truth publishes, build rules stay | M | todo | — |
+| CL-032 | **Ten** flow pages — diagrams + edge-case tables incl. accepted residues | L | done | — |
+| CL-033 | Business rules with rationale + the feature list by audience | L | done | #198, — |
+| CL-034 | Split `agents/knowledge/` by audience | M | **deferred** — own PR, see note | — |
 
-> **P7 in progress — splitting across two PRs.** Landed: the domain model (61 entities, ERDs per area,
+> **P7 content complete except `CL-034`.** Landed: the domain model (61 entities, ERDs per area,
 > generated from the EF configurations rather than described), the two-axis order lifecycle, offerability
 > including the take cascade, and the business rules with their rationale. Outstanding: `CL-032` (the
-> thirteen flow pages), `CL-034` (the `agents/knowledge/` split), and the product feature list half of
+> ten flow pages), `CL-034` (the `agents/knowledge/` split), and the product feature list half of
 > `CL-033`. Four `L`/`M` tickets is more than one reviewable diff.
+>
+> **P7b** landed the ten flow pages and the feature list. **`CL-034` is deferred to its own PR**: moving
+> `security-rules.md` and `roles/**` would rewrite **214 mentions across 84 files**, and those files are
+> the corpus `check-catalog-claims` reads — so the move changes what the gate checks and needs to be
+> reviewed as its own change, not as the tail of a content PR.
 
 ## P8 — Comment migration
 

@@ -290,6 +290,124 @@ function runKt(code, fileName = "Fixture.kt") {
     }
 }
 
+// Run the checker over a single TypeScript facade fixture and return { code, out, c3 }.
+function runTs(code, fileName = "fixture.facade.ts") {
+    const root = mkdtempSync(join(REPO, ".c3-fixture-"));
+    try {
+        const sub = join(root, "lib");
+        mkdirSync(sub, { recursive: true });
+        writeFileSync(join(sub, fileName), code, "utf8");
+        const rel = relative(REPO, root).split(sep).join("/");
+        let rc = 0;
+        let out = "";
+        try {
+            out = execFileSync(
+                process.execPath,
+                [TOOL, "frontend", `--paths=${rel}`],
+                { encoding: "utf8" },
+            );
+        } catch (e) {
+            rc = e.status ?? 1;
+            out = (e.stdout ?? "") + (e.stderr ?? "");
+        }
+        return { code: rc, out, c3: out.split(/\r?\n/).filter((l) => /\bC3\b/.test(l)) };
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+}
+
+// B10 — the type-token gate. Without it the rule fired on any `X.Resolve(` in the tree; it was
+// reporting TimeZoneResolution.Resolve(...) in two files that never mention a Dispute.
+test("B10 does NOT flag .Resolve( in a file that never names Dispute", () => {
+    const r = run({
+        code: `namespace X;
+public class H
+{
+    public TimeZoneInfo DoIt(string id) => TimeZoneResolution.Resolve(id);
+}`,
+    });
+    assert.equal(r.b10.length, 0, `expected 0 B10, got: ${r.out}`);
+});
+
+test("B10 still flags a bare .Resolve( once the file names the type", () => {
+    const r = run({
+        code: `namespace X;
+public class H
+{
+    public void DoIt(Dispute existing)
+    {
+        existing.Resolve("actor", null, "notes");
+    }
+}`,
+    });
+    assert.equal(r.b10.length, 1, `expected 1 B10, got: ${r.out}`);
+});
+
+// B1 — the record window. A flat 4-line lookahead bled into the NEXT record, so an HTTP body DTO
+// sitting immediately above the real Command read as a mis-named command.
+test("B1 does NOT flag an HTTP body DTO declared above the real Command", () => {
+    const r = run({
+        code: `namespace X;
+public class ApproveThing
+{
+    public record Request(string WorkCountryId, string? Notes);
+
+    public record Command(string Id, string WorkCountryId) : ICommand<Response>;
+}`,
+    });
+    const b1 = r.out.split(/\r?\n/).filter((l) => /\bB1\b/.test(l));
+    assert.equal(b1.length, 0, `expected 0 B1, got: ${r.out}`);
+});
+
+test("B1 STILL flags a command record that does not end in Command", () => {
+    const r = run({
+        code: `namespace X;
+public class DoThing
+{
+    public record Request(string Id) : ICommand<Response>;
+}`,
+    });
+    const b1 = r.out.split(/\r?\n/).filter((l) => /\bB1\b/.test(l));
+    assert.equal(b1.length, 1, `expected 1 B1, got: ${r.out}`);
+});
+
+// C3 — teardown the rule could not see. Both shapes below are CORRECT and were reported as leaks.
+test("C3 does NOT flag a pipe whose takeUntil is far above the subscribe", () => {
+    const filler = Array.from({ length: 34 }, (_, i) => `          // padding ${i}`).join("\n");
+    const r = runTs(`export class F extends UnsubscribeControlDirective {
+  load(): void {
+    this.svc.get()
+      .pipe(
+${filler}
+        takeUntil(this.destroyed$),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe(() => this.done());
+  }
+}`);
+    assert.equal(r.c3.length, 0, `expected 0 C3, got: ${r.out}`);
+});
+
+test("C3 does NOT flag a subscribe whose teardown lives on the stream definition", () => {
+    const r = runTs(`export class F extends UnsubscribeControlDirective {
+  private readonly data$ = this.svc.get().pipe(takeUntil(this.destroyed$));
+
+  load(): void {
+    this.data$.subscribe();
+  }
+}`);
+    assert.equal(r.c3.length, 0, `expected 0 C3, got: ${r.out}`);
+});
+
+test("C3 STILL flags a subscribe with no teardown anywhere", () => {
+    const r = runTs(`export class F extends UnsubscribeControlDirective {
+  load(): void {
+    this.svc.get().subscribe(() => this.done());
+  }
+}`);
+    assert.equal(r.c3.length, 1, `expected 1 C3, got: ${r.out}`);
+});
+
 // E9 — session-wipe-set membership (WARN-only).
 test("E9 flags a @Singleton StateFlow cache holder NOT implementing SessionScopedCache", () => {
     const r = runKt(`package x
@@ -373,7 +491,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\ncheck-consistency rules (B10 + E9): ${cases.length} passed`
-        : `\ncheck-consistency rules (B10 + E9): ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9): ${cases.length} passed`
+        : `\ncheck-consistency rules (B1 + B10 + C3 + E9): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

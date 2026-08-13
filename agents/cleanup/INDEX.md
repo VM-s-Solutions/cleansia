@@ -84,9 +84,16 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-022 | Backend — `B3` ×21 validator base, `B1` ×8 response records | M | todo | — |
-| CL-023 | Frontend + mobile — `D2` ×8, `E1` ×9, `: any`, hardcoded strings | M | todo | — |
-| CL-024 | Fix the `B10` regex — it fires on `TimeZoneResolution.Resolve(...)`, which touches no Dispute | S | todo | — |
+| CL-022 | Backend — 3 `B1` phantoms killed, `GetMyServingCleaners` → `IQuery`; `B3` ×21 + `B1` ×5 declared | M | done | — |
+| CL-023 | Frontend + mobile — 16 phantoms killed (`: any`, `C3`, hardcoded `Text`); `D2` ×8 + `E1` ×9 declared | M | done | — |
+| CL-024 | Fix `B10`, `C3`, `B1` and `conv` — 20 phantoms, each guarded by a new self-test | S | done | — |
+
+> **P4 complete — and it inverted.** The phase assumed ~58 items of debt to clear; **20 of the 66 were
+> the checker being wrong**, not the codebase. Those are fixed and guarded (self-tests 19 → 26, each
+> narrowing paired with a "STILL flags" case). One real landmine was fixed: `GetMyServingCleaners` was
+> an `ICommand` the UnitOfWork pipeline never commits, because it decides on the type-name suffix.
+> The surviving **46 are declared with reasons** in `consistency-baseline.md` — none has a user-visible
+> cost, and `B3` (21) and `D2` (8) need an owner ruling because both change working behaviour.
 
 ## P5 — Docs platform
 

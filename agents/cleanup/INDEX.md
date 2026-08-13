@@ -99,9 +99,19 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-025 | VitePress: mermaid + diagram tooling | S | todo | — |
-| CL-026 | Information architecture, nav and sidebar for the new sections | M | todo | — |
-| CL-027 | The code→docs reference convention + `check-docs-refs.mjs` gate | M | todo | — |
+| CL-025 | VitePress + mermaid; diagrams render, docs build clean | S | done | #196 |
+| CL-026 | New IA — Product · Domain · Flows · Decisions, with real landing pages | M | done | #196 |
+| CL-027 | `check-docs-refs.mjs` + 10 self-tests, wired as **Docs CI** (`T1-CI`) | M | done | #196 |
+
+> **P5 complete.** Mermaid renders (client-side — a malformed diagram builds clean and breaks only in
+> the browser, so diagrams get looked at). The IA gains Product · Domain · Flows · Decisions, each with
+> a real landing page rather than a stub. `check-docs-refs.mjs` verifies both halves of a pointer —
+> the page resolves AND the `#anchor` matches a heading — with 10 self-tests including two that prove
+> it can fail. Wired as **`docs-ci.yml` — "Docs CI"** on owner instruction, joining Backend / Frontend
+> / Android / iOS CI. It gates BOTH halves of the reference contract, neither of which was checked on
+> a PR before: `code → docs` via the checker, and `docs → docs` via `vitepress build` — which enforces
+> `ignoreDeadLinks:false` but previously ran only inside the deactivated, dispatch-only deploy
+> workflow. The gate's own self-test runs first and blocks, so a change that defangs it reddens here.
 
 ## P6 — ADR migration
 

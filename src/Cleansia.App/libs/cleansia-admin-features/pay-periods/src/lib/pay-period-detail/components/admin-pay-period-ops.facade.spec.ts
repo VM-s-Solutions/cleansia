@@ -123,9 +123,9 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.markPaid('period-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.pay_period.not_closed');
+    expect(facade.errorKey()).toBe('api.pay_period.not_closed');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.pay_period.not_closed'
+      'api.pay_period.not_closed'
     );
   });
 
@@ -136,7 +136,7 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.reopen('period-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.pay_period.already_paid');
+    expect(facade.errorKey()).toBe('api.pay_period.already_paid');
   });
 
   it('falls back to result.title when detail is absent', () => {
@@ -146,7 +146,7 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.markPaid('period-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.pay_period.not_closed');
+    expect(facade.errorKey()).toBe('api.pay_period.not_closed');
   });
 
   it('parses the error code from a JSON response string', () => {
@@ -158,7 +158,7 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.markPaid('period-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.payroll.pay_period.not_found');
+    expect(facade.errorKey()).toBe('api.payroll.pay_period.not_found');
   });
 
   it('falls back to a generic error for unknown codes and does not re-load', () => {
@@ -169,7 +169,7 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.reopen('period-1', onSuccess);
 
-    expect(facade.errorKey()).toBe('errors.common.error_occurred');
+    expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(onSuccess).not.toHaveBeenCalled();
   });
 });

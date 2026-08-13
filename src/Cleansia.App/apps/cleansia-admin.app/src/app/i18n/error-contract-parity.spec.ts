@@ -40,6 +40,14 @@ const I18N_DIR = join(
   'Cleansia.App/apps/cleansia-admin.app/src/assets/i18n'
 );
 
+// Everything the admin app compiles: its own source plus the admin feature libs it consumes. Both are
+// walked by the errors.* retirement guard below — a resurrected key is as likely to land in a lib as
+// in the app shell.
+const ADMIN_SOURCE_ROOTS = [
+  join(SOLUTION_DIR, 'Cleansia.App/apps/cleansia-admin.app/src'),
+  join(SOLUTION_DIR, 'Cleansia.App/libs/cleansia-admin-features'),
+];
+
 function localePath(locale: Locale): string {
   return join(I18N_DIR, `${locale}.json`);
 }
@@ -615,7 +623,10 @@ describe('error-contract parity (admin app)', () => {
     }
   });
 
-  for (const namespace of ['api', 'errors'] as const) {
+  // `errors` was the second namespace here until CL-021 retired it. Its retirement is asserted by
+  // 'the legacy errors.* namespace stays retired' below, which is a stronger check than key-set parity:
+  // parity would pass on five locales that all still carried it.
+  for (const namespace of ['api'] as const) {
     it(`the five locale files have identical ${namespace}.* key sets`, () => {
       const enKeys = namespaceKeySet(en, namespace);
       expect(enKeys.size).toBeGreaterThan(0);
@@ -689,5 +700,43 @@ describe('error-contract parity (admin app)', () => {
       const value = resolveKey(data, GENERIC_FALLBACK_KEY);
       expect(typeof value === 'string' && value.trim().length > 0).toBe(true);
     }
+  });
+
+  // The legacy admin-only `errors.*` namespace is gone (CL-021). It existed because several admin
+  // features resolved through their own XXX_ERROR_KEY_MAP instead of the shared interceptor, so admin
+  // carried a SECOND copy of 169 keys that api.* already had 164 of. Two namespaces for one fact is
+  // the defect this repo refuses everywhere else, and it had a live cost: a key written under only one
+  // of them reads as "An error occurred. Please try again."
+  //
+  // These two assertions are what stop it growing back — one for the data, one for the readers.
+  describe('the legacy errors.* namespace stays retired', () => {
+    it('no locale carries an errors block', () => {
+      const offenders = LOCALES.filter((locale) => 'errors' in readLocale(locale));
+      expect(offenders).toEqual([]);
+    });
+
+    it('nothing in the admin app resolves an errors.* key', () => {
+      const offenders: string[] = [];
+      const walk = (dir: string) => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = join(dir, entry.name);
+          if (entry.isDirectory()) {
+            if (entry.name === 'node_modules') continue;
+            walk(full);
+            continue;
+          }
+          if (!/\.(ts|html)$/.test(entry.name)) continue;
+          if (full === __filename) continue;
+          const source = readFileSync(full, 'utf8');
+          if (/['"`]errors\.[a-z_]/.test(source)) {
+            offenders.push(relative(ADMIN_SOURCE_ROOTS[0], full));
+          }
+        }
+      };
+      for (const root of ADMIN_SOURCE_ROOTS) {
+        if (existsSync(root)) walk(root);
+      }
+      expect(offenders.sort()).toEqual([]);
+    });
   });
 });

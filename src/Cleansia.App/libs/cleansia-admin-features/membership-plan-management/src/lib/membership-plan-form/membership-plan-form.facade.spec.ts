@@ -127,7 +127,7 @@ describe('MembershipPlanFormFacade', () => {
     facade.create(createInput);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.membership.plan.code_already_exists'
+      'api.membership.plan.code_already_exists'
     );
     expect(router.navigate).not.toHaveBeenCalled();
     expect(facade.saving()).toBe(false);
@@ -145,7 +145,7 @@ describe('MembershipPlanFormFacade', () => {
     facade.create(createInput);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.membership.plan.discount_out_of_range'
+      'api.membership.plan.discount_out_of_range'
     );
   });
 

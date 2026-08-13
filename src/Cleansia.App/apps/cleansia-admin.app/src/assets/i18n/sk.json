@@ -2209,259 +2209,6 @@
     "approved": "Schválené",
     "cancelled": "Zrušené"
   },
-  "errors": {
-    "auth": {
-      "invalid_password_format": "Neplatný formát hesla. Heslo musí mať aspoň 8 znakov a obsahovať aspoň jedno veľké písmeno, jedno malé písmeno a jednu číslicu.",
-      "current_password_invalid": "Súčasné heslo nie je správne",
-      "change_password_failed": "Zmena hesla sa nepodarila"
-    },
-    "common": {
-      "invalid_enum_value": "Bola zadaná neplatná hodnota",
-      "max_length": "Bola prekročená maximálna dĺžka",
-      "required": "Toto pole je povinné",
-      "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
-      "error_occurred": "Vyskytla sa chyba. Skúste to znova."
-    },
-    "company": {
-      "not_found": "Informácie o spoločnosti neboli nájdené",
-      "exists_for_country": "Informácie o spoločnosti pre túto krajinu už existujú",
-      "in_use": "Nie je možné odstrániť spoločnosť, pretože sa práve používa"
-    },
-    "country": {
-      "not_existing_id": "Krajina nebola nájdená",
-      "not_found": "Krajina nebola nájdená",
-      "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
-      "in_use": "Nie je možné odstrániť krajinu, pretože ju používajú zamestnanci, šablóny alebo iné entity"
-    },
-    "currency": {
-      "invalid": "Neplatná mena",
-      "not_found": "Mena nebola nájdená",
-      "code_already_exists": "Mena s týmto kódom už existuje",
-      "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
-      "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
-    },
-    "dispute": {
-      "already_exists": "Reklamácia pre túto objednávku už existuje",
-      "invalid_refund_amount": "Neplatná suma vrátenia",
-      "max_length_exceeded": "Bola prekročená maximálna dĺžka",
-      "not_found": "Reklamácia nebola nájdená",
-      "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
-      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená.",
-      "action_failed": "Akciu s reklamáciou sa nepodarilo dokončiť. Skúste to znova."
-    },
-    "email": {
-      "invalid_format": "Neplatný formát e-mailu",
-      "invalid_email": "Neplatná e-mailová adresa"
-    },
-    "employee": {
-      "already_approved": "Zamestnanec už bol schválený",
-      "already_rejected": "Zamestnanec už bol zamietnutý",
-      "documents_missing": "Chýbajú požadované dokumenty",
-      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
-      "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
-      "not_found": "Zamestnanec nebol nájdený",
-      "profile_incomplete": "Profil zamestnanca nie je kompletný"
-    },
-    "employee_document": {
-      "not_found": "Dokument nebol nájdený",
-      "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
-      "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu"
-    },
-    "file": {
-      "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
-      "count_exceeded": "Bolo nahraných príliš veľa súborov",
-      "count_too_few": "Bolo nahraných príliš málo súborov",
-      "invalid_file_type": "Neplatný typ súboru",
-      "required": "Súbor je povinný",
-      "size_exceeded": "Veľkosť súboru prekročila maximálnu povolenú veľkosť"
-    },
-    "general": {
-      "not_found": "Zdroj nebol nájdený"
-    },
-    "refund": {
-      "lines_required": "Vyberte aspoň jednu službu alebo balíček na vrátenie.",
-      "line_invalid": "Jedna z vybraných položiek nie je súčasťou tejto objednávky.",
-      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie.",
-      "failed": "Vrátenie peňazí sa nepodarilo. Skúste to prosím znova.",
-      "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
-      "order_not_refundable": "Túto objednávku nie je možné vrátiť."
-    },
-    "service": {
-      "not_found": "Služba nebola nájdená",
-      "in_use": "Nie je možné odstrániť službu, pretože sa práve používa",
-      "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky",
-      "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk"
-    },
-    "language": {
-      "not_found": "Jazyk nebol nájdený",
-      "not_supported": "Jazyk nie je podporovaný",
-      "code_already_exists": "Jazyk s týmto kódom už existuje",
-      "in_use": "Nie je možné odstrániť jazyk, pretože ho používajú iné entity (používatelia, šablóny, účtenky atď.)"
-    },
-    "order": {
-      "not_confirmed": "Objednávka nie je potvrdená",
-      "after_photos": {
-        "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
-      },
-      "actual_time": {
-        "positive": "Skutočný čas musí byť kladný"
-      },
-      "already_assigned": "Objednávka je už priradená",
-      "already_cancelled": "Objednávka už bola zrušená",
-      "already_completed": "Objednávka už bola dokončená",
-      "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
-      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
-      "cleaning_date": {
-        "future": "Dátum upratovania musí byť v budúcnosti"
-      },
-      "completion_notes": {
-        "required": "Poznámky k dokončeniu sú povinné",
-        "too_long": "Poznámky k dokončeniu sú príliš dlhé"
-      },
-      "creation_failed": "Nepodarilo sa vytvoriť objednávku",
-      "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
-      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
-      "empty": "Objednávka je prázdna",
-      "max_employees_exceeded": "Bol prekročený maximálny počet zamestnancov",
-      "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
-      "not_found": "Objednávka nebola nájdená",
-      "not_in_progress": "Objednávka nie je v stave spracovania",
-      "payment_gateway_unavailable": "Platobná brána nie je dostupná",
-      "selected_package": {
-        "invalid": "Vybraný balíček je neplatný"
-      },
-      "selected_services": {
-        "invalid": "Vybrané služby sú neplatné"
-      },
-      "total_price": {
-        "not_match": "Celková cena sa nezhoduje",
-        "positive": "Celková cena musí byť kladná"
-      }
-    },
-    "package": {
-      "not_found": "Balíček nebol nájdený",
-      "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
-      "invalid_weight": "Váhy služieb musia byť väčšie ako nula",
-      "update_failed": "Balíček sa nepodarilo aktualizovať"
-    },
-    "pay_config": {
-      "already_exists": "Konfigurácia odmien už existuje",
-      "base_pay_negative": "Základná odmena nesmie byť záporná",
-      "cannot_have_both": "Nie je možné mať súčasne službu aj balíček",
-      "distance_rate_negative": "Sadzba za vzdialenosť nesmie byť záporná",
-      "extra_per_bathroom_negative": "Príplatok za kúpeľňu nesmie byť záporný",
-      "extra_per_room_negative": "Príplatok za izbu nesmie byť záporný",
-      "has_order_pays": "Nie je možné odstrániť konfiguráciu odmien, ktorá má priradené platby za objednávky",
-      "maximum_less_than_minimum": "Maximálna odmena nesmie byť nižšia ako minimálna odmena",
-      "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
-      "minimum_pay_negative": "Minimálna odmena nesmie byť záporná",
-      "not_found": "Konfigurácia odmien nebola nájdená",
-      "service_or_package_required": "Je vyžadovaná služba alebo balíček"
-    },
-    "pay_period": {
-      "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "invalid_duration": "Neplatná dĺžka výplatného obdobia",
-      "not_closed": "Výplatné obdobie nie je uzavreté",
-      "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím",
-      "already_paid": "Výplatné obdobie už bolo zaplatené"
-    },
-    "payroll": {
-      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
-      "invoice": {
-        "already_cancelled": "Faktúra už bola zrušená",
-        "already_exists": "Faktúra už existuje",
-        "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
-        "invalid_status": "Neplatný stav faktúry",
-        "not_found": "Faktúra nebola nájdená",
-        "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
-        "template_not_found": "Šablóna faktúry nebola nájdená",
-        "already_paid": "Faktúra už bola zaplatená"
-      },
-      "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",
-      "no_currency": "Nebola nájdená žiadna mena",
-      "no_pay_configuration": "Nebola nájdená žiadna konfigurácia odmien",
-      "no_unpaid_order_pays": "Nenašli sa žiadne nevyplatené platby za objednávky",
-      "pay": {
-        "already_calculated": "Odmena už bola vypočítaná"
-      },
-      "pay_period": {
-        "not_found": "Výplatné obdobie nebolo nájdené",
-        "not_open": "Výplatné obdobie nie je otvorené"
-      },
-      "unpaid_invoices_exist": "Existujú nezaplatené faktúry"
-    },
-    "receipt": {
-      "generation_failed": "Nepodarilo sa vygenerovať účtenku",
-      "not_found": "Účtenka nebola nájdená"
-    },
-    "user": {
-      "email_confirmed": "E-mail je už potvrdený",
-      "existing_email": "E-mail už existuje",
-      "existing_phone_number": "Telefónne číslo už existuje",
-      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto používateľa",
-      "not_existing_email": "Používateľ s týmto e-mailom nebol nájdený",
-      "not_existing_id": "Používateľ nebol nájdený",
-      "not_found": "Používateľ nebol nájdený"
-    },
-    "admin_user": {
-      "not_found": "Administrátor nebol nájdený",
-      "email_exists": "Administrátor s týmto e-mailom už existuje",
-      "cannot_deactivate_self": "Nemôžete deaktivovať vlastný účet",
-      "cannot_delete_self": "Nemôžete odstrániť vlastný účet",
-      "cannot_deactivate_last_admin": "Nemôžete deaktivovať posledného aktívneho administrátora",
-      "cannot_target_admin_via_gdpr_tool": "Účty administrátorov nemožno spracovať nástrojom GDPR"
-    },
-    "template": {
-      "cannot_delete_active": "Nie je možné odstrániť aktívnu šablónu",
-      "invalid_file_type": "Neplatný typ súboru šablóny",
-      "file_size_exceeded": "Veľkosť súboru šablóny bola prekročená",
-      "file_required": "Súbor šablóny je povinný",
-      "invoice": {
-        "not_found": "Šablóna faktúry nebola nájdená",
-        "in_use": "Nie je možné odstrániť šablónu faktúry, pretože sa práve používa"
-      },
-      "receipt": {
-        "not_found": "Šablóna účtenky nebola nájdená",
-        "in_use": "Nie je možné odstrániť šablónu účtenky, pretože sa práve používa"
-      },
-      "email": {
-        "not_found": "E-mailová šablóna nebola nájdená",
-        "key_exists": "Preklad s týmto kľúčom už existuje",
-        "invalid_type": "Neplatný typ e-mailovej šablóny"
-      }
-    },
-    "validation": {
-      "must_be_positive": "Hodnota musí byť kladná",
-      "date_must_be_in_past": "Dátum musí byť v minulosti",
-      "invalid_age": "Neplatný vek",
-      "invalid_date": "Neplatný dátum",
-      "invalid_iban": "Neplatný formát IBAN",
-      "invalid_national_id": "Neplatný formát národného ID",
-      "invalid_password": "Neplatné heslo",
-      "invalid_phone_number": "Neplatný formát telefónneho čísla",
-      "invalid_tax_id": "Neplatný formát IČO",
-      "invalid_zip_code": "Neplatný formát PSČ"
-    },
-    "address": {
-      "invalid_length": "Neplatná dĺžka adresy"
-    },
-    "membership": {
-      "plan": {
-        "code_already_exists": "Plán s týmto kódom už existuje.",
-        "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
-        "not_found": "Plán členstva sa nenašiel.",
-        "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova."
-      }
-    },
-    "referral": {
-      "not_qualified": "Odporúčanie nie je v stave „uznané“.",
-      "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
-      "reason_required": "Vyžaduje sa dôvod.",
-      "not_found": "Odporúčanie sa nenašlo.",
-      "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova."
-    }
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Nie sú správne vyplnené všetky polia",
@@ -2499,48 +2246,165 @@
     }
   },
   "api": {
+    "address": {
+      "invalid_length": "Neplatná dĺžka adresy"
+    },
+    "admin_user": {
+      "cannot_deactivate_last_admin": "Nemôžete deaktivovať posledného aktívneho administrátora",
+      "cannot_deactivate_self": "Nemôžete deaktivovať vlastný účet",
+      "cannot_delete_self": "Nemôžete odstrániť vlastný účet",
+      "cannot_target_admin_via_gdpr_tool": "Účty administrátorov nemožno spracovať nástrojom GDPR",
+      "email_exists": "Administrátor s týmto e-mailom už existuje",
+      "not_found": "Administrátor nebol nájdený"
+    },
+    "audit": {
+      "not_found": "Záznam auditu sa nenašiel."
+    },
     "auth": {
-      "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
+      "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
       "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",
+      "change_password_failed": "Zmena hesla sa nepodarila",
+      "current_password_invalid": "Súčasné heslo nie je správne",
       "external_type_error": "Tento účet používa iný spôsob prihlásenia.",
+      "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
+      "insufficient_privileges": "Nemáte oprávnenie na prístup do administračného panela. Prihlásiť sa môžu iba administrátori a zamestnanci.",
       "internal_type_error": "Pre tento účet sa prihláste e-mailom a heslom.",
+      "invalid_apple_token": "Neplatný Apple token",
       "invalid_confirmation_code": "Neplatný potvrdzovací kód",
       "invalid_google_token": "Neplatný Google token",
-      "invalid_apple_token": "Neplatný Apple token",
       "invalid_password_format": "Neplatný formát hesla. Heslo musí mať aspoň 8 znakov a obsahovať aspoň jedno veľké písmeno, jedno malé písmeno a jednu číslicu.",
-      "invalid_reset_token": "Neplatný alebo expirovaný token na obnovenie hesla",
-      "same_reset_password": "Nové heslo musí byť odlišné od aktuálneho hesla",
-      "insufficient_privileges": "Nemáte oprávnenie na prístup do administračného panela. Prihlásiť sa môžu iba administrátori a zamestnanci.",
-      "current_password_invalid": "Súčasné heslo nie je správne",
-      "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
-      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
       "invalid_refresh_token": "Vaša relácia vypršala. Prihláste sa, prosím, znova.",
-      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+      "invalid_reset_token": "Neplatný alebo expirovaný token na obnovenie hesla",
+      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova.",
+      "same_reset_password": "Nové heslo musí byť odlišné od aktuálneho hesla",
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
     },
     "common": {
+      "error_occurred": "Vyskytla sa chyba. Skúste to znova.",
       "invalid_enum_value": "Bola zadaná neplatná hodnota",
       "max_length": "Bola prekročená maximálna dĺžka",
       "required": "Toto pole je povinné",
-      "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
-      "error_occurred": "Vyskytla sa chyba. Skúste to znova."
+      "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie"
+    },
+    "company": {
+      "exists_for_country": "Informácie o spoločnosti pre túto krajinu už existujú",
+      "in_use": "Nie je možné odstrániť spoločnosť, pretože sa práve používa",
+      "not_found": "Informácie o spoločnosti neboli nájdené"
+    },
+    "country": {
+      "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa",
+      "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
+      "not_existing_id": "Krajina nebola nájdená",
+      "not_found": "Krajina nebola nájdená",
+      "not_serviced": "V tejto krajine nepôsobíme.",
+      "required": "Krajina je povinná."
     },
     "currency": {
-      "invalid": "Neplatná mena",
-      "not_found": "Mena nebola nájdená",
-      "code_already_exists": "Mena s týmto kódom už existuje",
-      "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
+      "code_already_exists": "Mena s týmto kódom už existuje",
+      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo",
+      "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
+      "invalid": "Neplatná mena",
+      "not_found": "Mena nebola nájdená"
+    },
+    "device": {
+      "invalid_platform": "Platforma musí byť 'android' alebo 'ios'"
+    },
+    "dispute": {
+      "action_failed": "Akciu s reklamáciou sa nepodarilo dokončiť. Skúste to znova.",
+      "already_exists": "Reklamácia pre túto objednávku už existuje",
+      "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
+      "invalid_refund_amount": "Neplatná suma vrátenia",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená.",
+      "max_length_exceeded": "Bola prekročená maximálna dĺžka",
+      "not_found": "Reklamácia nebola nájdená",
+      "not_owned_by_user": "Táto reklamácia patrí inému používateľovi."
     },
     "email": {
-      "invalid_format": "Neplatný formát e-mailu",
-      "invalid_email": "Neplatná e-mailová adresa"
+      "invalid_email": "Neplatná e-mailová adresa",
+      "invalid_format": "Neplatný formát e-mailu"
+    },
+    "employee": {
+      "already_approved": "Zamestnanec už bol schválený",
+      "already_rejected": "Zamestnanec už bol zamietnutý",
+      "documents_missing": "Chýbajú požadované dokumenty",
+      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
+      "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
+      "not_found": "Zamestnanec nebol nájdený",
+      "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
+      "profile_incomplete": "Profil zamestnanca nie je kompletný"
+    },
+    "employee_document": {
+      "not_found": "Dokument nebol nájdený",
+      "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
+      "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu"
+    },
+    "feature_flag": {
+      "already_exists": "Prepínač funkcie s týmto názvom a rozsahom už existuje.",
+      "not_found": "Prepínač funkcie sa nenašiel."
+    },
+    "file": {
+      "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
+      "count_exceeded": "Bolo nahraných príliš veľa súborov",
+      "count_too_few": "Bolo nahraných príliš málo súborov",
+      "invalid_file_type": "Neplatný typ súboru",
+      "required": "Súbor je povinný",
+      "size_exceeded": "Veľkosť súboru prekročila maximálnu povolenú veľkosť",
+      "size_exceeded_10mb": "Veľkosť súboru nesmie prekročiť 10 MB",
+      "type_not_allowed": "Typ súboru nie je povolený. Akceptované: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "general": {
+      "not_found": "Zdroj nebol nájdený"
+    },
+    "language": {
+      "code_already_exists": "Jazyk s týmto kódom už existuje",
+      "in_use": "Nie je možné odstrániť jazyk, pretože sa práve používa",
+      "not_found": "Jazyk nebol nájdený",
+      "not_supported": "Jazyk nie je podporovaný"
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "Tento počet bodov prekračuje limit povolený pre ručnú úpravu.",
+      "reason_required": "Pre ručnú úpravu bodov sa vyžaduje dôvod.",
+      "tier_config_not_found": "Nastavenie vernostnej úrovne sa nenašlo.",
+      "tier_perks_json_invalid": "Výhody úrovne musia byť platný JSON."
+    },
+    "membership": {
+      "plan": {
+        "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova.",
+        "code_already_exists": "Plán s týmto kódom už existuje.",
+        "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
+        "not_found": "Plán členstva sa nenašiel."
+      }
     },
     "order": {
+      "actual_time": {
+        "positive": "Skutočný čas musí byť kladný"
+      },
+      "after_photos": {
+        "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
+      },
+      "already_assigned": "Objednávka je už priradená",
+      "already_cancelled": "Objednávka už bola zrušená",
+      "already_completed": "Objednávka už bola dokončená",
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },
+      "completion_notes": {
+        "required": "Poznámky k dokončeniu sú povinné",
+        "too_long": "Poznámky k dokončeniu sú príliš dlhé"
+      },
+      "creation_failed": "Nepodarilo sa vytvoriť objednávku",
+      "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
+      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
       "empty": "Objednávka je prázdna",
+      "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
+      "max_employees_exceeded": "Bol prekročený maximálny počet zamestnancov",
+      "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
+      "not_confirmed": "Objednávka nie je potvrdená",
+      "not_found": "Objednávka nebola nájdená",
+      "not_in_progress": "Objednávka nie je v stave spracovania",
+      "payment_gateway_unavailable": "Platobná brána nie je dostupná",
       "selected_package": {
         "invalid": "Vybraný balíček je neplatný"
       },
@@ -2548,182 +2412,162 @@
         "invalid": "Vybrané služby sú neplatné"
       },
       "total_price": {
-        "positive": "Celková cena musí byť kladná",
-        "not_match": "Celková cena sa nezhoduje"
-      },
-      "not_found": "Objednávka nebola nájdená",
-      "already_assigned": "Objednávka je už priradená",
-      "already_cancelled": "Objednávka už bola zrušená",
-      "already_completed": "Objednávka už bola dokončená",
-      "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
-      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
-      "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
-      "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
-      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
-      "max_employees_exceeded": "Bol prekročený maximálny počet zamestnancov",
-      "not_in_progress": "Objednávka nie je v stave spracovania",
-      "not_confirmed": "Objednávka nie je potvrdená",
-      "actual_time": {
-        "positive": "Skutočný čas musí byť kladný"
-      },
-      "completion_notes": {
-        "required": "Poznámky k dokončeniu sú povinné",
-        "too_long": "Poznámky k dokončeniu sú príliš dlhé"
-      },
-      "after_photos": {
-        "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
-      },
-      "payment_gateway_unavailable": "Platobná brána nie je dostupná",
-      "creation_failed": "Nepodarilo sa vytvoriť objednávku"
+        "not_match": "Celková cena sa nezhoduje",
+        "positive": "Celková cena musí byť kladná"
+      }
     },
-    "user": {
-      "email_confirmed": "E-mail je už potvrdený",
-      "existing_email": "E-mail už existuje",
-      "not_existing_email": "Používateľ s týmto e-mailom nebol nájdený",
-      "not_existing_id": "Používateľ nebol nájdený",
-      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto používateľa",
-      "existing_phone_number": "Telefónne číslo už existuje",
-      "not_found": "Používateľ nebol nájdený"
-    },
-    "employee": {
-      "not_found": "Zamestnanec nebol nájdený",
-      "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
-      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
-      "profile_incomplete": "Profil zamestnanca nie je kompletný",
-      "documents_missing": "Chýbajú požadované dokumenty",
-      "already_approved": "Zamestnanec už bol schválený",
-      "already_rejected": "Zamestnanec už bol zamietnutý",
-      "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte."
-    },
-    "employee_document": {
-      "not_found": "Dokument nebol nájdený",
-      "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu",
-      "not_owned": "Môžete pristupovať iba k vlastným dokumentom"
-    },
-    "payroll": {
-      "pay_period": {
-        "not_found": "Výplatné obdobie nebolo nájdené",
-        "not_open": "Výplatné obdobie nie je otvorené"
-      },
-      "invoice": {
-        "not_found": "Faktúra nebola nájdená",
-        "invalid_status": "Neplatný stav faktúry",
-        "already_exists": "Faktúra už existuje",
-        "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
-        "template_not_found": "Šablóna faktúry nebola nájdená",
-        "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
-        "already_cancelled": "Faktúra už bola zrušená",
-        "already_paid": "Faktúra už bola označená ako zaplatená",
-        "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
-        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova.",
-        "reference_missing": "Pred zaznamenaním platby priraďte variabilný symbol.",
-        "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
-        "reference_already_assigned": "Táto faktúra už variabilný symbol má."
-      },
-      "unpaid_invoices_exist": "Existujú nezaplatené faktúry",
-      "pay": {
-        "already_calculated": "Odmena už bola vypočítaná"
-      },
-      "no_unpaid_order_pays": "Nenašli sa žiadne nevyplatené platby za objednávky",
-      "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",
-      "no_pay_configuration": "Nebola nájdená žiadna konfigurácia odmien",
-      "no_currency": "Nebola nájdená žiadna mena",
-      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke"
-    },
-    "receipt": {
-      "not_found": "Účtenka nebola nájdená",
-      "generation_failed": "Nepodarilo sa vygenerovať účtenku"
-    },
-    "pay_period": {
-      "invalid_duration": "Neplatná dĺžka výplatného obdobia",
-      "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím",
-      "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "not_closed": "Výplatné obdobie nie je uzavreté",
-      "already_paid": "Výplatné obdobie už bolo zaplatené"
+    "package": {
+      "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
+      "invalid_weight": "Váhy služieb musia byť väčšie ako nula",
+      "not_found": "Balíček nebol nájdený",
+      "update_failed": "Balíček sa nepodarilo aktualizovať"
     },
     "pay_config": {
-      "service_or_package_required": "Je vyžadovaná služba alebo balíček",
-      "cannot_have_both": "Nie je možné mať súčasne službu aj balíček",
       "already_exists": "Konfigurácia odmien už existuje",
-      "not_found": "Konfigurácia odmien nebola nájdená",
-      "has_order_pays": "Nie je možné odstrániť konfiguráciu odmien, ktorá má priradené platby za objednávky",
       "base_pay_negative": "Základná odmena nesmie byť záporná",
-      "extra_per_room_negative": "Príplatok za izbu nesmie byť záporný",
-      "extra_per_bathroom_negative": "Príplatok za kúpeľňu nesmie byť záporný",
+      "cannot_have_both": "Nie je možné mať súčasne službu aj balíček",
       "distance_rate_negative": "Sadzba za vzdialenosť nesmie byť záporná",
-      "minimum_pay_negative": "Minimálna odmena nesmie byť záporná",
-      "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
+      "extra_per_bathroom_negative": "Príplatok za kúpeľňu nesmie byť záporný",
+      "extra_per_room_negative": "Príplatok za izbu nesmie byť záporný",
+      "has_order_pays": "Nie je možné odstrániť konfiguráciu odmien, ktorá má priradené platby za objednávky",
+      "last_for_live_catalogue_entry": "Toto je posledné nastavenie odmeny pre službu alebo balík, ktoré sa stále používajú. Jeho odstránením by pri zákazkách zmizla odhadovaná odmena.",
       "maximum_less_than_minimum": "Maximálna odmena nesmie byť nižšia ako minimálna odmena",
-      "last_for_live_catalogue_entry": "Toto je posledné nastavenie odmeny pre službu alebo balík, ktoré sa stále používajú. Jeho odstránením by pri zákazkách zmizla odhadovaná odmena."
+      "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
+      "minimum_pay_negative": "Minimálna odmena nesmie byť záporná",
+      "not_found": "Konfigurácia odmien nebola nájdená",
+      "service_or_package_required": "Je vyžadovaná služba alebo balíček"
+    },
+    "pay_period": {
+      "already_paid": "Výplatné obdobie už bolo zaplatené",
+      "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
+      "invalid_duration": "Neplatná dĺžka výplatného obdobia",
+      "not_closed": "Výplatné obdobie nie je uzavreté",
+      "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
+    },
+    "payment": {
+      "json_payload_required": "JSON obsah je povinný",
+      "stripe_signature_required": "Hlavička s podpisom Stripe je povinná"
     },
     "payout": {
       "not_found": "Tento zamestnanec nemá uložené platobné údaje"
     },
-    "file": {
-      "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
-      "invalid_file_type": "Neplatný typ súboru",
-      "size_exceeded": "Veľkosť súboru prekročila maximálnu povolenú veľkosť",
-      "count_exceeded": "Bolo nahraných príliš veľa súborov",
-      "count_too_few": "Bolo nahraných príliš málo súborov",
-      "required": "Súbor je povinný",
-      "size_exceeded_10mb": "Veľkosť súboru nesmie prekročiť 10 MB",
-      "type_not_allowed": "Typ súboru nie je povolený. Akceptované: PDF, JPEG, PNG, DOC, DOCX"
+    "payroll": {
+      "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
+      "invoice": {
+        "already_cancelled": "Faktúra už bola zrušená",
+        "already_exists": "Faktúra už existuje",
+        "already_paid": "Faktúra už bola označená ako zaplatená",
+        "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
+        "invalid_status": "Neplatný stav faktúry",
+        "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
+        "not_found": "Faktúra nebola nájdená",
+        "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
+        "reference_already_assigned": "Táto faktúra už variabilný symbol má.",
+        "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
+        "reference_missing": "Pred zaznamenaním platby priraďte variabilný symbol.",
+        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova.",
+        "template_not_found": "Šablóna faktúry nebola nájdená"
+      },
+      "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",
+      "no_currency": "Nebola nájdená žiadna mena",
+      "no_pay_configuration": "Nebola nájdená žiadna konfigurácia odmien",
+      "no_unpaid_order_pays": "Nenašli sa žiadne nevyplatené platby za objednávky",
+      "pay": {
+        "already_calculated": "Odmena už bola vypočítaná"
+      },
+      "pay_period": {
+        "not_found": "Výplatné obdobie nebolo nájdené",
+        "not_open": "Výplatné obdobie nie je otvorené"
+      },
+      "unpaid_invoices_exist": "Existujú nezaplatené faktúry"
     },
-    "address": {
-      "invalid_length": "Neplatná dĺžka adresy"
+    "promo": {
+      "amount_must_be_positive": "Výška zľavy musí byť väčšia ako nula.",
+      "code_already_exists": "Zľavový kód s týmto kódom už existuje.",
+      "code_invalid_format": "Formát zľavového kódu nie je platný.",
+      "not_found": "Zľavový kód sa nenašiel.",
+      "percent_out_of_range": "Percento zľavy je mimo povoleného rozsahu.",
+      "validity_range_invalid": "Dátum platnosti od nesmie byť neskorší ako dátum platnosti do."
     },
-    "language": {
-      "not_supported": "Jazyk nie je podporovaný",
-      "not_found": "Jazyk nebol nájdený",
-      "code_already_exists": "Jazyk s týmto kódom už existuje",
-      "in_use": "Nie je možné odstrániť jazyk, pretože sa práve používa"
+    "receipt": {
+      "generation_failed": "Nepodarilo sa vygenerovať účtenku",
+      "not_found": "Účtenka nebola nájdená"
     },
-    "country": {
-      "not_existing_id": "Krajina nebola nájdená",
-      "not_found": "Krajina nebola nájdená",
-      "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
-      "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa",
-      "not_serviced": "V tejto krajine nepôsobíme.",
-      "required": "Krajina je povinná."
+    "referral": {
+      "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova.",
+      "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
+      "not_found": "Odporúčanie sa nenašlo.",
+      "not_qualified": "Odporúčanie nie je v stave „uznané“.",
+      "reason_required": "Vyžaduje sa dôvod."
     },
-    "company": {
-      "not_found": "Informácie o spoločnosti neboli nájdené",
-      "exists_for_country": "Informácie o spoločnosti pre túto krajinu už existujú",
-      "in_use": "Nie je možné odstrániť spoločnosť, pretože sa práve používa"
+    "refund": {
+      "failed": "Vrátenie peňazí sa nepodarilo. Skúste to prosím znova.",
+      "line_invalid": "Jedna z vybraných položiek nie je súčasťou tejto objednávky.",
+      "lines_required": "Vyberte aspoň jednu službu alebo balíček na vrátenie.",
+      "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
+      "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
+      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."
     },
-    "dispute": {
-      "not_found": "Reklamácia nebola nájdená",
-      "already_exists": "Reklamácia pre túto objednávku už existuje",
-      "invalid_refund_amount": "Neplatná suma vrátenia",
-      "max_length_exceeded": "Bola prekročená maximálna dĺžka",
-      "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
-      "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
-      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená."
+    "service": {
+      "category_not_found": "Kategória služby sa nenašla.",
+      "in_use": "Nie je možné odstrániť službu, pretože sa práve používa",
+      "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk",
+      "not_found": "Služba nebola nájdená",
+      "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky"
     },
-    "admin_user": {
-      "not_found": "Administrátor nebol nájdený",
-      "email_exists": "Administrátor s týmto e-mailom už existuje",
-      "cannot_deactivate_self": "Nemôžete deaktivovať vlastný účet",
-      "cannot_delete_self": "Nemôžete odstrániť vlastný účet",
-      "cannot_deactivate_last_admin": "Nemôžete deaktivovať posledného aktívneho administrátora",
-      "cannot_target_admin_via_gdpr_tool": "Účty administrátorov nemožno spracovať nástrojom GDPR"
+    "service_area": {
+      "city_not_serviced": "V tomto meste zatiaľ nepôsobíme.",
+      "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
+      "country_required": "Vyberte krajinu."
+    },
+    "service_city": {
+      "already_exists": "Toto mesto už je v zozname obsluhovaných miest.",
+      "not_found": "Obsluhované mesto sa nenašlo."
+    },
+    "template": {
+      "cannot_delete_active": "Nie je možné odstrániť aktívnu šablónu",
+      "email": {
+        "invalid_type": "Neplatný typ e-mailovej šablóny",
+        "key_exists": "Preklad s týmto kľúčom už existuje",
+        "not_found": "E-mailová šablóna nebola nájdená"
+      },
+      "file_required": "Súbor šablóny je povinný",
+      "file_size_exceeded": "Veľkosť súboru šablóny bola prekročená",
+      "invalid_file_type": "Neplatný typ súboru šablóny",
+      "invoice": {
+        "in_use": "Nie je možné odstrániť šablónu faktúry, pretože sa práve používa",
+        "not_found": "Šablóna faktúry nebola nájdená"
+      },
+      "receipt": {
+        "in_use": "Nie je možné odstrániť šablónu účtenky, pretože sa práve používa",
+        "not_found": "Šablóna účtenky nebola nájdená"
+      }
+    },
+    "user": {
+      "email_confirmed": "E-mail je už potvrdený",
+      "existing_email": "E-mail už existuje",
+      "existing_phone_number": "Telefónne číslo už existuje",
+      "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto používateľa",
+      "not_existing_email": "Používateľ s týmto e-mailom nebol nájdený",
+      "not_existing_id": "Používateľ nebol nájdený",
+      "not_found": "Používateľ nebol nájdený"
     },
     "validation": {
-      "invalid_password": "Neplatné heslo",
-      "invalid_date": "Neplatný dátum",
       "date_must_be_in_past": "Dátum musí byť v minulosti",
       "invalid_age": "Neplatný vek",
-      "invalid_phone_number": "Neplatný formát telefónneho čísla",
-      "invalid_national_id": "Neplatný formát národného ID",
-      "invalid_tax_id": "Neplatný formát IČO",
+      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
+      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "invalid_date": "Neplatný dátum",
       "invalid_iban": "Neplatný formát IBAN",
+      "invalid_national_id": "Neplatný formát národného ID",
+      "invalid_password": "Neplatné heslo",
+      "invalid_phone_number": "Neplatný formát telefónneho čísla",
+      "invalid_tax_id": "Neplatný formát IČO",
       "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí byť kladná",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
-      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
-      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "payout": {
         "account_number_required": "Zadajte číslo účtu",
         "country_not_supported": "Výplaty do banky v tejto krajine zatiaľ nie sú podporované",
@@ -2738,98 +2582,6 @@
         "scheme_not_supported": "Výplaty na tento typ účtu zatiaľ nie sú podporované",
         "swift_required": "Banka je v inej krajine, než v ktorej zamestnanec pracuje, preto je potrebný aj SWIFT/BIC kód banky."
       }
-    },
-    "service": {
-      "not_found": "Služba nebola nájdená",
-      "in_use": "Nie je možné odstrániť službu, pretože sa práve používa",
-      "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky",
-      "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk",
-      "category_not_found": "Kategória služby sa nenašla."
-    },
-    "package": {
-      "not_found": "Balíček nebol nájdený",
-      "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
-      "invalid_weight": "Váhy služieb musia byť väčšie ako nula",
-      "update_failed": "Balíček sa nepodarilo aktualizovať"
-    },
-    "general": {
-      "not_found": "Zdroj nebol nájdený"
-    },
-    "device": {
-      "invalid_platform": "Platforma musí byť 'android' alebo 'ios'"
-    },
-    "payment": {
-      "json_payload_required": "JSON obsah je povinný",
-      "stripe_signature_required": "Hlavička s podpisom Stripe je povinná"
-    },
-    "template": {
-      "cannot_delete_active": "Nie je možné odstrániť aktívnu šablónu",
-      "invalid_file_type": "Neplatný typ súboru šablóny",
-      "file_size_exceeded": "Veľkosť súboru šablóny bola prekročená",
-      "file_required": "Súbor šablóny je povinný",
-      "invoice": {
-        "not_found": "Šablóna faktúry nebola nájdená",
-        "in_use": "Nie je možné odstrániť šablónu faktúry, pretože sa práve používa"
-      },
-      "receipt": {
-        "not_found": "Šablóna účtenky nebola nájdená",
-        "in_use": "Nie je možné odstrániť šablónu účtenky, pretože sa práve používa"
-      },
-      "email": {
-        "not_found": "E-mailová šablóna nebola nájdená",
-        "key_exists": "Preklad s týmto kľúčom už existuje",
-        "invalid_type": "Neplatný typ e-mailovej šablóny"
-      }
-    },
-    "service_area": {
-      "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
-      "country_required": "Vyberte krajinu.",
-      "city_not_serviced": "V tomto meste zatiaľ nepôsobíme."
-    },
-    "audit": {
-      "not_found": "Záznam auditu sa nenašiel."
-    },
-    "feature_flag": {
-      "already_exists": "Prepínač funkcie s týmto názvom a rozsahom už existuje.",
-      "not_found": "Prepínač funkcie sa nenašiel."
-    },
-    "loyalty": {
-      "points_exceed_sanity_cap": "Tento počet bodov prekračuje limit povolený pre ručnú úpravu.",
-      "reason_required": "Pre ručnú úpravu bodov sa vyžaduje dôvod.",
-      "tier_config_not_found": "Nastavenie vernostnej úrovne sa nenašlo.",
-      "tier_perks_json_invalid": "Výhody úrovne musia byť platný JSON."
-    },
-    "promo": {
-      "amount_must_be_positive": "Výška zľavy musí byť väčšia ako nula.",
-      "code_already_exists": "Zľavový kód s týmto kódom už existuje.",
-      "code_invalid_format": "Formát zľavového kódu nie je platný.",
-      "not_found": "Zľavový kód sa nenašiel.",
-      "percent_out_of_range": "Percento zľavy je mimo povoleného rozsahu.",
-      "validity_range_invalid": "Dátum platnosti od nesmie byť neskorší ako dátum platnosti do."
-    },
-    "service_city": {
-      "already_exists": "Toto mesto už je v zozname obsluhovaných miest.",
-      "not_found": "Obsluhované mesto sa nenašlo."
-    },
-    "membership": {
-      "plan": {
-        "code_already_exists": "Plán s týmto kódom už existuje.",
-        "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
-        "not_found": "Plán členstva sa nenašiel."
-      }
-    },
-    "referral": {
-      "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
-      "not_found": "Odporúčanie sa nenašlo.",
-      "not_qualified": "Odporúčanie nie je v stave „uznané“.",
-      "reason_required": "Vyžaduje sa dôvod."
-    },
-    "refund": {
-      "line_invalid": "Jedna z vybraných položiek nie je súčasťou tejto objednávky.",
-      "lines_required": "Vyberte aspoň jednu službu alebo balíček na vrátenie.",
-      "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
-      "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
-      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."
     }
   },
   "cookies": {

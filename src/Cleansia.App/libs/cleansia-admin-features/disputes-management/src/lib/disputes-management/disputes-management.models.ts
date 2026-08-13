@@ -142,15 +142,15 @@ export function buildDisputeStatusOptions(
  * best-effort normalization for money/dispute paths.
  */
 export const DISPUTE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'dispute.already_resolved': 'errors.dispute.already_resolved',
+  'dispute.already_resolved': 'api.dispute.already_resolved',
   'dispute.invalid_status_transition':
-    'errors.dispute.invalid_status_transition',
-  'dispute.not_found': 'errors.dispute.not_found',
-  'dispute.invalid_refund_amount': 'errors.dispute.invalid_refund_amount',
-  'dispute.max_length_exceeded': 'errors.dispute.max_length_exceeded',
-  'refund.failed': 'errors.refund.failed',
-  'refund.order_not_refundable': 'errors.refund.order_not_refundable',
-  'refund.nothing_refundable': 'errors.refund.nothing_refundable',
+    'api.dispute.invalid_status_transition',
+  'dispute.not_found': 'api.dispute.not_found',
+  'dispute.invalid_refund_amount': 'api.dispute.invalid_refund_amount',
+  'dispute.max_length_exceeded': 'api.dispute.max_length_exceeded',
+  'refund.failed': 'api.refund.failed',
+  'refund.order_not_refundable': 'api.refund.order_not_refundable',
+  'refund.nothing_refundable': 'api.refund.nothing_refundable',
 };
 
-export const DISPUTE_FALLBACK_ERROR_KEY = 'errors.dispute.action_failed';
+export const DISPUTE_FALLBACK_ERROR_KEY = 'api.dispute.action_failed';

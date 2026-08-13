@@ -266,11 +266,11 @@ describe('PackageFormComponent', () => {
   });
 
   it('renders the error state when the facade exposes an error key', () => {
-    facade.errorKey.set('errors.package.invalid_weight');
+    facade.errorKey.set('api.package.invalid_weight');
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('errors.package.invalid_weight');
+    expect(text).toContain('api.package.invalid_weight');
   });
 
   it('renders a weight input and derived gross per included service', () => {

@@ -1,14 +1,14 @@
 export const ADMIN_USER_FORM_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'admin_user.email_exists': 'errors.admin_user.email_exists',
-  'admin_user.not_found': 'errors.admin_user.not_found',
-  'language.not_supported': 'errors.language.not_supported',
-  'validation.date_must_be_in_past': 'errors.validation.date_must_be_in_past',
-  'validation.invalid_age': 'errors.validation.invalid_age',
-  'user.existing_email': 'errors.user.existing_email',
-  'user.existing_phone_number': 'errors.user.existing_phone_number',
+  'admin_user.email_exists': 'api.admin_user.email_exists',
+  'admin_user.not_found': 'api.admin_user.not_found',
+  'language.not_supported': 'api.language.not_supported',
+  'validation.date_must_be_in_past': 'api.validation.date_must_be_in_past',
+  'validation.invalid_age': 'api.validation.invalid_age',
+  'user.existing_email': 'api.user.existing_email',
+  'user.existing_phone_number': 'api.user.existing_phone_number',
 };
 
-export const ADMIN_USER_FORM_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
+export const ADMIN_USER_FORM_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
 
 export function resolveAdminUserFormErrorKey(error: unknown): string {
   const apiError = error as {

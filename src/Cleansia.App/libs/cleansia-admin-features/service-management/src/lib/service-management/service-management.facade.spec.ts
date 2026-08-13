@@ -145,7 +145,7 @@ describe('ServiceManagementFacade', () => {
 
     facade.deactivateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.service.not_found');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.service.not_found');
   });
 
   it('falls back to the generic error for unknown codes on activate failure', () => {
@@ -156,7 +156,7 @@ describe('ServiceManagementFacade', () => {
     facade.activateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
   });
 
@@ -167,6 +167,6 @@ describe('ServiceManagementFacade', () => {
 
     facade.deleteService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.service.in_use');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.service.in_use');
   });
 });

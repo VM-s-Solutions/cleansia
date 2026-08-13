@@ -202,9 +202,9 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.overrideStatus('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.order.invalid_status_transition');
+    expect(facade.errorKey()).toBe('api.order.invalid_status_transition');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.order.invalid_status_transition'
+      'api.order.invalid_status_transition'
     );
     expect(facade.submitting()).toBe(false);
   });
@@ -219,7 +219,7 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.overrideStatus('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.order.invalid_status_transition');
+    expect(facade.errorKey()).toBe('api.order.invalid_status_transition');
   });
 
   it('parses the error code from a JSON response string', () => {
@@ -233,7 +233,7 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.reassignOrder('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.order.no_available_spots');
+    expect(facade.errorKey()).toBe('api.order.no_available_spots');
   });
 
   it('maps the refund-not-refundable code on a refund failure', () => {
@@ -243,7 +243,7 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.refundOrder('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.refund.order_not_refundable');
+    expect(facade.errorKey()).toBe('api.refund.order_not_refundable');
   });
 
   it('falls back to a generic error for unknown codes and does not re-load', () => {
@@ -254,9 +254,9 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.cancelOrder('order-1', onSuccess);
 
-    expect(facade.errorKey()).toBe('errors.common.error_occurred');
+    expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
     expect(onSuccess).not.toHaveBeenCalled();
   });

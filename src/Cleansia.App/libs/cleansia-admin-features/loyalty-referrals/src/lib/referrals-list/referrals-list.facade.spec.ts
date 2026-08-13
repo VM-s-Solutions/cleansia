@@ -125,7 +125,7 @@ describe('ReferralsListFacade', () => {
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.referral.not_qualified'
+      'api.referral.not_qualified'
     );
     expect(facade.intervening()).toBe(false);
   });
@@ -166,7 +166,7 @@ describe('ReferralsListFacade', () => {
     facade.forceQualifyReferral('ref-2', 'reason', jest.fn());
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.referral.not_accepted'
+      'api.referral.not_accepted'
     );
   });
 
@@ -180,7 +180,7 @@ describe('ReferralsListFacade', () => {
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.referral.reason_required'
+      'api.referral.reason_required'
     );
   });
 
@@ -192,7 +192,7 @@ describe('ReferralsListFacade', () => {
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.referral.action_failed'
+      'api.referral.action_failed'
     );
   });
 

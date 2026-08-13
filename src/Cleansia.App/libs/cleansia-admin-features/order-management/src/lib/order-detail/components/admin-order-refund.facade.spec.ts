@@ -204,9 +204,9 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.refund.override_reason_required');
+    expect(facade.errorKey()).toBe('api.refund.override_reason_required');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.refund.override_reason_required'
+      'api.refund.override_reason_required'
     );
     expect(facade.submitting()).toBe(false);
   });
@@ -222,7 +222,7 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.refund.override_reason_required');
+    expect(facade.errorKey()).toBe('api.refund.override_reason_required');
   });
 
   it('parses the error code from a JSON response string', () => {
@@ -236,7 +236,7 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.refund.nothing_refundable');
+    expect(facade.errorKey()).toBe('api.refund.nothing_refundable');
   });
 
   it('falls back to the generic refund error for unknown codes', () => {
@@ -248,8 +248,8 @@ describe('AdminOrderRefundFacade', () => {
 
     facade.submit('order-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.refund.failed');
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.refund.failed');
+    expect(facade.errorKey()).toBe('api.refund.failed');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.refund.failed');
   });
 
   it('does not call the client when nothing is selected', () => {

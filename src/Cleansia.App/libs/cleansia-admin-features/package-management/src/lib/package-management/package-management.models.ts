@@ -13,11 +13,11 @@ export function mapStatusFilterToIsActive(
 }
 
 export const PACKAGE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'package.not_found': 'errors.package.not_found',
-  'package.in_use': 'errors.package.in_use',
+  'package.not_found': 'api.package.not_found',
+  'package.in_use': 'api.package.in_use',
 };
 
-export const PACKAGE_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
+export const PACKAGE_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
 
 export function resolvePackageErrorKey(error: unknown): string {
   const apiError = error as {

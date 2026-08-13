@@ -1,6 +1,6 @@
 # Mobile repository result contract — living decision notes
 
-> Companion to the **immutable** `agents/backlog/adr/0011-mobile-apiresult-contract.md` (ADR-0011).
+> Companion to the **immutable** `docs/decisions/adr-0011.md` (ADR-0011).
 > The ADR is the frozen contract; this file is the *evolving* design notes, trade-off space, and current
 > shape. Update this when the decision evolves; supersede the ADR for a real contract change.
 > Cross-links: consistency.md **E5**/**E3**, `check-consistency.mjs` rule E5, and (dev/published view) the

@@ -39,7 +39,7 @@ mapping below. D5 §3 also reconciles this with D5 §2: the re-check binds a ref
 remains, by design, redeemable at Mobile.Customer — same audience, same profile). This **adapts S1**
 (server-truth identity): re-derive role/profile from the DB at every refresh, not only at login.
 
-Source: `agents/backlog/adr/0001-authorization-model.md` D5 §3 (lines 512-534);
+Source: `docs/decisions/adr-0001.md` D5 §3 (lines 512-534);
 finding IDA-SEC-06 in `agents/backlog/audits/AUDIT-2026-06-01-findings.json`.
 
 Per-host `RequiredProfile` to apply (ADR-0001 D5 §3):

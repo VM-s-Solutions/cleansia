@@ -79,7 +79,7 @@ exhausted.
   takes `ITenantProvider` and reads it at `:19`. The reference namespace is **global** because the
   shipped unique index on `EmployeeInvoices.VariableSymbol` is global — bare column, `unique: true`,
   filtered `"VariableSymbol" IS NOT NULL`, no `TenantId`
-  (`Migrations/20260811192214_Initial.cs:2672-2677`) — so it has no NULLS-DISTINCT hole, and a
+  (`EmployeeInvoiceEntityConfiguration.cs:116-118`) — so it has no NULLS-DISTINCT hole, and a
   tenant-keyed counter under a globally-unique index means two tenants both allocate ordinal 1 and the
   second insert becomes **a 500 on the payroll path**.
   ⚠️ **It must not acquire one without the ADR-0046 §D3.2 flip**, which changes the counter key **and**
@@ -195,7 +195,12 @@ exhausted.
   first repeat.** They agree on the SQL shape and disagree on all three things that matter: tenancy,
   gaplessness, and transaction participation. A generic base would have to parameterize exactly the
   properties each one exists to guarantee.
+> **Never cite the `Initial` migration by filename.** Pre-prod it is REGENERATED rather than stacked,
+> so its timestamped name changes on every schema change — `20260811192214` became `20260813085249`
+> on 2026-08-13 and silently broke both citations that used to be here. Cite the entity
+> configuration: it carries the same fact and its name is stable.
+
 - **The year rollover is the only remedy for exhaustion**, by design. If 999 999 payout invoices in a
   year ever becomes plausible, the column width is the constraint to revisit — and it is
   `character varying(10)` on the wire to three generated clients
-  (`Migrations/20260811192214_Initial.cs:1540`), so that is an epic, not a tweak.
+  (`EmployeeInvoiceEntityConfiguration.cs:73-75`), so that is an epic, not a tweak.

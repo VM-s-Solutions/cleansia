@@ -96,14 +96,14 @@ both answer "what makes an edit the Architect's rather than the author's".
 - [ ] **AC5 — ADR-0033's false header claim is corrected through a sanctioned instrument.** Given that
       ADR-0033 is `accepted`, When the *"Refines … does not reverse"* claim is corrected as to limb 1,
       Then it is done by the new refining ADR or by a dated appended section on ADR-0033
-      (`agents/backlog/adr/README.md:7-29`) — **never a silent in-body edit**.
+      (`agents/archive/2026-08/adr-deliberation/README.md:7-29`) — **never a silent in-body edit**.
 - [ ] **AC6 — the ADR number is allocated at spawn and collision-checked at write time.** Given
-      `agents/backlog/adr/`, When the number is taken, Then it is verified free by grep **immediately
+      `docs/decisions/`, When the number is taken, Then it is verified free by grep **immediately
       before the file is written**, not earlier. **At HEAD the highest is 0042** (`proposed`, with
       `T-0547` reserved for its refactor). *Two architects collided on an ADR number this sprint by both
       grepping correctly at the same moment* — the check must be adjacent to the write.
 - [ ] **AC7 — the deliberation trail is on disk.** Given the panel, When it completes, Then the
-      challenge file exists at `agents/backlog/adr/challenges/<NNNN>-<topic>.md` (the shape of
+      challenge file exists at `agents/archive/2026-08/adr-deliberation/challenges/<NNNN>-<topic>.md` (the shape of
       `challenges/0033-floor.md`), the new ADR carries `## Challenge` / `## Defense` / `## Verdict`, and
       consensus is recorded as *zero blocking challenges remain*.
 - [ ] **AC8 — the living doc records the outcome.** Given
@@ -125,11 +125,11 @@ both answer "what makes an edit the Architect's rather than the author's".
 ## Implementation notes
 
 **Files this ticket produces or touches:**
-- `agents/backlog/adr/<NNNN>-<slug>.md` — the new ADR (number allocated per AC6).
-- `agents/backlog/adr/challenges/<NNNN>-<topic>.md` — the challenge trail.
+- `docs/decisions/<NNNN>-<slug>.md` — the new ADR (number allocated per AC6).
+- `agents/archive/2026-08/adr-deliberation/challenges/<NNNN>-<topic>.md` — the challenge trail.
 - `agents/architecture/decisions/catalog-governance.md` — `:94-103`, `:143-154`, `:274`, `:276`, `:283`.
 - Possibly a dated appended section on
-  `agents/backlog/adr/0033-catalog-edit-authority-the-routing-test-and-cross-stack-claim-strength.md`
+  `docs/decisions/adr-0033.md`
   (AC5) — appended only, never an in-body rewrite.
 
 **Citation drift is live in this worktree.** The lead pass recorded that it hit **every** load-bearing
@@ -144,7 +144,7 @@ routing differs from its settled text. Two cases is also not a corpus.
 ### Staleness detectability (sprint-15 §D3)
 
 Every path above is **excluded** from the candidate-3 path rule (`agents/architecture/**`) or is not a
-product path (`agents/backlog/adr/**`). **No path-based signal can flag this ticket.** While it is
+product path (`docs/decisions/**`). **No path-based signal can flag this ticket.** While it is
 `in_progress` the candidate-1 rule does not apply either. Its true state is legible only from whether
 the new ADR file exists and whether `catalog-governance.md`'s L1/L3/F4 rows are still red — check both
 by hand at each checkpoint.

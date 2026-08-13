@@ -116,7 +116,7 @@ exist yet would hand the owner an edit that is wrong until T-0439 merges** — s
 the implementer must **re-read `package.json` after T-0439 lands** and copy the *real* script names
 rather than the ones quoted below.
 
-Same applies to ADR-0031 itself (`agents/backlog/adr/0031-…md`) and the living doc
+Same applies to ADR-0031 itself (`docs/decisions/0031-…md`) and the living doc
 `agents/architecture/decisions/generated-client-contract.md`: **both currently exist only in T-0439's
 worktree**, uncommitted. Do not create either on `master` from this ticket.
 

@@ -135,7 +135,7 @@ is not limited to these, but must address them:
 - **A note the challenger will otherwise trip over:** ADR-0032 and ADR-0033 both carry a "Number note"
   saying **0031 exists only in T-0439's worktree and a reader on `master` sees a gap at 0031.**
   **That is no longer true** — T-0439 merged as `acf2f0bc` (PR #175) and
-  `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` is on `master`. There is no
+  `docs/decisions/adr-0031.md` is on `master`. There is no
   gap. Both notes are stale and each needs a **signed erratum**, not an inline edit — ADR-0032 is
   `accepted`, so the rule binds it. Fold the ADR-0033 one into this round's verdict; **file the
   ADR-0032 one as a separate finding for the PM** rather than editing an accepted ADR from inside
@@ -167,12 +167,12 @@ is not limited to these, but must address them:
   it.** Verified against the tree, not the ticket text:
   1. **ADR-0033 is still `proposed`** — its `:3` reads `- **Status:** proposed`, and its `## Challenge`
      is still the lead's three nominated lines of attack with no challenger text under them.
-  2. **The round has not run.** `agents/backlog/adr/challenges/` holds **14** files — 0034 ×2, 0035 ×3,
+  2. **The round has not run.** `agents/archive/2026-08/adr-deliberation/challenges/` holds **14** files — 0034 ×2, 0035 ×3,
      0036 ×3, 0037 ×2, 0038, 0039 ×2, 0040 — and **none for 0033**. Every other ADR in that range got a
      real challenger pass; this is the one that did not.
   3. **The Implementation-notes correction is still owed and is still accurate.** ADR-0032's and
      ADR-0033's "Number note" both still claim *"0031 exists only in T-0439's worktree… a reader on
-     `master` sees a gap at 0031"*. `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md`
+     `master` sees a gap at 0031"*. `docs/decisions/adr-0031.md`
      **is** on disk, so both notes are false. Fold ADR-0033's into this round's verdict; ADR-0032's stays
      a separate PM-filed finding (it is `accepted`, so it needs a signed erratum, not an inline edit).
   4. **Its cost of deferral just went up.** `ADR-0042` (the wire-enum decision, filed today) carries a
@@ -194,7 +194,7 @@ is not limited to these, but must address them:
 
 - 2026-08-05 — **ROUND RUN. ADR-0033 is `accepted` as amended (M1–M6); one AC needs the PM's call, so
   this is `in_review`, not `done`.** Artifacts: the challenger pass
-  `agents/backlog/adr/challenges/0033-floor.md` (six findings, two blocking, every claim cited to a
+  `agents/archive/2026-08/adr-deliberation/challenges/0033-floor.md` (six findings, two blocking, every claim cited to a
   file read in the tree under Gate 0 REFUTED-by-default); ADR-0033's `## Challenge` / `## Defense` /
   `## Verdict` filled; `agents/architecture/decisions/catalog-governance.md` updated in parallel per
   `deliberation.md` §"Parallel documentation". **No `agents/knowledge/*.md` file was edited** — Blocks
@@ -299,7 +299,7 @@ applied — `**Enforced by:**` has **0** instances in `patterns-mobile.md` (8 re
 constrains call sites with no enforcer + tier, and its test-1 sweep was never run — **recorded, not
 re-opened**, on the T-0274 precedent · **F4** the missing "carries a trade-off ⇒ ADR" limb · **F5**
 `patterns-mobile.md:1230` still grants the `.medium` detent that the T-0397-ratified `:985-990`
-withdrew. Full detail in `agents/backlog/adr/challenges/0033-floor.md` §Findings.
+withdrew. Full detail in `agents/archive/2026-08/adr-deliberation/challenges/0033-floor.md` §Findings.
 
 **New follow-ups on ADR-0033:** **FT-11** (Block D — the named reviewer-check; **blocks FT-8**) and
 **FT-12** (record the check id in `enforcement.md` so dropping it is a visible regression).
@@ -360,6 +360,6 @@ lead's reading** — the ADR as written does not compel it, which is the finding
 **drifted** since the challenger pass (`:577`→`:588`, `:985-990`→`:996-1001`, `:1230`→`:1241`), which is
 why the round's practice of quoting text alongside offsets is what made every citation recoverable.
 
-**Files touched by this pass:** `agents/backlog/adr/0033-…md` (appended section only) ·
+**Files touched by this pass:** `docs/decisions/0033-…md` (appended section only) ·
 `agents/architecture/decisions/catalog-governance.md` · `agents/knowledge/patterns-mobile.md` (F5, one
 hunk) · this ticket. **Nothing committed** — the owner commits.

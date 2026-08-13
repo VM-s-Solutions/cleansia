@@ -41,7 +41,7 @@ Verified against the real code:
   init race silently drops one event's pushes with only a Warning.
 
 This is the `notifications-dispatch` gap that **ADR-0002** (the side-effect dispatch contract,
-`agents/backlog/adr/0002-outbox-dispatch-contract.md`) names explicitly and resolves in **D2.2**:
+`docs/decisions/adr-0002.md`) names explicitly and resolves in **D2.2**:
 push has no domain target-state and FCM is non-transactional, so the consumer must use the
 **guard-first (claim-then-act)** pattern with the deterministic key frozen in **D2.1**
 (`push:{UserId}:{EventKey}:{OrderId?}`). The guarantee is **at-most-once after the marker**, not a
@@ -117,7 +117,7 @@ mythical exactly-once. Source: findings **F7** (`AUDIT-2026-06-01-findings.md:93
 
 ## Implementation notes
 
-- **Governing ADR: ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`). Load-bearing
+- **Governing ADR: ADR-0002** (`docs/decisions/adr-0002.md`). Load-bearing
   clauses: **D2.1** (frozen key `push:{UserId}:{EventKey}:{OrderId?}`), **D2.1a** (dual-read the
   bare-payload fallback at the deploy boundary — synthesize the key from payload fields),
   **D2.2** (`notifications-dispatch` = guard-first, claim-then-act, **unconditional** claim commit, the

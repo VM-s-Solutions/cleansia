@@ -32,7 +32,7 @@ The soft-delete primitives already exist (`IRepository.Deactivate/DeactivateRang
 
 ## Acceptance criteria
 - [ ] **AC1 (ADR exists & accepted)** — Given B6 is a tracked Architect judgment call, When this
-  ticket completes, Then a new ADR under `agents/backlog/adr/` (next free number) is `Status: accepted`,
+  ticket completes, Then a new ADR under `docs/decisions/` (next free number) is `Status: accepted`,
   follows the project ADR template (header, Context, Decision, Consequences, "How a reviewer verifies
   compliance"), and is reconciled by the reviewer with zero blocking challenges.
 - [ ] **AC2 (decision rule)** — The ADR states the Deactivate-vs-Remove decision rule: user/business-

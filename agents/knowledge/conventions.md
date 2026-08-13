@@ -184,7 +184,7 @@ right; what you may not do is ratify it for yourself. If none fires, edit inline
    > sentence, and two careful readers can differ (worked both ways on real hunks: `patterns-mobile.md:990`
    > vs T-0349 is determinate and fires; `:520-522` vs T-0473 is not). The first repair — *"name one
    > concrete artifact both sentences reach and rule differently"* — was drafted, challenged and
-   > **rejected** on 2026-08-05 (`agents/backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`,
+   > **rejected** on 2026-08-05 (`agents/archive/2026-08/adr-deliberation/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`,
    > `rejected`); a second author round is owed on **T-0553**. Until it lands, quote the candidate
    > sentence and record both readings in `## Review` rather than settling it by whoever quotes first.
 3. **Does it make a prescriptive claim about a stack this ticket did not build and run?** A rule for a

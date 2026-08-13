@@ -87,7 +87,7 @@ the architect's signature.
   supersede-never-edit is only as strong as its narrowest exception — letting anyone self-classify an
   edit as "just a transcription" is the loophole, and a dev slice editing an architect-owned accepted
   artifact normalizes the violation even when right. Ruling: challenge answered by BOUNDING the class
-  and making it rule-governed — the erratum convention is now recorded in `agents/backlog/adr/README.md`
+  and making it rule-governed — the erratum convention is now recorded in `agents/archive/2026-08/adr-deliberation/README.md`
   (cited-source-determined value only; no meaning change; bracketed+dated+self-describing; architect
   signature mandatory), and a signed erratum block is appended to ADR-0022. The dev edit was
   procedurally out of lane, substantively correct; ratified retroactively. Living doc already carried
@@ -129,7 +129,7 @@ the architect's signature.
   re-investigation stays open (T-0373 finding b); junk entries stripped at commit time again.
 - 2026-07-19 — **done** by architect (lead ruling, see Review): (a) the ADR-0022 in-body 74pt note
   ratified as a SIGNED ERRATUM (block appended to ADR-0022; convention recorded in
-  `agents/backlog/adr/README.md`) + the post-supersede stale pill rows swept in
+  `agents/archive/2026-08/adr-deliberation/README.md`) + the post-supersede stale pill rows swept in
   `ios-app-architecture.md` / `patterns-mobile.md` / `ios-app-review-checklist.md`; (b) the
   SnackbarInsetState canonical row RATIFIED against the landed code with one wording correction
   (pill-era "bar-composite" → stock-bar+FAB chrome); the 2026-07-04 `format: date` row addition

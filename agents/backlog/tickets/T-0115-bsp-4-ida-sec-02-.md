@@ -109,7 +109,7 @@ strict order **BSP-4 → SEC-W3 → PROD-CONFIG(BSP-5 hop)**. This ticket is the
 cluster; SEC-W3 and PROD-CONFIG must NOT run concurrently with it (all edit the startup pipeline /
 limiter). It must land before its cluster successors.
 
-**Governing ADR: ADR-0003** (`agents/backlog/adr/0003-partitioned-rate-limiting.md`) — read it in
+**Governing ADR: ADR-0003** (`docs/decisions/adr-0003.md`) — read it in
 full; it is immutable and dictates every decision below. Key edit sites in
 `src/Cleansia.Config/Abstractions/CleansiaStartupBase.cs`:
 - Replace `AddFixedWindowLimiter` at `:76-92` with `options.AddPolicy("auth", …)` /

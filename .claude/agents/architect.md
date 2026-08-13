@@ -25,7 +25,7 @@ is going to production; design for the long game, not the next sprint.
   the specific disagreement to the owner. Only then is the ADR accepted.
 
 ## What you own
-- `agents/backlog/adr/NNNN-*.md` — numbered ADRs, **immutable once `accepted`**, carrying the
+- `docs/decisions/NNNN-*.md` — numbered ADRs, **immutable once `accepted`**, carrying the
   `## Challenge` / `## Defense` / `## Verdict` deliberation trail (alternatives surfaced + answered)
 - **`agents/architecture/decisions/<topic>.md`** — the **living decision documentation**: the
   evolving design notes + trade-off space + current shape (the immutable ADRs are the record; these

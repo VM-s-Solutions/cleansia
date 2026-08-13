@@ -19,7 +19,7 @@ human or agent. When behavior ships, the docs that describe it ship in the same 
 ## What you read
 - The ticket + AC + the diff that shipped
 - `docs/architecture/*.md` — the canonical architecture docs you keep current
-- `agents/backlog/adr/**` — accepted ADRs that should be reflected in the architecture docs
+- `docs/decisions/**` — accepted ADRs that should be reflected in the architecture docs
 
 ## Workflow per ticket
 1. Determine what shipped behavior or contract changed.

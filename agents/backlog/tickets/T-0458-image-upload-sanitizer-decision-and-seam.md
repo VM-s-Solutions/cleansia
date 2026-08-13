@@ -76,7 +76,7 @@ Filed from the **T-0446 security gate** (finding **SEC-3**). Full write-up:
 > needed (the draft ADR reuses `file.content_type_doesnt_match`). **AC6 is overturned.** AC7 stands but
 > is owed on the **batch**, not the avatar. AC8 stands.
 >
-> **Draft ADR:** `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`
+> **Draft ADR:** `docs/decisions/adr-0043.md`
 > (`proposed`, number not allocated, **panel owed**).
 > **Living doc:** `agents/architecture/decisions/user-uploaded-artifacts.md`.
 
@@ -150,7 +150,7 @@ policy**, so it wants an accepted **ADR**, not a code review. The space to defen
 
 _(PM floor; the panel finalizes)_
 
-- [ ] **AC1** — An **ADR is accepted** in `agents/backlog/adr/` recording: the library + its licence
+- [ ] **AC1** — An **ADR is accepted** in `docs/decisions/` recording: the library + its licence
       position, strip-vs-re-encode, the seam's location, the caps, and orientation handling. Evidence:
       the ADR file with the deliberation trail.
 - [ ] **AC2** — Given a JPEG carrying GPS EXIF, When it goes through the sanitizer, Then the output
@@ -201,7 +201,7 @@ _(PM floor; the panel finalizes)_
 - 2026-07-30 — **not `ready`**: awaiting the architect panel (DoR item 7 — no archetype exists, and the library/seam decision is unmade).
 - 2026-08-05 — **Gate 0 run by the architect (author mode). Premises verified at HEAD; ~70 % of this
   ticket is already satisfied and the remainder is reframed.** See the GATE 0 block at the top. A draft
-  ADR is on disk — `agents/backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md` — with
+  ADR is on disk — `docs/decisions/adr-0043.md` — with
   the living doc `agents/architecture/decisions/user-uploaded-artifacts.md`. **Still not `ready`:** the
   draft is `proposed`, its `## Challenge` section is an author-run self-challenge, and
   `process/deliberation.md` requires distinct author / challenger / lead instances. AC1 is unsatisfied

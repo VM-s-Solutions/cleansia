@@ -24,7 +24,7 @@ Bucket-B migration — too large to run as one ticket. Per the §1 proposal in `
 splits a→b→c→d, **strictly serial** (same dispatch/pipeline surface). This child is the **ADR-only**
 deliverable and the gate for (b) table+EF, (c) backing+drainer+host, and (d) Bucket-B.
 
-ADR-0002 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`) freezes the dispatch contract but
+ADR-0002 (`docs/decisions/adr-0002.md`) freezes the dispatch contract but
 **explicitly defers two decisions** to this ticket:
 - **The outbox table design** (D5: "the outbox table design is deferred to F2-FULL's own ADR; this ADR
   only guarantees it slots under the frozen `IPendingDispatch` seam").

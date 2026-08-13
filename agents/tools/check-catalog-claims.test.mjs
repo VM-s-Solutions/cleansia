@@ -45,7 +45,7 @@ It is decided.
 
 const GOOD_CARD = `# Role — \`FixtureThing\` (CRC card)
 
-> **SHIPPED.** **ADR-0099 is \`accepted\`** (\`agents/backlog/adr/0099-fixture-decision.md:3\`).
+> **SHIPPED.** **ADR-0099 is \`accepted\`** (\`docs/decisions/adr-0099.md:3\`).
 > **Retires when:** ADR-0099's own status token changes.
 
 ## Invariants
@@ -57,7 +57,7 @@ const GOOD_CARD = `# Role — \`FixtureThing\` (CRC card)
 function makeRoot(files) {
     const root = mkdtempSync(join(tmpdir(), "catalog-claims-"));
     const base = {
-        "agents/backlog/adr/0099-fixture-decision.md": ADR,
+        "docs/decisions/adr-0099.md": ADR,
         "src/Fixture/Thing.cs": THING_CS,
         "agents/knowledge/roles/fixture-card.md": GOOD_CARD,
         ...files,
@@ -163,7 +163,7 @@ scenario("C1: a claim about an ADR that does not exist is RED", {
 });
 
 scenario("C1: an ADR whose own Status line moves reddens the card that quoted it", {
-    files: { "agents/backlog/adr/0099-fixture-decision.md": ADR.replace("accepted ", "superseded ") },
+    files: { "docs/decisions/adr-0099.md": ADR.replace("accepted ", "superseded ") },
     expectExit: 1,
     expectText: ["C1", "reads `superseded`"],
 });
@@ -257,7 +257,7 @@ scenario("C3: a continuation's verdict is SOFT — printed, never blocking", {
 // ── anti-vacuity ────────────────────────────────────────────────────────────
 scenario("ANTI-VACUITY: citation-shaped text the parser cannot consume is a hard P0", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": `${GOOD_CARD}\nSee \`agents/backlog/adr/0099-fixture-…md:3-5\` for the ruling.\n`,
+        "agents/knowledge/roles/fixture-card.md": `${GOOD_CARD}\nSee \`docs/decisions/0099-fixture-…md:3-5\` for the ruling.\n`,
     },
     expectExit: 1,
     expectText: ["P0", "REACH", "NOT consumed by the citation parser", "NOT RUN in full"],

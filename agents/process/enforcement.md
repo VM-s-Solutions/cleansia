@@ -191,7 +191,7 @@ this — the artifact is correct when the gate would run.
 
 1. **ADR status agreement.** For each ADR id appearing in `agents/knowledge/**/*.md` +
    `agents/process/**/*.md` adjacent to a quoted status token, read that ADR's `- **Status:**` line and
-   fail on disagreement. *(The two banner instances; `agents/backlog/adr/*.md` filenames are not stable
+   fail on disagreement. *(The two banner instances; `docs/decisions/*.md` filenames are not stable
    — resolve by the `NNNN-` prefix, not by full name.)*
 2. **`Retires when: <path> exists` markers.** `fs.existsSync` the path; fail if it exists, because the
    banner it guards is then false. *(The payout-allocator card.)*

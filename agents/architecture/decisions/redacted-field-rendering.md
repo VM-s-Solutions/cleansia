@@ -1,7 +1,7 @@
 # Rendering a server-redacted field on a client (living decision notes)
 
 > Companion to **ADR-0047**
-> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md`).
+> (`docs/decisions/adr-0047.md`).
 > An accepted ADR is immutable; this page is the *evolving* design notes, trade-off space and current
 > shape. Update this when the design evolves; supersede the ADR for a real decision change.
 >

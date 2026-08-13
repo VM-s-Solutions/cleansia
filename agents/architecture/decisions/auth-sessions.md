@@ -12,9 +12,9 @@ ADR-0026 X1 to the user/password-reset dimension:** password reset ends the rese
 sessions within the same ≤ 30 s bound via a **sibling `RevokedUserDirectory`** keyed on `sub` and fed
 from the persisted `password_reset` refresh-token rows (no migration); password CHANGE is deliberately
 NOT accelerated. Canonical decisions:
-`agents/backlog/adr/0024-mobile-access-token-ttl-is-the-device-revocation-latency-bound.md`,
-`agents/backlog/adr/0026-immediate-device-revocation-via-device-id-claim-and-polled-revocation-directory.md`,
-and `agents/backlog/adr/0027-immediate-user-session-cutoff-on-password-reset-via-polled-revoked-user-directory.md` (accepted).
+`docs/decisions/adr-0024.md`,
+`docs/decisions/adr-0026.md`,
+and `docs/decisions/adr-0027.md` (accepted).
 This page is the evolving companion; the ADRs govern on any conflict. Prior related security notes:
 `agents/backlog/security/auth-sessions.md` (tenant-filter symmetry on token reads, T-0236).
 

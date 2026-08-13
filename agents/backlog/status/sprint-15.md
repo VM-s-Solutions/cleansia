@@ -738,10 +738,10 @@ this addendum is a first-hand read at `dceed4f1`.
 # ADDENDUM B — challenger-round fallout: 7 defects that belong to no ADR (`T-0525`…`T-0531`)
 
 **Filed:** 2026-08-02, during the ADR-0034 / 0035 / 0036 challenger round.
-**Input:** `agents/backlog/adr/challenges/*.md` — 8 lanes (0034-db, 0034-security, 0035-A/B/C,
+**Input:** `agents/archive/2026-08/adr-deliberation/challenges/*.md` — 8 lanes (0034-db, 0034-security, 0035-A/B/C,
 0036-A/B/C), all read; plus PM grounding against the working tree.
 **Output: 7 new tickets + 2 owner questions.** No ADR was read for *its own* content and
-**nothing under `agents/backlog/adr/**` was written** — three architects are live in that directory.
+**nothing under `docs/decisions/**` was written** — three architects are live in that directory.
 
 ## Why these exist as tickets at all
 
@@ -840,7 +840,7 @@ panel should conclude *from* it. **These must reach the architects through you, 
 
 ## What this pass deliberately did NOT do
 
-- **Did not read the three ADRs' own text**, and did not write one byte under `agents/backlog/adr/**`.
+- **Did not read the three ADRs' own text**, and did not write one byte under `docs/decisions/**`.
   Three architects are live in there. Every ADR fact above is quoted from a challenge file or verified
   directly against source.
 - **Did not touch git** — no add, commit, branch, stash or checkout.
@@ -1010,7 +1010,7 @@ false "mirrors X" comments this sprint spent itself deleting.
 
 - **Did not touch git.** No add, commit, branch, stash or checkout. (The repo-global stash hazard across
   worktrees makes that rule load-bearing, not ceremonial.)
-- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `agents/backlog/adr/**`
+- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `docs/decisions/**`
   (other lanes are live in both), not production code, not tests, not `CLAUDE.md`, not `docs/`.
 - **Did not open** `.env`, `.p8`, `Info.plist`, `project.yml` or anything under `src/cleansia_ios/Config/`.
 - **Did not reconcile `T-0476`…`T-0492` / `T-0494` / `T-0496`…`T-0508` / `T-0510`** — the PR #189
@@ -1320,7 +1320,7 @@ two items longer.**
 - **Did not touch git.** No add, commit, branch, stash or checkout. `git log` / `git show` / `git ls-files`
   were read-only and are what the verification is built on. (The repo-global stash hazard across worktrees
   makes this rule load-bearing, not ceremonial.)
-- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `agents/backlog/adr/**`, not
+- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `docs/decisions/**`, not
   `agents/tools/**` — **which is why the proposed script in D3 was specified and not built.** No production
   code, no tests, no `CLAUDE.md`.
 - **Did not open** `.env`, `.p8`, `Info.plist`, `project.yml` or anything under `src/cleansia_ios/Config/`.
@@ -1396,7 +1396,7 @@ Both measured corrections were applied when writing these eleven tickets:
   work (candidate 3, resolved by suffix match against `git ls-files`).
 - **Five of the eleven are structurally undetectable by it.** T-0549/0550/0551/0552/0553 touch only
   `.claude/agents/**`, `agents/knowledge/**`, `agents/process/**`, `agents/architecture/**` and
-  `agents/backlog/adr/**` — and the middle three are *deliberately excluded* from the path rule, because
+  `docs/decisions/**` — and the middle three are *deliberately excluded* from the path rule, because
   counting shared knowledge docs takes it from **11 flags to 29** on this corpus. So each of those five
   carries a **`### Staleness detectability`** section naming the one hand-check that substitutes for the
   script. **This is a real hole in the proposed mechanism: the governance backlog — the part that went

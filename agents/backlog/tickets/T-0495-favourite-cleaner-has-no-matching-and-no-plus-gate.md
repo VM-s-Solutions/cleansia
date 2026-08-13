@@ -103,7 +103,7 @@ changes, which the ADR names as a consequence (it does not make the change).
 - [ ] **AC9 — at most three sized implementation candidates.** **This ticket builds nothing.**
       `git diff --stat -- src/` empty. Evidence: the candidates with S/M sizes; **any `L` is split in
       the ADR, not left for the PM to discover.**
-- [ ] **AC10 — the ADR is written to `agents/backlog/adr/00NN-*.md` and the living decision doc under
+- [ ] **AC10 — the ADR is written to `docs/decisions/00NN-*.md` and the living decision doc under
       `agents/architecture/decisions/` is updated in the same step.** Evidence: both files.
 - [ ] **AC11 — the deliberation trail (`## Challenge` / `## Defense` / `## Verdict`) stays in the
       artifact.** Evidence: the sections.

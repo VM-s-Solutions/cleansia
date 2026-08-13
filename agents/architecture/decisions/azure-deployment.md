@@ -1,7 +1,7 @@
 # Azure deployment (Bicep IaC + GitHub Environments) — living decision notes
 
 > Companion to the **immutable** ADR-0015
-> (`agents/backlog/adr/0015-azure-dev-deployment-bicep-and-github-environments.md`). The ADR is the frozen
+> (`docs/decisions/adr-0015.md`). The ADR is the frozen
 > contract; this file is the *evolving* design notes — the topology, the dev/prod SKU table, the resource→secret
 > map, the trade-off space, and the open questions. Update this as the deployment evolves; supersede the ADR for
 > a real change. Canonical source of the resource inventory: `docs/architecture/infrastructure.md`. Consumer

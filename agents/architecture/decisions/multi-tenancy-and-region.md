@@ -1,7 +1,7 @@
 # Multi-tenancy and multi-region — how the two axes compose (living decision note)
 
 > Companion to the **immutable** ADR-0017
-> (`agents/backlog/adr/0017-multi-region-expansion-seam-and-its-composition-with-app-level-tenancy.md`). The ADR
+> (`docs/decisions/adr-0017.md`). The ADR
 > is the frozen decision; this file is the evolving composition note — the verified tenancy facts, the
 > orthogonality, the seam, and the trigger. Cross-links: ADR-0015 (the Azure deployment this seam folds into),
 > `architecture/decisions/azure-deployment.md` (the region parameterization), `patterns-backend.md` (the
@@ -87,7 +87,7 @@ is single-tenant** — two otherwise-identical rows both insert and `ON CONFLICT
   arbitrarily; `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:157-172` charges every
   matching row). This is the case that shows the section's own warning is not hypothetical — the reverse
   direction bites *now*, in the mode the platform actually runs in. Decided by **ADR-0050 is `proposed`**
-  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`):
+  (`docs/decisions/adr-0050.md:3`):
   arm the index, map the resulting `23505` to the business error, gate the migration on a duplicate
   census. **Retires when:** that status line stops reading `proposed`.
   **State today: half-landed, and the halves are visible in different places.** `:112-114` carries
@@ -184,7 +184,7 @@ than folded in:**
 ## Where multi-tenancy actually stands — dormancy, and what it is owed
 
 The owner declined the activation pack (**ADR-0028 is `DECLINED`**,
-`agents/backlog/adr/0028-multi-tenant-activation-pack.md:3` — **retires when:** that status line stops
+`docs/decisions/adr-0028.md:3` — **retires when:** that status line stops
 reading `DECLINED`) and separately recorded, on Q-VS-03, *"we won't have franchises, DON'T
 OVERCOMPLICATE THINGS"* as a **standing instruction**
 (`agents/backlog/questions/open.md:2324-2337`). Read together, multi-tenancy is a **dormant seam on no

@@ -23,7 +23,7 @@ The iOS code lives at **`src/cleansia_ios/`** (to be created — it does not exi
 
 ## 1. The decisions already made (read the ADRs, don't re-litigate)
 
-All accepted and committed under `agents/backlog/adr/`:
+All accepted and committed under `docs/decisions/`:
 
 | ADR | Decision |
 |---|---|

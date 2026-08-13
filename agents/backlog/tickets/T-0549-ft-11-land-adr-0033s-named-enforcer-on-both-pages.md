@@ -59,7 +59,7 @@ redefinition"* — the same words T-0274 used two sprints earlier for the same f
 - [x] **AC1 — the reviewer's page carries the named check.** ✅ **criterion met; the evidence line as
       literally written does NOT return zero — see §Review "AC1 — the residual".** Given `.claude/agents/reviewer.md`, When
       step 5's catalog clause (`:105-110`) is replaced with **reviewer-check 5 "Catalog-edit routing"**
-      exactly as specified in ADR-0033 **Block D** (`agents/backlog/adr/0033-…md:368-394` — the three
+      exactly as specified in ADR-0033 **Block D** (`docs/decisions/0033-…md:368-394` — the three
       ordered tests + the floor's evidence rule + ADR-0032's enforcer/tier check), Then no sentence
       teaching the superseded axis survives on that page. Evidence: the diff, plus a grep for
       `redefines "the one way to do X"` in `.claude/agents/` returning **zero** hits.

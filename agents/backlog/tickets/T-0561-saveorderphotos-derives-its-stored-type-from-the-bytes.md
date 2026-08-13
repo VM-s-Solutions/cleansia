@@ -61,7 +61,7 @@ dispatches to a walker whose own signature matched and returns the input unchang
 AC-NEW below. Retained for provenance:
 
 > **It blocks T-0459.** The challenge on the content-policy draft
-(`agents/backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4, `c6370115`)
+(`agents/archive/2026-08/adr-deliberation/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4, `c6370115`)
 found the same defect from the other side: that draft elects **this** surface as its metadata-scrub
 pilot, and a per-format scrub dispatching on the client's `data:` prefix runs the **PNG chunk walker
 over JPEG bytes** whenever the uploader says `data:image/png` — a no-op the attacker selects, under a

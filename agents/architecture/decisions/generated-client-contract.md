@@ -1,9 +1,9 @@
 # Generated API clients — the drift contract (living decision notes)
 
 > Companion to the ADRs on this topic:
-> `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` (**ADR-0031**, accepted
+> `docs/decisions/adr-0031.md` (**ADR-0031**, accepted
 > 2026-07-30 — *call sites* vs a regen) and
-> `agents/backlog/adr/0042-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`
+> `docs/decisions/adr-0042.md`
 > (**ADR-0042** — the *shared enum declaration*, answering `Q-ENUM-01`). An accepted ADR is immutable;
 > this file is the *evolving* design notes, trade-off space, and current shape. Update this when the
 > design evolves; supersede an accepted ADR for a real decision change.
@@ -414,7 +414,7 @@ because it had no authority to be in conflict with.
 | `quality-gates.md` Gate 4 named item **WE-1** (a new `export enum` under `src/Cleansia.App/` is declared a wire mirror or not) | `agents/process/` | **does not land** until acceptance. It is the `T3-HUMAN` half: a *renamed* mirror has no mechanical witness, so the alias roster is closed by construction and the catalog must say so |
 | ~~`CLAUDE.md` repo-map correction~~ | ~~`CLAUDE.md`~~ | **WITHDRAWN** — `CLAUDE.md:34-35` already says the right thing; no owner step is owed |
 | `Q-ENUM-01` in `questions/open.md` | `agents/backlog/questions/` | ✅ **already corrected and correct at HEAD** — it records the owner's half as settled, the mechanism as returned, and stays open. No edit owed until the second panel rules |
-| ADR filename still carries round 1's slug | `agents/backlog/adr/` | **deliberate.** Rename only in the commit that accepts it, together with the three pointers that name it (ADR-0042 §9) |
+| ADR filename still carries round 1's slug | `docs/decisions/` | **deliberate.** Rename only in the commit that accepts it, together with the three pointers that name it (ADR-0042 §9) |
 
 ### Trade-off space — the axes, and what round 2 chose on each *(chosen ≠ accepted; the panel has not ruled)*
 

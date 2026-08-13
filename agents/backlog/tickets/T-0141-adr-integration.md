@@ -51,7 +51,7 @@ The defense-panel "theme 4 — integrations / resilience" is grounded in the rea
 
 ## Acceptance criteria
 - [ ] **AC1 (ADR exists & accepted)** — Given the backlog, When this ticket is done, Then
-  `agents/backlog/adr/0004-integration-resilience-contract.md` exists, follows the project ADR template
+  `docs/decisions/adr-0004.md` exists, follows the project ADR template
   (Status/Date/Applies-to header, Context, Decision, Consequences, "How a reviewer verifies
   compliance"), and is marked `Status: accepted`. The ADR number is recorded back into this ticket's
   `adrs:` frontmatter and added to TICKET-MAP's ADR list so `BLIND-5/6/1`, `LG-06`, `BLIND-7` can cite
@@ -111,7 +111,7 @@ The defense-panel "theme 4 — integrations / resilience" is grounded in the rea
   retried; a 422 maps to Permanent and is acked", "a SendGrid outage does not change `Register`'s HTTP
   status") so each downstream ticket can write the red test before the code (testing.md §"Test-first at
   the contract").
-- **Governing ADR for the async-email path:** **ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`)
+- **Governing ADR for the async-email path:** **ADR-0002** (`docs/decisions/adr-0002.md`)
   — the email enqueue rides the same `IPendingDispatch` / post-commit dispatch seam and must use its
   transient/permanent retry vocabulary. Do not invent a parallel dispatch mechanism.
 - **This ticket authors a NEW ADR.** Model it on the existing accepted ADRs
@@ -121,7 +121,7 @@ The defense-panel "theme 4 — integrations / resilience" is grounded in the rea
   zero in `Features/**` and `Infra.Clients/**` outside the factory registrations; every provider call
   in a handler is inside a classify-try/catch).
 - **Serialization cluster:** **none.** This ticket is **not** in any TICKET-MAP shared-file cluster — it
-  adds a doc under `agents/backlog/adr/` and touches no source file, so it is safe to run concurrently
+  adds a doc under `docs/decisions/` and touches no source file, so it is safe to run concurrently
   with any Wave-0/Wave-1 code ticket. (Its **dependents** `BLIND-5`/`BLIND-6` will touch
   `StripeClient.cs` / `SendGridClientFactory.cs` / host `ServiceExtensions.cs` and must serialize among
   themselves at implementation time — note that in those tickets, not here.)

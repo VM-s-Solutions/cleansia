@@ -70,7 +70,7 @@ order path.
   `MessageKey`** (no `Guid.NewGuid()`/timestamp) so a duplicate enqueue / redelivery is recognized as
   already-done by the consumer; the consumer asserts before sending (ADR-0002 D2.1 / D2.2). The key
   formula for the email effect is defined alongside the existing frozen formulas
-  (`agents/backlog/adr/0002-outbox-dispatch-contract.md:247-253`).
+  (`docs/decisions/adr-0002.md:247-253`).
 - [ ] **AC5** (consumer realizes the email; dual-read at deploy) — Given an enqueued email message,
   When the consumer runs, Then it sends via the existing `IEmailService` (confirmation or reset
   template per type, preserving language: `Register`/`RegisterEmployee`/`ResendConfirmationEmail` pass
@@ -111,7 +111,7 @@ order path.
   catalog marks strict red→green→refactor. Write the failing handler/key/consumer tests (AC6) **first**;
   the status log must note "red: <test> failing → green", and tests land in the **same merge** as the fix.
 - **Governing ADRs:** **ADR-INTEGRATION** (T-0141) decides *that* email is async and *how* the
-  integration layer classifies transport errors; **ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`)
+  integration layer classifies transport errors; **ADR-0002** (`docs/decisions/adr-0002.md`)
   governs the *seam* the email rides on — D1 (handler records intent via `IPendingDispatch.Enqueue`,
   realized post-commit, dispatch failure logged-and-swallowed), D1.2 (buffer discarded on non-success),
   D2.1 (deterministic `MessageKey`), D2.2 (consumer asserts before its terminal effect), D2.1a

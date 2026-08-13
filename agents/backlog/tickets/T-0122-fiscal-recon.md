@@ -51,7 +51,7 @@ There is precedent for a bounded fiscal sweep in this codebase: `FiscalRetryServ
 fiscal *re-registration* retries (`:24-94`). This sweep is a sibling at the *dispatch* layer (re-enqueue
 the missing message), not the registration layer â€” keep them distinct.
 
-Source: ADR-0002 D3.4 (`agents/backlog/adr/0002-outbox-dispatch-contract.md:355-365`), D3.3 fiscal
+Source: ADR-0002 D3.4 (`docs/decisions/adr-0002.md:355-365`), D3.3 fiscal
 carve-out (`:348-354`), verification check #3 (`:526-533`).
 
 ## Acceptance criteria
@@ -148,7 +148,7 @@ carve-out (`:348-354`), verification check #3 (`:526-533`).
   (TDD pairing).
 
 ## Amendment (2026-06-03) — C-B from ADR-0004 (BINDING)
-The fiscal-receipt-idempotency panel (ADR-0004, `agents/backlog/adr/0004-fiscal-receipt-idempotency-boundary.md`)
+The fiscal-receipt-idempotency panel (ADR-0004, `docs/decisions/adr-0004.md`)
 **widens this ticket's sweep predicate**. T-0119's claim-before-register reorder creates a new dangerous
 state — a row that **HAS** a `Receipt` but with `FiscalCode == null` (claimed-but-unregistered) — which the
 original D3.4 "no `Receipt`" predicate does **NOT** cover. **Mandated predicate (C-B):**

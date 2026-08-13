@@ -22,7 +22,7 @@ pairs_with: T-0110, T-0111, T-0112, T-0114, T-0117, T-0118
 This is **TC-IDEMP-0**, the cross-cutting "safe to run twice" test suite for Wave-0. It is the
 **executable gate** for two things at once:
 
-1. **ADR-0002's verification contract** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`,
+1. **ADR-0002's verification contract** (`docs/decisions/adr-0002.md`,
    "How a reviewer verifies compliance" #5–#10) — the dispatch/commit ordering and idempotent-consumer
    guarantees the F2/F11 cluster ships are claims until a test proves them. The ADR names the exact
    cases: TC-DISPATCH-0 (#7), TC-IDEMP-0 (#5), TC-KEY-0 (#6), the F11 regression (#10), and the
@@ -125,7 +125,7 @@ anti-patterns).
   written **failing-first** and merged **with** its paired fix (TDD same-merge): the status log must
   record the red→green note per case. An implementation that lands first with tests bolted on fails
   Gate 6.
-- **Governing ADR: ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`). The case list is
+- **Governing ADR: ADR-0002** (`docs/decisions/adr-0002.md`). The case list is
   the ADR's own gate — verification #4 (pipeline order), #5 (TC-IDEMP-0 receipt), #6 (TC-KEY-0), #7
   (TC-DISPATCH-0), #10 (F11 regression). Honor the **honest semantics** the ADR fixes: receipt email is
   *exactly-once* (claim-first), push is *at-most-once after marker* — do not assert a mythical

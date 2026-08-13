@@ -2,7 +2,7 @@
 
 > **✅ ACCEPTED AND SHIPPED.** Retires the *"PROPOSED — not yet the standard … do not build against
 > this card until ADR-0035 is `accepted`"* banner this card carried. **ADR-0035's own status line reads
-> `accepted`** (`agents/backlog/adr/0035-metered-membership-benefit-usage.md:3`, adjudicated 2026-08-02
+> `accepted`** (`docs/decisions/adr-0035.md:3`, adjudicated 2026-08-02
 > with 16 binding amendments), the feature is live, and `CLAUDE.md` §*"Metered membership benefits"*
 > documents it as shipped behaviour. **Retires when:** ADR-0035's status line stops reading `accepted`.
 >

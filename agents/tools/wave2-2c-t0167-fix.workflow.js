@@ -12,7 +12,7 @@ const CONTEXT = `
 T-0167 (admin partial-refund command) v1 landed but the parallel reviewer + security panel found THREE
 real money defects (the dev's own tests were vacuous on all three) plus the owner has now decided the one
 open policy question. This is the rework. ADR-0009 is the FROZEN policy; ADR-0006 is the FROZEN seam — cite,
-never re-decide. The full ADR-0009 text is at agents/backlog/adr/0009-refund-policy.md (D1 window, D2
+never re-decide. The full ADR-0009 text is at docs/decisions/adr-0009.md (D1 window, D2
 allocator, D3 fee bearer, D5/D5.1 gross basis, D6 loyalty).
 
 THE THREE FINDINGS TO FIX (all confirmed against ADR-0009 + real code):

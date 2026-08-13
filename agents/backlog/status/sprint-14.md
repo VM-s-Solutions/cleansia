@@ -1230,7 +1230,7 @@ unratified rule**, with nothing to appeal to when a reviewer and a developer dis
 
 **Found while writing it, and NOT fixed from inside another ticket:** ADR-0032 and ADR-0033 both carry
 a "Number note" saying *0031 exists only in T-0439's worktree and a reader on `master` sees a gap at
-0031.* **That is no longer true** — `agents/backlog/adr/0031-….md` is on `master`. ADR-0032 is
+0031.* **That is no longer true** — `docs/decisions/0031-….md` is on `master`. ADR-0032 is
 `accepted`, and `adr/README.md` rules an unsigned in-body edit to an accepted ADR a process violation,
 so each needs a **signed erratum**. T-0471 folds the ADR-0033 one into its verdict and routes the
 ADR-0032 one to the PM as a separate finding.

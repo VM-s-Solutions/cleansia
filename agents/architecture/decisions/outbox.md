@@ -1,6 +1,6 @@
 # Side-effect dispatch & the outbox (living design note)
 
-> Companion to the **immutable** ADR-0002 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`).
+> Companion to the **immutable** ADR-0002 (`docs/decisions/adr-0002.md`).
 > The ADR is the frozen contract; this file is the *evolving* design note — the trade-off space, the
 > current shape, and the open Wave-1 questions. When Wave-1 (F2-FULL) lands, update this file in the
 > same step (per `agents/process/deliberation.md`).
@@ -122,7 +122,7 @@ telemetry showed "already sent, skipping"**. The owner ruled (2026-07-08):
   `SendPushNotificationHandler` remains guard-first and untouched.
 
 The mode is greppable at the call site (three named `IIdempotencyGuard` members, no boolean flag).
-Full rule + rationale: `agents/backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md`;
+Full rule + rationale: `docs/decisions/adr-0023.md`;
 catalog entry: `agents/knowledge/patterns-backend.md` ("Queue-consumer idempotency").
 
 ## Dead-letter retention — the row is evidence, not an archive (ADR-0002 partial supersede, 2026-08-10)
@@ -235,12 +235,12 @@ failure result *without* calling `next()`, so UoW never runs) **plus** a defense
 
 ## Pointers
 
-- Immutable contract: `agents/backlog/adr/0002-outbox-dispatch-contract.md`
-- Durable consumer dedup: `agents/backlog/adr/0010-durable-consumer-idempotency.md` (partially
+- Immutable contract: `docs/decisions/adr-0002.md`
+- Durable consumer dedup: `docs/decisions/adr-0010.md` (partially
   superseded by ADR-0023 for the email claim ordering + the interface-frozen invariant)
-- Claim-ordering rule: `agents/backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md`
+- Claim-ordering rule: `docs/decisions/adr-0023.md`
 - Guard role card: `agents/knowledge/roles/idempotency-guard.md`
-- Authorization (prior ADR): `agents/backlog/adr/0001-authorization-model.md`
+- Authorization (prior ADR): `docs/decisions/adr-0001.md`
 - Catalog: `agents/knowledge/patterns-backend.md:281` (B8 side-effects rule),
   `agents/knowledge/security-rules.md:100` (S7 idempotency)
 - Canonical architecture: `docs/architecture/backend.md`, `docs/architecture/fiscal-compliance.md`,

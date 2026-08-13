@@ -24,7 +24,7 @@ public class ConfirmUserEmailValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Equal(1, result.Errors.Count);
+        Assert.Single(result.Errors);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.Required && e.ErrorCode == nameof(ConfirmUserEmail.Command.Code));
     }
 
@@ -43,7 +43,7 @@ public class ConfirmUserEmailValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Equal(1, result.Errors.Count);
+        Assert.Single(result.Errors);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.Required && e.ErrorCode == nameof(ConfirmUserEmail.Command.Code));
     }
 

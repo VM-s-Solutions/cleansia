@@ -73,7 +73,7 @@ public class GrantPointsManuallyValidatorTests
 
         var result = await GrantValidator().ValidateAsync(command);
 
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == nameof(GrantPointsManually.Command.RequestId)));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(GrantPointsManually.Command.RequestId));
     }
 
     // ── (revoke) — missing RequestId ⇒ Required ──
@@ -115,6 +115,6 @@ public class GrantPointsManuallyValidatorTests
 
         var result = await RevokeValidator().ValidateAsync(command);
 
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == nameof(RevokePointsManually.Command.RequestId)));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == nameof(RevokePointsManually.Command.RequestId));
     }
 }

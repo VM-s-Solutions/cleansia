@@ -49,7 +49,7 @@ public class GoogleAuthValidatorTests
     {
         var result = await _validator.ValidateAsync(Cmd("someToken"));
 
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Token"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Token");
     }
 
     [Fact]
@@ -60,8 +60,8 @@ public class GoogleAuthValidatorTests
         var result = await _validator.ValidateAsync(
             new GoogleAuth.Command(Token: "token", GoogleId: "", Email: "not-an-email", FirstName: "First", LastName: "Last"));
 
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Email"));
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "GoogleId"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Email");
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "GoogleId");
         Assert.True(result.IsValid);
     }
 
@@ -71,7 +71,7 @@ public class GoogleAuthValidatorTests
         var result = await _validator.ValidateAsync(Cmd("token", firstName: ""));
 
         Assert.False(result.IsValid);
-        Assert.NotEmpty(result.Errors.Where(e => e.PropertyName == "FirstName"));
+        Assert.Contains(result.Errors, e => e.PropertyName == "FirstName");
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class GoogleAuthValidatorTests
         var result = await _validator.ValidateAsync(Cmd("token", lastName: ""));
 
         Assert.False(result.IsValid);
-        Assert.NotEmpty(result.Errors.Where(e => e.PropertyName == "LastName"));
+        Assert.Contains(result.Errors, e => e.PropertyName == "LastName");
     }
 
     [Fact]

@@ -86,7 +86,7 @@ public class MobileLoginMissingDeviceIdWarningTests
 
         var entries = await InvokeAsync(typeof(MobileLogin), user, deviceId: null);
 
-        var warning = Assert.Single(entries.Where(e => e.Level == LogLevel.Warning));
+        var warning = Assert.Single(entries, e => e.Level == LogLevel.Warning);
         Assert.Contains("X-Device-Id", warning.Message);
         Assert.Contains(Audience, warning.Message);
         Assert.DoesNotContain(user.Email, warning.Message);
@@ -109,7 +109,7 @@ public class MobileLoginMissingDeviceIdWarningTests
 
         var entries = await InvokeAsync(typeof(MobilePartnerLogin), user, deviceId: null);
 
-        var warning = Assert.Single(entries.Where(e => e.Level == LogLevel.Warning));
+        var warning = Assert.Single(entries, e => e.Level == LogLevel.Warning);
         Assert.Contains("X-Device-Id", warning.Message);
         Assert.DoesNotContain(user.Email, warning.Message);
     }

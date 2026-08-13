@@ -174,8 +174,8 @@ public class BusinessErrorSlotContractTests
             $"Expected the {ScannedProject} scan to find the bulk of its Error constructions but found "
             + $"{constructions.Count} — the scanner, not the codebase, is what regressed.");
 
-        var grantConsent = Assert.Single(constructions.Where(c =>
-            c.RelativePath == "Features/Gdpr/GrantConsent.cs"));
+        var grantConsent = Assert.Single(constructions, c =>
+            c.RelativePath == "Features/Gdpr/GrantConsent.cs");
 
         Assert.Equal("nameof(Command.ConsentType)", grantConsent.CodeSlot);
         Assert.Equal("BusinessErrorMessage.ConsentAlreadyGranted", grantConsent.MessageSlot);

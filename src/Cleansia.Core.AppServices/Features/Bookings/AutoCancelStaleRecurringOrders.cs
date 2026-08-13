@@ -49,6 +49,7 @@ public class AutoCancelStaleRecurringOrders
     public class Handler(
         IOrderRepository orderRepository,
         INotificationProducer notificationProducer,
+        ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -69,44 +70,62 @@ public class AutoCancelStaleRecurringOrders
                 .ToListAsync(cancellationToken);
 
             var cancelled = 0;
-            foreach (var order in stale)
+            // Grouped by tenant because the OrderStatusTrack row added below is stamped from the
+            // AMBIENT tenant at commit time (CleansiaDbContext.SaveChangesAsync). This sweep carries no
+            // JWT, so without the override every cancellation row would land with a null TenantId
+            // whatever tenant the order belongs to. CleanupStalePendingOrders — named in its own header
+            // as the exact complement of this sweep — is the reference shape.
+            foreach (var tenantGroup in stale.GroupBy(o => o.TenantId ?? string.Empty))
             {
-                // Filter out orders already terminated (Cancelled or post-Confirmed)
-                // — the SQL filter on PaymentStatus catches most but the in-memory
-                // status check is cheap insurance against race conditions where a
-                // status flipped between query and processing.
-                var currentStatus = order.GetCurrentOrderStatus();
-                if (currentStatus is OrderStatus.Cancelled or OrderStatus.Completed)
+                // Reset before each iteration so a non-empty override from the previous group doesn't
+                // leak into a single-tenant (empty key) group that follows it.
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {
-                    continue;
+                    tenantProvider.SetTenantOverride(tenantGroup.Key);
                 }
 
-                try
+                foreach (var order in tenantGroup)
                 {
-                    order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+                    // Filter out orders already terminated (Cancelled or post-Confirmed)
+                    // — the SQL filter on PaymentStatus catches most but the in-memory
+                    // status check is cheap insurance against race conditions where a
+                    // status flipped between query and processing.
+                    var currentStatus = order.GetCurrentOrderStatus();
+                    if (currentStatus is OrderStatus.Cancelled or OrderStatus.Completed)
+                    {
+                        continue;
+                    }
 
-                    await notificationProducer.NotifyAsync(
-                        order.UserId!,
-                        NotificationEventCatalog.OrderCancelled,
-                        new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        order.TenantId,
-                        order.Id,
-                        cancellationToken);
+                    try
+                    {
+                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
-                    // The cancellation and its outbox row commit together so the row is durable iff this
-                    // order's state changed; the drainer puts it on the wire after the commit.
-                    await unitOfWork.CommitAsync(cancellationToken);
-                    cancelled++;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex,
-                        "Failed to auto-cancel stale recurring order {OrderId}",
-                        order.Id);
+                        await notificationProducer.NotifyAsync(
+                            order.UserId!,
+                            NotificationEventCatalog.OrderCancelled,
+                            new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            order.TenantId,
+                            order.Id,
+                            cancellationToken);
+
+                        // The cancellation and its outbox row commit together so the row is durable iff
+                        // this order's state changed; the drainer puts it on the wire after the commit.
+                        // Per-order rather than per-group on purpose: the catch below keeps one bad order
+                        // from stopping the sweep, which a group-wide commit would forfeit.
+                        await unitOfWork.CommitAsync(cancellationToken);
+                        cancelled++;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex,
+                            "Failed to auto-cancel stale recurring order {OrderId}",
+                            order.Id);
+                    }
                 }
             }
 

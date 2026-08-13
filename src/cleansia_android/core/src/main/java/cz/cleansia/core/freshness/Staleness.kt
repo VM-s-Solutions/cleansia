@@ -3,12 +3,21 @@ package cz.cleansia.core.freshness
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Per-cache freshness watermark. Repositories hold one per logical cache and mark it after a successful
- * fetch; ViewModels check it before triggering a background refresh on screen entry.
+ * Per-cache freshness watermark. Repositories hold one instance per logical
+ * cache (e.g. "my-invoices", "available-orders") and call [markFresh] after a
+ * successful fetch. Consumer ViewModels check [isStale] before deciding to
+ * trigger a background refresh on screen entry — fresh cache => skip the
+ * network round-trip, show what we already have.
  *
- * **User-initiated pulls bypass it entirely** — the user's intent is the source of truth, not cache age.
- * Orthogonal to the session-scoped wipe: a repo may hold both and should reset this from its existing
- * wipe hook. -> /mobile-app/patterns#session-wipe
+ * User-initiated pulls bypass this check entirely (the user's intent is the
+ * source of truth, not the cache age).
+ *
+ * Orthogonal to [cz.cleansia.core.auth.SessionScopedCache]: a repo may hold
+ * both, and should call [reset] from its existing `SessionScopedCache.clear()`
+ * so the watermark doesn't survive a logout / session swap.
+ *
+ * Thread-safe: backed by an [AtomicLong] so concurrent fetch completions don't
+ * race the staleness check.
  */
 class Staleness {
     private val lastFetchedAtMillis = AtomicLong(NEVER)

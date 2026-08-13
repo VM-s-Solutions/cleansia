@@ -88,11 +88,26 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /**
- * Cleaner-first dashboard, composed top-to-bottom around the four questions a cleaner has on opening the
- * app: what is my state today, what is my next job, what am I earning, when am I paid.
+ * Cleaner-first dashboard composition. Designed top-to-bottom around the
+ * four questions a cleaner has when they open the app:
  *
- * The hero adapts to state rather than stacking cards, so the answer is visible without scanning a grid.
- * -> /partner-app/dashboard
+ *  1. CompactGreetingBar  — name + date + "free today / N jobs today" state
+ *                           line. Tells them their state without making them
+ *                           scan a stats grid.
+ *  2. TodayHeroCard       — single hero that adapts to state:
+ *                           a) active next-job → countdown + address + CTA
+ *                           b) free + jobs available → gradient CTA with €X
+ *                              potential earnings
+ *                           c) free + nothing available → soft empty state
+ *  3. EarningsSplitRow    — Today / This week side-by-side. Shows the cleaner
+ *                           what they're making right now.
+ *  4. PayPeriodCard       — current pay period with progress bar + payout
+ *                           date. Answers "when do I get paid?".
+ *  5. LastMonthCard       — earnings + jobs + rating, three columns. Last
+ *                           month as social proof for self when today is zero.
+ *  6. QuickActionsGrid    — 4 tertiary shortcuts (Availability / Pay history
+ *                           / Documents / Help) when none of the above
+ *                           gives them what they need.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -682,9 +697,22 @@ private fun EarningsSplitRow(stats: DashboardStats?, onClick: () -> Unit) {
 }
 
 /**
- * Brand-blue earnings hero: the week so far as the primary number, today and the per-job average as
- * secondary rows. Replaces an older two-card split that read as flat siblings and showed bare numbers
- * without currency. -> /partner-app/dashboard
+ * Brand-blue earnings hero. Lays out the cleaner's week-so-far as the
+ * primary number, with today's earnings + the per-job average as
+ * secondary inline rows. Replaces the older two-card "Today / This
+ * week" split, which read as two flat siblings and showed bare
+ * numbers without currency.
+ *
+ *  ┌─────────────────────────────────────┐
+ *  │ This week               4 jobs done │
+ *  │ 6 262 Kč                            │
+ *  │ ─────────────────────────────────── │
+ *  │ Today  1 238 Kč   ·   ~1 566 Kč/job │
+ *  └─────────────────────────────────────┘
+ *
+ * Same gradient + corner + shadow language used by [NextJobHero] and
+ * [AvailableWorkHero] above it, so the dashboard's three top cards
+ * read as one family.
  */
 @Composable
 private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {

@@ -26,10 +26,25 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.core.R
 
 /**
- * Pull-to-refresh indicator shared by both apps: a suds-swirl rosette in a white pill.
+ * Pull-to-refresh indicator shared by both customer + partner apps:
+ * a suds-swirl rosette inside a white pill, matching the standard
+ * Material refresh-pill chrome (white surface, soft shadow, circular).
  *
- * It SLIDES IN from above the screen edge, translating with the pull. An earlier alpha fade made the
- * icon look like it appeared from nowhere mid-screen; the slide reads as pulling something onto the page.
+ * Animation choices:
+ *
+ *  - **Slides in from above the screen edge.** During the pull the
+ *    indicator translates downward proportional to `distanceFraction`
+ *    — same metaphor as the stock Material indicator. Earlier
+ *    versions faded in via alpha, which made the icon look like it
+ *    appeared from nowhere mid-screen; the slide-down reads as
+ *    "you're pulling something down onto the page".
+ *  - **Refreshing**: locked at its resting position, continuous 1.1s
+ *    linear rotation loop. Replaces the default Material spinner.
+ *  - **Pulling**: rotates a quarter-turn through the drag for a
+ *    "spinning up" feel.
+ *
+ * The Box anchors to TopCenter so the caller can
+ * `Modifier.padding(top = ...)` to clear the status bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

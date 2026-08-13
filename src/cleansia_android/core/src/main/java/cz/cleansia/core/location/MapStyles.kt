@@ -1,10 +1,19 @@
 package cz.cleansia.core.location
 
 /**
- * Mapbox style URIs — currently the stock light/dark styles, close enough to the palette for launch.
+ * Mapbox style URIs.
  *
- * A custom Studio style (Sky water, Slate land, POI noise hidden) is the intended next step; publish it
- * and replace the URIs here.
+ * **Current state:** using Mapbox's stock light/dark styles. They look clean and muted,
+ * close enough to the Cleansia palette for launch.
+ *
+ * **Next step (when you have time):** create a custom style in Mapbox Studio
+ * (https://studio.mapbox.com/), apply Cleansia palette (Sky-200 water, Slate-50 land,
+ * Slate-300 roads, hide POI noise), publish, and replace the URIs below with
+ * `mapbox://styles/{username}/{styleId}` for light + dark variants.
+ *
+ * Docs for style customisation:
+ *  - https://docs.mapbox.com/studio-manual/reference/styles/
+ *  - Use the "Monochrome" or "Basic" template as a starting point
  */
 object MapStyles {
     const val LIGHT = "mapbox://styles/mapbox/light-v11"

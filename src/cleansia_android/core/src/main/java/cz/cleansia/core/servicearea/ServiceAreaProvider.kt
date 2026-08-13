@@ -7,13 +7,25 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Single source of truth for which countries and cities the company serves. Backs the geocode bias,
- * country pickers and the service-area indicator.
+ * Single source of truth for "which countries / cities does the company
+ * actually serve". Backs:
+ *  - the Mapbox forward-geocode country bias (so suggestions don't
+ *    include unserved countries),
+ *  - any country pickers shown to users (only serviced countries),
+ *  - the inline city service-area indicator on the partner address
+ *    section + customer order wizard.
  *
- * **ONLY a successful answer is cached.** A failed fetch returns null and is not cached, so the next
- * access retries — caching the failure pinned an empty list until force-stop and made the picker claim
- * "we don't serve this city" for every address after one startup blip.
- * -> /mobile-app/patterns#negative-caching
+ * Fetched lazily on first access; ONLY a successful server answer is cached
+ * (in-memory, for the process lifetime — [refresh] clears it). A FAILED fetch
+ * returns null and is NOT cached, so the next access retries: caching the
+ * failure used to pin an empty list until force-stop, making the address
+ * picker claim "we don't serve this city" for every address after one
+ * startup-time network/auth blip.
+ *
+ * Lives in `:core` so customer-app and partner-app share one
+ * implementation; each app supplies its own [ServiceAreaDataSource]
+ * adapter that bridges its NSwag-generated API client to the slim
+ * core DTOs the provider exposes.
  */
 class ServiceAreaProvider(
     private val dataSource: ServiceAreaDataSource,

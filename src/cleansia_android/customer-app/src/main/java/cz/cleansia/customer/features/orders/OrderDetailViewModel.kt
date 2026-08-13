@@ -459,10 +459,19 @@ class OrderDetailViewModel @Inject constructor(
     }
 
     /**
-     * Submit or edit a review. **The backend endpoint is upsert by design** — one path handles both.
+     * Submit (create or edit) a review for the current order. The backend
+     * `SubmitOrderReview` is upsert by design — same endpoint handles both
+     * paths. The repo already surfaces a snackbar on network/HTTP failure;
+     * on success we push our own snackbar (variant depending on [isEdit]),
+     * emit on [reviewResult] so the screen can close the sheet, and re-fetch
+     * the detail so the `order.review` card re-renders.
      *
-     * The repo already surfaces failures, so this adds only the success snackbar, the close signal, and a
-     * re-fetch so the cached detail carries the new review.
+     * Caller-supplied rating is validated (1..5); anything else is a no-op.
+     * The comment is trimmed, truncated at 2000 chars (matching the backend),
+     * and coerced to null if it comes out empty so the wire payload is tidy.
+     *
+     * @param isEdit true when the user is updating an existing review; drives
+     *  the success snackbar copy ("Review updated." vs "Thanks — review submitted.").
      */
     fun submitReview(rating: Int, comment: String?, isEdit: Boolean = false) {
         val id = orderId

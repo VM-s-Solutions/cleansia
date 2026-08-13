@@ -42,10 +42,20 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * Cleansia-styled dialog, replacing stock Material3 across the app so confirm flows share one shape,
- * padding and typography. Two flavours: standard and destructive.
+ * Cleansia-styled dialog. Replaces stock Material3 [androidx.compose.material3.AlertDialog]
+ * across the app so confirm flows share one shape, padding, and typography.
  *
- * The optional icon halo is for high-stakes confirms only.
+ * Two flavors via [destructive]: standard (primary-tinted confirm) and
+ * destructive (error-tinted confirm + matching icon halo for delete/cancel).
+ *
+ * Optional [icon] renders a circular halo above the title — use for high-stakes
+ * confirms (delete account, cancel subscription) where a glyph helps the user
+ * orient. Omit for routine actions.
+ *
+ * For dialogs with custom body content (a TextField, a list of cleaners),
+ * pass a [content] slot instead of [message]. When both are provided, [content]
+ * renders below [message]. The Surface's [widthIn] keeps the dialog from
+ * stretching edge-to-edge on tablets.
  */
 @Composable
 fun CleansiaDialog(

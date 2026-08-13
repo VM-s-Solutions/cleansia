@@ -19,10 +19,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Cache + orchestrator for the user's loyalty state. `@Singleton`, so it lives for the process. Activity
- * history is deliberately NOT cached — that screen pages from the network on demand.
+ * Cache + orchestrator for the signed-in user's loyalty state.
  *
- * **Cleared on sign-out / account-delete.** -> /mobile-app/patterns#session-wipe
+ * Lifetime: `@Singleton` — lives for the app process. Caches the account
+ * snapshot ([account]) and the tier ladder ([tiers]), both refreshed
+ * lazily by [refresh]. Activity history is *not* cached — the activity
+ * screen pages from the network on demand.
+ *
+ * Cleared on sign-out / account-delete so the next user doesn't inherit
+ * this one's tier — call sites are wired in [AuthAuthenticator],
+ * [AuthRepository], and [UserRepository] alongside the matching
+ * OrderRepository / DisputeRepository hooks.
+ *
+ * Error model mirrors [cz.cleansia.customer.core.orders.OrderRepository]:
+ * foreground operations return [ApiResult.Success] on success and
+ * [ApiResult.Error] carrying the parsed message on failure. The consuming
+ * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays
+ * silent (NetworkErrorInterceptor owns the infra toast).
  */
 @Singleton
 class LoyaltyRepository @Inject constructor(

@@ -97,11 +97,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Dispute detail — header, original description, message thread, inline evidence, reply bar.
+ * Dispute detail screen — header + original description + message thread +
+ * inline evidence section + reply input bar.
  *
- * The original description renders as the first message bubble so the thread reads top-to-bottom.
- * Images open a fullscreen pinch-zoom preview; PDFs download to cache and hand off to the system viewer.
- * -> /flows/cancellation-refund-dispute
+ * The header surfaces status/reason/created-on so the user has context
+ * without scrolling. The original description renders as the first "message
+ * bubble" so the thread reads naturally top-to-bottom.
+ *
+ * Wave 3 Phase D1: evidence is now rendered inline (image thumbnails via Coil
+ * 3, PDFs as a card with the PDF icon). Tapping an image opens a fullscreen
+ * pinch-zoom preview; tapping a PDF downloads it to cache and hands off to
+ * the system PDF viewer via FileProvider. An "Add evidence" button below the
+ * list opens the system file picker (multi-select), with client-side
+ * validation matching the backend's 10MB + image/PDF whitelist.
+ *
+ * Input bar gating: uses [disputeAllowsMessages] — hidden on Resolved /
+ * Closed / Escalated. Null/unknown status shows the input (backend rejects
+ * if disallowed). Same gate also hides the "Add evidence" button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -35,11 +35,20 @@ class AppSettingsRepository(private val context: Context) {
     }
 
     /**
-     * The language code to send with confirmation and reset emails.
+     * The language code to send with confirmation / password-reset emails.
      *
-     * System is the default and carries a null tag, so a naive `?: "en"` sent a Czech phone English mail
-     * on a fresh install. **Resolution goes through the shared helper** — explicit choice, then the
-     * device's ordered locale list, then English.
+     * [LanguagePreference.System] is the default and carries a null tag, so every
+     * caller used to `?: "en"` and a Czech phone got English mail on a fresh
+     * install. Resolution now runs through [SupportedLanguages], which prefers an
+     * explicit picker choice, then the device's ordered locale list, then English —
+     * and clamps the answer to the five codes the backend's `LanguageValidator`
+     * will accept, so an unsupported handset locale can never fail a registration.
+     *
+     * We read `context.resources.configuration` rather than
+     * `AppCompatDelegate.getApplicationLocales()`: when the preference is System
+     * there is no app override to read, and when there IS one the configuration
+     * already reflects it. Reading both would be two sources of truth that
+     * disagree right after a locale change.
      */
     suspend fun emailLanguageTag(): String = SupportedLanguages.resolve(
         persistedTag = settings.first().language.tag,

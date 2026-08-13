@@ -293,11 +293,20 @@ class AuthViewModel @Inject constructor(
 
     private companion object {
         /**
-         * The remember-me flag, pinned to the long refresh lifetime.
+         * The `rememberMe` flag on `Auth/Login`, pinned to the 30-day refresh lifetime.
          *
-         * It was a checkbox defaulting to UNCHECKED, so the common case asked for the short token. **It is
-         * now one value for every mobile surface** — a handset is a personal device.
-         * -> /flows/auth-and-identity
+         * The sign-in screen used to offer this as a checkbox that defaulted to *unchecked*,
+         * so the common case asked for the 24-hour token. It is now one value for every
+         * mobile surface (iOS customer, iOS partner, Android partner all send `true` too).
+         * A handset is a personal device: the short token only bought a forced re-login after
+         * a day away, and the security it implied is already carried by single-use rotating
+         * refresh tokens, EncryptedSharedPreferences, and per-device revocation.
+         *
+         * Kept on the wire rather than dropped because the command still declares it and the
+         * web keeps its own checkbox — no server change. Note this app's server side
+         * (`MobileLogin`) already discarded the flag and forced the long lifetime, so nothing
+         * observable changes for a customer; the value is aligned so the client stops
+         * claiming something the server ignores.
          */
         const val LONG_LIVED_SESSION = true
 

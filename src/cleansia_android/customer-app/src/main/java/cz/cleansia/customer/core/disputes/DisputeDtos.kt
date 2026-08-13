@@ -4,11 +4,24 @@ import cz.cleansia.customer.core.user.CodeDto
 import kotlinx.serialization.Serializable
 
 /**
- * Wire DTOs for the customer Dispute endpoints — the customer-facing complaint channel, distinct from
- * the cleaner-authored order issue.
+ * Wire DTOs for the customer Dispute endpoints — the customer-facing
+ * complaint channel, distinct from `OrderIssue` (which is cleaner-authored).
  *
- * Field shapes match the backend records verbatim. Enum values arrive wrapped in the shared code shape,
- * not as bare values. -> /flows/cancellation-refund-dispute
+ * Routes mirror [Cleansia.Web.Customer.Controllers.DisputeController]:
+ *  - `POST /api/Dispute/Create`             → `string` (the new dispute id)
+ *  - `GET  /api/Dispute/GetPaged`           → `PagedData<DisputeListItem>`
+ *  - `GET  /api/Dispute/GetById/{disputeId}` → `DisputeDetails` (PATH param!)
+ *  - `POST /api/Dispute/AddMessage`         → 200 OK, no body
+ *
+ * Field shapes match the backend records verbatim — see
+ * `src/Cleansia.Core.AppServices/Features/Disputes/DTOs/` and
+ * `src/Cleansia.Core.AppServices/Mappers/DisputeMappers.cs`.
+ *
+ * Note that list-item and details wrap the `Reason` / `Status` enum values in
+ * the shared `Code` DTO shape (`{ type, name, value }`) — we reuse the
+ * existing [CodeDto] from the user module. The outbound `CreateDisputeRequest`
+ * takes the raw `Int` value of [cz.cleansia.customer.core.disputes.DisputeReason]
+ * because the backend validator expects an enum, not the wrapper.
  */
 
 /** Paged response wrapper — matches backend `PagedData<DisputeListItem>`. */

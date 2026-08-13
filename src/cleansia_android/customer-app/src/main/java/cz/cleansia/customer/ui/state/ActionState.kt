@@ -1,10 +1,19 @@
 package cz.cleansia.customer.ui.state
 
 /**
- * Three-state machine for one-shot UI actions.
+ * Wave 4 — generic three-state machine for one-shot UI actions
+ * (cancel-order, submit-review, download-receipt, booking-submit, …).
  *
- * A sealed type rather than a loading flag plus an error string, **so "submitting" and "errored" can no
- * longer co-exist** — the old shape allowed both-false-with-error and both-set transient races.
+ * Promotes the historical `loading: Boolean` + `error: String?` pair into a
+ * structurally exclusive sealed type so "submitting" and "errored" can no
+ * longer co-exist (the old shape allowed both flags false-with-error or
+ * both-set transient races). Consumers pattern-match on the variant rather
+ * than reading two flags.
+ *
+ * Successful completion is intentionally NOT a state here: success is an
+ * effect that flips the action back to [Idle] and (when needed) emits on a
+ * separate one-shot channel — keeping `ActionState` cycle-friendly so the
+ * same flow can be re-armed for a retry without ever holding stale data.
  */
 sealed interface ActionState {
     /** No action in flight, no inline error to surface. The default + post-success state. */

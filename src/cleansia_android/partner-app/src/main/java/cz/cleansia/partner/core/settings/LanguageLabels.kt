@@ -1,12 +1,22 @@
 package cz.cleansia.partner.core.settings
 
 /**
- * How each language is written in the picker.
+ * How each [LanguagePreference] is written in a picker row.
  *
- * **The five real languages carry their NATIVE names, never translated ones** — someone stuck in a
- * language they cannot read has to be able to find their own. That is why these are hard strings rather
- * than resources: a translated "Czech" would defeat the purpose. System is the exception, because it is
- * not a language.
+ * The five real languages are labelled with their *native* names, never
+ * translated ones: someone whose app is currently stuck in a language they
+ * cannot read has to be able to find their own. That is why these are hard
+ * strings and not `strings.xml` rows — a translated "Czech"/"Tschechisch"
+ * would defeat the purpose.
+ *
+ * [LanguagePreference.System] is the exception. It has no native name because
+ * it is not a language; it is labelled with the translated `language_system`
+ * resource, which is why [nativeName] returns null for it and every call site
+ * elvis-es into `stringResource(R.string.language_system)`.
+ *
+ * Consolidated here because the same six-way `when` had been copied into the
+ * profile summary row and the picker screen, and the pre-auth onboarding
+ * chooser would have made three.
  */
 object LanguageLabels {
 

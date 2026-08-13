@@ -432,10 +432,23 @@ private fun AddressTopBar(
 }
 
 /* ── 2. Smart upsell carousel — state-driven swipeable cards ──
-/**
- * The home upsell shelf. State drives both which slides appear and their order: Plus hides for
- * subscribers, Welcome hides once the customer has any past order, Referral and Book are always present.
- * -> /product/features
+ *
+ * What it does: shows the most relevant upsell card first on home, in a
+ * Wolt+/Bolt-style horizontally-swipeable shelf. State drives both which
+ * slides appear and the order:
+ *
+ *  - Plus      → hidden when user is already a Plus subscriber. Pitches the
+ *                14-day free trial. Routes to /membership/subscribe.
+ *  - Welcome   → hidden once user has any past order (no point pitching the
+ *                first-order promo to a return customer). Routes to booking.
+ *  - Referral  → always visible. Routes to the Rewards tab where the
+ *                referral block lives.
+ *  - Book      → always visible as the steady-state "book a cleaning" CTA.
+ *
+ * Auto-rotates every 6s; pauses while the user is touching the pager.
+ *
+ * Design intent: the Plus card uses the same dark Sky950→Slate900 gradient
+ * as the Plus subscribe page, so tapping it visually previews the destination.
  */
 
 private enum class UpsellKind { Plus, Welcome, Referral, Book, SetupRecurring }

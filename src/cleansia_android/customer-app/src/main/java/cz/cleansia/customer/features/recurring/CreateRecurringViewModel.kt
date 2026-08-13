@@ -37,13 +37,25 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Shared form state for the recurring-booking form, backing three paths: blank create, create pre-filled
- * from a completed order, and edit.
+ * Shared form state for the recurring-booking form. Backs three paths:
+ * Path A (blank-slate create), Path B (create pre-filled from a Completed
+ * order) and Path C (edit an existing template).
  *
- * **Pre-fill is deliberately partial.** Order history does not carry a saved-address id — orders snapshot
- * the inline address — so the user picks one explicitly and the template is always resolvable by the
- * materializer, with no string matching.
- * -> /flows/booking-and-pricing#recurring-bookings
+ * Path B is keyed on the optional `orderId` nav arg. When present, init()
+ * fetches the order detail and copies services/packages/rooms/bathrooms/
+ * paymentType/timeOfDay into the form. The user still picks frequency,
+ * savedAddress, and startsOn.
+ *
+ * Why pre-fill is partial: order history doesn't carry SavedAddressId
+ * (orders snapshot the inline address only). Forcing the user to pick a
+ * saved address explicitly means we always end up with a valid template
+ * the materializer can resolve, no string-matching gymnastics needed.
+ *
+ * Path C is keyed on the optional `templateId` nav arg and submits through
+ * `update` instead of `create`. The backend update is a full replace, so the
+ * form must start from the stored template rather than from defaults — a
+ * template that can't be resolved leaves the form empty on purpose, which the
+ * submit guard then refuses to send.
  */
 @HiltViewModel
 class CreateRecurringViewModel @Inject constructor(

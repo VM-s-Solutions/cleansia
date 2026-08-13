@@ -39,11 +39,22 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Slide-to-commit CTA. **The deliberate gesture is the point** — taking an offer or starting a
- * multi-hour cleaning is a big commitment, and a one-tap button invites mis-taps.
+ * Slide-to-commit primary CTA. The cleaner drags the thumb across the
+ * track to commit; releasing past 90% triggers [onCommit], releasing
+ * earlier snaps the thumb back. The deliberate gesture (vs a one-tap
+ * button) is the point — taking an offer or starting a multi-hour
+ * cleaning is a big commitment and we don't want mis-taps.
  *
- * While the request is in flight the thumb locks right and drags are ignored; if it fails the thumb
- * returns so the cleaner can retry. -> /flows/offerability-and-take
+ * While the request is in flight ([isBusy] = true) the thumb is locked at
+ * the right and shows a spinner, the label flips to [busyLabel], and
+ * drag gestures are ignored. If the request fails (parent flips [isBusy]
+ * back to false without the card disappearing) the thumb animates back
+ * to 0 so the cleaner can try again.
+ *
+ * Originally lived inline in `OrdersListScreen.kt` as `SlideToTake`;
+ * extracted so the OrderDetail screen can reuse it for both Take and
+ * Start (per the redesign — Take and Start are both "commit" actions
+ * with the same UX weight).
  */
 @Composable
 fun SlideToCommit(

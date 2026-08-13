@@ -21,11 +21,22 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 
 /**
- * Phone input with region-aware format-as-you-type.
+ * Phone input with region-aware format-as-you-type. Wraps an
+ * [OutlinedTextField] in the same chrome as [CleansiaTextField] so it
+ * sits next to other fields without visual mismatch.
  *
- * **The stored value is the RAW input** — digits and an optional leading plus. The pretty formatting is a
- * visual transformation only. Storing raw avoids round-tripping spaces with the backend and lets
- * validators check digits without parsing.
+ * The underlying stored value (what [onValueChange] emits, and what
+ * [value] should contain) is the raw user input — digits and an
+ * optional leading `+`. The pretty formatting (`+420 728 089 247`) is
+ * applied through a [VisualTransformation] driven by libphonenumber's
+ * [AsYouTypeFormatter]. Storing raw avoids round-tripping spaces with
+ * the backend and lets validators check digits without parsing.
+ *
+ * Region selection: caller passes [defaultRegion] (ISO-3166 alpha-2)
+ * as the fallback when the value doesn't start with `+`. The
+ * formatter picks the region from the country code prefix as soon as
+ * the user types one, so a CZ user pasting a Slovak number gets SK
+ * formatting automatically.
  */
 @Composable
 fun CleansiaPhoneInput(

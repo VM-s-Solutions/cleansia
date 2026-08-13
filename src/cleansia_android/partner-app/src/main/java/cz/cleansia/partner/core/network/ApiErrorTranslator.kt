@@ -39,10 +39,23 @@ class ApiErrorTranslator @Inject constructor(
     }
 
     /**
-     * Backend validation errors arrive as a map of validator to key. **Translate and join EVERY key
-     * rather than surfacing the generic detail line** — multiple validators usually fail together (after
-     * photos required AND actual time positive) and the cleaner needs to see all of them to fix the
-     * order. -> /architecture/backend
+     * Backend returns validation errors as `{ ValidatorName: "domain.key" }`
+     * (sometimes a list). We want to surface the actual error keys to the
+     * cleaner, not the generic ProblemDetails detail line ("A validation
+     * problem occurred."). Order of preference:
+     *
+     *   1. Translate every key from the validation map and join them.
+     *      Multiple validators usually fail together (e.g. "after photos
+     *      required" AND "actual time must be positive") and the cleaner
+     *      needs to see all of them to fix the order.
+     *   2. Fall back to the single [ApiError.BadRequest.errorKey] if no
+     *      structured validation map came through.
+     *   3. Last resort: the server's `detail` line.
+     *
+     * Unknown keys (no `error_key_*` string in resources) render as the
+     * key itself — at least the user sees "order.after_photos.required"
+     * instead of "A validation problem occurred", which is more
+     * actionable until translations get added.
      */
     private fun translateBadRequest(error: ApiError.BadRequest): String {
         val validationKeys = error.validationErrors

@@ -21,11 +21,19 @@ import cz.cleansia.core.ui.theme.ErrorText
 import cz.cleansia.core.ui.theme.SuccessText
 
 /**
- * Live-feedback list of password rules: green check when the rule passes, red close once the user has
- * typed and it still fails, neutral circle while untouched.
+ * Live-feedback list of password validation rules. Each row shows a
+ * Check / Close / RadioButtonUnchecked icon depending on rule state:
  *
- * **The untouched state matters** — showing every rule as failing before the user types reads as an
- * error they caused.
+ *  - `valid = true`  → green Check (rule passes)
+ *  - `valid = false, hasInput = true`  → red Close (user typed something, rule fails)
+ *  - `valid = false, hasInput = false` → neutral outlined circle (rule untouched)
+ *
+ * The caller supplies `rules` as `(label, isValid)` pairs and `hasInput`
+ * separately so an empty password field renders as neutral, not all-red.
+ *
+ * Originated as a private composable in customer-app's SignUpScreen; moved
+ * to `:core` so partner-app can render the same widget without duplicating
+ * the icon/colour logic.
  */
 @Composable
 fun PasswordRuleList(

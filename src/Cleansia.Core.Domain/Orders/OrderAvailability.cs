@@ -4,30 +4,15 @@ using Cleansia.Core.Domain.Enums;
 namespace Cleansia.Core.Domain.Orders;
 
 /// <summary>
-/// ADR-0037 — the ONE rule for "may a cleaner be offered, and take, this order". Every surface that
-/// answers that question reads this type; none re-derives it. Offerability is a property of the
-/// ORDER alone: it knows nothing about a cleaner (approval, weekly cap, calendar, the ADR-0036 hold
-/// all stay per-caller in <c>TakeOrder</c>), and it takes no collaborators — four columns in, a bool
-/// out.
+/// ADR-0037 — the ONE rule for "may a cleaner be offered, and take, this order". Every surface reads
+/// this type; none re-derives it. A property of the ORDER alone: four columns in, a bool out, and it
+/// knows nothing about a cleaner.
 ///
-/// <para>Two axes, because Cleansia stores them separately and every surface used to consult only
-/// the first:</para>
-/// <list type="bullet">
-///   <item><b>Fulfilment</b> — <c>CurrentStatus</c>: has the work started. <c>Confirmed</c>, plus
-///   <c>New</c> for cash only, because on a one-off cash order the take IS the confirmation.</item>
-///   <item><b>Money</b> — can anything still retract this order out from under the cleaner we hand
-///   it to. There are exactly two scheduled retractors in production and this term is the union of
-///   the negations of their own WHERE clauses:
-///   <c>CleanupStalePendingOrders</c> (15-min timer, <c>PaymentStatus == Pending AND PaymentType ==
-///   Card</c>, no status term) and <c>AutoCancelStaleRecurringOrders</c> (hourly,
-///   <c>RecurringTemplateId != null AND PaymentStatus == Pending</c>, no payment-type term). A card
-///   order survives only via <c>Paid</c>; a recurring order — cash included — survives only via
-///   <c>Paid</c>, which is what the customer's own confirm writes.</item>
-/// </list>
-///
-/// <para><b>Two evaluation forms, deliberately not one shared expression</b> (ADR-0036 precedent):
-/// SQL and C# disagree on null semantics and <c>.Compile()</c> on a request path is banned. They
-/// are pinned against each other by an equivalence test over real Postgres, never by review.</para>
+/// <para>Spans both axes, and a plain status list cannot express it: <c>New</c> is offerable only for
+/// cash, and <c>Confirmed</c> only once nothing scheduled can still retract the order. The two
+/// evaluation forms below are deliberately NOT one shared expression — SQL and C# disagree on null
+/// semantics — and are pinned to each other by an equivalence test over real Postgres, never by
+/// review. → /domain/offerability</para>
 /// </summary>
 public static class OrderAvailability
 {

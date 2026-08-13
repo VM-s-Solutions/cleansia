@@ -1,9 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Stable password (from user-secrets / env: Parameters:postgres-password), NOT generated per run.
-// The container is Persistent, so its password is baked in at first creation and never updated on
-// later starts; a per-run generated password would drift from the existing container and fail auth
-// (28P01). Pinning keeps the handed-out password identical to the baked-in one across restarts.
+// Stable, not generated per run: the container is persistent, so a fresh password drifts from the
+// baked-in one and fails auth with 28P01. → /architecture/local-orchestration#postgres-password
 var postgresPassword = builder.AddParameter("postgres-password", secret: true);
 
 var postgres = builder.AddPostgres("postgres", password: postgresPassword)
@@ -12,17 +10,8 @@ var postgres = builder.AddPostgres("postgres", password: postgresPassword)
 
 var cleansiaDb = postgres.AddDatabase("ConnectionString", databaseName: "Cleansia");
 
-// Azurite emulator with PINNED standard ports (10000 blob, 10001 queue,
-// 10002 table). Pinning is load-bearing: appsettings.json /
-// local.settings.json fall back to `UseDevelopmentStorage=true` which is
-// hard-coded to those ports inside the Azure SDK. Without the pin, Aspire
-// picks random ports and the producer (web hosts) + consumer (Functions
-// queue triggers) end up on different Azurite instances — message goes in,
-// nothing comes out, queue function never fires. This was the recurring
-// "queue function not triggered" bug.
-//
-// Persistent + data volume so queue state survives Aspire restarts; the
-// same container is reused across runs.
+// Ports pinned — random ports put the producer and the consumer on different Azurite instances and
+// the queue function silently never fires. → /architecture/local-orchestration#azurite-ports
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
         .WithLifetime(ContainerLifetime.Persistent)
@@ -32,10 +21,8 @@ var storage = builder.AddAzureStorage("storage")
         .WithTablePort(10002));
 var queues = storage.AddQueues("QueueStorageConnectionString");
 
-// A fresh Azurite volume starts with NO blob containers, and unlike queues (created on every
-// send by AzureStorageQueueClient) the blob read/list paths never create one — the data-retention
-// sweep and PDF jobs failed on first run. Modeling the containers here makes the emulator create
-// them at startup. Names mirror Constants.BlobContainers and deploy/bicep/modules/storage.bicep.
+// Declared, not created on demand: the blob read/list paths never create a container, so a fresh
+// volume breaks the retention sweep and the PDF jobs. → /architecture/local-orchestration#blob-containers
 string[] blobContainers =
 [
     "generated-receipts",
@@ -50,19 +37,10 @@ foreach (var containerName in blobContainers)
     storage.AddBlobContainer(containerName);
 }
 
-// One-shot migrator: the ONLY startup actor allowed to touch the schema. Every app project
-// below waits for its COMPLETION (exit 0), not merely for the Postgres container being
-// healthy — WaitFor(cleansiaDb) alone let the hosts' background jobs (outbox drainer,
-// fiscal sweep, Hangfire) race the in-process migration and crash on missing tables.
-// A non-zero exit (failed migration) keeps every dependent stopped instead of letting it
-// run against a half-migrated schema.
-//
-// Deliberately an EXECUTABLE resource, not AddProject: under Visual Studio, project
-// resources are launched through the IDE's run-session service, and VS refuses this
-// console project ("run session could not be started: IDE returned a response indicating
-// failure"). Executables are spawned by Aspire's own orchestrator, so the same graph works
-// under F5 and `dotnet run` alike. The AppHost's ProjectReference (IsAspireProjectResource
-// =false) keeps the migrator compiled before the AppHost starts.
+// The only startup actor allowed to touch the schema. Every API below WaitForCompletion(migrations),
+// not WaitFor — waiting on the database alone lets background jobs race the migration and crash on
+// missing tables. Executable, not AddProject: VS refuses to launch this as a project resource.
+// → /architecture/local-orchestration#migrator
 #if DEBUG
 const string migratorConfiguration = "Debug";
 #else
@@ -102,11 +80,8 @@ var customerApi = builder.AddProject<Projects.Cleansia_Web_Customer>("customer-a
     .WithReference(queues)
     .WaitForCompletion(migrations);
 
-// Dedicated host for the customer mobile app (Android, future iOS). Mirrors
-// the partner-Mobile host shape: body-token JWT, no cookies, no CSRF — native
-// clients can't read HttpOnly cookies that the Customer Web host (5003) uses
-// after the booking-extras/HttpOnly migration. Issues tokens with
-// JwtAudiences.Customer so the same user pool/audience as the web side.
+// Separate from the web customer host because native clients cannot read its HttpOnly cookies: body
+// -token JWT, no cookies, no CSRF, same audience. → /architecture/local-orchestration#two-customer-hosts
 var customerMobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile_Customer>("customer-mobile-api")
     .WithEndpoint("http", e => { e.Port = 5004; e.IsProxied = false; })
     .WithReference(cleansiaDb)

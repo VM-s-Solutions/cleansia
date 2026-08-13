@@ -154,9 +154,16 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-035 | C# — 4,720 `//` triaged, 9,158 `///` trimmed to 1–2 lines | L | todo | — |
+| CL-035 | C# comment migration — rule + mechanism proven, 4 exemplar files | L | **in_progress** — bulk sweep outstanding | — |
 | CL-036 | Android 15,391 · iOS · Angular | L | todo | — |
-| CL-037 | Write the rule into `conventions.md` and all 13 agent charters | M | todo | — |
+| CL-037 | The rule in `conventions.md` + the docs charter | M | done | — |
+
+> **P8 tranche 1.** The rule is written and binding, and the mechanism is proven end to end: **8 live
+> pointers**, the gate verifying page *and* anchor, Docs CI enforcing it. Four exemplar files migrated
+> — `AppHost/Program.cs` (121 → 97 lines), `BookingPolicy`, `OrderAvailability`, and the pages behind
+> them. **The safety net paid for itself immediately**: trimming `OrderAvailability` shifted line
+> numbers and `check-catalog-claims` failed on three citations in the same run. Bulk sweep of the
+> remaining ~4,700 `//` and ~9,150 `///` lines across 1,370 files is mechanical from here and outstanding.
 
 ## P9 — Archive & delete
 

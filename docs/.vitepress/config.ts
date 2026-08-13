@@ -158,6 +158,10 @@ export default withMermaid(
               { text: 'Database', link: '/architecture/database' },
               { text: 'Infrastructure', link: '/architecture/infrastructure' },
               {
+                text: 'Local orchestration',
+                link: '/architecture/local-orchestration',
+              },
+              {
                 text: 'Push Notifications',
                 link: '/architecture/push-notifications',
               },

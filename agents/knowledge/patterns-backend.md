@@ -464,7 +464,7 @@ this rule does not reach it.*
 3. **Prove the withholding cannot remove an AFFORDANCE.** Where the block also carries a "you may still
    act" flag, withholding it must be shown — not assumed — to be impossible while that flag is true.
    For the preferred offer it is provable: `PreferredOfferExit.IsOpen` conjoins
-   `OrderAvailability.IsOfferable` (`PreferredOfferExit.cs:40-49`, `OrderAvailability.cs:60-63`) and an
+   `OrderAvailability.IsOfferable` (`PreferredOfferExit.cs:40-49`, `OrderAvailability.cs:40-48`) and an
    empty-seat term, so `¬disclosable ⇒ ¬IsOpen`. **That implication is the enforcer's core assertion**,
    not a comment.
 
@@ -1134,7 +1134,7 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   own doc comment says exactly this and is the right place for it.
   **Two bounds worth knowing before reaching for the shape.** (i) It is available in
   `Core.AppServices` and **not** in `Core.Domain`: `IUserSessionProvider` is an AppServices type, which
-  is why `OrderAvailability` (`OrderAvailability.cs:55`) and `OrderVisibility`
+  is why `OrderAvailability` (`OrderAvailability.cs:40`) and `OrderVisibility`
   (`OrderVisibility.cs:36`, `:50`) are pure with no siblings and must stay that way. (ii) **Co-locating
   the resolver is not the same as collapsing the platform to one implementation, and it is NOT a
   finding that it did not** — `CreateOrder.Validator.CallerHasActiveMembershipAsync`

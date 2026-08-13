@@ -50,7 +50,7 @@ already uses for every non-customer caller
   between them is `¬IsDisclosable ⇒ ¬IsOpen`, asserted by a test rather than by construction.
 - **`OrderAvailability.IsOfferable`** — reached only *through* `IsOpen`. `IsDisclosable` never calls it:
   offerability answers *may a cleaner take this*, which is a different question with a money axis on it
-  (`src/Cleansia.Core.Domain/Orders/OrderAvailability.cs:55-63`).
+  (`src/Cleansia.Core.Domain/Orders/OrderAvailability.cs:40-48`).
 - **`IEmployeeRepository`** — the mapper's, for the beneficiary's display name. Neither pure function
   knows a name exists.
 

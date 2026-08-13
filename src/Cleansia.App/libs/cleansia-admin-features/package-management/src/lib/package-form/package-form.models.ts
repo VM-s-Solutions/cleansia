@@ -12,12 +12,12 @@ export interface DerivedServiceGross {
 }
 
 export const PACKAGE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'package.invalid_weight': 'errors.package.invalid_weight',
-  'package.not_found': 'errors.package.not_found',
-  'package.in_use': 'errors.package.in_use',
+  'package.invalid_weight': 'api.package.invalid_weight',
+  'package.not_found': 'api.package.not_found',
+  'package.in_use': 'api.package.in_use',
 };
 
-export const PACKAGE_FALLBACK_ERROR_KEY = 'errors.package.update_failed';
+export const PACKAGE_FALLBACK_ERROR_KEY = 'api.package.update_failed';
 
 export function roundToCents(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;

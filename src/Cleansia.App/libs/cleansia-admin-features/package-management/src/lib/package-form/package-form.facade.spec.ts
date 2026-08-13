@@ -143,9 +143,9 @@ describe('PackageFormFacade', () => {
 
     facade.updatePackage('pkg-1', formData);
 
-    expect(facade.errorKey()).toBe('errors.package.invalid_weight');
+    expect(facade.errorKey()).toBe('api.package.invalid_weight');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.package.invalid_weight'
+      'api.package.invalid_weight'
     );
     expect(facade.saving()).toBe(false);
   });
@@ -158,7 +158,7 @@ describe('PackageFormFacade', () => {
 
     facade.updatePackage('pkg-1', formData);
 
-    expect(facade.errorKey()).toBe('errors.package.invalid_weight');
+    expect(facade.errorKey()).toBe('api.package.invalid_weight');
   });
 
   it('parses the error code from a JSON response string', () => {
@@ -171,7 +171,7 @@ describe('PackageFormFacade', () => {
 
     facade.updatePackage('pkg-1', formData);
 
-    expect(facade.errorKey()).toBe('errors.package.in_use');
+    expect(facade.errorKey()).toBe('api.package.in_use');
   });
 
   it('falls back to the generic update error for unknown codes', () => {
@@ -182,9 +182,9 @@ describe('PackageFormFacade', () => {
 
     facade.updatePackage('pkg-1', formData);
 
-    expect(facade.errorKey()).toBe('errors.package.update_failed');
+    expect(facade.errorKey()).toBe('api.package.update_failed');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.package.update_failed'
+      'api.package.update_failed'
     );
   });
 

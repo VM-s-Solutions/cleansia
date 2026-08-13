@@ -45,13 +45,13 @@ export function getReferralInterventionActions(
  * intervention path is money-adjacent (mirrors the disputes-management map).
  */
 export const REFERRAL_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'referral.not_qualified': 'errors.referral.not_qualified',
-  'referral.not_accepted': 'errors.referral.not_accepted',
-  'referral.reason_required': 'errors.referral.reason_required',
-  'referral.not_found': 'errors.referral.not_found',
+  'referral.not_qualified': 'api.referral.not_qualified',
+  'referral.not_accepted': 'api.referral.not_accepted',
+  'referral.reason_required': 'api.referral.reason_required',
+  'referral.not_found': 'api.referral.not_found',
 };
 
-export const REFERRAL_FALLBACK_ERROR_KEY = 'errors.referral.action_failed';
+export const REFERRAL_FALLBACK_ERROR_KEY = 'api.referral.action_failed';
 
 export function resolveReferralErrorKey(error: unknown): string {
   const apiError = error as {

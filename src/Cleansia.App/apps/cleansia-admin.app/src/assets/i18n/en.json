@@ -2209,259 +2209,6 @@
     "approved": "Approved",
     "cancelled": "Cancelled"
   },
-  "errors": {
-    "auth": {
-      "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
-      "current_password_invalid": "The current password is incorrect",
-      "change_password_failed": "Failed to change the password"
-    },
-    "common": {
-      "invalid_enum_value": "Invalid value provided",
-      "max_length": "Maximum length exceeded",
-      "required": "This field is required",
-      "unauthorized": "You are not authorized to perform this action",
-      "error_occurred": "An error occurred. Please try again."
-    },
-    "company": {
-      "not_found": "Company information not found",
-      "exists_for_country": "Company information already exists for this country",
-      "in_use": "Cannot delete company because it is currently in use"
-    },
-    "country": {
-      "not_existing_id": "Country not found",
-      "not_found": "Country not found",
-      "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use by employees, templates, or other entities"
-    },
-    "currency": {
-      "invalid": "Invalid currency",
-      "not_found": "Currency not found",
-      "code_already_exists": "A currency with this code already exists",
-      "in_use": "Cannot delete currency because it is currently in use",
-      "cannot_delete_default": "Cannot delete the default currency",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
-    },
-    "dispute": {
-      "already_exists": "Dispute already exists for this order",
-      "invalid_refund_amount": "Invalid refund amount",
-      "max_length_exceeded": "Maximum length exceeded",
-      "not_found": "Dispute not found",
-      "already_resolved": "This dispute has already been resolved and cannot be changed.",
-      "invalid_status_transition": "This status change is not allowed for the current dispute state.",
-      "action_failed": "The dispute action could not be completed. Please try again."
-    },
-    "email": {
-      "invalid_format": "Invalid email format",
-      "invalid_email": "Invalid email address"
-    },
-    "employee": {
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
-      "documents_missing": "Required documents are missing",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "not_existing_email": "No employee found with this email",
-      "not_found": "Employee not found",
-      "profile_incomplete": "Employee profile is incomplete"
-    },
-    "employee_document": {
-      "not_found": "Document not found",
-      "not_owned": "You can only access your own documents",
-      "unauthorized": "You are not authorized to access this document"
-    },
-    "file": {
-      "content_type_doesnt_match": "File content type doesn't match",
-      "count_exceeded": "Too many files uploaded",
-      "count_too_few": "Not enough files uploaded",
-      "invalid_file_type": "Invalid file type",
-      "required": "File is required",
-      "size_exceeded": "File size exceeded maximum allowed size"
-    },
-    "general": {
-      "not_found": "Resource not found"
-    },
-    "refund": {
-      "lines_required": "Select at least one service or package to refund.",
-      "line_invalid": "One of the selected lines is not part of this order.",
-      "override_reason_required": "A justification is required to refund outside the allowed window.",
-      "failed": "The refund could not be processed. Please try again.",
-      "nothing_refundable": "There is nothing left to refund on this order.",
-      "order_not_refundable": "This order is not eligible for a refund."
-    },
-    "service": {
-      "not_found": "Service not found",
-      "in_use": "Cannot delete service because it is currently in use",
-      "translations_required": "Translations are required for all supported languages",
-      "missing_translation_for_language": "Missing translation for required language"
-    },
-    "language": {
-      "not_found": "Language not found",
-      "not_supported": "Language not supported",
-      "code_already_exists": "A language with this code already exists",
-      "in_use": "Cannot delete language because it is currently in use by other entities (users, templates, receipts, etc.)"
-    },
-    "order": {
-      "not_confirmed": "Order is not confirmed",
-      "after_photos": {
-        "required": "After photos are required to complete the order"
-      },
-      "actual_time": {
-        "positive": "Actual time must be positive"
-      },
-      "already_assigned": "Order is already assigned",
-      "already_cancelled": "Order has already been cancelled",
-      "already_completed": "Order has already been completed",
-      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
-      "invalid_status_transition": "This status change is not allowed for the current order state",
-      "cleaning_date": {
-        "future": "Cleaning date must be in the future"
-      },
-      "completion_notes": {
-        "required": "Completion notes are required",
-        "too_long": "Completion notes are too long"
-      },
-      "creation_failed": "Failed to create order",
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
-      "empty": "Order is empty",
-      "max_employees_exceeded": "Maximum number of employees exceeded",
-      "no_available_spots": "No available spots for this order",
-      "not_found": "Order not found",
-      "not_in_progress": "Order is not in progress",
-      "payment_gateway_unavailable": "Payment gateway is unavailable",
-      "selected_package": {
-        "invalid": "Selected package is invalid"
-      },
-      "selected_services": {
-        "invalid": "Selected services are invalid"
-      },
-      "total_price": {
-        "not_match": "Total price doesn't match",
-        "positive": "Total price must be positive"
-      }
-    },
-    "package": {
-      "not_found": "Package not found",
-      "in_use": "Cannot delete package because it is currently in use",
-      "invalid_weight": "Service weights must be greater than zero",
-      "update_failed": "Failed to update package"
-    },
-    "pay_config": {
-      "already_exists": "Pay configuration already exists",
-      "base_pay_negative": "Base pay cannot be negative",
-      "cannot_have_both": "Cannot have both service and package",
-      "distance_rate_negative": "Distance rate cannot be negative",
-      "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
-      "extra_per_room_negative": "Extra per room cannot be negative",
-      "has_order_pays": "Cannot delete pay configuration that has associated order pays",
-      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
-      "maximum_pay_negative": "Maximum pay cannot be negative",
-      "minimum_pay_negative": "Minimum pay cannot be negative",
-      "not_found": "Pay configuration not found",
-      "service_or_package_required": "Either service or package is required"
-    },
-    "pay_period": {
-      "has_order_pays": "Cannot delete pay period that has associated order pays",
-      "invalid_duration": "Invalid pay period duration",
-      "not_closed": "Pay period is not closed",
-      "overlapping_period": "Pay period overlaps with an existing period",
-      "already_paid": "Pay period has already been paid"
-    },
-    "payroll": {
-      "employee_not_assigned": "Employee not assigned to this order",
-      "invoice": {
-        "already_cancelled": "Invoice has already been cancelled",
-        "already_exists": "Invoice already exists",
-        "cannot_cancel_paid": "Cannot cancel a paid invoice",
-        "invalid_status": "Invalid invoice status",
-        "not_found": "Invoice not found",
-        "pdf_generation_failed": "Failed to generate PDF",
-        "template_not_found": "Invoice template not found",
-        "already_paid": "Invoice has already been paid"
-      },
-      "no_active_period": "No active pay period found",
-      "no_currency": "No currency found",
-      "no_pay_configuration": "No pay configuration found",
-      "no_unpaid_order_pays": "No unpaid order pays found",
-      "pay": {
-        "already_calculated": "Pay has already been calculated"
-      },
-      "pay_period": {
-        "not_found": "Pay period not found",
-        "not_open": "Pay period is not open"
-      },
-      "unpaid_invoices_exist": "Unpaid invoices exist"
-    },
-    "receipt": {
-      "generation_failed": "Failed to generate receipt",
-      "not_found": "Receipt not found"
-    },
-    "user": {
-      "email_confirmed": "Email is already confirmed",
-      "existing_email": "Email already exists",
-      "existing_phone_number": "Phone number already exists",
-      "not_allowed_to_update": "You are not allowed to update this user",
-      "not_existing_email": "No user found with this email",
-      "not_existing_id": "User not found",
-      "not_found": "User not found"
-    },
-    "admin_user": {
-      "not_found": "Admin user not found",
-      "email_exists": "An admin user with this email already exists",
-      "cannot_deactivate_self": "You cannot deactivate your own account",
-      "cannot_delete_self": "You cannot delete your own account",
-      "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
-      "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool"
-    },
-    "template": {
-      "cannot_delete_active": "Cannot delete an active template",
-      "invalid_file_type": "Invalid template file type",
-      "file_size_exceeded": "Template file size exceeded",
-      "file_required": "Template file is required",
-      "invoice": {
-        "not_found": "Invoice template not found",
-        "in_use": "Cannot delete invoice template because it is currently in use"
-      },
-      "receipt": {
-        "not_found": "Receipt template not found",
-        "in_use": "Cannot delete receipt template because it is currently in use"
-      },
-      "email": {
-        "not_found": "Email template not found",
-        "key_exists": "A translation with this key already exists",
-        "invalid_type": "Invalid email template type"
-      }
-    },
-    "validation": {
-      "must_be_positive": "Value must be positive",
-      "date_must_be_in_past": "Date must be in the past",
-      "invalid_age": "Invalid age",
-      "invalid_date": "Invalid date",
-      "invalid_iban": "Invalid IBAN format",
-      "invalid_national_id": "Invalid national ID format",
-      "invalid_password": "Invalid password",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_tax_id": "Invalid tax ID format",
-      "invalid_zip_code": "Invalid zip code format"
-    },
-    "address": {
-      "invalid_length": "Invalid address length"
-    },
-    "membership": {
-      "plan": {
-        "code_already_exists": "A plan with this code already exists.",
-        "discount_out_of_range": "Discount must be between 0 and 100.",
-        "not_found": "Membership plan not found.",
-        "action_failed": "The membership plan action failed. Try again."
-      }
-    },
-    "referral": {
-      "not_qualified": "The referral is not in the qualified state.",
-      "not_accepted": "The referral is not in the accepted state.",
-      "reason_required": "A reason is required.",
-      "not_found": "Referral not found.",
-      "action_failed": "The referral action failed. Try again."
-    }
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Not all fields are properly filled",
@@ -2499,48 +2246,165 @@
     }
   },
   "api": {
+    "address": {
+      "invalid_length": "Invalid address length"
+    },
+    "admin_user": {
+      "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
+      "cannot_deactivate_self": "You cannot deactivate your own account",
+      "cannot_delete_self": "You cannot delete your own account",
+      "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool",
+      "email_exists": "An admin user with this email already exists",
+      "not_found": "Admin user not found"
+    },
+    "audit": {
+      "not_found": "Audit entry not found."
+    },
     "auth": {
-      "google_type_error": "This account uses Google sign-in. Use the Google button.",
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
+      "change_password_failed": "Failed to change the password",
+      "current_password_invalid": "The current password is incorrect",
       "external_type_error": "This account uses a different sign-in method.",
+      "google_type_error": "This account uses Google sign-in. Use the Google button.",
+      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
       "internal_type_error": "Use email and password to sign in for this account.",
+      "invalid_apple_token": "Invalid Apple token",
       "invalid_confirmation_code": "Invalid confirmation code",
       "invalid_google_token": "Invalid Google token",
-      "invalid_apple_token": "Invalid Apple token",
       "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
-      "invalid_reset_token": "Invalid or expired password reset token",
-      "same_reset_password": "New password must be different from the current password",
-      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
-      "current_password_invalid": "The current password is incorrect",
-      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
-      "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
       "invalid_refresh_token": "Your session has expired. Please sign in again.",
-      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+      "invalid_reset_token": "Invalid or expired password reset token",
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
+      "same_reset_password": "New password must be different from the current password",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
+      "error_occurred": "An error occurred. Please try again.",
       "invalid_enum_value": "Invalid value provided",
       "max_length": "Maximum length exceeded",
       "required": "This field is required",
-      "unauthorized": "You are not authorized to perform this action",
-      "error_occurred": "An error occurred. Please try again."
+      "unauthorized": "You are not authorized to perform this action"
+    },
+    "company": {
+      "exists_for_country": "Company information already exists for this country",
+      "in_use": "Cannot delete company because it is currently in use",
+      "not_found": "Company information not found"
+    },
+    "country": {
+      "in_use": "Cannot delete country because it is currently in use",
+      "iso_code_already_exists": "A country with this ISO code already exists",
+      "not_existing_id": "Country not found",
+      "not_found": "Country not found",
+      "not_serviced": "This country is not serviced.",
+      "required": "A country is required."
     },
     "currency": {
-      "invalid": "Invalid currency",
-      "not_found": "Currency not found",
-      "code_already_exists": "A currency with this code already exists",
-      "in_use": "Cannot delete currency because it is currently in use",
       "cannot_delete_default": "Cannot delete the default currency",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
+      "code_already_exists": "A currency with this code already exists",
+      "exchange_rate_must_be_positive": "Exchange rate must be a positive number",
+      "in_use": "Cannot delete currency because it is currently in use",
+      "invalid": "Invalid currency",
+      "not_found": "Currency not found"
+    },
+    "device": {
+      "invalid_platform": "Platform must be 'android' or 'ios'"
+    },
+    "dispute": {
+      "action_failed": "The dispute action could not be completed. Please try again.",
+      "already_exists": "Dispute already exists for this order",
+      "already_resolved": "This dispute has already been resolved and cannot be changed.",
+      "invalid_refund_amount": "Invalid refund amount",
+      "invalid_status_transition": "This status change is not allowed for the current dispute state.",
+      "max_length_exceeded": "Maximum length exceeded",
+      "not_found": "Dispute not found",
+      "not_owned_by_user": "This dispute belongs to a different user."
     },
     "email": {
-      "invalid_format": "Invalid email format",
-      "invalid_email": "Invalid email address"
+      "invalid_email": "Invalid email address",
+      "invalid_format": "Invalid email format"
+    },
+    "employee": {
+      "already_approved": "Employee has already been approved",
+      "already_rejected": "Employee has already been rejected",
+      "documents_missing": "Required documents are missing",
+      "not_allowed_to_update": "You are not allowed to update this employee",
+      "not_existing_email": "No employee found with this email",
+      "not_found": "Employee not found",
+      "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
+      "profile_incomplete": "Employee profile is incomplete"
+    },
+    "employee_document": {
+      "not_found": "Document not found",
+      "not_owned": "You can only access your own documents",
+      "unauthorized": "You are not authorized to access this document"
+    },
+    "feature_flag": {
+      "already_exists": "A feature flag with this name and scope already exists.",
+      "not_found": "Feature flag not found."
+    },
+    "file": {
+      "content_type_doesnt_match": "File content type doesn't match",
+      "count_exceeded": "Too many files uploaded",
+      "count_too_few": "Not enough files uploaded",
+      "invalid_file_type": "Invalid file type",
+      "required": "File is required",
+      "size_exceeded": "File size exceeded maximum allowed size",
+      "size_exceeded_10mb": "File size must not exceed 10 MB",
+      "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "general": {
+      "not_found": "Resource not found"
+    },
+    "language": {
+      "code_already_exists": "A language with this code already exists",
+      "in_use": "Cannot delete language because it is currently in use",
+      "not_found": "Language not found",
+      "not_supported": "Language not supported"
+    },
+    "loyalty": {
+      "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
+      "reason_required": "A reason is required for a manual points adjustment.",
+      "tier_config_not_found": "Loyalty tier configuration not found.",
+      "tier_perks_json_invalid": "The tier perks must be valid JSON."
+    },
+    "membership": {
+      "plan": {
+        "action_failed": "The membership plan action failed. Try again.",
+        "code_already_exists": "A plan with this code already exists.",
+        "discount_out_of_range": "Discount must be between 0 and 100.",
+        "not_found": "Membership plan not found."
+      }
     },
     "order": {
+      "actual_time": {
+        "positive": "Actual time must be positive"
+      },
+      "after_photos": {
+        "required": "After photos are required to complete the order"
+      },
+      "already_assigned": "Order is already assigned",
+      "already_cancelled": "Order has already been cancelled",
+      "already_completed": "Order has already been completed",
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
+      "completion_notes": {
+        "required": "Completion notes are required",
+        "too_long": "Completion notes are too long"
+      },
+      "creation_failed": "Failed to create order",
+      "employee_already_assigned": "Employee is already assigned to this order",
+      "employee_not_assigned": "Employee is not assigned to this order",
       "empty": "Order is empty",
+      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
+      "invalid_status_transition": "This status change is not allowed for the current order state",
+      "max_employees_exceeded": "Maximum number of employees exceeded",
+      "no_available_spots": "No available spots for this order",
+      "not_confirmed": "Order is not confirmed",
+      "not_found": "Order not found",
+      "not_in_progress": "Order is not in progress",
+      "payment_gateway_unavailable": "Payment gateway is unavailable",
       "selected_package": {
         "invalid": "Selected package is invalid"
       },
@@ -2548,182 +2412,162 @@
         "invalid": "Selected services are invalid"
       },
       "total_price": {
-        "positive": "Total price must be positive",
-        "not_match": "Total price doesn't match"
-      },
-      "not_found": "Order not found",
-      "already_assigned": "Order is already assigned",
-      "already_cancelled": "Order has already been cancelled",
-      "already_completed": "Order has already been completed",
-      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
-      "invalid_status_transition": "This status change is not allowed for the current order state",
-      "no_available_spots": "No available spots for this order",
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
-      "max_employees_exceeded": "Maximum number of employees exceeded",
-      "not_in_progress": "Order is not in progress",
-      "not_confirmed": "Order is not confirmed",
-      "actual_time": {
-        "positive": "Actual time must be positive"
-      },
-      "completion_notes": {
-        "required": "Completion notes are required",
-        "too_long": "Completion notes are too long"
-      },
-      "after_photos": {
-        "required": "After photos are required to complete the order"
-      },
-      "payment_gateway_unavailable": "Payment gateway is unavailable",
-      "creation_failed": "Failed to create order"
+        "not_match": "Total price doesn't match",
+        "positive": "Total price must be positive"
+      }
     },
-    "user": {
-      "email_confirmed": "Email is already confirmed",
-      "existing_email": "Email already exists",
-      "not_existing_email": "No user found with this email",
-      "not_existing_id": "User not found",
-      "not_allowed_to_update": "You are not allowed to update this user",
-      "existing_phone_number": "Phone number already exists",
-      "not_found": "User not found"
-    },
-    "employee": {
-      "not_found": "Employee not found",
-      "not_existing_email": "No employee found with this email",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "profile_incomplete": "Employee profile is incomplete",
-      "documents_missing": "Required documents are missing",
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
-      "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them."
-    },
-    "employee_document": {
-      "not_found": "Document not found",
-      "unauthorized": "You are not authorized to access this document",
-      "not_owned": "You can only access your own documents"
-    },
-    "payroll": {
-      "pay_period": {
-        "not_found": "Pay period not found",
-        "not_open": "Pay period is not open"
-      },
-      "invoice": {
-        "not_found": "Invoice not found",
-        "invalid_status": "Invalid invoice status",
-        "already_exists": "Invoice already exists",
-        "pdf_generation_failed": "Failed to generate PDF",
-        "template_not_found": "Invoice template not found",
-        "cannot_cancel_paid": "Cannot cancel a paid invoice",
-        "already_cancelled": "Invoice has already been cancelled",
-        "already_paid": "Invoice has already been marked paid",
-        "not_approved": "Invoice must be approved before it can be marked paid",
-        "reference_unavailable": "That payment reference is already in use. Please try again.",
-        "reference_missing": "Assign a payment reference before recording the transfer.",
-        "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
-        "reference_already_assigned": "This invoice already has a payment reference."
-      },
-      "unpaid_invoices_exist": "Unpaid invoices exist",
-      "pay": {
-        "already_calculated": "Pay has already been calculated"
-      },
-      "no_unpaid_order_pays": "No unpaid order pays found",
-      "no_active_period": "No active pay period found",
-      "no_pay_configuration": "No pay configuration found",
-      "no_currency": "No currency found",
-      "employee_not_assigned": "Employee not assigned to this order"
-    },
-    "receipt": {
-      "not_found": "Receipt not found",
-      "generation_failed": "Failed to generate receipt"
-    },
-    "pay_period": {
-      "invalid_duration": "Invalid pay period duration",
-      "overlapping_period": "Pay period overlaps with an existing period",
-      "has_order_pays": "Cannot delete pay period that has associated order pays",
-      "not_closed": "Pay period is not closed",
-      "already_paid": "Pay period has already been paid"
+    "package": {
+      "in_use": "Cannot delete package because it is currently in use",
+      "invalid_weight": "Service weights must be greater than zero",
+      "not_found": "Package not found",
+      "update_failed": "Failed to update package"
     },
     "pay_config": {
-      "service_or_package_required": "Either service or package is required",
-      "cannot_have_both": "Cannot have both service and package",
       "already_exists": "Pay configuration already exists",
-      "not_found": "Pay configuration not found",
-      "has_order_pays": "Cannot delete pay configuration that has associated order pays",
       "base_pay_negative": "Base pay cannot be negative",
-      "extra_per_room_negative": "Extra per room cannot be negative",
-      "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
+      "cannot_have_both": "Cannot have both service and package",
       "distance_rate_negative": "Distance rate cannot be negative",
-      "minimum_pay_negative": "Minimum pay cannot be negative",
-      "maximum_pay_negative": "Maximum pay cannot be negative",
+      "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
+      "extra_per_room_negative": "Extra per room cannot be negative",
+      "has_order_pays": "Cannot delete pay configuration that has associated order pays",
+      "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay.",
       "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
-      "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay."
+      "maximum_pay_negative": "Maximum pay cannot be negative",
+      "minimum_pay_negative": "Minimum pay cannot be negative",
+      "not_found": "Pay configuration not found",
+      "service_or_package_required": "Either service or package is required"
+    },
+    "pay_period": {
+      "already_paid": "Pay period has already been paid",
+      "has_order_pays": "Cannot delete pay period that has associated order pays",
+      "invalid_duration": "Invalid pay period duration",
+      "not_closed": "Pay period is not closed",
+      "overlapping_period": "Pay period overlaps with an existing period"
+    },
+    "payment": {
+      "json_payload_required": "JSON payload is required",
+      "stripe_signature_required": "Stripe signature header is required"
     },
     "payout": {
       "not_found": "This employee has no payout details on file"
     },
-    "file": {
-      "content_type_doesnt_match": "File content type doesn't match",
-      "invalid_file_type": "Invalid file type",
-      "size_exceeded": "File size exceeded maximum allowed size",
-      "count_exceeded": "Too many files uploaded",
-      "count_too_few": "Not enough files uploaded",
-      "required": "File is required",
-      "size_exceeded_10mb": "File size must not exceed 10 MB",
-      "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
+    "payroll": {
+      "employee_not_assigned": "Employee not assigned to this order",
+      "invoice": {
+        "already_cancelled": "Invoice has already been cancelled",
+        "already_exists": "Invoice already exists",
+        "already_paid": "Invoice has already been marked paid",
+        "cannot_cancel_paid": "Cannot cancel a paid invoice",
+        "invalid_status": "Invalid invoice status",
+        "not_approved": "Invoice must be approved before it can be marked paid",
+        "not_found": "Invoice not found",
+        "pdf_generation_failed": "Failed to generate PDF",
+        "reference_already_assigned": "This invoice already has a payment reference.",
+        "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
+        "reference_missing": "Assign a payment reference before recording the transfer.",
+        "reference_unavailable": "That payment reference is already in use. Please try again.",
+        "template_not_found": "Invoice template not found"
+      },
+      "no_active_period": "No active pay period found",
+      "no_currency": "No currency found",
+      "no_pay_configuration": "No pay configuration found",
+      "no_unpaid_order_pays": "No unpaid order pays found",
+      "pay": {
+        "already_calculated": "Pay has already been calculated"
+      },
+      "pay_period": {
+        "not_found": "Pay period not found",
+        "not_open": "Pay period is not open"
+      },
+      "unpaid_invoices_exist": "Unpaid invoices exist"
     },
-    "address": {
-      "invalid_length": "Invalid address length"
+    "promo": {
+      "amount_must_be_positive": "The discount amount must be greater than zero.",
+      "code_already_exists": "A promo code with this code already exists.",
+      "code_invalid_format": "The promo code format is not valid.",
+      "not_found": "Promo code not found.",
+      "percent_out_of_range": "The discount percentage is outside the allowed range.",
+      "validity_range_invalid": "The valid-from date must not be after the valid-until date."
     },
-    "language": {
-      "not_supported": "Language not supported",
-      "not_found": "Language not found",
-      "code_already_exists": "A language with this code already exists",
-      "in_use": "Cannot delete language because it is currently in use"
+    "receipt": {
+      "generation_failed": "Failed to generate receipt",
+      "not_found": "Receipt not found"
     },
-    "country": {
-      "not_existing_id": "Country not found",
-      "not_found": "Country not found",
-      "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use",
-      "not_serviced": "This country is not serviced.",
-      "required": "A country is required."
+    "referral": {
+      "action_failed": "The referral action failed. Try again.",
+      "not_accepted": "The referral is not in the accepted state.",
+      "not_found": "Referral not found.",
+      "not_qualified": "The referral is not in the qualified state.",
+      "reason_required": "A reason is required."
     },
-    "company": {
-      "not_found": "Company information not found",
-      "exists_for_country": "Company information already exists for this country",
-      "in_use": "Cannot delete company because it is currently in use"
+    "refund": {
+      "failed": "The refund could not be processed. Please try again.",
+      "line_invalid": "One of the selected lines is not part of this order.",
+      "lines_required": "Select at least one service or package to refund.",
+      "nothing_refundable": "There is nothing left to refund on this order.",
+      "order_not_refundable": "This order is not eligible for a refund.",
+      "override_reason_required": "A justification is required to refund outside the allowed window."
     },
-    "dispute": {
-      "not_found": "Dispute not found",
-      "already_exists": "Dispute already exists for this order",
-      "invalid_refund_amount": "Invalid refund amount",
-      "max_length_exceeded": "Maximum length exceeded",
-      "not_owned_by_user": "This dispute belongs to a different user.",
-      "already_resolved": "This dispute has already been resolved and cannot be changed.",
-      "invalid_status_transition": "This status change is not allowed for the current dispute state."
+    "service": {
+      "category_not_found": "Service category not found.",
+      "in_use": "Cannot delete service because it is currently in use",
+      "missing_translation_for_language": "Missing translation for required language",
+      "not_found": "Service not found",
+      "translations_required": "Translations are required for all supported languages"
     },
-    "admin_user": {
-      "not_found": "Admin user not found",
-      "email_exists": "An admin user with this email already exists",
-      "cannot_deactivate_self": "You cannot deactivate your own account",
-      "cannot_delete_self": "You cannot delete your own account",
-      "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
-      "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool"
+    "service_area": {
+      "city_not_serviced": "We don't currently serve this city.",
+      "country_not_serviced": "We don't currently operate in this country.",
+      "country_required": "Please select a country."
+    },
+    "service_city": {
+      "already_exists": "This city is already on the serviced list.",
+      "not_found": "Serviced city not found."
+    },
+    "template": {
+      "cannot_delete_active": "Cannot delete an active template",
+      "email": {
+        "invalid_type": "Invalid email template type",
+        "key_exists": "A translation with this key already exists",
+        "not_found": "Email template not found"
+      },
+      "file_required": "Template file is required",
+      "file_size_exceeded": "Template file size exceeded",
+      "invalid_file_type": "Invalid template file type",
+      "invoice": {
+        "in_use": "Cannot delete invoice template because it is currently in use",
+        "not_found": "Invoice template not found"
+      },
+      "receipt": {
+        "in_use": "Cannot delete receipt template because it is currently in use",
+        "not_found": "Receipt template not found"
+      }
+    },
+    "user": {
+      "email_confirmed": "Email is already confirmed",
+      "existing_email": "Email already exists",
+      "existing_phone_number": "Phone number already exists",
+      "not_allowed_to_update": "You are not allowed to update this user",
+      "not_existing_email": "No user found with this email",
+      "not_existing_id": "User not found",
+      "not_found": "User not found"
     },
     "validation": {
-      "invalid_password": "Invalid password",
-      "invalid_date": "Invalid date",
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_national_id": "Invalid national ID format",
-      "invalid_tax_id": "Invalid tax ID format",
+      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
+      "invalid_contract_status": "Invalid contract status value",
+      "invalid_date": "Invalid date",
       "invalid_iban": "Invalid IBAN format",
+      "invalid_national_id": "Invalid national ID format",
+      "invalid_password": "Invalid password",
+      "invalid_phone_number": "Invalid phone number format",
+      "invalid_tax_id": "Invalid tax ID format",
       "invalid_zip_code": "Invalid zip code format",
       "must_be_positive": "Value must be positive",
-      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
       "page_must_be_positive": "Page must be greater than 0",
-      "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "invalid_contract_status": "Invalid contract status value",
+      "page_size_must_be_positive": "Page size must be greater than 0",
       "payout": {
         "account_number_required": "Enter the account number",
         "country_not_supported": "Payouts to a bank in this country are not supported yet",
@@ -2738,98 +2582,6 @@
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
         "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
       }
-    },
-    "service": {
-      "not_found": "Service not found",
-      "in_use": "Cannot delete service because it is currently in use",
-      "translations_required": "Translations are required for all supported languages",
-      "missing_translation_for_language": "Missing translation for required language",
-      "category_not_found": "Service category not found."
-    },
-    "package": {
-      "not_found": "Package not found",
-      "in_use": "Cannot delete package because it is currently in use",
-      "invalid_weight": "Service weights must be greater than zero",
-      "update_failed": "Failed to update package"
-    },
-    "general": {
-      "not_found": "Resource not found"
-    },
-    "device": {
-      "invalid_platform": "Platform must be 'android' or 'ios'"
-    },
-    "payment": {
-      "json_payload_required": "JSON payload is required",
-      "stripe_signature_required": "Stripe signature header is required"
-    },
-    "template": {
-      "cannot_delete_active": "Cannot delete an active template",
-      "invalid_file_type": "Invalid template file type",
-      "file_size_exceeded": "Template file size exceeded",
-      "file_required": "Template file is required",
-      "invoice": {
-        "not_found": "Invoice template not found",
-        "in_use": "Cannot delete invoice template because it is currently in use"
-      },
-      "receipt": {
-        "not_found": "Receipt template not found",
-        "in_use": "Cannot delete receipt template because it is currently in use"
-      },
-      "email": {
-        "not_found": "Email template not found",
-        "key_exists": "A translation with this key already exists",
-        "invalid_type": "Invalid email template type"
-      }
-    },
-    "service_area": {
-      "country_not_serviced": "We don't currently operate in this country.",
-      "country_required": "Please select a country.",
-      "city_not_serviced": "We don't currently serve this city."
-    },
-    "audit": {
-      "not_found": "Audit entry not found."
-    },
-    "feature_flag": {
-      "already_exists": "A feature flag with this name and scope already exists.",
-      "not_found": "Feature flag not found."
-    },
-    "loyalty": {
-      "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
-      "reason_required": "A reason is required for a manual points adjustment.",
-      "tier_config_not_found": "Loyalty tier configuration not found.",
-      "tier_perks_json_invalid": "The tier perks must be valid JSON."
-    },
-    "promo": {
-      "amount_must_be_positive": "The discount amount must be greater than zero.",
-      "code_already_exists": "A promo code with this code already exists.",
-      "code_invalid_format": "The promo code format is not valid.",
-      "not_found": "Promo code not found.",
-      "percent_out_of_range": "The discount percentage is outside the allowed range.",
-      "validity_range_invalid": "The valid-from date must not be after the valid-until date."
-    },
-    "service_city": {
-      "already_exists": "This city is already on the serviced list.",
-      "not_found": "Serviced city not found."
-    },
-    "membership": {
-      "plan": {
-        "code_already_exists": "A plan with this code already exists.",
-        "discount_out_of_range": "Discount must be between 0 and 100.",
-        "not_found": "Membership plan not found."
-      }
-    },
-    "referral": {
-      "not_accepted": "The referral is not in the accepted state.",
-      "not_found": "Referral not found.",
-      "not_qualified": "The referral is not in the qualified state.",
-      "reason_required": "A reason is required."
-    },
-    "refund": {
-      "line_invalid": "One of the selected lines is not part of this order.",
-      "lines_required": "Select at least one service or package to refund.",
-      "nothing_refundable": "There is nothing left to refund on this order.",
-      "order_not_refundable": "This order is not eligible for a refund.",
-      "override_reason_required": "A justification is required to refund outside the allowed window."
     }
   },
   "cookies": {

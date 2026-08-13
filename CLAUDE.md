@@ -295,12 +295,17 @@ interceptor sees `message === candidateKey` and substitutes `api.common.error_oc
 ("An error occurred. Please try again."). That silent generic fallback is exactly the failure this
 rule exists to prevent, so it looks like a translation gap rather than a missing key.
 
-> **The admin app's `errors.*` block is live legacy — do not delete it.** Several admin features
-> resolve through their own `XXX_ERROR_KEY_MAP` (orders, disputes, refunds, referrals, pay-periods,
-> invoices, packages, services, membership plans, admin users, profile) which map onto `errors.*`.
-> Only admin has that block; partner and customer locales carry `api` only. New work uses `api.*`
-> on every app. The parity guards are `apps/<app>/src/app/i18n/error-contract-parity.spec.ts` —
-> they assert against `BusinessErrorMessage.cs` directly.
+> **The admin `errors.*` block is GONE (2026-08-13, PR #194) — there is now exactly one namespace.**
+> It used to be live legacy: several admin features resolved through their own `XXX_ERROR_KEY_MAP`
+> onto `errors.*`, so admin carried a second copy of 169 keys — of which `api.*` already had **164**.
+> All 30 readers were repointed, the five unique keys moved across, and the block was deleted from all
+> five locales.
+>
+> `api.*` is the only error namespace on every app. Two assertions in
+> `apps/cleansia-admin.app/src/app/i18n/error-contract-parity.spec.ts` keep it that way — one that no
+> locale carries an `errors` block, one that nothing under the admin app or its feature libs resolves
+> an `errors.*` key. The parity guards themselves still assert against `BusinessErrorMessage.cs`
+> directly, in every app.
 
 ## Order Lifecycle
 
@@ -562,7 +567,8 @@ Two corrections to what this section used to claim, so nobody re-derives them fr
   repository. If a tool or template tries to append attribution, strip it before committing.
 - **Backend errors**: `category.specific_error` pattern in `BusinessErrorMessage`
 - **Frontend errors**: `api.category.specific_error` in i18n files — the namespace the shared
-  interceptor actually reads. Admin's `errors.*` is legacy-but-live; see *i18n* above
+  interceptor actually reads, and since 2026-08-13 the **only** one. Admin's legacy `errors.*` block
+  is deleted and guarded against return; see *i18n* above
 - **API clients**: Never hand-edit — always regenerate via NSwag
 - **Tests**: xUnit for backend, Jest for frontend
 - **No inline templates/styles** in Angular components

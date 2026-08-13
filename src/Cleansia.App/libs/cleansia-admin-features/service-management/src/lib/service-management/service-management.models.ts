@@ -13,11 +13,11 @@ export function mapStatusFilterToIsActive(
 }
 
 export const SERVICE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'service.not_found': 'errors.service.not_found',
-  'service.in_use': 'errors.service.in_use',
+  'service.not_found': 'api.service.not_found',
+  'service.in_use': 'api.service.in_use',
 };
 
-export const SERVICE_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
+export const SERVICE_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
 
 export function resolveServiceErrorKey(error: unknown): string {
   const apiError = error as {

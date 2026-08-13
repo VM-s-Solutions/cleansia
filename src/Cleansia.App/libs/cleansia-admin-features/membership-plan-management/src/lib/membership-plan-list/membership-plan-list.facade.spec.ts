@@ -133,7 +133,7 @@ describe('MembershipPlanListFacade', () => {
     );
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.membership.plan.not_found'
+      'api.membership.plan.not_found'
     );
     expect(facade.deactivating()).toBe(false);
   });
@@ -148,7 +148,7 @@ describe('MembershipPlanListFacade', () => {
     );
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.membership.plan.action_failed'
+      'api.membership.plan.action_failed'
     );
   });
 });

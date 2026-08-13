@@ -85,7 +85,7 @@ describe('AdminProfileFacade', () => {
     });
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.auth.current_password_invalid'
+      'api.auth.current_password_invalid'
     );
     expect(facade.passwordChanged()).toBe(0);
     expect(facade.saving()).toBe(false);
@@ -104,7 +104,7 @@ describe('AdminProfileFacade', () => {
     });
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.auth.invalid_password_format'
+      'api.auth.invalid_password_format'
     );
   });
 
@@ -119,7 +119,7 @@ describe('AdminProfileFacade', () => {
     });
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.auth.change_password_failed'
+      'api.auth.change_password_failed'
     );
   });
 

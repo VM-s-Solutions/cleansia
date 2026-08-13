@@ -89,7 +89,7 @@ describe('CurrencyManagementFacade', () => {
     facade.setDefaultCurrency(currencies[1]);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.currency.not_found'
+      'api.currency.not_found'
     );
   });
 
@@ -101,7 +101,7 @@ describe('CurrencyManagementFacade', () => {
     facade.setDefaultCurrency(currencies[1]);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
   });
 });

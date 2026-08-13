@@ -151,14 +151,14 @@ function formatCzk(value: number | undefined | null): string {
  */
 export const MEMBERSHIP_PLAN_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
   'membership.plan.code_already_exists':
-    'errors.membership.plan.code_already_exists',
+    'api.membership.plan.code_already_exists',
   'membership.plan.discount_out_of_range':
-    'errors.membership.plan.discount_out_of_range',
-  'membership.plan.not_found': 'errors.membership.plan.not_found',
+    'api.membership.plan.discount_out_of_range',
+  'membership.plan.not_found': 'api.membership.plan.not_found',
 };
 
 export const MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY =
-  'errors.membership.plan.action_failed';
+  'api.membership.plan.action_failed';
 
 export function resolveMembershipPlanErrorKey(error: unknown): string {
   const apiError = error as {

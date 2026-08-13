@@ -122,7 +122,7 @@ describe('DisputeDetailFacade', () => {
     facade.resolve('dispute-1', 100, 'notes');
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.dispute.already_resolved'
+      'api.dispute.already_resolved'
     );
     expect(facade.resolving()).toBe(false);
   });
@@ -135,7 +135,7 @@ describe('DisputeDetailFacade', () => {
     facade.resolve('dispute-1', 100, 'notes');
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.dispute.already_resolved'
+      'api.dispute.already_resolved'
     );
   });
 
@@ -146,7 +146,7 @@ describe('DisputeDetailFacade', () => {
 
     facade.resolve('dispute-1', 100, 'notes');
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.refund.failed');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.refund.failed');
   });
 
   it('falls back to the generic dispute error for unknown codes', () => {
@@ -157,7 +157,7 @@ describe('DisputeDetailFacade', () => {
     facade.resolve('dispute-1', 100, 'notes');
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.dispute.action_failed'
+      'api.dispute.action_failed'
     );
   });
 
@@ -189,7 +189,7 @@ describe('DisputeDetailFacade', () => {
     facade.updateStatus('dispute-1', DisputeStatus.Closed);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.dispute.invalid_status_transition'
+      'api.dispute.invalid_status_transition'
     );
     expect(facade.updatingStatus()).toBe(false);
   });

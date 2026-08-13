@@ -136,7 +136,7 @@ describe('PackageManagementFacade', () => {
 
     facade.deactivatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.package.not_found');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.package.not_found');
   });
 
   it('maps package.in_use to its translation key on delete failure', () => {
@@ -146,7 +146,7 @@ describe('PackageManagementFacade', () => {
 
     facade.deletePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.package.in_use');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.package.in_use');
   });
 
   it('falls back to the generic error for unknown codes', () => {
@@ -157,7 +157,7 @@ describe('PackageManagementFacade', () => {
     facade.activatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
   });
 });

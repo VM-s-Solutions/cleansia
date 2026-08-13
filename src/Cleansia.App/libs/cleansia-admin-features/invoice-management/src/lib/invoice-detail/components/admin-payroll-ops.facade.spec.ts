@@ -222,9 +222,9 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.adjustAmounts('invoice-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.payroll.invoice.already_paid');
+    expect(facade.errorKey()).toBe('api.payroll.invoice.already_paid');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.payroll.invoice.already_paid'
+      'api.payroll.invoice.already_paid'
     );
     expect(facade.submitting()).toBe(false);
   });
@@ -237,7 +237,7 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.adjustAmounts('invoice-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.payroll.invoice.already_paid');
+    expect(facade.errorKey()).toBe('api.payroll.invoice.already_paid');
   });
 
   it('parses the error code from a JSON response string', () => {
@@ -250,7 +250,7 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.disputeInvoice('invoice-1', jest.fn());
 
-    expect(facade.errorKey()).toBe('errors.payroll.invoice.not_found');
+    expect(facade.errorKey()).toBe('api.payroll.invoice.not_found');
   });
 
   it('falls back to a generic error for unknown codes and does not re-load', () => {
@@ -262,9 +262,9 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.rejectInvoice('invoice-1', onSuccess);
 
-    expect(facade.errorKey()).toBe('errors.common.error_occurred');
+    expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
     expect(onSuccess).not.toHaveBeenCalled();
   });

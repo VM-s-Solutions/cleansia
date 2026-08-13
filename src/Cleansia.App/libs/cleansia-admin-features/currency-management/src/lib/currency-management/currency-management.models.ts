@@ -51,12 +51,12 @@ export function getCurrencyFlagCode(currencyCode: string | undefined): string {
 }
 
 export const CURRENCY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'currency.not_found': 'errors.currency.not_found',
-  'currency.in_use': 'errors.currency.in_use',
-  'currency.cannot_delete_default': 'errors.currency.cannot_delete_default',
+  'currency.not_found': 'api.currency.not_found',
+  'currency.in_use': 'api.currency.in_use',
+  'currency.cannot_delete_default': 'api.currency.cannot_delete_default',
 };
 
-export const CURRENCY_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
+export const CURRENCY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
 
 export function resolveCurrencyErrorKey(error: unknown): string {
   const apiError = error as {

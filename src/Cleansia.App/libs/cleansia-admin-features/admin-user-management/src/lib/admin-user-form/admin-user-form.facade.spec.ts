@@ -128,7 +128,7 @@ describe('AdminUserFormFacade', () => {
     facade.createUser(fullData);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.admin_user.email_exists'
+      'api.admin_user.email_exists'
     );
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
@@ -142,7 +142,7 @@ describe('AdminUserFormFacade', () => {
     facade.updateUser('usr-1', fullData);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.language.not_supported'
+      'api.language.not_supported'
     );
   });
 
@@ -154,7 +154,7 @@ describe('AdminUserFormFacade', () => {
     facade.createUser(fullData);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
   });
 

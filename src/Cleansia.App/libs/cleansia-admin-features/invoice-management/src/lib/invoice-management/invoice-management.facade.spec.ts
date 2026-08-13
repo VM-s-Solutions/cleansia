@@ -122,7 +122,7 @@ describe('InvoiceManagementFacade', () => {
     facade.retryPdf(invoice);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.payroll.invoice.not_found'
+      'api.payroll.invoice.not_found'
     );
     expect(invoiceClient.getPaged).not.toHaveBeenCalled();
     expect(facade.retryingPdf()).toBe(false);
@@ -136,7 +136,7 @@ describe('InvoiceManagementFacade', () => {
     facade.retryPdf(invoice);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.payroll.invoice.not_found'
+      'api.payroll.invoice.not_found'
     );
   });
 
@@ -149,7 +149,7 @@ describe('InvoiceManagementFacade', () => {
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showError).toHaveBeenCalledWith('errors.company.not_found');
+    expect(snackbar.showError).toHaveBeenCalledWith('api.company.not_found');
   });
 
   it('falls back to a generic error for unknown retry failures', () => {
@@ -160,7 +160,7 @@ describe('InvoiceManagementFacade', () => {
     facade.retryPdf(invoice);
 
     expect(snackbar.showError).toHaveBeenCalledWith(
-      'errors.common.error_occurred'
+      'api.common.error_occurred'
     );
   });
 });

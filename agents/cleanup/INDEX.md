@@ -70,9 +70,15 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-019 | Extend `error-contract-parity.spec.ts` to guard the migration before it starts | S | todo | — |
-| CL-020 | Repoint 23 `ERROR_KEY_MAP`s and merge ~759 tokens × 5 locales into `api` | L | todo | — |
-| CL-021 | Remove the legacy `errors.*` block from the admin locales | S | todo | — |
+| CL-019 | Two retirement assertions in `error-contract-parity.spec.ts` — no `errors` block, no reader | S | done | — |
+| CL-020 | Repoint 30 files; merge 5 unique keys (164 of 169 were already duplicates) | M | done | — |
+| CL-021 | Delete the `errors` block from all five admin locales; correct `CLAUDE.md` | S | done | — |
+
+> **P3 complete.** The block was **97% redundant** — 164 of its 169 keys already existed under `api.*`,
+> so this removed a duplicate rather than migrating a corpus. It also closed a live gap: `refund.failed`
+> is a real `BusinessErrorMessage` that had **no** `api.*` translation, so any admin hitting it through
+> the interceptor path saw the generic message. Admin locales: 235 `api` keys, no `errors`. 67 projects'
+> tests green, admin app builds.
 
 ## P4 — Convention debt to a stated baseline
 

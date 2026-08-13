@@ -297,7 +297,7 @@ a **product** question: card payout is *"a separate epic… explicitly out of sc
 **What I want changed.** D9 splits into two paragraphs and one escalation:
 - *D9a (decided, security):* no PAN column, ever; a card destination is an **id** in
   `ProviderAccountRef`; enforced by the validator per Part A. **Not negotiable, no escalation needed.**
-- *D9b (escalated):* a new **`Q-PAYOUT-04`** in `agents/backlog/questions/open.md` — *"Did 'Card number'
+- *D9b (escalated):* a new **`Q-PAYOUT-04`** in `agents/archive/2026-08/backlog/questions/open.md` — *"Did 'Card number'
   mean (a) cleaners are paid **to a card**, or (b) it was one example of 'the identifiers needed to pay
   someone'? (a) requires a PSP payout rail (Stripe Connect Express or equivalent), per-cleaner KYC and
   a webhook-driven account lifecycle — a separate epic. (b) is what ADR-0034 builds. **This does not

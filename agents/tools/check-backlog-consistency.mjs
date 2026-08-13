@@ -17,7 +17,7 @@
  *
  *   C1  SELF-AGREEMENT — a ticket with more than one row in INDEX.md must not have one row saying
  *       done and another saying draft/ready/blocked. This is the defect that burned the three lanes.
- *   C2  FILE AGREEMENT — a ticket whose `agents/backlog/tickets/T-*.md` says `status: done` must not
+ *   C2  FILE AGREEMENT — a ticket whose `agents/archive/2026-08/backlog/tickets/T-*.md` says `status: done` must not
  *       have an INDEX row claiming otherwise.
  *
  * WHAT IT DELIBERATELY DOES NOT CHECK. Whether a `done` row is *true* — that needs the tree, and the
@@ -34,8 +34,13 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const INDEX = join(REPO, "agents", "backlog", "INDEX.md");
-const TICKETS = join(REPO, "agents", "backlog", "tickets");
+
+// The backlog was archived on 2026-08-13 and is frozen history rather than a work queue, so this
+// checker now guards that history against being edited into disagreeing with itself. The path is
+// built from segments, which is why the archive move did not rewrite it the way it rewrote prose.
+const BACKLOG = join(REPO, "agents", "archive", "2026-08", "backlog");
+const INDEX = join(BACKLOG, "INDEX.md");
+const TICKETS = join(BACKLOG, "tickets");
 
 const warn = process.argv.includes("--warn");
 const verbose = process.argv.includes("--verbose");

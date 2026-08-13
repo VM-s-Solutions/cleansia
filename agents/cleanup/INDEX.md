@@ -1,6 +1,6 @@
 # Cleanup Track — INDEX
 
-The manifest for the 2026-08 cleanup. **Deliberately separate from `agents/backlog/`** — no ticket,
+The manifest for the 2026-08 cleanup. **Deliberately separate from `agents/archive/2026-08/backlog/`** — no ticket,
 row or id is shared between the two tracks, so the state of this work is readable without untangling
 it from three sprints of feature history.
 
@@ -10,7 +10,7 @@ gaps that actually matter.
 
 ## The three rules this track exists to obey
 
-1. **One row per ticket, one status.** `agents/backlog/INDEX.md` records a ticket twice — a *filing*
+1. **One row per ticket, one status.** `agents/archive/2026-08/backlog/INDEX.md` records a ticket twice — a *filing*
    row and a *close-out* row with independent statuses — and on 2026-08-11 that sent four lanes at 24
    already-shipped tickets. There is no filing row here. This table is the only place a status lives.
 2. **Cite the PR, never the branch SHA.** Every PR lands squashed, so a SHA recorded on a feature
@@ -122,7 +122,7 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 > **P6 complete.** **51** records, not 52 — the earlier count included `README.md`. Each is now
 > `adr-NNNN.md`, so `/decisions/adr-0037` resolves and the ~618 citing source files needed no edit.
-> 125 stale `agents/backlog/adr/` paths rewritten. Three defects surfaced on the way: a tool-call
+> 125 stale `agents/archive/2026-08/backlog/adr/` paths rewritten. Three defects surfaced on the way: a tool-call
 > artifact committed inside ADR-0021, my own migration dropping frontmatter from the two YAML-style
 > records, and two citations of the migration filename **P2 renamed** — which no gate caught, because
 > `check-catalog-claims` runs in no workflow.
@@ -177,10 +177,39 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-038 | Archive `agents/backlog/` → `agents/archive/2026-08/` (kept in git) | M | todo | — |
-| CL-039 | Delete the dead — `_legacy/`, `planning/`, six frozen root docs, ~25 spent wave scripts, the empty `Infra.Scripts` project | M | todo | — |
-| CL-040 | Rewrite `README.md` — it currently hands out `Add-Migration` against paths that do not exist | S | todo | — |
-| CL-041 | Slim `CLAUDE.md` to the working agreement + pointers into the docs site | M | todo | — |
+| CL-038 | Archive the backlog → `agents/archive/2026-08/backlog/` (kept in git) | M | done | #202 |
+| CL-039 | Delete the dead — `_legacy/`, root `planning/`, six frozen root docs, 28 spent wave scripts, the `Infra.Scripts` project | M | done | #202 |
+| CL-040 | Rewrite `README.md` — it handed out `Add-Migration` against paths that do not exist | S | done | #202 |
+| CL-041 | Slim `CLAUDE.md` to the working agreement + pointers into the docs site | M | done | #202 |
+
+> **P9 complete. 602 files, −30,500 net lines.** `README.md` 15 → 95 lines (it was Visual-Studio-era
+> scratch notes pointing at `03 Infrastructure\` and `05 Web\`, folders that have never existed in this
+> layout). `CLAUDE.md` 594 → 220: the working agreement is kept **verbatim**, and everything that
+> explained the domain is now a pointer, leaving only what an agent must *do* or must *not* do — the
+> four landmines, the manual-steps prohibition, the conventions.
+>
+> **Two of the four rows misdescribed the tree, which is rule 3 earning its place.** `agents/planning/`
+> does not exist and never did — it is `planning/` at the repo root. And `Infra.Scripts` is not an
+> "empty project": it compiles zero `.cs` files, but it carried **19 seed SQL scripts, 18 of them the
+> only copy in the repo**. Deleting the folder as the row instructed would have destroyed them. They
+> are now `sql-scripts/seed/` with a README.
+>
+> **And the 19th nearly shipped a silent break.** `insert_seed_data.sql` looked like a byte-identical
+> duplicate of the repo-root copy, so it was deleted as redundant — but the duplication was
+> deliberate: `CleansiaStartupBase.SeedDevelopmentData` resolves *that* path from the solution
+> directory and executes it, so a fresh Development boot would have logged *"Seed file not found.
+> Skipping seed."* and carried on with an empty database and no failure. It was caught by
+> `StartupSeedScriptSyncTests`, a pin written after the two copies drifted once before. Restoring the
+> duplicate was the wrong repair: startup now reads `sql-scripts/insert_seed_data.sql`, already the
+> file three other test classes read, so **one copy exists and the drift class is gone rather than
+> policed** — and the pin retires with it.
+>
+> Archiving the backlog was not a `git mv` either: **~404 references across 170 files point into it,
+> 31 of them published ADRs.** Those were rewritten in the same commit, or P7's reference contract
+> would have broken the moment the folder moved. `check-backlog-consistency.mjs` built its path from
+> string segments rather than a literal, so the prose rewrite missed it and the checker went red on the
+> next run — it now reads the archive and guards that history against being edited into disagreeing
+> with itself.
 
 ---
 

@@ -136,7 +136,7 @@ a mutable per-cleaner field**:
   `Infra.Scripts/SeedData/insert_users_employees.sql:73-111` seeds **three of five** cleaners with a
   `VatNumber` and labels them *"OSVČ, VAT-registered"* and *"Legal entity (s.r.o.), VAT-registered"*.
   The launch cohort the ADR's F3 counts is 60% VAT-registered.
-- **`Q-PAYOUT-03` is open, `blocking: YES`, unanswered** (`agents/backlog/questions/open.md:873-889`)
+- **`Q-PAYOUT-03` is open, `blocking: YES`, unanswered** (`agents/archive/2026-08/backlog/questions/open.md:873-889`)
   and asks the missing question verbatim: *"is 'null means not registered' sufficient, or must a cleaner
   positively declare their status **(and can it change mid-pay-period)**?"* `INDEX.md:391` records
   T-0522 — the ticket that shipped the very document this ADR governs — as *"blocked only on

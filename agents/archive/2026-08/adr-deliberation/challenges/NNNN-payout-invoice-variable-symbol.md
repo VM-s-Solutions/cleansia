@@ -644,4 +644,4 @@ ticket the ADR does not currently scope. If the lead prefers option (i) (refuse 
 §D4.3), the frontend cost disappears and the ADR gets *stronger*, not weaker.
 
 I did not write any repair, did not touch `src/`, did not amend the draft, and did not write to
-`agents/backlog/questions/open.md`.
+`agents/archive/2026-08/backlog/questions/open.md`.

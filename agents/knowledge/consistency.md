@@ -561,7 +561,7 @@ These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-
 ## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)
 
 > **Enforced by:** `InterimMarkerTripwireTests` in `Cleansia.Tests` (walks `src/`, validates the marker
-> pattern, resolves each id against `agents/backlog/INDEX.md`) — **`(gate pending: FT-38.2)` → T1-CI**
+> pattern, resolves each id against `agents/archive/2026-08/backlog/INDEX.md`) — **`(gate pending: FT-38.2)` → T1-CI**
 > via `backend-ci.yml:71` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
 > that tool appears in **zero** `.github/` workflows, so it can never set an exit code, and a
 > T2-ADVISORY orphan-check on a code comment is — precisely — a comment with a ticket number in it.*
@@ -578,7 +578,7 @@ temporary implementation shipped ahead of its end state carries, on the changed 
   `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)` — `§Dn` **explicit and optional**. *(AM-7: the
   first version of this rule stated the pattern without `§Dn` while the template and the only shipped
   marker both had one, so a checker built to spec would have matched **zero** markers and reported OK.)*
-- The ticket id must be **filled, present in `agents/backlog/INDEX.md`, open, *and not blocked*** before
+- The ticket id must be **filled, present in `agents/archive/2026-08/backlog/INDEX.md`, open, *and not blocked*** before
   the interim merges — an unfilled marker blocks review, and so does an id whose row carries a 🔴
   do-not-start gate. *(AM-7: "open" alone goes green while the retirement work is forbidden — which is
   the exact state ADR-0038's own interim shipped in, blocked on the ADR that authorized it.)*

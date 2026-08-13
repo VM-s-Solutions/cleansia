@@ -252,7 +252,7 @@ operations page next to the cron config, not in a code change now.
 Already ticketed as **CL-014**, listed here so the register is the single view:
 
 1. `check-consistency.mjs` fails with 84 violations and runs in no CI workflow.
-2. `agents/backlog/INDEX.md` cites `catalog-claims.yml` as a live `T1-CI` gate; it was deleted.
+2. `agents/archive/2026-08/backlog/INDEX.md` cites `catalog-claims.yml` as a live `T1-CI` gate; it was deleted.
 3. `README.md` documents `Add-Migration` against two paths that do not exist.
 4. Six root docs are a frozen second "how we build" corpus (Jan–Jun 2026).
 5. The graphify graph is 70 commits stale and `CLAUDE.md` points at a `wiki/` that was never built.

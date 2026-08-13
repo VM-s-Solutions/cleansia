@@ -402,12 +402,12 @@ is about to become immutable should not carry three.
 The header states: *"Ticket **T-0546** carries the round; **T-0547** carries the refactor … `T-0545` was
 the highest on disk when this was written."*
 
-- **`T-0546` is taken.** `agents/backlog/tickets/T-0546-four-customer-libs-cannot-run-jest.md` exists,
+- **`T-0546` is taken.** `agents/archive/2026-08/backlog/tickets/T-0546-four-customer-libs-cannot-run-jest.md` exists,
   and `.github/workflows/nx-project-registration.yml:6` attributes NX-6/NX-7 to T-0546 **in committed
   CI**: *"NX-6/NX-7 (T-0546) extend it one layer in."*
 - **`T-0547` is genuinely reserved** — `INDEX.md:41` says *"ADR number allocated at write time; highest
   at HEAD is 0042, `T-0547` reserved."* That half is fine.
-- **"`T-0545` was the highest on disk" is false at HEAD:** `agents/backlog/tickets/` also holds T-0546,
+- **"`T-0545` was the highest on disk" is false at HEAD:** `agents/archive/2026-08/backlog/tickets/` also holds T-0546,
   T-0548 and T-0549.
 
 Small, mechanical, and exactly the sort of line that gets copied into a `## Verdict` and then into two

@@ -16,7 +16,7 @@ NOT accelerated. Canonical decisions:
 `docs/decisions/adr-0026.md`,
 and `docs/decisions/adr-0027.md` (accepted).
 This page is the evolving companion; the ADRs govern on any conflict. Prior related security notes:
-`agents/backlog/security/auth-sessions.md` (tenant-filter symmetry on token reads, T-0236).
+`agents/archive/2026-08/backlog/security/auth-sessions.md` (tenant-filter symmetry on token reads, T-0236).
 
 ## The decision stack in one paragraph
 

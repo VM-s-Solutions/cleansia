@@ -94,7 +94,7 @@ vectors, NEVER for brand raster/animated art — mascots/logo/wordmark); **AR-DP
 check (AppIcon + branded launch screen + in-app splash), owned by the app's shell/scaffold ticket because app
 chrome lives in no screen's `.kt` citation (the phase/ios-fix1 gate-miss lesson: the gate's citation unit was the
 `.kt` screen file, so everything in `res/` and app packaging slipped). Recorded in §G of
-`agents/backlog/ios-app-review-checklist.md` + sprint-12 §10.6 + reviewer-check #22; it runs
+`agents/archive/2026-08/backlog/ios-app-review-checklist.md` + sprint-12 §10.6 + reviewer-check #22; it runs
 beside Gate-AR (ADR-0016) and the SwiftLint/SwiftFormat gate on every iOS **screen** ticket (infra tickets
 N/A). A **new** control mapping a feature surfaces is folded back into the table above (living-doc note) so the
 set converges; a new *rule about the principle itself* would be a superseding ADR.
@@ -932,7 +932,7 @@ path has the wrong responsibility). **Reviewer check #35** = ADR-0022 §"How a r
 > Companion section for **ADR-0016** (`docs/decisions/adr-0016.md`).
 > The iOS apps are held to a **submission-passing** bar (higher than the rest of the platform). Tickets
 > T-0323…T-0329 in `status/sprint-12.md §10`; the pre-submission audit artifact is
-> `agents/backlog/ios-app-review-checklist.md`.
+> `agents/archive/2026-08/backlog/ios-app-review-checklist.md`.
 
 **The myth, corrected (so it never re-enters the record):** there is **NO "AI-written-code detector"** in App
 Review and review **cannot brick/disable hardware** — both **FALSE**. The real risk is **rejection vs the

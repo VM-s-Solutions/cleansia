@@ -101,7 +101,7 @@ the indirection's *default* and *completeness*; it does not remove it.
 - **A new divergent-intent collision** discovered during implementation: split the permission (map
   principle) and record it in the trade-off table above.
 
-## Resolved questions (owner, 2026-06-01) — see `agents/backlog/questions/answered.md`
+## Resolved questions (owner, 2026-06-01) — see `agents/archive/2026-08/backlog/questions/answered.md`
 - **Q-0005 → staff dispute reply is ADMIN-ONLY** (staff `CanRespondToDispute` = AdminOnly; endpoint
   moves Partner→Admin; customer self-reply via `CanAddDisputeMessage` unchanged). Locked into ADR-0001.
 - **Q-0001/Q-0002/Q-0003/Q-0004 → confirmed on documented defaults** (AdminOnly admin-user mgmt /

@@ -99,7 +99,7 @@ mentions `Q-PROMISE-02`'s sibling, raised in the same challenger round on the sa
 the same owner:
 
 ```
-agents/backlog/questions/open.md:1192
+agents/archive/2026-08/backlog/questions/open.md:1192
   Answer (owner, 2026-08-07): The promise is TRUE and must be kept: a cleaner is assigned
   within 1 hour, in PROD. The copy stays.
 ```

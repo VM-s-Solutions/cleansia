@@ -45,7 +45,7 @@ storage, actor-based single-flight refresh, the device-id header contract):
 
 **The governing decisions** are in the ADRs — read these, don't re-litigate:
 `docs/decisions/0013` (architecture), `0014` (iOS-16 + ObservableObject), `0016` (Apple App Review),
-`0018` (design parity / Gate-DP). Plan + tickets: `agents/backlog/status/sprint-12.md`. The big-picture
+`0018` (design parity / Gate-DP). Plan + tickets: `agents/archive/2026-08/backlog/status/sprint-12.md`. The big-picture
 handoff: `agents/IOS-AND-AZURE-HANDOFF.md`.
 
 ---
@@ -112,7 +112,7 @@ complexity (the hard areas: the customer booking wizard + Stripe, maps across bo
 order work-loop).
 
 **Every screen ticket** is held to: SwiftLint/SwiftFormat (blocking), **Gate-AR** (Apple App Review,
-ADR-0016 + `agents/backlog/ios-app-review-checklist.md`), and **Gate-DP** (design parity — looks like the
+ADR-0016 + `agents/archive/2026-08/backlog/ios-app-review-checklist.md`), and **Gate-DP** (design parity — looks like the
 cited Android Compose screen, ADR-0018).
 
 ---
@@ -156,5 +156,5 @@ porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 > authored on Windows and verified structurally; **the first Mac task is `xcodegen generate` → open
 > `Cleansia.xcworkspace` → `swift build && swift test` → build both app schemes for an iOS-16 simulator**
 > to confirm it compiles. Then (needs: the Azure dev API live + the mobile-spec regen) proceed to **Phase
-> 1 = the partner login → Dashboard vertical (T-0303)** per `agents/backlog/status/sprint-12.md`. Governing
+> 1 = the partner login → Dashboard vertical (T-0303)** per `agents/archive/2026-08/backlog/status/sprint-12.md`. Governing
 > decisions: ADR-0013/0014/0016/0018. Quality gates per screen: SwiftLint/SwiftFormat + Gate-AR + Gate-DP.

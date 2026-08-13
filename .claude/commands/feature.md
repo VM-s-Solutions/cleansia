@@ -16,7 +16,7 @@ tickets, locks the contract (`architect` → `db` → `backend`), fans out consu
 owner-only `manual_steps`, and updates the sprint status. See `agents/WAY-OF-WORKING.md` §3.
 
 ## Rules
-- Cross-stack work is ticketed and traceable in `agents/backlog/` — nothing happens "verbally".
+- Cross-stack work is ticketed and traceable in `agents/archive/2026-08/backlog/` — nothing happens "verbally".
 - Do not run owner-only steps; flag them. Do not commit/push unless the owner asks.
 
 ## Example

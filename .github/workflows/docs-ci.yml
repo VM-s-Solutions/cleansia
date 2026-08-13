@@ -1,0 +1,71 @@
+name: Docs CI
+
+# The documentation site is the source of truth for how this platform works, which only holds if its
+# references resolve. Two halves, and until this workflow existed NEITHER was gated on a PR:
+#
+#   docs -> docs   a link to a page that does not exist. Caught by `vitepress build` with
+#                  ignoreDeadLinks:false — but that build only ran inside deploy-docs.yml, which is
+#                  workflow_dispatch-only (deactivated 2026-07-15), so nothing checked it on a PR.
+#   code -> docs   a `→ /path#anchor` pointer in a source comment aimed at a page or heading that is
+#                  gone. Caught by agents/tools/check-docs-refs.mjs.
+#
+# Runs on pushes to master for the same reason backend-ci and frontend-ci do: a pull_request-only
+# trigger means a direct-to-master commit is never checked, so a page rename lands unnoticed and
+# reddens the next contributor's PR instead.
+#
+# Paths deliberately include src/** — a docs pointer lives in the CODE, so a source-only change can
+# break this without touching docs/ at all.
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'agents/tools/check-docs-refs.mjs'
+      - 'agents/tools/check-docs-refs.test.mjs'
+      - '.github/workflows/docs-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    name: References and build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      # FIRST, and blocking. A reference gate that cannot fail reports "0 unresolved" forever and
+      # everyone believes it — which is exactly how check-consistency accumulated 20 phantom
+      # violations before anyone ran it site by site. Two of these ten cases assert the gate FAILS,
+      # so a change that quietly defangs it reddens here rather than going unnoticed.
+      - name: Gate self-test (proves the gate can still fail)
+        run: node agents/tools/check-docs-refs.test.mjs
+
+      # code -> docs. Needs no npm install: the checker is dependency-free Node, by the same rule as
+      # the other tools in agents/tools.
+      - name: Code references resolve to real pages and headings
+        run: node agents/tools/check-docs-refs.mjs
+
+      - name: Install docs dependencies
+        run: cd docs && npm ci
+
+      # docs -> docs. ignoreDeadLinks is false in .vitepress/config.ts, so a link to a missing page
+      # fails this step. It does NOT validate mermaid: a fence is rendered in the browser, so a
+      # malformed diagram builds clean here and breaks only for a reader. Diagrams get looked at.
+      - name: Docs site builds (dead internal links fail here)
+        run: cd docs && npm run build

@@ -131,10 +131,10 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-030 | Domain model — ERDs per area, generated from the **61** EF configurations | L | done | — |
-| CL-031 | Order lifecycle + offerability, both diagrammed | M | done | — |
+| CL-030 | Domain model — ERDs per area, generated from the **61** EF configurations | L | done | #198 |
+| CL-031 | Order lifecycle + offerability, both diagrammed | M | done | #198 |
 | CL-032 | Thirteen flow pages — sequence diagrams + edge-case tables, from P1 | L | todo | — |
-| CL-033 | Business rules with rationale — booking, cancellation, crew, preferred, pay | L | **partial** — feature list outstanding | — |
+| CL-033 | Business rules with rationale — booking, cancellation, crew, preferred, pay | L | **partial** — feature list outstanding | #198 |
 | CL-034 | Split `agents/knowledge/` by audience — domain truth publishes, build rules stay | M | todo | — |
 
 > **P7 in progress — splitting across two PRs.** Landed: the domain model (61 entities, ERDs per area,

@@ -159,14 +159,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     }
 
     /// <summary>
-    /// Reads at most <see cref="RedactionScanLimit"/> + 1 characters, never the whole body. This
-    /// middleware runs before authentication and before the rate limiter, so reading to the end made an
-    /// anonymous request of Kestrel's maximum size a ~121 MB allocation that <see cref="SafeBody"/> then
-    /// discarded — 423x the body, with nothing upstream to throttle it.
-    ///
-    /// The bound is in CHARACTERS because SafeBody's verdict is <c>string.Length</c>: one character past
-    /// the cap decides it exactly as the whole body would, so every log line is unchanged. A byte bound
-    /// would put a multi-byte body under the cap and log what must be suppressed.
+    /// Reads at most <see cref="RedactionScanLimit"/> + 1 characters, never the whole body — this runs
+    /// before auth and before the rate limiter. <b>The bound is in CHARACTERS, not bytes</b>: a byte bound
+    /// puts a multi-byte body under the cap and logs what must be suppressed.
+    /// → /architecture/request-logging#scan-limit
     /// </summary>
     private static async Task<string> ReadBoundedAsync(StreamReader reader)
     {
@@ -184,12 +180,9 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     }
 
     /// <summary>
-    /// Redact BEFORE truncating. The regex matches a complete quoted value, so truncating first leaves
-    /// the raw visible prefix of any secret whose closing quote falls past the cut.
-    ///
-    /// Redacting first costs a scan of the whole body, so anything past <see cref="RedactionScanLimit"/>
-    /// is suppressed outright rather than scanned or truncated — bounding the per-request cost without
-    /// reopening the prefix leak that truncating first would.
+    /// <b>Redact BEFORE truncating.</b> The regex matches a complete quoted value, so truncating first
+    /// leaves the raw prefix of any secret whose closing quote falls past the cut. Anything past the scan
+    /// limit is suppressed outright. → /architecture/request-logging#redact-before-truncate
     /// </summary>
     private static string SafeBody(PathString path, string rawBody, int logLimit)
     {
@@ -217,13 +210,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     }
 
     /// <summary>
-    /// Two passes because the two families are not the same defect and must not be reasoned about as
-    /// one. A credential/payload value is unbounded — a base64 image, a signed URL, a JWT — so collapsing
-    /// it to the sentinel FREES hundreds of bytes of window and drags whatever follows it into the log
-    /// (the class <c>RedactionUnmaskedFreeTextGuardTests</c> exists for). A contact-identity value is
-    /// bounded at tens of bytes, so its collapse shifts the window by tens of bytes, and for the short
-    /// ones it LENGTHENS the body. Keeping them in one alternation would have made every string member of
-    /// every DTO read as "unmasked", which is how a guard stops being informative.
+    /// <b>Two passes, because they are two different defects.</b> Collapsing an unbounded credential
+    /// value frees window and drags what follows into the log; a bounded contact value does not. One
+    /// alternation would make every string member of every DTO read as "unmasked".
+    /// → /architecture/request-logging#two-passes
     /// </summary>
     private static string RedactSensitiveFields(string body)
     {
@@ -303,22 +293,12 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     private static partial Regex SensitiveFieldRegex();
 
     /// <summary>
-    /// Contact identity, matched by SHAPE rather than enumerated. Enumerating it was the defect: the leak
-    /// was never one endpoint, it was <see cref="SafeBody"/> — generic over every route — so a per-route
-    /// or per-exact-name entry fixes the instance and leaves the class open. Measured when this was
-    /// written: 152 members on 80+ routes carry one of these names, and a shape covers the next one
-    /// without anyone remembering.
-    ///
-    /// <para>The alternation is quote-anchored on both sides, so a name must match WHOLE. That is what
-    /// keeps <c>emailTemplateId</c> (an id) out while catching <c>customerEmail</c>, and it is why
-    /// <c>*email</c> takes no suffix while <c>*phone*</c> does. The value group matches a quoted string or
-    /// <c>null</c> and nothing else, so a boolean neighbour like <c>isEmailConfirmed</c> is structurally
-    /// unreachable.</para>
-    ///
-    /// <para>What makes a denylist fail closed is not the list — it is
-    /// <c>RequestLogPiiSurfaceGuardTests</c>, which walks every wire DTO on the five hosts and reddens CI
-    /// when a PII-shaped member is neither matched here nor on a suppressed route nor excepted in
-    /// writing. It reads THIS regex, so the two cannot drift.</para>
+    /// Contact identity, matched by SHAPE rather than enumerated — enumerating it WAS the defect, because
+    /// the leak was the generic body helper rather than any one route. <b>The alternation is quote-anchored
+    /// on both sides so a name must match WHOLE</b>, which is what keeps <c>emailTemplateId</c> out while
+    /// catching <c>customerEmail</c>. What makes this fail closed is not the list but
+    /// <c>RequestLogPiiSurfaceGuardTests</c>, which reads THIS regex so the two cannot drift.
+    /// → /architecture/request-logging#matched-by-shape
     /// </summary>
     [GeneratedRegex("\"([A-Za-z]*email|[A-Za-z]*phone[A-Za-z]*|[A-Za-z]*firstName|[A-Za-z]*lastName|fullName|birthDate)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]

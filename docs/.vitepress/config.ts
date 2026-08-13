@@ -162,6 +162,10 @@ export default withMermaid(
                 link: '/architecture/local-orchestration',
               },
               {
+                text: 'Request logging & PII redaction',
+                link: '/architecture/request-logging',
+              },
+              {
                 text: 'Push Notifications',
                 link: '/architecture/push-notifications',
               },

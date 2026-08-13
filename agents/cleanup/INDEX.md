@@ -99,9 +99,9 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-025 | VitePress + mermaid; diagrams render, docs build clean | S | done | — |
-| CL-026 | New IA — Product · Domain · Flows · Decisions, with real landing pages | M | done | — |
-| CL-027 | `check-docs-refs.mjs` + 10 self-tests (**not wired to CI — owner decision**) | M | done | — |
+| CL-025 | VitePress + mermaid; diagrams render, docs build clean | S | done | #196 |
+| CL-026 | New IA — Product · Domain · Flows · Decisions, with real landing pages | M | done | #196 |
+| CL-027 | `check-docs-refs.mjs` + 10 self-tests (**not wired to CI — owner decision**) | M | done | #196 |
 
 > **P5 complete.** Mermaid renders (client-side — a malformed diagram builds clean and breaks only in
 > the browser, so diagrams get looked at). The IA gains Product · Domain · Flows · Decisions, each with

@@ -55,7 +55,7 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
 | CL-014 | Route the eight analysis findings to their owning phase | S | done | #193 |
-| CL-015 | G-01 tenant stamping · G-15 seat ordinal (**`MS-1` open**: EF migration) | L | done | #193 |
+| CL-015 | G-01 tenant stamping · G-15 seat ordinal (`MS-1` **cleared** — migration regenerated) | L | done | #193 |
 | CL-016 | `C3` — 6 real teardown gaps fixed; 4 were checker false positives → CL-024 | S | done | #193 |
 | CL-017 | `E6` — 13 sites converted to `collectAsStateWithLifecycle()` (checker saw 11) | S | done | #193 |
 | CL-018 | Build warnings — 3 EF 10 deprecations + 24 xUnit analyser sites | S | done | #193 |
@@ -63,7 +63,8 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 > **P2 complete.** 19 real defects fixed, 7 checker false positives routed to `CL-024`, 3,878 unit
 > tests green. `CL-014` shrank on inspection: five of the eight findings are P9's work (README, root
 > docs, dead scripts, `CLAUDE.md`) and one duplicated `CL-018`, so it became routing rather than fixes.
-> **`MS-1` is open** — the seat index is inert until the migration is regenerated.
+> **`MS-1` cleared** — `Initial` regenerated (`20260813085249`), the seat index exists, and the
+> concurrency test passes against real Postgres. **DEV needs a database drop**: the migration id changed.
 
 ## P3 — Admin `errors.*` → `api.*` consolidation
 

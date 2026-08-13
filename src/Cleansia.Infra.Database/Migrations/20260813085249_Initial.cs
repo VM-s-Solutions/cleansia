@@ -1773,9 +1773,10 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "OrderEmployees",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     EmployeeId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    SeatOrdinal = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -2981,9 +2982,10 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderEmployees_OrderId",
+                name: "IX_OrderEmployees_OrderId_SeatOrdinal",
                 table: "OrderEmployees",
-                column: "OrderId");
+                columns: new[] { "OrderId", "SeatOrdinal" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderIssues_OrderId",

@@ -1,7 +1,10 @@
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.IntegrationTests.Features.Orders;
@@ -17,25 +20,22 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// <c>MaxEmployees = 1</c> — two <c>OrderEmployeePay</c> rows, a second full wage against an unchanged
 /// customer price.
 ///
-/// <para><b>Why this is skipped.</b> The integration fixture applies the committed EF migration, and
-/// <c>SeatOrdinal</c> + <c>IX_OrderEmployees_OrderId_SeatOrdinal</c> currently exist only in the model —
-/// the migration is an owner-only step (pre-prod, folded into a regenerated <c>Initial</c>). Running now
-/// would fail on a missing column and say nothing about the fix. Remove the Skip in the same change that
-/// regenerates the migration; that is the whole checklist.</para>
+/// <para>This is the test the suite lacked. It runs against real Postgres because the guarantee is a
+/// database one: the unique index is the only thing that separates the two callers, and no in-memory
+/// harness can express that.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string SkipUntilMigration =
-        "MANUAL_STEP: needs the regenerated Initial migration carrying OrderEmployees.SeatOrdinal + "
-        + "IX_OrderEmployees_OrderId_SeatOrdinal. Owner-only (see CLAUDE.md § Manual Steps).";
-
-    [Fact(Skip = SkipUntilMigration)]
+    [Fact]
     public async Task Two_Concurrent_Takes_Of_One_Seat_Leave_Exactly_One_Assignment()
     {
-        var orderId = $"seat-race-{Ulid.NewUlid()}";
+        // Ids are varchar(26) — a bare ULID is exactly that width.
+        var orderId = Ulid.NewUlid().ToString();
+        var employeeA = Ulid.NewUlid().ToString();
+        var employeeB = Ulid.NewUlid().ToString();
 
-        await SeedSingleSeatOrderAsync(orderId, "emp-race-a", "emp-race-b");
+        await SeedSingleSeatOrderAsync(orderId, employeeA, employeeB);
 
         // Two independent contexts = two independent connections = a genuine race. Both read a free
         // seat, both derive ordinal 0, both attempt the insert.
@@ -48,17 +48,19 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
         Assert.Empty(orderA.AssignedEmployees);
         Assert.Empty(orderB.AssignedEmployees);
 
-        orderA.AddAssignedEmployee(OrderEmployee.Create(orderA, await LoadEmployeeAsync(contextA, "emp-race-a")));
-        orderB.AddAssignedEmployee(OrderEmployee.Create(orderB, await LoadEmployeeAsync(contextB, "emp-race-b")));
+        orderA.AddAssignedEmployee(OrderEmployee.Create(orderA, await LoadEmployeeAsync(contextA, employeeA)));
+        orderB.AddAssignedEmployee(OrderEmployee.Create(orderB, await LoadEmployeeAsync(contextB, employeeB)));
 
-        var saveA = contextA.SaveChangesAsync();
-        var saveB = contextB.SaveChangesAsync();
+        // CommitAsync, not SaveChangesAsync: CleansiaDbContext stamps audit + tenant fields in
+        // CommitAsync and only then calls SaveChangesAsync, so this is also the production path.
+        var saveA = contextA.CommitAsync(CancellationToken.None);
+        var saveB = contextB.CommitAsync(CancellationToken.None);
 
         var outcomes = await Task.WhenAll(Capture(saveA), Capture(saveB));
 
         // Exactly one winner and one unique-violation — not two winners, and not two losers.
         Assert.Equal(1, outcomes.Count(o => o is null));
-        var rejection = Assert.Single(outcomes.Where(o => o is not null))!;
+        var rejection = Assert.Single(outcomes, o => o is not null)!;
         Assert.IsType<DbUpdateException>(rejection);
 
         await using var verify = NewContext();
@@ -80,10 +82,14 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
         }
     }
 
+    // Must carry a session + tenant provider: CleansiaDbContext stamps CreatedBy/TenantId from them at
+    // SaveChanges, and the options-only constructor (used by the migration runner) stamps neither.
     private CleansiaDbContext NewContext() =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>()
-            .UseNpgsql(Fixture.GetConnectionString())
-            .Options);
+                .UseNpgsql(Fixture.GetConnectionString())
+                .Options,
+            new TestUserSessionProvider("seat-race", "seat-race@cleansia.test"),
+            new FixedTenantProvider(tenantId: null));
 
     private static Task<Order> LoadWithAssignmentsAsync(CleansiaDbContext context, string orderId) =>
         context.Orders
@@ -93,11 +99,37 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
     private static Task<Employee> LoadEmployeeAsync(CleansiaDbContext context, string employeeId) =>
         context.Employees.FirstAsync(e => e.Id == employeeId);
 
+    private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
+    {
+        private string? _tenantId = tenantId;
+
+        public string? GetCurrentTenantId() => _tenantId;
+
+        public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
+
+        public void ClearTenantOverride() => _tenantId = null;
+    }
+
     private async Task SeedSingleSeatOrderAsync(string orderId, params string[] employeeIds)
     {
         await using var context = NewContext();
 
-        var address = Address.Create("123 Main St", "Prague", "11000", "cz");
+        // The Postgres container is shared across the collection, so reference rows another test may
+        // already have seeded are added only when missing.
+        if (!await context.Languages.AnyAsync(l => l.Code == "en"))
+        {
+            context.Languages.Add(Language.Create("en", "English"));
+        }
+
+        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        country.Id = Ulid.NewUlid().ToString();
+
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        currency.Id = Ulid.NewUlid().ToString();
+        context.Countries.Add(country);
+        context.Currencies.Add(currency);
+
+        var address = Address.Create("123 Main St", "Prague", "11000", country.Id);
         var order = Order.Create(
             customerName: "Race Customer",
             customerEmail: $"{orderId}@example.com",
@@ -109,7 +141,7 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
-            currencyId: "czk",
+            currencyId: currency.Id,
             paymentStatus: PaymentStatus.Pending);
         order.Id = orderId;
         order.SetMaxEmployees(1);
@@ -119,13 +151,13 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
 
         foreach (var employeeId in employeeIds)
         {
-            var user = User.CreateWithPassword($"{employeeId}@example.com", "x", "Emp", "Loyee");
-            user.Id = $"{employeeId}-user";
+            var user = User.CreateWithPassword($"{employeeId}@example.com", "12345678Test!", "Emp", "Loyee");
+            user.Id = Ulid.NewUlid().ToString();
             var employee = Employee.CreateWithUser(user);
             employee.Id = employeeId;
             context.Employees.Add(employee);
         }
 
-        await context.SaveChangesAsync();
+        await context.CommitAsync(CancellationToken.None);
     }
 }

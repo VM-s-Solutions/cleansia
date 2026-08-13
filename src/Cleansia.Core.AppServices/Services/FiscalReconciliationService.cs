@@ -11,23 +11,11 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep.
-/// Wave-0 dispatch is at-most-once: a crash between the commit and the in-memory drain loses
-/// the send, leaving NO message → no <c>-poison</c> → no alert (the F3 poison floor only catches
-/// enqueued-and-failed-5x). For the two fiscal queues that silent loss is a lost legal/financial
-/// artifact, so this sweep finds committed-but-unrealized fiscal work and RE-ENQUEUES it through the
-/// SAME idempotent path — harmlessly deduped downstream by the deterministic <see cref="MessageKeys"/>
-/// + the consumer's target-state guard.
-///
-/// <para>This is a Bucket-B system-context loop (per item, no per-request pipeline to gate), so it
-/// calls <see cref="IQueueClient"/> DIRECTLY under the documented Bucket-B carve-out (ADR-0002 D5
-/// Bucket B, reviewer check #1 whitelist) — NOT the request-scoped <c>IPendingDispatch</c>. Each
-/// message is wrapped in the SAME <see cref="QueueEnvelope{T}"/> + frozen <see cref="MessageKeys"/>
-/// so the re-enqueue dedups downstream.</para>
-///
-/// <para>Mirrors the batch + tenant-override pattern of <c>FiscalRetryService</c> but is DISTINCT from
-/// it: that is the registration-retry layer (re-register an already-claimed receipt); this is the
-/// dispatch layer (re-enqueue the missing message). They are not merged.</para>
+/// ADR-0002 D3.4 — the dispatch-layer reconciliation sweep. Dispatch is at-most-once, so a crash
+/// between commit and drain loses the send with <b>no message, no poison queue and therefore no
+/// alert</b>. For the two fiscal queues that silent loss is a lost legal artifact, so this finds
+/// committed-but-unrealized fiscal work and re-enqueues it through the SAME idempotent path.
+/// → /flows/cross-cutting#dead-letters
 /// </summary>
 public sealed class FiscalReconciliationService(
     IOrderRepository orderRepository,

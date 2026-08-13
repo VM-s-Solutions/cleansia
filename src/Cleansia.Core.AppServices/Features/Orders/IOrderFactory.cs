@@ -7,23 +7,12 @@ using Cleansia.Core.Domain.Users;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Builds + persists <see cref="Order"/> aggregates with full pricing/discount
-/// snapshot, services + packages relationships, VAT breakdown, and an initial
-/// <see cref="OrderStatus.New"/> status track. Shared by the customer-facing
-/// <see cref="CreateOrder.Handler"/> (one-off booking) and by
-/// <see cref="Bookings.MaterializeRecurringBookings.Handler"/> (recurring
-/// pipeline) so the order-creation contract — pricing rules, discount math,
-/// VAT, status track — is in exactly one place.
+/// Builds and persists <see cref="Order"/> aggregates — pricing snapshot, discounts, VAT, relationships
+/// and the initial status track — shared by the one-off and recurring paths so <b>the order-creation
+/// contract lives in exactly one place</b>.
 ///
-/// The caller is responsible for everything around the factory:
-///   * address + currency resolution (the factory takes already-loaded entities)
-///   * Stripe checkout session creation (one-off card flow)
-///   * post-create side effects (queue receipt generation, promo
-///     <c>ApplyAsync</c>, referral acceptance, push notifications)
-///
-/// The factory itself does NOT create a Stripe session — recurring orders
-/// stay <see cref="PaymentStatus.Pending"/> until the customer confirms,
-/// at which point the confirm flow creates the session.
+/// <para>The caller owns everything around it: address and currency resolution, Stripe session
+/// creation, and post-create side effects. → /flows/booking-and-pricing</para>
 /// </summary>
 public interface IOrderFactory
 {

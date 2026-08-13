@@ -5,23 +5,12 @@ using System.Text;
 namespace Cleansia.Config.Authentication;
 
 /// <summary>
-/// Stateless CSRF-token derivation. The token is an HMAC-SHA256 of the JWT's
-/// session-identifying claim (jti, or sub as fallback), keyed by the
-/// server's `Csrf:Secret` configuration value. Both sides (server +
-/// authenticated client) can derive the same value from the same JWT, so
-/// no per-session storage is required.
+/// Stateless CSRF-token derivation: an HMAC of the JWT's session claim, keyed by the server secret, so
+/// both sides derive the same value and no per-session storage is needed.
 ///
-/// Threat model the token defeats: a cross-site attacker can trick the
-/// browser into sending the HttpOnly auth cookie on a forged request, but
-/// cannot read the cookie or inspect the JWT — so they can't compute the
-/// expected CSRF header value. SameSite=Strict catches most CSRF on its
-/// own; this is defense-in-depth for the cases SameSite misses
-/// (subdomain fronting, certain browser bugs).
-///
-/// The secret is the same for all instances of a host. Compromise of the
-/// secret would let an attacker mint valid CSRF headers for any session
-/// whose JWT they already have — but at that point they already have the
-/// session, so the CSRF defence is moot.
+/// <para>A cross-site attacker can make the browser send the HttpOnly cookie but cannot read it or
+/// compute the header. SameSite catches most CSRF alone; <b>this is defence in depth for what SameSite
+/// misses.</b> → /architecture/security-rules</para>
 /// </summary>
 public class CsrfTokenService
 {

@@ -7,23 +7,13 @@ public interface IEmployeeRepository : IRepository<Employee, string>
     Task<Employee?> GetByUserEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Tenant-IGNORING lookup of an employee by their user email. For the token-minting
-    /// paths (login + refresh) ONLY: those run with no tenant context yet, so the
-    /// tenant-scoped <see cref="GetByUserEmailAsync"/> collapses to TenantId == null and
-    /// misses a tenant-stamped employee — minting a JWT without the employee_id claim
-    /// (T-0361).
+    /// Tenant-IGNORING lookup by user email, <b>for the token-minting paths (login + refresh) ONLY</b>:
+    /// those run with no tenant context yet, so the tenant-scoped variant collapses to
+    /// <c>TenantId == null</c>, misses a tenant-stamped employee, and mints a JWT with no employee claim.
     ///
-    /// <para>The cell (ADR-0051 D1): the row is WRITTEN under a tenant claim and READ with no claim,
-    /// because this read happens BEFORE the JWT that would carry one exists. That asymmetry — not the
-    /// endpoint being anonymous, and not any property of the email — is the whole reason a bypass is
-    /// owed here; an anonymous read whose rows are also written anonymously stays filtered.</para>
-    ///
-    /// <para>The re-pin is the caller's, and the signature cannot enforce it: the credential check that
-    /// precedes this call has already authenticated the caller as the owner of that address, so the read
-    /// resolves the just-authenticated subject's OWN employee row. Callers stay confined to the
-    /// token-mint paths for exactly that reason. It is emphatically NOT an appeal to email being unique
-    /// across the platform — uniqueness is per-tenant by design, on <c>(TenantId, Email)</c> — and
-    /// ADR-0051 D2 forbids re-pinning a bypass on a uniqueness property the schema does not enforce.</para>
+    /// <para>The row is WRITTEN under a tenant claim and READ with none, because this read happens before
+    /// the JWT that would carry one exists. <b>That asymmetry — not the endpoint being anonymous — is why
+    /// a bypass is owed here.</b> → /flows/cross-cutting#tenancy</para>
     /// </summary>
     Task<Employee?> GetByUserEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
 

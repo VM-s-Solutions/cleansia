@@ -13,22 +13,9 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
 /// <summary>
-/// Sweeps Pending recurring-template Orders due in roughly the next 24 hours
-/// and dispatches a <c>recurring.scheduled</c> push to the customer reminding
-/// them to confirm + pay before the cleaning slot. Pairs with
-/// <see cref="MaterializeRecurringBookings"/> (which spawns the Order rows
-/// 7 days ahead) and Wave 3.3's <c>ConfirmRecurringOrder</c> command (which
-/// the customer reaches via the push deep-link).
-///
-/// Idempotency: each Order has a <see cref="Order.RecurringReminderSentAt"/>
-/// stamp. The sweep filters by null on that field, so running multiple times
-/// inside the 24h window only fires once per order.
-///
-/// Window: Orders with <c>CleaningDateTime</c> between <c>now + leadHoursLow</c>
-/// and <c>now + leadHoursHigh</c>. Defaulted to [22, 26] so a sweep at 02:00 UTC
-/// catches everything roughly 24h out, with slack so a cron miss-by-a-few-hours
-/// doesn't drop reminders. Orders past the upper bound get caught by next-day
-/// sweeps as long as they cross into the window before the cleaning starts.
+/// Sweeps unconfirmed recurring occurrences due in roughly the next 24 hours and pushes a reminder to
+/// confirm and pay. <b>Idempotency is the sent-at stamp on the order</b>, which the sweep filters on, so
+/// running repeatedly inside the window fires once. → /flows/booking-and-pricing#recurring-bookings
 /// </summary>
 public class SendRecurringOrderReminders
 {

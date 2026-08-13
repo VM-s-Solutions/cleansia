@@ -13,29 +13,12 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
 /// <summary>
-/// Daily sweep that dispatches two membership-lifecycle pushes:
-/// <list type="bullet">
-///   <item><c>membership.expiring_soon</c> — fired ~3 days before
-///   <see cref="UserMembership.CurrentPeriodEnd"/> for any
-///   <see cref="MembershipStatus.Active"/> subscription. Acts as a
-///   "your plan renews soon" billing reminder.</item>
-///   <item><c>membership.cancellation_effective</c> — fired ~1 day before
-///   <see cref="UserMembership.CurrentPeriodEnd"/> when
-///   <see cref="UserMembership.CancelledAt"/> is set. Acts as a "your
-///   cancellation takes effect tomorrow — benefits end" warning so the
-///   user can still retract via a plan swap.</item>
-/// </list>
+/// Daily sweep dispatching two membership-lifecycle pushes: a renewal reminder ~3 days before the
+/// period ends, and a cancellation-effective warning ~1 day before, so the user can still retract.
 ///
-/// Idempotency: each membership row carries
-/// <see cref="UserMembership.RenewalReminderSentAt"/> and
-/// <see cref="UserMembership.CancellationReminderSentAt"/> stamps which the
-/// sweep filters on. Period rollovers (in <see cref="UserMembership.UpdateFromStripeWebhook"/>)
-/// and plan swaps re-arm the stamps so future periods/cancellations fire
-/// fresh reminders.
-///
-/// Both queries run cross-tenant — the sweep is invoked system-level (no
-/// JWT). The queue dispatch carries each membership's TenantId so the
-/// downstream dispatcher resolves to the correct partition.
+/// <para><b>Idempotency is the two sent-at stamps on the membership row</b>, which the sweep filters
+/// on; period rollovers and plan swaps re-arm them.
+/// → /flows/loyalty-and-memberships</para>
 /// </summary>
 public class SendMembershipLifecycleNotifications
 {

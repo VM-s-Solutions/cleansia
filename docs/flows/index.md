@@ -66,8 +66,21 @@ Some concerns do not belong to a single flow and are documented once rather than
 tenancy scoping, the outbox and its drainer, consumer idempotency, notification dispatch, and rate
 limiting.
 
-## What is here now
+## The pages
 
-The flow pages are being written from the end-to-end walk recorded in the cleanup track's gap
-register. Until each lands, the [Architecture](/architecture/overview) and app sections carry the
-current descriptions.
+| Flow | |
+|---|---|
+| **[Auth and identity](/flows/auth-and-identity)** | sign-in, session rotation, theft detection, revocation |
+| **[Booking and pricing](/flows/booking-and-pricing)** | quote, create, express surcharge, recurring, guest lookup |
+| **[Payment and fiscal](/flows/payment-and-fiscal)** | the Stripe webhook, replay, receipts, the stale-checkout sweep |
+| **[Offerability and the take](/flows/offerability-and-take)** | the board, the preferred hold, the seat race |
+| **[Execution and completion](/flows/execution-and-completion)** | on-the-way to completed, photos, what a browsing cleaner sees |
+| **[Cancellation, refund and dispute](/flows/cancellation-refund-dispute)** | the fee ladder, refund bounds, the dispute guard |
+| **[Pay, periods, invoices and payouts](/flows/pay-and-payouts)** | pay rows, period states, claimed numbering, payout disclosure |
+| **[Loyalty, memberships and referrals](/flows/loyalty-and-memberships)** | points, Plus, the metered express waiver |
+| **[GDPR, retention and audit](/flows/gdpr-and-audit)** | anonymise-in-place, what survives it, the audit trail |
+| **[Cross-cutting concerns](/flows/cross-cutting)** | tenancy, outbox, idempotency, notifications, rate limiting |
+
+Each was written from the end-to-end walk recorded in the cleanup track's gap register, and each
+carries the edge cases as a table — including the ones that are **accepted rather than fixed**, with
+the reason stated. A residue nobody wrote down is indistinguishable from a bug nobody found.

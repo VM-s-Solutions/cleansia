@@ -425,7 +425,7 @@ they were never tenant-coupled.
   approval; this doctrine recommends proceeding unchanged).
 - **T-0123** (`agents/backlog/tickets/T-0123-prod-config.md`) — note its "BSP-9" is the `LookupBatch`
   hardening, a *different* finding from the four-catalog fix.
-- **Security law S3** (`agents/knowledge/security-rules.md`) — anonymous routes must not serve
+- **Security law S3** (`docs/architecture/security-rules.md`) — anonymous routes must not serve
   tenant-scoped data without deliberate, spoof-resistant resolution.
 - **Real-code anchors:** `Currency.cs`, `Country.cs`, `Language.cs`, `CountryConfiguration.cs`,
   `CountryInvoiceConfig.cs`, `CurrencyResolutionService.cs`, `OrderPricingCalculator.cs:46-66`,

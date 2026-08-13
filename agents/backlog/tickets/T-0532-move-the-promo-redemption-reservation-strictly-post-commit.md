@@ -164,7 +164,7 @@ Files the end state touches (from the ADR, for sizing only):
 (registration order) · `Features/Orders/OrderPromoApplier.cs` (records an effect instead of calling
 the service) · `Services/PromoCodeService.cs` (frozen amount, AC7) ·
 `Infra.Database/Repositories/PromoCodeRedemptionRepository.cs` (restore the statement, AC1) ·
-`agents/knowledge/roles/post-commit-effects.md` (new CRC card).
+`docs/domain/roles/post-commit-effects.md` (new CRC card).
 
 **The trap to expect first** (ADR-0038 Consequences): law 3 — adding a **tracked** entity inside a
 post-commit effect and expecting it to save. The pipeline's commit has already happened and will not

@@ -178,7 +178,7 @@ never reachable and never needed):
 6. **The law is a new S12**, keyed on **audience**, not on "served back by URL" — because the surface
    carrying the most metadata (employee documents) is not served by URL at all. Not an S4 extension:
    same principle, but S4's check is "read the DTO's field list," and no reading of a field list reaches
-   inside a byte array. ✅ **WRITTEN, 2026-08-07 — `agents/knowledge/security-rules.md` §S12**, with the
+   inside a byte array. ✅ **WRITTEN, 2026-08-07 — `docs/architecture/security-rules.md` §S12**, with the
    audit-checklist item 12, the per-clause enforcer/tier table, and the incident named. The header now
    reads S1–S12 (it read "S1–S10" while S11 existed), and the count was swept across `agents/` and
    `.claude/`.

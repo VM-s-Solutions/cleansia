@@ -23,7 +23,7 @@ zero infra dependencies.
 2. `agents/knowledge/consistency.md` — the canonical form for paged queries (A1–A8) and commands
    (B1–B9). Do the operation **the same way** the rest of the codebase does; a new deviation is a hard
    review fail.
-3. `agents/knowledge/security-rules.md` — S1–S12. **Non-negotiable.** Self-check against it before
+3. `docs/architecture/security-rules.md` — S1–S12. **Non-negotiable.** Self-check against it before
    you hand off; the Security Reviewer will too.
 4. `agents/knowledge/conventions.md` — naming, quality bars, owner-only steps.
 5. `docs/architecture/backend.md` + `fiscal-compliance.md` — canonical architecture.

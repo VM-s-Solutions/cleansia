@@ -405,7 +405,7 @@ soft-delete is ever needed there, add a separate column.
 **On a shared device, the previous user's cached data must NOT survive to the next account.** ANY
 mobile `@Singleton` (Android) / long-lived injected class (iOS) that holds **per-user state** — a
 cached `StateFlow`/`@Published`, a persistent DataStore/`UserDefaults` row, a
-[`Staleness`](../../src/cleansia_android/core/src/main/java/cz/cleansia/core/freshness/Staleness.kt)
+[`Staleness`](https://github.com/VM-s-Solutions/cleansia/blob/master/src/cleansia_android/core/src/main/java/cz/cleansia/core/freshness/Staleness.kt)
 watermark, or a per-key `Map` of any of these — **is a member of the session-wipe set and must be
 flushed on session end.** Leaving one out leaks the prior user's orders / profile / invoices /
 notifications to the next account on that handset — a security defect, not a UX nit (this rule was
@@ -429,8 +429,8 @@ Profile/OrderChecklist/NotificationPreferences).
 
 **The allowlist (the only sanctioned exception).** A `@Singleton` that holds cached state but whose
 state is **device-level or public, not per-user**, is legitimately out of the set — but only if it is
-on the **named, reason-annotated allowlist** in [`consistency.md` §E9](./consistency.md) /
-[`patterns-mobile.md`](./patterns-mobile.md). A stateless pass-through (no cache field) is trivially
+on the **named, reason-annotated allowlist** in [`consistency.md` §E9](https://github.com/VM-s-Solutions/cleansia/blob/master/agents/knowledge/consistency.md) /
+[`patterns-mobile.md`](https://github.com/VM-s-Solutions/cleansia/blob/master/agents/knowledge/patterns-mobile.md). A stateless pass-through (no cache field) is trivially
 out and needs no allowlist entry, but should carry a one-line `// Stateless — nothing cached, so no
 SessionScopedCache` comment (as `DeviceManagementRepository` does) so a reviewer isn't left guessing.
 **A per-user holder missing from both the set and the allowlist is an S11 violation** — caught today by

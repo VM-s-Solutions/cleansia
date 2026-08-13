@@ -110,7 +110,7 @@ The `Order` aggregate stores `StripePaymentIntentId` (`src/Cleansia.Core.Domain/
 
 2. **Given** a `charge.dispute.created` event whose order **already** has an open platform dispute (`GetOpenDisputeForOrderAsync` returns non-null, per `IDisputeRepository.cs:19`), **When** processed, **Then** the existing dispute is linked via `LinkStripeDispute` (no second/duplicate dispute is stacked — mirroring the `DisputeAlreadyExists` guard in `CreateDispute.cs:57-60`).
 
-3. **Given** the same Stripe event id is delivered more than once (Stripe retries on 5xx/socket reset), **When** the webhook is processed again, **Then** no duplicate dispute is created and no field is re-mutated — the existing `ProcessedStripeEvents` idempotency gate (`HandlePaymentNotification.cs:144-159`) short-circuits, satisfying **S7** (`agents/knowledge/security-rules.md:83-91`).
+3. **Given** the same Stripe event id is delivered more than once (Stripe retries on 5xx/socket reset), **When** the webhook is processed again, **Then** no duplicate dispute is created and no field is re-mutated — the existing `ProcessedStripeEvents` idempotency gate (`HandlePaymentNotification.cs:144-159`) short-circuits, satisfying **S7** (`docs/architecture/security-rules.md:83-91`).
 
 4. **Given** a subsequent `charge.dispute.updated` or `charge.dispute.closed` event for an already-linked Stripe dispute id, **When** processed, **Then** the matching `Dispute` is found by its `StripeDisputeId` and its status is updated to reflect Stripe's current status (e.g. won → Resolved-class, lost → Closed/Escalated-class), without creating a new dispute.
 
@@ -471,7 +471,7 @@ The identical enqueue-before-commit shape exists in the siblings: `CreateOrder.c
 
 **Rules this violates (verified in the knowledge base):**
 - `agents/knowledge/runtime-readiness.md` checklist item **4** — "Side effects are enqueued (durable + retried), not inline-fire-and-forget" and its dependency matrix row: *"If the enqueue is part of the transaction, a failure should fail the command before committing user-visible state, OR use the outbox pattern… Never 'fire and hope'."*
-- `agents/knowledge/consistency.md` **B8** + `agents/knowledge/security-rules.md` **S7** — side-effecting commands must be idempotent and reconciled; here the enqueue ordering breaks the reconciliation guarantee (a side effect can be observed for a write that never landed).
+- `agents/knowledge/consistency.md` **B8** + `docs/architecture/security-rules.md` **S7** — side-effecting commands must be idempotent and reconciled; here the enqueue ordering breaks the reconciliation guarantee (a side effect can be observed for a write that never landed).
 
 ---
 
@@ -570,8 +570,8 @@ It runs `GetMembershipPlans.Query` → `IMembershipPlanRepository.GetActivePlans
 The global query filter (`src/Cleansia.Infra.Database/CleansiaDbContext.cs:111-177`) resolves the tenant via `TenantProvider.GetCurrentTenantId()`, which on an anonymous request has no `tenant_id` claim and no override, so it returns `null` (`src/Cleansia.Infra.Database/TenantProvider.cs:12-20`). With `currentTenantId == null`, the filter body collapses to `e.TenantId == null` (the `singleTenantMatch` clause, `CleansiaDbContext.cs:154-156`). Net effect in any **multi-tenant** deployment: the anonymous plans route returns **only null-tenant rows** — wrong/empty for every real tenant — while the authenticated subscribe flow (`Subscribe`, JWT present) sees the correct tenant's plans. The inverse footgun: a plan seeded with `TenantId == null` as a "shared" plan would leak to **every** tenant's anonymous page.
 
 This directly violates the project's own rules:
-- **S3** (`agents/knowledge/security-rules.md:54-56`): "For `[AllowAnonymous]` endpoints there is no tenant claim, so the global filter is bypassed — anonymous routes must not return tenant-scoped data unless gated by a different shared secret."
-- **S8** (`agents/knowledge/security-rules.md:93-98`): entities are either `ITenantEntity` or documented "true platform config" — this decision was not made explicitly for `MembershipPlan`.
+- **S3** (`docs/architecture/security-rules.md:54-56`): "For `[AllowAnonymous]` endpoints there is no tenant claim, so the global filter is bypassed — anonymous routes must not return tenant-scoped data unless gated by a different shared secret."
+- **S8** (`docs/architecture/security-rules.md:93-98`): entities are either `ITenantEntity` or documented "true platform config" — this decision was not made explicitly for `MembershipPlan`.
 
 Precedent for the fix fork already exists in the codebase: `Country` is deliberately **not** `ITenantEntity` (`src/Cleansia.Core.Domain/Internationalization/Country.cs:7`) i.e. true platform config served anonymously, whereas `Service`/`Package`/`Extra` are all `ITenantEntity` and also served on `[AllowAnonymous]` routes — so whichever model is chosen for plans should be applied consistently.
 
@@ -1398,7 +1398,7 @@ I have everything I need. The gap is fully grounded in the cited code. Here is t
 - The write path cannot set either field: `CreateAdminUser.Command` accepts only `Email, Password, FirstName, LastName, PhoneNumber` — `CreateAdminUser.cs:15-20`; `UpdateAdminUser.Command` accepts only `UserId, FirstName, LastName, PhoneNumber` — `UpdateAdminUser.cs:13-17`.
 - Data-loss footgun: `User.Update(string firstName, string lastName, string phoneNumber, DateOnly? birthDate = null)` unconditionally assigns `BirthDate = birthDate` (`User.cs:132-140`). `UpdateAdminUser` calls `user.Update(firstName, lastName, phoneNumber)` with **no** `birthDate` argument (`UpdateAdminUser.cs:66-69`), so the default `null` is applied and **`BirthDate` is wiped on every admin edit**. `PreferredLanguageCode` is left untouched by `Update` (only `UpdateLanguagePreference` at `User.cs:181-185` sets it), so it can never be changed via the admin user flows at all.
 
-This is a read/write contract drift (Consistency §A/§B: the DTO and the command archetypes disagree) and a silent data-integrity loss on update — adjacent to S5 "audit every Response/DTO for fields that must not [drift]" in `agents/knowledge/security-rules.md:61`.
+This is a read/write contract drift (Consistency §A/§B: the DTO and the command archetypes disagree) and a silent data-integrity loss on update — adjacent to S5 "audit every Response/DTO for fields that must not [drift]" in `docs/architecture/security-rules.md:61`.
 
 ## Decision required before build (for PM/Architect)
 
@@ -1948,7 +1948,7 @@ This is a compliance/trust gap on a money-adjacent feature: admins are forced to
 
 ## Rule citations
 
-- **S7 — Idempotency** (`agents/knowledge/security-rules.md:83-91`): the fix must not disturb the existing `(OrderId, Source)` dedup (AC 5) — the cited reference pattern is `LoyaltyService.GrantForCompletedOrderAsync`.
+- **S7 — Idempotency** (`docs/architecture/security-rules.md:83-91`): the fix must not disturb the existing `(OrderId, Source)` dedup (AC 5) — the cited reference pattern is `LoyaltyService.GrantForCompletedOrderAsync`.
 - **S4 — DTO leak prevention** (`security-rules.md:58-68`): the new `Description` field added to the activity DTOs is the admin-entered justification only (no PII / no actor id leak), consistent with the audit-every-DTO rule.
 - **Naming trap — command suffix** (`agents/knowledge/conventions.md:93-95`): the `UnitOfWorkPipelineBehavior` only commits requests ending in `Command`; `GrantPointsManually.Command` / `RevokePointsManually.Command` already comply, so the persisted Description will be committed.
 - **Owner-only steps** (`conventions.md:97-101`): `nswag-regen` flag is required for the admin DTO change; `ef-migration` is *not* expected (column already present).
@@ -2170,7 +2170,7 @@ As an **admin (tenant administrator)**, I want the GDPR data-subject tools and t
 - `DeactivateAdminUser.Validator` (`src/Cleansia.Core.AppServices/Features/AdminUsers/DeactivateAdminUser.cs:17-36`) **already** blocks self-deactivation (`CannotDeactivateSelf`, line 33-34) but has **no last-admin guard** — the final active administrator can still be deactivated, locking out the admin console.
 - A `CannotDeleteSelf = "admin_user.cannot_delete_self"` constant already exists (`BusinessErrorMessage.cs:208`) but is **referenced nowhere** — the intended self-delete guard was never wired up.
 
-This is a real authorization/availability gap, not a style nit — it maps directly to the project's security laws: **S3** (resource-by-id operations must guard who/what may be targeted) and the priority ordering **security > correctness** in `agents/knowledge/security-rules.md`.
+This is a real authorization/availability gap, not a style nit — it maps directly to the project's security laws: **S3** (resource-by-id operations must guard who/what may be targeted) and the priority ordering **security > correctness** in `docs/architecture/security-rules.md`.
 
 ## Acceptance criteria
 
@@ -2699,7 +2699,7 @@ Filed under the **admin** persona because the harmed party is the operator of re
   - `ResendConfirmationEmail` and password-reset request/confirm follow the same `GetByEmailAsync`/code pattern in `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:18-48`.
 - Endpoints are confirmed `[AllowAnonymous]` — e.g. `src/Cleansia.Web.Customer/Controllers/AuthController.cs:34-73` (Login, ConfirmUserEmail, ResendConfirmationEmail), mirrored in the Partner/Admin/Mobile auth controllers.
 - **Net effect:** for any user with a non-null `TenantId`, these four flows return "no user found" and silently fail. Single-tenant deployments (all `TenantId == null`) are unaffected, which is why this has not surfaced yet.
-- **The tempting wrong fix is itself the security risk.** `agents/knowledge/security-rules.md:54-56` (S3): anonymous routes have no tenant claim so the global filter is bypassed and "must not return tenant-scoped data unless gated by a different shared secret (e.g. a confirmation code in the URL)." A blanket `IgnoreQueryFilters()` (already used narrowly and deliberately in `UserRepository.GetByIdIgnoringTenantAsync`, line 69-74) would make `GetByConfirmationCodeAsync` match a code across **all** tenants, converting a weak per-tenant code into a cross-tenant takeover — a direct S8 violation (`security-rules.md:93-101`).
+- **The tempting wrong fix is itself the security risk.** `docs/architecture/security-rules.md:54-56` (S3): anonymous routes have no tenant claim so the global filter is bypassed and "must not return tenant-scoped data unless gated by a different shared secret (e.g. a confirmation code in the URL)." A blanket `IgnoreQueryFilters()` (already used narrowly and deliberately in `UserRepository.GetByIdIgnoringTenantAsync`, line 69-74) would make `GetByConfirmationCodeAsync` match a code across **all** tenants, converting a weak per-tenant code into a cross-tenant takeover — a direct S8 violation (`security-rules.md:93-101`).
 - A host→value resolution precedent already exists: `IHostAudienceProvider` (`src/Cleansia.Core.AppServices/Authentication/IHostAudienceProvider.cs`) is injected per Web host at startup. A host/subdomain→tenant resolver should mirror that shape and feed `ITenantProvider.SetTenantOverride(...)`.
 
 ## Acceptance criteria
@@ -2750,7 +2750,7 @@ Filed under the **admin** persona because the harmed party is the operator of re
 - **Backend — AppServices (Auth):** `Features/Auth/Login.cs`, `ConfirmUserEmail.cs`, `ResendConfirmationEmail.cs`, password-reset request/confirm handlers + validators (must rely on the resolved tenant; must **not** add `IgnoreQueryFilters`).
 - **Backend — Infra.Database:** `Repositories/UserRepository.cs` (the `GetByEmailAsync`/`GetByConfirmationCodeAsync` consumers; no filter-ignoring additions). The filter in `CleansiaDbContext.cs:111-179` is read/relied-on, not modified.
 - **Tests:** `src/Cleansia.Tests` (and/or `Cleansia.IntegrationTests`) for the AC-6 guard tests.
-- **Docs:** `docs/architecture` + `agents/knowledge/security-rules.md` (S3/S8) — record the single-vs-multi-tenant auth resolution decision.
+- **Docs:** `docs/architecture` + `docs/architecture/security-rules.md` (S3/S8) — record the single-vs-multi-tenant auth resolution decision.
 - **Manual steps (owner-only):** none expected for schema/clients; if a host→tenant mapping store is added, flag `ef-migration`. No `nswag-regen` unless a request DTO changes (it should not).
 
 
@@ -4221,7 +4221,7 @@ partner (cleaner / employee acting on jobs)
 - `src/Cleansia.Core.Domain/Users/Employee.cs:243-255` — `Reject()` sets `ContractStatus = ContractStatus.Rejected`; line 229-241 `Approve()` is the only method that sets `Approved`.
 - `src/Cleansia.Core.AppServices/Features/Orders/StartOrder.cs:47-52` — the InProgress (start work) transition gates only on `EmployeeIsAssignedToOrderAsync` + `EmployeeHasNoOrderInProgressAsync`; **it has no document/approval gate at all**. This is the wider finding: a rejected/terminated cleaner who already holds an assignment can still start the job.
 - Error key: `src/Cleansia.Core.AppServices/Common/BusinessErrorMessage.cs:109` — `EmployeeDocumentsMissing = "employee.documents_missing"`. The rule method `HasUploadedDocumentsAsync`, and this message, both describe documents while the code actually reads `ContractStatus` — the name lies about what it enforces.
-- Convention basis: `agents/knowledge/security-rules.md` S2/S3 (authorization must be enforced in the handler/domain, not assumed) and the project rule that approval is the vetting gate. An open question (EMP-GAP-02) is whether `Active` should count alongside `Approved`; this story forces that decision to be made explicitly rather than left implicit in a `!= Pending` check.
+- Convention basis: `docs/architecture/security-rules.md` S2/S3 (authorization must be enforced in the handler/domain, not assumed) and the project rule that approval is the vetting gate. An open question (EMP-GAP-02) is whether `Active` should count alongside `Approved`; this story forces that decision to be made explicitly rather than left implicit in a `!= Pending` check.
 
 ## Acceptance criteria (Given/When/Then)
 
@@ -5042,7 +5042,7 @@ Now I'll write the user story.
 - The identical defect exists on the admin path: `UploadEmployeeDocument.Handler` at `src/Cleansia.Core.AppServices/Features/EmployeeDocuments/UploadEmployeeDocument.cs:106-138` (same "filename exists → new version" logic, no content check).
 - The domain entity has **no content-hash column** today: `src/Cleansia.Core.Domain/Documents/EmployeeDocument.cs:8-41` exposes `FileName`, `FilePath`, `ContentType`, `FileSizeBytes`, `Version`, `PreviousVersionId`, `Status` — there is nothing to compare content against yet.
 - The lookup repo method already scopes by `EmployeeId + FileName + IsActive` and orders by `Version` desc: `src/Cleansia.Infra.Database/Repositories/EmployeeDocumentRepository.cs:71-77` — the natural seam for a hash comparison.
-- **Rule cited:** S7 (Idempotency on side-effecting commands) in `agents/knowledge/security-rules.md:84-91` — "*check whether the side effect already happened … before doing it again*", with `LoyaltyService.GrantForCompletedOrderAsync` / `ReferralService.ProcessQualifyingOrderAsync` as the ledger-check reference pattern. Blob upload + new DB row is a doublable side effect. Also B8 in `agents/knowledge/consistency.md:76-79` ("Side-effecting commands are idempotent (S7)").
+- **Rule cited:** S7 (Idempotency on side-effecting commands) in `docs/architecture/security-rules.md:84-91` — "*check whether the side effect already happened … before doing it again*", with `LoyaltyService.GrantForCompletedOrderAsync` / `ReferralService.ProcessQualifyingOrderAsync` as the ledger-check reference pattern. Blob upload + new DB row is a doublable side effect. Also B8 in `agents/knowledge/consistency.md:76-79` ("Side-effecting commands are idempotent (S7)").
 
 ## Acceptance criteria
 
@@ -5221,7 +5221,7 @@ I now have everything grounded in real code and real rules (S7 names push as a d
 - **Queue re-delivery is guaranteed on any failure.** `SendPushNotificationFunction.cs:120` `throw;` re-queues; `SendSitewidePromoFanoutFunction.cs:162` `throw;` re-pages the **entire** opted-in user set and re-enqueues a fresh per-user push for everyone — no campaign-level ledger.
 - **Partial-success-then-failure re-sends.** In `FcmPushDispatcher.SendAsync` (`FcmPushDispatcher.cs:70-81`), `SendEachForMulticastAsync` can partially succeed before an exception; the broad catch returns `(0, count, [])`, the Function logs all-failed and re-throws, and redelivery re-pushes tokens that already received it. A failure of `CommitAsync` after pruning (`SendPushNotificationFunction.cs:107`) has the same effect.
 - **Cold-start init race silently drops one event.** `EnsureInitialized` returns `null` on transient init failure leaving `_initAttempted=false` (`FcmPushDispatcher.cs:170-179`) — good for next-time retry — but the current dispatch reports `(0, allFailed, [])` (`:52`) and the Function logs all-failed with **nothing pruned** at Warning only.
-- **Rules cited:** **S7** (`agents/knowledge/security-rules.md:84-91`) lists push among doublable side effects that *must* be idempotent (check a ledger before re-doing the side effect), with `LoyaltyService.GrantForCompletedOrderAsync` (`src/Cleansia.Core.AppServices/Services/LoyaltyService.cs:52-60`) as the canonical "bail if ledger entry exists" pattern. **Consistency B8** (`agents/knowledge/consistency.md:75-79`) explicitly flags "try/catch but no idempotency guard" and "broad `catch (Exception)` for control flow" — both present in `FcmPushDispatcher.cs:75-81`.
+- **Rules cited:** **S7** (`docs/architecture/security-rules.md:84-91`) lists push among doublable side effects that *must* be idempotent (check a ledger before re-doing the side effect), with `LoyaltyService.GrantForCompletedOrderAsync` (`src/Cleansia.Core.AppServices/Services/LoyaltyService.cs:52-60`) as the canonical "bail if ledger entry exists" pattern. **Consistency B8** (`agents/knowledge/consistency.md:75-79`) explicitly flags "try/catch but no idempotency guard" and "broad `catch (Exception)` for control flow" — both present in `FcmPushDispatcher.cs:75-81`.
 
 ## Acceptance Criteria (Given / When / Then)
 
@@ -5656,7 +5656,7 @@ I have everything needed to write a grounded, single user story.
 - The refund capability already exists and is proven: `IStripeClient.RefundCheckoutSessionAsync(stripeSessionId, amount, ct)` (`Cleansia.Core.Clients.Abstractions/Stripe/IStripeClient.cs:13`), used by the customer cancel path `CancelOrder.cs:142` with the `PaymentStatus.Refunded` transition and a non-blocking `StripeException` try. The `Order` carries `StripeSessionId` + `PaymentStatus`. This story wires the *same proven path* into dispute resolution.
 - No state-machine guard exists: `Dispute.Resolve` (`Dispute.cs:82`) and `Dispute.UpdateStatus` (`Dispute.cs:64-68`) both set `Status` unconditionally, so any status → any status is allowed and re-resolving overwrites the prior `RefundAmount` (and would re-trigger a payout).
 - `Dispute.StripeDisputeId` + `Dispute.LinkStripeDispute` (`Dispute.cs:38, 104`) are dead — never called; there is no inbound Stripe-dispute (chargeback) webhook.
-- This is the exact scenario S7 (`agents/knowledge/security-rules.md:84-91`) governs: a command that issues a Stripe refund / writes a financial record **must be idempotent**, keyed off an existing ledger/transaction, with `LoyaltyService.GrantForCompletedOrderAsync` and `ReferralService.ProcessQualifyingOrderAsync` named as the reference patterns. The webhook-idempotency precedent is `ProcessedStripeEvent` + `HandlePaymentNotification.cs:144`.
+- This is the exact scenario S7 (`docs/architecture/security-rules.md:84-91`) governs: a command that issues a Stripe refund / writes a financial record **must be idempotent**, keyed off an existing ledger/transaction, with `LoyaltyService.GrantForCompletedOrderAsync` and `ReferralService.ProcessQualifyingOrderAsync` named as the reference patterns. The webhook-idempotency precedent is `ProcessedStripeEvent` + `HandlePaymentNotification.cs:144`.
 
 ## Acceptance criteria (Given / When / Then)
 
@@ -6234,7 +6234,7 @@ This contradicts the sibling catalog deletes: `DeleteCountry`/`DeleteCurrency`/`
 
 This violates two named rules:
 - **Consistency B6** (`agents/knowledge/consistency.md:65-72`): prefer soft-delete via `Deactivate` (sets `IsActive=false`, preserves history); `Remove` is only for true join/scratch rows that carry no history and are never referenced. Services and packages carry both.
-- **Security S10** (`agents/knowledge/security-rules.md:114-121`): `IsActive` is the soft-delete flag, and the customer overviews already filter it (`GetServiceOverview.cs:21`, `GetPackageOverview.cs:21`), so deactivation already hides the entity from the booking catalog — no destructive delete is needed to "retire" a service.
+- **Security S10** (`docs/architecture/security-rules.md:114-121`): `IsActive` is the soft-delete flag, and the customer overviews already filter it (`GetServiceOverview.cs:21`, `GetPackageOverview.cs:21`), so deactivation already hides the entity from the booking catalog — no destructive delete is needed to "retire" a service.
 
 Notably, the user-facing surface for the safe behavior **already exists but is unwired**: `BusinessErrorMessage.ServiceInUse = "service.in_use"` and `PackageInUse = "package.in_use"` (`BusinessErrorMessage.cs:223,230`) are defined and translated in admin i18n (`errors.service.in_use` en.json:1765, `errors.package.in_use` :1813) yet referenced by no validator or handler.
 
@@ -6392,7 +6392,7 @@ Here is the user story.
 - `src/Cleansia.Core.AppServices/Features/SavedAddresses/GetSavedAddresses.cs:22` — the handler does `.Where(s => s.Address != null)` before projecting to `SavedAddressDto`, dropping any orphan with **no error and no log**.
 - `src/Cleansia.Infra.Database/EntityConfigurations/SavedAddressEntityConfiguration.cs:23` — the `SavedAddress → Address` FK is `OnDelete(DeleteBehavior.Restrict)`; `AddressRepository` (`src/Cleansia.Infra.Database/Repositories/AddressRepository.cs`) exposes **no** delete method. So an orphan is an **invariant violation**, not a normal state — meaning the silent filter masks a real data-integrity bug.
 - `Address` (`src/Cleansia.Core.Domain/Users/Address.cs`) has **no soft-delete** and mutates in place via `Anonymize()`; there is no IsDeleted flag the read could legitimately be filtering on.
-- This contradicts `agents/knowledge/conventions.md` "production-ready, long-term bar" (*solve root cause; surface deeper structural problems rather than paper over them*) and the `agents/knowledge/security-rules.md` **S6** logging-hygiene law (log identifiers, never address PII).
+- This contradicts `agents/knowledge/conventions.md` "production-ready, long-term bar" (*solve root cause; surface deeper structural problems rather than paper over them*) and the `docs/architecture/security-rules.md` **S6** logging-hygiene law (log identifiers, never address PII).
 
 > Note: `GetSavedAddresses` does not filter `IsActive` either (S10), and the existing `.Where` is **not** that filter — it is an undocumented orphan-drop. This story is scoped to the orphan-drop behavior only (see out-of-scope).
 
@@ -6559,7 +6559,7 @@ never inject markup/script into an email body (stored/reflected XSS)**.
   If any hosted template wraps those in `{{{...}}}`, the user-supplied value is injected unescaped.
   This needs an out-of-band check of the SendGrid templates.
 - Cited rules: `agents/knowledge/conventions.md:60` ("**No dead code.** Delete unreferenced
-  methods/classes…") directly supports removal; `agents/knowledge/security-rules.md` is the audit
+  methods/classes…") directly supports removal; `docs/architecture/security-rules.md` is the audit
   harness this gap is graded against (no existing S-rule covers email-template escaping, so this story
   also asks to record the "no `{{{ }}}` on user data" rule).
 
@@ -6584,7 +6584,7 @@ never inject markup/script into an email body (stored/reflected XSS)**.
   them, Then the rendered email body shows that value as inert literal text (HTML-escaped), with no
   executable markup.
 - **AC5** — Given the security knowledge base, When this story is delivered, Then a rule is recorded
-  (in `agents/knowledge/security-rules.md`, e.g. as S11 or an addendum to S4/S6) stating "email/HTML
+  (in `docs/architecture/security-rules.md`, e.g. as S11 or an addendum to S4/S6) stating "email/HTML
   template output must be HTML-encoded; never place user-controlled data inside `{{{ }}}` or behind a
   `WriteSafeString` helper", so future template work is graded against it.
 
@@ -6611,7 +6611,7 @@ never inject markup/script into an email body (stored/reflected XSS)**.
 - **External config (out of repo, owner/admin task)** — review and, where needed, edit the SendGrid
   hosted dynamic templates to use double-stache for customer-controlled fields.
 - **Knowledge base / process** — record the audit result under `agents/backlog/audits/` and add the
-  template-escaping rule to `agents/knowledge/security-rules.md`.
+  template-escaping rule to `docs/architecture/security-rules.md`.
 - **No** changes to: frontend apps, Android apps, NSwag clients, DB schema/migrations, or API
   contracts (so no `ef-migration` / `nswag-regen` manual step is required).
 

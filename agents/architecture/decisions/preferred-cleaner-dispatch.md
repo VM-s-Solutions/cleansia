@@ -5,7 +5,7 @@
 > is the immutable record and carries the `## Challenge` / `## Defense` / `## Verdict` trail; **this page
 > is the evolving companion and is what you read first.** `agents/knowledge/patterns-backend.md` now
 > carries the enforceable rule (*"Bounded exclusivity on a pull board"*), and the role card is
-> `agents/knowledge/roles/preferred-cleaner-hold-resolver.md`.
+> `docs/domain/roles/preferred-cleaner-hold-resolver.md`.
 >
 > ⚠️ **AMENDED 2026-08-03 by owner instruction.** **[ADR-0039](../../backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**
 > is **`accepted`** (2026-08-03, after a two-lane defense panel: disclosure + query-cost + lead;

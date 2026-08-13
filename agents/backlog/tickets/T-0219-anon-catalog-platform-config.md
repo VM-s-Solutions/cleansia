@@ -31,7 +31,7 @@ This ticket is created per the **architect panel + platform-expandability delibe
 which ruled these get the **same Option A treatment as `MembershipPlan` (T-0113)** but in their **own
 batch** (NOT folded into T-0113 — scope discipline; avoids the double-fix collision). Governing docs:
 - ADR-0001 **Addendum A1** (`adr/0001-authorization-model.md`) — D-A1.1 doctrine + D-A1.4 routes these here.
-- `agents/knowledge/platform-expandability.md` §7b/§8 — the per-entity index reality + the
+- `docs/architecture/platform-expandability.md` §7b/§8 — the per-entity index reality + the
   forward-safe/reverse-constrained FK note (carry both into this ticket's implementation).
 
 > **"BSP-9" naming collision (resolve before scheduling):** the label "BSP-9" is overloaded — in T-0123
@@ -88,7 +88,7 @@ multi-tenant move is not assumed cheap.
 - Admin catalog CRUD surfaces (separate Wave-2 tickets).
 
 ## Implementation notes
-- **Governing:** ADR-0001 Addendum A1 (D-A1.1/D-A1.4) + `agents/knowledge/platform-expandability.md`.
+- **Governing:** ADR-0001 Addendum A1 (D-A1.1/D-A1.4) + `docs/architecture/platform-expandability.md`.
 - **Serialization:** check at spawn time that no other ticket is concurrently editing these five entity
   configs or `CleansiaDbContext` global-filter registration; serialize if so. Coordinate with T-0123
   (which uses the "BSP-9" label for a different fix) so the two don't collide.

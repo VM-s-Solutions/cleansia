@@ -166,7 +166,7 @@ status doc — not by an agent writing into a live ADR.
 `NULLS NOT DISTINCT`. Both facts are already demonstrated by the two shipped indexes.
 
 **Archetype:** `agents/architecture/decisions/` living-doc update (the architect's own artifact), not an
-ADR. `agents/knowledge/security-rules.md` S8 is the rule this constraint qualifies.
+ADR. `docs/architecture/security-rules.md` S8 is the rule this constraint qualifies.
 
 ## Status log
 - 2026-08-02 — draft (created by pm from the challenger round, as a **known-constraint note**, per the

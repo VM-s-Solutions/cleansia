@@ -74,7 +74,21 @@ import { fileURLToPath } from "node:url";
 // ── configuration ───────────────────────────────────────────────────────────
 
 /** The corpus the rule governs — `conventions.md` names exactly these two trees. */
-const CORPUS_DIRS = ["agents/knowledge", "agents/process"];
+// The corpus follows the files, not the folder. CL-034 published the domain-truth half of
+// agents/knowledge — the S1–S12 security laws, the per-component role contracts and the expandability
+// doctrine — into docs/. Their claims about the tree did not stop needing checking just because they
+// moved, so the paths move with them. Entries may be a directory OR a single file.
+//
+// Deliberately NOT "docs/**": that would sweep in the 51 migrated ADRs, whose thousands of line-number
+// citations have never been C3-checked. Widening coverage is a decision to take on its own, not a side
+// effect of a move.
+const CORPUS_DIRS = [
+    "agents/knowledge",
+    "agents/process",
+    "docs/domain/roles",
+    "docs/architecture/security-rules.md",
+    "docs/architecture/platform-expandability.md",
+];
 const ADR_DIR = "docs/decisions";
 
 /** Trees a citation may point into. Anything outside them resolves as "missing". */
@@ -453,6 +467,10 @@ const corpus = [];
 for (const d of CORPUS_DIRS) {
     const abs = join(REPO, d);
     if (!existsSync(abs)) continue;
+    if (statSync(abs).isFile()) {
+        if (abs.endsWith(".md")) corpus.push(abs);
+        continue;
+    }
     for (const f of walk(abs, [], (n) => n.endsWith(".md"))) corpus.push(f);
 }
 corpus.sort();

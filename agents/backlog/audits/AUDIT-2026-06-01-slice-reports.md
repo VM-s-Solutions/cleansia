@@ -1171,7 +1171,7 @@ Confirmed: `LinkStripeDispute` / `StripeDisputeId` has a column and a domain met
 
 # Audit: Disputes & Addresses — Functional Gaps and Half-Built Features
 
-Scope: `Features/Disputes`, `Features/Addresses`, `Features/SavedAddresses`, plus customer web/mobile disputes & addresses UI. Audit only; no code changed. Rules cited from `agents/knowledge/security-rules.md` (S1–S10) and `consistency.md` (B/C/E sections).
+Scope: `Features/Disputes`, `Features/Addresses`, `Features/SavedAddresses`, plus customer web/mobile disputes & addresses UI. Audit only; no code changed. Rules cited from `docs/architecture/security-rules.md` (S1–S10) and `consistency.md` (B/C/E sections).
 
 ## Summary verdict
 The **disputes** domain is half-built and the missing half is the entire **admin/support side**. Customers can open disputes and chat, but **no admin can triage, respond, resolve, escalate, or close a dispute from the Admin app** — those operations are physically mounted only on the *Partner* API, and there is no admin dispute UI at all. Three of six `DisputeStatus` states are unreachable. The **saved-addresses** domain is essentially complete and consistent across web + mobile; its issues are minor parity/quality items. The most severe finding is a **privilege-escalation hole** (S1) in the dispute message endpoint.

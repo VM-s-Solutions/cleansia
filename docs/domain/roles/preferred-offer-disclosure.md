@@ -71,7 +71,7 @@ already uses for every non-customer caller
   distinguishing them is a hard reject.
 - **Neither writes.** No `Add`, no `Commit`, no notification, no hold mutation. The hold pair's only
   writers stay `Order.GrantPreferredHold` / `ClearPreferredHold`
-  (`agents/knowledge/roles/preferred-cleaner-hold-resolver.md`).
+  (`docs/domain/roles/preferred-cleaner-hold-resolver.md`).
 - **The client does not know disclosability.** It renders the block off the block's **arrival**. A
   client conjoining a status onto the server's block is `patterns-frontend.md` §*"A server-authored
   disclosure block is rendered off its own ARRIVAL"*.

@@ -3314,7 +3314,7 @@ T-0342 is that blocker's ticketized form.)
   non-existent requirement); a missing `aps-environment` entitlement; a flagged-as-missing `UiState`/`ActionState` on the
   registrar/observer (the §7.6 D3 mis-fire). (Composes with #13-gen — the `Device/*` calls ride the ADR-0019 spine.)
 
-#### New CRC roles (added with the T-0311 wiring; the RDD home is the planned `agents/knowledge/roles/ios-*` cards that land with their code — ADR-0019 precedent)
+#### New CRC roles (added with the T-0311 wiring; the RDD home is the planned `docs/domain/roles/ios-*` cards that land with their code — ADR-0019 precedent)
 
 - **`ios-push-registrar`** (new, `CleansiaCore/Push`) — the `PushRegistrar` protocol + its default impl (decision (a); the
   next member of the ADR-0014 D6′ / ADR-0018 D2 system-framework-behind-a-Core-seam family): *responsibility:* be the SOLE

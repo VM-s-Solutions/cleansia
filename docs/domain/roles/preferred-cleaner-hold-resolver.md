@@ -6,7 +6,7 @@
 > anything here** — six of the draft's rules were broken by challengers and the surviving forms are not
 > the obvious ones. **Third sibling of `CancellationPolicyResolver` and `IExpressWaiverResolver`** —
 > same shape, same namespace family, same "returns a record the caller acts on" contract. Read
-> `CancellationPolicyResolver.cs:14-45`, `agents/knowledge/roles/express-waiver-resolver.md` and
+> `CancellationPolicyResolver.cs:14-45`, `docs/domain/roles/express-waiver-resolver.md` and
 > `TakeOrder.cs` in full first.
 >
 > ⚠️ **AMENDED 2026-08-03 by owner instruction — ADR-0039**, `accepted` the same day after a two-lane

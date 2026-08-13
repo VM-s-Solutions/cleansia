@@ -178,7 +178,7 @@ binaries.
 **Catalog-edit routing:** no catalog edit proposed. Test 1 (code sweep): the only production caller of
 `Dispute.Anonymize()` is `GdprDeletionService.cs:233`, and the only three other blob-deleting sites are
 the sibling blocks in the same method — one call site each, no pattern to generalize. Test 2 (floor):
-searched `agents/knowledge/security-rules.md` for `blob`, `erasure`, `container`, and `consistency.md`
+searched `docs/architecture/security-rules.md` for `blob`, `erasure`, `container`, and `consistency.md`
 for `blob` — nothing governs "which containers an erasure must reach" at any level of generality, so a
 new sentence would be a first statement, not a narrowing. It is not written as a catalog rule anyway:
 the statement it would make is enforced instead by

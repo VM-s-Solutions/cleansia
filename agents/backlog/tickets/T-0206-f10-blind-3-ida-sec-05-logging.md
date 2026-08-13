@@ -20,7 +20,7 @@ source: findings F10/BLIND-3/IDA-SEC-05 (S6)
 ## Context
 
 Wave-3 consistency/quality cleanup. Findings F10 / BLIND-3 / IDA-SEC-05 flag concrete violations of
-the **S6 logging-hygiene law** (`agents/knowledge/security-rules.md` §S6: *"No email, phone, name,
+the **S6 logging-hygiene law** (`docs/architecture/security-rules.md` §S6: *"No email, phone, name,
 address, payment/Stripe detail, JWT, refresh token, or confirmation code in logs at Information level
 or higher. Log `userId`, not `user.Email`."*). The codebase currently logs sensitive material above
 `Debug` in several real places:
@@ -90,7 +90,7 @@ values, no contracts change.
 
 ## Implementation notes
 
-- **Canonical pattern:** S6 in `agents/knowledge/security-rules.md` §S6 — *log `userId`, never
+- **Canonical pattern:** S6 in `docs/architecture/security-rules.md` §S6 — *log `userId`, never
   email/phone/card/code/body*. This ticket is a `consistency.md`-style "one way to do each thing"
   cleanup: the canonical log shape is **safe scalar correlation keys only** (`UserId`, `OrderId`,
   `EventKey`, `StatusCode`, byte counts) at Information/Warning/Error; PII/secrets allowed at `Debug`

@@ -35,7 +35,7 @@ const LENSES = [
     key: 'security',
     agent: 'security',
     focus: [
-      'The S1-S10 laws in agents/knowledge/security-rules.md INCLUDING the new S7a/S7b idempotency idioms.',
+      'The S1-S10 laws in docs/architecture/security-rules.md INCLUDING the new S7a/S7b idempotency idioms.',
       'AuthZ/IDOR/resource-ownership, multi-tenancy isolation, PII, idempotency atomicity (check-then-act,',
       'conditional-UPDATE vs caught-unique-violation, where DbUpdateException surfaces vs the UoW commit),',
       'secrets in config, [AllowAnonymous] discipline, rate-limit, migration/DTO safety.',

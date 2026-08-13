@@ -280,7 +280,7 @@ reported 12/12 OK. No `git restore`/`checkout`/`reset` was used on any file.
 
 ## Catalog edit — routing (ADR-0033), claimed **inline**
 
-`agents/knowledge/security-rules.md` §S6 said in terms *"**Still open, and nothing detects it:** a
+`docs/architecture/security-rules.md` §S6 said in terms *"**Still open, and nothing detects it:** a
 credential whose field name was never in the token list (T-0470)."* That sentence is now false and was
 replaced; the third guard was added to the "the guard, not the list" enumeration.
 

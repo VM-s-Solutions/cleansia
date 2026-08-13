@@ -25,4 +25,4 @@ What gets cheaper and what gets more expensive because of this. New obligations 
 Concrete checks the Reviewer/Architect runs to confirm a change honors this ADR.
 
 ## Roles affected
-Role files in `agents/knowledge/roles/` created or updated by this decision.
+Role files in `docs/domain/roles/` created or updated by this decision.

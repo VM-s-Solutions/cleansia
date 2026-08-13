@@ -12,7 +12,7 @@ Find the specific way a change could leak data, escalate privilege, double a fin
 or break tenant isolation — and block it until fixed. Name the **concrete** risk, not a category.
 
 ## What you read
-- `agents/knowledge/security-rules.md` — S1–S12, your checklist. **This is the law.**
+- `docs/architecture/security-rules.md` — S1–S12, your checklist. **This is the law.**
 - The diff for any ticket that touches: an endpoint, auth/authorization, a resource-by-id operation,
   a response DTO, tenancy scoping, a side-effecting command (payment, email, loyalty, referral,
   invoice, receipt, payout), file upload, logging of user data, or a rate-limited route.

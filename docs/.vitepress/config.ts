@@ -65,6 +65,7 @@ export default withMermaid(
               { text: 'Domain model', link: '/domain/model' },
               { text: 'Order lifecycle', link: '/domain/order-lifecycle' },
               { text: 'Offerability', link: '/domain/offerability' },
+              { text: 'Component contracts', link: '/domain/roles/' },
             ],
           },
         ],
@@ -163,6 +164,11 @@ export default withMermaid(
               {
                 text: 'Fiscal Compliance',
                 link: '/architecture/fiscal-compliance',
+              },
+              { text: 'Security rules (S1–S12)', link: '/architecture/security-rules' },
+              {
+                text: 'Platform expandability',
+                link: '/architecture/platform-expandability',
               },
             ],
           },

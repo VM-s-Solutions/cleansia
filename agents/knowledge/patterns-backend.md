@@ -726,7 +726,7 @@ Adopting Mode B for a new consumer requires an ADR (or an explicit ticket decisi
 ADR-0023's test) + the two duplicate windows documented in the consumer's doc-comment. **Never mix
 modes in one consumer**, and never hide the mode behind a boolean — the member name at the call site
 is the greppable evidence of which mode the consumer runs (ADR-0002 verification check #3 logic).
-Role card: `agents/knowledge/roles/idempotency-guard.md`.
+Role card: `docs/domain/roles/idempotency-guard.md`.
 
 ## A durable store of a VERBATIM wire body declares a clock, and "durable" never means "forever"
 
@@ -888,7 +888,7 @@ by construction, so an in-process effect recorded there is silently discarded. A
 **serializable intent record, never a closure** (that is what keeps an outbox leg additive), must own
 its own commit (**a tracked `Add` inside an effect is a silent no-op**), must not fail the request, and
 must carry a named detection query in its doc-comment. Full contract + the five laws:
-`agents/knowledge/roles/post-commit-effects.md`.
+`docs/domain/roles/post-commit-effects.md`.
 
 **Corollary 1 — the ledger row reads the PERSISTED entity, never the preview.** `OrderFactory`
 may discard a previewed promo when membership+tier is larger (`ResolveLoy003Discount`), so

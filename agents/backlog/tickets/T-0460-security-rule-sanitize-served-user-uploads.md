@@ -61,7 +61,7 @@ Filed from the **T-0446 security gate** (finding **SEC-5**). Full write-up:
 > **Proposed S12 text, the S12-vs-S4 ruling, the "how wide is artifact" ruling and the retroactive-scope
 > ruling are all in** `docs/decisions/adr-0043.md` **§D7
 > / §D8 / §D9** (`proposed`, number not allocated, **panel owed**). This ticket remains the **sole
-> writer** of `agents/knowledge/security-rules.md`; the draft ADR deliberately does not edit it.
+> writer** of `docs/architecture/security-rules.md`; the draft ADR deliberately does not edit it.
 
 **This is a genuine gap in the rule set, not a violation of it.** Nothing in **S1–S11** addresses
 **bytes embedded inside a stored artifact that is later served by URL**:
@@ -76,7 +76,7 @@ catching it. **The reviewers were not wrong against the rules; the rules were si
 strongest possible argument for adding one, and it is the same argument that produced Gate 0.5
 (T-0445) and the worktree rule (T-0456) this sprint.
 
-The rule to add to `agents/knowledge/security-rules.md`, in substance (**the panel owns the final
+The rule to add to `docs/architecture/security-rules.md`, in substance (**the panel owns the final
 wording**):
 
 > **User-supplied artifacts that will ever be served back by URL are sanitized at upload** — metadata
@@ -106,7 +106,7 @@ and the panel must settle more than the wording:
 
 ## Acceptance criteria
 
-- [ ] **AC1** — The rule is added to `agents/knowledge/security-rules.md` in the established S-series
+- [ ] **AC1** — The rule is added to `docs/architecture/security-rules.md` in the established S-series
       voice (statement of the law → the concrete failure it prevents → a reference to the code that
       complies once T-0458 lands). Evidence: the diff.
 - [ ] **AC2** — The **audit checklist** at the foot of `security-rules.md` gains a corresponding
@@ -141,7 +141,7 @@ and the panel must settle more than the wording:
 - **Sequencing preference (not a hard dependency):** this should ideally land **before or alongside
   T-0458's panel**, so that ADR can cite the rule rather than invent the reasoning from scratch. It is
   deliberately left without a `depends_on` in either direction so neither can deadlock the other.
-- **Shared-file lane:** `agents/knowledge/security-rules.md` — this ticket is the **sole writer**. No
+- **Shared-file lane:** `docs/architecture/security-rules.md` — this ticket is the **sole writer**. No
   overlap with T-0454 (`check-consistency.mjs`), T-0456 (`shared-file-lanes.md`) or T-0439
   (`quality-gates.md`).
 
@@ -185,12 +185,12 @@ and the panel must settle more than the wording:
 ### Architect — 2026-08-07 — **written; ready for the docs/reviewer pass**
 
 **ADR-0043 is `accepted` and assigns this rule to T-0460 (§E). This pass transcribes its D7 text and
-its §B.6 enforcement table into `agents/knowledge/security-rules.md` as **S12**. No decision was
+its §B.6 enforcement table into `docs/architecture/security-rules.md` as **S12**. No decision was
 re-taken.** Two transcription refinements are flagged below rather than made silently.
 
 #### AC1 — the rule is added, in the S-series voice ✅
 
-`agents/knowledge/security-rules.md` §**S12 — What is inside a stored artifact is disclosed to everyone
+`docs/architecture/security-rules.md` §**S12 — What is inside a stored artifact is disclosed to everyone
 who can fetch it.** Statement → the audience hinge (with the employee-document counter-example that
 kills "served back by URL") → the three roster questions → the no-decoder prohibition → **the incident**
 → scope (new uploads only; not an S4 extension) → a per-clause enforcement table → a reviewer test.
@@ -222,7 +222,7 @@ by default, which is how it was missed before) and the repo root. **Live docs up
 
 | File | Was | Now |
 |---|---|---|
-| `agents/knowledge/security-rules.md:1` | `S1–S10` (while S11 existed at `:319`) | `S1–S12` |
+| `docs/architecture/security-rules.md:1` | `S1–S10` (while S11 existed at `:319`) | `S1–S12` |
 | `agents/README.md:86` | `S1–S10 non-negotiable security laws` | `S1–S12` |
 | `agents/WAY-OF-WORKING.md:58,132` | `S1–S10 laws` | `S1–S12` |
 | `agents/process/quality-gates.md:115` | Gate 3 walks `(S1–S10)` | `(S1–S12)` |
@@ -321,7 +321,7 @@ fix is a word in S12, not a re-run of the panel.**
 
 #### Files changed
 
-- `agents/knowledge/security-rules.md` — header, **S12**, checklist item 12 *(sole writer, per §Implementation notes)*
+- `docs/architecture/security-rules.md` — header, **S12**, checklist item 12 *(sole writer, per §Implementation notes)*
 - `agents/process/enforcement.md` — the S12 mechanical-checkability section (AC5)
 - `agents/architecture/decisions/user-uploaded-artifacts.md` — §header, §1 row 5, §2 scrub column ×3 + its ⚠️ note, §4 item 6, §5 preamble. **Surgical**; §7.x (the ADR-0044 lane) untouched
 - `agents/README.md`, `agents/WAY-OF-WORKING.md`, `agents/process/quality-gates.md`,

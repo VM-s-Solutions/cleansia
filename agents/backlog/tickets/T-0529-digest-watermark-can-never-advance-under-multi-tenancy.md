@@ -201,7 +201,7 @@ is delegated to the reviewer.
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
 
 **Catalog harvest (backend, 2026-08-02).** Added the mirror of S8's existing "anonymous-write /
-authenticated-read" trap to `agents/knowledge/security-rules.md` §S8: *a tenant-ignoring sweep whose
+authenticated-read" trap to `docs/architecture/security-rules.md` §S8: *a tenant-ignoring sweep whose
 write-back is tenant-scoped*. It states the rule (both sides of the loop, not just the selection), why it
 is invisible (the `if (x is null) return;` guard drops only the bookkeeping, never the effect), the
 testing requirement (the fixture must seed a non-null `TenantId`), and the two in-repo references

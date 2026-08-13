@@ -179,7 +179,7 @@ translation.
 
 **Step 4 — the "does NOT know" line.** `OrderAccessService` does not know the hold rule; it *asks*
 `OrderVisibility`. If a future scenario forces it to reason about deadlines itself, the collaborator is
-missing. Put that on `agents/knowledge/roles/preferred-cleaner-hold-resolver.md`.
+missing. Put that on `docs/domain/roles/preferred-cleaner-hold-resolver.md`.
 
 ---
 

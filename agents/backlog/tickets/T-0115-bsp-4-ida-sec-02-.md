@@ -122,7 +122,7 @@ full; it is immutable and dictates every decision below. Key edit sites in
   (`:133`); leave `UseHostAuthMiddleware(app)` (`:137`) where it is (ADR D4).
 - Partition-key functions (`AuthPartition` / `InteractivePartition` / `ClientIp`), the global
   anonymous cardinality cap, and `OnRejected` + metrics live in the shared base too — see ADR D2,
-  D6, D7, D8 for the exact shapes. New role: `agents/knowledge/roles/rate-limit-policy.md`.
+  D6, D7, D8 for the exact shapes. New role: `docs/domain/roles/rate-limit-policy.md`.
 
 **TEST-FIRST (knowledge/testing.md).** This is security + pure-pipeline logic → strict. The test
 pair **T-0126** is written first and lands in the same merge: it requires a **new

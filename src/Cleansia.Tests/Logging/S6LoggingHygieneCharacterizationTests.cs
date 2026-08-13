@@ -21,7 +21,7 @@ using Moq;
 namespace Cleansia.Tests.Logging;
 
 /// <summary>
-/// S6 logging-hygiene characterization (see <c>agents/knowledge/security-rules.md</c> §S6). These pin
+/// S6 logging-hygiene characterization (see <c>docs/architecture/security-rules.md</c> §S6). These pin
 /// the CURRENT log EVENT — the level and the safe scalar correlation keys (UserId / OrderId / EventKey /
 /// CampaignId / StatusCode) — at the call sites that previously dumped a raw queue body, a SendGrid
 /// response body, or a confirmation code/email. They assert the *event and its scalar properties*, NOT

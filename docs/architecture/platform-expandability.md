@@ -7,9 +7,20 @@
 > expandability and current situation overall."
 >
 > This is the canonical reference for the question **"is this entity platform-config, tenant-scoped, or
-> country-scoped?"** It grounds three pending decisions: **T-0113** (MembershipPlan tenancy),
-> **the four sibling anonymous catalogs** (Service/Package/Extra/ServiceCity), and **currency-display**.
-> Where it changes a decision it cross-references **ADR-0001 Addendum A1**.
+> country-scoped?"** Where it changes a decision it cross-references **ADR-0001 Addendum A1**.
+>
+> ### ⚠️ Two of the three decisions it grounded have SHIPPED — verified 2026-08-14
+>
+> **T-0113 (MembershipPlan tenancy) and the four sibling anonymous catalogs are done.** All six —
+> `MembershipPlan`, `Service`, `Package`, `Extra`, `ServiceCity` and `ServiceCategory` — are
+> `: Auditable` today, with no `ITenantEntity`, and `MembershipPlanEntityConfiguration` records the
+> `(TenantId, Code)` composite being dropped for a platform-wide unique `(Code)`. §7a and §7b below
+> still describe the *pre-fix* state in the present tense and still issue marching orders to perform it.
+> **Read them as the record of a decision that was carried out, not as work to schedule** — including
+> §7b's instruction to the PM to create a ticket "before scheduling", which is the failure this project
+> has already paid for once: four lanes dispatched at 24 already-shipped tickets.
+>
+> **Currency-display (§7c) is the one that is still open.**
 >
 > **Architect verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
 > Option-A ruling for T-0113 and broadens it into a general entity-classification rule (§6). It does
@@ -302,7 +313,10 @@ Decide along the orthogonal axes:
 
 ### 7a. T-0113 (MembershipPlan tenancy) — Option A is CONFIRMED, and broadened
 
-`MembershipPlan` is today `: Auditable, ITenantEntity` (`MembershipPlan.cs:24`) served on
+> **SHIPPED.** The paragraph below describes the state *before* the fix. `MembershipPlan` is
+> `: Auditable` today and the index swap is in `MembershipPlanEntityConfiguration`.
+
+`MembershipPlan` was `: Auditable, ITenantEntity` served on
 `[AllowAnonymous] GetPlans` (`MembershipController.cs:58`, customer + mobile.customer hosts), with a
 unique index `(TenantId, Code)` and seed rows at `TenantId = NULL`. It is the textbook instance of the
 §1 bug class.
@@ -330,7 +344,10 @@ A1 ruling is warranted.**
 
 ### 7b. The four sibling anonymous catalogs (Service / Package / Extra / ServiceCity) — marching orders
 
-All four are `: Auditable, ITenantEntity` (verified) **and** served `[AllowAnonymous]` on the customer
+> **SHIPPED.** All five entities named below — the four siblings plus `ServiceCategory` — are
+> `: Auditable` today. The marching order was carried out; it is not outstanding work.
+
+All four were `: Auditable, ITenantEntity` **and** served `[AllowAnonymous]` on the customer
 host (`ServiceController`, `PackageController`, `ExtraController`, `ServiceCityController`, all line ~14).
 `ServiceCategory` is **also** `ITenantEntity` — confirm whether it is reachable from any anonymous read
 path; if yes it joins the batch, if no it stays untouched (parity with the `LoyaltyTierConfig` carve-out).

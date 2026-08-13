@@ -196,17 +196,27 @@ JWT settings are defined in `appsettings.json` under the `JwtSettings` section:
 {
   "JwtSettings": {
     "Secret": "SET_VIA_USER_SECRETS_OR_KEY_VAULT",
-    "DefaultTokenExpHours": 6,
-    "CookieTokenExpHours": 1
+    "AccessTokenExpMinutes": 15,
+    "RefreshTokenExpDays": 30,
+    "RefreshTokenShortExpDays": 1
   }
 }
 ```
 
 | Setting | Description |
 |---------|-------------|
-| `Secret` | HMAC-SHA256 signing key (min 32 chars). Stored in Key Vault for deployed environments. |
-| `DefaultTokenExpHours` | Expiration for standard login (default: 6h) |
-| `CookieTokenExpHours` | Expiration when `rememberMe: true` (default: 1h) |
+| `Secret` | HMAC-SHA256 signing key (min 32 chars). Key Vault for deployed environments; the same value across every host in an environment. |
+| `AccessTokenExpMinutes` | Access-token lifetime. **Per host, and deliberately different:** Admin **15**, Partner **1440**, Mobile Customer **30**. Admin's 15 is ADR-0030 and is pinned by a test — see [ADR-0030](/decisions/adr-0030). |
+| `RefreshTokenExpDays` | Refresh lifetime when the user chose *remember me* — **30** (Mobile Customer **90**). |
+| `RefreshTokenShortExpDays` | Refresh lifetime when they did not — **1**. |
+
+::: danger These keys are bound by name, and an unknown key is silently ignored
+`AutoBindConfig` calls `Bind()` without `ErrorOnUnknownConfiguration`, so a misspelled or obsolete key
+does not fail startup — it is dropped, and the host runs on the built-in default. There is no warning
+in the log. The pair `DefaultTokenExpHours` / `CookieTokenExpHours` documented here until 2026-08-14 is
+exactly that case: those keys existed in no `.cs`, `.json`, `.bicep` or `.yml` in the repository, so an
+operator who set a 6-hour lifetime got Admin's 15 minutes and no signal that the setting was ignored.
+:::
 
 ::: warning
 The `Secret` value must **never** be committed to source control. Use `dotnet user-secrets` for local development and Azure Key Vault references for deployed environments.

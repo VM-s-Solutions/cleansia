@@ -341,8 +341,8 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
         }
 
         private static string AssignEmployee(string idPrefix, string employeeId, string where) =>
-            "INSERT INTO \"OrderEmployees\" (\"Id\",\"OrderId\",\"EmployeeId\",\"IsActive\") " +
-            $"SELECT '{idPrefix}-' || \"Id\", \"Id\", '{employeeId}', true FROM \"Orders\" WHERE {where};";
+            "INSERT INTO \"OrderEmployees\" (\"Id\",\"OrderId\",\"EmployeeId\",\"IsActive\",\"SeatOrdinal\") " +
+            $"SELECT '{idPrefix}-' || \"Id\", \"Id\", '{employeeId}', true, 0 FROM \"Orders\" WHERE {where};";
 
         private static string InsertOrders(string idPrefix, int count, string statusSql, string cleaningSql) =>
             "INSERT INTO \"Orders\" (" +

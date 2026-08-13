@@ -11,4 +11,12 @@ namespace Cleansia.Core.AppServices.Common;
 public static class DbConstraintNames
 {
     public const string UsersTenantIdEmailUnique = "IX_Users_TenantId_Email";
+
+    /// <summary>
+    /// The order-seat arbiter. <c>TakeOrder</c>'s capacity checks are unlocked reads, so the loser of two
+    /// concurrent takes is separated here, at commit, and mapped back to the ordinary
+    /// <c>order.no_available_spots</c> refusal. Pinned against the EF model by
+    /// <c>OrderEmployeeSeatOrdinalIndexTests</c>.
+    /// </summary>
+    public const string OrderEmployeesOrderIdSeatOrdinalUnique = "IX_OrderEmployees_OrderId_SeatOrdinal";
 }

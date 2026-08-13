@@ -121,7 +121,7 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
     {
         await using var ctx = NewContext();
         await ctx.Database.ExecuteSqlRawAsync(
-            "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\") VALUES ({0}, {1}, {2}, 1)",
+            "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\", \"SeatOrdinal\") VALUES ({0}, {1}, {2}, 1, 0)",
             $"oe-{orderId}", orderId, employeeId);
     }
 

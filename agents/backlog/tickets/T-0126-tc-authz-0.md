@@ -135,7 +135,7 @@ and per the `pairs_with` chain (T-0100 → T-0101 → T-0102 → T-0103 → T-01
 goes **red** until its paired fix merges — write/merge each test case **with** its fix (same merge)
 so the build is never left red on `master`.
 
-**Governing ADR:** ADR-0001 §D6 (`agents/backlog/adr/0001-authorization-model.md:536-553`) and the
+**Governing ADR:** ADR-0001 §D6 (`docs/decisions/adr-0001.md:536-553`) and the
 verification list **#5 / #6** (lines 711-727). D6 is explicit that #5 is *gated on this harness* and
 that the policy-layer tier (#1-#4, #6 handler-level) is buildable without it.
 

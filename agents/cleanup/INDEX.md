@@ -117,8 +117,15 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-028 | Migrate 52 ADRs to `docs/decisions/` with stable `ADR-NNNN` anchors | L | todo | — |
-| CL-029 | Archive the deliberation artifacts (`challenges/`, `drafts/`) — argument, not decision | S | todo | — |
+| CL-028 | Migrate **51** ADRs to `docs/decisions/adr-NNNN.md`; index + supersession graph | L | done | — |
+| CL-029 | Archive 29 challenges + 7 drafts to `agents/archive/2026-08/adr-deliberation/` | S | done | — |
+
+> **P6 complete.** **51** records, not 52 — the earlier count included `README.md`. Each is now
+> `adr-NNNN.md`, so `/decisions/adr-0037` resolves and the ~618 citing source files needed no edit.
+> 125 stale `agents/backlog/adr/` paths rewritten. Three defects surfaced on the way: a tool-call
+> artifact committed inside ADR-0021, my own migration dropping frontmatter from the two YAML-style
+> records, and two citations of the migration filename **P2 renamed** — which no gate caught, because
+> `check-catalog-claims` runs in no workflow.
 
 ## P7 — Content build
 

@@ -83,7 +83,7 @@ Three related production-posture findings, all in shared startup/config surface:
 - **TEST-FIRST per `agents/knowledge/testing.md`** â€” write the failing checks first: the CSRF-403
   integration test (AC1), the boot-guard test (AC3), and the batch verify/harden tests (AC4/AC5);
   they land in the same merge as the config change.
-- **Governing ADR: ADR-0003** (`agents/backlog/adr/0003-partitioned-rate-limiting.md`). It owns the
+- **Governing ADR: ADR-0003** (`docs/decisions/adr-0003.md`). It owns the
   `CleansiaStartupBase.Configure` pipeline (the Swagger block at `:110-118` lives inside the same
   pipeline ADR-0003 reorders, and ADR-0003 documents the **startup-guard** pattern â€” D3 â€” reused for
   AC3). The Swagger gate must sit at the ADR-0003 pipeline position

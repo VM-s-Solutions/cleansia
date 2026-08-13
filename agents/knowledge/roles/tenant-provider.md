@@ -33,7 +33,7 @@ filter, and the `Added`-entity stamp at commit time.
   the first meaning work and thereby makes the second one silent.
 - **Which rows exist.** A tenant id it returns need not have a single row; a tenant that has rows need
   not ever be returned. There is no registry, no validation, and — since ADR-0028 is `DECLINED` — no
-  host resolution. *(`agents/backlog/adr/0028-multi-tenant-activation-pack.md:3`. **Retires when:** that
+  host resolution. *(`docs/decisions/adr-0028.md:3`. **Retires when:** that
   status line stops reading `DECLINED`.)*
 - **Whether a `(TenantId, …)` unique index will fire.** It will not, while it answers `null`, unless the
   index is declared `NULLS NOT DISTINCT`. The provider is the reason that question exists and is the

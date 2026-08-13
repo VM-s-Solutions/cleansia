@@ -1,7 +1,7 @@
 # Role — `PreferredCleanerHoldResolver` / `IPreferredCleanerHoldResolver` (+ `OrderVisibility`, + `Order`'s hold pair) (CRC card)
 
 > **ACCEPTED — this is the standard.** Introduced by **ADR-0036**
-> (`agents/backlog/adr/0036-preferred-cleaner-first-refusal-hold.md`), `accepted` 2026-08-02 after a
+> (`docs/decisions/adr-0036.md`), `accepted` 2026-08-02 after a
 > full defense panel (author + three challengers + lead). **Read the ADR's `## Defense` before changing
 > anything here** — six of the draft's rules were broken by challengers and the surviving forms are not
 > the obvious ones. **Third sibling of `CancellationPolicyResolver` and `IExpressWaiverResolver`** —

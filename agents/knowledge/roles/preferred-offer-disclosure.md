@@ -5,7 +5,7 @@
 > landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:56-83`, enforcer
 > `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), and its **ADR-0049** is
 > `accepted` **with amendments C1–C6** (lead, 2026-08-11)
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> (`docs/decisions/adr-0049.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 >
 > ⚠️ **Read amendment C1 before citing §D7.** Its evidence — *"three live-order sets and all three are

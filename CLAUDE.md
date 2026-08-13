@@ -521,7 +521,12 @@ artifacts. **If you are coordinating multi-agent or multi-step work, start here:
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
 - **`agents/knowledge/*.md`** — the "how we build" catalog (patterns + the S1–S12 security laws +
   conventions). **Every developer agent reads its stack catalog first.**
-- **`agents/backlog/`** — tickets, stories, ADRs, sprint status, questions, audits, test-plans.
+- **`agents/backlog/`** — tickets, stories, sprint status, questions, audits, test-plans.
+- **`docs/decisions/`** — the ADRs. Migrated out of the backlog on 2026-08-13 and **published**:
+  a record is `docs/decisions/adr-NNNN.md` and resolves at `/decisions/adr-NNNN`. The `ADR-NNNN`
+  id is the reference, so a retitle breaks no citation. Panel challenges and drafts are the
+  argument rather than the decision and are archived at
+  `agents/archive/2026-08/adr-deliberation/`.
 
 **Slash commands that exist** (`.claude/commands/`): `/feature <request>` — the full-stack entry
 point, which invokes the PM end-to-end — plus the direct escape hatches `/backend` `/frontend`

@@ -69,7 +69,7 @@ Source: ADR-0002 D5 step 1.
 - Any EF migration or NSwag regen (none required — the queue contract is internal; ADR-0002 §Rollout).
 
 ## Implementation notes
-- **Governing ADR:** ADR-0002 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`), specifically
+- **Governing ADR:** ADR-0002 (`docs/decisions/adr-0002.md`), specifically
   D5 "Wave-0 sequencing" step 1 and Test-C1 in the Challenge/Defense trail. Read it before starting.
 - **Serialization cluster:** NOT a member of any shared-file cluster in `TICKET-MAP.md`. It does,
   however, create the `Cleansia.Functions.Core` surface that **F2, F4, F3, FISCAL-RECON depend on**

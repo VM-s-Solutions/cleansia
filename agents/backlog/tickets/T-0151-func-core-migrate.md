@@ -20,7 +20,7 @@ source: ADR-0002 D5
 ## Context
 T-0121 (FUNC-CORE) extracted a **first** slice of consumer bodies into the non-Exe
 `Cleansia.Functions.Core` library so the dispatch-contract tests could compile (ADR-0002 D5 "Wave-0
-sequencing" step 1; `agents/backlog/adr/0002-outbox-dispatch-contract.md`). That landed the seam for
+sequencing" step 1; `docs/decisions/adr-0002.md`). That landed the seam for
 the *effect-realizing* consumers the Wave-0 gate needed (`generate-receipt`, `notifications-dispatch`,
 `calculate-order-pay`). The **remaining** consumers — the timer/sweep Functions and the in-Function
 producer — were not in that first slice and still live in the `OutputType=Exe` host
@@ -34,7 +34,7 @@ for the Wave-1 outbox follow-up where ADR-0002 D5 **Bucket B** (the sweeps and c
 keep direct `IQueueClient.SendAsync` under the Wave-0 carve-out) migrates to the durable seam — both
 need the bodies reachable and injectable first.
 
-Source: ADR-0002 D5 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`).
+Source: ADR-0002 D5 (`docs/decisions/adr-0002.md`).
 
 ## Acceptance criteria
 - [ ] **AC1 — Every remaining consumer body lives in `Cleansia.Functions.Core`.** Given the consumers
@@ -78,7 +78,7 @@ Source: ADR-0002 D5 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`).
 - Any EF migration or NSwag regen (none — the queue contract is internal; ADR-0002 §Rollout).
 
 ## Implementation notes
-- **Governing ADR:** ADR-0002 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`), specifically
+- **Governing ADR:** ADR-0002 (`docs/decisions/adr-0002.md`), specifically
   D5 (the three-bucket inventory + "change once" promise), Bucket B (the sweeps/called-services
   carve-out + Wave-1 follow-up), Bucket C / D2.3 (fan-out producer stays direct). Read it before
   starting.

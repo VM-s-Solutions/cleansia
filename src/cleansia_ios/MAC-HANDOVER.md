@@ -44,7 +44,7 @@ storage, actor-based single-flight refresh, the device-id header contract):
 - 3 intentional later-phase namespaces: `Format`, `Location`, `Push` (Push = T-0311).
 
 **The governing decisions** are in the ADRs — read these, don't re-litigate:
-`agents/backlog/adr/0013` (architecture), `0014` (iOS-16 + ObservableObject), `0016` (Apple App Review),
+`docs/decisions/0013` (architecture), `0014` (iOS-16 + ObservableObject), `0016` (Apple App Review),
 `0018` (design parity / Gate-DP). Plan + tickets: `agents/backlog/status/sprint-12.md`. The big-picture
 handoff: `agents/IOS-AND-AZURE-HANDOFF.md`.
 

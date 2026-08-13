@@ -607,7 +607,7 @@ the only reconstruction.
 Searched `agents/backlog/tickets/` for `AM-B`, for the ruling's own words (*"notified of the price
 change"*, *"non-member price"*) and for every filename matching `recur`/`notif`. The only file in
 `agents/backlog/tickets/` that matches any of them is **T-0494 itself**. ADR-0036 AM-B
-(`agents/backlog/adr/0036-preferred-cleaner-first-refusal-hold.md:2026-2075`) states the third leg of the
+(`docs/decisions/adr-0036.md:2026-2075`) states the third leg of the
 owner ruling — *"Notify the customer of the price change: **NO. This does not exist.** … A new
 notification is required. **Filed as a ticket (P-3)**, not assumed"* — and enumerates its scope: a new
 `NotificationEventCatalog` key, a `NotificationCategory` + `UserNotificationPreferences` mapping,

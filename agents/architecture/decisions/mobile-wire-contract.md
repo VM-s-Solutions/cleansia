@@ -1,7 +1,7 @@
 # The mobile wire contract — mapping and refusing a generated DTO (living decision notes)
 
 > Companion to **ADR-0048**
-> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md`).
+> (`docs/decisions/adr-0048.md`).
 > An accepted ADR is immutable; this page is the *evolving* design notes, trade-off space and current
 > shape. Update this when the design evolves; supersede the ADR for a real decision change.
 >

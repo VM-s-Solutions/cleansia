@@ -85,7 +85,7 @@ parameter.** A design that departs from it must say why.
       unless the ADR argues otherwise. **`GetMyMembership.cs` is the obvious host and it already
       returns `AllowsExpressUpgrade`.** Evidence: the DTO delta, exact enough for T-0493 to build and
       T-0514 to consume.
-- [ ] **AC8 — the ADR is written to `agents/backlog/adr/00NN-*.md` and the living decision doc under
+- [ ] **AC8 — the ADR is written to `docs/decisions/00NN-*.md` and the living decision doc under
       `agents/architecture/decisions/` is updated in the same step** (`process/documentation.md` — a
       finalized artifact with stale docs is not finalized). Evidence: both files.
 - [ ] **AC9 — the deliberation trail stays in the artifact.** `## Challenge` / `## Defense` /
@@ -129,7 +129,7 @@ lands first owns it; the ADR names where it lives so the second one reuses it.
   *values* the owner still owes are `Q-PLUS-02` and are deliberately **not** a dependency — AC2
   requires the design to survive either answer.
 - 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0035**
-  (`agents/backlog/adr/0035-metered-membership-benefit-usage.md`), drafted `e052684f`, challenged in
+  (`docs/decisions/adr-0035.md`), drafted `e052684f`, challenged in
   `eee24957`, **accepted `15d80faa`** with 16 binding amendments. **Verified at HEAD:** the ADR header
   reads `- **Status:** accepted`. Four of D3's five mechanisms did not survive the panel — AM-5 replaced
   COUNT-of-live with `generate_series + NOT EXISTS + ORDER BY LIMIT 1` because the original yielded

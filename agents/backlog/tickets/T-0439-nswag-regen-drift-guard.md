@@ -69,7 +69,7 @@ position is amended or upheld, and record the why-not for the rejected options i
 
 ## Decision taken (ADR-0031) — **no panel convened**
 
-`agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md`, status `proposed`.
+`docs/decisions/adr-0031.md`, status `proposed`.
 
 - **A — chain a check onto the regen scripts: ACCEPTED**, refined. `npm run typecheck` runs
   `ngc --noEmit` over every app compilation unit discovered from `apps/*/tsconfig.app.json`, reports
@@ -120,7 +120,7 @@ _(to be finalized by the panel; these are the PM's floor)_
 
 - [x] **AC1** — An ADR exists recording the chosen option, the rejected options, and why. The
       `quality-gates.md` §"After an NSwag regen…" paragraph is amended to point at it.
-      Evidence: `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` — options
+      Evidence: `docs/decisions/adr-0031.md` — options
       **A–H** each with a disposition (E and F–H added at panel close), the author's C1–C8 under
       `## Challenges pre-answered`, and the panel's `## Challenge` CH-1…CH-14 /`## Defense` /
       `## Verdict`; `agents/process/quality-gates.md:296-306` — **additive**, the existing rule text is
@@ -220,7 +220,7 @@ _(to be finalized by the panel; these are the PM's floor)_
 | `.github/workflows/frontend-ci.yml` | `push: master` (paths-scoped) + `concurrency` + e2e job PR-only + `NX_BASE` resolved for push events + guard self-test step |
 | `docs/architecture/frontend.md` | regen workflow: `generate-clients` added, the `::: info` block corrected (F3) |
 | `agents/process/quality-gates.md` | additive paragraph under §"After an NSwag regen…" |
-| `agents/backlog/adr/0031-…md` | new ADR |
+| `docs/decisions/0031-…md` | new ADR |
 
 ## Review
 
@@ -297,7 +297,7 @@ sha256. The other two mutations were restored by file copy. Flagging rather than
 The panel the ticket required has now convened: author = the implementing agent's C1–C8 pre-answers;
 challenger = CH-1…CH-14; lead = a third instance (author and lead are different instances per
 `process/deliberation.md`). Full trail in the `## Challenge` / `## Defense` / `## Verdict` sections of
-`agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md`. The **decision** — chain an
+`docs/decisions/adr-0031.md`. The **decision** — chain an
 Angular typecheck onto the regen command; give `frontend-ci.yml` a `master` push trigger; keep the
 generated members required — is **ratified as implemented**. Two defects in the *deliverable* were
 sustained and must land before this ticket is `done`:

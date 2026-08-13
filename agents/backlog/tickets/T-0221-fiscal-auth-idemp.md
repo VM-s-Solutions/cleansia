@@ -17,7 +17,7 @@ source: ADR-0004 D-F4.3 C-C/C-D (split off T-0119/F4); architect panel 2026-06-0
 ---
 
 ## Context
-ADR-0004 (`agents/backlog/adr/0004-fiscal-receipt-idempotency-boundary.md`) **D-F4.3 C-C/C-D**. T-0119's
+ADR-0004 (`docs/decisions/adr-0004.md`) **D-F4.3 C-C/C-D**. T-0119's
 claim-before-register reorder introduces a **registered-but-stamp-not-persisted** residual: the tax
 authority HAS registered the receipt but the local `FiscalCode` was not yet persisted (crash in the
 two-commit split window); recovery re-calls `RegisterReceiptAsync` with the **same `ReceiptNumber`**

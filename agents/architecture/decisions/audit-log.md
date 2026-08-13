@@ -1,6 +1,6 @@
 # Admin action audit log (living design note)
 
-> Companion to the **immutable** ADR-0012 (`agents/backlog/adr/0012-admin-action-audit-log.md`).
+> Companion to the **immutable** ADR-0012 (`docs/decisions/adr-0012.md`).
 > The ADR is the frozen contract; this file is the *evolving* design note — the trade-off space, the
 > current shape, and the open questions. When the consumer tickets land (entity/behavior/snapshots/
 > query/UI), update this file in the same step (per `agents/process/deliberation.md`).

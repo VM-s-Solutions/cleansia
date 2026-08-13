@@ -301,7 +301,7 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > per-field judgement is still not expressible (it needs the spec's nullability for the schema the
 > mapper targets); what is mechanical is the **presence of a pin** plus rule 1's numeric-zero
 > coercions, whose baseline is zero. **ADR-0048 is `accepted`** (with amendments B1–B6)
-> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
+> (`docs/decisions/adr-0048.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
@@ -640,7 +640,7 @@ raw components one-off; never duplicate a `:core` component.
 > (`7fdce902` Android, `327013db` iOS); the deviating form and the converted roster are in
 > `consistency.md` §*"Rendering a server-redacted field off an entitlement flag"*.
 > **ADR-0047 is `accepted`** (with amendments A1–A4)
-> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
+> (`docs/decisions/adr-0047.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 >
 > ### The block-level case — a DISCLOSURE BLOCK's arrival is the SERVER's decision (ADR-0049)

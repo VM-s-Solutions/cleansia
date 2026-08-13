@@ -81,7 +81,7 @@ A. The chargeback status-reflection vs the T-0172 transition guard. ReflectCharg
    ADR-0006 D4 intends and is reachable from Escalated in T-0172's table.
 B. DisputeReason.Chargeback: add the enum value (additive, honors ADR-0006 D4, triggers nswag-regen for the
    customer client) OR record UnauthorizedCharge as the accepted substitution (no regen). Read ADR-0006 D4
-   (agents/backlog/adr/0006-refund-dispute-money-path.md) — it freezes "Reason = Chargeback". Recommend the
+   (docs/decisions/adr-0006.md) — it freezes "Reason = Chargeback". Recommend the
    faithful option unless there's a concrete reason not to; state the manual_step consequence.
 
 Read the real files (HandlePaymentNotification.cs:324-410, DisputeRepository.cs, Dispute.cs transition table,

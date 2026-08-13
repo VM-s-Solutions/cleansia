@@ -1,7 +1,7 @@
 # Rate limiting — partitioned, bounded, shared across hosts
 
 **Status:** Accepted (ADR-0003 / ADR-RATELIMIT, 2026-06-01). Canonical decision:
-`agents/backlog/adr/0003-partitioned-rate-limiting.md`. This page is the operator/developer summary;
+`docs/decisions/adr-0003.md`. This page is the operator/developer summary;
 the ADR governs on any conflict.
 
 ## The decision in one paragraph

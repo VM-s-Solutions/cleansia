@@ -491,7 +491,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   the index cannot be created over pre-existing duplicates). **So a model assertion goes green the moment
   the builder call lands and says nothing about the database** — do not read one as evidence of the
   other. **ADR-0050 is `proposed`**
-  (`agents/backlog/adr/0050-a-dormant-tenant-column-arbitrates-nothing-the-account-email-index-is-declared-nulls-not-distinct.md:3`).
+  (`docs/decisions/adr-0050.md:3`).
   **Retires when:** that status line stops reading `proposed`.
 
   **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
@@ -692,7 +692,7 @@ deliberate and were **right when written**, which is the whole point.
 > and does not restate it as its own measurement.)* Rule, scope and rejected alternatives:
 > `patterns-mobile.md` §*"The redaction narrowing of rule (1)"*;
 > decision: **ADR-0047**, which is `accepted` **with amendments A1–A4**
-> (`agents/backlog/adr/0047-a-server-redacted-field-is-rendered-off-its-own-arrival-the-entitlement-flag-gates-actions-not-fields.md:3`).
+> (`docs/decisions/adr-0047.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
@@ -774,7 +774,7 @@ offered.* A canonicalization that deletes these is worse than the defect.
 > mechanical is the presence of a pin, plus rule 1's numeric-zero coercions. Rule and rejected
 > alternatives: `patterns-mobile.md` §*"And the RESPONSE side"*; decision: **ADR-0048**, which is
 > `accepted` **with amendments B1–B6**
-> (`agents/backlog/adr/0048-a-generated-dto-is-refused-at-the-repository-boundary-and-the-refusal-names-the-field.md:3`).
+> (`docs/decisions/adr-0048.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing
@@ -857,7 +857,7 @@ the correct use.
 > Rule, scope and rejected alternatives: `patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the
 > server when its sentence stops being true"*; decision: **ADR-0049**, which is `accepted`
 > **with amendments C1–C6**
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> (`docs/decisions/adr-0049.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 >
 > **This entry exists because the rule put code that existed at the time in violation** (ADR-0033

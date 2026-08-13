@@ -5,7 +5,7 @@
  * Chained onto every script that invokes NSwag: the generator emits a nullable DTO member as a
  * REQUIRED interface key, which breaks every existing object-literal call site, so the regen is the
  * moment the drift is created and the earliest point a check still costs one person one minute.
- * See agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md.
+ * See docs/decisions/adr-0031.md.
  *
  * The unit set is read from each `apps/*` project's build-target `options.tsConfig` — the same
  * string handed to `@angular/build:application` — so the checked file set is the production build's

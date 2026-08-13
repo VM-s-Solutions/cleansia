@@ -117,7 +117,7 @@ scope, which is a business decision several orders of magnitude larger than a pa
 - [ ] **AC11 — the generality question is answered consistently with T-0511 AC5.** Both ADRs land in
       the same week and both ask *"one general table or one specific set of columns?"*. **Two opposite
       answers by accident is a worse outcome than either answer.** Evidence: the cross-reference.
-- [ ] **AC12 — the ADR is written to `agents/backlog/adr/00NN-*.md` and the living decision doc under
+- [ ] **AC12 — the ADR is written to `docs/decisions/00NN-*.md` and the living decision doc under
       `agents/architecture/decisions/` is updated in the same step.** Evidence: both files.
 - [ ] **AC13 — the deliberation trail (`## Challenge` / `## Defense` / `## Verdict`) stays in the
       artifact**, and a challenger that finds nothing names what it checked. Evidence: the sections.
@@ -161,7 +161,7 @@ signal that makes AC3 load-bearing.
   validation is `Length(15, 34)` — a 20-character sentence is a valid IBAN to this platform today.
   `ready`: passes DoR, no unmet dependency, panel is step 1.
 - 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0034**
-  (`agents/backlog/adr/0034-partner-payout-details-shape.md`), drafted `b855d758`, challenged by two lanes
+  (`docs/decisions/adr-0034.md`), drafted `b855d758`, challenged by two lanes
   in `eee24957`, **accepted `7fc2935e`** with 8 blocking findings folded in. **Verified at HEAD:** the ADR
   file's header reads `- **Status:** \`accepted\` — **2026-08-02, by panel verdict.**` The panel changed the
   design rather than ratifying it: D1's first stated reason is struck, the completeness gate reads a

@@ -398,7 +398,7 @@ and the entity path emit identical DTO values.
 > (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:150-182`) now returns `null` rather
 > than shipping the block on a concluded or fully-staffed booking.
 > Decision: **ADR-0049**, which is `accepted` **with amendments C1–C6**
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md:3`).
+> (`docs/decisions/adr-0049.md:3`).
 > **Retires when:** that status line stops reading `accepted`.
 
 **A disclosure block is a group of fields the server populates in order to make a STATEMENT about the
@@ -1209,7 +1209,7 @@ When a rule must give one actor **temporary exclusive access** to a work item on
 > **LAW — ADR-0039 is `accepted`.** Its status line reads *"`accepted` — **2026-08-03, by the lead of
 > the defense panel**"* after two challenge lanes (disclosure `CH-D1…D9`, query-cost `CH-Q1…Q7`) and
 > eleven amendments
-> (`agents/backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md:3-9`).
+> (`docs/decisions/adr-0039.md:3-9`).
 > **Retires when:** that status line stops reading `accepted`.
 > *(This block said "PROPOSED — not yet law … `proposed` and unchallenged as of 2026-08-03" until
 > 2026-08-09 — the ADR was accepted the same day the banner was written, and a sibling card

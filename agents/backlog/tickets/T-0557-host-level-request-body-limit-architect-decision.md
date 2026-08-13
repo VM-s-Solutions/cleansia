@@ -85,7 +85,7 @@ rather than in a startup file nobody re-reads.
 ## Implementation notes
 
 **Files this ticket touches (decision first, implementation after acceptance):**
-- `agents/backlog/adr/<NNNN>-<slug>.md` + `agents/backlog/adr/challenges/<NNNN>-<topic>.md` — the panel.
+- `docs/decisions/<NNNN>-<slug>.md` + `agents/archive/2026-08/adr-deliberation/challenges/<NNNN>-<topic>.md` — the panel.
 - `src/Cleansia.Config/Abstractions/CleansiaStartupBase.cs` — the host-level limit (AC4).
 - The five host projects under `src/Cleansia.Web.*` / `src/Cleansia.Web.Mobile.*` — inheritance, and the
   AC5 guard test in `src/Cleansia.Tests/`.
@@ -99,7 +99,7 @@ skipped its panel is not a decision.
 ### Staleness detectability (sprint-15 §D3)
 
 The implementation half names **product paths under `src/`** (`CleansiaStartupBase.cs`), so the
-candidate-3 path rule can flag it. The decision half lives under `agents/backlog/adr/**`, which no path
+candidate-3 path rule can flag it. The decision half lives under `docs/decisions/**`, which no path
 signal covers — re-verify by hand whether the ADR file exists at each checkpoint.
 
 ## Status log
@@ -109,7 +109,7 @@ signal covers — re-verify by hand whether the ADR file exists at each checkpoi
   for endpoints nobody has measured. `security_touching: true` — an unbounded intake is a resource
   exhaustion surface on all five hosts.
 - 2026-08-05 — **architect (author mode) drafted the decision. NOT decided: AC1 is unmet.** Draft at
-  `agents/backlog/adr/drafts/NNNN-host-request-intake-ceiling.md` (`proposed`, **number deliberately not
+  `agents/archive/2026-08/adr-deliberation/drafts/NNNN-host-request-intake-ceiling.md` (`proposed`, **number deliberately not
   allocated** — two architects collided on a number this sprint; asking for **0044**). Living doc:
   `agents/architecture/decisions/request-intake-limits.md`. **This ticket stays open** until an
   independent challenger round + a lead adjudication run and the ADR is renamed/accepted.

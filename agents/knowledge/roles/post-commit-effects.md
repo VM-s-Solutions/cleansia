@@ -1,7 +1,7 @@
 # Role — `IPostCommitEffects` / `PostCommitEffectBehavior` (CRC card)
 
 > **LAW.** Introduced by **ADR-0038**
-> (`agents/backlog/adr/0038-promo-redemption-reservation-runs-after-the-uow-commit.md`), `accepted`
+> (`docs/decisions/adr-0038.md`), `accepted`
 > 2026-08-03 by the panel lead's `## Verdict` (amendments AM-1 … AM-11).
 > Living doc: `agents/architecture/decisions/promo-redemption-ordering.md`.
 >

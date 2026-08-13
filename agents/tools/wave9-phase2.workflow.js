@@ -11,7 +11,7 @@ const ROOT = 'c:/Users/cmisa/Desktop/Mike/Projects/cleansia'
 
 const COMMON = [
   'Repo root: ' + ROOT + '. Branch feature/wave8-pre-ios-cleanup checked out. Do NOT commit, push, or git add. Other lanes\' uncommitted changes are EXPECTED — touch only your ticket files.',
-  'Today is 2026-06-23. This is Wave 9 Phase 2 — the admin audit-log CAPTURE machinery. Read your ticket IN FULL, agents/backlog/adr/0012-admin-action-audit-log.md (the FROZEN contract — build exactly to it), conventions.md + patterns-backend.md.',
+  'Today is 2026-06-23. This is Wave 9 Phase 2 — the admin audit-log CAPTURE machinery. Read your ticket IN FULL, docs/decisions/adr-0012.md (the FROZEN contract — build exactly to it), conventions.md + patterns-backend.md.',
   'The AdminActionAudit entity + table already exist and migrated (T-0282 done): src/Cleansia.Core.Domain/Auditing/AdminActionAudit.cs (append-only, init-only) + its EF config + the migrated table. Build ON it; do not change the entity shape.',
   'GATE 0 (evidence discipline) applies to any finding you raise. TEST-FIRST per agents/knowledge/testing.md: the ADR lists the exact tests (TC-AUDIT-ATOMIC/FAILURE/GATE/LABEL for T-0283; TC-AUDIT-QUERY + authz-rejection for T-0285; TC-AUDIT-SNAPSHOT + GDPR-survives-erasure for T-0284) — write them red-first.',
   'ENVIRONMENT: backend — dotnet build <proj>.csproj then dotnet test <proj>.csproj --no-build (VS host-DLL locks; build the specific project). Real Postgres via Testcontainers is up — the atomic/failure/survives-erasure tests are real-Postgres integration tests. Baseline green: Cleansia.Tests 1580, IntegrationTests 79, HostTests 51. ANY new red is YOURS.',

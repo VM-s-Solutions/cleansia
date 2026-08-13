@@ -17,7 +17,7 @@
 > retirement condition"* and its `(gate pending:)` checker.
 >
 > **⚠️ NOT YET BUILT — but the decision is settled.** *(superseded — see above.)* Introduced by **ADR-0035**
-> (`agents/backlog/adr/0035-metered-membership-benefit-usage.md`), **`accepted`** 2026-08-02 with 16
+> (`docs/decisions/adr-0035.md`), **`accepted`** 2026-08-02 with 16
 > binding amendments, **amended 2026-08-03 by owner instruction (AM-17/AM-18/AM-19)**. T-0493 builds it.
 > **Direct sibling of `CancellationPolicyResolver`** (`Core.AppServices/Services/`) — same shape, same
 > namespace family, same null-user short-circuit, same "returns a record the policy takes as a

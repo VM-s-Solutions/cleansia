@@ -418,7 +418,7 @@ they were never tenant-coupled.
 
 ## 9. Cross-references
 
-- **ADR-0001 Addendum A1** (`agents/backlog/adr/0001-authorization-model.md:1134-1184`) — the binding
+- **ADR-0001 Addendum A1** (`docs/decisions/adr-0001.md:1134-1184`) — the binding
   ruling this doctrine confirms and broadens. D-A1.1 is the hard rule; D-A1.4 routes the sibling
   catalogs (see the §7b naming discrepancy).
 - **T-0113** (`agents/backlog/tickets/T-0113-lg-sec-05.md`) — MembershipPlan build ticket (awaiting owner

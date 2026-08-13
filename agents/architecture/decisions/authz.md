@@ -1,6 +1,6 @@
 # Authorization — living decision notes
 
-> Companion to the **immutable** `agents/backlog/adr/0001-authorization-model.md` (ADR-AUTHZ).
+> Companion to the **immutable** `docs/decisions/adr-0001.md` (ADR-AUTHZ).
 > The ADR is the frozen contract; this file is the *evolving* design notes, trade-off space, and
 > current shape. Update this when the decision evolves; supersede the ADR for a real mapping change.
 

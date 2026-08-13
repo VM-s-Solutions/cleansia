@@ -19,7 +19,7 @@ Four records, four jobs, and they are not interchangeable:
 |---|---|---|
 | **This file** | what the platform does differently now | `CHANGELOG.md` |
 | Architecture docs | how it works today | [`docs/architecture/`](docs/architecture/) |
-| ADRs | *why* it was decided that way | `agents/backlog/adr/` |
+| ADRs | *why* it was decided that way | `docs/decisions/` |
 | `git log` | which lines changed | the repository |
 
 ## What gets an entry

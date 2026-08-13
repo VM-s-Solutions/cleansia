@@ -21,7 +21,7 @@ source: ADR-0002 Wave-1 build
 ## Context
 
 This is the **Wave-1 backing swap** for the side-effect dispatch contract frozen in
-**ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`). Wave-0 (T-0118 / F2 â€” the
+**ADR-0002** (`docs/decisions/adr-0002.md`). Wave-0 (T-0118 / F2 â€” the
 `IPendingDispatch` + `PostCommitDispatchBehavior` seam, ADR-0002 D1/D4) made every Bucket-A command
 handler **record intent** instead of calling `IQueueClient.SendAsync` directly, and dispatch that
 intent **after** the UnitOfWork commit â€” but the buffer is **in-memory**, so dispatch is
@@ -155,7 +155,7 @@ migration, a backend backing swap + drainer, a Functions-host decision, and the 
   The Bucket-B migration (AC7) edits `LoyaltyService.cs` â€” note the separate `LoyaltyService.cs`
   cluster (TICKET-MAP row 7: LG-SEC-06 â†’ LG-01q/LG-03); serialize the `LoyaltyService.cs` edit against
   those if any is concurrently runnable.
-- **Governing ADR:** **ADR-0002** (`agents/backlog/adr/0002-outbox-dispatch-contract.md`) is the
+- **Governing ADR:** **ADR-0002** (`docs/decisions/adr-0002.md`) is the
   frozen contract. The load-bearing clauses for this ticket: **D1.1** (in-request idempotency invariant
   â€” the table's `(QueueName, MessageKey)` uniqueness realizes it), **D1.3** (the in-Functions drainer
   question this ticket must answer), **D5** (the Wave-1 paragraph: swap backing only, zero handler/

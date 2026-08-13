@@ -1,6 +1,6 @@
 # Role — `RefundPolicy` (CRC card)
 
-> Introduced by **ADR-0009** (`agents/backlog/adr/0009-refund-policy.md`). Sibling to `BookingPolicy`.
+> Introduced by **ADR-0009** (`docs/decisions/adr-0009.md`). Sibling to `BookingPolicy`.
 > A pure policy class in `Cleansia.Core.AppServices.Features.Orders`. Caller-side — the admin refund
 > command / `ResolveDispute` consults it; it is NOT inside `IRefundService` (ADR-0006 scopes the seam to
 > the refundable ceiling + idempotency only).

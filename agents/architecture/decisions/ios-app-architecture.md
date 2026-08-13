@@ -1,6 +1,6 @@
 # iOS app architecture & port strategy — living decision notes
 
-> Companion to the **immutable** ADRs `agents/backlog/adr/0013-ios-app-architecture-and-port-strategy.md`
+> Companion to the **immutable** ADRs `docs/decisions/adr-0013.md`
 > (ADR-0013) **+** `0014-ios-deployment-target-ios16-and-state-mechanism.md` (ADR-0014, which **partially
 > supersedes** ADR-0013: **iOS-16 floor** + the **`ObservableObject`/`@Published`** state mechanism + the
 > iOS-16 MapKit variant; all other ADR-0013 decisions stand). The ADRs are the frozen decisions; this file
@@ -929,7 +929,7 @@ path has the wrong responsibility). **Reviewer check #35** = ADR-0022 §"How a r
 
 ## Apple App Review compliance + the quality bar (ADR-0016, accepted 2026-06-23)
 
-> Companion section for **ADR-0016** (`agents/backlog/adr/0016-apple-app-review-compliance-and-ios-quality-bar.md`).
+> Companion section for **ADR-0016** (`docs/decisions/adr-0016.md`).
 > The iOS apps are held to a **submission-passing** bar (higher than the rest of the platform). Tickets
 > T-0323…T-0329 in `status/sprint-12.md §10`; the pre-submission audit artifact is
 > `agents/backlog/ios-app-review-checklist.md`.

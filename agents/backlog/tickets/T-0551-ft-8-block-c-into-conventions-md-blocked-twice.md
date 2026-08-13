@@ -26,7 +26,7 @@ source: ADR-0033 §Follow-ups **FT-8** (`:571`) + Block C (`:289-354`) · blocke
 
 ## Context
 
-ADR-0033 **Block C** (`agents/backlog/adr/0033-…md:289-354`) is the catalog text of the routing test:
+ADR-0033 **Block C** (`docs/decisions/0033-…md:289-354`) is the catalog text of the routing test:
 the three ordered tests, the amended floor, the "inline is not free" clause, and the cross-stack
 strength rule — destined for `agents/knowledge/conventions.md` §"Harvest good patterns back into the
 catalog", below the "The price of a law" section ADR-0032 already added (`conventions.md:136`).

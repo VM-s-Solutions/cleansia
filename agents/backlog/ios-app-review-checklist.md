@@ -2,7 +2,7 @@
 
 > The single document the team runs **before the first TestFlight / App Store submission** (and re-runs before
 > any subsequent submission). Owned by the **reviewer + ios** charters. Source of the bar: **ADR-0016**
-> (`agents/backlog/adr/0016-apple-app-review-compliance-and-ios-quality-bar.md`). Consumer ticket that runs this
+> (`docs/decisions/adr-0016.md`). Consumer ticket that runs this
 > end-to-end: **T-0329** (`status/sprint-12.md §10`). **The first submission does not proceed until every
 > applicable box per app is green.**
 

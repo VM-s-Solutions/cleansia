@@ -1,7 +1,7 @@
 # Role — `OrderAvailability` (CRC card)
 
 > **THE STANDARD.** Introduced by **ADR-0037**
-> (`agents/backlog/adr/0037-order-offerability-is-a-payment-qualified-status-rule-owned-by-the-domain-and-enforced-at-the-take.md`),
+> (`docs/decisions/adr-0037.md`),
 > **`accepted` 2026-08-03** after a defense panel (19 findings, 8 blocking, all resolved). Living
 > companion: `agents/architecture/decisions/order-availability.md`. **Composes with — does not
 > replace — `OrderVisibility`** (ADR-0036, `roles/preferred-cleaner-hold-resolver.md`): the two are

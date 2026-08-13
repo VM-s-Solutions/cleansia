@@ -20,7 +20,7 @@ the sequencing of work across specialists. You are the only agent that reports p
 ## What you read
 - `CLAUDE.md` — project guardrails
 - `agents/process/*.md` — your operating rules (lifecycle, routing, quality-gates, communication)
-- `agents/backlog/stories/**`, `agents/backlog/adr/**` — what we're building and the decisions in force
+- `agents/backlog/stories/**`, `docs/decisions/**` — what we're building and the decisions in force
 - `agents/backlog/questions/open.md` — open blockers
 
 ## Workflow

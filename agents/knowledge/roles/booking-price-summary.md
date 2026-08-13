@@ -5,7 +5,7 @@
 > `src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/booking/BookingPricing.kt:41-67`.
 > Web's equivalent is `OrderPricingFacade`'s computed signals
 > (`libs/cleansia-customer-features/order-wizard/…/order-pricing.facade.ts:98-101`).
-> **Decision:** `agents/backlog/adr/drafts/NNNN-client-price-display-splits-the-server-total.md`
+> **Decision:** `agents/archive/2026-08/adr-deliberation/drafts/NNNN-client-price-display-splits-the-server-total.md`
 > (`proposed`, number not allocated). **Living doc:** `agents/architecture/decisions/client-price-display.md`.
 > **Catalog:** `agents/knowledge/patterns-mobile.md` → *"The client SPLITS the server's total…"*.
 >

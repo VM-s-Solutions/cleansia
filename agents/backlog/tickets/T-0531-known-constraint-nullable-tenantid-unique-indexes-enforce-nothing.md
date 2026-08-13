@@ -157,7 +157,7 @@ coverage claims ("state coverage structurally, never empirically").
 
 ## Implementation notes
 
-**Nobody may edit `agents/backlog/adr/**` from this ticket.** Three architects are revising ADR-0034/0035/
+**Nobody may edit `docs/decisions/**` from this ticket.** Three architects are revising ADR-0034/0035/
 0036 concurrently. The two corrections above are delivered to those panels by the **owner**, via the sprint
 status doc — not by an agent writing into a live ADR.
 

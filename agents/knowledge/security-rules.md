@@ -307,7 +307,7 @@ the **closed scope of those two repositories only**. For the repository-wide sco
 because the roster does not exist yet** — writing it is the ticket. No count is stated here; derive it
 with `grep -rn "IgnoreQueryFilters(\|GetQueryableIgnoringTenant()" src/Cleansia.Infra.Database/Repositories/`.
 **ADR-0051 is `proposed`**
-(`agents/backlog/adr/0051-a-reads-tenancy-posture-is-decided-by-the-write-tenant-read-tenant-asymmetry-not-by-the-endpoints-anonymity.md:3`).
+(`docs/decisions/adr-0051.md:3`).
 **Retires when:** that status line stops reading `proposed`.
 
 **Anonymous-write / authenticated-read asymmetry (the silent-zero-rows trap).** A row written on an

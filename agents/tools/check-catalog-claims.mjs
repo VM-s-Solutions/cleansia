@@ -75,7 +75,7 @@ import { fileURLToPath } from "node:url";
 
 /** The corpus the rule governs — `conventions.md` names exactly these two trees. */
 const CORPUS_DIRS = ["agents/knowledge", "agents/process"];
-const ADR_DIR = "agents/backlog/adr";
+const ADR_DIR = "docs/decisions";
 
 /** Trees a citation may point into. Anything outside them resolves as "missing". */
 const INDEX_ROOTS = ["src", "agents", "docs", ".github", "scripts", "deploy", "sql-scripts"];
@@ -406,13 +406,30 @@ const adrs = new Map();
     const dir = join(REPO, ADR_DIR);
     if (existsSync(dir)) {
         for (const name of readdirSync(dir)) {
-            const m = /^(\d{4})-.*\.md$/.exec(name);
+            // Records live at docs/decisions/adr-NNNN.md — the id IS the filename, so a retitle cannot
+            // break a citation. The old agents/backlog/adr/NNNN-<slug>.md form is still accepted so a
+            // stale checkout reports honestly rather than silently reading zero.
+            const m = /^(?:adr-)?(\d{4})(?:-.*)?\.md$/.exec(name);
             if (!m) continue;
             const text = readText(join(dir, name));
             if (text === null) continue;
             const lines = text.split(/\r?\n/);
             let status = null;
             let statusLine = 0;
+            // Status is in the YAML frontmatter for records that carry one, and in a `- **Status:**`
+            // bullet for the rest. Read the frontmatter first; the bullet still wins when present,
+            // because that is the line a human edits.
+            const fm = /^---\n([\s\S]*?)\n---/.exec(text);
+            if (fm) {
+                const fmHit = new RegExp(
+                    `^status:\\s*\`?(${HEADER_STATUS_TOKENS.join("|")})\\b`,
+                    "im",
+                ).exec(fm[1]);
+                if (fmHit) {
+                    status = fmHit[1].toLowerCase();
+                    statusLine = 1;
+                }
+            }
             for (let i = 0; i < Math.min(lines.length, 40); i++) {
                 if (!/^\s*[-*]?\s*\*\*Status:?\*\*/i.test(lines[i])) continue;
                 // The header carries an authoring hint as an HTML comment listing every legal token.

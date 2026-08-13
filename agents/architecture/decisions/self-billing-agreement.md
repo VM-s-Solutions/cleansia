@@ -431,7 +431,7 @@ not be able to change it, and a frozen stamp is the mechanism.
 ## SEVERED — the coverage decision. **Specified here; the PM lifts it into an ADR and numbers it**
 
 > **Status: NOT A DECISION YET.** This is a specification handed over, not a ruling. It lives here
-> because `agents/backlog/adr/` is numbered `NNNN-*` and ADR-0041's charter rule is *one decision per
+> because `docs/decisions/` is numbered `NNNN-*` and ADR-0041's charter rule is *one decision per
 > ADR*. **No number is allocated by the architect.** Filed as ticket 12 in ADR-0041 §Tickets.
 >
 > **Why it was severed (ADR-0041 §W.6).** Three panels ran. The *record's shape* held every time; the
@@ -441,7 +441,7 @@ not be able to change it, and a frozen stamp is the mechanism.
 
 > ### ✅ The round-3 lead's correction block is **EXECUTED IN REV 4** — the text below now reads as corrected
 >
-> The round-3 challenger (`agents/backlog/adr/challenges/0041-rev3.md`) re-measured this section and the
+> The round-3 challenger (`agents/archive/2026-08/adr-deliberation/challenges/0041-rev3.md`) re-measured this section and the
 > lead ruled on it (ADR-0041 §X.2, §X.4). Rev 4 has rewritten §S1, §S2, §S4 and §S7 and **DELETED §S5**,
 > so the block is no longer a set of pending corrections. **Four things a future author must not undo:**
 >

@@ -18,7 +18,7 @@ pairs_with: T-0127
 ---
 
 ## Context
-ADR-0004 (`agents/backlog/adr/0004-fiscal-receipt-idempotency-boundary.md`) **D-F4.2** splits the fiscal
+ADR-0004 (`docs/decisions/adr-0004.md`) **D-F4.2** splits the fiscal
 **sequence allocator** out of T-0119. The current allocator `GetNextSequenceForYearAsync`
 (`src/Cleansia.Infra.Database/Repositories/OrderReceiptRepository.cs:35-47`) is literally
 `COUNT(*) of receipts this year + 1` — **non-atomic** (two concurrent generations get the same number →

@@ -522,7 +522,7 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
 > customer-orders lib — which is every change that could violate it — not the whole workspace. The
 > baseline **is** zero: neither `order-preferred-offer.facade.ts` nor `order-preferred-offer.models.ts`
 > reads an order status today. Decision: **ADR-0049**
-> (`agents/backlog/adr/0049-a-disclosure-block-is-withheld-by-the-server-when-its-sentence-stops-being-true.md`),
+> (`docs/decisions/adr-0049.md`),
 > whose own status line is the ratification record; this entry restates no value from it, so the two
 > cannot drift apart.
 > **Retires when:** `preferredOffer` stops being a nested optional on `OrderItem` — that optionality is

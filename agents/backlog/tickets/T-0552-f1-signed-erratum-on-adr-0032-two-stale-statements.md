@@ -20,7 +20,7 @@ source: finding **F1**, widened by the independent lead pass (ADR-0033 `:1051-10
 
 ## Context
 
-**ADR-0032 is `accepted`, so it cannot be quietly edited.** `agents/backlog/adr/README.md:7-29` allows
+**ADR-0032 is `accepted`, so it cannot be quietly edited.** `agents/archive/2026-08/adr-deliberation/README.md:7-29` allows
 exactly three instruments: a dated appended section, a superseding ADR, or — for a narrow class of
 corrections — an **in-body annotation ratified by a signed, dated erratum block appended to the ADR**.
 *"An unsigned in-body edit — whoever made it — is a process violation until ratified or reversed."*
@@ -30,7 +30,7 @@ which is why the original F1 filing understates the scope.
 
 | # | Line | What it says | Why it is stale (PM-verified at HEAD, 2026-08-05) |
 |---|---|---|---|
-| **1** | `0032-…md:23-25` — the **Number note** | *"**0031 is taken** by `0031-nswag-regen-drift-is-guarded-at-regen-time.md`, which exists **only in T-0439's worktree and has not reached `master`** … A reader on `master` sees a gap at 0031 until T-0439 merges."* | **0031 is on `master`.** `git log -- agents/backlog/adr/0031-…md` → `acf2f0bc` *"feat(web): guard the NSwag regen against client/call-site drift [T-0439] (#175)"*. There is no gap, and a reader following this note goes looking for a merge that already happened |
+| **1** | `0032-…md:23-25` — the **Number note** | *"**0031 is taken** by `0031-nswag-regen-drift-is-guarded-at-regen-time.md`, which exists **only in T-0439's worktree and has not reached `master`** … A reader on `master` sees a gap at 0031 until T-0439 merges."* | **0031 is on `master`.** `git log -- docs/decisions/0031-…md` → `acf2f0bc` *"feat(web): guard the NSwag regen against client/call-site drift [T-0439] (#175)"*. There is no gap, and a reader following this note goes looking for a merge that already happened |
 | **2** | `0032-…md:14` — the **Split note** | *"**ADR-0033 is `proposed`, not accepted** (see its status block)."* | **ADR-0033 is `accepted`** — its status block reads `accepted`, dated 2026-08-05, amended and accepted by the T-0471 panel (`34a3c733`, `0e1af548`). Made stale by the very round that produced this finding |
 
 Statement 2 is the one that does damage: a reader who checks whether ADR-0033 binds, and trusts
@@ -76,7 +76,7 @@ wrong answers and no way to choose between them.
 ## Implementation notes
 
 **Files this ticket touches:**
-- `agents/backlog/adr/0032-catalog-law-declarations-require-a-named-ci-gate.md` — `:14`, `:23-25`, plus
+- `docs/decisions/adr-0032.md` — `:14`, `:23-25`, plus
   the appended erratum block at the end of the file.
 - `agents/architecture/decisions/catalog-governance.md` — `:4-8`, `:280`.
 
@@ -85,12 +85,12 @@ specifies it; it does not perform it — the same separation as T-0549.
 
 ### Staleness detectability (sprint-15 §D3)
 
-`agents/architecture/**` is excluded from the candidate-3 path rule and `agents/backlog/adr/**` is not a
+`agents/architecture/**` is excluded from the candidate-3 path rule and `docs/decisions/**` is not a
 product path, so **no path-based signal can flag this ticket**. It is also, ironically, a ticket *about*
 a stale document — which is the argument for closing it rather than carrying it. Manual check at
 dispatch, two commands:
-`grep -n 'ADR-0033 is .proposed' agents/backlog/adr/0032-*.md` and
-`git log --oneline -1 -- agents/backlog/adr/0031-*.md`.
+`grep -n 'ADR-0033 is .proposed' docs/decisions/0032-*.md` and
+`git log --oneline -1 -- docs/decisions/0031-*.md`.
 
 **No-decision note:** a record correction with no decision content — no panel. AC2 is the guard that
 keeps it that way: if the correction turns out to change decision content, it becomes a supersede and
@@ -102,7 +102,7 @@ gets one.
 - 2026-08-05 — **ARCHITECT: DONE. The instrument is NOT an erratum — AC2's alternate lane fired, and
   that is the substance of the ticket rather than a technicality.** Both statements were re-verified at
   HEAD before anything was written (Gate 0): ADR-0033 `:3` reads `**Status:** accepted` dated
-  2026-08-05, and `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` is a tracked
+  2026-08-05, and `docs/decisions/adr-0031.md` is a tracked
   file (T-0439 merged as `acf2f0bc`, PR #175; ADR-0033's own corrected Number note `:19-27` records the
   same fact).
   - **Erratum lane refused, for both.** `adr/README.md:16-26` opens it only for *"a **transcription

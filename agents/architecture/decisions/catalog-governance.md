@@ -200,7 +200,7 @@ counting. Use:
 rg -U 'one\s+way\s+to\s+do\s+X' .claude/ agents/knowledge/ agents/process/   # or: rg 'way to do X'
 ```
 
-Expected: no hit that *instructs* routing. Hits inside `agents/backlog/adr/` are legitimate — an
+Expected: no hit that *instructs* routing. Hits inside `docs/decisions/` are legitimate — an
 accepted ADR records what was decided then, and ADR-0033 must quote the rule it reverses.
 
 ---

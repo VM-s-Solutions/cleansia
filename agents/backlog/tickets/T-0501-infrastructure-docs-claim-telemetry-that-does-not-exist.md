@@ -231,8 +231,8 @@ were each read directly, not inferred.
 
 - **`agents/architecture/`** — no such directory exists in the tree (the ticket's *Read first* names
   `agents/architecture/decisions/azure-deployment.md`; it is absent). Architecture records live in
-  `agents/backlog/adr/`.
-- **`agents/backlog/adr/0015-*.md:208`** — reviewed, **not edited.** It states *"All 5 APIs + SSR +
+  `docs/decisions/`.
+- **`docs/decisions/0015-*.md:208`** — reviewed, **not edited.** It states *"All 5 APIs + SSR +
   Functions emit telemetry (D3/observability)"*, which is false today. Left alone deliberately: an ADR
   records the decision as made, and the charter's split is that the architecture doc carries current
   state. **Flagged for the architect** — if D3 was accepted as built, the ADR needs a correction note.

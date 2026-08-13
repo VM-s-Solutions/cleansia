@@ -21,7 +21,7 @@ source: defense-panel ADR; theme 3
 
 Defense-panel theme 3 ("the money path"): refunds and disputes are written in two unrelated places
 with two different, partly-broken behaviors, and chargeback linkage is dead. This ticket produces a
-**Wave-1 foundational ADR** (`ADR-REFUND`, the next free number in `agents/backlog/adr/`) that freezes
+**Wave-1 foundational ADR** (`ADR-REFUND`, the next free number in `docs/decisions/`) that freezes
 the refund/dispute money-path *contract* — it does not build the admin refund UI or the chargeback
 handler. Those are the Wave-2 consumers (`AUD-01`, the `D-01/DA-1/SEC-DSP-06/07` bundle, `D-06`) which
 the TICKET-MAP already lists as `depends_on: ADR-REFUND`. The ADR must be `accepted` before any of
@@ -59,7 +59,7 @@ refund).
 ## Acceptance criteria
 
 - [ ] **AC1 — ADR file exists and is `accepted`.** Given the `agents/templates/adr.md` template,
-  When the architect writes `agents/backlog/adr/NNNN-refund-dispute-money-path.md` (next free number),
+  When the architect writes `docs/decisions/NNNN-refund-dispute-money-path.md` (next free number),
   Then it has frontmatter `Status: accepted`, `Date: 2026-06-01`, `Applies to: backend`, and a
   Challenge/Defense/Verdict trail per `agents/process/deliberation.md` with **zero blocking**
   challenges, mirroring the structure of ADR-0002.

@@ -130,6 +130,38 @@ comment that no longer matches the code is worse than none.
 > that must be kept true; most add risk (drift) without adding understanding. Spend the effort on the
 > name instead.
 
+### When the *why* is longer than a line — the warning stays, the explanation moves
+
+The rule above allows a comment for a race, an ordering requirement, a surprising deviation. What it
+does not allow is that comment growing into an essay. Several had: an incident write-up, the
+alternatives considered, the history of two previous attempts — hundreds of lines of documentation
+living where only a reader of that one file will ever find it.
+
+**Split it. The comment keeps the WARNING; the docs site keeps the EXPLANATION.**
+
+```csharp
+// Ports pinned — random ports split producer/consumer across Azurite instances and the queue
+// consumer never fires. → /architecture/local-orchestration#azurite-ports
+```
+
+One line. It still stops the next person unpinning the ports, which is the comment's whole job. The
+three paragraphs about how that failure was diagnosed live on a page that can carry a diagram, be
+searched, and be read by someone who is not currently in this file.
+
+**The test for what stays:** *if a reader deleted this line and changed the code, would they break
+something?* If yes it is a warning — keep it. If it only tells them why the decision was made, it is
+an explanation — move it and link.
+
+**The pointer format is `→ /path` or `→ /path#anchor`.** The arrow is the marker, and it is required:
+a bare path in a comment is far too common to treat as a reference. `check-docs-refs.mjs` verifies
+both halves — that the page exists **and** that the anchor matches a real heading — and it runs in
+**Docs CI**, so a pointer to a page someone later renamed fails the build rather than rotting quietly.
+
+**`///` XML docs are not covered by this.** They are IntelliSense and they feed the Swagger surface, so
+they stay — but trimmed to what a tooltip should say. One or two lines. If a `<summary>` has grown
+paragraphs and a `<remarks>` essay, that is the same split: a sentence in the tooltip, the rest on a
+page.
+
 ## Harvest good patterns back into the catalog
 
 The knowledge catalog (`patterns-*.md`, `consistency.md`) is a **living** document, not a fixed

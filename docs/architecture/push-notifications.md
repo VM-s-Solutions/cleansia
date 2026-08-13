@@ -235,3 +235,60 @@ runtime available." Use **Debug → Attach to Process** instead:
    `SendPushNotificationFunction.Run` hit.
 
 When VS ships a toolset with net10 support, switch to F5 launch instead.
+
+## The event catalogue {#event-catalogue}
+
+`NotificationEventCatalog` maps every event key — the strings that flow on the queue and into the FCM
+payload — to the per-user opt-in category. The same keys are looked up in the Android apps' string
+resources, so the two must stay in step.
+
+Several keys exist as separate keys for reasons that are easy to undo by "simplifying" them.
+
+### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
+
+`OrderConfirmed` is [overloaded](/domain/order-lifecycle#confirmed-is-deliberately-overloaded) — it
+means *money settled* **or** *cleaner assigned*. Two of its producers, the Stripe webhook and the
+recurring cash confirmation, have no cleaner at all.
+
+Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
+layer up, in the thing that writes to a customer's lock screen.
+
+### Why the preferred-offer-closed message is one sentence {#one-sentence}
+
+When a customer's chosen cleaner does not take the booking, the customer is told the offer ended and is
+offered a second choice. **They are never told that a named person refused, and never told that a named
+person did not answer.**
+
+One sentence covers both outcomes and that *is* the guarantee. Two per-path strings would reintroduce
+exactly the disclosure the neutral line exists to prevent — and the question of which lawful basis
+covers telling a third party what a worker did is still open.
+
+The same reticence runs the other way: no surface ever says an order is held for someone else, and no
+cleaner ever learns they were passed over.
+
+### Which events a user may silence {#mutability}
+
+Most order events sit under the existing `OrderUpdates` category rather than getting one of their own.
+A new category is a boolean **column** plus a toggle in every client, and someone who silenced order
+updates has already answered the question.
+
+Two are deliberately **non-mutable**:
+
+| Event | Why it cannot be silenced |
+|---|---|
+| Admin assigned you a job | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
+| Admin took you off a job | Losing a booked day is not an optional notice |
+
+And the admin-unassigned copy is deliberately **not** the assignment-cancelled copy: here the job goes
+ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be telling them
+their booking was gone.
+
+### One claim the copy still overstates {#near-you}
+
+The new-jobs digest says *"N new jobs near you"*, and the server now means it — the count is narrowed by
+the cleaner's own job radius around their home address.
+
+**It is still not true for everyone.** A cleaner who has set no radius, and one whose home never
+geocoded, both keep the country-wide board by design, and the payload carries no way for the client to
+tell those apart. Making the wording follow the reality needs a second loc arg or a second event key,
+which means new strings in both apps.

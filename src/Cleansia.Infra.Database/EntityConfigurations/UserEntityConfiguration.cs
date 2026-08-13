@@ -89,26 +89,12 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Index the identity-lookup columns so login / register /
-        // password-reset / email-confirm / profile-load stop sequentially scanning Users.
-        // UNIQUE index on Email. The column is citext, so this index is natively
-        // case-insensitive (no LOWER()/functional index needed). DB-level uniqueness — not just the
-        // ExistsWithEmailAsync app pre-check — is the real guarantee that closes the register/update
-        // TOCTOU race.
+        // Identity-lookup indexes. UNIQUE on Email — citext, so natively case-insensitive.
+        // DB-level uniqueness, NOT the app pre-check, is what closes the register/update TOCTOU race.
         //
-        // Per S8 the uniqueness scope is (TenantId, Email), NOT global Email. User is an
-        // ITenantEntity and the app-layer checks (ExistsWithEmailAsync / GetByEmailAsync) run inside the
-        // global tenant query filter — so email identity is PER-TENANT. A global unique index let tenant
-        // B's registration 500 on an unhandled 23505 when tenant A already held the email (a cross-tenant
-        // existence oracle) and barred the same person from being a customer in two tenants. The composite
-        // index still closes the same-tenant TOCTOU race the app pre-check can't. citext keeps the Email
-        // component case-insensitive.
-        //
-        // NULLS NOT DISTINCT is what ARMS all of the above. TenantId is nullable and holds NULL on every
-        // row in single-tenant mode, and PostgreSQL's default treats NULLs in a unique index as DISTINCT
-        // — so without this option the index admits unlimited duplicate (NULL, email) rows and the
-        // guarantee claimed above is not one (ADR-0050 D1). The per-tenant scoping is untouched:
-        // (NULL, 'a@b') and ('T1', 'a@b') still coexist; only (NULL, 'a@b') twice now collides.
+        // Scope is (TenantId, Email), never global Email: a global unique index made tenant B's
+        // registration 500 on an unhandled 23505 when tenant A already held the address — a
+        // cross-tenant existence oracle. → /architecture/security-rules
         builder.HasIndex(u => new { u.TenantId, u.Email })
             .IsUnique()
             .AreNullsDistinct(false);

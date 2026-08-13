@@ -217,20 +217,17 @@ public class User : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// Binds the VERIFIED Apple subject to an account that does not carry one yet, and does nothing at all
-    /// when one is already stored.
-    /// <para>
-    /// Why this matters: Apple sends the email only on the FIRST authorization and the sub on every one, so
-    /// an Apple account whose row predates sub-storage is reachable by the email fallback exactly once —
-    /// and on every sign-in after that, the sub lookup misses and there is no email to fall back to, which
-    /// locks the user out of their own account with no self-service recovery. Binding the sub on the one
-    /// sign-in that still carries an email closes that window permanently.
-    /// </para>
-    /// <para>
-    /// The never-overwrite rule is a SECURITY property, not tidiness: an existing sub is the account's
-    /// verified identity anchor, and letting a later sign-in rewrite it would let one Apple ID take over an
-    /// account anchored to a different one (S1 server-truth-identity).
-    /// </para>
+    /// Binds the VERIFIED Apple subject to an account that does not carry one, and does nothing when one
+    /// is already stored.
+    ///
+    /// <para>Apple sends the email only on the FIRST authorization and the subject on every one, so an
+    /// account predating subject-storage is reachable by the email fallback exactly once — after which
+    /// the subject lookup misses with no email to fall back to, <b>locking the user out with no
+    /// self-service recovery</b>.</para>
+    ///
+    /// <para><b>The never-overwrite rule is a SECURITY property, not tidiness</b>: an existing subject is
+    /// the account's verified identity anchor, and letting a later sign-in rewrite it would let one Apple
+    /// ID take over an account anchored to another. → /flows/auth-and-identity</para>
     /// </summary>
     public User LinkAppleId(string appleSub)
     {

@@ -2,22 +2,11 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { OrderStatus } from '@cleansia/models';
 
 /**
- * Maps an `OrderStatus` (or wrapper `{ value?: number }`) to the PrimeNG
- * severity token used by `<p-tag>`.
+ * Maps an order status to the PrimeNG severity token.
  *
- * Why a pipe and not a function helper:
- *  - Templates that previously called `getOrderStatusSeverity(status)` inside
- *    `@for` blocks re-ran the helper on every change-detection pass — once
- *    per row. With this pipe (pure by default), Angular memoizes by input
- *    identity so the lookup runs at most once per status reference change.
- *  - Single source of truth shared across customer/partner/admin instead of
- *    four byte-identical switch statements.
- *
- * Severities chosen to match PrimeNG's `Tag` token vocabulary:
- *  - `warn`    → "needs attention" (Pending)
- *  - `info`    → neutral progress (Confirmed, InProgress, default)
- *  - `success` → terminal happy path (Completed)
- *  - `danger`  → terminal sad path (Cancelled)
+ * **A pipe rather than a helper function on purpose**: a helper called inside `@for` re-ran once per
+ * row on every change-detection pass. A pure pipe memoizes by input identity, so the lookup runs at
+ * most once per status change. → /domain/order-lifecycle
  */
 @Pipe({
   name: 'orderStatusSeverity',

@@ -44,18 +44,10 @@ struct BookingQuote: Equatable {
         self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
     }
 
-    /// **Refuse.** This is the number the customer commits to, and the screen does arithmetic on it:
-    /// `preSurchargeSubtotal` subtracts the surcharge from the total and the price bar subtracts the
-    /// discount again, so the breakdown lines are the addends of a figure the same screen prints. A
-    /// coerced `0` renders "0 Kč" on the confirm step and nothing anywhere goes red — the customer
-    /// then pays whatever `CreateOrder` prices the same basket at.
-    ///
-    /// `currencyId` is refused for a second reason: `BookingOrderCommandFactory` sends it on the
-    /// create command and maps blank to nil, so a coerced `""` submits an order with no currency.
-    ///
-    /// The two discount amounts are `decimal?` on the server and stay coerced on purpose. Null there
-    /// means *no such discount applied*, which is the same fact as zero — the summary adds them and
-    /// `0` falsifies nothing. Rule 5 protects a distinction the server drew; it drew none here.
+    /// **Refuse.** This is the number the customer commits to, and the screen does arithmetic on it —
+    /// the breakdown lines are addends of a figure the same screen prints. A coerced `0` renders "0 Kč"
+    /// on the confirm step with nothing going red, and the customer then pays whatever the server
+    /// prices the same basket at. → /decisions/adr-0048
     init(from response: QuoteOrderResponse) throws {
         try self.init(
             totalPrice: response.totalPrice.require("totalPrice"),

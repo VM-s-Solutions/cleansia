@@ -8,21 +8,11 @@ import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
 
 /**
- * Color keyed off the backend `DisputeStatus.value`. The backend enum
- * (`src/Cleansia.Core.Domain/Enums/DisputeStatus.cs`) has SIX values, 1-indexed:
- *   1 = Pending             → amber (warning) — freshly filed, awaiting triage
- *   2 = UnderReview         → primary sky — support is actively looking
- *   3 = WaitingForResponse  → primary sky — ping-ponging with the customer
- *   4 = Resolved            → green — happy terminal state
- *   5 = Closed              → neutral slate — closed without refund
- *   6 = Escalated           → red — handed off (e.g. Stripe dispute)
- *   null / unknown          → outlineVariant
+ * Colour keyed off the backend dispute status VALUE, which is 1-indexed — amber while pending, sky
+ * while in review or awaiting a reply, green resolved, slate closed, red rejected.
  *
- * Note the mismatch with `OrderStatus` which is 0-indexed. Keep this switch
- * keyed on the exact `value` integers the backend serializes.
- *
- * Consumers typically use the returned color as a tint plus a soft-tinted
- * background via `color.copy(alpha = 0.14f)` — same treatment as order pills.
+ * **Keyed on the numeric value, not the name**, because the name is not on the wire.
+ * -> /flows/cancellation-refund-dispute
  */
 @Composable
 fun disputeStatusColor(statusValue: Int?): Color = when (statusValue) {

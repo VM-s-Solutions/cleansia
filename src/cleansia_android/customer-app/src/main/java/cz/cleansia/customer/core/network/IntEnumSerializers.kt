@@ -21,16 +21,11 @@ import cz.cleansia.customer.api.model.SortDirection
 import kotlinx.serialization.modules.SerializersModule
 
 /**
- * Customer-app's set of int-enum bindings registered with the JSON config.
- * The reusable [IntValueEnumSerializer] codec class itself lives in `:core`.
+ * The customer app's int-enum bindings; the reusable codec lives in `:core`.
  *
- * Add new entries here when a new int-enum lands. The list mirrors
- * `grep -l '@SerialName(value = "[0-9]")' build/generated/openapi/.../model/`.
- *
- * Each line is verbose on purpose — the generated enums all expose a
- * `.value: Int` property and an `entries` collection, but writing them out
- * keeps the call site type-safe and grep-friendly so a missing entry is
- * obvious in code review.
+ * **Add an entry whenever a new int-enum lands** — the generated client emits these as quoted integers,
+ * and an unregistered one fails to deserialize at runtime rather than at build.
+ * -> /architecture/backend#tolerant-json
  */
 val IntEnumSerializersModule = SerializersModule {
     contextual(AppliedDiscountSource::class, IntValueEnumSerializer(

@@ -156,21 +156,8 @@ fun MembershipManagementCard(
 }
 
 /**
- * Inactive (not-subscribed) Plus card — restructured into a richer
- * marketing block. Layout:
- *
- *   ┌────────────────────────────────────────────────────────┐
- *   │  ◉ PLUS BADGE                              🧽 mascot   │
- *   │  Cleansia Plus                                         │
- *   │  Save 10% · cancel anytime · recurring · …             │
- *   │  ─────────────────────────────────────                 │
- *   │  [ Try Plus free for 14 days  ▸ ]                      │
- *   └────────────────────────────────────────────────────────┘
- *
- * The mascot anchors the brand emotionally without taking over; the
- * single-line perks summary teases value before the user has to commit
- * to a tap; the explicit CTA button reads as an affordance even on
- * users who skim past the gradient background.
+ * The not-subscribed Plus card: badge and mascot, the value line, then the trial CTA.
+ * -> /product/features
  */
 @Composable
 private fun InactiveCard(modifier: Modifier, onClick: () -> Unit) {

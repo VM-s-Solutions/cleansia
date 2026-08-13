@@ -22,19 +22,18 @@ public class GetCancellationFeePreview
     public record Query(string OrderId) : IQuery<Response>;
 
     /// <param name="Tier">
-    /// Why the fee is what it is, so a client renders the reason instead of rebuilding the schedule.
-    /// The two facts that decide it — the caller's own free-cancellation window (a Plus plan's is 4
-    /// hours where the standard is 24) and whether a cleaner has actually been pulled onto the job —
-    /// are server-side, so no client can derive this correctly even in principle.
+    /// Why the fee is what it is, so a client renders the reason rather than rebuilding the schedule.
+    /// Both deciding facts — the caller's own free-cancellation window and whether a cleaner has been
+    /// pulled onto the job — are server-side, so <b>no client can derive this even in principle</b>.
+    /// → /product/business-rules#cancellation
     /// </param>
     /// <param name="FeeAmount">
-    /// The charge, in the order's currency. Always <c>TotalPrice - RefundAmount</c>, so the two halves
-    /// the customer is shown sum to the total they paid.
+    /// The charge, in the order's currency. Always <c>TotalPrice - RefundAmount</c>, so the two halves the
+    /// customer is shown sum to what they paid.
     /// </param>
     /// <param name="ExpressWaiverForfeitedOnCancel">
-    /// ADR-0035 AM-13 — cancelling would use up one of this month's free express bookings. Disclosed
-    /// here because the cases where the forfeiture is otherwise invisible (inside the oops window, or
-    /// on any cash order) are exactly the ones where the fee is zero.
+    /// Cancelling would consume one of this month's free express bookings. Disclosed here because the
+    /// cases where the forfeiture is otherwise invisible are exactly the ones where the fee is zero.
     /// </param>
     public record Response(
         string OrderId,

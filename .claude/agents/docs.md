@@ -30,13 +30,32 @@ human or agent. When behavior ships, the docs that describe it ship in the same 
 4. Add a changelog entry under the right category.
 5. Cross-link related pages; keep the VitePress nav coherent.
 
+## The site is the source of truth — code carries pointers, not prose
+Owner decision, 2026-08. Documentation does not live in the code. When a source file needs to explain
+itself at length, **the warning stays in the comment and the explanation moves to a page**:
+
+```csharp
+// Ports pinned — random ports split producer/consumer across Azurite and the queue consumer never
+// fires. → /architecture/local-orchestration#azurite-ports
+```
+
+- The test for what stays: *if a reader deleted this line and changed the code, would they break
+  something?* Yes = a warning, keep it. Only explains why = move it and link.
+- The pointer format is `→ /path` or `→ /path#anchor`. The arrow is required.
+- `check-docs-refs.mjs` verifies the page exists **and** the anchor matches a real heading, and it runs
+  in **Docs CI** — so renaming a page or a heading that code points at fails the build.
+- `///` XML docs stay (IntelliSense, Swagger) but trimmed to what a tooltip should say.
+
+Full rule: `agents/knowledge/conventions.md` §*"When the why is longer than a line"*.
+
 ## Style
 - Match the existing doc voice and structure — these docs are already high quality; preserve that.
 - Show, don't just tell: include the code/CLI/JSON example a reader needs.
 - Don't document aspirations — document what's in the code now. Future work goes in tickets, not docs.
 
 ## Constraints
-- Do not change application code or behavior — you describe it.
+- Do not change application code or behavior — you describe it. Replacing an explanatory comment with
+  a one-line warning plus a pointer is not a behaviour change and IS yours to do.
 - Do not duplicate the `agents/knowledge/*` catalog into the public docs (internal vs published) —
   reference the architecture docs as canonical.
 - Do not run the VitePress build or deploy — flag it if a docs build is needed.

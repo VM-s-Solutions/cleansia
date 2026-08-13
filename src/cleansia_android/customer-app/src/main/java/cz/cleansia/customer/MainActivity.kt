@@ -115,18 +115,9 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        // NOTE: previously this Surface had a root-level
-                        // Modifier.clickable that called focusManager.clearFocus()
-                        // + keyboardController.hide() to implement "tap outside
-                        // to dismiss". That broke ALL text input app-wide:
-                        // tapping any OutlinedTextField fired the parent click
-                        // handler immediately after focus was granted, hiding
-                        // the keyboard before the user could type.
-                        //
-                        // If we want "tap outside to dismiss" again, attach it
-                        // to specific scrollable form Columns (where TextField
-                        // children DO consume their own taps), not to a root
-                        // Surface that sits behind every screen.
+                        // No root-level clickable here. One that cleared focus to implement
+                        // tap-outside-to-dismiss swallowed the first tap of EVERY text field on every
+                        // screen, because the root consumed it before the field saw it.
                         val navController = rememberNavController()
 
                         // Notification deep links — `pendingDeepLink` is set by
@@ -171,19 +162,11 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
     }
 
     /**
-     * Re-applies the persisted language to the process on every cold start.
+     * Re-applies the persisted language on every cold start.
      *
-     * minSdk is 26 and neither app registers `AppLocalesMetadataHolderService`
-     * with `autoStoreLocales`, so on API 26-32 AppCompat holds the per-app
-     * locale in a process-scoped static and loses it when the process dies.
-     * DataStore kept the choice (it is what `emailLanguageTag()` reads for the
-     * confirmation mail), so a customer who picked Czech got a Czech email and
-     * then reopened the app in English. This closes that gap from the DataStore
-     * side - see [AppLocale] for why not the manifest service.
-     *
-     * [AppLocale.applyIfChanged] is a no-op when the delegate already matches,
-     * which is both the API 33+ path and the recreate that the API 26-32 path
-     * triggers, so this cannot loop.
+     * **On API 26-32 AppCompat holds the per-app locale in a process-scoped static and loses it when the
+     * process dies**, and neither app registers the auto-store service. DataStore keeps the choice, so it
+     * has to be re-applied here or the app reverts to the device language after every kill.
      */
     private fun restorePersistedAppLocale() {
         lifecycleScope.launch {

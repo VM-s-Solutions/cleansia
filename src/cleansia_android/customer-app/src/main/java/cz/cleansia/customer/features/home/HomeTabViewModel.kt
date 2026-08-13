@@ -17,18 +17,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
- * Holder VM for [HomeTab]. The home screen observes six singleton repositories
- * (address, orders, loyalty, membership, catalog, recurring); exposing them
- * via Hilt-injected fields keeps the screen out of the EntryPointAccessors
- * pattern. State already lives in the singletons — this VM is purely an
- * injection seam, no per-VM state.
+ * Injection seam for the home screen's six singleton repositories.
  *
- * [refreshCatalog] warms the catalog for the popular-packages strip and
- * surfaces the snackbar on failure (the repo no longer does). Connectivity
- * failures stay silent — NetworkErrorInterceptor owns the infra toast.
- *
- * [onResume] is the one place that re-fetches an already-warm cache; every
- * other warmer on this screen fires at most once per session.
+ * **No state lives here** — it exists so the screen avoids the EntryPointAccessors pattern.
  */
 @HiltViewModel
 class HomeTabViewModel @Inject constructor(
@@ -61,20 +52,11 @@ class HomeTabViewModel @Inject constructor(
 
     /**
      * Home entry — a tab switch back, or the process returning to foreground.
-     * Both land on `ON_START`, and because the lifecycle observer is re-attached
-     * to an already-STARTED lifecycle every time HomeTab recomposes, this runs
-     * far more often than "once per foreground". That is why each source is
-     * gated on its own [Staleness] watermark rather than refreshed outright:
-     * ungated, every tap on the Home tab would cost three network calls.
      *
-     * The three warmers on the screen itself (MainShell's `loaded`-gated
-     * prefetch for loyalty and orders, HomeTab's null-gated membership effect)
-     * are all one-shot, so without this nothing short of sign-out or another
-     * tab's pull-to-refresh moves the data — points earned mid-session showed
-     * up only on the next cold start.
-     *
-     * Silent on failure: these are ambient background refreshes and the screen
-     * keeps rendering the cached snapshot, so a snackbar would be noise.
+     * **The observer is re-attached to an already-STARTED lifecycle on every recomposition, so this runs
+     * far more often than once per foreground.** That is why each source is gated on its own freshness
+     * watermark: ungated, every tap on Home would cost three network calls.
+     * -> /mobile-app/patterns#session-wipe
      */
     fun onResume() {
         refreshIfStale(loyaltyRepository.staleness) { loyaltyRepository.refresh() }

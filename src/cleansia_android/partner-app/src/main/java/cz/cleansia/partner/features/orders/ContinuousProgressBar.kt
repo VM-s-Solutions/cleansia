@@ -34,17 +34,11 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderStatus
 
 /**
- * Foodora-style segmented progress bar. Five thin separated bars
- * (one per phase). Past phases are solid green, the current phase
- * animates its fill once on entry, future phases sit muted.
+ * Segmented progress bar, one thin bar per phase: past solid, current animating once on entry, future
+ * muted.
  *
- * No shimmer, no looping, no halo — Foodora's bar is intentionally
- * quiet so the cleaner's eye stays on content, not on the chrome.
- * The single fill-in animation is enough to acknowledge the phase
- * transition without becoming visual noise on a multi-hour job.
- *
- * Cancelled gets a flat danger-red bar (no segmentation — the
- * workflow didn't progress, so segments would be misleading).
+ * **No shimmer, no looping, no halo** — the bar is intentionally quiet so the cleaner's eye stays on
+ * the job, not the chrome.
  */
 @Composable
 fun ContinuousProgressBar(
@@ -121,21 +115,10 @@ fun ContinuousProgressBar(
 private enum class SegmentState { Past, Current, Future }
 
 /**
- * One thin pill bar. 4dp tall — Foodora's tracker reads small and
- * confident. Past = solid past-color, Future = muted, Current =
- * Windows-style indeterminate: pale active-tinted track with a
- * brighter active-color band that slides L → R across it on a
- * ~1.5s loop.
+ * One thin pill bar: past solid, future muted, current an indeterminate band sliding across a pale
+ * tinted track.
  *
- * Implementation:
- *  - Background fill is `activeColor * 0.25 alpha` — gives the bar
- *    its "armed" tint so it doesn't read as inactive between sweeps.
- *  - A 40%-wide band sits on top, full-opacity activeColor, clipped
- *    to the segment via the parent's clip. Its X is animated with
- *    `offsetXFraction` from `-0.4f` to `1.0f` so it enters from the
- *    left edge and exits past the right edge before looping.
- *  - Linear easing — Windows progress bars don't ease; the band
- *    travels at constant speed. Easing in/out would feel sluggish.
+ * The background tint is what stops the current bar reading as inactive between sweeps.
  */
 @Composable
 private fun ProgressSegment(
@@ -161,19 +144,8 @@ private fun ProgressSegment(
         )
         SegmentState.Current -> {
             val transition = rememberInfiniteTransition(label = "currentSegmentSweep")
-            // Single sweep with an intentional rest beat between
-            // passes. Phase travels from -sweepWidth to a value
-            // greater than 1f — the extra range past 1f keeps the
-            // sweep off-screen on the right for a noticeable pause
-            // before wrapping. With LinearEasing the rest is just
-            // the segment sitting in its armed-track tint, then the
-            // next sweep enters from the left.
-            //
-            // travelEnd = 1f → sweep right-edge hits the segment's
-            //                  right edge then immediately wraps.
-            // travelEnd = 2f → sweep finishes, then we spend the
-            //                  same amount of time again with the
-            //                  sweep off-screen before restarting.
+            // A single sweep with a deliberate rest beat: the phase travels past 1f so the band sits
+            // off-screen for a pause before wrapping, rather than restarting the instant it exits.
             val sweepWidthFraction = 0.5f
             // Phase range: visible portion is [-0.5, 1.0] (1.5
             // units), rest beat is [1.0, 2.5] (1.5 units) — equal

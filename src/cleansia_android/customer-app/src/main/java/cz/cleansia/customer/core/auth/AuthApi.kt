@@ -8,17 +8,11 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 
 /**
- * Hand-written Retrofit interface for Cleansia.Web.Customer auth endpoints.
+ * Hand-written Retrofit interface for the customer auth endpoints.
  *
- * We don't use the OpenAPI-generated client here because (a) ASP.NET's default
- * operationIds produce noisy Kotlin method names and (b) the refresh endpoint
- * needs a separate no-auth OkHttp client, which is easier to wire when the
- * interface is small and under our control.
- *
- * All methods return [Response] so the caller can inspect HTTP status — auth
- * endpoints sometimes return 200 with a special payload (unconfirmed email
- * returns 200 with empty Token) and sometimes non-2xx. Wrapping in ProblemDetails
- * for errors happens in [AuthRepository].
+ * **Deliberately not the generated client**: the default operation ids produce noisy method names, and
+ * the refresh endpoint needs its own no-auth OkHttp client, which is far easier to wire against a small
+ * hand-written interface. -> /flows/auth-and-identity
  */
 interface AuthApi {
     @POST("api/Auth/Login")

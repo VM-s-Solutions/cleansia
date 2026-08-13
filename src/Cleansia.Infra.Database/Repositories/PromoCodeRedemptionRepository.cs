@@ -28,18 +28,13 @@ public class PromoCodeRedemptionRepository(CleansiaDbContext context)
         decimal appliedDiscount,
         CancellationToken cancellationToken)
     {
-        // The Orders row this points at is only CHANGE-TRACKED when we get here — CreateOrder's
-        // UnitOfWork commit runs after the handler returns — so the self-committing INSERT this
-        // replaces violated FK_PromoCodeRedemptions_Orders_OrderId (23503) on every promo booking.
-        // Staging the row on the same DbContext makes EF emit the Orders INSERT before this
-        // dependent one inside the single SaveChangesAsync.
+        // Staged on the caller's DbContext rather than self-committed: the Orders row is only
+        // change-tracked at this point, so a self-committing INSERT violated the FK on every promo
+        // booking. Staging makes EF emit the Orders INSERT first, inside one SaveChanges.
         //
-        // The cost, named: the per-user cap is now an app-level pre-read, not a single atomic
-        // statement. Two concurrent same-user redemptions can both compute the same ordinal; with a
-        // NULL tenant the unique index is nulls-distinct and both land, and with a non-null tenant
-        // the index fires as a DbUpdateException at the order's commit rather than as a clean null.
-        // Both are bounded and strictly better than the outage. The end state restores the atomic
-        // statement byte-for-byte and runs it after the commit — see T-0532.
+        // THE COST, NAMED: the per-user cap is now an app-level pre-read rather than one atomic
+        // statement, so two concurrent same-user redemptions can both compute the same ordinal. Bounded,
+        // and strictly better than the outage it replaces. -> /flows/loyalty-and-memberships
         var highestOrdinal = await GetDbSet()
             .Where(r => r.PromoCodeId == promoCodeId && r.UserId == userId)
             .Select(r => (int?)r.SlotOrdinal)

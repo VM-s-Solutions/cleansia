@@ -4,18 +4,12 @@ using Cleansia.Core.AppServices.Features.Orders.DTOs;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// What a cleaner admitted by <c>IOrderAccessService.CanBrowseOrderAsync</c> alone — one who has not
-/// taken this job and is not its customer — may read about it.
+/// What a cleaner who has NOT taken this job and is not its customer may read about it.
 ///
-/// <para>One rule, two shapes, in one file on purpose: the list and the detail describe the same order
-/// to the same caller, and when the two lived apart the detail answered with everything the list had
-/// just withheld. A field added to either DTO is covered here or it is not, and
-/// <c>OrderRedactionSurfaceTests</c> fails the build until somebody says which.</para>
-///
-/// <para>What survives is the job, not the household: services, packages, extras, room counts,
-/// schedule, duration, price and pay estimate. What does not is the customer's identity, their home
-/// and its coordinates, anything they or a previous cleaner typed in free text, the confirmation code,
-/// and the crew's personal contact details.</para>
+/// <para><b>One rule, two shapes, in one file on purpose</b> — when the list and the detail lived apart,
+/// the detail answered with everything the list had just withheld. A field added to either DTO is
+/// covered here or it is not, and <c>OrderRedactionSurfaceTests</c> fails the build until somebody says
+/// which. → /flows/execution-and-completion</para>
 /// </summary>
 public static class OrderPiiRedaction
 {

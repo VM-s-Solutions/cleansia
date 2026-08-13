@@ -486,17 +486,11 @@ private fun SortDropdown(
 }
 
 /**
- * Available-order opportunity card. Restores the richer decision panel
- * from the original orders-page-redesign spec: full when/where header,
- * scope chips (rooms · baths · extras), distance + duration, prominent
- * pay readout, and decision badges (hot deal, starting soon). Cleaners
- * told us they want enough information *on the card* to decide whether
- * to tap through — the previous one-line compact row was too thin.
+ * Available-order card: when and where, scope chips, distance and duration, the pay readout, and the
+ * decision badges.
  *
- * Card stays a flat 16dp surface with a 1dp outlineVariant border to
- * match EarningsSummaryScreen's design language. Tap opens details;
- * the trailing primary CTA still fires the inline Take action so a
- * scanning cleaner can grab a job without an extra screen hop.
+ * **The pay readout is prominent because it is the decision** — cleaners said a card without it is not
+ * worth reading. -> /flows/offerability-and-take
  */
 @Composable
 private fun AvailableOrderRow(

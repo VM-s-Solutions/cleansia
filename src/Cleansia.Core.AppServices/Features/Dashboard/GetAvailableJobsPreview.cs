@@ -11,16 +11,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
 /// <summary>
-/// Slim preview of unclaimed orders the calling employee could take right
-/// now. Used by the mobile dashboard's "available work" hero card so the
-/// cleaner sees "earn up to €X" without pulling the full paged order list.
+/// Slim preview of unclaimed orders the caller could take, for the mobile dashboard hero card.
 ///
-/// Authorisation: same as the main paged-orders endpoint — caller must
-/// resolve to an employee. The spec passes <c>excludeEmployeeId</c>, so every row returned is by
-/// construction an order the caller is NOT assigned to — the population the pre-acceptance redaction
-/// exists for. The location is therefore the coarse form the board and the detail already serve, built
-/// by <see cref="OrderMappers.BuildApproximateAddress(string?, string?)"/>; the street is never
-/// selected, so it does not leave the database.
+/// <para>The spec passes <c>excludeEmployeeId</c>, so every row is by construction an order the caller
+/// is NOT assigned to — the population pre-acceptance redaction exists for. <b>The street is never
+/// selected, so it does not leave the database.</b> → /flows/execution-and-completion</para>
 /// </summary>
 public class GetAvailableJobsPreview
 {

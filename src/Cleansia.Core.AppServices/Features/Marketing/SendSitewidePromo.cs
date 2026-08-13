@@ -9,19 +9,13 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Marketing;
 
 /// <summary>
-/// Admin-triggered "send sitewide promo" action. Records exactly one fan-out message and returns. The
-/// actual per-user dispatch (paging through users with <c>Promo = true</c>, enqueueing the per-user
-/// notification message) runs inside <c>SendSitewidePromoFanoutFunction</c>.
+/// Admin-triggered sitewide promo. Records exactly one fan-out message and returns; per-user dispatch
+/// runs in the consumer.
 ///
-/// Phase B's only event whose body is NOT a fixed mobile-side template.
-/// Admin types per-locale title+body in the UI; mobile receives the
-/// already-localized strings via the FCM data payload.
-///
-/// Locale coverage is intentionally strict (all 5: en/cs/sk/uk/ru must be
-/// non-empty) so users always see body text in their language. We considered
-/// fall-back-to-English, but a Czech user receiving an English marketing
-/// notification looks broken — better to force the admin to fill in every
-/// locale than to ship a half-translated campaign.
+/// <para><b>Locale coverage is strict — all five must be non-empty.</b> Fall-back-to-English was
+/// considered and rejected: a Czech user receiving an English marketing push looks broken, so the admin
+/// fills every locale rather than shipping a half-translated campaign.
+/// → /architecture/push-notifications#event-catalogue</para>
 /// </summary>
 public static class SendSitewidePromo
 {

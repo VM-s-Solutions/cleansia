@@ -73,19 +73,9 @@ class OnboardingViewModel @Inject constructor(
     /**
      * Persists the language chosen on the intro screen.
      *
-     * Applying it to the running process is the caller's job (see [AppLocale]), exactly as the
-     * profile picker does it. Keeping the `AppCompatDelegate` call out of the ViewModel is what lets
-     * this be covered by a plain-JVM unit test.
-     *
-     * The value has to land in DataStore rather than anywhere else because
-     * that is what `AppSettingsRepository.emailLanguageTag()` reads when
-     * `RegisterViewModel` stamps the confirmation email's language — routing
-     * it through the store is also what runs `SupportedLanguages.resolve`, and
-     * a raw device tag would fail the backend's `LanguageValidator` outright.
-     *
-     * Nobody is signed in on this carousel, so [languageSync] has no row to update and answers that
-     * from the token store without a request. It is called anyway so the three chooser surfaces stay
-     * one line of code, and the session question keeps exactly one answer.
+     * **Applying it to the running process is the CALLER's job** — keeping that call out of the ViewModel
+     * is what lets this be covered by a plain-JVM unit test. It must land in DataStore, because that is
+     * what the confirmation-mail language tag reads.
      */
     fun setLanguage(language: LanguagePreference) {
         viewModelScope.launch {

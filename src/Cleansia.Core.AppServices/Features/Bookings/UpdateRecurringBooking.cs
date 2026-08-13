@@ -99,16 +99,11 @@ public class UpdateRecurringBooking
         }
 
         /// <summary>
-        /// <c>UpdateSchedule</c> rewrites every schedule field and clears the materialisation watermark,
-        /// so an update is authoring a schedule — the same paid Cleansia Plus capability
-        /// <c>CreateRecurringBooking</c> gates. Without this, one paid month buys a permanently
-        /// re-specifiable scheduling engine: subscribe, create, cancel, then update forever.
-        /// <para>The owner ruling that a lapsed membership does not stop a schedule (Q-PLUS-04)
-        /// PRESERVES an existing schedule; it does not license writing a new one. Pause, resume and
-        /// delete stay ungated so a lapsed subscriber can always stop what is still generating.</para>
-        /// <para>The predicate is the shared one — <c>Status == Active &amp;&amp; CurrentPeriodEnd &gt;
-        /// UtcNow</c> — so a trialing member (Stripe's <c>trialing</c> collapses to Active) keeps this
-        /// perk; only the metered express waiver is withheld during a trial.</para>
+        /// Gated on an active membership because an update REWRITES every schedule field — it is
+        /// authoring a schedule, the same paid capability creation gates. <b>Without this, one paid month
+        /// buys a permanently re-specifiable scheduling engine: subscribe, create, cancel, update
+        /// forever.</b> Pause, resume and delete stay ungated so a lapsed subscriber can always stop what
+        /// is still generating. → /flows/loyalty-and-memberships
         /// </summary>
         private async Task<bool> CallerHasActiveMembershipAsync(string id, CancellationToken cancellationToken)
         {

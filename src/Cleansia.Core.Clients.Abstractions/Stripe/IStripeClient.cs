@@ -9,11 +9,10 @@ public interface IStripeClient
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
     /// <para>
-    /// <paramref name="idempotencyKey"/> is passed straight to Stripe as the refund request's
-    /// IdempotencyKey. It MUST be the caller's deterministic refund key (ADR-0006 D3), never a
-    /// per-call Guid/timestamp: the same key replays the same Stripe refund instead of issuing a
-    /// second one, which is what makes the ADR-0005 D1.2 resilience retry safe to auto-retry this
-    /// write at all (an unkeyed write is never auto-retried).
+    /// <paramref name="idempotencyKey"/> <b>MUST be the caller's deterministic refund key (ADR-0006 D3),
+    /// never a per-call Guid or timestamp</b> — the same key replays the same refund instead of issuing a
+    /// second one, which is the only reason this write may be auto-retried at all.
+    /// → /flows/cancellation-refund-dispute#refund
     /// </para>
     /// </summary>
     Task RefundCheckoutSessionAsync(
@@ -23,10 +22,8 @@ public interface IStripeClient
     /// Refund a charge captured on a PaymentIntent directly (the mobile PaymentSheet path, where there
     /// is no Checkout Session — T-0347 suppresses it). Amount is in the intent's currency.
     /// <para>
-    /// <paramref name="idempotencyKey"/> is the caller's deterministic refund key (ADR-0006 D3), passed
-    /// to Stripe verbatim — exactly as <see cref="RefundCheckoutSessionAsync"/> uses it: the same key
-    /// replays the same Stripe refund instead of issuing a second one, which is what makes the resilience
-    /// retry safe to auto-retry this write.
+    /// <paramref name="idempotencyKey"/> — same contract as <see cref="RefundCheckoutSessionAsync"/>:
+    /// <b>deterministic, never per-call</b>. → /flows/cancellation-refund-dispute#refund
     /// </para>
     /// </summary>
     Task RefundPaymentIntentAsync(
@@ -71,17 +68,12 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Read the LIVE settlement state of an order's card charge, resolving whichever surface the order
-    /// was charged on (Checkout Session for web, PaymentIntent for mobile). Read-only — it never moves
-    /// money. Callers use it to answer "has this customer already paid?" before taking an alternative
-    /// tender, so the answer must come from Stripe rather than our possibly-stale
-    /// <c>PaymentStatus</c> (the whole point is that the webhook may never have arrived).
-    /// <para>
-    /// Throws the same way every other read here does (<c>StripeException</c> /
-    /// <c>HttpRequestException</c> / timeout, classified + metered at the adapter boundary) — an
-    /// unreachable Stripe is NOT reported as "unpaid", so a caller that must not double-charge can fail
-    /// closed.
-    /// </para>
+    /// Read the LIVE settlement state of an order's card charge. Read-only. Callers use it to answer
+    /// "has this customer already paid?" before taking an alternative tender, so <b>the answer must come
+    /// from Stripe rather than our possibly-stale <c>PaymentStatus</c></b> — the whole point is that the
+    /// webhook may never have arrived.
+    /// <para><b>An unreachable Stripe THROWS and is never reported as "unpaid"</b>, so a caller that must
+    /// not double-charge fails closed. → /flows/payment-and-fiscal</para>
     /// </summary>
     Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(
         string? stripeSessionId,

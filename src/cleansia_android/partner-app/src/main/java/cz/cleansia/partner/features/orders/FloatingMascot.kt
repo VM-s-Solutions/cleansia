@@ -28,17 +28,9 @@ import cz.cleansia.partner.api.model.OrderStatus
 import kotlin.math.roundToInt
 
 /**
- * Foodora-style floating mascot that breaks out of the bottom-sheet
- * top edge on the RIGHT side. Half above (over the map), half below
- * (over the sheet's first strip). No card behind it — just the
- * PNG/WebP directly so the character reads as part of the scene.
+ * Mascot breaking out of the sheet's top edge on the right — half over the map, half over the sheet.
  *
- * Tracks the sheet's top-edge Y via [SheetState.requireOffset] so it
- * follows when the cleaner drags the sheet up or down.
- *
- * Caller must place this inside the same `Box(fillMaxSize)` that wraps
- * the BottomSheetScaffold and align it to TopEnd so it sits on the
- * right side. Right-padding pulls it in from the screen edge.
+ * **No card behind it**, so the character reads as part of the scene rather than as a widget.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -53,21 +53,11 @@ import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
- * Account-deletion confirmation screen per Play Policy (May 2024 requirement).
+ * Account-deletion confirmation, per Play policy.
  *
- * The user must:
- *  1. Read a clear list of what gets deleted.
- *  2. Type their own email to confirm (prevents slip-taps).
- *  3. Tap a destructive-red button, then confirm in a dialog.
- *
- * Two independent gates guard the delete: the typed-email match keeps the CTA
- * disabled, and the dialog is the last word before the call goes out. Neither
- * replaces the other — the email match stops the wrong account being deleted,
- * the dialog stops a deliberate-looking tap the user did not mean. iOS gates it
- * the same way (DeleteAccountView.swift).
- *
- * Success flow (VM handles): backend anonymises, we wipe tokens locally, a
- * forced-sign-out event routes back to SignIn. A snackbar confirms.
+ * **Two INDEPENDENT gates, and neither replaces the other**: typing the account's own email keeps the
+ * CTA disabled and stops the wrong account being deleted, and the dialog is the last word before the
+ * call goes out. -> /flows/gdpr-and-audit
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

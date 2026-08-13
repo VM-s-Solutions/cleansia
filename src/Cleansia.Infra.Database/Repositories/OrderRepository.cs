@@ -380,33 +380,19 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public async Task<List<Order>> GetReceiptReconciliationCandidatesAsync(
         DateTime olderThanUtc, int take, CancellationToken cancellationToken)
     {
-        // ADR-0002 D3.4 + ADR-0004 C-B — the OUTER net for the at-most-once Wave-0 dispatch
-        // gap. System-job read: bypass the tenant filter so the sweep sees every tenant's stale fiscal
-        // work. The caller re-scopes per item (SetTenantOverride) before re-enqueuing (S8).
-        //
-        // Predicate:
-        //   • receipt-eligible (mirrors GenerateReceiptHandler eligibility: Cash OR Paid), AND
-        //   • committed BEFORE the threshold cutoff (CreatedOn <= olderThanUtc) — fresh orders whose
-        //     normal post-commit dispatch may still be on the wire are NOT swept, AND
-        //   • the receipt is not fully realized: Receipt is null (original D3.4) OR Receipt.FiscalCode
-        //     is null (C-B: the claimed-but-unregistered row).
-        // The "AND enforcementMode != None" half of C-B is resolved per item in the sweep (it needs the
-        // per-country config), not here. Include the Receipt + CustomerAddress so the sweep can resolve
-        // the enforcement mode without a second round-trip.
+        // The outer net for the at-most-once dispatch gap. System-job read: bypasses the tenant filter so
+        // the sweep sees every tenant's stale fiscal work, and the CALLER re-scopes per item before
+        // re-enqueuing. Fresh orders whose normal dispatch may still be on the wire are not swept.
+        // -> /flows/cross-cutting#dead-letters
         var cutoff = new DateTimeOffset(olderThanUtc, TimeSpan.Zero);
 
-        // ROUND-2 FIX: do NOT filter on the Include'd one-to-one ref nav (o.Receipt.FiscalCode) — EF
-        // emits an untranslatable LeftJoin for that next to the cardinality-altering Include+Take.
-        // Express "not fully realized" as an ANTI-JOIN against the OrderReceipts table: there is NO
-        // fully-registered (FiscalCode != null) receipt for this order. The !Any(...) covers BOTH
-        // "no receipt at all" and "receipt with null FiscalCode" (the C-B widening) in one translatable
-        // predicate.
+        // Do NOT filter on the Include'd one-to-one nav — EF emits an untranslatable join next to the
+        // cardinality-altering Include+Take. Express "not fully realized" as an ANTI-JOIN instead, which
+        // covers both "no receipt" and "receipt with no fiscal code" in one translatable predicate.
         //
-        // The anti-join set is hoisted with IgnoreQueryFilters() so the OrderReceipt tenant query filter
-        // (whose body is an untranslatable tenantProvider.GetCurrentTenantId() call) is NOT re-attached
-        // inside the correlated subquery — and so the cross-tenant system read stays correct: a stale
-        // order in tenant T whose receipt is registered must still be seen as realized, which requires
-        // the subquery to look across tenants too (same as the outer IgnoreQueryFilters).
+        // The anti-join set is hoisted with IgnoreQueryFilters so the receipt tenant filter (whose body is
+        // an untranslatable provider call) is not re-attached inside the subquery — AND so the subquery
+        // looks across tenants too, or a stale order whose receipt is registered reads as unrealized.
         var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
 
         // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both

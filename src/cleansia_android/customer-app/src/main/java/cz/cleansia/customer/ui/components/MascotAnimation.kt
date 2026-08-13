@@ -25,24 +25,11 @@ import cz.cleansia.customer.BuildConfig
 private const val MASCOT_CANVAS_PX = 360
 
 /**
- * Renders an animated WebP mascot from `res/raw/`.
+ * Animated WebP mascot. Animated WebP keeps full alpha so the mascot floats over any background — no
+ * compositing rectangle, no chroma-key artifacts, no video-player overhead.
  *
- * Backed by Coil 3 with the animated-image decoder registered in
- * [cz.cleansia.customer.CleansiaApp]. Animated WebP keeps full alpha so the
- * mascot floats over any background — no compositing rectangle, no chroma-key
- * artifacts, no ExoPlayer overhead.
- *
- * Loop count is overridden at the request level rather than relying on the
- * WebP container's baked-in loop metadata, because Android's `ImageDecoder`
- * is inconsistent about respecting it across vendors. With [loop] = false
- * the animation plays exactly once and freezes on the final frame.
- *
- * Cache keys are namespaced with the version code so a new build always
- * decodes fresh from the bundled raw resource. Without this, Coil's disk
- * cache holds the decoded animation across app updates and you'd see the
- * old asset until the user manually clears storage. Disk cache is also
- * disabled outright — we're loading from APK resources, not the network,
- * so disk caching adds nothing useful here.
+ * **Loop count is overridden at the request level rather than trusting the container's baked-in
+ * metadata**, because Android's decoder is inconsistent about respecting it across vendors.
  */
 @Composable
 fun MascotAnimation(

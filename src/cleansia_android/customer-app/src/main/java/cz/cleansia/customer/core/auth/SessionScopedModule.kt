@@ -20,17 +20,11 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 
 /**
- * Aggregates every [SessionScopedCache] implementor into a Hilt multibinding.
+ * Aggregates every session-scoped cache into a Hilt multibinding, which sign-out and the authenticator
+ * both iterate.
  *
- * [AuthRepository.logout] and [AuthAuthenticator] both inject the resulting
- * `Set<SessionScopedCache>` and iterate it on sign-out — that replaces the
- * old hand-maintained list of seven `Provider<T>` constructor params per side
- * (which previously had to stay in sync by convention).
- *
- * To register a new cache:
- *   1. Have the repo implement [SessionScopedCache] (one `override suspend fun clear()`).
- *   2. Add a `@Binds @IntoSet` line below.
- *   That's it — both clear-paths pick it up automatically.
+ * **This replaced a hand-maintained list of provider params per side** — the shape that let a new cache
+ * be added on one side and forgotten on the other. -> /mobile-app/patterns#session-wipe
  */
 @Module
 @InstallIn(SingletonComponent::class)

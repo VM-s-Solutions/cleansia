@@ -154,9 +154,24 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-035 | C# — 4,720 `//` triaged, 9,158 `///` trimmed to 1–2 lines | L | todo | — |
-| CL-036 | Android 15,391 · iOS · Angular | L | todo | — |
-| CL-037 | Write the rule into `conventions.md` and all 13 agent charters | M | todo | — |
+| CL-035 | C# comment migration — 76 files | L | done | #201 |
+| CL-036 | Android 81 · iOS 5 · Angular 10 | L | done | #201 |
+| CL-037 | The rule in `conventions.md` + the docs charter | M | done | #200 |
+
+> **P8, all four stacks.** 187 files, **−1,419 net lines**, 21 commits, 181 live pointers, both gates
+> green by exit code. The rule that decided every block: *if a reader deleted this line and changed the
+> code, would they break something?* Yes → it stays where the code is. Only explains why → it moves to
+> the docs site and leaves a `→ /path#anchor`.
+>
+> **Comment ratio was not the signal.** `IOrderRepository` sat at 69 % comments and almost all of it was
+> warnings — it barely moved. The volume came from worked examples and restated arithmetic.
+>
+> **Two mechanical approaches failed and were reverted whole**, which is the finding worth keeping:
+> a sentence-selector mangled 71 KDoc blocks, and offset arithmetic computed against a batch-1 tree but
+> applied to the original corrupted 20 Kotlin files (`Expecting a top level declaration`). What worked,
+> and what any future sweep should use: **text-anchored replacement, pre-flight assertion that each
+> anchor matches exactly once, a character-level `/* */` scanner over every touched file, and both gates
+> read by exit code before the commit** — not by eyeballing their output.
 
 ## P9 — Archive & delete
 

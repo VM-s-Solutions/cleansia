@@ -158,6 +158,14 @@ export default withMermaid(
               { text: 'Database', link: '/architecture/database' },
               { text: 'Infrastructure', link: '/architecture/infrastructure' },
               {
+                text: 'Local orchestration',
+                link: '/architecture/local-orchestration',
+              },
+              {
+                text: 'Request logging & PII redaction',
+                link: '/architecture/request-logging',
+              },
+              {
                 text: 'Push Notifications',
                 link: '/architecture/push-notifications',
               },
@@ -217,6 +225,7 @@ export default withMermaid(
             items: [
               { text: 'Overview', link: '/mobile-app/overview' },
               { text: 'Features', link: '/mobile-app/features' },
+              { text: 'Shared patterns', link: '/mobile-app/patterns' },
               { text: 'API Integration', link: '/mobile-app/api-integration' },
             ],
           },

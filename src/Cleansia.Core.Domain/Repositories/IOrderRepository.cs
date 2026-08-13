@@ -200,21 +200,13 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-side candidates for the dispatch
-    /// reconciliation sweep: receipt-eligible orders (the receipt consumer's eligibility:
-    /// <c>PaymentType == Cash</c> OR <c>PaymentStatus == Paid</c>) committed BEFORE
-    /// <paramref name="olderThanUtc"/> whose receipt has not been fully realized — i.e.
-    /// <c>Receipt is null</c> (the original D3.4 predicate) OR <c>Receipt.FiscalCode == null</c> (the
-    /// ADR-0004 C-B widening that catches the claimed-but-unregistered rows the
-    /// claim-before-register reorder creates).
+    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-eligible orders committed before
+    /// <paramref name="olderThanUtc"/> whose receipt is missing OR carries no fiscal code. Batch-bounded
+    /// by <paramref name="take"/>, oldest first.
     ///
-    /// <para>System-job read — bypasses the tenant filter (<c>IgnoreQueryFilters</c>) so the timer can
-    /// pick up orders across all tenants. The caller MUST set
-    /// <c>ITenantProvider.SetTenantOverride(order.TenantId)</c> per item before any re-enqueue so the
-    /// envelope carries the right tenant. The <c>enforcementMode != None</c> half of the C-B predicate
-    /// is resolved per item in the sweep (it needs the per-country config), not in this SQL.</para>
-    ///
-    /// <para>Batch-bounded by <paramref name="take"/>; ordered oldest-first.</para>
+    /// <para><b>System-job read — it bypasses the tenant filter, so the caller MUST set
+    /// <c>ITenantProvider.SetTenantOverride(order.TenantId)</c> per item</b> before any re-enqueue, or
+    /// the envelope carries the wrong tenant. → /flows/cross-cutting#tenancy</para>
     /// </summary>
     Task<List<Order>> GetReceiptReconciliationCandidatesAsync(
         DateTime olderThanUtc, int take, CancellationToken cancellationToken);

@@ -464,7 +464,7 @@ this rule does not reach it.*
 3. **Prove the withholding cannot remove an AFFORDANCE.** Where the block also carries a "you may still
    act" flag, withholding it must be shown — not assumed — to be impossible while that flag is true.
    For the preferred offer it is provable: `PreferredOfferExit.IsOpen` conjoins
-   `OrderAvailability.IsOfferable` (`PreferredOfferExit.cs:40-49`, `OrderAvailability.cs:60-63`) and an
+   `OrderAvailability.IsOfferable` (`PreferredOfferExit.cs:40-49`, `OrderAvailability.cs:40-48`) and an
    empty-seat term, so `¬disclosable ⇒ ¬IsOpen`. **That implication is the enforcer's core assertion**,
    not a comment.
 
@@ -775,10 +775,10 @@ the credential had no special status at all. The opposite polarity is already on
 
 **Before redacting, check what the redaction destroys.** If the row's only lookup handle is a
 *substring of the body* — ADR-0002 D3 documented
-`SELECT … WHERE "SourceQueue" = … AND "RawBody" LIKE '%<MessageKey>%'` (`PoisonHandlerBase.cs:95`) —
+`SELECT … WHERE "SourceQueue" = … AND "RawBody" LIKE '%<MessageKey>%'` (`PoisonHandlerBase.cs:58`) —
 then redaction turns the row into an anonymous blob. **Promote the identity to its own indexed
 column first.** The values are usually already computed and thrown away at the write site
-(`PoisonHandlerBase.cs:69` builds the descriptor, `:80` passes none of it).
+(`PoisonHandlerBase.cs:31` builds the descriptor, `:80` passes none of it).
 
 **Deviating form:** an entity with a verbatim-body column whose doc-comment says "unbounded" and whose
 type appears in **no** retention, prune or GDPR path.
@@ -1134,7 +1134,7 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   own doc comment says exactly this and is the right place for it.
   **Two bounds worth knowing before reaching for the shape.** (i) It is available in
   `Core.AppServices` and **not** in `Core.Domain`: `IUserSessionProvider` is an AppServices type, which
-  is why `OrderAvailability` (`OrderAvailability.cs:55`) and `OrderVisibility`
+  is why `OrderAvailability` (`OrderAvailability.cs:40`) and `OrderVisibility`
   (`OrderVisibility.cs:36`, `:50`) are pure with no siblings and must stay that way. (ii) **Co-locating
   the resolver is not the same as collapsing the platform to one implementation, and it is NOT a
   finding that it did not** — `CreateOrder.Validator.CallerHasActiveMembershipAsync`

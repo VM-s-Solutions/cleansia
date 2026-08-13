@@ -4,25 +4,13 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Config.Authentication;
 
 /// <summary>
-/// Validates the <c>X-CSRF-Token</c> header on state-changing requests.
-/// Sequence:
-///  1. If the feature flag is off → no-op.
-///  2. If the method is GET/HEAD/OPTIONS/TRACE → no-op (CSRF is about
-///     state mutations).
-///  3. If the request matches an opt-out path (Stripe webhooks, login,
-///     register, refresh) → no-op. Those endpoints either have their own
-///     auth (webhook HMAC) or don't yet have a session to derive a CSRF
-///     token from.
-///  4. If the user is not authenticated → no-op. CSRF only applies to
-///     credentialed requests; the auth middleware will 401 unauthenticated
-///     state-changers on its own.
-///  5. Else: compute the expected token from the session JWT, compare to
-///     the header, and reject with 403 on mismatch.
+/// Validates the <c>X-CSRF-Token</c> header on state-changing requests. No-ops on safe methods, on
+/// opt-out paths (Stripe webhook, login, register, refresh — which either carry their own auth or have
+/// no session yet), and on unauthenticated requests; otherwise compares against the token derived from
+/// the session JWT and 403s on mismatch.
 ///
-/// Registration is host-specific because the opt-out paths differ slightly
-/// per host (e.g. only the Customer host has the Stripe webhook). The
-/// middleware sits AFTER auth middleware so <see cref="HttpContext.User"/>
-/// is populated by the time we validate.
+/// <para><b>Registration is host-specific because the opt-out paths differ per host</b>, and the
+/// middleware MUST sit after auth so the user is resolved. → /architecture/security-rules</para>
 /// </summary>
 public class CsrfValidationMiddleware
 {

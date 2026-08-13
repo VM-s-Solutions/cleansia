@@ -115,16 +115,8 @@ private val DEFAULT_CENTER = Point.fromLngLat(14.4378, 50.0755)
 private const val DEFAULT_ZOOM = 15.0
 
 /**
- * Full-screen Address Manager — shared UX from home top-bar, booking, and profile.
- *
- * Three panes, animated between each other:
- *  1. List  — saved addresses + "Add address" action
- *  2. AddOnMap — Mapbox picker with a top search overlay (Wolt/Bolt style)
- *  3. ReviewNew — confirm the picked address + Save/Default toggles
- *
- * [onAddressSelected] fires whenever the user taps a saved address (or confirms
- * a freshly added one). Callers that don't care about selection (e.g. profile
- * screen) can ignore it; the manager persists everything via the repository.
+ * Full-screen address manager, shared by the home top bar, booking and profile: the saved list, the map
+ * picker, and the confirm pane.
  */
 @OptIn(MapboxExperimental::class)
 @Composable

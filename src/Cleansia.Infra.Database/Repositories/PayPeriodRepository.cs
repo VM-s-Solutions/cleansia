@@ -64,24 +64,15 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
         // the (possibly many) pay rows per (period, employee) to one re-enqueue candidate.
         var cutoff = new DateTimeOffset(olderThanUtc, TimeSpan.Zero);
 
-        // ROUND-2 FIX (translation): the previous shape composed THREE tenant-filtered DbSets as
-        // subqueries (stalePeriodIds.Contains, the EmployeeInvoice !Any, and the OrderEmployeePay root).
-        // Each separate Context.Set<>() re-attaches its tenant query filter, whose body is an
-        // untranslatable tenantProvider.GetCurrentTenantId() call — EF could not translate the
-        // PayPeriod sub-select. Mirror the proven GetDueForRetryAsync pattern: ONE query rooted on the
-        // OrderEmployeePay set with IgnoreQueryFilters() so the ignore propagates across the whole tree,
-        // express the stale-period filter through the pay.PayPeriod NAVIGATION (no separate set), and
-        // hoist the EmployeeInvoice anti-join set with IgnoreQueryFilters() so it too reads cross-tenant
-        // and translates.
+        // ONE query rooted on the pay set with IgnoreQueryFilters so the ignore propagates across the
+        // whole tree. Composing separate DbSets re-attaches each tenant filter, whose body is an
+        // untranslatable provider call — so the stale-period filter goes through the NAVIGATION rather
+        // than a second set, and the anti-join set is hoisted the same way.
         //
-        // ROUND-2 FIX (grouping): projecting g.Min(p => p.TenantId) (a non-key string) inside the record
-        // ctor is untranslatable. All pay rows for one (period, employee) share a tenant, so adding
-        // TenantId to the grouping KEY does NOT change cardinality but lets EF project it straight off
-        // g.Key.
-        //
-        // ROUND-2 FIX (ordering): OrderBy/Take must run on the grouping KEY (which IS in SQL after the
-        // GROUP BY), NOT on the projected InvoiceReconciliationItem record — EF cannot sort by a property
-        // of the constructed record. So sort + bound on g.Key first, then project.
+        // TenantId is in the grouping KEY rather than projected with Min(): all pay rows for one
+        // (period, employee) share a tenant, so it does not change cardinality but does become
+        // projectable. Order and bound on the key too — EF cannot sort by a property of the constructed
+        // record.
         var existingInvoices = Context.Set<EmployeeInvoice>().IgnoreQueryFilters();
 
         var query =

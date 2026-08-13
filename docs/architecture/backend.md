@@ -384,3 +384,39 @@ app.Run();
 ::: tip NSwag API Client Generation
 The Angular frontends use NSwag to auto-generate TypeScript API clients from the backend OpenAPI specs. When you add or modify an endpoint, regenerate the client with `npm run generate:api` from the frontend workspace.
 :::
+
+## The JSON wire is tolerant on read, fixed on write {#tolerant-json}
+
+Enums are read leniently and **always written as integers**.
+
+The leniency exists because the OpenAPI Generator's kotlinx-serialization template emits int-backed
+enums with `@SerialName("1")` markers, so the Kotlin client sends the JSON **string** `"1"` rather than
+the integer `1`. Default `System.Text.Json` handling accepts only the integer form, and the mobile
+payloads failed with *"The JSON value could not be converted to …"*.
+
+Read accepts three forms: the integer `1`, the quoted integer `"1"`, and the enum name `"NaturalPerson"`
+(defensive).
+
+> **Write format may not change.** Every Angular NSwag-generated client already expects the integer, so
+> emitting names would be a breaking change for every JavaScript consumer.
+
+The same shape applies to date-only values, for the same reason: a client's serialiser format is not
+something the server gets to dictate after the clients ship.
+
+## Upload intake decides by bytes, never by what the client said {#content-sniffing}
+
+An uploaded payload's type is decided from its **first bytes**, by one function answering both questions
+an intake has — *may we accept this?* and *what is it?* Those are the same fact, and splitting them is
+how a path ends up accepting on one basis and storing on another. A null result means neither.
+
+> **The declared content type and the file extension are both ignored.** Both are client strings, so
+> neither may decide what a stored object is served as — and the extension is the weaker of the two,
+> since it also survives a rename by anyone who later touches the file name.
+
+Every type recorded from intake onward is therefore drawn from one table, which is what keeps
+`text/html` and `image/svg+xml` off a response header whatever a client sends. Rows written before this
+existed still hold what their uploader claimed, which is why the download path reads the same table.
+
+**One table, many intakes.** The image intakes used to carry their own signature list, and it drifted in
+both directions — mapping a bare `RIFF` container to `image/webp` when a WAV and an AVI open the same
+way, and missing formats the shared table already knew. A second list is a second thing to keep true.

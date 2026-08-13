@@ -1,16 +1,13 @@
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep: the
-/// OUTER net for the at-most-once Wave-0 dispatch gap. Finds committed-but-unrealized fiscal work (a
-/// receipt-eligible order without a fully-realized receipt; a pay period with an employee lacking an
-/// invoice) older than the configured threshold and RE-ENQUEUES it through the SAME idempotent path so
-/// a re-enqueue that races a successful dispatch is harmlessly deduped downstream (deterministic
-/// <c>MessageKey</c> + the consumer's target-state guard).
+/// ADR-0002 D3.4 — the OUTER net for the at-most-once dispatch gap. Finds committed-but-unrealized
+/// fiscal work older than the threshold and re-enqueues it through the SAME idempotent path, so a
+/// re-enqueue racing a successful dispatch is harmlessly deduped.
 ///
-/// <para>This is DISTINCT from <c>IFiscalRetryService</c> (the registration-retry layer): this sweep
-/// re-enqueues the missing <i>message</i>; that one re-registers an already-claimed receipt with the
-/// authority. They are not merged.</para>
+/// <para><b>DISTINCT from the retry service and not merged with it</b>: this re-enqueues the missing
+/// message; that one re-registers an already-claimed receipt with the authority.
+/// → /flows/cross-cutting#dead-letters</para>
 /// </summary>
 public interface IFiscalReconciliationService
 {

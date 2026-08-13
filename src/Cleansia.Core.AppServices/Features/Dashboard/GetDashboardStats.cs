@@ -107,26 +107,10 @@ public class GetDashboardStats
                 weekStart, weekEnd,
                 cancellationToken);
 
-            // Earnings — sum per-order, using booked OrderEmployeePay
-            // when it exists, otherwise the per-employee pay-config
-            // estimate (same logic the orders list uses for the
-            // EstimatedCleanerPay chip). Without this fallback the
-            // dashboard showed "0 Kč earned" while the orders list
-            // showed "1238 Kč" for the same job — because payroll
-            // hasn't run yet and OrderEmployeePay rows don't exist.
-            // The cleaner sees the honest "what you've earned today"
-            // number even before admin processes the pay period.
-            //
-            // We do this in three steps shared across the three
-            // windows (today / this-week / last-month):
-            //   1. Pull the orders completed in the week OR last-month
-            //      window in ONE round trip (today ⊆ week, so the today
-            //      rows are a subset) and partition in memory with the
-            //      same inclusive bounds the per-window fetches used.
-            //   2. Load pay configs ONCE for the union of all
-            //      service / package ids touched by any window.
-            //   3. For each window, sum: booked pay (if a row exists)
-            //      OR estimator output OR 0 if no config matches.
+            // Earnings fall back to the pay-config estimate when no OrderEmployeePay row exists yet.
+            // Without the fallback the dashboard showed "0 Kc earned" while the orders list showed the
+            // real figure for the same job, because payroll had not run.
+            // -> /flows/pay-and-payouts
             var fetchedCompletedOrders = await orderRepository.GetCompletedOrdersInEitherRangeAsync(
                 employeeId, weekStart, weekEnd, previousMonthStart, previousMonthEnd, cancellationToken);
 

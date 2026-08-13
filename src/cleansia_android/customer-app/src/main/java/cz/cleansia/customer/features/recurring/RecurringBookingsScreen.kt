@@ -303,18 +303,8 @@ private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
 }
 
 /**
- * Recurring schedule card — restructured per user feedback. Layout:
- *
- *   ┌ tinted header strip (frequency icon + cadence label, paused badge) ┐
- *   │                                                                    │
- *   │  Tuesday at 10:00                                                  │
- *   │  📍 Address line                                                   │
- *   │  ─────────────────────────────                                     │
- *   │  ▶ Resume / ⏸ Pause      ✎ Edit                  🗑 Delete         │
- *   └────────────────────────────────────────────────────────────────────┘
- *
- * The tinted header gives the card a clear "this is a schedule" identity
- * vs. the plain bordered row from v1.
+ * Recurring schedule card: tinted header with the cadence and paused badge, then the slot, address and
+ * next occurrence. -> /flows/booking-and-pricing#recurring-bookings
  */
 @Composable
 private fun TemplateCard(

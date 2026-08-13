@@ -10,17 +10,11 @@ export enum RecurrenceFrequency {
 }
 
 /**
- * Path B prefill payload — stashed in sessionStorage by the order-detail
- * "Make this recurring" CTA, consumed by the wizard on init.
+ * Prefill payload stashed by the order-detail "make this recurring" action and consumed by the wizard.
  *
- * Only carries fields that survive an Order → recurring template translation:
- * services/packages, room counts, payment type, and the source order's
- * cleaning time of day (for a sensible time slot default). The user still
- * picks frequency, day-of-week, address, and start date in the wizard.
- *
- * `selectedServiceNames` / `selectedPackageNames` are passed through so the
- * wizard can show a "no longer available" warning if the catalog dropped
- * any IDs since the source order — same pattern as the order-wizard rebook.
+ * **Only carries what survives an order-to-template translation** — selections, room counts, payment
+ * type and time of day. The user still picks frequency, day, address and start date.
+ * → /flows/booking-and-pricing#recurring-bookings
  */
 export interface RecurringPrefillParams {
   selectedServiceIds: string[];

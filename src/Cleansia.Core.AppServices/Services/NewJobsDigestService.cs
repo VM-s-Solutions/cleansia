@@ -39,36 +39,14 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - The cleaner has no overlapping live-commitment order at the order's
 ///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>)
 ///
-/// Freshness is THREE sources, disjunctive and upper-bounded at the sweep's own start
-/// instant (ADR-0036 §D5.3), because <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/>
-/// is a single per-cleaner scalar and two of the filters above are per-cleaner,
-/// NON-monotone rules — an order can become takeable again long after its own status
-/// stopped changing:
-///   - the order's status moved into an offerable state after the watermark; or
-///   - one of THIS cleaner's commitments was released (cancelled/completed) after the
-///     watermark, and this order sits in the window that release freed. Without the
-///     second source, every candidate dropped for a time conflict was burned the moment
-///     the cleaner was notified about anything else (T-0528); or
-///   - a preferred-cleaner hold on the order EXPIRED after the watermark. A held order's
-///     only status track is written at creation, so without the third source its whole
-///     history is already older than every other cleaner's watermark by the time it
-///     opens, and it leaves the notification channel permanently — board-only, findable
-///     solely by someone who happens to scroll.
-/// A cleaner who has never been digested has no watermark and no released window: the
-/// whole open board is new to them, bounded by the not-started-yet floor.
-///
-/// Throttling: this method IS the rate-limit — the timer's cadence caps each
-/// cleaner to at most one digest per interval. No per-event dedup store is
-/// needed because cleaners are only notified about orders that are fresh to
-/// them personally.
-///
-/// Opt-out: each candidate's <see cref="UserNotificationPreferences.NewJobsAvailable"/>
-/// gates the enqueue. Cleaners can disable the category and never
-/// receive these.
-///
-/// Tenancy: the sweep runs across all tenants (`GetQueryableIgnoringTenant`)
-/// and stamps the per-recipient queue message with the cleaner's
-/// <c>TenantId</c> so the downstream consumer scopes correctly.
+/// Freshness is THREE disjunctive sources, upper-bounded at the sweep's own start instant, because
+/// <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/> is ONE per-cleaner scalar while two of the
+/// filters are per-cleaner and NON-monotone — an order can become takeable again long after its own
+/// status stopped changing. Drop the released-commitment source and every candidate dropped for a time
+/// conflict is burned; drop the expired-hold source and a held order leaves the notification channel
+/// permanently. This method IS the rate limit — the timer's cadence caps each cleaner to one digest per
+/// interval, so no dedup store is needed. Runs across all tenants and stamps each message with the
+/// recipient's TenantId. → /flows/offerability-and-take#new-jobs-digest
 /// </summary>
 public class NewJobsDigestService(
     IEmployeeRepository employeeRepository,

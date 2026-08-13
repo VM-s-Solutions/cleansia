@@ -71,3 +71,53 @@ disabled.
 Secure by default: the default policy requires an authenticated user, and `[AllowAnonymous]` is the
 explicit, greppable opt-out. Counting controllers without an `[Authorize]` attribute tells you nothing
 — the fallback is what protects them.
+
+## Poisoned messages and dead letters {#dead-letters}
+
+A message that exhausts its retry budget on a business queue is moved by the Storage-queue runtime to
+`<queue>-poison`. Every poison consumer does exactly three things and nothing more:
+
+```mermaid
+flowchart LR
+  A[Poisoned message] --> B["1. persist a dead-letter row — body VERBATIM"]
+  B --> C["2. alert — identity only, never the body"]
+  C --> D["3. ACK — return, never throw"]
+
+  classDef warn fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  class D warn
+```
+
+**It never re-runs the original effect.** No receipt, invoice, push or pay is re-processed here — the
+handler is purely *persist and alert*. Recovery is a deliberate replay from the durable row.
+
+**Acking is mandatory.** Throwing would re-poison the message into an endless loop. The durable row is
+what makes acking safe.
+
+### Why the alert carries the identity and never the body {#poison-alert-body}
+
+One of the bodies that reaches this path is the outbound-email message, whose code field is a **raw
+confirmation or reset token** — a live credential that grants account takeover until it is consumed or
+expires.
+
+The dead-letter row's sink is our own database. The alert's sinks are the host's retained log stream
+and a separate vendor, where structured values additionally become **indexed tags** and a scope
+breadcrumb that re-attaches to later, unrelated events.
+
+The two live consumers on the same worker already hold this line, and the message-key helper hashes the
+token so the secret never appears in a key or a log line. The poison handler was the one place on the
+queue path that did not.
+
+### When persisting fails {#persist-failed}
+
+The handler still alerts and still acks — never re-poisons — so that message ends with **no durable
+row**. The alert is deliberately **not** widened to carry the body as a last-copy substitute:
+
+1. the log was never assigned a recovery role; the dead-letter row is the recovery source;
+2. the queues whose durable row is mandatory lose nothing — the receipt and invoice messages contain no
+   credential and no PII, and their whole subject is already inside the message key the alert carries;
+3. the one body this subtracts is the one where "the log is the last copy" is a **liability**.
+   Recovering a poisoned email is a *re-issue*, which needs the user id and the purpose — both already
+   in the clear in the key — not a replay of a live token out of a vendor's log store.
+
+Persisting fails when the database does, which is not an independent per-message coin flip: every
+poisoned message in that window takes this branch at once. This is the burst case, not the singleton.

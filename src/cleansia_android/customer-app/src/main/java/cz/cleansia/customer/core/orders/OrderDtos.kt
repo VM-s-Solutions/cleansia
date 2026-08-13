@@ -367,16 +367,9 @@ data class OrderPhotosResponse(
 )
 
 /**
- * Mirrors backend `GetOrderPhotos.OrderPhotoDto`. Note:
- *  - `photoType` is serialized as an int (backend `PhotoType` enum is
- *    numeric — `Before = 1`, `After = 2`). No string form.
- *  - `blobUrl` is a fully-signed SAS URL with 1h TTL — pass directly to
- *    Coil / AsyncImage; no auth header needed.
- *  - Both `fileName` and `originalFileName` are present on the backend DTO.
- */
-/**
- * Mirrors backend `GetMyServingCleaners.Response`. Returned by
- * `/api/Order/MyServingCleaners` — feeds the favorite-cleaner picker.
+ * Mirrors the backend order-photo DTO. The photo type is an INT on the wire, never a string, and the
+ * blob URL is **an already-signed SAS with a short TTL** — pass it straight to the image loader and add
+ * no auth header. -> /flows/execution-and-completion
  */
 @Serializable
 data class ServingCleanerDto(

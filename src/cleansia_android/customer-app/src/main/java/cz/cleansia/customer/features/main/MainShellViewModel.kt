@@ -16,17 +16,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
- * Holder VM for [MainShell]. The shell warms six singleton caches on first
- * composition (addresses, catalog, orders, loyalty, referral) and reads two
- * more (user, app-settings) for the onboarding gate; exposing them via Hilt
- * keeps the shell out of the EntryPointAccessors pattern.
+ * Injection seam for the shell's cache warming and the onboarding gate.
  *
- * No state lives here — every cache is its own singleton, the onboarding
- * gate keeps its `onboardingChecked` flag in `remember`. Pure injection seam.
- *
- * [refreshCatalog] warms the booking catalog and surfaces the snackbar on
- * failure (the repo no longer does). Connectivity failures stay silent —
- * NetworkErrorInterceptor owns the infra toast.
+ * **No state lives here** — every cache is its own singleton.
  */
 @HiltViewModel
 class MainShellViewModel @Inject constructor(

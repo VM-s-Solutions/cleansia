@@ -20,16 +20,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Receives FCM data payloads and turns them into local Android
- * notifications. We use data-only payloads (no `notification` field on
- * the FCM message) so:
- *  - The mobile client owns the title/body text (no PII shipped to FCM).
- *  - The lock-screen text is whatever WE choose to show.
- *  - The same payload shape works for foreground and background delivery.
+ * Turns FCM data payloads into local notifications.
  *
- * Hilt-injected via [AndroidEntryPoint]. The service is process-scoped
- * by Android, so the [PushTokenRepository] singleton is reachable for
- * `onNewToken`.
+ * **Data-only payloads, never a `notification` field**: the client owns the text, so no PII ships to
+ * FCM, the lock-screen wording is ours, and one payload shape works foreground and background.
+ * -> /architecture/push-notifications
  */
 @AndroidEntryPoint
 class CleansiaFirebaseMessagingService : FirebaseMessagingService() {

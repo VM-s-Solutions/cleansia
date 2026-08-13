@@ -32,21 +32,11 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 
 /**
- * Adapter over the OpenAPI-generated [GenOrderApi] for the customer order
- * screens. The hand-written [OrderListItemDto] / [OrderDetailDto] DTOs carry
- * stable shapes (defaulted primitives, etc.) so screens + view-models don't
- * need to deal with the generated all-nullable wire types.
+ * Adapter over the generated order API.
  *
- * Routes mirror [Cleansia.Web.Customer.Controllers.OrderController]:
- *  - `GET  /api/Order/GetMyOrders`     → paged wrapper `PagedData<OrderListItem>`
- *  - `GET  /api/Order/GetById?OrderId=…` → `OrderItem`
- *  - `POST /api/Order/Cancel`          → `CancelOrder.Response`
- *  - `GET  /api/Order/CancellationPreview?OrderId=…` → `GetCancellationFeePreview.Response`
- *  - `POST /api/Order/ConfirmRecurring` → `ConfirmRecurringOrder.Response`
- *  - `POST /api/Order/SubmitReview`    → `OrderReviewDto`
- *  - `GET  /api/Order/DownloadReceipt?OrderId=…` → raw PDF bytes (streamed)
- *  - `GET  /api/Order/GetPhotos?OrderId=…` → `GetOrderPhotos.Response`
- *  - `GET  /api/Order/MyServingCleaners` → favorite-cleaner picker source
+ * **The hand-written DTOs carry stable shapes** — defaulted primitives rather than the generated
+ * all-nullable wire types — so screens and ViewModels do not deal with nullability the server never
+ * actually sends. -> /mobile-app/api-integration
  */
 class OrderApi(
     private val orderApi: GenOrderApi,

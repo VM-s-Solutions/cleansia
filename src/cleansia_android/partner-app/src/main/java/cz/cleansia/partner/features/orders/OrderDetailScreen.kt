@@ -500,19 +500,9 @@ private fun OrderDetailSheetContent(
     // expands to its natural content height and the footer is pushed
     // off-screen at the peek snap point.
     val scrollState = rememberScrollState()
-    // Gesture-priority guard: once the cleaner has scrolled into the
-    // sheet content, vertical drags must keep scrolling the content
-    // instead of collapsing the sheet. M3's BottomSheetScaffold
-    // nested-scroll integration alone doesn't always win this race
-    // when the content is in a weighted child (the sheet sometimes
-    // wins pre-scroll), so we intercept pre-scroll here and consume
-    // anything the content can still absorb before letting the sheet
-    // see it.
-    //
-    // Convention: positive `available.y` = drag down (would collapse
-    // the sheet); negative = drag up (would expand it / scroll
-    // content further). `scrollState.value` grows as the content
-    // scrolls down (revealing lower content).
+    // Gesture-priority guard: once the cleaner has scrolled INTO the sheet content, a vertical drag must
+    // keep scrolling that content rather than collapsing the sheet. The stock nested-scroll integration
+    // does not reliably win that race, so the priority is asserted here.
     val sheetGuard = remember(scrollState) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {

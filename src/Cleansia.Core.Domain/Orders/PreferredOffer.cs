@@ -54,26 +54,13 @@ public static class PreferredOffer
     }
 
     /// <summary>
-    /// ADR-0049 — whether the state's sentence is still TRUE of this booking. <see cref="StateOf"/>
-    /// answers <i>what became of the reservation</i>; this answers <i>is that still worth saying</i>,
-    /// and only the second needs the order. Both are pure, and they stay apart so a fifth column never
-    /// leaks into the derivation.
+    /// ADR-0049 — whether the state's sentence is still TRUE of this booking. <c>StateOf</c> answers
+    /// <i>what became of the reservation</i>; this answers <i>is that still worth saying</i>, and only
+    /// the second needs the order. Both stay pure and apart so a fifth column never leaks into the
+    /// derivation.
     ///
-    /// <para><b>(a) The booking concluded.</b> On <c>Cancelled</c> all four sentences are false — the
-    /// booking is open to nobody, nobody is being asked, nothing is confirmed. On <c>Completed</c>,
-    /// <i>"open to our whole team"</i> is false. <c>Completed</c> + <c>Accepted</c> is the one true
-    /// sentence this limb withholds, and it goes anyway: it is the same fact as the assigned-cleaner
-    /// card on the same screen, in a tense that reads as a promise.</para>
-    ///
-    /// <para><b>(b) The reservation closed and every seat is taken.</b> <i>"This booking is now open to
-    /// our whole team"</i> is false when nobody can take it. The term is the FREE SEAT COUNT and never
-    /// an assignment count: with <c>RequiredEmployees = ceil(EstimatedTime / 120)</c> most bookings
-    /// carry more than one seat, and on a 1-of-2 booking the sentence is still true. This rule removes
-    /// false sentences, not stale ones.</para>
-    ///
-    /// <para>Deliberately NOT limbs: <c>AwaitingConfirmation</c> on a live booking (the deadline term
-    /// inside <see cref="StateOf"/> already makes it self-expiring), and <c>Closed</c> on a live but
-    /// unfilled booking — true, and the customer's only record of what became of their request.</para>
+    /// <para><b>The seat term is the FREE SEAT COUNT, never an assignment count.</b>
+    /// → /domain/roles/preferred-offer-disclosure</para>
     /// </summary>
     public static bool IsDisclosable(
         PreferredOfferState state,

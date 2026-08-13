@@ -10,18 +10,14 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Consumes the per-employee <c>generate-invoice</c> fan-out and runs
-/// <c>GenerateInvoice.Command</c> via MediatR so an <c>EmployeeInvoice</c> is created and the
-/// employee's unpaid <c>OrderEmployeePay</c> rows are assigned to it.
+/// Consumes the per-employee invoice fan-out and runs the command so an invoice is created and unpaid
+/// pay rows are assigned to it.
 ///
-/// Queue trigger — no JWT/tenant context. The employee is looked up cross-tenant by the trusted
-/// payload id and its TenantId is set as the override BEFORE the command runs, so the new invoice and
-/// the order-pay assignments are stamped with the right tenant (no cross-tenant leak).
-///
-/// Validator rejections (invoice already exists, no unpaid pays, employee/period gone) are logged at
-/// warning and acked — retrying won't change the verdict. The already-exists guard is also what makes
-/// an at-least-once redelivery safe: the second pass rejects and acks as a no-op. Infra failures throw
-/// so the queue retries up to <c>maxDequeueCount</c> (host.json).
+/// <para><b>Queue trigger — no tenant context.</b> The employee is looked up cross-tenant by the trusted
+/// payload id and its tenant is set as the override BEFORE the command runs, or the invoice and the pay
+/// assignments are stamped wrong. Validator rejections are logged and acked — retrying cannot change the
+/// verdict, and the already-exists guard is what makes redelivery safe. Infra failures throw so the queue
+/// retries. → /flows/pay-and-payouts</para>
 /// </summary>
 public class GenerateInvoiceHandler(
     IMediator mediator,

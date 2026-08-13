@@ -17,20 +17,12 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Customer-driven confirmation of a Pending order spawned by the recurring
-/// materializer. Two flavors based on the template's stored payment type:
+/// Customer confirmation of an occurrence the recurring materializer spawned. Card returns a Stripe
+/// PaymentIntent and the order confirms only on the webhook; cash flips to Confirmed and Paid
+/// immediately and queues the receipt.
 ///
-///   * <see cref="PaymentType.Card"/> — returns a Stripe PaymentIntent so the
-///     mobile PaymentSheet can collect payment. Mirrors
-///     <see cref="CreatePaymentIntent"/>'s behaviour exactly; the order
-///     transitions to Confirmed only after the payment-success webhook.
-///   * <see cref="PaymentType.Cash"/> — flips the order to Confirmed +
-///     PaymentStatus.Paid immediately and queues receipt generation, since
-///     no payment gateway is involved.
-///
-/// Refuses orders that are not Pending, not owned by the caller, or not
-/// linked to a recurring template — those go through the standard booking
-/// flow rather than this confirm path.
+/// <para>Refuses orders that are not pending, not owned by the caller, or not linked to a template —
+/// those belong on the standard booking flow. → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 public class ConfirmRecurringOrder
 {

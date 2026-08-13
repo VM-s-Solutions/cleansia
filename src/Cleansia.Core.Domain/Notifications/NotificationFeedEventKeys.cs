@@ -15,17 +15,12 @@ public enum NotificationFeedAudience
 }
 
 /// <summary>
-/// The per-audience keysets for the notifications feed — the single source of truth beside
-/// <see cref="NotificationEventCatalog"/>. Every feed operation (paged list, unread count,
-/// mark-read, mark-all-read) is scoped to the calling host's keyset.
+/// The per-audience keysets for the notifications feed. Every feed operation is scoped to the calling
+/// host's keyset.
 ///
-/// Customer = every event currently dispatched to customers EXCEPT <c>promo.new_sitewide</c>
-/// (the one event with server-authored literal text; excluded from feed v1). Partner = every
-/// partner-targeted dispatch.
-///
-/// A key belongs in a keyset only once the audience's clients render it: the unread badge counts
-/// every row in the keyset, so a key listed ahead of its client template inflates the badge with a
-/// row the app drops unrendered.
+/// <para><b>A key belongs in a keyset only once the audience's clients render it.</b> The unread badge
+/// counts every row in the keyset, so a key listed ahead of its client template inflates the badge with
+/// a row the app drops unrendered. → /architecture/push-notifications#event-catalogue</para>
 /// </summary>
 public static class NotificationFeedEventKeys
 {

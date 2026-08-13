@@ -10,16 +10,11 @@ using Stripe;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// Implements <see cref="IStripeSubscriptionWebhookHandler"/>. Extracted from
-/// <c>HandlePaymentNotification.Handler</c> so the order-payment and
-/// subscription-lifecycle paths stay independently readable — they share
-/// only the webhook entry point in the handler.
+/// Subscription-lifecycle half of the Stripe webhook, kept separate from the order-payment path so both
+/// stay readable; they share only the entry point.
 ///
-/// Resolves the local row by Stripe subscription id, auto-provisions on
-/// <c>customer.subscription.created</c> when missing (web Checkout flow),
-/// then applies the status + period bounds via <c>UpdateFromStripeWebhook</c>.
-/// Fail-soft throughout — unknown subscriptions, unknown users, and missing
-/// metadata log a warning and no-op so retried webhooks don't 500.
+/// <para><b>Fail-soft throughout</b> — unknown subscriptions, unknown users and missing metadata log a
+/// warning and no-op, so a retried webhook never 500s. → /flows/loyalty-and-memberships</para>
 /// </summary>
 public class StripeSubscriptionWebhookHandler(
     IUserRepository userRepository,
@@ -184,18 +179,12 @@ public class StripeSubscriptionWebhookHandler(
             trialEndsAtUtc: trialEnd);
         userMembershipRepository.Add(membership);
 
-        // SEC-W2 / S7a + S7b — CLOSE the check-then-insert race at the write boundary. The
-        // GetActiveForUserAsync read above is a fast path, not the guarantee: two webhooks (or a webhook +
-        // a confirmed request-path subscribe) can both pass the read before either commits, and the
-        // FILTERED UNIQUE INDEX on (TenantId, UserId) WHERE Status=Active then rejects the loser with a
-        // Postgres 23505. CRITICAL (S7b): this handler does NOT own its own commit — it runs inside
-        // HandlePaymentNotification.Handle under the UnitOfWorkPipelineBehavior, whose CommitAsync fires
-        // AFTER the handler returns. If we let the violation reach that pipeline commit it surfaces as an
-        // unhandled DbUpdateException → 500, which makes STRIPE RETRY the webhook (amplifying, not fixing).
-        // So FLUSH the insert HERE and own the failure: a 23505 means a concurrent winner already created
-        // the active row — resolve to it and return it as a clean reconcile no-op (no throw). On success
-        // the entity is Unchanged, so the pipeline's final CommitAsync is a safe no-op; on the violation we
-        // returned the winner, and the pipeline commit then has nothing to persist for this row either.
+        // The read above is a fast path, not the guarantee: two webhooks can both pass it before either
+        // commits, and the filtered unique index rejects the loser with a 23505. CRITICAL — this handler
+        // does NOT own its commit, so letting the violation reach the pipeline's commit surfaces a 500,
+        // which makes STRIPE RETRY the webhook and amplifies rather than fixes. So flush HERE and own the
+        // failure: a 23505 means a concurrent winner exists — resolve to it and return a clean no-op.
+        // -> /flows/cross-cutting
         try
         {
             await userMembershipRepository.CommitAsync(cancellationToken);

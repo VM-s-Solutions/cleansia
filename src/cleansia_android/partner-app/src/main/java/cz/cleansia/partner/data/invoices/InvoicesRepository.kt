@@ -25,17 +25,8 @@ interface InvoicesRepository {
     suspend fun downloadPdf(invoiceId: String): ApiResult<ResponseBody>
 
     /**
-     * Freshness watermark for [getMyInvoices]. ViewModels check
-     * [Staleness.isStale] before triggering background refreshes
-     * (silent-stale pattern) so screen-resume on a still-fresh cache
-     * skips the network round-trip. User-initiated pulls ignore this
-     * and always fetch — the user's intent is the source of truth,
-     * not the cache age.
-     *
-     * Marked fresh ONLY on a successful fetch; errors leave the
-     * watermark untouched so the next entry still retries. Watermark
-     * survives for the lifetime of the singleton repo (no per-screen
-     * reset).
+     * Freshness watermark for the invoice list. **User-initiated pulls ignore it and always fetch** —
+     * the user's intent outranks cache age. -> /mobile-app/patterns#session-wipe
      */
     fun getMyInvoicesStaleness(): Staleness
 

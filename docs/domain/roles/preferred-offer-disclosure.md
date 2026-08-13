@@ -2,7 +2,7 @@
 
 > **Both halves are SHIPPED and the decision behind them is now ratified.** `StateOf` is
 > ADR-0045 §D7.1 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`), unchanged. `IsDisclosable`
-> landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:56-83`, enforcer
+> landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:52-79`, enforcer
 > `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), and its **ADR-0049** is
 > `accepted` **with amendments C1–C6** (lead, 2026-08-11)
 > (`docs/decisions/adr-0049.md:3`).
@@ -50,7 +50,7 @@ already uses for every non-customer caller
   between them is `¬IsDisclosable ⇒ ¬IsOpen`, asserted by a test rather than by construction.
 - **`OrderAvailability.IsOfferable`** — reached only *through* `IsOpen`. `IsDisclosable` never calls it:
   offerability answers *may a cleaner take this*, which is a different question with a money axis on it
-  (`src/Cleansia.Core.Domain/Orders/OrderAvailability.cs:55-63`).
+  (`src/Cleansia.Core.Domain/Orders/OrderAvailability.cs:40-48`).
 - **`IEmployeeRepository`** — the mapper's, for the beneficiary's display name. Neither pure function
   knows a name exists.
 

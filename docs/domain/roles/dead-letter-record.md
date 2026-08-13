@@ -5,7 +5,7 @@
 > is evidence with two clocks, not an archive. Entity:
 > `src/Cleansia.Core.Domain/DeadLettering/DeadLetter.cs`; store interface:
 > `src/Cleansia.Core.Queue.Abstractions/IDeadLetterStore.cs`; backing:
-> `src/Cleansia.Infra.Database/DeadLetterStore.cs`; writers: `PoisonHandlerBase.cs:80` (all seven
+> `src/Cleansia.Infra.Database/DeadLetterStore.cs`; writers: `PoisonHandlerBase.cs:42` (all seven
 > `-poison` consumers) and `OutboxDrainerService.cs:86` (retry budget exhausted).
 >
 > **Status of the sweep:** `PruneDeadLetters` is **not yet built** — it lands with T-0584's build spec
@@ -21,7 +21,7 @@ poisoned effect is noticed and triaged instead of silently lost.
 - Every `-poison` consumer (one per `QueueNames` constant) via `PoisonHandlerBase` — which persists
   **before** it alerts, guards the persist so a DB fault cannot re-poison, and acks either way.
 - `PoisonAlert` — the alert-side projection. It computes `(MessageKey, TenantId, Bytes, Fingerprint)`
-  at `PoisonHandlerBase.cs:69`; two of those become the row's identity columns (ADR-0002 §A4.2).
+  at `PoisonHandlerBase.cs:31`; two of those become the row's identity columns (ADR-0002 §A4.2).
 - `OutboxDrainerService` — the second writer; its row is a **duplicate** of a `Failed`
   `OutboxMessage` that is itself never pruned.
 - `PruneDeadLetters` (the two clocks) driven by the existing `PruneOutboxTimerHandler`.

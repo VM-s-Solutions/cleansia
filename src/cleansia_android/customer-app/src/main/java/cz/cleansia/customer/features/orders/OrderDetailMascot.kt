@@ -27,18 +27,11 @@ import kotlin.math.roundToInt
 internal val FloatingMascotSize: Dp = 120.dp
 
 /**
- * The character that breaks out of the sheet's top edge on the right, half over
- * the map and half over the panel. Follows the sheet as it is dragged, and is
- * clamped under the status bar so the deepest anchor doesn't push it off the
- * top of the screen.
+ * The character breaking out of the sheet's top edge, following the drag and clamped under the status
+ * bar so the deepest anchor cannot push it off screen.
  *
- * [sheetTopPx] is a lambda, not a value: read inside `offset` the drag moves
- * the mascot in the layout phase, where reading it as a parameter would
- * recompose this subtree — animated mascot included — on every frame of the
- * gesture.
- *
- * Caller places it in the [cz.cleansia.core.ui.components.SnapSheet] overlay
- * slot aligned to TopEnd.
+ * **The sheet position is a lambda, not a value** — read inside the offset, the drag recomposes only
+ * the offset rather than the whole subtree.
  */
 @Composable
 internal fun OrderFloatingMascot(

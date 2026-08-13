@@ -9,25 +9,13 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Fan-out consumer for the admin "send sitewide promo" action.
+/// Fan-out consumer for the sitewide-promo campaign: pages opted-in users, joins for locale, and
+/// enqueues one push per recipient.
 ///
-/// One <see cref="SendSitewidePromoMessage"/> is enqueued by
-/// <c>AdminMarketingController.SendSitewidePromo</c> per campaign. This
-/// handler pages through <see cref="UserNotificationPreferences"/> rows
-/// where the user has opted in to the <c>Promo</c> category, joins the
-/// matching <see cref="Domain.Users.User"/> for locale, and enqueues a
-/// <see cref="SendPushNotificationMessage"/> per recipient on
-/// <c>notifications-dispatch</c> carrying the locale-matched title+body.
-///
-/// Why fan-out happens HERE rather than in the synchronous request:
-///   - The admin's POST returns immediately even on million-user sends.
-///   - Azure Storage Queues throttle write throughput by partition. Paging
-///     and streaming with small delays keeps us well under the rate limit.
-///   - Retries (e.g. transient queue failure mid-fan-out) are handled by
-///     the queue's poison-message pipeline without re-prompting the admin.
-///
-/// Locale resolution: looks at <c>User.PreferredLanguageCode</c>; falls back
-/// to "en" when unset or when the language isn't one of the 5 we support.
+/// <para><b>Fan-out is here rather than in the request</b> so the admin POST returns immediately on a
+/// million-user send, so paging stays under the queue's per-partition write throttle, and so a
+/// mid-fan-out failure is retried by the poison pipeline rather than re-sending to everyone.
+/// → /architecture/push-notifications#event-catalogue</para>
 /// </summary>
 public class SendSitewidePromoFanoutHandler(
     IUserNotificationPreferencesRepository preferencesRepository,

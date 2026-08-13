@@ -114,22 +114,12 @@ public class Order : Auditable, ITenantEntity
     private const int StandardWorkUnitMinutes = 120;
 
     /// <summary>
-    /// The longest span a single booking is ASSUMED to occupy. It exists only as a query floor: the
-    /// overlap scan starts at <c>windowStart - MaxOrderSpanHours</c> instead of at the beginning of
-    /// time, because the predicate's lower side is a per-row interval computation and only the upper
-    /// bound is sargable. It may only ever be too generous — too generous costs a wider range scan of a
-    /// near-empty band, too tight makes an overlapping order invisible ON THE BOOKING WRITE GATE, which
-    /// is a double booking.
-    ///
-    /// <para><b>Assumed, not enforced.</b> <see cref="EstimatedTime"/> is an unbounded sum over the
-    /// selected services and packages: nothing caps a service's estimate (the catalog validators only
-    /// require it be non-negative) and nothing caps how many items one order may select. The shipped
-    /// catalog's maximum producible span is 3495 min (58.25 h) — every service plus every package on
-    /// one order — so 7 days holds it with ~3x headroom, but the bound is a policy number, not an
-    /// invariant. Falsify it in one line: <c>SELECT MAX("EstimatedTime") FROM "Orders"</c> must stay
-    /// well under <c>MaxOrderSpanHours * 60</c>. When it stops holding, the durable fix is a validated
-    /// span cap on the order write path or a persisted appointment-end column (ADR-0039 A15) — NOT a
-    /// bigger number here.</para>
+    /// Query floor for the overlap scan. <b>It may only ever be too GENEROUS</b> — too generous costs a
+    /// wider scan of a near-empty band; too tight makes an overlapping order invisible on the booking
+    /// write gate, which is a double booking. <b>Assumed, not enforced</b>: <see cref="EstimatedTime"/>
+    /// is an unbounded sum, so this is a policy number rather than an invariant, and when it stops
+    /// holding the fix is a validated span cap — NOT a bigger number here.
+    /// → /product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars
     /// </summary>
     public const int MaxOrderSpanHours = 168;
 
@@ -247,19 +237,10 @@ public class Order : Auditable, ITenantEntity
 
     /// <summary>
     /// ADR-0036 — until this instant the order is offered to <see cref="PreferredEmployeeId"/> alone.
-    /// An absolute deadline, never a duration: set once at creation through
-    /// <see cref="GrantPreferredHold"/>, never recomputed, so tuning the policy cannot re-time orders
-    /// that already exist, and expiry is <c>now &gt;= deadline</c> in a WHERE clause with no sweep, no
-    /// timer and no status transition. The failure mode of a job-driven expiry is <i>an order stuck
-    /// held</i>; the failure mode of a clock comparison is that the clock is wrong.
-    ///
-    /// <para><c>null</c> = no hold, ever — which is what makes every row without one unaffected by
-    /// construction, with no backfill.</para>
-    ///
-    /// <para>Predicates key on the DEADLINE, never on <see cref="PreferredEmployeeId"/>: keying on the
-    /// beneficiary would switch behaviour on retroactively for every order that ever carried a
-    /// preference. And the reverse pair — a deadline with nobody able to act on it — is closed at both
-    /// ends: unwritable here, and treated as no hold by the visibility rule's null-beneficiary disjunct.</para>
+    /// <b>An absolute deadline, never a duration</b>, and never recomputed, so tuning the policy cannot
+    /// re-time orders that already exist. <b>Predicates key on the DEADLINE, never on the beneficiary</b>
+    /// — keying on the beneficiary switches behaviour on retroactively for every order that ever carried
+    /// a preference. <c>null</c> = no hold, ever. → /domain/offerability#the-preferred-cleaner-hold
     /// </summary>
     public DateTime? PreferredHoldUntilUtc { get; private set; }
 
@@ -330,17 +311,13 @@ public class Order : Auditable, ITenantEntity
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
     /// <summary>
-    /// Persisted denormalization of the latest <see cref="OrderStatusHistory"/> row, written ONLY by
-    /// <see cref="AddOrderStatus"/> (the single append seam); the history stays the authoritative audit
-    /// trail. CreatedOn is the primary (human-meaningful) sort and Sequence the deterministic tiebreaker
-    /// for same-tick transitions the ULID id cannot provide.
+    /// Persisted denormalization of the latest status row, written ONLY by <see cref="AddOrderStatus"/>;
+    /// the history stays the authoritative audit trail. Sequence is the deterministic tiebreaker for
+    /// same-tick transitions.
     ///
-    /// <para><b>Non-nullable, and there is no history fallback.</b> A brand-new aggregate is
-    /// <see cref="OrderStatus.New"/> — which is what it is — and the single production creation path
-    /// appends the <c>New</c> track before the row is staged, so no persisted order can lack a status.
-    /// Making the column NOT NULL is what lets every filter drop the <c>!= null</c> conjunct that was
-    /// pushing the status term inside an OR and stopping PostgreSQL from using the leading column of
-    /// IX_Orders_CurrentStatus_CleaningDateTime.</para>
+    /// <para><b>Non-nullable, and there is no history fallback.</b> Making it NOT NULL is what lets every
+    /// filter drop the <c>!= null</c> conjunct that was pushing the status term inside an OR and stopping
+    /// PostgreSQL using the index. → /domain/order-lifecycle</para>
     /// </summary>
     public OrderStatus CurrentStatus { get; private set; }
 
@@ -464,23 +441,12 @@ public class Order : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// ADR-0036 — the ONLY writer of the (<see cref="PreferredEmployeeId"/>,
-    /// <see cref="PreferredHoldUntilUtc"/>) pair, and ADR-0045 D5.3's only writer of
-    /// <see cref="PreferredOfferRound"/>. Writing both halves of the pair together is what makes a
-    /// deadline with no beneficiary — an order nobody may take and no actor may release — unreachable:
-    /// a safety property defended by a reviewer remembering to null the companion field is not a
-    /// safety property.
-    ///
-    /// <para>ADR-0045 D5.1 widened this from "set once, at creation" to re-callable, and the structural
-    /// invariants it keeps are below. The one that can actually fail is <b>no live reservation for
-    /// someone else</b>, and it is phrased on the HOLD rather than on the preference column:
-    /// <see cref="Create"/> writes <see cref="PreferredEmployeeId"/> independently of any hold, so an
-    /// invariant on the preference would refuse re-offers that never held anything and permit ones that
-    /// do.</para>
-    ///
-    /// <para><paramref name="maxRounds"/> is a platform policy number the application layer owns
-    /// (<c>BookingPolicy.MaxPreferredOfferRounds</c>) — this entity stays policy-ignorant, the same way
-    /// <see cref="CalculateRequiredEmployees"/> takes the spare-seat count.</para>
+    /// ADR-0036 — <b>the ONLY writer of the (<see cref="PreferredEmployeeId"/>,
+    /// <see cref="PreferredHoldUntilUtc"/>) pair.</b> Writing both halves together is what makes a
+    /// deadline with no beneficiary unreachable — an order nobody may take and no actor may release. A
+    /// safety property defended by a reviewer remembering to null the companion field is not a safety
+    /// property. <paramref name="maxRounds"/> is passed in so this entity stays policy-ignorant.
+    /// → /domain/offerability#the-preferred-cleaner-hold
     /// </summary>
     public Order GrantPreferredHold(
         string preferredEmployeeId, DateTime untilUtc, DateTime nowUtc, int maxRounds)
@@ -662,18 +628,12 @@ public class Order : Auditable, ITenantEntity
 
 
     /// <summary>
-    /// Seats a cleaner and stamps which seat they took. The ordinal is the smallest free one in
-    /// <c>[0, MaxEmployees)</c> — smallest-free rather than a count, so that an
-    /// <see cref="UnassignEmployee"/> genuinely returns its seat to the pool instead of leaving a
-    /// permanent hole (release seat 0 of {0,1} and a count would derive 1, which is already taken).
+    /// Seats a cleaner and stamps which seat they took — the smallest FREE ordinal, not a count, so an
+    /// <see cref="UnassignEmployee"/> genuinely returns its seat to the pool.
     ///
-    /// <para><b>The ordinal is the concurrency arbiter, not this check.</b> <c>HasAvailableSpots</c> here
-    /// and the two reads before it in <c>TakeOrder</c> are three UNLOCKED reads: two cleaners tapping the
-    /// same single-seat job both see it free and both reach this line. What separates them is the unique
-    /// index on <c>(OrderId, SeatOrdinal)</c> — the loser's INSERT is rejected at commit, and
-    /// <c>TakeOrder</c> turns that into the same <c>NoAvailableSpots</c> refusal the in-memory path
-    /// gives. Same seat allocation as <c>AddOrderStatus</c> assigns <c>OrderStatusTrack.Sequence</c>:
-    /// the aggregate is the consistency boundary and the caller never supplies the number.</para>
+    /// <para><b>The unique index on (OrderId, SeatOrdinal) is the concurrency arbiter, not this check.</b>
+    /// This and the two reads before it in <c>TakeOrder</c> are three UNLOCKED reads — two cleaners
+    /// tapping the same single-seat job both reach this line. → /domain/offerability#seat-allocation</para>
     /// </summary>
     public Order AddAssignedEmployee(OrderEmployee orderEmployee)
     {

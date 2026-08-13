@@ -14,16 +14,11 @@ import cz.cleansia.core.network.required
 import retrofit2.Response
 
 /**
- * Adapter over the OpenAPI-generated Service/Package/Extra clients. The
- * repository layer keeps the strict (non-null where it should be) hand-written
- * DTOs in [CatalogDto.kt]; this adapter calls the generated all-nullable
- * client and fills defaults at the seam.
+ * Adapter over the generated catalog clients.
  *
- * Why an adapter instead of swapping the DTO outright: the call sites
- * (repository, view-models, screens) all read `serviceListItem.id` etc. as
- * non-null. Changing them to `?` would propagate through dozens of files and
- * lose the "this field is always present" assumption. The pinch point is
- * here — wire-shape on one side, app-shape on the other.
+ * **The repository layer keeps strict hand-written DTOs**; this seam calls the all-nullable generated
+ * client and fills the defaults, so nullability the server never sends stops at the boundary.
+ * -> /mobile-app/api-integration
  */
 class CatalogApi(
     private val serviceApi: GenServiceApi,

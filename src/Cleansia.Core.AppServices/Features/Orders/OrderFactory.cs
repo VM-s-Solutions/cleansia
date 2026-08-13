@@ -34,24 +34,11 @@ public sealed class OrderFactory(
     INotificationProducer notificationProducer) : IOrderFactory
 {
     /// <summary>
-    /// LOY-003 — Hard cap on combined (Plus + tier) discount, applied as a
-    /// fraction of raw subtotal. Promo can exceed this cap because it's a
-    /// per-campaign decision, but the additive tier+Plus combination never
-    /// does. Keep in lock-step with <see cref="QuoteOrder"/> and the customer
-    /// wizard summary so the displayed price matches what gets persisted.
-    /// <para>
-    /// 12% is an OWNER RULING, not a tuning value: the top loyalty tier is
-    /// already 12%, so stacking the 5% Plus rate on it un-capped would be a
-    /// 17% discount, which the owner judged too much. Raising it is a product
-    /// decision, not a bug fix — it reads like one because a subscriber at the
-    /// top tier gets nothing extra for their money.
-    /// </para>
-    /// <para>
-    /// That consequence is stated in the member-facing copy on web, Android and
-    /// iOS (membership_perk_discount_* / membership_social_proof_*, five locales
-    /// each). Change this number and that copy becomes false. Pinned by
-    /// CombinedDiscountCapTests.
-    /// </para>
+    /// Hard cap on the combined (Plus + tier) discount, as a fraction of raw subtotal. <b>12% is an
+    /// OWNER RULING, not a tuning value</b> — raising it is a product decision, not a bug fix, even
+    /// though it reads like one. <b>The consequence is stated in member-facing copy on web, Android and
+    /// iOS in five locales each: change this number and that copy becomes false.</b> Keep in lock-step
+    /// with <see cref="QuoteOrder"/> and the wizard summary. → /product/business-rules#discount-cap
     /// </summary>
     public const decimal MaxCombinedDiscountFraction = 0.12m;
 
@@ -242,17 +229,10 @@ public sealed class OrderFactory(
     }
 
     /// <summary>
-    /// LOY-003 — additive Plus + tier with 12% cap on the combined amount.
-    /// Promo replaces the combined if larger. Tier floor enforcement is
-    /// upstream (LoyaltyService); by the time amounts reach here, a below-
-    /// floor tier discount is already 0.
-    ///
-    /// Returns the per-source amounts that actually applied so the caller
-    /// can persist + render them. When the combined Plus+Tier amount would
-    /// exceed the cap, both amounts are pro-rated down so their sum equals
-    /// the cap; this keeps each source's share visible on the receipt
-    /// rather than zeroing one out. Promo, when it wins, fully replaces
-    /// the combined (both Plus and Tier go to 0 in the output).
+    /// Additive Plus + tier, capped; promo replaces the combined if larger. Over the cap, both are
+    /// PRO-RATED rather than one zeroed, so each source stays visible on the receipt. Tier-floor
+    /// enforcement is upstream — a below-floor tier discount is already 0 by the time it arrives.
+    /// → /product/business-rules#discount-cap
     /// </summary>
     internal static DiscountResolution ResolveLoy003Discount(
         decimal membershipDiscount,
@@ -307,19 +287,12 @@ public sealed class OrderFactory(
         decimal TotalAmount)
     {
         /// <summary>
-        /// The same resolution restated against the price actually charged — the ONE form that may be
-        /// reported, persisted or rendered.
-        ///
-        /// <para>Resolution happens on the raw pre-surcharge subtotal and stays there: the tier floor
-        /// and the 12% cap must be judged on the base <see cref="QuoteOrder"/> judged them on, or a
-        /// booking straddling the floor qualifies in the wizard and loses the discount at submit. But
-        /// the price these come off carries the express surcharge, and on an express order the raw
-        /// figure under-states the saving by <c>ExpressSurchargeRate</c> of itself — the customer would
-        /// have paid <c>raw * 1.2</c> and pays <c>(raw - d) * 1.2</c>, so they saved <c>d * 1.2</c>.
-        /// Every consumer composes the amount with the surcharge-inclusive price (the mappers'
-        /// <c>OriginalSubtotal = TotalPrice + applied</c>, the lifetime-savings sum, every client's
-        /// <c>totalPrice - discount</c>), and the order carries no express flag for any of them to
-        /// correct with, so the correction can only be made here, before the amount is written.</para>
+        /// The resolution restated against the price actually charged — <b>the ONE form that may be
+        /// reported, persisted or rendered.</b> Resolution happens on the raw pre-surcharge subtotal, but
+        /// the price it comes off carries the surcharge, so the raw figure under-states the saving. <b>The
+        /// order carries no express flag for any consumer to correct with, so the correction can only be
+        /// made HERE, before the amount is written.</b>
+        /// → /product/business-rules#discount-express-correction
         /// </summary>
         internal DiscountResolution AsChargedAgainst(bool surchargeApplies)
         {

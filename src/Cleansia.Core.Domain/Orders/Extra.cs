@@ -5,16 +5,12 @@ using Cleansia.Core.Domain.Internationalization;
 namespace Cleansia.Core.Domain.Orders;
 
 /// <summary>
-/// Add-on cleaning task customers can toggle on top of the base service / package
-/// selection (inside-oven, inside-fridge, interior-windows, etc.). Mirrors
-/// <see cref="Services.ServiceCategory"/>'s shape: stable platform-wide <see cref="Slug"/>
-/// for client lookups, JS-friendly <see cref="Translations"/> dictionary,
-/// soft-delete via <c>IsActive</c> (inherited from BaseEntity).
+/// Add-on cleaning task on top of the base selection. Stable platform-wide slug for client lookups,
+/// translations dictionary, soft-delete via <c>IsActive</c>.
 ///
-/// MVP pricing model: flat <see cref="Price"/> per selection regardless of
-/// quantity (the spec calls out per-window / per-laundry-hour pricing as a
-/// fast-follow). Authored in the default currency (CZK); currency conversion
-/// happens in <c>OrderPricingCalculator</c> alongside services and packages.
+/// <para><b>Flat price per selection regardless of quantity</b>, and authored in the default currency —
+/// conversion happens in the pricing calculator alongside services and packages.
+/// → /product/business-rules</para>
 /// </summary>
 public class Extra : Auditable
 {

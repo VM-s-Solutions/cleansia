@@ -9,25 +9,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Shared state for "how far above the bottom should the snackbar sit on the
- * currently-visible screen". Screens that draw persistent bottom chrome
- * (bottom nav, sticky CTA, anchored sheet) call [SnackbarInsetScope] with a
- * dp value large enough to clear that chrome.
+ * How far above the bottom the snackbar sits on the current screen.
  *
- * A CompositionLocal doesn't work here because [GlobalSnackbarHost] lives at
- * the root of the composition — outside the NavHost / feature screens — so
- * locals provided further down don't flow UP to it. A shared flow does.
+ * A CompositionLocal cannot work here: the host lives at the root of the composition, outside the nav
+ * graph, so locals provided further down do not flow UP to it.
  *
- * The state is a **stack of owned entries**, not a single value. Several scopes
- * can be alive at once (a bottom-nav shell underneath a modal sheet is the
- * everyday case), so a scope going away must restore whatever is still active
- * underneath it rather than slamming the value back to the default.
- *
- * Default: 96.dp. That is not a "nothing on screen" figure — it is what the
- * modal sheets that push no inset of their own (cancel order, submit review,
- * promo code) rely on to keep an error snackbar clear of their own bottom CTA.
- * Lowering it is a separate change that has to give those sheets an explicit
- * scope first.
+ * **The state is a STACK of owned entries, not a single value** — several scopes can be alive at once, so
+ * a scope going away must restore whatever is still active underneath rather than resetting to the
+ * default. -> /mobile-app/patterns#snackbar-inset
  */
 object SnackbarInsetState {
     val DEFAULT_INSET: Dp = 96.dp
@@ -78,20 +67,11 @@ object SnackbarInsetState {
 }
 
 /**
- * Apply while a screen with persistent bottom chrome is visible. On dispose the
- * inset falls back to whichever *other* scope is still active — or to
- * [SnackbarInsetState.DEFAULT_INSET] when none is — so closing a sheet that sat
- * on top of the bottom-nav shell restores the shell's inset instead of the
- * default.
+ * Apply while a screen with persistent bottom chrome is visible.
  *
- * Usage:
- * ```
- * @Composable
- * fun MyScreen() {
- *     SnackbarInsetScope(88.dp)
- *     // ... normal screen content
- * }
- * ```
+ * **On dispose the inset falls back to whichever OTHER scope is still active**, not to the default — so
+ * closing a sheet that sat on top of the bottom-nav shell restores the shell's inset.
+ * -> /mobile-app/patterns#snackbar-inset
  */
 @Composable
 fun SnackbarInsetScope(bottomInset: Dp) {

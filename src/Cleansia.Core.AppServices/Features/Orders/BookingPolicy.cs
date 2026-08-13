@@ -67,37 +67,18 @@ public static class BookingPolicy
     public const decimal NoShowCreditCzk = 500m;
 
     /// <summary>
-    /// Seats an order carries BEYOND the crew the work needs (<c>Order.RequiredEmployees</c>, derived
-    /// from the booked estimate). Passed to <c>Order.CalculateRequiredEmployees</c>, which is the only
-    /// writer of the seat cap.
-    ///
-    /// Zero, by owner ruling (ADR-0037 D9.4 / ADR-0039): a spare seat is not free. Pay is one row per
-    /// assigned employee with no crew-size term, so every seat filled beyond the requirement is a
-    /// second full wage against an unchanged customer price.
+    /// Seats beyond the crew the work needs. Zero by owner ruling — a filled spare seat is a second
+    /// full wage against an unchanged customer price. → /product/business-rules#crew-size
     /// </summary>
     public const int SpareSeatsPerOrder = 0;
 
     /// <summary>
-    /// The longest span a single booking may be CREATED with. <b>Enforced, not assumed:</b>
-    /// <c>OrderFactory</c> rejects above it and <c>CreateOrder.Validator</c> mirrors it, which is what
-    /// makes <c>Order.MaxOrderSpanHours</c>' premise — no order is longer than the overlap scan's lower
-    /// bound — true by construction instead of by hope. <c>OrderSpanCapTests</c> pins
-    /// <c>cap &lt;= floor</c>; that ordering is the whole safety argument and neither number moves alone.
-    ///
-    /// <para><b>This is a DISCLOSURE bound, not a double-booking one</b> (ADR-0039 CH-Q2 / CH-D2), and
-    /// the distinction is why it is worth its weight. A double booking would need an order longer than
-    /// the 168 h scan floor — a seven-day appointment nothing produces, real but not live. What IS live
-    /// is that the span is a plain sum over a caller-chosen selection, so before this cap the client
-    /// handed the server any window it liked, from minutes up to 58.25 h (every seeded service plus
-    /// every seeded package's included services on one order). A caller-controlled window that wide,
-    /// pointed at the preferred-cleaner availability answer, is a binary-search primitive for
-    /// reconstructing a cleaner's private schedule. <b>Read this cap as a double-booking guard and you
-    /// will correctly de-prioritise it — and ship the oracle.</b></para>
-    ///
-    /// <para>It is also, unavoidably, a CREW cap: <c>RequiredEmployees = ceil(EstimatedTime / 120)</c>
-    /// and <see cref="SpareSeatsPerOrder"/> is 0, so 24 h implies at most 12 seats. 24 rejects nothing a
-    /// real appointment does — the entire seeded service catalog booked at once is 20.25 h — and rejects
-    /// every selection only a probe or a mis-click produces.</para>
+    /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>
+    /// — an uncapped caller-chosen window pointed at the preferred-cleaner availability answer is a
+    /// binary-search primitive over a cleaner's private schedule. Read it as a double-booking guard and
+    /// you will de-prioritise it correctly and ship the oracle. Must stay &lt;= the 168 h overlap-scan
+    /// floor; neither number moves alone.
+    /// → /product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars
     /// </summary>
     public const int MaxBookableOrderSpanHours = 24;
 

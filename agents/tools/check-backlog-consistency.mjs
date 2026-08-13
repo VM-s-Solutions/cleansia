@@ -34,8 +34,13 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const INDEX = join(REPO, "agents", "backlog", "INDEX.md");
-const TICKETS = join(REPO, "agents", "backlog", "tickets");
+
+// The backlog was archived on 2026-08-13 and is frozen history rather than a work queue, so this
+// checker now guards that history against being edited into disagreeing with itself. The path is
+// built from segments, which is why the archive move did not rewrite it the way it rewrote prose.
+const BACKLOG = join(REPO, "agents", "archive", "2026-08", "backlog");
+const INDEX = join(BACKLOG, "INDEX.md");
+const TICKETS = join(BACKLOG, "tickets");
 
 const warn = process.argv.includes("--warn");
 const verbose = process.argv.includes("--verbose");

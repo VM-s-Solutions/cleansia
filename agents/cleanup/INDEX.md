@@ -177,10 +177,30 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-038 | Archive `agents/archive/2026-08/backlog/` → `agents/archive/2026-08/` (kept in git) | M | todo | — |
-| CL-039 | Delete the dead — `_legacy/`, `planning/`, six frozen root docs, ~25 spent wave scripts, the empty `Infra.Scripts` project | M | todo | — |
-| CL-040 | Rewrite `README.md` — it currently hands out `Add-Migration` against paths that do not exist | S | todo | — |
-| CL-041 | Slim `CLAUDE.md` to the working agreement + pointers into the docs site | M | todo | — |
+| CL-038 | Archive the backlog → `agents/archive/2026-08/backlog/` (kept in git) | M | done | #202 |
+| CL-039 | Delete the dead — `_legacy/`, root `planning/`, six frozen root docs, 28 spent wave scripts, the `Infra.Scripts` project | M | done | #202 |
+| CL-040 | Rewrite `README.md` — it handed out `Add-Migration` against paths that do not exist | S | done | #202 |
+| CL-041 | Slim `CLAUDE.md` to the working agreement + pointers into the docs site | M | done | #202 |
+
+> **P9 complete. 602 files, −30,500 net lines.** `README.md` 15 → 95 lines (it was Visual-Studio-era
+> scratch notes pointing at `03 Infrastructure\` and `05 Web\`, folders that have never existed in this
+> layout). `CLAUDE.md` 594 → 220: the working agreement is kept **verbatim**, and everything that
+> explained the domain is now a pointer, leaving only what an agent must *do* or must *not* do — the
+> four landmines, the manual-steps prohibition, the conventions.
+>
+> **Two of the four rows misdescribed the tree, which is rule 3 earning its place.** `agents/planning/`
+> does not exist and never did — it is `planning/` at the repo root. And `Infra.Scripts` is not an
+> "empty project": it compiles zero `.cs` files, but it carried **19 seed SQL scripts, 18 of them the
+> only copy in the repo**. Deleting the folder as the row instructed would have destroyed them. They
+> are now `sql-scripts/seed/` with a README; only the csproj, the solution entry and one byte-identical
+> duplicate went.
+>
+> Archiving the backlog was not a `git mv` either: **~404 references across 170 files point into it,
+> 31 of them published ADRs.** Those were rewritten in the same commit, or P7's reference contract
+> would have broken the moment the folder moved. `check-backlog-consistency.mjs` built its path from
+> string segments rather than a literal, so the prose rewrite missed it and the checker went red on the
+> next run — it now reads the archive and guards that history against being edited into disagreeing
+> with itself.
 
 ---
 

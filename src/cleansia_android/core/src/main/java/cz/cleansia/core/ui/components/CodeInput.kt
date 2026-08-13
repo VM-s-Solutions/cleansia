@@ -29,21 +29,10 @@ import androidx.compose.ui.unit.sp
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
- * OTP-style numeric code input — `length` separate digit boxes with a hidden
- * BasicTextField underneath capturing the actual input. Focused box gets a
- * 2dp primary-coloured border; the rest get 1dp outline. Digits render in
- * Poppins 24sp.
+ * OTP-style numeric code input: separate digit boxes over a hidden field that captures the real input.
  *
- * Behavior:
- *  - Hidden input is auto-focused on first composition.
- *  - Callers should filter [onCodeChange] to digits + cap at [length]; this
- *    composable doesn't enforce either (some flows might want alphanumeric).
- *  - Auto-submission on completion (length-reached) is the caller's job —
- *    wrap with `LaunchedEffect(code) { if (code.length == LENGTH) onSubmit(code) }`.
- *
- * Originated as a private composable in customer-app's EmailVerifyScreen;
- * extracted to `:core` so partner-app's ConfirmEmailScreen can render the
- * same widget.
+ * **Callers must filter to digits and cap at the length** — this composable enforces neither, so a flow
+ * that wants alphanumeric can reuse it.
  */
 @Composable
 fun CodeInput(

@@ -27,21 +27,11 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
 /**
- * Payment summary. When any discount applies (originalSubtotal !=
- * totalPrice) we render a breakdown:
+ * Payment summary. Renders a discount breakdown only when one applies, otherwise total and method, to
+ * keep the card terse.
  *
- *   Subtotal              1 250 Kč
- *   Tier discount         -125 Kč
- *   Membership discount    -25 Kč
- *   ─────────
- *   Total                 1 100 Kč
- *
- * Otherwise we show just Total + Method to keep the card terse.
- *
- * The payment-status pill (Paid / Pending / Failed / Refunded) is
- * color-coded so the cleaner can see at a glance whether to expect cash
- * at the door — failed cards are a real-world scenario where the
- * cleaner needs to know before they show up.
+ * **The payment-status pill is colour-coded because the cleaner needs to know whether to expect cash at
+ * the door** — a failed card is a real situation at the doorstep. -> /flows/pay-and-payouts
  */
 @Composable
 fun PaymentCard(

@@ -24,21 +24,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for DisputeDetailScreen. Loads a single dispute on init (no
- * caching in the repo — details always hit the network), and handles posting
- * new messages via [DisputeRepository.addMessage]. After a successful send,
- * re-fetches the dispute to pick up the persisted reply (the repo doesn't
- * append to cache because there's no details cache).
+ * Loads one dispute on init and posts new messages.
  *
- * Wave 3 Phase D1 adds [uploadEvidence]: client-side validates size + content
- * type, then forwards to [DisputeRepository.uploadEvidence]. On success we
- * trigger a [load] so the new evidence row appears in the LazyColumn — same
- * "fire-and-refresh" pattern as messages, since the repo has no detail cache.
- *
- * UiState mirrors the standard Loading/Loaded/Error funnel — the missing-arg
- * path collapses to Error immediately so the screen shows the retry/back UI
- * rather than crashing. DisputeRepository already surfaces snackbar errors
- * for network + non-2xx; the VM just translates null into the terminal state.
+ * **Details always hit the network — there is no details cache**, which is why a successful send
+ * re-fetches rather than appending locally. Evidence upload validates size and content type client-side
+ * before forwarding. -> /flows/cancellation-refund-dispute
  */
 @HiltViewModel
 class DisputeDetailViewModel @Inject constructor(

@@ -22,21 +22,12 @@ internal data class NotificationChannelSpec(
 )
 
 /**
- * The complete channel table, one row per [NotificationCategoryDto].
+ * The complete channel table, one row per category.
  *
- * Every row's name/description are the same strings the matching in-app
- * toggle renders on the notification-settings screen, so the OS category a
- * user mutes reads exactly like the switch they just tapped. The three
- * Phase A channels keep their older dedicated `notification_channel_*`
- * strings, which say the same thing in longer form.
- *
- * NOTE: names and descriptions are read once, at [NotificationChannels.registerAll]
- * time — i.e. in `CleansiaApp.onCreate`. Switching the in-app language
- * recreates activities but not the process, so the OS-level names follow the
- * new locale on the next cold start, not immediately. Do not "fix" that by
- * re-registering on locale change: re-registration cannot raise an
- * importance the user has lowered, and touching importance here is how you
- * end up with a fleet that behaves two different ways.
+ * Names and descriptions are the same strings the in-app toggle renders, so the OS category a user mutes
+ * reads exactly like the switch they just tapped. **They are read ONCE, at registration** — renaming a
+ * channel later needs a new channel id, or the old name persists.
+ * -> /architecture/push-notifications#event-catalogue
  */
 internal val notificationChannelSpecs: List<NotificationChannelSpec> = listOf(
     NotificationChannelSpec(NotificationCategoryDto.OrderUpdates,

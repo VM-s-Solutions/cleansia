@@ -52,21 +52,10 @@ import cz.cleansia.core.R
 data class CleansiaDropdownOption(val id: String, val label: String)
 
 /**
- * Outlined-text-field-shaped dropdown that opens a modal bottom sheet
- * for the picker. Two reasons we don't reuse `ExposedDropdownMenuBox`:
- *   1. Its anchor popup is M3-chromed (square menu, no theming hook
- *      for the picker surface) which clashes with the app's flat
- *      outlined cards everywhere else.
- *   2. The popup gets clipped on screens where it'd overflow — the
- *      sheet always has room.
+ * Dropdown shaped like the outlined text field, opening a modal bottom sheet for the picker.
  *
- * Matches [CleansiaTextField] visually: same 12dp corners, same border
- * colors, same float-label rhythm, so a dropdown sits next to a text
- * field as a sibling, not as an alien control.
- *
- * Pass `searchable = true` to surface a search box at the top of the
- * sheet — useful for country / language pickers; we filter case-
- * insensitive on the option's label.
+ * **Deliberately not `ExposedDropdownMenuBox`**: its popup is M3-chromed with no theming hook, and it
+ * clips on screens where it would overflow. A sheet always has room.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

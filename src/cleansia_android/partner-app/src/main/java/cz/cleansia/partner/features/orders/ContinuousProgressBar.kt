@@ -121,21 +121,10 @@ fun ContinuousProgressBar(
 private enum class SegmentState { Past, Current, Future }
 
 /**
- * One thin pill bar. 4dp tall — Foodora's tracker reads small and
- * confident. Past = solid past-color, Future = muted, Current =
- * Windows-style indeterminate: pale active-tinted track with a
- * brighter active-color band that slides L → R across it on a
- * ~1.5s loop.
+ * One thin pill bar: past solid, future muted, current an indeterminate band sliding across a pale
+ * tinted track.
  *
- * Implementation:
- *  - Background fill is `activeColor * 0.25 alpha` — gives the bar
- *    its "armed" tint so it doesn't read as inactive between sweeps.
- *  - A 40%-wide band sits on top, full-opacity activeColor, clipped
- *    to the segment via the parent's clip. Its X is animated with
- *    `offsetXFraction` from `-0.4f` to `1.0f` so it enters from the
- *    left edge and exits past the right edge before looping.
- *  - Linear easing — Windows progress bars don't ease; the band
- *    travels at constant speed. Easing in/out would feel sluggish.
+ * The background tint is what stops the current bar reading as inactive between sweeps.
  */
 @Composable
 private fun ProgressSegment(

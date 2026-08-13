@@ -4,26 +4,11 @@ import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 
 /**
- * What the server released to *this* caller on this order, read off each field's own arrival.
+ * What the server released to THIS caller on this order, read off each field's own arrival.
  *
- * `OrderPiiRedaction` blanks the customer's contact, the door code and the on-job record for a
- * cleaner admitted by the browse gate alone, and the predicate it uses is `CanAccessOrderAsync` —
- * not `isAssignedToCurrentUser`, which is computed from the assignment list and answers a different
- * question. The two disagree for exactly one caller: an employee who booked a cleaning for their own
- * home arrives here as the order's *customer*, so nothing is redacted and the flag is false. Gating
- * the render on the flag hid that person's own data from them, and was a second authorization
- * implementation living beside the server's.
- *
- * This governs **rendering only**. Whether a button, slide or command is offered still reads
- * `isAssignedToCurrentUser` and still fails closed — offering "Slide to start" on a stranger's order
- * is the failure that gate exists to prevent.
- *
- * The redaction is **mixed**, and the roster spans both forms: string scalars are blanked to
- * `string.Empty` (`CustomerName`, `CustomerEmail`, `CustomerPhone`, `ConfirmationCode`), collections
- * to `[]` (`OrderNotes`, `OrderIssues`), and every free-text field is set to `null` —
- * `AccessInstructions`, `Notes`, `SpecialInstructions`, `CompletionNotes`, plus `Address`, `Review`
- * and `PreferredOffer`. Neither `!= null` nor `!= ""` alone covers it, so every read here is
- * arrival-by-content: `isNotBlank` on a scalar, `isNullOrEmpty` on a list.
+ * **The redaction predicate is the browse gate, NOT `isAssignedToCurrentUser`** — that one is computed
+ * from the assignment list and answers a different question. Render off what arrived, never off a flag
+ * you derived. -> /flows/execution-and-completion
  */
 data class OrderDisclosure(
     val customerPhone: String?,

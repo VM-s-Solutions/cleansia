@@ -83,21 +83,11 @@ sealed interface CancellationPreviewUiState {
 }
 
 /**
- * Fetches a single order's detail from [OrderRepository] and exposes the
- * result as a [StateFlow] of [OrderDetailUiState]. The `orderId` is read
- * from the navigation args — Compose Nav 2.8 typed routes serialize
- * `Routes.OrderDetail(orderId)` into the SavedStateHandle keyed by the
- * property name, so `savedStateHandle.get<String>("orderId")` keeps working
- * unchanged. (Equivalent: `savedStateHandle.toRoute<Routes.OrderDetail>().orderId`.)
+ * Fetches one order's detail and exposes it as UI state.
  *
- * [OrderRepository.getById] already shows a snackbar on failure, so this VM
- * just needs to translate a null result into `Error(canRetry = true)` —
- * there's no need to double-surface the user-facing message.
- *
- * Wave 2 Phase 2 adds [cancel] + related state so the cancel sheet can drive
- * a backend-authoritative cancellation flow: the VM collects the submit
- * state, surfaces a success snackbar on the shared bus, and triggers a list
- * refresh on the singleton repo so the Orders tab reflects the new status.
+ * The order id comes from the nav args: **typed routes serialize into the SavedStateHandle keyed by
+ * PROPERTY NAME**, which is why reading it by that name keeps working. The repo already surfaces
+ * failures, so this adds none.
  */
 @HiltViewModel
 class OrderDetailViewModel @Inject constructor(

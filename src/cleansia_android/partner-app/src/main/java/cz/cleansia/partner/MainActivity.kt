@@ -143,19 +143,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Re-applies the persisted language to the process on every cold start.
+     * Re-applies the persisted language on every cold start.
      *
-     * minSdk is 26 and neither app registers `AppLocalesMetadataHolderService`
-     * with `autoStoreLocales`, so on API 26–32 AppCompat holds the per-app
-     * locale in a process-scoped static and loses it when the process dies.
-     * DataStore kept the choice (it is what `emailLanguageTag()` reads for the
-     * confirmation mail), so the cleaner who picked Czech got a Czech email and
-     * then reopened the app in English. This closes that gap from the DataStore
-     * side — see [AppLocale] for why not the manifest service.
-     *
-     * [AppLocale.applyIfChanged] is a no-op when the delegate already matches,
-     * which is both the API 33+ path and the recreate that the API 26–32 path
-     * triggers, so this cannot loop.
+     * **On API 26-32 AppCompat holds the per-app locale in a process-scoped static and loses it when the
+     * process dies**, and neither app registers the auto-store service. DataStore keeps the choice, so
+     * without this the app reverts to the device language after every kill.
      */
     private fun restorePersistedAppLocale() {
         lifecycleScope.launch {

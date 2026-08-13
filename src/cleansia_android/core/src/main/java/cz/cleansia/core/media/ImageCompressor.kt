@@ -279,16 +279,9 @@ private inline fun <T> guarded(block: () -> T?): T? =
     }
 
 /**
- * Power-of-two decode divisor that keeps the intermediate bitmap small without
- * ever going below the target size.
- *
- * Halves while the halved longest side is still at least [maxDimension], so the
- * decoded bitmap is between 1x and 2x the final dimensions — enough headroom
- * for [Bitmap.createScaledBitmap] to produce a clean result, far short of
- * decoding a 12MP source at full size on the way to a 1920px JPEG.
- *
- * Returns 1 for degenerate input; `BitmapFactory` treats anything below 1 as 1
- * anyway, but returning 0 here would be a divide-by-zero waiting to happen.
+ * Power-of-two decode divisor that keeps the intermediate bitmap small **without ever going below the
+ * target size** — it halves only while the halved longest side is still at or above the target, so the
+ * decoded bitmap stays between 1x and 2x the final dimensions.
  */
 internal fun calculateInSampleSize(srcWidth: Int, srcHeight: Int, maxDimension: Int): Int {
     if (srcWidth <= 0 || srcHeight <= 0 || maxDimension <= 0) return 1

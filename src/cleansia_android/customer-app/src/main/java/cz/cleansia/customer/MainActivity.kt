@@ -115,18 +115,9 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        // NOTE: previously this Surface had a root-level
-                        // Modifier.clickable that called focusManager.clearFocus()
-                        // + keyboardController.hide() to implement "tap outside
-                        // to dismiss". That broke ALL text input app-wide:
-                        // tapping any OutlinedTextField fired the parent click
-                        // handler immediately after focus was granted, hiding
-                        // the keyboard before the user could type.
-                        //
-                        // If we want "tap outside to dismiss" again, attach it
-                        // to specific scrollable form Columns (where TextField
-                        // children DO consume their own taps), not to a root
-                        // Surface that sits behind every screen.
+                        // No root-level clickable here. One that cleared focus to implement
+                        // tap-outside-to-dismiss swallowed the first tap of EVERY text field on every
+                        // screen, because the root consumed it before the field saw it.
                         val navController = rememberNavController()
 
                         // Notification deep links — `pendingDeepLink` is set by

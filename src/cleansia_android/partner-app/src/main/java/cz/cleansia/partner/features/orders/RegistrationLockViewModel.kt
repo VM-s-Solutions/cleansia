@@ -364,17 +364,10 @@ class RegistrationLockViewModel @Inject constructor(
 }
 
 /**
- * Section identifier used by the registration-lock routing helpers. Keeps
- * the `forOnboarding` flag construction in one place — every caller goes
- * through `.toRoute(...)` so we can't accidentally hand-build a section
- * route without the flag.
+ * Section identifier for the registration-lock routing helpers.
  *
- * [ownedFields] returns the backend `profile.fields.*` keys that belong
- * to this section. The lock + chain reuse this single source of truth
- * to decide "which section owns this missing field?" — declaring it
- * twice (once in the lock VM map, once on the section screen) is how
- * the Personal section drifted from the lock's "missing fields" list
- * in the first place.
+ * **Every caller goes through `toRoute`**, which is what keeps the onboarding flag from being
+ * hand-built and accidentally omitted. -> /partner-app/onboarding
  */
 enum class ProfileSection {
     Personal, Address, Identification, Bank;

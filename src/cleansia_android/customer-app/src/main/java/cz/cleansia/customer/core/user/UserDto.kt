@@ -7,16 +7,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Legacy hand-written DTO holders kept for the modules that haven't yet been
- * migrated to the OpenAPI-generated client (`AddressRepository`, dispute/order
- * DTOs reference these). New code should use the equivalents from
- * `cz.cleansia.customer.api.model.*`.
+ * Legacy hand-written DTO holders, kept for the modules not yet migrated to the generated client.
  *
- * Removed by this migration pass: the old `UserDto` + its `toCurrentUser()`
- * mapper. They lost the empty-profile fight because they declared required
- * fields (`id`, `firstName`, `lastName`) that the backend response either
- * omits (`id`) or sends nullable. The generated `MyProfileDto` has the right
- * nullability and is the new source.
+ * **New code uses the generated equivalents.**
  */
 
 @Serializable

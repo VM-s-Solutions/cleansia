@@ -34,17 +34,11 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderStatus
 
 /**
- * Foodora-style segmented progress bar. Five thin separated bars
- * (one per phase). Past phases are solid green, the current phase
- * animates its fill once on entry, future phases sit muted.
+ * Segmented progress bar, one thin bar per phase: past solid, current animating once on entry, future
+ * muted.
  *
- * No shimmer, no looping, no halo — Foodora's bar is intentionally
- * quiet so the cleaner's eye stays on content, not on the chrome.
- * The single fill-in animation is enough to acknowledge the phase
- * transition without becoming visual noise on a multi-hour job.
- *
- * Cancelled gets a flat danger-red bar (no segmentation — the
- * workflow didn't progress, so segments would be misleading).
+ * **No shimmer, no looping, no halo** — the bar is intentionally quiet so the cleaner's eye stays on
+ * the job, not the chrome.
  */
 @Composable
 fun ContinuousProgressBar(
@@ -150,19 +144,8 @@ private fun ProgressSegment(
         )
         SegmentState.Current -> {
             val transition = rememberInfiniteTransition(label = "currentSegmentSweep")
-            // Single sweep with an intentional rest beat between
-            // passes. Phase travels from -sweepWidth to a value
-            // greater than 1f — the extra range past 1f keeps the
-            // sweep off-screen on the right for a noticeable pause
-            // before wrapping. With LinearEasing the rest is just
-            // the segment sitting in its armed-track tint, then the
-            // next sweep enters from the left.
-            //
-            // travelEnd = 1f → sweep right-edge hits the segment's
-            //                  right edge then immediately wraps.
-            // travelEnd = 2f → sweep finishes, then we spend the
-            //                  same amount of time again with the
-            //                  sweep off-screen before restarting.
+            // A single sweep with a deliberate rest beat: the phase travels past 1f so the band sits
+            // off-screen for a pause before wrapping, rather than restarting the instant it exits.
             val sweepWidthFraction = 0.5f
             // Phase range: visible portion is [-0.5, 1.0] (1.5
             // units), rest beat is [1.0, 2.5] (1.5 units) — equal

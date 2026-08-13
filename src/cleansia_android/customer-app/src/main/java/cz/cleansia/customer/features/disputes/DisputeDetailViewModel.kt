@@ -114,16 +114,11 @@ class DisputeDetailViewModel @Inject constructor(
     }
 
     /**
-     * Upload a single evidence file. Mirrors the backend's accepted MIME types
-     * + 10MB cap so a doomed request doesn't even hit the network.
+     * Upload one evidence file.
      *
-     * Whitelist matches the backend `UploadDisputeEvidenceCommand` validator —
-     * if it grows there, mirror it here.
-     *
-     * On success, triggers [load] to refresh the dispute and pick up the
-     * persisted evidence row. Multi-file callers should `await` each upload
-     * sequentially (the screen's launcher does this in a single coroutine) so
-     * we don't race overlapping reloads.
+     * **The accepted types and the size cap mirror the backend validator**, so a doomed request never
+     * reaches the network — and if the whitelist grows there it must grow here.
+     * -> /flows/cancellation-refund-dispute
      */
     fun uploadEvidence(bytes: ByteArray, fileName: String, mimeType: String) {
         val id = disputeId ?: return

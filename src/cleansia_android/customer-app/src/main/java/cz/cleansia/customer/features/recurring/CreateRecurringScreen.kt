@@ -90,17 +90,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 /**
- * Multi-step "create recurring booking" wizard. Mirrors the order-booking
- * sheet's UX so users get the same step indicator + slide transitions:
- *
- *  Step 1 — When:  Frequency · Day-of-week · Time-of-day
- *  Step 2 — What:  Packages · Services · Rooms · Bathrooms
- *  Step 3 — Where & Pay:  Address · Payment · Starts on
- *
- * Every path lands on Step 1. Path A (blank) starts on defaults, Path B
- * (pre-filled from a Completed order) and Path C (editing an existing
- * template) start populated. The ViewModel keys on the optional `orderId` /
- * `templateId` nav args to decide which mode it's in.
+ * Multi-step create-recurring wizard, mirroring the booking sheet's step indicator and transitions.
+ * -> /flows/booking-and-pricing#recurring-bookings
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

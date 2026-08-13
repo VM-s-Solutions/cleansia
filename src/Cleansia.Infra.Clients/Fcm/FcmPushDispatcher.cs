@@ -126,18 +126,12 @@ public class FcmPushDispatcher(
 
             failureCount++;
 
-            // Surface WHY FCM rejected this token — without this a caller only sees the "{Failure}
-            // failed" count and cannot tell an APNs-config problem from a stale token. The
-            // MessagingErrorCode is the actionable diagnostic: ThirdPartyAuthError = the APNs auth
-            // key/cert in Firebase is wrong/missing/expired or not authorised for the bundle;
-            // Unregistered/SenderIdMismatch = stale or wrong-project/wrong-environment token;
-            // Unavailable/Internal = transient. It is NULL for a credential rejection (FCM answers
-            // 401/403 before its own taxonomy applies), which is why the HTTP status and the
-            // transport-level ErrorCode are logged alongside it — those are the only signal in that
-            // case, and reading them is the difference between a one-look diagnosis and a poison
-            // queue full of synthesized messages. S6-safe: the error codes + the SDK's fixed
-            // technical message carry no user content; the token is identified only by its fan-out
-            // index.
+            // Surface WHY FCM rejected this token — without it a caller sees only a failure count and
+            // cannot tell an APNs-config problem from a stale token. The FCM error code is NULL for a
+            // credential rejection (FCM answers 401/403 before its own taxonomy applies), which is why the
+            // HTTP status and transport code are logged beside it: in that case they are the only signal.
+            // S6-safe — codes and the SDK's fixed message carry no user content, and the token is
+            // identified only by its fan-out index. -> /architecture/push-notifications
             var status = (int?)item.Exception?.HttpResponse?.StatusCode;
             logger.LogWarning(
                 "FCM rejected token #{Index}/{Total} for event {EventKey}: {ErrorCode}/{TransportErrorCode} " +
@@ -265,19 +259,11 @@ public class FcmPushDispatcher(
 
             try
             {
-                // Two credential sources, in priority order:
-                //  1. FCM:ServiceAccountJson — explicit base64-or-raw JSON of a
-                //     downloaded service-account key. Required for any
-                //     environment where the SDK can't reach user creds (CI,
-                //     prod containers without Workload Identity).
-                //  2. Application Default Credentials — picks up
-                //     %APPDATA%\gcloud\application_default_credentials.json
-                //     (set by `gcloud auth application-default login`) or the
-                //     GOOGLE_APPLICATION_CREDENTIALS env var. Used locally
-                //     because the GCP org policy iam.disableServiceAccountKey-
-                //     Creation blocks downloadable keys on this account.
-                //     ADC requires FCM:ProjectId since user creds aren't
-                //     project-scoped.
+                // Two credential sources in priority order: an explicit service-account JSON (required
+                // wherever the SDK cannot reach user creds — CI, prod containers), then Application
+                // Default Credentials, used locally because the org policy blocks downloadable keys.
+                // ADC requires an explicit project id, since user creds are not project-scoped.
+                // -> /architecture/push-notifications
                 GoogleCredential credential;
                 string? projectIdOverride = null;
                 if (!string.IsNullOrWhiteSpace(config.ServiceAccountJson))

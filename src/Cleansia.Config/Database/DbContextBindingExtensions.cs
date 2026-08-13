@@ -48,19 +48,11 @@ public static class DbContextBindingExtensions
         dataSourceBuilder.EnableUnmappedTypes();
         var dataSource = dataSourceBuilder.Build();
 
-        // Npgsql caches the Postgres type catalog per data source on the FIRST physical connection. On a
-        // freshly-created database that first connection can predate the migration's CREATE EXTENSION
-        // citext/pg_trgm, leaving every citext column to read as the unknown type "-.-"
-        // (InvalidCastException) for the life of the process. The hosted-service reload below is not
-        // reliable in the isolated Functions worker (its IHostedService start races the first
-        // timer-trigger query), so THAT host eagerly seeds the catalog HERE, synchronously, before any
-        // consumer can open a connection on this singleton data source. Best-effort: if the DB is
-        // unreachable at build time the catalog has not been cached yet either, and the hosted service /
-        // first connection picks it up post-migration.
-        //
-        // Opt-in, because for an API host this is a blocking DB round-trip in ConfigureServices that buys
-        // nothing: an API host has no trigger racing IHostedService start, so NpgsqlTypeCatalogInitializer
-        // (registered two lines below, async + retrying + extension-aware) already covers it.
+        // Npgsql caches the Postgres type catalog on the FIRST physical connection, which on a fresh
+        // database can predate CREATE EXTENSION citext — leaving every citext column unreadable for the
+        // life of the process. The Functions host seeds it eagerly HERE because its timer trigger races
+        // IHostedService start. Opt-in: for an API host this is a blocking round-trip that buys nothing.
+        // -> /architecture/local-orchestration
         if (eagerlyReloadNpgsqlTypeCatalog)
         {
             TryEagerlyReloadTypeCatalog(dataSource);

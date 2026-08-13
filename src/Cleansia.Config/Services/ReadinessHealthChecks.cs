@@ -7,17 +7,13 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Cleansia.Config.Services;
 
 /// <summary>
-/// The READINESS half of the health split. <c>/alive</c> keeps only the trivial "self" check
-/// (liveness: the process serves requests); <c>/health</c> — the path every API site's App Service
-/// probe polls (the appService Bicep module's default) — additionally runs these dependency checks,
-/// so an instance whose Postgres connection is broken stops answering 200 and gets routed around /
-/// recycled instead of serving "no data" screens indefinitely.
+/// The readiness half of the health split: <c>/alive</c> is liveness only, <c>/health</c> — what the
+/// App Service probe polls — additionally runs dependency checks.
 ///
-/// Failure semantics are deliberate: the DATABASE check reports Unhealthy (non-200 — every request
-/// on this instance would fail anyway, and a recycle can rebuild a wedged connection pool), while
-/// the BLOB check reports Degraded (still 200 — storage is an external dependency shared by all
-/// instances, and recycling the whole fleet during a storage outage only amplifies it; Degraded
-/// keeps the signal visible in the health payload without triggering the probe).
+/// <para><b>The failure semantics are deliberate.</b> Database reports Unhealthy, because every request
+/// on that instance would fail anyway and a recycle can rebuild a wedged pool. Blob reports Degraded and
+/// still 200, because storage is shared by the whole fleet and recycling everything during a storage
+/// outage only amplifies it. → /architecture/infrastructure</para>
 /// </summary>
 public static class ReadinessHealthChecks
 {

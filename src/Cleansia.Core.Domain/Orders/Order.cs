@@ -311,17 +311,13 @@ public class Order : Auditable, ITenantEntity
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
     /// <summary>
-    /// Persisted denormalization of the latest <see cref="OrderStatusHistory"/> row, written ONLY by
-    /// <see cref="AddOrderStatus"/> (the single append seam); the history stays the authoritative audit
-    /// trail. CreatedOn is the primary (human-meaningful) sort and Sequence the deterministic tiebreaker
-    /// for same-tick transitions the ULID id cannot provide.
+    /// Persisted denormalization of the latest status row, written ONLY by <see cref="AddOrderStatus"/>;
+    /// the history stays the authoritative audit trail. Sequence is the deterministic tiebreaker for
+    /// same-tick transitions.
     ///
-    /// <para><b>Non-nullable, and there is no history fallback.</b> A brand-new aggregate is
-    /// <see cref="OrderStatus.New"/> — which is what it is — and the single production creation path
-    /// appends the <c>New</c> track before the row is staged, so no persisted order can lack a status.
-    /// Making the column NOT NULL is what lets every filter drop the <c>!= null</c> conjunct that was
-    /// pushing the status term inside an OR and stopping PostgreSQL from using the leading column of
-    /// IX_Orders_CurrentStatus_CleaningDateTime.</para>
+    /// <para><b>Non-nullable, and there is no history fallback.</b> Making it NOT NULL is what lets every
+    /// filter drop the <c>!= null</c> conjunct that was pushing the status term inside an OR and stopping
+    /// PostgreSQL using the index. → /domain/order-lifecycle</para>
     /// </summary>
     public OrderStatus CurrentStatus { get; private set; }
 

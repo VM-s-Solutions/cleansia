@@ -4,18 +4,13 @@ using Cleansia.Infra.Common.Validations;
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// The single seam through which money leaves via Stripe (ADR-0006 D1). Every refund — order
-/// cancellation, dispute resolution, admin-issued — flows through <see cref="IssueRefundAsync"/>.
-/// <para>
-/// The seam: clamps the amount to the refundable ceiling (ADR-0006 D2), calls Stripe with the
-/// deterministic refund key as the idempotency key (ADR-0006 D3 / ADR-0005 D1.2), then records the
-/// <c>Refund</c> projection and the payment-status transition ONLY AFTER Stripe confirms
-/// (confirm-then-record, ADR-0006 D7). A concurrent double-issue collapses on the unique
-/// <c>RefundKey</c> index (PG 23505 → resolve-to-existing, S7a/S7b). It does NOT enqueue
-/// notifications (the calling handler does, ADR-0006 D6) and does NOT enforce the refund window
-/// (that is the caller-side <c>RefundPolicy</c>, ADR-0009 D1 — the seam enforces only the ceiling
-/// and idempotency).
-/// </para>
+/// <b>The single seam through which money leaves via Stripe.</b> Every refund flows through here.
+///
+/// <para>It clamps to the refundable ceiling, calls Stripe with the deterministic key, and records the
+/// projection and status transition <b>only after Stripe confirms</b>. A concurrent double-issue
+/// collapses on the unique refund-key index. It does NOT enqueue notifications and does NOT enforce the
+/// refund window — the seam enforces only the ceiling and idempotency.
+/// → /flows/cancellation-refund-dispute#refund</para>
 /// </summary>
 public interface IRefundService
 {

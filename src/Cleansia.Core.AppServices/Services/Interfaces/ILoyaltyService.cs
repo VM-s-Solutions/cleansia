@@ -58,19 +58,12 @@ public interface ILoyaltyService
         string userId, decimal orderTotal, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Grant a fixed points award outside the order-completion path (e.g.
-    /// referral rewards, manual admin grants). The user's loyalty account is
-    /// lazily created if missing.
-    /// <para>
-    /// Idempotency (S7a): the admin manual path supplies a
-    /// REQUIRED client-generated <paramref name="requestId"/> which is persisted
-    /// as the ledger row's idempotency key. A double-submit / retry collapses
-    /// onto exactly one ledger row via a fast-path lookup-by-key AND the
-    /// filtered unique-index backstop (Postgres 23505 caught and resolved to the
-    /// same success). The order-driven / referral path passes
-    /// <c>requestId: null</c> and remains keyed on
-    /// (<paramref name="orderId"/>, <paramref name="source"/>) as before.
-    /// </para>
+    /// Grant points outside the order-completion path. The loyalty account is lazily created.
+    ///
+    /// <para><b>The admin manual path REQUIRES a client-generated request id</b>, persisted as the ledger
+    /// row's idempotency key, so a double-submit collapses onto one row via the fast-path lookup and the
+    /// filtered unique index behind it. The order-driven and referral paths pass null and stay keyed on
+    /// (order, source). → /flows/loyalty-and-memberships</para>
     /// </summary>
     Task GrantPointsManuallyAsync(
         string userId,

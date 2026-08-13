@@ -154,16 +154,12 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     }
 
     /// <summary>
-    /// Test-provider shim. Production runs on Npgsql, where
-    /// <see cref="DateTimeOffset"/> maps to <c>timestamp with time zone</c> and is fully comparable /
-    /// sortable in SQL. The reconciliation query tests run against the in-memory SQLite provider, which
-    /// has NO native <see cref="DateTimeOffset"/> support — any <c>WHERE CreatedOn &lt;= cutoff</c> or
-    /// <c>ORDER BY CreatedOn</c> throws "could not be translated" / "SQLite does not support
-    /// expressions of type 'DateTimeOffset'". Storing <see cref="DateTimeOffset"/> as an order-preserving
-    /// binary value makes those operators translate identically under SQLite.
+    /// Test-provider shim. SQLite has no native <see cref="DateTimeOffset"/> support, so any comparison or
+    /// ordering on one throws "could not be translated"; storing it as an order-preserving binary value
+    /// makes those operators translate.
     ///
-    /// <para>Guarded by provider name so it is a strict no-op on Npgsql — production schema and behaviour
-    /// are unchanged; only the SQLite test backend gets the converter.</para>
+    /// <para><b>Guarded by provider name so it is a strict no-op on Npgsql</b> — production schema and
+    /// behaviour are unchanged. → /architecture/database</para>
     /// </summary>
     private void ApplySqliteDateTimeOffsetCompatibility(ModelBuilder modelBuilder)
     {

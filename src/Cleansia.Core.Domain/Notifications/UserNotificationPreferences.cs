@@ -4,19 +4,11 @@ using Cleansia.Core.Domain.Users;
 namespace Cleansia.Core.Domain.Notifications;
 
 /// <summary>
-/// Per-user toggles for push-notification categories. One row per User —
-/// lazy-created on first GET if missing (defaults: all-true).
+/// Per-user push-category toggles. One row per user, lazily created on first read.
 ///
-/// Stored as discrete bool columns rather than a flags-int so:
-///  - The schema is self-documenting in the DB.
-///  - Adding a new <see cref="NotificationCategory"/> is a column add (not
-///    a value renumber), keeping <see cref="NotificationCategory"/> safe to
-///    extend without touching existing rows.
-///  - Backfill defaults explicitly per column.
-///
-/// All defaults are TRUE. The only category we might consider opt-in by
-/// default is <see cref="NotificationCategory.Promo"/> (marketing) — the
-/// spec calls for opt-in there, so the column default is FALSE.
+/// <para>Discrete bool columns rather than a flags int, so adding a category is a column add rather than
+/// a value renumber. <b>All defaults are TRUE except marketing, which is opt-in.</b>
+/// → /architecture/push-notifications#mutability</para>
 /// </summary>
 public class UserNotificationPreferences : Auditable, ITenantEntity
 {

@@ -121,19 +121,10 @@ public class GetOrderPhotos
 
         private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs)
         {
-            // We need to recover the blob name (the path WITHIN the
-            // container) from the stored absolute URL so we can hand
-            // it to GenerateSasUri — which itself prepends the
-            // container path. The previous Skip(1) only worked on the
-            // production Azure URL shape `/<container>/<blob>`; on
-            // Azurite the path is `/<accountName>/<container>/<blob>`
-            // which left the container name in the blob name and
-            // produced doubled paths like
-            // `…/order-photos/order-photos/2026/…` in the SAS URL.
-            //
-            // Locate the container segment by name and take everything
-            // after it. Works for both Azure (`/<container>/…`) and
-            // Azurite (`/<account>/<container>/…`).
+            // Recover the blob name from the stored absolute URL by locating the container segment by
+            // NAME and taking everything after it. A positional Skip(1) worked only on the Azure shape
+            // `/<container>/<blob>`; Azurite serves `/<account>/<container>/<blob>`, which left the
+            // container in the blob name and produced doubled paths in the SAS URL.
             var uri = new Uri(blobUrl);
             var pathSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var containerName = Constants.BlobContainers.OrderPhotos;

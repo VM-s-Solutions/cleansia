@@ -86,18 +86,14 @@ public static class IntegrationFailureClassifier
         };
 
     /// <summary>
-    /// Classify a per-token <see cref="FirebaseMessagingException"/> using everything the SDK gives us,
-    /// in decreasing specificity: the FCM-level <see cref="MessagingErrorCode"/> when present, else the
-    /// HTTP status FCM answered with, else the transport-level <see cref="FirebaseAdmin.ErrorCode"/>.
+    /// Classify a per-token FCM failure in decreasing specificity: the FCM error code, else the HTTP
+    /// status, else the transport-level code.
     ///
-    /// Why this exists: a credential rejection (FCM answers 401/403 for a disabled service-account key,
-    /// a missing <c>firebase.messaging</c> OAuth scope, or a project without the FCM API enabled) arrives
-    /// with MessagingErrorCode == NULL, because the failure is at the auth layer BEFORE FCM's own error
-    /// taxonomy applies. <see cref="FromFcmErrorCode"/> alone therefore lands such a failure on its
-    /// <c>_ => Transient</c> default and the caller retries a permanently-broken config into the poison
-    /// queue. This does NOT introduce a second taxonomy: it reduces to the existing
-    /// <see cref="FromHttpStatus"/> primitive, which has always mapped 401/403 → AuthConfig — it merely
-    /// makes that mapping REACHABLE from the FCM path.
+    /// <para><b>A credential rejection arrives with a NULL FCM error code</b>, because the failure is at
+    /// the auth layer before FCM's taxonomy applies — so the FCM-code path alone lands it on its
+    /// transient default and the caller retries a permanently-broken config into the poison queue. This
+    /// introduces no second taxonomy; it reduces to the HTTP mapping that always had 401/403, and merely
+    /// makes it reachable. → /architecture/push-notifications</para>
     /// </summary>
     public static IntegrationFailureClass FromFcmException(FirebaseMessagingException exception) =>
         FromFcmFailure(

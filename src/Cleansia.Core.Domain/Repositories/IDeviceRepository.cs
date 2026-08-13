@@ -28,18 +28,13 @@ public interface IDeviceRepository : IRepository<Device, string>
     Task<IReadOnlyList<DeactivatedDevice>> GetDeactivatedSinceAsync(DateTimeOffset cutoff, CancellationToken cancellationToken);
 
     /// <summary>
-    /// GDPR erasure. Deletes every device row the subject holds, ACTIVE OR NOT.
+    /// GDPR erasure. Deletes every device row the subject holds, <b>ACTIVE OR NOT</b>.
     ///
-    /// <para>The <c>IsActive</c> half is the whole reason this exists rather than reusing
-    /// <see cref="GetByUserIdAsync"/>: logout soft-deletes a device and leaves the row physically present so
-    /// the next login can reclaim the tombstone, and BOTH paths that would otherwise remove it filter on
-    /// <c>IsActive</c> — the erasure's own read did, and the stale-device retention sweep still does
-    /// (<c>device.IsActive &amp;&amp; LastActiveAt &lt; cutoff</c>). A logged-out handset's <c>UserId</c>,
-    /// <c>DeviceId</c> and push token were therefore reachable by neither, indefinitely.</para>
-    ///
-    /// <para>A separate method rather than widening <see cref="GetByUserIdAsync"/>: that one's other callers
-    /// (the "my devices" list, push targeting) must keep seeing active rows only, and one method deciding
-    /// that on its callers' behalf is the S8 shape this codebase already names in pairs.</para>
+    /// <para>That is the whole reason it exists: logout soft-deletes a device so the next login can
+    /// reclaim the tombstone, and both paths that would otherwise remove it filter on <c>IsActive</c> — so
+    /// a logged-out handset's user id, device id and push token were reachable by neither, indefinitely.
+    /// A separate method rather than widening the existing one, whose other callers must keep seeing
+    /// active rows only. → /flows/gdpr-and-audit</para>
     /// </summary>
     Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
 }

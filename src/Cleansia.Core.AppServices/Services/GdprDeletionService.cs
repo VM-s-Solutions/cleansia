@@ -85,20 +85,14 @@ public class GdprDeletionService(
     }
 
     /// <summary>
-    /// Erasure is refused while the subject still has a LIVE order — every status except the two
-    /// terminal ones. Deliberately the same membership as <c>OrderRepository.SlotBlockingStatuses</c>:
-    /// ADR-0037 D5 already names the two as the pair of conservative-direction readers of one question.
-    /// They stay two artifacts because they gate two different things in two layers — that one is the
-    /// repository's slot-occupancy filter, this one is the erasure refusal — and ADR-0049 §D7 refuses
-    /// promoting either to a shared platform grouping. <c>ErasureBlockingOrderStatusTests</c> pins them
-    /// against each other instead, so the next divergence fails rather than sits.
+    /// Erasure is refused while the subject still has a LIVE order — every status except the two terminal
+    /// ones, deliberately the same membership as the repository's slot-occupancy filter, pinned against it
+    /// by a test rather than merged into one shared grouping.
     ///
-    /// <para><c>OnTheWay</c> was missing here from the day the set was written, with no ticket, ADR or
-    /// comment recording an intent to exclude it — while the DEAD <c>Pending</c> was present, which is
-    /// the tell: no deliberate reading of "is this order live" admits a status nothing writes and
-    /// refuses one a cleaner is actively driving under. Restored as the omission it was. Without it an
-    /// erasure could complete while a cleaner was en route to the subject's home, anonymizing the
-    /// customer record underneath a job that stays live and staffed.</para>
+    /// <para><b>Without <c>OnTheWay</c> in this set an erasure could complete while a cleaner was en route
+    /// to the subject's home</b>, anonymising the customer underneath a job that stays live and staffed.
+    /// It was missing from the day the set was written while the DEAD <c>Pending</c> was present.
+    /// → /flows/gdpr-and-audit</para>
     /// </summary>
     private static readonly OrderStatus[] ErasureBlockingStatuses =
     [

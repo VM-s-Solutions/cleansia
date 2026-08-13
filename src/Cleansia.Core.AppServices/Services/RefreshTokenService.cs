@@ -229,19 +229,11 @@ public class RefreshTokenService(
         }, new RefreshTokenRevocationScope { UserId = userId, SparedTokenHash = sparedHash }, cancellationToken);
     }
 
-    // Stages a revoke (via the caller's predicate) then commits, riding the caller's own unit of work
-    // so a revoke stays atomic with any sibling change the command already staged (e.g. the new password
-    // hash in ChangePassword — ADR-0024 D4.6). A target RefreshToken carries an xmin optimistic-
-    // concurrency token, so a rotation that concurrently touched one of the target rows makes the commit
-    // throw DbUpdateConcurrencyException. Revocation is idempotent — the token ends dead either way — so
-    // instead of surfacing a 500 (and rolling the revoke, and any sibling change, back) we recover: reload
-    // the conflicted rows to clear the stale xmin, then RE-RUN the stage predicate. Re-running (not just
-    // re-applying to the conflicted entries) is what makes the kill switch airtight against the very race
-    // it guards — a rotation that raced RevokeAllForUser inserts a NEW child token the first read never
-    // saw; the re-read picks it up and revokes it too, so no rotation child escapes the revoke-all.
-    // Reloading only the conflicted RefreshToken entries (never clearing the tracker) keeps the command's
-    // other staged changes intact, so atomicity holds. Self-committing here rather than deferring to the
-    // pipeline is what lets the conflict be caught and retried; the pipeline's later commit is a no-op.
+    // Stages a revoke then commits on the caller's unit of work, so it stays atomic with any sibling
+    // change already staged. On an xmin collision it RE-RUNS the stage predicate rather than re-applying
+    // to the conflicted entries — a rotation that raced revoke-all inserts a NEW child the first read
+    // never saw, and only a re-read revokes it too. Self-committing here is what lets the conflict be
+    // caught and retried at all. -> /flows/auth-and-identity
     private async Task CommitRevokeWithRetryAsync(
         string reason,
         Func<Action<RefreshToken>, CancellationToken, Task> stage,
@@ -320,19 +312,12 @@ public class RefreshTokenService(
         }
     }
 
-    // The last resort after maxAttempts consecutive xmin collisions on the same target rows — an
-    // active race (exactly what a token thief keeping a stolen session refreshing would produce) or
-    // pathological contention. Order matters, and the non-atomicity is deliberate:
-    //  1. Detach the stale tracked revoke marks so no later commit can collide on RefreshToken again.
-    //  2. Land the set-based revoke that ignores optimistic concurrency and VERIFIES termination —
-    //     BulkRevokeIgnoringConcurrencyAsync loops revoke-then-verify on fresh snapshots until zero
-    //     live rows remain in scope, closing the statement-overlap escape (T-0421 review F1), and
-    //     throws rather than report a revocation that provably did not complete.
-    //  3. THEN commit the command's sibling staged changes (e.g. ChangePassword's new hash). If that
-    //     commit still fails the revoke has already landed — the failure mode is "tokens dead + the
-    //     caller retries", never "tokens alive" (ADR-0024 D4.6 requires exactly this direction: a
-    //     revoke without the password change is safe; a password change without the revoke is not,
-    //     and the reverse order could roll the revoke back with the sibling failure).
+    // Last resort after repeated xmin collisions — what a thief keeping a stolen session refreshing
+    // produces. ORDER MATTERS and the non-atomicity is deliberate: detach, land a set-based revoke that
+    // VERIFIES termination and throws rather than reporting one that did not complete, and only THEN
+    // commit the sibling change. The failure mode must be "tokens dead, caller retries" and never "tokens
+    // alive" — a revoke without the password change is safe; the reverse is not.
+    // -> /flows/auth-and-identity
     private async Task FailClosedBulkRevokeAsync(
         RefreshTokenRevocationScope scope,
         string reason,

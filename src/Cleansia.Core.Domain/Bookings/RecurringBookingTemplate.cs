@@ -113,16 +113,13 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
         };
 
     /// <summary>
-    /// Apply an in-place update to the template's schedule + targets. Preserves
-    /// the entity's <see cref="BaseEntity.Id"/> so any client holding a reference
-    /// (mobile/web caching by id) survives the edit.
+    /// In-place schedule update. Preserves the id so a client caching by id survives the edit.
     ///
-    /// <see cref="LastMaterializedFor"/> is intentionally cleared because the
-    /// new schedule may put the next occurrence earlier than the previously
-    /// materialized one — the materializer must re-evaluate from scratch. Do
-    /// not stop clearing it to prevent duplicates: the marker is a resume
-    /// pointer, and the duplicate guard is the materializer's check for an
-    /// order already spawned at the candidate instant.
+    /// <para><b>The materialisation watermark is cleared deliberately</b> — a new schedule may put the
+    /// next occurrence earlier than the last materialised one. <b>Do not stop clearing it to prevent
+    /// duplicates</b>: the marker is a resume pointer, and the duplicate guard is the materialiser's
+    /// check for an order already spawned at that instant.
+    /// → /flows/booking-and-pricing#recurring-bookings</para>
     /// </summary>
     public RecurringBookingTemplate UpdateSchedule(
         RecurrenceFrequency frequency,

@@ -17,16 +17,10 @@ public enum MembershipStatus
 
     /// <summary>
     /// Latest invoice failed; Stripe is retrying. <b>Benefits STOP immediately — there is no grace
-    /// window.</b> Owner ruling 2026-08-03 (ADR-0035 E-2 / ADR-0036 <c>Q-PLUS-05</c>): cut every
-    /// benefit on the first payment failure. This matches <see cref="UserMembership.IsActive"/> and
-    /// <c>UserMembershipRepository.ActiveForUserQuery</c>, which both require
-    /// <see cref="Active"/> — so a PastDue member loses the discount, the wider cancellation window,
-    /// the express waiver and the preferred-cleaner perk the instant the dunning webhook lands.
-    /// <para>
-    /// This comment previously claimed benefits continued during a grace window. No code ever
-    /// implemented that; the owner has now ruled the opposite, knowingly accepting that a customer
-    /// whose card merely expired loses benefits before they are told.
-    /// </para>
+    /// window.</b> Owner ruling: cut every benefit on the first payment failure. A past-due member loses
+    /// the discount, the wider cancellation window, the express waiver and the preferred-cleaner perk the
+    /// instant the dunning webhook lands — knowingly accepting that a customer whose card merely expired
+    /// loses benefits before they are told. → /flows/loyalty-and-memberships
     /// </summary>
     PastDue = 2,
 

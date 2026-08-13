@@ -4,18 +4,12 @@ using Cleansia.Core.Domain.Common;
 namespace Cleansia.Core.Domain.Payments;
 
 /// <summary>
-/// Audit row that records a Stripe webhook event we've already processed.
-/// <see cref="Features.Payments.HandlePaymentNotification"/> writes one row
-/// per delivered event and short-circuits on duplicate <see cref="StripeEventId"/>.
+/// Records a Stripe webhook event already processed; the handler short-circuits on a duplicate id.
 ///
-/// Tenant-global by design — Stripe webhooks are not tenant-scoped, and
-/// the dedupe must work across every tenant the platform serves.
-///
-/// Insert pattern: the handler relies on a UNIQUE index on
-/// <see cref="StripeEventId"/> to enforce dedupe under parallel retries.
-/// Both retries do an existence check, both can see no row, both attempt
-/// insert — exactly one commit succeeds; the other gets a DbUpdateException
-/// and the handler converts that into a "already processed" success path.
+/// <para><b>Tenant-global by design</b> — Stripe webhooks are not tenant-scoped and the dedupe must work
+/// across every tenant. <b>The UNIQUE index is the enforcement, not the existence check</b>: under
+/// parallel retries both can see no row and both attempt the insert, exactly one commits, and the loser's
+/// exception becomes an already-processed success. → /flows/payment-and-fiscal</para>
 /// </summary>
 public class ProcessedStripeEvent : BaseEntity
 {

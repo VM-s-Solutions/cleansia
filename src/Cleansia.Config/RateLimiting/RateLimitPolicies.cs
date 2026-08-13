@@ -15,16 +15,11 @@ using Microsoft.Extensions.Options;
 namespace Cleansia.Config.RateLimiting;
 
 /// <summary>
-/// ADR-0003 (ADR-RATELIMIT) — the single, shared, partitioned rate-limiter contract for all five
-/// hosts. Holds the partition-key functions (D2), the policy registration (D1), the global anonymous
-/// cardinality cap (D7), the rejection behavior (D6), and the forwarded-headers trust boundary +
-/// fail-closed startup guard (D3). <c>CleansiaStartupBase</c> calls into here; the policies are
-/// defined ONCE and inherited identically — no host re-registers them (D5).
+/// ADR-0003 — the single shared partitioned rate-limiter contract for all five hosts. Anonymous
+/// requests are isolated by the REAL client IP, authenticated ones by the JWT <c>sub</c>.
 ///
-/// Partitioning principle: anonymous requests are isolated by the REAL client IP (the strongest
-/// pre-auth server-derived identity, established by <see cref="ConfigureForwardedHeaders"/>);
-/// authenticated requests by the JWT <c>sub</c>. Policy names <c>"auth"</c> / <c>"interactive"</c>
-/// are preserved so existing <c>[EnableRateLimiting]</c> sites are untouched.
+/// <para><b>Defined ONCE and inherited identically — no host re-registers them</b>, and the policy names
+/// are preserved so existing attribute sites are untouched. → /flows/cross-cutting#rate-limiting</para>
 /// </summary>
 public static class RateLimitPolicies
 {

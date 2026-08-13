@@ -1,16 +1,13 @@
 namespace Cleansia.Core.Fiscal.Abstractions;
 
 /// <summary>
-/// Country-agnostic data for fiscal registration. Each implementation maps
-/// this into the payload expected by its fiscal authority API.
+/// Country-agnostic data for fiscal registration; each implementation maps it to its authority's payload.
 /// </summary>
 /// <remarks>
-/// <see cref="IdempotencyKey"/> is the explicit authority-side idempotency token (ADR-0004). It is
-/// the natural token — the <see cref="ReceiptNumber"/> — but it is carried as a first-class field so a
-/// provider's dedup behaviour is a stated contract rather than an implicit per-provider assumption:
-/// the initial register and any recovery re-register for the same receipt present the SAME key, so an
-/// idempotent authority collapses a redelivery onto the prior registration instead of burning a second
-/// entry. Build instances via <see cref="Create"/> so the key cannot drift from the receipt number.
+/// The idempotency key is the natural token — the receipt number — but is carried as a first-class field
+/// so <b>a provider's dedup behaviour is a stated contract rather than an implicit assumption</b>. The
+/// initial register and any recovery re-register present the SAME key. Build via <c>Create</c> so the key
+/// cannot drift from the receipt number. → /architecture/fiscal-compliance
 /// </remarks>
 public record FiscalReceiptRequest(
     string ReceiptNumber,

@@ -26,21 +26,12 @@ public class QuoteOrder
         DateTime? CleaningDate = null) : ICommand<Response>;
 
     /// <summary>
-    /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express
-    /// surcharge (exactly <c>IOrderPricingCalculator.CalculateAsync</c>'s TotalPrice) and is what
-    /// <c>CreateOrder.PriceMatchesAsync</c> validates against — clients must
-    /// submit this value unchanged. <see cref="FinalPriceAfterDiscount"/> is the
-    /// display price after the best-of-three (tier vs membership) discount, computed the way
-    /// <c>OrderFactory</c> persists it: discount off the pre-surcharge subtotal, surcharge on top.
-    /// <see cref="OriginalSubtotal"/> is that price plus the discount, so it always equals the
-    /// <c>OrderItem.OriginalSubtotal</c> the order detail page will show for the same booking — and,
-    /// because the discount is reported against the charged price, equals <see cref="TotalPrice"/>.
-    /// Both are the undiscounted price; two fields that disagreed were the express-composition defect.
-    /// Promo isn't included here (entered at checkout, applied at create-time).
-    ///
-    /// <see cref="ExtrasSubtotal"/>, <see cref="ExpressSurchargeApplied"/>,
-    /// <see cref="ExpressSurchargeAmount"/> let the wizard render a
-    /// transparent line-item breakdown (extras row + surcharge row).
+    /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express surcharge
+    /// and is what create-order validates against — <b>clients must submit this value unchanged</b>.
+    /// <see cref="FinalPriceAfterDiscount"/> is the display price; <see cref="OriginalSubtotal"/> equals
+    /// <see cref="TotalPrice"/> because the discount is reported against the charged price. <b>Two fields
+    /// that disagreed were the express-composition defect.</b> Promo is not included — it is entered at
+    /// checkout and applied at create time. → /product/business-rules#price-stages
     /// </summary>
     public record Response(
         decimal TotalPrice,

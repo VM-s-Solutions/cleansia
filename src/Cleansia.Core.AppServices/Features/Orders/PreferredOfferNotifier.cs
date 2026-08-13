@@ -5,18 +5,13 @@ using Cleansia.Core.Domain.Orders;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Q-BROWSE-01 owner ruling (b) — the ONE producer of the cleaner-facing "this booking is held for
-/// you" signal, and the one place the question "is there anything to announce yet" is asked. Sibling of
-/// <see cref="PreferredOfferClosedNotifier"/>; feed row + push ride the caller's unit of work via the
-/// producer seam (no commit here).
+/// The ONE producer of the cleaner-facing "this booking is held for you" signal. Feed row and push ride
+/// the caller's unit of work; no commit here.
 ///
-/// <para>The push deep-links to the order detail, whose browse gate is
-/// <see cref="OrderAvailability"/>. So the announcement rides the transition into OFFERABLE, not the
-/// creation: a cash one-off is offerable the moment it exists and is announced by the factory, while a
-/// card order sits <c>New</c> + <c>Pending</c> until the Stripe webhook lands and a recurring
-/// occurrence until the customer confirms. Announcing earlier hands a cleaner a notification whose
-/// screen refuses them, and — for the card order CleanupStalePendingOrders cancels an hour later — one
-/// that reads as "you were given a job that vanished".</para>
+/// <para><b>The announcement rides the transition into OFFERABLE, not creation.</b> Announcing earlier
+/// hands a cleaner a notification whose screen refuses them — and for a card order the stale-checkout
+/// sweep cancels an hour later, so it reads as "you were given a job that vanished".
+/// → /flows/offerability-and-take</para>
 /// </summary>
 public static class PreferredOfferNotifier
 {
@@ -49,16 +44,13 @@ public static class PreferredOfferNotifier
     }
 
     /// <summary>
-    /// For the sites that MAKE an order offerable and therefore owe the announcement the creation
-    /// withheld: the Stripe webhook's completed session, and the customer's confirmation of a recurring
-    /// cash occurrence.
+    /// For the sites that MAKE an order offerable and therefore owe the announcement creation withheld.
     ///
-    /// <para>The recipient is re-derived from the resolver rather than read off
-    /// <c>Order.PreferredEmployeeId</c>, because that column records what the customer ASKED FOR and is
-    /// written even when the resolver declined — a muted, unreachable, unapproved or already-busy
-    /// cleaner. Reading the column alone would push exactly the cleaners ADR-0036 D4.1 decided not to
-    /// push. Re-running it against a persisted order is the shape <c>ChoosePreferredCleaner</c> already
-    /// uses, and it costs nothing on the overwhelming majority of orders, which carry no preference.</para>
+    /// <para><b>The recipient is re-derived from the resolver, never read off
+    /// <c>Order.PreferredEmployeeId</c></b> — that column records what the customer ASKED FOR and is
+    /// written even when the resolver declined a muted, unreachable, unapproved or busy cleaner. Reading
+    /// it alone would push exactly the cleaners the hold rule decided not to.
+    /// → /domain/offerability#the-preferred-cleaner-hold</para>
     /// </summary>
     public static async Task NotifyBecameOfferableAsync(
         Order order,

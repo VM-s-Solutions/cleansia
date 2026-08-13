@@ -1,18 +1,11 @@
 namespace Cleansia.Core.Fiscal.Abstractions;
 
 /// <summary>
-/// Maps a fiscal regime (identified by its provider key) to the
-/// <c>(Year, IssuerScope)</c> pair that keys its gapless sequence counter.
+/// Maps a fiscal regime to the <c>(Year, IssuerScope)</c> pair keying its gapless counter.
 ///
-/// <para>The numbering unit and the year-reset rule are legally regime-specific:</para>
-/// <list type="bullet">
-///   <item><description>CZ EET 2.0 / SK eKasa: numbering is per provider and resets each calendar
-///   year, so the scope is the provider key and the year is the calendar year.</description></item>
-///   <item><description>DE TSE: the transaction counter is per TSE and does NOT reset annually, so
-///   the year is <c>NoAnnualResetYear</c> and the scope carries the TSE identity (the provider key
-///   today; a provider-plus-device key once multi-TSE config lands).</description></item>
-///   <item><description>AT RKSV / ES VeriFactu: per issuer, continuous (no annual reset).</description></item>
-/// </list>
+/// <para><b>The numbering unit and the year-reset rule are legally regime-specific</b> — CZ and SK reset
+/// each calendar year per provider; a German TSE counter is per device and does NOT reset annually;
+/// AT and ES are per issuer and continuous. → /architecture/fiscal-compliance</para>
 /// </summary>
 public static class FiscalSequenceScope
 {

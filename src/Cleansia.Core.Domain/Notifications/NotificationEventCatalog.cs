@@ -33,17 +33,10 @@ public static class NotificationEventCatalog
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
 
     /// <summary>
-    /// Customer-targeted: the cleaning this customer booked starts in about an hour. The promise the
-    /// booking-confirmation screen makes ("We'll remind you 1 hour before") — entirely within the
-    /// platform's control, and until now made by nothing. Args: <c>orderNumber</c> (loc) +
-    /// <c>orderId</c> (deep link).
-    ///
-    /// <para>One-off orders only. A recurring occurrence's reminder is
-    /// <see cref="RecurringScheduled"/>, which is a different message at a different lead time — it
-    /// asks the customer to CONFIRM 24h out, where this one only tells them the day has come.</para>
-    ///
-    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/> rather than its own category.
-    /// → /architecture/push-notifications#mutability</para>
+    /// Customer-targeted: the booked cleaning starts in about an hour — the promise the confirmation
+    /// screen makes. <b>One-off orders only</b>; a recurring occurrence gets a different message at a
+    /// different lead time, asking the customer to CONFIRM rather than telling them the day has come.
+    /// Mutable under order updates. → /architecture/push-notifications#mutability
     /// </summary>
     public const string OrderStartingSoon = "order.starting_soon";
 

@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -156,7 +156,7 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: AuthViewModel = hiltViewModel()
-            val state by vm.uiState.collectAsState()
+            val state by vm.uiState.collectAsStateWithLifecycle()
             val context = androidx.compose.ui.platform.LocalContext.current
 
             // React to successful outcomes once per emission; VM clears state itself.
@@ -191,7 +191,7 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: AuthViewModel = hiltViewModel()
-            val state by vm.uiState.collectAsState()
+            val state by vm.uiState.collectAsStateWithLifecycle()
             val context = androidx.compose.ui.platform.LocalContext.current
 
             LaunchedEffect(state.outcome) {
@@ -229,7 +229,7 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: AuthViewModel = hiltViewModel()
-            val state by vm.uiState.collectAsState()
+            val state by vm.uiState.collectAsStateWithLifecycle()
 
             // Latched off the VM's confirmed-send event, never off the tap: a
             // request the server rejected must leave the user on the email step.
@@ -271,7 +271,7 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) { backStackEntry ->
             val vm: AuthViewModel = hiltViewModel()
-            val state by vm.uiState.collectAsState()
+            val state by vm.uiState.collectAsStateWithLifecycle()
             val args = backStackEntry.toRoute<Routes.EmailVerify>()
 
             LaunchedEffect(state.outcome) {
@@ -384,8 +384,8 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
-            val user by vm.currentUser.collectAsState()
-            val saveState by vm.saveState.collectAsState()
+            val user by vm.currentUser.collectAsStateWithLifecycle()
+            val saveState by vm.saveState.collectAsStateWithLifecycle()
             val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.ProfileOnboardingScreen(
@@ -408,11 +408,11 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
-            val user by vm.currentUser.collectAsState()
-            val saveState by vm.saveState.collectAsState()
+            val user by vm.currentUser.collectAsStateWithLifecycle()
+            val saveState by vm.saveState.collectAsStateWithLifecycle()
             val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
-            val avatarDraft by vm.avatarDraft.collectAsState()
-            val avatarState by vm.avatarState.collectAsState()
+            val avatarDraft by vm.avatarDraft.collectAsStateWithLifecycle()
+            val avatarState by vm.avatarState.collectAsStateWithLifecycle()
 
             // A pending pick must not survive an abandoned edit — the hero would
             // otherwise show an image the server never received.
@@ -458,8 +458,8 @@ fun CleansiaNavHost(
         ) {
             val authVm: AuthViewModel = hiltViewModel()
             val profileVm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
-            val authState by authVm.uiState.collectAsState()
-            val user by profileVm.currentUser.collectAsState()
+            val authState by authVm.uiState.collectAsStateWithLifecycle()
+            val user by profileVm.currentUser.collectAsStateWithLifecycle()
             val email = user?.email.orEmpty()
 
             // Same rule as ForgotPassword: only a code the server confirmed it
@@ -501,7 +501,7 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: cz.cleansia.customer.features.profile.DeleteAccountViewModel = hiltViewModel()
-            val deleteState by vm.deleteState.collectAsState()
+            val deleteState by vm.deleteState.collectAsStateWithLifecycle()
             val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
             // Read the current user's email from TokenStore so we can pre-fill the confirm-match check.

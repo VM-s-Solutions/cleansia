@@ -432,7 +432,7 @@ private fun AddressTopBar(
 }
 
 /* ── 2. Smart upsell carousel — state-driven swipeable cards ──
-/**
+ *
  * The home upsell shelf. State drives both which slides appear and their order: Plus hides for
  * subscribers, Welcome hides once the customer has any past order, Referral and Book are always present.
  * -> /product/features

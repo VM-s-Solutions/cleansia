@@ -170,3 +170,20 @@ Every consumer composes the amount with the surcharge-inclusive price — the ma
 the lifetime-savings sum, every client's `totalPrice − discount` — and **the order carries no express
 flag for any of them to correct with**. So the correction can only be made once, before the amount is
 persisted.
+
+## What "price" means at each stage {#price-stages}
+
+The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
+promo. The **express surcharge is already folded in**, because the surcharge is a property of the
+*slot*, not of the user, so it belongs on the pricing side rather than the discount side.
+
+Discount-aware totals are computed downstream. The broken-out subtotals — services, packages, extras,
+surcharge — exist so the booking wizard can show a transparent line-item breakdown rather than one
+number.
+
+One flag is easy to misread: *"the slot **is** inside the express window and the surcharge was
+nevertheless not charged, because a membership waiver was available and applied."* Without it, a waived
+booking and a booking that was never express look identical to a client — both show no surcharge — and
+the customer cannot be told what their membership just saved them.
+
+Nothing is consumed during a quote. A guest previews no waiver at all.

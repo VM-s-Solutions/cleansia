@@ -1,19 +1,10 @@
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// Pricing snapshot returned by <see cref="IOrderPricingCalculator.CalculateAsync"/>.
-///
-/// <see cref="TotalPrice"/> is the raw subtotal BEFORE any user-level discount
-/// (tier, membership, promo) is applied. The express surcharge IS already
-/// folded into it when <see cref="ExpressSurchargeApplied"/> is true — the
-/// surcharge is a property of the slot, not the user, so it belongs on the
-/// pricing side. Discount-aware totals are computed downstream in
-/// <c>QuoteOrder.Handler</c> / <c>OrderFactory</c>.
-///
-/// The broken-out subtotals (<see cref="ServicesSubtotal"/>,
-/// <see cref="PackagesSubtotal"/>, <see cref="ExtrasSubtotal"/>,
-/// <see cref="ExpressSurchargeAmount"/>) let the customer wizard display a
-/// transparent line-item breakdown.
+/// Pricing snapshot. <see cref="TotalPrice"/> is the RAW subtotal <b>before any user-level discount</b>
+/// — but the express surcharge IS already folded in, because the surcharge is a property of the slot
+/// rather than the user. Discount-aware totals are computed downstream.
+/// → /product/business-rules#price-stages
 /// </summary>
 /// <param name="ExpressSurchargeWaivedByMembership">
 /// The slot IS inside the express window and the surcharge was nevertheless not charged, because the

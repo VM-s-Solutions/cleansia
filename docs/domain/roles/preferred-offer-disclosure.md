@@ -2,7 +2,7 @@
 
 > **Both halves are SHIPPED and the decision behind them is now ratified.** `StateOf` is
 > ADR-0045 §D7.1 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:36-53`), unchanged. `IsDisclosable`
-> landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:56-83`, enforcer
+> landed with T-0595 (`src/Cleansia.Core.Domain/Orders/PreferredOffer.cs:52-79`, enforcer
 > `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`), and its **ADR-0049** is
 > `accepted` **with amendments C1–C6** (lead, 2026-08-11)
 > (`docs/decisions/adr-0049.md:3`).

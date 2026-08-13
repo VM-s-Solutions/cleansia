@@ -51,15 +51,11 @@ public interface IUserRepository : IRepository<User, string>
     Task<User?> GetByAppleIdIgnoringTenantAsync(string appleId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Anonymous-path lookup by the Google <c>sub</c> (<see cref="User.GoogleId"/>), the mirror of
-    /// <see cref="GetByAppleIdIgnoringTenantAsync"/> and subject to the same tenant rationale.
-    /// <para>
-    /// Google, unlike Apple, keeps sending the email on every sign-in, which is why the account was
-    /// historically resolved by address alone. That made a mutable, provider-owned attribute the account
-    /// key: a Google user who changes the address on their Google account stops matching their own row.
-    /// The subject is the stable identity and is resolved first; the email survives only as a fallback
-    /// for accounts provisioned before a subject was ever stored.
-    /// </para>
+    /// Anonymous-path lookup by the Google <c>sub</c>. <b>The subject is the stable identity and is
+    /// resolved FIRST</b> — resolving by email made a mutable, provider-owned attribute the account key,
+    /// so a user changing their Google address stopped matching their own row. Email survives only as a
+    /// fallback for accounts provisioned before a subject was stored.
+    /// → /flows/auth-and-identity
     /// </summary>
     Task<User?> GetByGoogleIdIgnoringTenantAsync(string googleId, CancellationToken cancellationToken = default);
 

@@ -11,28 +11,12 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
 /// <summary>
-/// Daily sweep that turns active <see cref="Cleansia.Core.Domain.Bookings.RecurringBookingTemplate"/>
-/// rows into concrete <see cref="Cleansia.Core.Domain.Orders.Order"/> records 7 days ahead. Running it
-/// twice on the same day is a no-op for templates whose horizon is already materialized — see the
-/// per-template command for why that is a query for the existing orders and not <c>LastMaterializedFor</c>,
-/// which an edit clears.
+/// Daily sweep turning active recurring templates into concrete orders 7 days ahead. Running it twice
+/// in a day is a no-op for an already-materialized horizon.
 ///
-/// <para>This handler is a <b>dispatcher, not a worker</b>. It selects the candidate template ids and
-/// sends one <see cref="MaterializeRecurringBookingTemplate.Command"/> per template, each inside its OWN
-/// DI scope — and therefore its own <c>DbContext</c>, change tracker, tenant provider and pending-dispatch
-/// buffer. All the per-template work lives in that command; see its docs for why the isolation has to be
-/// a scope and cannot be a <c>try/catch</c> around a shared context.</para>
-///
-/// <para><b>What this buys.</b> One permanently-bad template used to starve every template ordered after
-/// it: the throw propagated out of the sweep, so the templates it had not reached yet were never
-/// processed on that tick — or on any later tick, because the bad template sorted the same way every
-/// time. Now a template that throws is logged, counted in <c>TemplatesFailed</c>, and the sweep moves on;
-/// its wreckage dies with its scope. The failed template keeps its old marker, so the next tick retries
-/// it from exactly where it was.</para>
-///
-/// <para>No UI exists today to create templates, so on a fresh database this handler processes zero rows
-/// — the entity + materializer are foundations for when Cleansia Plus's "recurring bookings" perk
-/// launches.</para>
+/// <para><b>A dispatcher, not a worker.</b> It selects candidate template ids and sends one command per
+/// template, each in its OWN DI scope — and therefore its own DbContext, change tracker, tenant provider
+/// and pending-dispatch buffer. → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 public class MaterializeRecurringBookings
 {

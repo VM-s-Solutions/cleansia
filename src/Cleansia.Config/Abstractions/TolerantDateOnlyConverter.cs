@@ -5,31 +5,14 @@ using System.Text.Json.Serialization;
 namespace Cleansia.Config.Abstractions;
 
 /// <summary>
-/// JSON converter for <see cref="DateOnly"/> that is tolerant on the read
-/// side but preserves the default date-only write behaviour every existing
-/// web client relies on.
+/// <see cref="DateOnly"/> JSON converter: tolerant on read, fixed on write. Accepts
+/// <c>"yyyy-MM-dd"</c> and a full ISO date-time whose time part is truncated <b>literally — no
+/// time-zone conversion, the day is taken as the client wrote it.</b> Anything else still throws, so
+/// garbage keeps producing a 400.
 ///
-/// <para>
-/// <b>Why:</b> the OpenAPI Generator's swift5 template has no date-only
-/// type — it maps <c>format: date</c> to <c>Date</c> and serializes it as
-/// a full ISO date-time (<c>"1990-05-01T00:00:00.000Z"</c>). Default
-/// System.Text.Json <see cref="DateOnly"/> handling only accepts
-/// <c>"yyyy-MM-dd"</c>, so payloads from the iOS apps fail with
-/// "The JSON value could not be converted to System.DateOnly".
-/// </para>
-///
-/// <para>
-/// <b>What this converter accepts on read:</b> <c>"yyyy-MM-dd"</c>
-/// (Android / web format) and a full ISO 8601 date-time, whose time part
-/// is truncated literally (no time-zone conversion — the day is taken as
-/// the client wrote it). Anything else still throws, so garbage keeps
-/// producing a 400.
-/// </para>
-///
-/// <para>
-/// <b>What it writes:</b> always <c>"yyyy-MM-dd"</c>, matching the
-/// System.Text.Json default the Angular and Kotlin clients already expect.
-/// </para>
+/// <para><b>Always WRITES <c>"yyyy-MM-dd"</c>, and that may not change</b> — the Angular and Kotlin
+/// clients already parse it. The read leniency exists because the swift5 generator has no date-only
+/// type and sends a full ISO date-time. → /architecture/backend#tolerant-json</para>
 /// </summary>
 public sealed class TolerantDateOnlyConverter : JsonConverter<DateOnly>
 {

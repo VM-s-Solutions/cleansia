@@ -110,26 +110,11 @@ sealed interface ReferralCodeUiState {
 }
 
 /**
- * Wave 4 — collapses the historical `quote: QuoteOrderResponse?` +
- * `quoting: Boolean` flow pair into a single sealed state. Consumers that
- * previously combined "do I have a quote AND am I refreshing it" can now
- * pattern-match cleanly:
- *  - [Idle]: no inputs / catalog selection cleared, nothing to render.
- *  - [Quoting]: refresh in flight; UI shows the previous total (if any) and
- *    a subtle re-quote indicator.
- *  - [Quoted]: authoritative response cached; submit() can short-circuit if
- *    the inputs still match.
+ * Quote state as one sealed type rather than a response/loading pair, so consumers pattern-match instead
+ * of combining two flags.
  *
- * Refresh-while-Quoted intentionally drops back to [Quoting] (clearing the
- * cached response) to keep the state machine flat — the receipt UI renders
- * the in-progress quote line only when [Quoted], so a transient [Quoting]
- * pulse just hides the price for ~400ms while a fresh number lands. If that
- * flicker becomes a UX issue, add a `Quoted+Refreshing` variant carrying the
- * previous response; for now YAGNI.
- *
- * No `Error` variant — [refreshQuote] swallows failures (per the existing
- * "leave the last-known-good total visible during transient network blips"
- * contract). Wired in if/when we want to surface inline quote errors.
+ * Refresh-while-quoted drops back to Quoting deliberately, to keep the state machine flat: the receipt
+ * line hides for a few hundred ms while a fresh number lands.
  */
 sealed interface QuoteState {
     data object Idle : QuoteState

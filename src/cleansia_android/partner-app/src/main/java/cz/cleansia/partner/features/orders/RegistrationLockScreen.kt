@@ -71,22 +71,11 @@ import cz.cleansia.partner.features.settings.LanguageChooser
 import cz.cleansia.partner.navigation.NavRoute
 
 /**
- * App-wide gate for cleaners who haven't finished onboarding or aren't
- * approved yet. Mirrors partner-web's `<cleansia-registration-lock>`
- * modal: hero lock icon, 3 category rows (Profile /
- * Documents / Approval), each row with a "Fix" arrow that routes to the
- * exact section that owns that step.
+ * App-wide gate for cleaners who have not finished onboarding or are not approved. Three category rows,
+ * each routing to the section that owns that step.
  *
- * Auto-refreshes on resume (cleaner saves a section → comes back → row
- * flips to Done → progress bar advances). Once all 4 are Done the parent
- * NavHost pops this destination and lands them on Main.
- *
- * Visual language matches [EarningsSummaryScreen]: flat 16dp cards with
- * a 1dp outline-variant border (no elevation), [IconHalo] for category
- * icons (44dp primaryContainer circle, 22dp icon), primary-color
- * labelMedium micro-headers. Pull-to-refresh + inline error banner
- * give the cleaner a way to recover from transient failures without
- * relying on the snackbar (the lock screen has no scaffold/host).
+ * Auto-refreshes on resume, so saving a section and coming back flips the row; once all are done the
+ * parent pops this destination. -> /partner-app/onboarding
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

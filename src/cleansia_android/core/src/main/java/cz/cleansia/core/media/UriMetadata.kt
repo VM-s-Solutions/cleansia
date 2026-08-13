@@ -35,21 +35,12 @@ fun queryMimeType(context: Context, uri: Uri): String? =
     runCatching { context.contentResolver.getType(uri) }.getOrNull()
 
 /**
- * Whether a picked file should go through [ImageCompressor] or be uploaded
- * byte-for-byte as-is.
+ * Whether a picked file is compressed or uploaded byte-for-byte. The single rule both mixed-content
+ * pickers use.
  *
- * This is the single rule both mixed-content pickers use — the partner
- * documents picker (which accepts any type, so PDFs and Word files arrive
- * here) and the customer dispute evidence picker. Re-encoding a PDF as a JPEG
- * would corrupt it, so anything that is not an image type must pass through
- * untouched.
- *
- * Providers are allowed to return a type with parameters
- * (`image/jpeg; charset=binary`) and are not required to lowercase it, so both
- * are normalised before the prefix test. A null or blank type — which is what
- * a provider that declares nothing returns — is not an image, so it passes
- * through; that is the fail-safe direction, since a passthrough of an image
- * still uploads successfully whereas a JPEG re-encode of a document does not.
+ * **Re-encoding a PDF as a JPEG would corrupt it**, so anything that is not an image passes through
+ * untouched. Providers may return a type with parameters and are not required to lowercase it, so the
+ * value is normalised before the prefix test. -> /architecture/backend#content-sniffing
  */
 fun isImageMimeType(mimeType: String?): Boolean =
     mimeType?.substringBefore(';')?.trim()?.lowercase()?.startsWith("image/") == true
@@ -60,20 +51,12 @@ private const val MAX_UPLOAD_FILE_NAME_LENGTH = 255
 private const val JPEG_EXTENSION = ".jpg"
 
 /**
- * The name to upload a compressed image under: the user's own [displayName]
- * with its extension replaced by `.jpg`.
+ * The name to upload a compressed image under: the user's own name with the extension replaced by
+ * `.jpg`.
  *
- * Everything [ImageCompressor] returns is a JPEG whatever was picked, so the
- * name has to say so. `SaveOrderPhotos.cs` derives the stored content type from
- * the file extension, and the dispute evidence list routes a tap to the image
- * or the PDF viewer on the same basis — a PNG name on JPEG bytes makes both
- * wrong. The user's own name is kept rather than collapsed to
- * [ImageCompressor.OUTPUT_FILE_NAME] because the partner documents list renders
- * it verbatim, and a screen of identical `photo.jpg` rows is useless.
- *
- * A provider-supplied name is untrusted: it is stripped of path segments and
- * truncated to the 255 the validators accept, and anything left blank (a
- * dotfile, a path with no leaf) falls back to the shared default.
+ * **Everything the compressor returns is a JPEG whatever was picked, so the name has to say so** — the
+ * backend derives the stored content type from the extension, and the evidence list routes a tap to the
+ * image or PDF viewer on the same basis. -> /architecture/backend#content-sniffing
  */
 fun jpegFileName(displayName: String?): String {
     val base = displayName

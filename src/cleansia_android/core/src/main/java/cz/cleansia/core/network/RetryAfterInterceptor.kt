@@ -6,20 +6,11 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 /**
- * Honors the server's `429 Too Many Requests` + `Retry-After` contract
- * (partitioned rate limiter, ADR-0003 D6): waits the advertised delay plus a
- * random 0–15s jitter — so rejected clients desync instead of re-spiking at
- * the window rollover — then retries the request exactly **once**. A second
- * `429` (or any other status) is returned to the caller unchanged.
+ * Honours the server's 429 + Retry-After contract: waits the advertised delay plus random jitter — so
+ * rejected clients desync instead of re-spiking at the window rollover — then retries exactly ONCE.
  *
- * Belongs **outermost** on the auth OkHttp chain so the retry re-enters
- * [cz.cleansia.core.auth.AuthInterceptor] and picks up a fresh Bearer token.
- * The refresh/login NoAuth client deliberately does not carry it.
- *
- * The wait is cancellation-safe: `call.cancel()` (what a cancelled coroutine
- * triggers) is observed between sleep slices and aborts with the same
- * `IOException("Canceled")` OkHttp itself uses, which the toast suppression in
- * [cz.cleansia.core.auth.NetworkErrorInterceptor] already recognizes.
+ * **Belongs OUTERMOST on the chain** so the wait happens before anything else re-runs.
+ * -> /flows/cross-cutting#rate-limiting
  */
 class RetryAfterInterceptor(
     private val jitterMillis: () -> Long = { Random.nextLong(JITTER_RANGE_MILLIS) },

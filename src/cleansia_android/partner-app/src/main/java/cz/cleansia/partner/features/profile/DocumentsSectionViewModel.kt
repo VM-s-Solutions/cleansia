@@ -92,19 +92,8 @@ class DocumentsSectionViewModel @Inject constructor(
     /**
      * Read a picked file and stage it for the type-and-description dialog.
      *
-     * All of this used to run inline in the picker callback, which the
-     * `ActivityResultRegistry` dispatches on the main thread — so opening the
-     * stream, reading every byte and base64-encoding them froze the UI — and
-     * this picker has no MIME filter, so a 10 MB PDF got exactly that treatment.
-     *
-     * Images go through [ImageCompressor], which downscales them to 1920px and
-     * re-encodes them as a JPEG carrying no EXIF block — no capture GPS, no
-     * device serial. Everything else is uploaded **byte-identical**: this
-     * picker accepts any type, and re-encoding a PDF or a Word file as a JPEG
-     * would destroy it. [isImageMimeType] is the whole test, and it answers
-     * false for a provider that declares no type at all, which is the safe
-     * direction — a passthrough of an image still uploads, a JPEG re-encode of
-     * a contract does not.
+     * **The picker callback runs on the MAIN thread**, and this picker has no MIME filter — so reading
+     * and encoding inline froze the UI on a 10 MB PDF. -> /mobile-app/patterns#image-upload
      */
     fun stageFile(uri: Uri) {
         // Guard and flag both flip before the launch: two picker callbacks are

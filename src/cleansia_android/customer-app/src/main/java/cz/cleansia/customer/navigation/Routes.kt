@@ -3,20 +3,10 @@ package cz.cleansia.customer.navigation
 import kotlinx.serialization.Serializable
 
 /**
- * Typed Compose-Navigation routes (Navigation 2.8+).
+ * Typed Compose-Navigation routes.
  *
- * Each destination is either a `@Serializable object` (no args) or a
- * `@Serializable data class` (args as constructor params). The Navigation
- * runtime serializes the type to a route string and deserializes the args
- * into a [androidx.lifecycle.SavedStateHandle] keyed by property name —
- * which is why ViewModels keep working with `savedStateHandle.get<String>("orderId")`
- * after this migration. (Equivalent typed access:
- * `savedStateHandle.toRoute<OrderDetailRoute>()`.)
- *
- * Why typed routes:
- *  - Compile-time safety: no more `"orders/{orderId}"` string-template typos.
- *  - Single source of truth: arg name + arg type live next to the route name.
- *  - Cheap to refactor: rename a route, the compiler walks every call site.
+ * The runtime serializes the type to a route string and deserializes args into the SavedStateHandle
+ * **keyed by property name**, which is why ViewModels keep reading them by that name.
  */
 object Routes {
 

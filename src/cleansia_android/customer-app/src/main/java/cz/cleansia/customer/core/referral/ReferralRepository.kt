@@ -18,27 +18,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Cache + orchestrator for the signed-in user's referral state (Phase C).
+ * Cache + orchestrator for the user's referral state. `@Singleton`, so it lives for the process.
  *
- * Lifetime: `@Singleton` — lives for the app process. Caches the user's own
- * code + counters ([account]) and the list of referrals they've invited
- * ([referrals]), refreshed lazily by [refresh] from MainShell prefetch.
+ * `validate` is a passthrough that deliberately does NOT touch repo state — the caller may be
+ * unauthenticated during signup, and the result is per-attempt UI feedback rather than shared state.
  *
- * The [validate] method is a direct passthrough used by the signup form and
- * the booking wizard — it doesn't touch repo state because the caller may be
- * unauthenticated (signup) and the result is per-attempt UI feedback, not
- * shared state.
- *
- * Cleared on sign-out / account-delete so the next user doesn't inherit the
- * previous one's code — call sites are wired in [AuthAuthenticator],
- * [AuthRepository], and [UserRepository] alongside the Phase A
- * [LoyaltyRepository] hooks.
- *
- * Error model mirrors [cz.cleansia.customer.core.loyalty.LoyaltyRepository]:
- * foreground operations return [ApiResult.Success] on success and
- * [ApiResult.Error] carrying the parsed message on failure. The consuming
- * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays silent
- * (NetworkErrorInterceptor owns the infra toast).
+ * **Cleared on sign-out / account-delete.** -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class ReferralRepository @Inject constructor(

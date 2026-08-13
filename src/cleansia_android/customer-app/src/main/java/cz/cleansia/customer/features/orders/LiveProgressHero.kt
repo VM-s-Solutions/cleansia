@@ -39,24 +39,11 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
- * Live progress hero for the order-detail screen. Replaces the static
- * [HeroCard] when the order is in an "active" status (`Confirmed` or
- * `InProgress`); for terminal states (`Completed`, `Cancelled`) and the
- * pre-acceptance phase (`New`, `Pending`) we keep the original [HeroCard].
+ * Live progress hero, replacing the static card while the order is active. Combines the status headline,
+ * a progress bar driven by elapsed-over-estimated, and the step indicator.
  *
- * The hero combines three signals on one card:
- *  1. Status pill + a contextual headline that mutates per state
- *     ("Marek accepted", "Cleaning in progress", etc).
- *  2. Live progress bar driven by `(now - startedAt) / estimatedDurationMin`
- *     when `InProgress`. Only rendered if we have both anchors.
- *  3. Step indicator at the bottom (Booked → Accepted → Started → Finished)
- *     with the current step highlighted.
- *
- * The mascot belongs to [OrderFloatingMascot], which straddles the sheet's top
- * edge above this card — one character per screen, not one per card.
- *
- * The "now" tick re-evaluates every 30 seconds via [LaunchedEffect] so the
- * progress bar advances without leaning on an external clock or push event.
+ * **The bar renders only when both anchors exist** — without a start time and an estimate there is
+ * nothing honest to draw. -> /flows/execution-and-completion
  */
 @Composable
 fun LiveProgressHero(order: OrderDetailDto) {

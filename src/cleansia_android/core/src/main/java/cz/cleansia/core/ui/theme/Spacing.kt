@@ -3,25 +3,14 @@ package cz.cleansia.core.ui.theme
 import androidx.compose.ui.unit.dp
 
 /**
- * Cleansia spacing scale — the canonical layout spacing values used across the
- * app. Backed by an 8-pt grid with two 4-pt extensions for tight clusters.
+ * The canonical spacing scale — an 8-pt grid with two 4-pt extensions for tight clusters.
  *
- * Why a global object instead of a CompositionLocal: layout values never differ
- * between themes (light vs dark vs Plus), so a `MaterialTheme.local…` lookup
- * adds runtime cost for zero benefit. A plain `object` keeps usage identical
- * to `MaterialTheme.colorScheme.*` semantics from a caller's POV — they read
- * `Spacing.M` instead of `16.dp` — without paying for indirection.
+ * A plain object rather than a CompositionLocal: layout values never differ between themes, so a theme
+ * lookup costs runtime for nothing.
  *
- * Migration policy: new code must use this scale. Existing screens continue to
- * use literals until they're modified for unrelated reasons; we don't run a
- * blanket find-and-replace because regressions are visual + hard to QA.
- *
- * Legend:
- *  - XXS / XS — within-cluster tightening (icon + label, hint text under field)
- *  - S        — paragraph rhythm, default Spacer between siblings
- *  - M        — section padding, card content padding
- *  - L        — between major regions on the same screen
- *  - XL / XXL — between hero blocks, around bottom-sheet content
+ * **New code must use this scale; existing screens keep their literals until touched for another
+ * reason** — a blanket find-and-replace produces visual regressions that are hard to QA.
+ * -> /mobile-app/patterns#spacing
  */
 object Spacing {
     /** 2dp — hairline; tooltip arrow, divider thickness. */

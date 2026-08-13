@@ -70,9 +70,9 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-019 | Two retirement assertions in `error-contract-parity.spec.ts` — no `errors` block, no reader | S | done | — |
-| CL-020 | Repoint 30 files; merge 5 unique keys (164 of 169 were already duplicates) | M | done | — |
-| CL-021 | Delete the `errors` block from all five admin locales; correct `CLAUDE.md` | S | done | — |
+| CL-019 | Two retirement assertions in `error-contract-parity.spec.ts` — no `errors` block, no reader | S | done | #194 |
+| CL-020 | Repoint 30 files; merge 5 unique keys (164 of 169 were already duplicates) | M | done | #194 |
+| CL-021 | Delete the `errors` block from all five admin locales; correct `CLAUDE.md` | S | done | #194 |
 
 > **P3 complete.** The block was **97% redundant** — 164 of its 169 keys already existed under `api.*`,
 > so this removed a duplicate rather than migrating a corpus. It also closed a live gap: `refund.failed`

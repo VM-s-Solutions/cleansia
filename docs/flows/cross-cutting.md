@@ -88,7 +88,12 @@ flowchart LR
 ```
 
 **It never re-runs the original effect.** No receipt, invoice, push or pay is re-processed here — the
-handler is purely *persist and alert*. Recovery is a deliberate replay from the durable row.
+handler is purely *persist and alert*.
+
+**And nothing replays the row either.** No query, no admin endpoint, no replay command reads a
+`DeadLetter`; the only code that touches one after the write is GDPR erasure, which deletes it. The row
+is **the record that a thing failed, not the mechanism for making it succeed** — recovery today means a
+human reading the alert and acting. → [`dead-letter-record`](/domain/roles/dead-letter-record)
 
 **Acking is mandatory.** Throwing would re-poison the message into an endless loop. The durable row is
 what makes acking safe.

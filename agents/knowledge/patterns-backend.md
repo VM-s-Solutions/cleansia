@@ -775,10 +775,10 @@ the credential had no special status at all. The opposite polarity is already on
 
 **Before redacting, check what the redaction destroys.** If the row's only lookup handle is a
 *substring of the body* — ADR-0002 D3 documented
-`SELECT … WHERE "SourceQueue" = … AND "RawBody" LIKE '%<MessageKey>%'` (`PoisonHandlerBase.cs:95`) —
+`SELECT … WHERE "SourceQueue" = … AND "RawBody" LIKE '%<MessageKey>%'` (`PoisonHandlerBase.cs:58`) —
 then redaction turns the row into an anonymous blob. **Promote the identity to its own indexed
 column first.** The values are usually already computed and thrown away at the write site
-(`PoisonHandlerBase.cs:69` builds the descriptor, `:80` passes none of it).
+(`PoisonHandlerBase.cs:31` builds the descriptor, `:80` passes none of it).
 
 **Deviating form:** an entity with a verbatim-body column whose doc-comment says "unbounded" and whose
 type appears in **no** retention, prune or GDPR path.

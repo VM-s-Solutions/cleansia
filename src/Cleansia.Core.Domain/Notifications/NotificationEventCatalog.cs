@@ -1,12 +1,9 @@
 namespace Cleansia.Core.Domain.Notifications;
 
 /// <summary>
-/// Single source of truth mapping event-keys (the strings flowing on the
-/// queue + going into the FCM payload) to <see cref="NotificationCategory"/>
-/// values (the per-user opt-in toggles).
-///
-/// Keep in sync with the <c>strings.xml</c> entries on the customer Android
-/// app — the same keys are looked up there.
+/// Single source of truth mapping event keys — the strings on the queue and in the FCM payload — to the
+/// per-user opt-in category. <b>Keep in sync with the Android apps' string resources</b>; the same keys
+/// are looked up there. → /architecture/push-notifications#event-catalogue
 /// </summary>
 public static class NotificationEventCatalog
 {
@@ -29,10 +26,9 @@ public static class NotificationEventCatalog
     /// link) + <c>orderNumber</c> (loc); no cleaner name, which belongs on the order detail the deep
     /// link opens rather than on a lock screen.
     ///
-    /// <para>Distinct from <see cref="OrderConfirmed"/> on purpose. <c>Confirmed</c> is overloaded —
-    /// "money settled" OR "cleaner assigned" — and two of <see cref="OrderConfirmed"/>'s producers
-    /// (the Stripe webhook, the recurring cash confirmation) have no cleaner, so widening that key to
-    /// carry this claim would repeat the overloading one layer up.</para>
+    /// <para><b>Distinct from <see cref="OrderConfirmed"/> on purpose</b> — that key is overloaded and two
+    /// of its producers have no cleaner at all.
+    /// → /architecture/push-notifications#assigned-vs-confirmed</para>
     /// </summary>
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
 
@@ -46,9 +42,8 @@ public static class NotificationEventCatalog
     /// <see cref="RecurringScheduled"/>, which is a different message at a different lead time — it
     /// asks the customer to CONFIRM 24h out, where this one only tells them the day has come.</para>
     ///
-    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/> rather than a category of
-    /// its own: a new category is a bool COLUMN on <c>UserNotificationPreferences</c> plus a toggle in
-    /// every client, and a customer who silenced order updates has already said what they want.</para>
+    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/> rather than its own category.
+    /// → /architecture/push-notifications#mutability</para>
     /// </summary>
     public const string OrderStartingSoon = "order.starting_soon";
 
@@ -58,16 +53,10 @@ public static class NotificationEventCatalog
     /// link). Produced by exactly two callers through one notifier — the 5-minute lapse sweep and the
     /// cleaner's explicit decline — so the sentence and its args are byte-identical on both paths.
     ///
-    /// <para><b>One sentence covers both outcomes, and that is the whole of the guarantee.</b> The
-    /// customer learns that the offer ended and is offered a second choice; they are never told that a
-    /// named person refused, and never told that a named person did not answer. A per-path string would
-    /// re-introduce exactly the disclosure the neutral line exists to prevent, and
-    /// <c>Q-AVAIL-04</c> — which lawful basis covers telling a third party what a worker did — is
-    /// open.</para>
-    ///
-    /// <para>Mutable under <see cref="NotificationCategory.OrderUpdates"/>: an update about the
-    /// customer's own order must not need its own opt-out to be discoverable, and someone who silenced
-    /// order updates has already answered the question.</para>
+    /// <para><b>One sentence covers both outcomes, and that IS the guarantee.</b> The customer is never
+    /// told a named person refused, and never told a named person did not answer. A per-path string
+    /// reintroduces exactly the disclosure this line exists to prevent.
+    /// → /architecture/push-notifications#one-sentence</para>
     /// </summary>
     public const string PreferredOfferClosed = "order.preferred_offer_closed";
 
@@ -75,12 +64,9 @@ public static class NotificationEventCatalog
     /// Partner-side digest. Args: <c>count</c> (decimal-string count of new
     /// eligible orders). Body localized client-side ("N new jobs near you").
     ///
-    /// <para>The client copy says "near you", and the server now means it: the count is the cleaner's
-    /// work country narrowed by their own <c>Employee.JobRadiusKm</c> around their home address
-    /// (<see cref="Orders.JobProximity"/>). <b>The copy is still not true for everyone</b> — a cleaner
-    /// who has set no radius, and one whose home never geocoded, both keep the country-wide board by
-    /// design, and the args carry no way for the client to tell those apart. Making the wording follow
-    /// the reality needs a second loc arg or a second event key, i.e. new strings in both apps.</para>
+    /// <para>Narrowed by the cleaner's own <c>Employee.JobRadiusKm</c>. <b>The "near you" copy is still
+    /// not true for everyone</b> — no radius set, or a home that never geocoded, both keep the
+    /// country-wide board. → /architecture/push-notifications#near-you</para>
     /// </summary>
     public const string NewJobsAvailable = "order.new_available";
 
@@ -93,8 +79,9 @@ public static class NotificationEventCatalog
     /// jobs. Mutable under <see cref="NotificationCategory.NewJobsAvailable"/> — a cleaner who silenced
     /// new-job notifications must not receive a push-shaped bypass of that mute.
     ///
-    /// <para>This is the only place the platform tells a cleaner they were chosen. No surface ever says
-    /// an order is held for SOMEONE ELSE, and no cleaner ever learns they were passed over.</para>
+    /// <para>The only place the platform tells a cleaner they were chosen. <b>No surface ever says an
+    /// order is held for SOMEONE ELSE, and no cleaner ever learns they were passed over.</b>
+    /// → /architecture/push-notifications#one-sentence</para>
     /// </summary>
     public const string PreferredOffer = "order.preferred_offer";
 

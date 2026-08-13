@@ -47,7 +47,7 @@ public sealed class LiveActivityTokenModelMetadataTests
     [Fact]
     public void LiveActivityToken_Has_Tenant_Global_Query_Filter()
     {
-        Assert.NotNull(GetEntityType().GetQueryFilter());
+        Assert.NotEmpty(GetEntityType().GetDeclaredQueryFilters());
     }
 
     [Fact]

@@ -342,7 +342,7 @@ public class RegisterValidatorTests
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
-        Assert.False(result.IsValid);
+        Assert.False(result.IsValid, $"Expected '{password}' to be rejected: {reason}");
         var errors = result.Errors.Where(e => e.PropertyName == "Password").ToList();
         Assert.Single(errors);
         Assert.Equal(BusinessErrorMessage.InvalidPasswordFormat, errors[0].ErrorMessage);

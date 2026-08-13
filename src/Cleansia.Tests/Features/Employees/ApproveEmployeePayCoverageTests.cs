@@ -154,8 +154,7 @@ public class ApproveEmployeePayCoverageTests
 
         var result = await CreateValidator().ValidateAsync(Command());
 
-        var failure = Assert.Single(
-            result.Errors.Where(e => e.ErrorMessage == BusinessErrorMessage.EmployeePayConfigMissing));
+        var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeePayConfigMissing);
         Assert.Equal(ServiceName, failure.ErrorCode);
     }
 

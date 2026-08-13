@@ -42,7 +42,7 @@ public sealed class RefundModelMetadataTests
         Assert.True(typeof(ITenantEntity).IsAssignableFrom(typeof(Refund)));
 
         var refund = GetRefundEntityType();
-        Assert.NotNull(refund.GetQueryFilter());
+        Assert.NotEmpty(refund.GetDeclaredQueryFilters());
     }
 
     [Fact]

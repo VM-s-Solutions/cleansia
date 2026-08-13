@@ -153,7 +153,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       modal: true,
     });
 
-    dialogRef.onClose.subscribe((result: ApproveDialogResult | undefined) => {
+    dialogRef.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ApproveDialogResult | undefined) => {
       if (result?.workCountryId) {
         this.approveEmployee(result.workCountryId, result.notes);
       }
@@ -206,7 +206,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       modal: true,
     });
 
-    dialogRef.onClose.subscribe((result: RejectDialogResult | undefined) => {
+    dialogRef.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {
       if (result?.reason) {
         this.rejectEmployee(result.reason);
       }

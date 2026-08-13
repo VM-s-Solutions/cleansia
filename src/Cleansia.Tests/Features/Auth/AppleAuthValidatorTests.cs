@@ -60,7 +60,7 @@ public class AppleAuthValidatorTests
         var result = await _validator.ValidateAsync(Cmd(lastName: lastName));
 
         Assert.True(result.IsValid);
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "LastName"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "LastName");
     }
 
     // Later Apple sign-ins carry no name at all — both fields absent must still validate (identity is
@@ -73,7 +73,7 @@ public class AppleAuthValidatorTests
         var result = await _validator.ValidateAsync(Cmd(firstName: firstName));
 
         Assert.True(result.IsValid);
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "FirstName"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "FirstName");
     }
 
     [Fact]

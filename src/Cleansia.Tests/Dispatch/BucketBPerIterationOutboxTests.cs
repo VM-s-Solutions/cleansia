@@ -95,6 +95,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new FixedTenantProvider(null),
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
 

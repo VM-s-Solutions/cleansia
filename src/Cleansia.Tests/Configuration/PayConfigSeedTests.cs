@@ -55,7 +55,7 @@ public class PayConfigSeedTests
             .ToList();
 
         Assert.NotEmpty(statements);
-        return Assert.Single(statements.Where(s => s.Contains(targetColumn, StringComparison.Ordinal)));
+        return Assert.Single(statements, s => s.Contains(targetColumn, StringComparison.Ordinal));
     }
 
     // Mirrors StartupSeedScriptSyncTests — walk up to the *.sln, then across to the canonical script.

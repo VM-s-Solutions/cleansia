@@ -661,6 +661,20 @@ public class Order : Auditable, ITenantEntity
     }
 
 
+    /// <summary>
+    /// Seats a cleaner and stamps which seat they took. The ordinal is the smallest free one in
+    /// <c>[0, MaxEmployees)</c> — smallest-free rather than a count, so that an
+    /// <see cref="UnassignEmployee"/> genuinely returns its seat to the pool instead of leaving a
+    /// permanent hole (release seat 0 of {0,1} and a count would derive 1, which is already taken).
+    ///
+    /// <para><b>The ordinal is the concurrency arbiter, not this check.</b> <c>HasAvailableSpots</c> here
+    /// and the two reads before it in <c>TakeOrder</c> are three UNLOCKED reads: two cleaners tapping the
+    /// same single-seat job both see it free and both reach this line. What separates them is the unique
+    /// index on <c>(OrderId, SeatOrdinal)</c> — the loser's INSERT is rejected at commit, and
+    /// <c>TakeOrder</c> turns that into the same <c>NoAvailableSpots</c> refusal the in-memory path
+    /// gives. Same seat allocation as <c>AddOrderStatus</c> assigns <c>OrderStatusTrack.Sequence</c>:
+    /// the aggregate is the consistency boundary and the caller never supplies the number.</para>
+    /// </summary>
     public Order AddAssignedEmployee(OrderEmployee orderEmployee)
     {
         if (!HasAvailableSpots)
@@ -668,6 +682,14 @@ public class Order : Auditable, ITenantEntity
             throw new InvalidOperationException("No available spots for this order");
         }
 
+        var taken = _assignedEmployees.Select(oe => oe.SeatOrdinal).ToHashSet();
+        var seat = 0;
+        while (taken.Contains(seat))
+        {
+            seat++;
+        }
+
+        orderEmployee.AssignSeatOrdinal(seat);
         _assignedEmployees.Add(orderEmployee);
         return this;
     }

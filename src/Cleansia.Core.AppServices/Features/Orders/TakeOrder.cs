@@ -272,6 +272,34 @@ public class TakeOrder
                 statusChanged = true;
             }
 
+            // Commit the seat BEFORE anything is told about it. The three capacity checks above are
+            // unlocked reads, so two cleaners tapping the same single-seat job both reach this line; the
+            // unique index on (OrderId, SeatOrdinal) is what separates them, and it can only speak at
+            // commit. Deferring to the UnitOfWork pipeline would surface the loser's rejection as a 500
+            // AFTER the customer had already been told a cleaner was assigned. Same
+            // effects-only-after-the-state-commit discipline as the Stripe webhook, and the same
+            // handler-level commit-with-catch as Register.cs.
+            try
+            {
+                await orderRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolationOn(
+                    ex, DbConstraintNames.OrderEmployeesOrderIdSeatOrdinalUnique))
+            {
+                // Someone else took this seat between our read and our commit. Same refusal the in-memory
+                // path gives, so the two cannot disagree and TC-TAKE-ONE-ERROR still holds.
+                //
+                // On a MULTI-seat order under exact concurrency this can refuse while another seat is
+                // still free: both callers derived the same smallest-free ordinal from the same stale
+                // read. Deliberately not retried — the cleaner's next tap reads the committed state and
+                // succeeds, and a retry loop here would be real complexity for a self-healing window.
+                logger.LogInformation(
+                    "Take lost the seat race for order {OrderId}; refusing as no-available-spots", order.Id);
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
+
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
                 order, notificationProducer, cancellationToken);
 

@@ -94,7 +94,7 @@ public sealed class AdminActionAuditModelMetadataTests
     [Fact]
     public void AdminActionAudit_HasTenantGlobalQueryFilter()
     {
-        Assert.NotNull(GetEntityType().GetQueryFilter());
+        Assert.NotEmpty(GetEntityType().GetDeclaredQueryFilters());
     }
 
     [Fact]

@@ -35,7 +35,7 @@ public class LoginValidatorTests
         var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
         Assert.NotEmpty(emailErrors);
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.Required && e.ErrorCode == "Email");
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class LoginValidatorTests
         var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
         Assert.NotEmpty(emailErrors);
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.Required && e.ErrorCode == "Email");
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class LoginValidatorTests
         Assert.NotEmpty(emailErrors);
         // Assuming AddEmailRules includes EmailAddress() validation
         Assert.Contains(emailErrors, e => e.ErrorMessage.Contains("email"));
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class LoginValidatorTests
         Assert.False(result.IsValid);
         var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.NotExistingUserWithEmail && e.ErrorCode == "Email");
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class LoginValidatorTests
         Assert.False(result.IsValid);
         var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError && e.ErrorCode == "Email");
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class LoginValidatorTests
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError && e.ErrorCode == "Email");
         // The bug this test guards: an Apple account used to be told it signed in with Google.
         Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError);
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class LoginValidatorTests
         var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
         Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.ExternalAuthTypeError && e.ErrorCode == "Email");
         Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError || e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError);
-        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260811192214_Initial")]
+    [Migration("20260813085249_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3340,7 +3340,8 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderEmployee", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("EmployeeId")
                         .IsRequired()
@@ -3353,13 +3354,18 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int>("SeatOrdinal")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("OrderId", "SeatOrdinal")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderEmployees_OrderId_SeatOrdinal");
 
-                    b.ToTable("OrderEmployees");
+                    b.ToTable("OrderEmployees", (string)null);
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderIssue", b =>

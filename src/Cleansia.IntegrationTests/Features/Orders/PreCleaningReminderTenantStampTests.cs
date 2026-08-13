@@ -156,7 +156,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         ctx.Orders.Add(order);
         await ctx.CommitAsync(CancellationToken.None);
         await ctx.Database.ExecuteSqlRawAsync(
-            "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\") VALUES ({0}, {1}, {2}, true)",
+            "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\", \"SeatOrdinal\") VALUES ({0}, {1}, {2}, true, 0)",
             $"oe-{key}", orderId, $"emp-{key}");
     }
 

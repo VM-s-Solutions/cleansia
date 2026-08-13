@@ -138,6 +138,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            _tenantProvider,
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
 

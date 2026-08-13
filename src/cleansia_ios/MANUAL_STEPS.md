@@ -100,11 +100,16 @@ Poppins covers no Cyrillic at all, so `ru`/`uk` headings already fall back while
 
 ## 7. Generate the Swift API clients — `manual_step: mobile-spec-regen`
 
+> **The first generation has HAPPENED — this section is now the re-run instruction, not a blocker.**
+> Verified 2026-08-14: the committed specs carry `Device/Mine`, the device revoke and
+> `EmployeePayroll/GetPeriodPays`; `CleansiaPartnerApi` and `CleansiaCustomerApi` exist on disk and are
+> wired into both `project.yml` files under `packages:` **and** the target's `dependencies:`. No iOS
+> feature work is gated on this.
+
 The typed business clients are generated from the **shared committed mobile specs**
 (`src/cleansia_android/openapi/{partner,customer}-mobile-api.json`) with `openapi-generator` (swift5 +
-URLSession). The toolchain wiring is complete (`openapi/`, `scripts/generate-api-clients.sh`), but the
-**first real generation is owner-gated**: the committed specs are stale (pre-T-0272 — missing
-`Device/Mine`, `Device/{id}` revoke, `EmployeePayroll/GetPeriodPays`).
+URLSession). A **spec re-dump stays owner-run** (`manual_step: mobile-spec-regen`) — it needs the mobile
+API hosts running — but generating from the specs already committed does not.
 
 ```sh
 brew install openapi-generator                                   # once, 7.x

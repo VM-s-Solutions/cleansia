@@ -124,7 +124,9 @@ targets:
 ```
 
 > **First real generation is owner-gated** (`manual_step: mobile-spec-regen`). The committed specs are
-> stale (pre-T-0272); the toolchain wiring is complete and runnable now but emits a stale client until the
+> current as of 2026-08-14; the clients are generated, wired into both project.yml files, and nothing is
+> blocked on them. A spec **re-dump** stays owner-run because it needs the mobile hosts up. (Was: specs
+> stale pre-T-0272 — that is retired.) Formerly: the toolchain emitted a stale client until the
 > owner regenerates the shared specs. See `MANUAL_STEPS.md` step 7.
 
 ## Docs

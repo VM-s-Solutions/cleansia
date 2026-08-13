@@ -180,7 +180,8 @@ does NOT need this** — only Phase 1+ (the feature screens) do.
 1. **Provision the Azure dev environment** (follow `deploy/AZURE-DEV-RUNBOOK.md`) → unblocks iOS Phase 1+.
 2. **Rotate the exposed Mapbox token** before putting it in Key Vault.
 3. **Mobile-spec regen** — regenerate the committed mobile OpenAPI specs
-   (`src/cleansia_android/openapi/{partner,customer}-mobile-api.json`). They are stale (pre-T-0272). This
+   (`src/cleansia_android/openapi/{partner,customer}-mobile-api.json`). **They are current as of
+   2026-08-14 and both clients are generated and wired — this is no longer a blocker.** Formerly this
    unblocks the iOS codegen (T-0302 first gen) + every iOS feature screen (T-0303+).
 4. **APNs auth key** (Apple Developer) — needed for T-0311 (push).
 5. **Apple Developer signing** — provisioning profiles/certs for the two app targets (needed to run on a

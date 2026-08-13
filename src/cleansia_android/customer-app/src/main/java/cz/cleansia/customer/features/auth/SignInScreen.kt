@@ -119,12 +119,8 @@ fun SignInScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        // Forgot password — TODO Wave 1 Finding 3: link hidden until
-        // UserController reset endpoints are wired. The screen + route still
-        // exist so the wiring can drop in without churn.
-        // (Arrangement.End, not SpaceBetween: the remember-me checkbox that used to
-        // hold the left of this row is gone, and SpaceBetween with a lone child would
-        // have flipped the link to the left edge.)
+        // Arrangement.End, not SpaceBetween: the remember-me checkbox that used to hold the left of
+        // this row is gone, and SpaceBetween with a lone child would flip the link to the left edge.
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

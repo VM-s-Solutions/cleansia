@@ -11,7 +11,9 @@
 # on a single source of truth.
 #
 # The CANONICAL regen of these committed specs is an owner step
-# (manual_step: mobile-spec-regen) — the specs are stale (pre-T-0272) and the
+# (manual_step: mobile-spec-regen) — a re-dump is owner-run because it needs the mobile API hosts
+# running. It is NOT a blocker: the committed specs are current as of 2026-08-14 and both clients are
+# generated and wired. Formerly the specs were stale (pre-T-0272) and the
 # first real client generation is held until the owner refreshes them. This
 # script is the same plumbing a developer uses locally against a dev host.
 #

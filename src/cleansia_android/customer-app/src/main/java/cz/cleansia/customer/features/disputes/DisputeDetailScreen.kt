@@ -450,10 +450,12 @@ private fun StatusPill(label: String, color: Color) {
 
 /* ── Message bubble ──
  *
- * Aligns right + primaryContainer bg for the customer, left + surfaceVariant
- * bg for staff. `authorName` on the wire is currently always empty string
- * (backend mapper has a TODO), so we synthesize the author label from the
- * `isStaffMessage` flag — which IS reliable per the wire contract.
+ * Aligns right + primaryContainer bg for the customer, left + surfaceVariant bg for staff. The label
+ * is synthesized from `isStaffMessage` rather than read from `authorName`.
+ *
+ * NOTE: that is no longer because the field is empty — `DisputeMappers` populates it from the author's
+ * name, and both web clients render it, so one thread is attributed differently per platform. Aligning
+ * them is a product call, not a comment fix. → /flows/cancellation-refund-dispute
  */
 @Composable
 private fun MessageBubble(message: DisputeMessageDto) {

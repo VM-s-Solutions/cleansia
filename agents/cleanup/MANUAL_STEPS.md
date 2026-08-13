@@ -5,7 +5,27 @@ step, cleared when done.
 
 ## Open
 
-*(none)*
+### MS-2 — Drop the DEV database before the next deploy — **owner**
+
+`MS-1` regenerated the single `Initial` migration, so its id changed from `20260811192214` to
+`20260813085249`. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
+tables that already exist — failing the `migrate-database` job every other deploy job depends on.
+
+**Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
+seed repopulates it (`sql-scripts/insert_seed_data.sql`).
+
+This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
+owe?"* would not find it. That is what `CL-043` is.
+
+### MS-3 — Rotate the exposed Mapbox token — **owner**
+
+Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed
+token remains recoverable from git history, so rotation is the only thing that retires it. Its original
+tracker row is now inside the archived backlog, which is why it is re-filed here.
+
+**Action:** rotate the token at Mapbox, provision the new value as `Mapbox--GeocodingAccessToken` in Key
+Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
 

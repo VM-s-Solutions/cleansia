@@ -236,15 +236,15 @@ what that promotion bought.
 |---|---|---|---|---|
 | CL-044 | `Web.Partner`'s anonymous health endpoint returned `ex.Message` to the public internet | S | done | #203 |
 | CL-042 | 63 dead `backlog/adr/` links; 22 instructions telling agents to write into frozen history | M | done | #203 |
-| CL-045 | `docs/customer-app/authentication.md` documents a bearer/localStorage session the tree replaced | M | todo | — |
-| CL-049 | Gate holes — `check-docs-refs` passes having read zero files; Backend CI blind to `sql-scripts/` | M | todo | — |
-| CL-047 | Three P7 pages carry domain claims the tree contradicts | M | todo | — |
-| CL-046 | `platform-expandability.md` still orders a catalog-tenancy migration that shipped in June | M | todo | — |
-| CL-048 | Operator pages — two config keys that bind nothing, a CI inventory missing five of ten | S | todo | — |
-| CL-050 | iOS — eight live files still call the first client generation owner-gated; it shipped | S | todo | — |
-| CL-052 | A dead 299-line `PayCalculator`, and three comments asserting constraints the tree lifted | S | todo | — |
-| CL-043 | `MANUAL_STEPS.md § Open` reads *(none)* while two owner actions are owed | S | todo | — |
-| CL-051 | ADR-0030 records as OPEN two gates the tree closed — dated correction note | S | todo | — |
+| CL-045 | `docs/customer-app/authentication.md` documents a bearer/localStorage session the tree replaced | M | done | #203 |
+| CL-049 | Gate holes — `check-docs-refs` passes having read zero files; Backend CI blind to `sql-scripts/` | M | done | #203 |
+| CL-047 | Three P7 pages carry domain claims the tree contradicts | M | done | #203 |
+| CL-046 | `platform-expandability.md` still orders a catalog-tenancy migration that shipped in June | M | done | #203 |
+| CL-048 | Operator pages — two config keys that bind nothing, a CI inventory missing five of ten | S | done | #203 |
+| CL-050 | iOS — eight live files still call the first client generation owner-gated; it shipped | S | done | #203 |
+| CL-052 | A dead 299-line `PayCalculator`, and three comments asserting constraints the tree lifted | S | done | #203 |
+| CL-043 | `MANUAL_STEPS.md § Open` reads *(none)* while two owner actions are owed | S | done | #203 |
+| CL-051 | ADR-0030 records as OPEN two gates the tree closed — dated correction note | S | done | #203 |
 
 ### Handed over — named, not worked here
 

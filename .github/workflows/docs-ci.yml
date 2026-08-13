@@ -1,13 +1,15 @@
 name: Docs CI
 
-# The documentation site is the source of truth for how this platform works, which only holds if its
-# references resolve. Two halves, and until this workflow existed NEITHER was gated on a PR:
+# The documentation site is the source of truth for how this platform works, which only holds if what
+# it says stays true. Three checks, and none of them was gated on a PR before this workflow existed:
 #
 #   docs -> docs   a link to a page that does not exist. Caught by `vitepress build` with
 #                  ignoreDeadLinks:false — but that build only ran inside deploy-docs.yml, which is
 #                  workflow_dispatch-only (deactivated 2026-07-15), so nothing checked it on a PR.
 #   code -> docs   a `→ /path#anchor` pointer in a source comment aimed at a page or heading that is
 #                  gone. Caught by agents/tools/check-docs-refs.mjs.
+#   text -> tree   a claim the written corpus makes about the CODE — an ADR's status, a `file.cs:120`
+#                  citation, a "retires when" condition. Caught by check-catalog-claims.mjs.
 #
 # Runs on pushes to master for the same reason backend-ci and frontend-ci do: a pull_request-only
 # trigger means a direct-to-master commit is never checked, so a page rename lands unnoticed and
@@ -25,8 +27,7 @@ on:
     paths:
       - 'docs/**'
       - 'src/**'
-      - 'agents/tools/check-docs-refs.mjs'
-      - 'agents/tools/check-docs-refs.test.mjs'
+      - 'agents/**'
       - '.github/workflows/docs-ci.yml'
 
 concurrency:
@@ -60,6 +61,16 @@ jobs:
       # the other tools in agents/tools.
       - name: Code references resolve to real pages and headings
         run: node agents/tools/check-docs-refs.mjs
+
+      # The written corpus makes claims ABOUT the tree — "ADR-0037 is accepted", "see Order.cs:295",
+      # "retires when X ships" — and every one of those decays silently. This is the checker for them.
+      #
+      # It was unwired, and that cost: P2 regenerated the Initial migration, two citations of the old
+      # timestamped filename went dead, and CI stayed green. The breakage was found by hand a phase
+      # later. Its own REACH floor also refuses to report a pass when it read less than it should have,
+      # which is what caught the ADR move in P6.
+      - name: Written claims about the tree still resolve
+        run: node agents/tools/check-catalog-claims.mjs
 
       - name: Install docs dependencies
         run: cd docs && npm ci

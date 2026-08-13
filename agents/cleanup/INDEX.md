@@ -131,11 +131,17 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 
 | ID | Title | Size | Status | PR |
 |---|---|---|---|---|
-| CL-030 | Domain model — ERD from the 65 EF configurations + entity reference | L | todo | — |
-| CL-031 | Order lifecycle — the two-axis state machine as a diagram | M | todo | — |
+| CL-030 | Domain model — ERDs per area, generated from the **61** EF configurations | L | done | #198 |
+| CL-031 | Order lifecycle + offerability, both diagrammed | M | done | #198 |
 | CL-032 | Thirteen flow pages — sequence diagrams + edge-case tables, from P1 | L | todo | — |
-| CL-033 | Product — feature list + business-rule rationale (pricing, cancellation, pay, membership, loyalty) | L | todo | — |
+| CL-033 | Business rules with rationale — booking, cancellation, crew, preferred, pay | L | **partial** — feature list outstanding | #198 |
 | CL-034 | Split `agents/knowledge/` by audience — domain truth publishes, build rules stay | M | todo | — |
+
+> **P7 in progress — splitting across two PRs.** Landed: the domain model (61 entities, ERDs per area,
+> generated from the EF configurations rather than described), the two-axis order lifecycle, offerability
+> including the take cascade, and the business rules with their rationale. Outstanding: `CL-032` (the
+> thirteen flow pages), `CL-034` (the `agents/knowledge/` split), and the product feature list half of
+> `CL-033`. Four `L`/`M` tickets is more than one reviewable diff.
 
 ## P8 — Comment migration
 

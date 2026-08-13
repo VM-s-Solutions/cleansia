@@ -23,7 +23,7 @@ public class GetMyServingCleaners
     public record Query(
         DateTime? CleaningDateTimeUtc = null,
         IReadOnlyList<string>? SelectedServiceIds = null,
-        IReadOnlyList<string>? SelectedPackageIds = null) : ICommand<IReadOnlyList<Response>>;
+        IReadOnlyList<string>? SelectedPackageIds = null) : IQuery<IReadOnlyList<Response>>;
 
     public record Response(
         string EmployeeId,
@@ -51,7 +51,7 @@ public class GetMyServingCleaners
         IPackageRepository packageRepository,
         IUserMembershipRepository userMembershipRepository,
         IUserSessionProvider userSessionProvider,
-        ILogger<Handler> logger) : ICommandHandler<Query, IReadOnlyList<Response>>
+        ILogger<Handler> logger) : IQueryHandler<Query, IReadOnlyList<Response>>
     {
         public async Task<BusinessResult<IReadOnlyList<Response>>> Handle(Query query, CancellationToken cancellationToken)
         {

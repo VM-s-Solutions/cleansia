@@ -185,7 +185,17 @@ function checkBackend(roots) {
             // B1 naming trap — a record implementing ICommand must be named/suffixed Command
             const rec = ln.match(/public\s+record\s+(\w+)\s*\(/);
             if (rec) {
-                const window = lines.slice(i, i + 4).join(" ");
+                // Bound the window at THIS record's own declaration end. A flat 4 lines bled into the
+                // NEXT record: `public record Request(...)` immediately followed by
+                // `public record Command(...) : ICommand<Response>` made the HTTP body DTO look like a
+                // mis-named command (ApproveEmployee, RejectEmployee).
+                const slice = [];
+                for (let k = i; k < Math.min(lines.length, i + 4); k++) {
+                    if (k > i && /public\s+record\s+\w+/.test(lines[k])) break;
+                    slice.push(lines[k]);
+                    if (/;\s*$/.test(lines[k])) break;
+                }
+                const window = slice.join(" ");
                 if (
                     /:\s*ICommand/.test(window) &&
                     rec[1] !== "Command" &&
@@ -236,6 +246,12 @@ function checkDisputeWrites(roots) {
     for (const f of files) {
         const lines = read(f);
         const text = lines.join("\n");
+        // A file that never names the type cannot write a Dispute's state. Without this the rule fires
+        // on any `X.Resolve(` anywhere — it was reporting TimeZoneResolution.Resolve(...) in
+        // BenefitPeriodKeyFactory and GetDashboardStats, neither of which contains the token `Dispute`.
+        // Costs no sensitivity: reaching a Dispute instance requires naming the type or a
+        // Dispute-named repository/property somewhere in the same file.
+        if (!/\bDispute/.test(text)) continue;
         const base = f.split(/[\\/]/).pop();
         const re = /\b(\w+)\.(Close|Escalate|Resolve)\s*\(/g;
         let m;
@@ -318,13 +334,39 @@ function checkFrontend(roots) {
             if (/new\s+BehaviorSubject</.test(ln))
                 add(f, n, "C2", "State uses BehaviorSubject — use signal<T>()");
             if (/\.subscribe\(/.test(ln)) {
+                // Teardown is often not on this chain at all. Two shapes are correct and were being
+                // reported as leaks (P2, 4 of 10 C3 hits):
+                //   this.someStream$.subscribe(...)      — takeUntil is on the stream's DEFINITION
+                //   this.someHelper(id).subscribe(...)   — takeUntil is inside the helper's own pipe
+                // Resolve the symbol in this file and accept its teardown before scanning the chain.
+                const held = ln.match(/this\.(\w+\$?)\s*\(?/);
+                if (held) {
+                    const sym = held[1];
+                    const defRe = new RegExp(
+                        `(${sym}\\s*[:=]|\\b${sym}\\s*\\()`,
+                    );
+                    const defIdx = lines.findIndex(
+                        (l, k) => k !== i && defRe.test(l),
+                    );
+                    if (defIdx >= 0) {
+                        const body = lines
+                            .slice(defIdx, Math.min(lines.length, defIdx + 25))
+                            .join(" ");
+                        if (
+                            /takeUntil\(\s*this\.destroyed\$\s*\)/.test(body)
+                        )
+                            return;
+                    }
+                }
                 // Walk back to the start of this pipe chain (the line that opens `.pipe(` or the call)
-                // and check the whole chain for takeUntil — pipes here span many lines (catchError/finalize).
+                // and check the whole chain for takeUntil — pipes here span many lines (catchError/
+                // finalize). The bound was 25 and a real admin pipe measured 33, so the chain that
+                // DID carry takeUntil was reported as though it carried none.
                 let start = i;
                 while (
                     start > 0 &&
                     !/\b\w+\$?\s*\n?\s*\.pipe\(|\.pipe\(/.test(lines[start]) &&
-                    i - start < 25
+                    i - start < 60
                 ) {
                     if (/\.pipe\(/.test(lines[start])) break;
                     start--;
@@ -371,9 +413,29 @@ function checkFrontend(roots) {
             });
     }
     // no `any` in feature TS (skip specs + generated client)
+    //
+    // ControlValueAccessor is exempt, and it has to be: Angular DECLARES those members with `any` —
+    // `writeValue(obj: any)`, `registerOnChange(fn: any)`, `registerOnTouched(fn: any)`. A narrower
+    // type does not implement the interface. Every `: any` this rule reported in the design system was
+    // one of these, so the rule was asking for code that will not compile.
+    const CVA_ANY =
+        /\b(writeValue|registerOnChange|registerOnTouched|onChange|onTouch|onTouched)\b/;
+    // Angular: type TrackByFunction<T> = (index: number, item: T) => any;
+    const FRAMEWORK_ANY = /\btrackBy\w*\s*\(/i;
     for (const f of all) {
         if (/\.spec\.ts$/.test(f) || /[\\/]client[\\/]/.test(f)) continue;
+        const body = read(f).join("\n");
+        // A component that EXTENDS the shared CVA base never names the interface itself, so an
+        // `override writeValue(...)` is the tell. TrackByFunction<T> is likewise declared
+        // `(index: number, item: T) => any` by Angular, so a trackBy's return type cannot be narrowed.
+        const implementsCva =
+            /ControlValueAccessor/.test(body) ||
+            /override\s+(writeValue|registerOnChange|registerOnTouched)\b/.test(
+                body,
+            );
         read(f).forEach((ln, i) => {
+            if (implementsCva && CVA_ANY.test(ln)) return;
+            if (FRAMEWORK_ANY.test(ln)) return;
             if (/:\s*any(\b|\[)/.test(ln) && !/eslint-disable/.test(ln))
                 add(
                     f,
@@ -423,7 +485,12 @@ function checkMobile(roots) {
                     "E6",
                     "viewModel flow uses collectAsState() — use collectAsStateWithLifecycle()",
                 );
-            if (/Text\(\s*"[^"]+"/.test(ln) && !/stringResource/.test(ln))
+            // `\w+Text(` excludes builders that merely END in Text — newPlainText("referral_code", …)
+            // is a clipboard LABEL, not a rendered string, and was the only hit this rule produced.
+            if (
+                /(^|[^.\w])Text\(\s*"[^"]+"/.test(ln) &&
+                !/stringResource/.test(ln)
+            )
                 add(
                     f,
                     n,

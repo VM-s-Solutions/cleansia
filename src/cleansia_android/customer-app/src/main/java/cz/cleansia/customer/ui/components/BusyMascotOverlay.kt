@@ -35,19 +35,9 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 
 /**
- * Full-screen busy overlay with the cleaning mascot. Used by long async ops
- * (booking submit, payment, subscribe Plus) so the user sees mascot motion
- * instead of a bare spinner. Drop into any screen as a sibling of the main
- * content; visibility is driven by [visible].
+ * Full-screen busy overlay for long async operations, so the user sees motion rather than a bare spinner.
  *
- * The overlay swallows touches so the user can't accidentally interact with
- * the underlying screen mid-flight (no double-submits). The dim layer fades
- * in/out and the mascot card springs in from below — same choreography as
- * [CleansiaDialog] for visual consistency.
- *
- * [message] is the headline text under the mascot — keep it short ("Booking
- * your cleaning…", "Processing payment…"). Pass localized strings; the
- * composable doesn't read R.string itself.
+ * **It swallows touches**, which is what prevents a double-submit mid-flight.
  */
 @Composable
 fun BusyMascotOverlay(

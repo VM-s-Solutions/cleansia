@@ -72,19 +72,9 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 /**
- * Cleansia Plus subscribe page — premium-feel marketing page modeled after
- * Bolt Plus / Wolt+:
- *  - Dark hero with brand splash, struck-through old price + bold "0 Kč first
- *    14 days" anchor.
- *  - Plan toggle (monthly / annual) inside the hero so the user picks before
- *    committing.
- *  - Social-proof tile right under the hero ("Members typically save…").
- *  - Perks rendered as tiles with bigger icons; ordered economic-value first
- *    (discount → cancellation → favorite cleaner → recurring → express waiver).
- *  - Sticky bottom CTA on a contrasting bg with verb-led label
- *    ("Start free trial") + fine-print renewal terms.
- *
- * The two-phase Stripe flow is unchanged from the previous version.
+ * Cleansia Plus subscribe page. Dark hero with the trial anchor, plan toggle inside the hero so the
+ * choice is made before committing, social proof, then perks.
+ * -> /product/features
  */
 @Composable
 fun SubscribePlusScreen(

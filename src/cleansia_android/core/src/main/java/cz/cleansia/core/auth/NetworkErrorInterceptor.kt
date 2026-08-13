@@ -50,24 +50,12 @@ class NetworkErrorInterceptor(
     }
 
     /**
-     * Decide whether THIS exception is a real infrastructure failure worth
-     * showing the user a toast for, or a benign artefact we should swallow.
+     * Is this a real infrastructure failure worth a toast, or a benign cancellation?
      *
-     * The bug we're guarding against: when a screen unmounts mid-fetch (fast
-     * tab switch on Home, NavHost popBackStack on forced sign-out, app
-     * backgrounding) the coroutine cancels and OkHttp surfaces it as one of
-     * several IOException subtypes. `chain.call().isCanceled()` catches some
-     * of those but not all — the cancel flag is set asynchronously and
-     * sometimes the exception is thrown before it propagates. We add three
-     * additional "this is a cancel, not a real failure" signals:
-     *
-     *  1. Exception message contains "canceled" / "closed" — covers
-     *     SocketException("Socket closed") + IOException("Canceled").
-     *  2. InterruptedIOException — thread was interrupted; treat as cancel.
-     *  3. The thread's interrupt flag is set — same.
-     *
-     * RefreshToken stays excluded — the Authenticator handles that path via
-     * its own ForcedSignOut flow.
+     * **The cancel flag is set ASYNCHRONOUSLY**, so checking it alone misses cases where the exception is
+     * thrown before it propagates — a fast tab switch or a pop on forced sign-out then shows the user an
+     * infrastructure error. Message text, InterruptedIOException and a socket closed under a cancelled
+     * call are the additional signals. -> /mobile-app/patterns#cancellation-noise
      */
     private fun shouldSurfaceToast(
         chain: Interceptor.Chain,

@@ -22,31 +22,12 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
- * Cache + orchestrator for the signed-in user's disputes.
+ * Cache + orchestrator for the signed-in user's disputes. `@Singleton`, so it lives for the process.
  *
- * Lifetime: `@Singleton` — lives for the app process. Caches the list of
- * disputes ([disputes]) and supports additive pagination via [loadNextPage].
- * Cleared on sign-out / account-delete so the next user doesn't inherit this
- * one's data — call sites are wired in [cz.cleansia.core.auth.AuthAuthenticator],
- * [cz.cleansia.customer.core.auth.AuthRepository], and
- * [cz.cleansia.customer.core.user.UserRepository] alongside the matching
- * OrderRepository / AddressRepository clear() hooks.
- *
- * Error model mirrors [cz.cleansia.customer.core.orders.OrderRepository]:
- * operations return [ApiResult.Success] on success and [ApiResult.Error]
- * carrying the parsed message on failure. The consuming ViewModel surfaces the
- * snackbar; an [ApiError.Network] failure stays silent (NetworkErrorInterceptor
- * owns the infra toast). Background page loads ([loadNextPage]) are silent —
- * the VM maps their Error to a no-op; scrolling again retries.
- *
- * Deliberately does NOT auto-invalidate or refetch on mutations. After a
- * successful [create] or [addMessage], the calling VM is expected to trigger
- * its own [refresh] / [getById] call. This avoids racing against a sheet
- * that's still open and mirrors OrderRepository's mutation behaviour.
- *
- * Dispute details are not cached — each [getById] hits the network. Message
- * threads change frequently (new staff replies), so a stale cache would be
- * more confusing than useful; VMs pull-to-refresh freely.
+ * **Cleared on sign-out / account-delete** — without that the next account on a shared handset inherits
+ * this one's data. Errors carry the parsed message for the ViewModel's snackbar; a network failure stays
+ * silent because the interceptor owns that toast.
+ * -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class DisputeRepository @Inject constructor(

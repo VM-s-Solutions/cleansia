@@ -87,25 +87,12 @@ class OrderPhotosViewModel @Inject constructor(
     }
 
     /**
-     * Downscale, strip the metadata from and upload the picked photo.
+     * Downscale, strip metadata from and upload the picked photo.
      *
-     * The picker callback hands over a [Uri] and nothing else: reading and
-     * encoding the file used to happen inline in that callback, which the
-     * `ActivityResultRegistry` dispatches on the main thread, so a multi-MB
-     * photo froze the UI. All of it now happens inside [ImageCompressor],
-     * which hops to `Dispatchers.Default` and base64-encodes in the same hop.
-     *
-     * [PhotoMutationState.isUploading] is set *before* the compression rather
-     * than at the network call, so the add-tile spinner covers the whole
-     * operation. Left at the network call the cleaner gets a second of dead tap
-     * — the same freeze, just without the frame drops.
-     *
-     * Single-flight guarded to match iOS (`OrderPhotosViewModel.swift:53`):
-     * the spinner replaces the add tile, but a fast double-tap can still land
-     * two picks, and the second would overwrite the first's spinner state. Both
-     * the check and the flag flip happen *before* the launch, synchronously on
-     * the main thread — two picker callbacks are both delivered before either
-     * coroutine body starts, so a guard inside the launch would let both past.
+     * **The picker callback is dispatched on the MAIN thread**, so reading and encoding inline froze the
+     * UI on a multi-megabyte photo. The uploading flag is set BEFORE compression, not at the network
+     * call — set later the cleaner gets a second of dead tap. Single-flight guarded, matching iOS.
+     * -> /mobile-app/patterns#image-upload
      */
     fun compressAndUpload(type: PhotoType, uri: Uri) {
         if (_mutation.value.isUploading) return

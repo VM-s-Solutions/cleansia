@@ -55,19 +55,8 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
- * Gallery screen for an order's before/after photos.
- *
- * Structure:
- *   - Top bar with back button + title.
- *   - Loading / Error states as standalone centered blocks.
- *   - Loaded state: a TabRow (Before / After), then a 3-column lazy grid of
- *     square thumbnails. Tapping a thumb opens a fullscreen pager with pinch-
- *     zoom (see [FullscreenPager]).
- *
- * Notes on photoType bucketing: the backend serializes `PhotoType` as an int
- * where `1 = Before` / `2 = After`. Any photo with a null/unknown photoType
- * lands in the Before bucket — this is a pragmatic default for stale or test
- * photos so they remain reachable instead of being silently dropped.
+ * Before/after photo gallery: tabs, a square-thumbnail grid, and a fullscreen pinch-zoom pager.
+ * -> /flows/execution-and-completion
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

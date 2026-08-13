@@ -21,22 +21,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Cache + orchestrator for the signed-in user's orders.
+ * Cache + orchestrator for the user's orders, with additive pagination. `@Singleton`, so it lives for the
+ * process.
  *
- * Lifetime: `@Singleton` — lives for the app process. Caches the list of
- * orders (`orders`) and supports additive pagination via [loadNextPage].
- * Cleared on sign-out / account-delete so the next user doesn't inherit this
- * one's data — call sites are wired in AuthAuthenticator, AuthRepository,
- * and UserRepository alongside the matching AddressRepository.clear() hooks.
- *
- * Error model mirrors [cz.cleansia.customer.core.data.AddressRepository]:
- *  - Foreground operations return [ApiResult.Success] on success and
- *    [ApiResult.Error] carrying the parsed message on failure. The consuming
- *    ViewModel surfaces the snackbar; an [ApiError.Network] failure stays
- *    silent (NetworkErrorInterceptor owns the infra toast).
- *  - Background page loads ([loadNextPage]) and the eligibility picker
- *    ([getMyServingCleaners]) are silent on failure — the caller ignores the
- *    [ApiResult.Error] (pulling down / scrolling again retries).
+ * **Cleared on sign-out / account-delete.** Errors carry the parsed message for the snackbar; network
+ * failures stay silent because the interceptor owns that toast.
+ * -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class OrderRepository @Inject constructor(

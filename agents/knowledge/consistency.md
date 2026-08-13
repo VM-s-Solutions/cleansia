@@ -222,7 +222,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   the target over customer-app's `T?`-with-snackbar-in-repo because it carries the error explicitly, enables
   retry, and doesn't bury UI concerns in the data layer. customer-app's `T?` repos are the legacy form to
   migrate — this is a cross-cutting change, so it's a tracked refactor, not a same-day edit.)* **Ratified by
-  ADR-0011** (`../backlog/adr/0011-mobile-apiresult-contract.md`): `ApiResult<T>` is THE mobile repository
+  ADR-0011** (`/decisions/adr-0011`): `ApiResult<T>` is THE mobile repository
   contract; the type **lives in the shared `:core` module** (`cz.cleansia.core.network`) so partner-app,
   customer-app, and the incoming iOS app consume **one** contract (fire-and-forget returns `ApiResult<Unit>`);
   the app-local localizers (`ApiErrorTranslator`/`ApiErrorParser`) stay per-app (E3); and the iOS Swift
@@ -561,7 +561,7 @@ These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-
 ## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)
 
 > **Enforced by:** `InterimMarkerTripwireTests` in `Cleansia.Tests` (walks `src/`, validates the marker
-> pattern, resolves each id against `agents/archive/2026-08/backlog/INDEX.md`) — **`(gate pending: FT-38.2)` → T1-CI**
+> pattern, resolves each id against the backlog manifest) — **`(gate pending: FT-38.2)` → T1-CI**
 > via `backend-ci.yml:71` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
 > that tool appears in **zero** `.github/` workflows, so it can never set an exit code, and a
 > T2-ADVISORY orphan-check on a code comment is — precisely — a comment with a ticket number in it.*
@@ -578,7 +578,7 @@ temporary implementation shipped ahead of its end state carries, on the changed 
   `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)` — `§Dn` **explicit and optional**. *(AM-7: the
   first version of this rule stated the pattern without `§Dn` while the template and the only shipped
   marker both had one, so a checker built to spec would have matched **zero** markers and reported OK.)*
-- The ticket id must be **filled, present in `agents/archive/2026-08/backlog/INDEX.md`, open, *and not blocked*** before
+- The ticket id must be **filled, present in the live manifest, open, *and not blocked*** before
   the interim merges — an unfilled marker blocks review, and so does an id whose row carries a 🔴
   do-not-start gate. *(AM-7: "open" alone goes green while the retirement work is forbidden — which is
   the exact state ADR-0038's own interim shipped in, blocked on the ADR that authorized it.)*

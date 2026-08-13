@@ -2,12 +2,12 @@
 
 **Topic:** how the platform holds *where a cleaner's money goes* — the shape, the governing country, the
 validation, the at-rest posture, and the read contract.
-**ADRs:** [ADR-0034](../../backlog/adr/0034-partner-payout-details-shape.md)
+**ADRs:** [ADR-0034](/decisions/adr-0034)
 (**`accepted` 2026-08-02** — the shape; survived a two-challenger defense panel with **eight blocking
 findings folded in** — see *What the panel changed* below) · composes with
-[ADR-0017](../../backlog/adr/0017-multi-region-expansion-seam-and-its-composition-with-app-level-tenancy.md)
+[ADR-0017](/decisions/adr-0017)
 (per-country variation is config-driven) ·
-[ADR-0012](../../backlog/adr/0012-admin-action-audit-log.md) D4.1 (admin audit records ids, not PII).
+[ADR-0012](/decisions/adr-0012) D4.1 (admin audit records ids, not PII).
 **Tickets:** T-0517 (this decision) → T-0518 (db) · T-0519 (backend) · T-0520 (web/admin) ·
 T-0521 (mobile) · consumed by T-0522 (payout invoice); cross-checked with T-0508 (invoice field spec)
 and T-0511 AC5 (the same generality question).

@@ -22,7 +22,7 @@
 > rulings and **§5** for what remains. The ADR's §Verdict escalation table is discharged for those
 > three; **E-4, E-5 and E-6 are engineering follow-ups and are still open.**
 
-**ADRs:** `../../backlog/adr/0035-metered-membership-benefit-usage.md` (**accepted**, immutable;
+**ADRs:** `/decisions/adr-0035` (**accepted**, immutable;
 carries a dated 2026-08-03 owner-instruction amendment at the end)
 **Tickets:** T-0511 (this decision) → T-0512 (schema) → T-0493 (enforcement) → T-0514 (clients);
 T-0513 (copy — **corrective half already shipped**); **P-1 / P-2 / P-3** to be filed (§5)
@@ -492,11 +492,11 @@ question differently by accident. They **should** answer differently, and this i
 
 ---
 
-**Cross-links:** `../../backlog/adr/0035-metered-membership-benefit-usage.md` (**accepted** — read its
+**Cross-links:** `/decisions/adr-0035` (**accepted** — read its
 `## Verdict` for the AM-1…AM-16 index and the E-1…E-6 escalations) · the three challenge files under
-`../../backlog/adr/challenges/` · `../../knowledge/roles/membership-benefit-usage.md` ·
+`agents/archive/2026-08/adr-deliberation/challenges/` · `../../knowledge/roles/membership-benefit-usage.md` ·
 `../../knowledge/roles/express-waiver-resolver.md` · `../../knowledge/patterns-backend.md`
 (the "Per-user metered entitlements" section lands on acceptance) ·
-`../../backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md` (the
+`/decisions/adr-0023` (the
 claim-ordering rule this reuses) ·
-`../../backlog/adr/0009-refund-policy.md` (the frozen-`TotalPrice` principle D1 extends)
+`/decisions/adr-0009` (the frozen-`TotalPrice` principle D1 extends)

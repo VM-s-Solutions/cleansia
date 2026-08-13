@@ -31,7 +31,7 @@ decisions; developers: their own) updated **in parallel**.
 4. **Role-owned living docs, updated in parallel** — `agents/process/documentation.md` +
    `agents/analysts/<domain>.md` (business logic + **Mermaid** diagrams + story map) +
    `agents/architecture/decisions/<topic>.md` (living decision docs; immutable ADRs stay in
-   `backlog/adr/`). A finalized artifact with a stale doc **is not finalized** — the lead enforces it.
+   `docs/decisions/`). A finalized artifact with a stale doc **is not finalized** — the lead enforces it.
 5. **Whole-business-logic view** — challengers and the lead read the domain's living business-logic
    doc (not just the one story), so the panel reasons about the *whole* application, as asked.
 

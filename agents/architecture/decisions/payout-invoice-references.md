@@ -2,15 +2,15 @@
 
 **Topic:** the number that makes a payout invoice payable — what the *variabilní symbol* is, who
 assigns it, when, in what namespace, what prints, and what happens when the assignment fails.
-**ADRs:** [ADR-0046](../../backlog/adr/0046-payout-invoice-variable-symbol-is-a-claimed-number-not-a-derived-one.md)
+**ADRs:** [ADR-0046](/decisions/adr-0046)
 (**`accepted` 2026-08-09** — the shape; adjudicated by a panel lead with **twelve findings, seven
 blocking**, folded in as the closed list R1–R17 — see *What the panel changed* below) · composes with
-[ADR-0034](../../backlog/adr/0034-partner-payout-details-shape.md) (payout details — the bank block the
-symbol sits beside) · [ADR-0041](../../backlog/adr/0041-self-billing-agreement-is-a-versioned-append-only-acceptance-record.md)
+[ADR-0034](/decisions/adr-0034) (payout details — the bank block the
+symbol sits beside) · [ADR-0041](/decisions/adr-0041)
 (self-billing — **why** the reference is Cleansia's to allocate at all) ·
-[ADR-0038](../../backlog/adr/0038-promo-redemption-reservation-runs-after-the-uow-commit.md)
+[ADR-0038](/decisions/adr-0038)
 (*"post-persist means post-commit"* — the ordering rule, applied here to a document instead of an FK) ·
-[ADR-0010](../../backlog/adr/0010-durable-consumer-idempotency.md) (the tenant-global entity lane).
+[ADR-0010](/decisions/adr-0010) (the tenant-global entity lane).
 **Retires in practice:** **T-0244** — its *finding* is upheld harder; its *remedy* (a better hash) is
 the thing ADR-0046 rules out.
 **Tickets:** T-0522 (the rebuilt document this prints onto, `in_review`) · T-0508 (invoice field spec) ·

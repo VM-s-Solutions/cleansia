@@ -40,7 +40,7 @@ decision; the charter is the *definition*.
 | **Orchestrator** | *(the main session)* | routing | Receives your request, invokes the PM, relays status. The only agent you talk to. |
 | **PM** | `pm.md` | `backlog/tickets`, `backlog/status`, ticket state | Owns the backlog & sprint state; sequences work; the only agent that reports progress up. |
 | **Analyst** | `analyst.md` | `backlog/stories`, `questions/open.md` | Turns intent into user stories with Given/When/Then acceptance criteria. |
-| **Architect** | `architect.md` | `backlog/adr`, `knowledge/*`, `knowledge/roles` | Owns Architecture Decision Records, the pattern catalog, and the responsibility map. |
+| **Architect** | `architect.md` | `docs/decisions`, `knowledge/*`, `knowledge/roles` | Owns Architecture Decision Records, the pattern catalog, and the responsibility map. |
 | **Backend Dev** | `backend.md` | `src/Cleansia.Core.*`, `Cleansia.Web.*`, `Cleansia.Infra.Services`, `Cleansia.Functions` | Implements .NET 10 / CQRS / MediatR features and integrations. |
 | **DB Master** | `db.md` | `src/Cleansia.Infra.Database`, migrations, entity configs | Owns the Postgres schema, EF Core configs, migrations, query filters, indexes, seeds. |
 | **Frontend Dev** | `frontend.md` | `src/Cleansia.App` (apps + libs) | Implements Angular 19 / Nx / NgRx / PrimeNG across the 3 web apps. |
@@ -77,7 +77,7 @@ agents/
 │   ├── communication.md      # artifact-based protocol; escalation; no agent chat
 │   └── routing.md            # how the PM decides which agent gets the work
 ├── analysts/                 # analyst living docs: business logic + Mermaid diagrams, per domain
-├── architecture/decisions/   # architect living decision docs (immutable ADRs stay in backlog/adr/)
+├── architecture/decisions/   # architect living decision docs (immutable ADRs stay in docs/decisions/)
 ├── knowledge/                # the canonical "how we build" catalog (agents read this first)
 │   ├── patterns-backend.md   # CQRS, validators, BusinessResult, repos, mappers (REAL types)
 │   ├── patterns-frontend.md  # facades, signals, NgRx, PrimeNG, i18n (REAL types)

@@ -24,6 +24,12 @@ A good story leaves no room for interpretation about scope. During audits you fi
 half-built*, not just what's ugly.
 
 ## What you own
+> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
+> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
+> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
+> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
+> raise the need with the owner rather than inventing a destination.
+
 - `agents/archive/2026-08/backlog/stories/US-<persona>-NNNN-*.md` — user stories with AC + the `## Challenge` /
   `## Defense` / `## Verdict` deliberation trail
 - **`agents/analysts/<domain>.md`** — the **business-logic living documentation**: the domain's rules

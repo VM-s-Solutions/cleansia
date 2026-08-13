@@ -12,6 +12,12 @@ Find the specific way a change could leak data, escalate privilege, double a fin
 or break tenant isolation — and block it until fixed. Name the **concrete** risk, not a category.
 
 ## What you read
+> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
+> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
+> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
+> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
+> raise the need with the owner rather than inventing a destination.
+
 - `docs/architecture/security-rules.md` — S1–S12, your checklist. **This is the law.**
 - The diff for any ticket that touches: an endpoint, auth/authorization, a resource-by-id operation,
   a response DTO, tenancy scoping, a side-effecting command (payment, email, loyalty, referral,

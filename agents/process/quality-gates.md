@@ -1,5 +1,12 @@
 # Quality Gates
 
+> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
+> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
+> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
+> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
+> raise the need with the owner rather than inventing a destination.
+
+
 A change does not reach `done` until every **applicable** gate passes. The Reviewer enforces gates
 1–2 and 6–7 on every ticket; Security (gate 3), Architecture (gate 4), and Optimizer (gate 5) are
 conditional. The PM will not merge until the gates that apply are green.
@@ -327,7 +334,7 @@ partner,admin}`) and fix the consumers before pushing. The blocking frontend pro
 this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
 already fails on the drift symptom.)
 
-**Mechanized after the second occurrence — [ADR-0031](../backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md).**
+**Mechanized after the second occurrence — [ADR-0031](/decisions/adr-0031).**
 The rule above is unchanged and still binds; it is now carried by two mechanisms instead of by memory.
 Every `generate-*-client` script ends in `npm run typecheck`, which runs the Angular compiler over
 **all** app compilation units and names the offending file:line before anything is pushed

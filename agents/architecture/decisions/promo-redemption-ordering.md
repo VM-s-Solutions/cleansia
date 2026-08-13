@@ -1,6 +1,6 @@
 # Promo redemption ordering — where the reservation runs relative to the commit
 
-> **[ADR-0038](../../backlog/adr/0038-promo-redemption-reservation-runs-after-the-uow-commit.md)**
+> **[ADR-0038](/decisions/adr-0038)**
 > (**`accepted` 2026-08-03**, amendments AM-1 … AM-11 after the challenger pass
 > `adr/challenges/0038-seam.md`) — the immutable record, with the alternatives and the deliberation
 > trail. This file is the **living companion**: the current shape, the trade-off space, and what is

@@ -1,6 +1,6 @@
 # Push Notifications — Living Decision Doc
 
-> Living companion to the immutable ADRs (`../../backlog/adr/`). Current shape of the push pipeline
+> Living companion to the immutable ADRs (`docs/decisions/`). Current shape of the push pipeline
 > and its display contract. Canonical dev-facing runbook: `docs/architecture/push-notifications.md`.
 > Governing ADRs: **ADR-0002** (dispatch/outbox contract, D2.1 keys, consumer classification),
 > **ADR-0010/0023** (idempotency — push consumer is **Mode A**, claim-before-act),

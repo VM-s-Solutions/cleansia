@@ -1,13 +1,13 @@
 # Preferred-cleaner dispatch — living decision notes
 
-> **Status of this page: CURRENT SHAPE.** **[ADR-0036](../../backlog/adr/0036-preferred-cleaner-first-refusal-hold.md)**
+> **Status of this page: CURRENT SHAPE.** **[ADR-0036](/decisions/adr-0036)**
 > is **`accepted`** (2026-08-02, after a full defense panel: author + three challengers + lead). The ADR
 > is the immutable record and carries the `## Challenge` / `## Defense` / `## Verdict` trail; **this page
 > is the evolving companion and is what you read first.** `agents/knowledge/patterns-backend.md` now
 > carries the enforceable rule (*"Bounded exclusivity on a pull board"*), and the role card is
 > `docs/domain/roles/preferred-cleaner-hold-resolver.md`.
 >
-> ⚠️ **AMENDED 2026-08-03 by owner instruction.** **[ADR-0039](../../backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**
+> ⚠️ **AMENDED 2026-08-03 by owner instruction.** **[ADR-0039](/decisions/adr-0039)**
 > is **`accepted`** (2026-08-03, after a two-lane defense panel: disclosure + query-cost + lead;
 > **sixteen findings, fourteen upheld, eleven amendments folded in**). It **partially supersedes
 > ADR-0036 D5.1 / A6**: the preferred cleaner's availability at the booking's own date and time **is**
@@ -48,7 +48,7 @@
 > propose minting that key.**
 >
 > **This page is rewritten in full when the assign-and-confirm ADR is accepted** (it is `proposed`, under
-> `backlog/adr/drafts/`, revised after a challenge round — see its §Verdict). The correction above is a
+> `agents/archive/2026-08/adr-deliberation/drafts/`, revised after a challenge round — see its §Verdict). The correction above is a
 > statement of fact and applies no unaccepted decision.
 >
 > Companion pages: [`membership-benefits.md`](./membership-benefits.md) (ADR-0035 — the express waiver
@@ -423,7 +423,7 @@ two index paths. It probably will (the NULL arm is empty on any database built f
   ADR-0037 ruling and needs an owner-only migration) and **time-boxed** — near-free while the owner is
   regenerating `Initial`, a backfill afterwards. **`Q-AVAIL-05`, needs its own ADR.**
   > **✅ ADOPTED, 2026-08-04 — it got its ADR:
-  > [ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)**
+  > [ADR-0040](/decisions/adr-0040)**
   > (`proposed`). **This does not close the `EXPLAIN` obligation two bullets up** — ADR-0040 claims the
   > status term becomes an unconditional qual on the leading index column (a *shape* claim), not a
   > measured plan. The flip condition above (`Concat`/`UNION`) becomes moot only if ADR-0040 is
@@ -715,7 +715,7 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
   **Not blocking**, and now demonstrably so — `null` is reserved for a suppression flag today, so an
   opt-out outcome changes text rather than mechanism.
 - 🕐 **`Q-AVAIL-05` — ROUTED, 2026-08-04: it has its ADR.**
-  **[ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)**
+  **[ADR-0040](/decisions/adr-0040)**
   (`proposed`) rules `Orders.CurrentStatus` **`NOT NULL`**, partially superseding ADR-0037 §D3's
   NULL ruling (which becomes *vacuous* rather than wrong). The write-time guarantee is verified there,
   not assumed: one production creation path (`OrderFactory.cs:104` → `:179` `AddOrderStatus(New)` →

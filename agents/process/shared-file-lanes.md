@@ -1,5 +1,12 @@
 # Shared-File Lanes — the serialization list
 
+> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
+> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
+> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
+> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
+> raise the need with the owner rather than inventing a destination.
+
+
 When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
 into a single lane (one writer at a time). This file is the **maintained data list** of those files.
 The PM validates every parallel batch's lane assignments against this list **before dispatch**; a

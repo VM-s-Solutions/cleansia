@@ -210,6 +210,56 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 > string segments rather than a literal, so the prose rewrite missed it and the checker went red on the
 > next run — it now reads the archive and guards that history against being edited into disagreeing
 > with itself.
+>
+> **Correction, 2026-08-13 (P10).** The paragraph above is wrong in exactly the way this track exists
+> to catch. P9 rewrote every `agents/backlog/` string it found, which made dead paths *resolve* — and
+> resolving to the wrong place is worse than breaking, because nothing complains. **22 instructions
+> across 10 live files were left telling agents to WRITE into frozen history**, including step 1 of
+> `/feature` (`.claude/agents/pm.md:27`). A separate **63 links across 13 files** pointed at
+> `backlog/adr/…`, a path that has existed nowhere since P6 — untouched, because they do not contain
+> the string the rewrite searched for. Both closed by `CL-042`.
+
+---
+
+## P10 — Loose ends
+
+The nine phases each wrote sentences that were true when written. This phase checks which of them
+still are. Every row was ground-truthed against the tree first; **29 of 60 candidates were refuted**
+under adversarial verification.
+
+The finding that frames the rest: **`docs/` was declared the source of truth, but only the ~100 pages
+this track authored were ever verified.** 24 pages under `docs/{api,deployment,customer-app,partner-app,admin-app}`
+were written in **April 2026** and promoted to authoritative without a read. `CL-045`–`CL-048` are
+what that promotion bought.
+
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-044 | `Web.Partner`'s anonymous health endpoint returned `ex.Message` to the public internet | S | done | #203 |
+| CL-042 | 63 dead `backlog/adr/` links; 22 instructions telling agents to write into frozen history | M | done | #203 |
+| CL-045 | `docs/customer-app/authentication.md` documents a bearer/localStorage session the tree replaced | M | todo | — |
+| CL-049 | Gate holes — `check-docs-refs` passes having read zero files; Backend CI blind to `sql-scripts/` | M | todo | — |
+| CL-047 | Three P7 pages carry domain claims the tree contradicts | M | todo | — |
+| CL-046 | `platform-expandability.md` still orders a catalog-tenancy migration that shipped in June | M | todo | — |
+| CL-048 | Operator pages — two config keys that bind nothing, a CI inventory missing five of ten | S | todo | — |
+| CL-050 | iOS — eight live files still call the first client generation owner-gated; it shipped | S | todo | — |
+| CL-052 | A dead 299-line `PayCalculator`, and three comments asserting constraints the tree lifted | S | todo | — |
+| CL-043 | `MANUAL_STEPS.md § Open` reads *(none)* while two owner actions are owed | S | todo | — |
+| CL-051 | ADR-0030 records as OPEN two gates the tree closed — dated correction note | S | todo | — |
+
+### Handed over — named, not worked here
+
+Each is a decision or a feature. The track's job is to put it on the owner's desk, not absorb it.
+
+| ID | Title | Size | Status |
+|---|---|---|---|
+| CL-053 | **Where does a new ticket get filed now?** After CL-038 the PM's channel table has no live destination | S | blocked — owner |
+| CL-055 | `CLAUDE.md` §4 calls `IsUniqueViolationOn` the worked example of over-building; it has **6 production call sites**, which §4's own test endorses | S | blocked — owner |
+| CL-058 | `B3` ×21 — validators inheriting a shared base. Changes working validation behaviour | M | blocked — owner |
+| CL-059 | `D2` ×8 — `fb.nonNullable.group(...)`. Changes `reset()` semantics | M | blocked — owner |
+| CL-060 | G-11 / T-0483 — admin entry-instruction reveal + audit. A four-platform feature, not a cleanup edit | L | blocked — owner |
+| CL-054 | Q-W3-2 — `CurrencyCode` on the payroll DTOs. Owner ruled *"ADD A DTO"* 2026-08-07; carries `nswag-regen` | M | blocked — owner |
+| CL-056 | Two Android defects the comment sweep exposed — a dead camera affordance, a per-platform dispute author label | M | blocked — UI |
+| CL-057 | Admin pay-period close uses a hardcoded English `confirm()`; the translated key ships in all five locales | S | blocked — UI |
 
 ---
 

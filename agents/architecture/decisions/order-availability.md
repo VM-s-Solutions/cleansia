@@ -1,7 +1,7 @@
 # Order availability — which orders a cleaner may be offered, and which they may take
 
 > **Status of this page: THE CURRENT SHAPE — binding.**
-> **[ADR-0037](../../backlog/adr/0037-order-offerability-is-a-payment-qualified-status-rule-owned-by-the-domain-and-enforced-at-the-take.md)**
+> **[ADR-0037](/decisions/adr-0037)**
 > is **`accepted`** (2026-08-03) after a defense panel: **two challenger lanes, 19 findings, 8 marked
 > blocking, all resolved**. The ADR is the immutable record and carries the full
 > `## Challenge` / `## Defense` / `## Verdict` trail; **this page is the evolving companion and is what
@@ -18,7 +18,7 @@
 > join a partly-staffed job.** Folded into the ADR as **§D9**. **The status axis is unchanged**; D9 is
 > the *seat* axis. See §"The seat axis" below. The owner's other ruling from the same conversation —
 > preferred-cleaner slot availability — is
-> **[ADR-0039](../../backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**.
+> **[ADR-0039](/decisions/adr-0039)**.
 >
 > Companion pages: [`preferred-cleaner-dispatch.md`](./preferred-cleaner-dispatch.md) (ADR-0036 — the
 > hold predicate this composes with, as a separate conjunct on the same six surfaces),
@@ -208,7 +208,7 @@ null semantics and `.Compile()` on a request path is banned. ~~Our predicate has
 hazard.~~ **The two-forms ruling STANDS; only its NULL-hazard justification is retired — see the box
 below. Do not read ADR-0040 as licence to unify the two forms.**
 
-**~~NULL `CurrentStatus`~~ — ⚠️ BEING SUPERSEDED BY [ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)
+**~~NULL `CurrentStatus`~~ — ⚠️ BEING SUPERSEDED BY [ADR-0040](/decisions/adr-0040)
 (`proposed`, 2026-08-04).** The ruling below is ADR-0037 §D3 as accepted, kept readable because the
 implementation still carries it today:
 

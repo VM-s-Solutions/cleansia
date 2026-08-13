@@ -114,7 +114,7 @@ silently discarded.
    an anonymization-stable column** (AM-9). — *`(gate pending: T-0532)` → T1-CI*
 
 Full tier table + why 1/3/5 cannot be gated *before* the seam exists (ADR-0032 D3 anti-vacuity over an
-empty corpus): `agents/knowledge/roles/post-commit-effects.md`.
+empty corpus): `docs/domain/roles/post-commit-effects.md`.
 
 **The effect record carries the frozen amount and not its inputs** (AM-2), and **post-commit an effect
 claims inventory, never re-decides eligibility** (AM-3) — a post-commit refusal is unactionable, because

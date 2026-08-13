@@ -117,7 +117,7 @@ until the owner confirms the migration.
 possibly an `nswag-regen` if the DTO changes. **Start the schema spec early even if the rest waits**,
 because the wait is the schedule.
 
-**Read first:** `agents/knowledge/security-rules.md`, **ADR-0012** + `Q-AUDIT-01`'s answer in
+**Read first:** `docs/architecture/security-rules.md`, **ADR-0012** + `Q-AUDIT-01`'s answer in
 `questions/answered.md`, `Cleansia.Infra.Database/EntityConfigurations/`, and the multi-tenancy
 `TenantId` convention (a consent record is tenant-scoped).
 

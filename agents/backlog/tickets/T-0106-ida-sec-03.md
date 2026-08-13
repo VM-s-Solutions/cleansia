@@ -94,7 +94,7 @@ confirm, no longer resolvable by code alone), with enforced expiry. Paired test 
   red→green→refactor; the test (T-0128 / TC-AUTH-TAKEOVER) must predate or land with the
   implementation in the diff, and each AC maps to a case. Gate 6 (Reviewer) enforces this.
 - **Governing rules:** no ADR governs token-secret design — this is governed by the S-laws in
-  `agents/knowledge/security-rules.md` (S4 DTO/secret-leak: token hashes belong in the never-leak list;
+  `docs/architecture/security-rules.md` (S4 DTO/secret-leak: token hashes belong in the never-leak list;
   S5/S6 logging). ADRs 0001/0002/0003 do **not** apply here.
 - **Serialization cluster:** none. The touched files — `User.cs`, `UserRepository.cs`,
   `ConfirmUserEmail.cs`, `ChangePassword.cs` (+ EF entity config for the User token columns) — do not

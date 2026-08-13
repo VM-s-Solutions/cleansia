@@ -920,7 +920,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > - **`src/Cleansia.Web.{Admin,Customer,Mobile.Customer,Mobile.Partner,Partner}/Middleware/RequestLoggingMiddleware.cs`** → **T-0446 ✅ → T-0457 ✅ (`b9753e85`, pass 4) → T-0470** (T-0470 is the lane's next writer) (**5 copies of one file; all five must change together, four-of-five is a hole.** Line offsets differ: `Cleansia.Web.Customer` is +4 vs the other four). **T-0470 should stay OUT of this lane by reading the token list from the compiled regex** rather than the source — which is what the existing `RedactionUnmaskedFreeTextGuardTests` already does
 > - **`src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs`** → **T-0446 ✅ (merged) → T-0464** (the `Metadata.CacheMetadata` trap is in this file) → then **T-0458** (sanitizer pilot).
 > - **`src/Cleansia.Core.AppServices/Features/{Orders,Disputes}/*Photo*.cs` + `UploadDisputeEvidence.cs`** → **T-0459** sole writer
-> - **`agents/knowledge/security-rules.md`** → **T-0460** sole writer
+> - **`docs/architecture/security-rules.md`** → **T-0460** sole writer
 > - **`agents/tools/check-consistency.mjs`** → **T-0454 → T-0461** (**correction: T-0454 is NO LONGER sole writer**)
 > - **`agents/knowledge/consistency.md`** → **T-0454 → T-0461** (T-0461 owns its own entry; the ADR-0031 lead deliberately left this file untouched to avoid the collision)
 > - **`libs/data-access/partner-stores/**`** → **T-0446's frontend leg has MERGED** (`user.effects.ts`, +14 lines in `a63b776e`), so the three-way contention is down to two. **Safe order: T-0446 ✅ → T-0455 → T-0463.** T-0461 is explicitly told **not** to touch this lib's `tsconfig.json`

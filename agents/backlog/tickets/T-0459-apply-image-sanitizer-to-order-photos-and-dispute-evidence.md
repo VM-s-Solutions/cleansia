@@ -110,7 +110,7 @@ policy from inside this ticket.
 - **Shared-file lane:** `Features/Orders/SaveOrderPhotos.cs`, `Features/Orders/UploadOrderPhoto.cs`,
   `Features/Disputes/UploadDisputeEvidence.cs` — this ticket is the sole writer in its wave. No
   overlap with any T-0446…T-0457 lane.
-- Read `agents/knowledge/security-rules.md` including the rule added by **T-0460**.
+- Read `docs/architecture/security-rules.md` including the rule added by **T-0460**.
 
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0446 security gate, finding SEC-3; split from T-0458 so neither ticket is an `L`)

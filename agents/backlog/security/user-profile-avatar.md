@@ -233,7 +233,7 @@ URL**. S4 governs *DTO fields*. S6 governs *logs*. Neither reaches metadata insi
 That is why SEC-3 could sit in three shipped pipelines without any gate catching it — the reviewers
 were not wrong against the rules; the rules were silent.
 
-The rule to add to `agents/knowledge/security-rules.md`, in substance:
+The rule to add to `docs/architecture/security-rules.md`, in substance:
 
 > User-supplied images that will ever be served back by URL are **sanitized at upload** — metadata
 > stripped, dimensions bounded, re-encoded. **Magic-byte validation is an accept/reject check, not a

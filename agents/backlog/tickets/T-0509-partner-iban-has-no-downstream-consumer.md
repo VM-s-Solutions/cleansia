@@ -90,7 +90,7 @@ blast radius.
 **Dispatchable today, no dependency, ~an hour.** Its value is highest **before** T-0518 widens the
 field set, because a sweep of one column is cheaper than a sweep of five.
 
-**Read first:** `agents/knowledge/security-rules.md` (S1–S10), sprint-14's **T-0457** and **T-0470**,
+**Read first:** `docs/architecture/security-rules.md` (S1–S10), sprint-14's **T-0457** and **T-0470**,
 `Employee.cs:255-320`, `GdprExportDto.cs`, `EmployeeListItem.cs`,
 `EmployeeUserAuditCoverageTests.cs`, and `Q-OBS-01` in `questions/open.md`.
 

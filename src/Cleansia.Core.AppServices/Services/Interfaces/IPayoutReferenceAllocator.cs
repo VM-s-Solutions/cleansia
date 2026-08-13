@@ -4,7 +4,7 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
 /// Claims the next payout-invoice <i>variabilní symbol</i> (ADR-0046). Role card:
-/// <c>agents/knowledge/roles/payout-reference-allocator.md</c>.
+/// <c>docs/domain/roles/payout-reference-allocator.md</c>.
 ///
 /// <para>It knows the calendar year and nothing else — not the tenant, not the invoice, not the pay
 /// period. The year is the year of ALLOCATION, so a December period closed on 2 January produces a

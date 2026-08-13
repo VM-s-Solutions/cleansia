@@ -147,7 +147,7 @@ from the `db` angle (AC1, AC8) — the shape decision and the encryption decisio
 `ValidationExtensions.cs:122-130`, `UpdateBankDetails.cs` (in full — it is 65 lines and it is the
 extension point), `CompanyInfo.cs:60-110`, `CountryConfiguration.cs` (in full),
 `ITaxIdValidator.cs` + `TaxIdValidator.cs`, `UpdateIdentificationInfo.cs:60-100`,
-`DefaultReceiptLayoutBuilder.cs:160-175`, `agents/knowledge/security-rules.md` (S1–S10), and
+`DefaultReceiptLayoutBuilder.cs:160-175`, `docs/architecture/security-rules.md` (S1–S10), and
 `CLAUDE.md`'s note that `Address.State` is retained *"for US/CA when we launch there"* — the roadmap
 signal that makes AC3 load-bearing.
 

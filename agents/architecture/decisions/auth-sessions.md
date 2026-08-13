@@ -168,6 +168,6 @@ sign-out remains UX-only (a hostile client ignores a push — it is never the se
 - **Mint `exp` through `TimeProvider`** (hygiene) — ADR-0026's new components already use
   `TimeProvider`; the two legacy mint sites still don't.
 - **Catalog edit at ADR-0026 acceptance (due now):** amend the ADR-0024 token-lifetime paragraph
-  in `agents/knowledge/security-rules.md:48-50` (new ≤ 30 s bound + claim-not-header rule + pinned
+  in `docs/architecture/security-rules.md:48-50` (new ≤ 30 s bound + claim-not-header rule + pinned
   `DeviceRevocation` config); executed by the architect lane as the acceptance follow-up (outside
   the panel's writable surface).

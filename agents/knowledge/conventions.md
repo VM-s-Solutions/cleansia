@@ -347,7 +347,7 @@ swept then. T-0574 **measured** that baseline instead of guessing at it, and the
 before the sweep was planned: **7 were C2-FORM** (a bold "not yet built" banner with no `Retires when:`
 condition — a one-line mechanical fix per site), **8 were C3** (rotted citations, including two into a
 migration filename that no longer exists and one into a file that is gone), and **1 was C1**. The
-C2-FORM class is now empty and the C3 class survives only inside `agents/knowledge/roles/`; the C1 is
+C2-FORM class is now empty and the C3 class survives only inside `docs/domain/roles/`; the C1 is
 untouched by design. Two of
 T-0574's four owed items remain: the **sweep**, and **one line extending
 reviewer-check 5 "Catalog-edit routing"** (`.claude/agents/reviewer.md`) to re-read the banners and

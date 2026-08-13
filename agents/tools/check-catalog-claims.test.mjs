@@ -59,7 +59,7 @@ function makeRoot(files) {
     const base = {
         "docs/decisions/adr-0099.md": ADR,
         "src/Fixture/Thing.cs": THING_CS,
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD,
+        "docs/domain/roles/fixture-card.md": GOOD_CARD,
         ...files,
     };
     for (const [p, content] of Object.entries(base)) {
@@ -113,7 +113,7 @@ scenario("a known-good card passes AND the summary states what it found", {
 // ── C1 — ADR status agreement ───────────────────────────────────────────────
 scenario("C1: a card claiming `proposed` over an `accepted` ADR is RED", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace(
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace(
             "**ADR-0099 is `accepted`**",
             "**ADR-0099 is `proposed`**",
         ),
@@ -124,7 +124,7 @@ scenario("C1: a card claiming `proposed` over an `accepted` ADR is RED", {
 
 scenario("C1: the reverse form (`an accepted ADR-0099`) is checked too", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace(
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace(
             "**ADR-0099 is `accepted`**",
             "built against a `superseded` ADR-0099",
         ),
@@ -135,7 +135,7 @@ scenario("C1: the reverse form (`an accepted ADR-0099`) is checked too", {
 
 scenario("C1: a status verb that is NOT a status claim does not fire", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace(
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace(
             "**ADR-0099 is `accepted`**",
             "that coupling was explicitly rejected (ADR-0099 PA-5) and **ADR-0099 is `accepted`**",
         ),
@@ -146,7 +146,7 @@ scenario("C1: a status verb that is NOT a status claim does not fire", {
 
 scenario("C1: a QUOTED bad example is skipped, and the skip is counted", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": `${GOOD_CARD}
+        "docs/domain/roles/fixture-card.md": `${GOOD_CARD}
 Retires the *"PROPOSED — do not build until ADR-0099 is \`proposed\`"* banner.
 `,
     },
@@ -156,7 +156,7 @@ Retires the *"PROPOSED — do not build until ADR-0099 is \`proposed\`"* banner.
 
 scenario("C1: a claim about an ADR that does not exist is RED", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("ADR-0099 is `accepted`", "ADR-0098 is `accepted`"),
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("ADR-0099 is `accepted`", "ADR-0098 is `accepted`"),
     },
     expectExit: 1,
     expectText: ["C1", "no ADR 0098 exists"],
@@ -176,14 +176,14 @@ const NOT_BUILT_NO_MARKER = `# Role — \`Allocator\` (CRC card)
 `;
 
 scenario("C2-FORM: a not-yet-built banner with no `Retires when:` is RED", {
-    files: { "agents/knowledge/roles/allocator.md": NOT_BUILT_NO_MARKER },
+    files: { "docs/domain/roles/allocator.md": NOT_BUILT_NO_MARKER },
     expectExit: 1,
     expectText: ["C2-FORM", "carries no `Retires when:` condition"],
 });
 
 scenario("C2: the same banner WITH a retirement condition naming a missing path passes", {
     files: {
-        "agents/knowledge/roles/allocator.md": `${NOT_BUILT_NO_MARKER}> **Retires when:** \`src/Fixture/Allocator.cs\` exists.
+        "docs/domain/roles/allocator.md": `${NOT_BUILT_NO_MARKER}> **Retires when:** \`src/Fixture/Allocator.cs\` exists.
 `,
     },
     expectExit: 0,
@@ -192,7 +192,7 @@ scenario("C2: the same banner WITH a retirement condition naming a missing path 
 
 scenario("C2-RETIRED: a retirement condition whose path now EXISTS is RED", {
     files: {
-        "agents/knowledge/roles/allocator.md": `${NOT_BUILT_NO_MARKER}> **Retires when:** \`src/Fixture/Thing.cs\` exists.
+        "docs/domain/roles/allocator.md": `${NOT_BUILT_NO_MARKER}> **Retires when:** \`src/Fixture/Thing.cs\` exists.
 `,
     },
     expectExit: 1,
@@ -201,7 +201,7 @@ scenario("C2-RETIRED: a retirement condition whose path now EXISTS is RED", {
 
 scenario("C2: a prose mention of the phrase is not a banner", {
     files: {
-        "agents/knowledge/roles/allocator.md": `# Notes
+        "docs/domain/roles/allocator.md": `# Notes
 
 The rule covers a claim that something is not yet built, in prose, unemphasised.
 `,
@@ -212,14 +212,14 @@ The rule covers a claim that something is not yet built, in prose, unemphasised.
 
 // ── C3 — citation resolution ────────────────────────────────────────────────
 scenario("C3: a citation past the end of the file is RED", {
-    files: { "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30") },
+    files: { "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30") },
     expectExit: 1,
     expectText: ["C3", "cited line 30 is past the end of the file", "(20 lines)"],
 });
 
 scenario("C3: the same citation stays green after the file GROWS", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30"),
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30"),
         "src/Fixture/Thing.cs": `${THING_CS}\n${Array.from({ length: 20 }, (_, i) => `// extra ${i}`).join("\n")}`,
     },
     expectExit: 0,
@@ -227,7 +227,7 @@ scenario("C3: the same citation stays green after the file GROWS", {
 });
 
 scenario("C3: a citation to a file that no longer exists is RED", {
-    files: { "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:12", "Renamed.cs:12") },
+    files: { "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:12", "Renamed.cs:12") },
     expectExit: 1,
     expectText: ["C3", "no such file in the tree"],
 });
@@ -240,7 +240,7 @@ scenario("C3: deleting the CITED file reddens the citing page (the decay directi
 
 scenario("C3: the `Type.Member:N-M` dialect resolves and is checked", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("`Compute` is at `Thing.cs:12`", "`Thing.Compute:99`"),
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("`Compute` is at `Thing.cs:12`", "`Thing.Compute:99`"),
     },
     expectExit: 1,
     expectText: ["[type]", "cited line 99 is past the end"],
@@ -248,7 +248,7 @@ scenario("C3: the `Type.Member:N-M` dialect resolves and is checked", {
 
 scenario("C3: a continuation's verdict is SOFT — printed, never blocking", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("`Compute` is at `Thing.cs:12`", "at `Thing.cs:12`, also `:99`"),
+        "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("`Compute` is at `Thing.cs:12`", "at `Thing.cs:12`, also `:99`"),
     },
     expectExit: 0,
     expectText: ["C3-SOFT", "catalog-claims FAILED: C1 0 · C2 0 · C3 0"],
@@ -257,7 +257,7 @@ scenario("C3: a continuation's verdict is SOFT — printed, never blocking", {
 // ── anti-vacuity ────────────────────────────────────────────────────────────
 scenario("ANTI-VACUITY: citation-shaped text the parser cannot consume is a hard P0", {
     files: {
-        "agents/knowledge/roles/fixture-card.md": `${GOOD_CARD}\nSee \`docs/decisions/0099-fixture-…md:3-5\` for the ruling.\n`,
+        "docs/domain/roles/fixture-card.md": `${GOOD_CARD}\nSee \`docs/decisions/0099-fixture-…md:3-5\` for the ruling.\n`,
     },
     expectExit: 1,
     expectText: ["P0", "REACH", "NOT consumed by the citation parser", "NOT RUN in full"],
@@ -271,7 +271,7 @@ scenario("ANTI-VACUITY: the reach floors fire on an under-populated root", {
 
 scenario("ANTI-VACUITY: an empty corpus is RED, not a silent pass", {
     args: [],
-    files: { "agents/knowledge/roles/fixture-card.md": null },
+    files: { "docs/domain/roles/fixture-card.md": null },
     expectExit: 1,
     expectText: ["P0", "REACH", "citations found: 0"],
     denyText: ["catalog-claims FAILED: C1 0 · C2 0 · C3 0 (0 claim violation(s), 0 reach failure(s)"],
@@ -279,7 +279,7 @@ scenario("ANTI-VACUITY: an empty corpus is RED, not a silent pass", {
 
 scenario("ANTI-VACUITY: --warn reports every claim finding and still exits 0", {
     args: ["--floors=off", "--warn"],
-    files: { "agents/knowledge/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30") },
+    files: { "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30") },
     expectExit: 0,
     expectText: ["C3", "cited line 30 is past the end", "[--warn: exit 0]"],
 });

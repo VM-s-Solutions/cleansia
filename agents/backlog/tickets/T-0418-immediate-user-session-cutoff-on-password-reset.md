@@ -62,7 +62,7 @@ source: ADR-0026 verdict instruction X1 / challenger CH-13 — T-0407 makes rese
   exists — do not invent divergent literals).
 
 **2. Directory + refresher (new, `Cleansia.Config` — sibling to the device pair; CRC card
-`agents/knowledge/roles/revoked-user-directory.md`):**
+`docs/domain/roles/revoked-user-directory.md`):**
 - `IRevokedUserDirectory.IsRevoked(string userId, DateTimeOffset? tokenIssuedAt)` — immutable snapshot
   dictionary (`userId → resetAt`), atomic reference swap, reject iff an entry exists and
   `tokenIssuedAt is null || tokenIssuedAt < resetAt`. Structural clone of `RevokedDeviceDirectory`,

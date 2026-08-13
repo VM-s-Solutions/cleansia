@@ -13,7 +13,7 @@ Act as the **Backend Dev**. Load and follow the charter at `.claude/agents/backe
 required references first:
 - `agents/knowledge/patterns-backend.md` (CQRS one-file feature, controllers, DTOs, repos, errors,
   fiscal modes)
-- `agents/knowledge/security-rules.md` (S1–S12 — non-negotiable)
+- `docs/architecture/security-rules.md` (S1–S12 — non-negotiable)
 - `agents/knowledge/conventions.md`
 - `docs/architecture/backend.md`
 

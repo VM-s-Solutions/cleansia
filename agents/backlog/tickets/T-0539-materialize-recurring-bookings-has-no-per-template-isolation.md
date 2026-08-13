@@ -119,7 +119,7 @@ of scope).
 `CleanupStalePendingOrders` by moving the commit inside the group loop, and its mutation proof prints
 `Expected "tenant-a", Actual null`. That is the shape of evidence AC4 wants.
 
-**Archetype:** `agents/knowledge/security-rules.md` §S8 (background-sweep tenancy, as amended by
+**Archetype:** `docs/architecture/security-rules.md` §S8 (background-sweep tenancy, as amended by
 `077b7e8a`) + `patterns-backend.md` (UnitOfWork — handlers never commit; a sweep is the documented
 exception and must say so).
 

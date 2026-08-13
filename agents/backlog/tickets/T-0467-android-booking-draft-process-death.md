@@ -105,7 +105,7 @@ _(PM floor; the panel finalizes)_
 ## Implementation notes
 
 - **Archetype:** `agents/knowledge/patterns-mobile.md` (including T-0441's harvest) and the
-  `SessionScopedCache` mechanism documented in **S11** (`agents/knowledge/security-rules.md:209-247`).
+  `SessionScopedCache` mechanism documented in **S11** (`docs/architecture/security-rules.md:209-247`).
 - **Shared-file lane:** `BookingBottomSheet.kt` + the booking view-model — **no other sprint-14 ticket
   writes these**, so no serialization is needed today. Re-check at dispatch.
 - `depends_on: [T-0441]` — not for code, but because T-0441 is what puts a credential in the draft.

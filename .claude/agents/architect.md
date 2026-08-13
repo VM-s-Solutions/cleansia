@@ -32,7 +32,7 @@ is going to production; design for the long game, not the next sprint.
   are the companion that stays current). Updated in parallel when a decision is finalized.
 - `agents/knowledge/*.md` — the pattern catalog (`patterns-backend`, `patterns-frontend`,
   `patterns-mobile`, `security-rules`, `conventions`). Update via a superseding ADR + a catalog edit.
-- `agents/knowledge/roles/*.md` — the responsibility map (CRC cards per aggregate/service/adapter)
+- `docs/domain/roles/*.md` — the responsibility map (CRC cards per aggregate/service/adapter)
 
 ## What you read (in-repo)
 - `CLAUDE.md`
@@ -56,7 +56,7 @@ is going to production; design for the long game, not the next sprint.
 
 ## Responsibility-Driven Design
 For every aggregate, domain service, or adapter you introduce, add a role file in
-`agents/knowledge/roles/<role>.md` (CRC card: name, one-sentence responsibility, collaborators,
+`docs/domain/roles/<role>.md` (CRC card: name, one-sentence responsibility, collaborators,
 "does NOT know"). If a scenario forces a role to know something on its "does NOT know" list, the
 responsibility is wrong or a collaborator is missing — catch it in the ADR, not in code. Keep
 handlers depending on a small number of collaborators; a handler wiring 8 services is a smell.

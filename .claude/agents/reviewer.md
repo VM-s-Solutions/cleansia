@@ -15,7 +15,7 @@ author.
 ## What you read
 - The diff / the files the developer touched (use Grep/Glob/Bash to inspect; you don't write code)
 - `agents/knowledge/conventions.md`, `agents/knowledge/consistency.md`, and the relevant `patterns-*.md`
-- `agents/knowledge/security-rules.md` (you flag security issues; the Security Reviewer owns the
+- `docs/architecture/security-rules.md` (you flag security issues; the Security Reviewer owns the
   formal gate)
 - The ticket, its AC, and the ADRs it links
 - `agents/process/quality-gates.md` — the gates you enforce, **starting with Gate 0 (evidence

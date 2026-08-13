@@ -40,7 +40,7 @@ This ticket encodes "what correct looks like" as executable red tests so the fix
 net the moment they exist. The two fixes own the production-code changes (and IDA-SEC-03's migration);
 this ticket owns the **test cases that prove the holes are closed**. Governed by ADR-0001
 (server-truth-identity, S1) for the claim-binding cases; the token-secret cases are governed by the
-S-laws in `agents/knowledge/security-rules.md` (no ADR for token-secret design — see T-0106 notes).
+S-laws in `docs/architecture/security-rules.md` (no ADR for token-secret design — see T-0106 notes).
 
 ## Acceptance criteria
 
@@ -106,7 +106,7 @@ S-laws in `agents/knowledge/security-rules.md` (no ADR for token-secret design �
   Gate 6 (Reviewer) enforces TDD order via commit order / the status log. Because they pair with
   T-0105/T-0106, schedule so the tests are written first and the three merge together.
 - **Governing decisions:** ADR-0001 (server-truth-identity / S1) for AC1–AC4 claim-binding; the
-  S-laws in `agents/knowledge/security-rules.md` (S4 secret-leak: token hashes; S5/S6 logging) for the
+  S-laws in `docs/architecture/security-rules.md` (S4 secret-leak: token hashes; S5/S6 logging) for the
   token-secret cases. ADRs 0002/0003 do not apply.
 - **Serialization cluster:** **none.** The test files below, and the production files T-0105/T-0106
   touch (`GoogleAuth.cs`, `ConfirmUserEmail.cs`, `ChangePassword.cs`, `UserRepository.cs`, `User.cs`),

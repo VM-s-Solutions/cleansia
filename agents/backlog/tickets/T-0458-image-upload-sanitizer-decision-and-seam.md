@@ -190,7 +190,7 @@ _(PM floor; the panel finalizes)_
 - **Archetype:** none exists — this is a new cross-cutting service. Closest structural precedents for
   *placement* are the existing `Cleansia.Infra.Services` services (PDF/QuestPDF, email, blob) and
   their DI registration in `Cleansia.Config`.
-- Read `agents/knowledge/security-rules.md` — and note that **the rule this ticket enforces does not
+- Read `docs/architecture/security-rules.md` — and note that **the rule this ticket enforces does not
   exist yet**; it is being written by **T-0460** (SEC-5). Ideally T-0460's panel runs first or
   alongside, so the ADR can cite the rule rather than invent it.
 - The order-photo pipelines already compute a `contentType` (`SaveOrderPhotos.cs:117`,

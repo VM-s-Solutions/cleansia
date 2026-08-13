@@ -141,7 +141,7 @@ route.
 **Share the predicate with T-0493.** Whichever lands first writes "does this user have an active Plus
 membership" somewhere the other can reuse. Two copies of a membership check is how they drift.
 
-**Read first:** `agents/knowledge/security-rules.md` (S1–S11), `Features/Bookings/*.cs`,
+**Read first:** `docs/architecture/security-rules.md` (S1–S11), `Features/Bookings/*.cs`,
 `Core.Domain/Memberships/*`.
 
 ## Status log

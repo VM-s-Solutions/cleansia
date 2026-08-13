@@ -96,7 +96,7 @@ data the money path depends on.
 **Read first:** the T-0517 ADR, `ValidationExtensions.cs:100-140`, `UpdateBankDetails.cs` in full,
 `UpdateEmployee.cs:120-135`, `AdminUpdateEmployee.cs:55-100`, `UpdateIdentificationInfo.cs:60-100`
 (the archetype), `ITaxIdValidator.cs`, `GdprExportDto.cs`, `EmployeeListItem.cs`, and
-`agents/knowledge/security-rules.md`.
+`docs/architecture/security-rules.md`.
 
 **Lane note:** `ValidationExtensions.cs` and the three employee update commands are shared with the
 partner-onboarding chain (T-0505…T-0510). **Check `process/shared-file-lanes.md` and serialize

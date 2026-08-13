@@ -59,7 +59,7 @@ source: owner directive 2026-07-15 ("I want the device once it's deleted from th
   pattern (T-0245 lineage). No index in this ticket (table is tiny; ADR-0026 D9.6).
 
 **4. Directory + refresher (new, `Cleansia.Config` registration; see the CRC card
-`agents/knowledge/roles/revoked-device-directory.md`):**
+`docs/domain/roles/revoked-device-directory.md`):**
 - `IRevokedDeviceDirectory.IsRevoked(userId, deviceId, tokenIssuedAt)` — immutable snapshot
   dictionary, atomic reference swap, reject iff entry exists and `tokenIssuedAt < RevokedAt`.
 - `RevokedDeviceDirectoryRefresher : BackgroundService` — poll every

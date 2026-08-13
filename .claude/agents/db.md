@@ -13,7 +13,7 @@ migrations precisely — but the **owner runs them** (`manual_step: ef-migration
 
 ## Read first
 - `agents/knowledge/patterns-backend.md` (repository + entity sections),
-  `agents/knowledge/security-rules.md` (S8 tenancy, S9 migration safety, S10 soft-delete),
+  `docs/architecture/security-rules.md` (S8 tenancy, S9 migration safety, S10 soft-delete),
   `agents/knowledge/conventions.md`
 - `docs/architecture/database.md` — canonical schema doc
 - The ticket + linked ADRs

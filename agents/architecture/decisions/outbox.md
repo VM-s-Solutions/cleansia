@@ -239,9 +239,9 @@ failure result *without* calling `next()`, so UoW never runs) **plus** a defense
 - Durable consumer dedup: `docs/decisions/adr-0010.md` (partially
   superseded by ADR-0023 for the email claim ordering + the interface-frozen invariant)
 - Claim-ordering rule: `docs/decisions/adr-0023.md`
-- Guard role card: `agents/knowledge/roles/idempotency-guard.md`
+- Guard role card: `docs/domain/roles/idempotency-guard.md`
 - Authorization (prior ADR): `docs/decisions/adr-0001.md`
 - Catalog: `agents/knowledge/patterns-backend.md:281` (B8 side-effects rule),
-  `agents/knowledge/security-rules.md:100` (S7 idempotency)
+  `docs/architecture/security-rules.md:100` (S7 idempotency)
 - Canonical architecture: `docs/architecture/backend.md`, `docs/architecture/fiscal-compliance.md`,
   `docs/architecture/push-notifications.md`

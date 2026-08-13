@@ -57,6 +57,11 @@ jobs:
       - name: Gate self-test (proves the gate can still fail)
         run: node agents/tools/check-docs-refs.test.mjs
 
+      # The claims checker had no self-test running anywhere, which is the same hole one level up:
+      # its 12 cases only ever ran when someone remembered. It gates 51 ADRs and ~685 citations.
+      - name: Claims-gate self-test
+        run: node agents/tools/check-catalog-claims.test.mjs
+
       # code -> docs. Needs no npm install: the checker is dependency-free Node, by the same rule as
       # the other tools in agents/tools.
       - name: Code references resolve to real pages and headings

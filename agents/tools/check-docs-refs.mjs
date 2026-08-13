@@ -139,4 +139,20 @@ for (const p of problems) console.log(`  ${p}`);
 console.log(
     `\ndocs-refs: ${scanned} source file(s), ${refs} reference(s), ${problems.length} unresolved`,
 );
-process.exit(problems.length === 0 ? 0 : 1);
+
+// ANTI-VACUITY. Zero problems means nothing only if the reader actually read something. Rename a
+// source root, mistype --paths, or point this at a tree where the pointer syntax changed, and it
+// prints "0 source file(s) ... 0 unresolved" and exits 0 — a green gate over an unchecked corpus,
+// which is the exact failure it exists to close. The floors sit well under today's counts (5,900
+// files / 180 references) so they catch a blind reader, not normal churn.
+// Overridable so the self-test can run over a three-file fixture AND still prove the floor fires.
+const MIN_FILES = Number(argValue("min-files", "500"));
+const MIN_REFS = Number(argValue("min-refs", "20"));
+const blind = [];
+if (scanned < MIN_FILES)
+    blind.push(`read only ${scanned} source file(s) (floor ${MIN_FILES}) — the reader is broken, not the tree`);
+if (refs < MIN_REFS)
+    blind.push(`found only ${refs} reference(s) (floor ${MIN_REFS}) — the pointer syntax or the corpus moved`);
+for (const b of blind) console.error(`docs-refs REACH: ${b}`);
+
+process.exit(problems.length === 0 && blind.length === 0 ? 0 : 1);

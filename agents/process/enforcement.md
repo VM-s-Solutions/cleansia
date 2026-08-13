@@ -5,26 +5,45 @@ plan and the current state for turning the team's conventions into **machine-che
 consistency survives even when an agent (or human) doesn't read carefully. The principle:
 **deterministic beats diligent.** Anything a tool can check, a tool should check.
 
-> ## ⚠️ FOUR CI GATES WERE REMOVED — 2026-08-11, owner instruction. Any `T1-CI` token naming one of them is now FALSE.
+> ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13. Read this before trusting any `T1-CI` token below.
 >
-> Deleted: `catalog-claims.yml`, `module-boundaries.yml`, `offerability-parity.yml`,
-> `nx-project-registration.yml`. **The checker scripts survive** under `agents/tools/` and still run on
-> demand — what is gone is the thing that made them able to fail a build.
+> **Two checkers gate a pull request. Five do not.**
 >
-> `conventions.md` §*"The price of a law"* is explicit that **a tier naming a mechanism that cannot fail
-> a build is `T2-ADVISORY`**, not `T1-CI`. So every entry below that cites one of those four workflows
-> now overstates its enforcement, and a reader must treat those rules as **conventions a human upholds**,
-> rather than as gates. The tokens are not individually rewritten here — that would be a large edit
-> asserting a tier nobody has re-decided — so this banner is the correction, and it applies to all of
-> them at once.
+> | Checker | Gates a PR? | Where |
+> |---|---|---|
+> | `check-docs-refs.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
+> | `check-catalog-claims.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
+> | `check-consistency.mjs` | no | on demand only |
+> | `check-module-boundaries.mjs` | no | on demand only |
+> | `check-available-status-parity.mjs` | no | on demand only |
+> | `check-nx-project-registration.mjs` | no | on demand only |
+> | `check-backlog-consistency.mjs` | no | on demand only |
 >
-> **What is actually lost, so the trade is visible rather than implied:** citation and ADR-status rot in
-> `agents/**` (the catalog gate caught a live instance the same day it was promoted), customer→partner
+> This banner previously read *"FOUR CI GATES WERE REMOVED"* and named `catalog-claims.yml`,
+> `module-boundaries.yml`, `offerability-parity.yml` and `nx-project-registration.yml`. **It was wrong in
+> both directions.** `check-catalog-claims` came back on 2026-08-13 and blocks in `docs-ci.yml`, so the
+> banner under-stated enforcement there; and it implied the other rules were fine, when
+> `check-consistency` and `check-backlog-consistency` have never gated a build either. It also stated its
+> own retirement condition — *"retires when a workflow runs any of the four again"* — and that condition
+> had been met for a phase without anyone noticing, which is the failure mode this whole document is
+> about.
+>
+> **How to read a `T1-CI` token below.** If it names a checker in the top two rows, it is accurate. If it
+> names one of the other five, or cites `catalog-claims.yml` / `module-boundaries.yml` /
+> `offerability-parity.yml` / `nx-project-registration.yml` — **none of which exist** — treat the rule as
+> `T2-ADVISORY`: a convention a human upholds. `conventions.md` §*"The price of a law"* is explicit that a
+> tier naming a mechanism that cannot fail a build is not `T1-CI`. The 53 individual tokens are not
+> rewritten here, because that would assert a tier nobody has re-decided; **this table is the
+> correction**, and it applies to all of them at once.
+>
+> **What the five ungated checkers would still catch, so the trade stays visible:** customer→partner
 > module-boundary regressions, offerability-status drift between the C# source of truth and eight client
-> literals across three languages, and libraries becoming invisible to Nx. Each was a real defect class
-> with a measured baseline before its gate existed.
+> literals across three languages, libraries becoming invisible to Nx, the 44 declared convention
+> violations moving, and the archived backlog being edited into disagreeing with itself. Each is a real
+> defect class with a measured baseline.
 >
-> **Retires when:** a workflow under `.github/workflows/` runs any of the four checkers again.
+> **Retires when:** the set of `node agents/tools/check-*.mjs` steps under `.github/workflows/` stops
+> matching the two `yes, blocking` rows above.
 
 ## What's mechanical today
 

@@ -15,7 +15,7 @@ const REPO = join(fileURLToPath(import.meta.url), "..", "..", "..");
 const TOOL = join(REPO, "agents", "tools", "check-docs-refs.mjs");
 
 // Build a throwaway docs tree + source tree, run the tool over them, return { code, out }.
-function run({ pages = {}, sources = {} }) {
+function run({ pages = {}, sources = {}, floors = false }) {
     const root = mkdtempSync(join(REPO, ".docsref-fixture-"));
     try {
         const docsDir = join(root, "docs");
@@ -36,7 +36,17 @@ function run({ pages = {}, sources = {} }) {
         try {
             out = execFileSync(
                 process.execPath,
-                [TOOL, `--docs=${rel}/docs`, `--paths=${rel}/src`],
+                floors
+                    ? [TOOL, `--docs=${rel}/docs`, `--paths=${rel}/src`]
+                    : [
+                          TOOL,
+                          `--docs=${rel}/docs`,
+                          `--paths=${rel}/src`,
+                          // Fixtures are three files by design; the reach floors are sized for the
+                          // real tree. `floors: true` puts them back — see the two REACH cases.
+                          "--min-files=0",
+                          "--min-refs=0",
+                      ],
                 { encoding: "utf8", cwd: REPO },
             );
         } catch (e) {
@@ -152,6 +162,28 @@ test("skips generated clients", () => {
     });
     assert.equal(r.code, 0, r.out);
     assert.match(r.out, /0 reference\(s\)/);
+});
+
+test("REACH: FAILS when it reads no source files at all", () => {
+    // The failure this closes: rename a source root or mistype --paths and the tool prints
+    // "0 source file(s) ... 0 unresolved" and exits 0 — a green gate over a corpus it never opened.
+    const r = run({
+        pages: { "flows/index.md": "# Flows\n" },
+        sources: {},
+        floors: true,
+    });
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /REACH: read only 0 source file\(s\)/);
+});
+
+test("REACH: FAILS when it reads files but finds no references", () => {
+    // The other half: the corpus is there but the pointer syntax moved, so every → went unseen.
+    const sources = {};
+    for (let i = 0; i < 600; i++) sources[`f${i}.cs`] = "// no pointer here\n";
+    const r = run({ pages: { "flows/index.md": "# Flows\n" }, sources, floors: true });
+    assert.equal(r.code, 1, r.out);
+    assert.match(r.out, /REACH: found only 0 reference\(s\)/);
+    assert.doesNotMatch(r.out, /read only \d+ source file/);
 });
 
 let failed = 0;

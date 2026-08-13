@@ -66,18 +66,10 @@ class ApiErrorTranslator @Inject constructor(
     }
 
     /**
-     * Looks up a server error key (`user.not_existing_email`,
-     * `auth.invalid_credentials`, etc.) in string resources. Resource ids are
-     * named `error_<dot-replaced-with-underscore>`, e.g.
-     * `error_user_not_existing_email` — same convention as the customer app's
-     * ApiErrorParser so translations can be cross-referenced.
+     * Looks up a server error key in string resources.
      *
-     * Falls back to the legacy `error_key_<...>` prefix for any historical
-     * partner entries that haven't been renamed yet — keeps existing
-     * translations working without a flag-day rename.
-     *
-     * Returns null if neither resource exists so the caller can fall back
-     * to the server message.
+     * **Resource ids are the dot-key with underscores** — the same convention as the customer app, so
+     * translations cross-reference. -> /architecture/backend
      */
     private fun lookupKey(key: String): String? {
         val normalized = key.replace('.', '_').replace('-', '_').lowercase()

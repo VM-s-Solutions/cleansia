@@ -484,18 +484,8 @@ private fun nextJobWhereLine(name: String?, address: String?): String? {
 }
 
 /**
- * Available-work card — customer-app design language. White surface,
- * outline-variant border, 16dp corners, brand-tinted CTA. The 56dp
- * waving-mascot avatar in the leading slot gives this card the
- * personality the earnings card below it (which has a generic icon
- * halo) doesn't have, and reinforces that the dashboard's mascot
- * character is the one "showing you" available jobs.
- *
- *  ┌────────────────────────────────────────────────┐
- *  │ ┌────┐  AVAILABLE WORK                 2 jobs  │
- *  │ │ 👋 │  Earn up to 650 Kč                       │
- *  │ └────┘                       [ Browse jobs → ] │
- *  └────────────────────────────────────────────────┘
+ * Available-work card. The mascot avatar in the leading slot is what gives this card personality the
+ * earnings card below it does not have. -> /partner-app/dashboard
  */
 @Composable
 private fun AvailableWorkHero(

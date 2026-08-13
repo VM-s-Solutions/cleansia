@@ -65,17 +65,9 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
- * My Disputes screen — lists the signed-in user's disputes with infinite scroll
- * + pull-to-refresh, mirroring [cz.cleansia.customer.features.orders.OrdersTab].
- *
- * Entry points:
- *  - Profile tab → "Disputes" row
- *  - Order detail → "Report issue" footer (routes through CreateDispute first,
- *    which lands here after success via the DisputeDetail screen)
- *
- * The FAB always opens CreateDispute with no orderId — that screen renders an
- * error state explaining dispute filing requires an order, since we don't
- * have a picker UI in Wave 2. Not ideal but acceptable per the phase spec.
+ * The user's disputes, with infinite scroll and pull-to-refresh. Reached from the profile tab and from
+ * order detail via create-dispute, which lands here on success.
+ * -> /flows/cancellation-refund-dispute
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

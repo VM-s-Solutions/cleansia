@@ -15,18 +15,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 /**
- * Receives FCM data payloads and turns them into local Android notifications.
- * We use data-only payloads (no `notification` field) so:
- *  - The client owns the title/body text (no PII shipped to FCM).
- *  - The lock-screen text is whatever WE choose to show.
- *  - The same payload shape works for foreground and background delivery.
+ * Turns FCM data payloads into local notifications.
  *
- * The in-app feed is server-backed ([NotificationFeedRepository]): the producer
- * wrote a UserNotification row in the same transaction that dispatched this
- * push, so we bump the bell badge locally instead of persisting a row here.
- *
- * Hilt-injected via [AndroidEntryPoint]; the service is process-scoped by
- * Android so the singleton [PushTokenRepository] is reachable for onNewToken.
+ * **Data-only payloads, never a `notification` field**: the client owns the text, so no PII ships to
+ * FCM, the lock-screen wording is ours, and one payload shape works foreground and background.
+ * -> /architecture/push-notifications
  */
 @AndroidEntryPoint
 class CleansiaFirebaseMessagingService : FirebaseMessagingService() {

@@ -17,18 +17,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
- * Holder VM for [HomeTab]. The home screen observes six singleton repositories
- * (address, orders, loyalty, membership, catalog, recurring); exposing them
- * via Hilt-injected fields keeps the screen out of the EntryPointAccessors
- * pattern. State already lives in the singletons — this VM is purely an
- * injection seam, no per-VM state.
+ * Injection seam for the home screen's six singleton repositories.
  *
- * [refreshCatalog] warms the catalog for the popular-packages strip and
- * surfaces the snackbar on failure (the repo no longer does). Connectivity
- * failures stay silent — NetworkErrorInterceptor owns the infra toast.
- *
- * [onResume] is the one place that re-fetches an already-warm cache; every
- * other warmer on this screen fires at most once per session.
+ * **No state lives here** — it exists so the screen avoids the EntryPointAccessors pattern.
  */
 @HiltViewModel
 class HomeTabViewModel @Inject constructor(

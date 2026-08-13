@@ -17,17 +17,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * In-memory cache of the public services + packages catalog. Screens observe
- * [services] and [packages]; call [refresh] on startup / when entering booking.
+ * In-memory cache of the public services and packages catalog.
  *
- * Category derivation (distinct by slug, sorted by displayOrder) lives at the
- * call site — the services flow already carries the data and adding a second
- * derived StateFlow here would just duplicate reactivity.
- *
- * [refresh] returns [ApiResult.Success] once the catalog is warm and
- * [ApiResult.Error] carrying the parsed message on failure. The consuming
- * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays silent
- * (NetworkErrorInterceptor owns the infra toast).
+ * Category derivation lives at the call site — the services flow already carries the data, and a second
+ * derived flow would be a second thing to keep in step.
  */
 @Singleton
 class CatalogRepository @Inject constructor(

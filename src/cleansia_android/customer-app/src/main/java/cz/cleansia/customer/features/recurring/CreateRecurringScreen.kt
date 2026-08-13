@@ -664,18 +664,9 @@ private fun FrequencyOptionCard(
 }
 
 /**
- * Day-of-week strip — 7 fixed-width chips in Mon→Sun order using 2-letter
- * abbreviations (Mo Tu We Th Fr Sa Su) so users can distinguish Tue/Thu and
- * Sat/Sun at a glance. Backend dayOfWeek follows .NET DayOfWeek
- * (Sun=0..Sat=6); we map back at click.
- */
-/**
- * Day-of-week strip — Mon→Fri rendered tightly, then a slightly larger gap
- * before Sat/Sun. The visual break tells the user "weekend lives here"
- * without needing labels. Weekend chips also use a subtler background tint
- * when unselected so they're recognizable without being shouty.
+ * Day-of-week strip. Two-letter abbreviations so Tue/Thu and Sat/Sun are distinguishable at a glance.
  *
- * Backend dayOfWeek follows .NET DayOfWeek (Sun=0..Sat=6); we map at click.
+ * **The backend day index follows .NET's, Sunday-first**, so the mapping is applied at click.
  */
 @Composable
 private fun DayOfWeekChips(selected: Int, onSelect: (Int) -> Unit) {

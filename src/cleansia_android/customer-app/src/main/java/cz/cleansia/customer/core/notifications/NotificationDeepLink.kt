@@ -4,17 +4,11 @@ import android.content.Intent
 import cz.cleansia.customer.navigation.Routes
 
 /**
- * Bidirectional bridge between FCM data payloads and the app's typed
- * Compose-Nav routes (`Routes.OrderDetail`, etc.).
+ * Bridge between FCM data payloads and the app's typed nav routes.
  *
- * Why we serialize through Intent extras instead of passing a route
- * object directly: PendingIntent payloads need to round-trip through the
- * Android system, which means raw types only. We encode the event_key +
- * args as string extras and re-resolve to a typed `Routes.X` instance
- * inside [MainActivity.onNewIntent].
- *
- * Falls back to `null` when the payload doesn't map to a known event —
- * caller should land on Home in that case rather than crashing.
+ * **Serialized through Intent extras rather than passing a route object**: a PendingIntent payload has
+ * to round-trip through the Android system, which means raw types only.
+ * -> /architecture/push-notifications
  */
 object NotificationDeepLink {
 

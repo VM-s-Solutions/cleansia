@@ -158,18 +158,10 @@ fun rememberSnapSheetState(
 }
 
 /**
- * Non-modal sheet parked at one of three [SnapAnchor]s over a full-bleed
- * [backdrop], the Wolt/Foodora map layout. Nothing here is ever dismissed —
- * the shallowest anchor still leaves the sheet on screen.
+ * Non-modal sheet parked at one of three anchors over a full-bleed backdrop — the map layout.
  *
- * Three slots, drawn bottom to top: [backdrop] (the map), the sheet itself, and
- * [overlay] for anything that has to float above both — the character glued to
- * the sheet's top edge, the floating navigation buttons. The overlay does not
- * intercept touches where it is empty.
- *
- * [sheetContent] is measured at exactly the visible sheet height, so a child
- * with `Modifier.weight(1f)` above a footer keeps that footer on screen at
- * every anchor.
+ * **Nothing here is ever dismissed**: the shallowest anchor still leaves the sheet on screen.
+ * -> /flows/offerability-and-take
  */
 @Composable
 @OptIn(ExperimentalFoundationApi::class)

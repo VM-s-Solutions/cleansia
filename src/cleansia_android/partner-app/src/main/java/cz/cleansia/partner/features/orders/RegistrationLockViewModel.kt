@@ -323,18 +323,9 @@ class RegistrationLockViewModel @Inject constructor(
             get() = ProfileSection.values().map { it to it.ownedFields() }
 
         /**
-         * Picks the first profile section that has unfilled fields, so the
-         * cleaner taps "Complete profile" and lands exactly where they need
-         * to be — not on the Profile hub. Priority order matches the visual
-         * order on the Profile screen.
-         *
-         * Maps the backend's `profile.fields.*` keys to section destinations.
-         * Falls back to Personal when nothing matches (defensive — server
-         * said hasCompletedProfile=false but didn't list a field).
-         *
-         * [forOnboarding] propagates the onboarding flag into the returned
-         * NavRoute so the receiving section knows to chain forward on save
-         * instead of popping back to the lock.
+         * Picks the first profile section with unfilled fields, so "Complete profile" lands the cleaner
+         * exactly where they need to be rather than on the hub. Priority matches the visual order.
+         * -> /partner-app/onboarding
          */
         fun firstMissingProfileSection(
             missingFields: List<String>,

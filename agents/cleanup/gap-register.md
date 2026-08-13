@@ -67,6 +67,22 @@ pattern is already written and already tested.
 
 **Verdict: fix.** → CL-015.
 
+> **Correction, 2026-08-13 (from working the fix).** This entry claimed three files. Only
+> **`AutoCancelStaleRecurringOrders`** is affected. The other two write nothing that gets stamped from
+> the ambient tenant: `SendRecurringOrderReminders` and `SendMembershipLifecycleNotifications` insert
+> only notification rows, and `NotificationProducer` passes the tenant down explicitly —
+> `UserNotification.Create(userId, eventKey, argsJson, tenantId)` — so `CleansiaDbContext` never
+> reaches its ambient fallback (it stamps only when `TenantId` is empty). Their other write,
+> `Mark…ReminderSent`, is an UPDATE to an existing row and does not re-stamp.
+>
+> What makes the one remaining case real is `OrderStatusTrack`: it is `ITenantEntity` and
+> `OrderStatusTrack.Create` never sets `TenantId`. `CleanupStalePendingOrders` inserts the *same* row
+> type and *does* group by tenant — so the fix makes two sweeps that write the same entity treat it the
+> same way, which is the whole argument.
+>
+> I over-claimed the blast radius in PR #192 by reading the pattern (cross-tenant read + write + commit)
+> instead of checking what each write actually inserts.
+
 ### G-15 — Two cleaners can take the same seat concurrently; nothing at the database rejects the second
 
 **Where:** `Features/Orders/TakeOrder.cs:242-265` · `Order.cs:137, 666` ·

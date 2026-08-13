@@ -4,33 +4,12 @@ using System.Text.Json.Serialization;
 namespace Cleansia.Config.Abstractions;
 
 /// <summary>
-/// JSON converter for enums that is tolerant on the read side but
-/// preserves the default integer write behaviour every existing web
-/// client (Angular NSwag-generated) relies on.
+/// Enum JSON converter: tolerant on read, fixed on write. Reads the integer <c>1</c>, the quoted
+/// integer <c>"1"</c> (what the Kotlin/OpenAPI-Generator clients emit) and the enum name.
 ///
-/// <para>
-/// <b>Why:</b> the OpenAPI Generator's kotlinx-serialization template
-/// emits int-backed enums with <c>@SerialName("1")</c> markers, which
-/// the Kotlin client serializes as the JSON string <c>"1"</c> rather
-/// than the integer <c>1</c>. Default System.Text.Json enum handling
-/// only accepts the integer form, so payloads from the mobile apps
-/// fail with "The JSON value could not be converted to {EnumType}".
-/// </para>
-///
-/// <para>
-/// <b>What this converter accepts on read:</b>
-/// <list type="bullet">
-///   <item>integer <c>1</c></item>
-///   <item>quoted integer <c>"1"</c> (Kotlin / OpenAPI Generator format)</item>
-///   <item>string enum name <c>"NaturalPerson"</c> (defensive)</item>
-/// </list>
-/// </para>
-///
-/// <para>
-/// <b>What it writes:</b> always the integer value, matching what the
-/// Angular clients already expect. Changing the write format would be
-/// a breaking change for every JS consumer.
-/// </para>
+/// <para><b>Always WRITES the integer, and that may not change</b> — every Angular NSwag-generated
+/// client already expects it, so emitting names is a breaking change for every JS consumer.
+/// → /architecture/backend#tolerant-json</para>
 /// </summary>
 public sealed class TolerantEnumConverterFactory : JsonConverterFactory
 {

@@ -13,33 +13,15 @@ internal enum UploadIntake
 }
 
 /// <summary>
-/// The content type of an uploaded payload, decided by its first bytes.
+/// The content type of an uploaded payload, decided by its first bytes. One function answers both
+/// questions an intake has — may we accept this, and what is it — because they are the same fact;
+/// <c>null</c> means neither.
 ///
-/// <para>One function answers both questions an intake has — <i>may we accept this?</i> and <i>what is
-/// it?</i> — because they are the same fact, and splitting them is how a path ends up accepting on one
-/// basis and storing on another. A <c>null</c> result means neither: not a permitted payload for that
-/// intake, and no type to store.</para>
-///
-/// <para><b>The declared <see cref="Shared.DTOs.Files.BlobFileDto.ContentType"/> and the file extension
-/// are both ignored.</b> Both are client strings, so neither can decide what a stored object is served
-/// as; the extension is the weaker of the two, since it also survives a rename by anyone who later
-/// touches the file name. Every type recorded from here on is therefore one of the table below, which is
-/// what keeps <c>text/html</c> and <c>image/svg+xml</c> off a response header whatever a client sends.
-/// Rows written before this existed still hold what their uploader claimed — which is what
-/// <see cref="ForDownload"/> exists for, and why both entry points read the one table.</para>
-///
-/// <para><b>One table, many intakes.</b> The image intakes used to carry their own signature list, which
-/// drifted from this one in both directions: it mapped a bare <c>RIFF</c> container to <c>image/webp</c>
-/// (a WAV and an AVI open the same way, so an audio file was stored as an image), and it accepted BMP and
-/// TIFF, which <see cref="ServedContentType"/> can only ever hand back as <c>application/octet-stream</c>
-/// — an upload that succeeds and an image that never renders. Two tables for one fact is what allowed
-/// both; the per-intake ACCEPTED SET, not a second table, is what differs between intakes.</para>
-///
-/// <para><b>What this does not do.</b> A signature bounds the container format, not its contents: a ZIP
-/// header says OOXML-or-any-other-zip, an OLE2 header says Office-compound-file-or-any-other, and both
-/// admit a well-formed file carrying macros or an embedded payload. There is no malware scan on this
-/// path. It refuses the classes that have no business here — markup, scripts, executables, arbitrary
-/// binary — and it makes the stored type server-truth; it does not make the bytes safe to open.</para>
+/// <para><b>The declared ContentType and the file extension are both IGNORED.</b> Both are client
+/// strings, so neither may decide what a stored object is served as. That is what keeps
+/// <c>text/html</c> and <c>image/svg+xml</c> off a response header whatever a client sends.
+/// <b>One table, many intakes</b> — a per-intake signature list drifts in both directions.
+/// → /architecture/backend#content-sniffing</para>
 /// </summary>
 internal static class SniffedContentType
 {

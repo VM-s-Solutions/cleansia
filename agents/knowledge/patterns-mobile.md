@@ -599,7 +599,7 @@ raw components one-off; never duplicate a `:core` component.
 >   gate lives on the presentation model, and the view's expression is a single reference to it with no
 >   `&&`** (ADR-0047 amendment A1). A lifecycle term does not escape this: it becomes a parameter or a
 >   property — `OrderDisclosure.showsAccessCard(status)`
->   (`OrderDisclosurePresentation.kt:45-46`) and `OrderDetail.showsAccessCard`
+>   (`OrderDisclosurePresentation.kt:35-36`) and `OrderDetail.showsAccessCard`
 >   (`OrderDetail.swift:140-142`) are the two shipped shapes.
 >   ⚠️ **"Named" is not the obligation; WHOLE is.** Two forms satisfy "named" and leave the defect live:
 >   a `val` inside the composable, and a *partial* gate where the model exposes the arrival term and the

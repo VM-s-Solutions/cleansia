@@ -192,8 +192,17 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 > does not exist and never did — it is `planning/` at the repo root. And `Infra.Scripts` is not an
 > "empty project": it compiles zero `.cs` files, but it carried **19 seed SQL scripts, 18 of them the
 > only copy in the repo**. Deleting the folder as the row instructed would have destroyed them. They
-> are now `sql-scripts/seed/` with a README; only the csproj, the solution entry and one byte-identical
-> duplicate went.
+> are now `sql-scripts/seed/` with a README.
+>
+> **And the 19th nearly shipped a silent break.** `insert_seed_data.sql` looked like a byte-identical
+> duplicate of the repo-root copy, so it was deleted as redundant — but the duplication was
+> deliberate: `CleansiaStartupBase.SeedDevelopmentData` resolves *that* path from the solution
+> directory and executes it, so a fresh Development boot would have logged *"Seed file not found.
+> Skipping seed."* and carried on with an empty database and no failure. It was caught by
+> `StartupSeedScriptSyncTests`, a pin written after the two copies drifted once before. Restoring the
+> duplicate was the wrong repair: startup now reads `sql-scripts/insert_seed_data.sql`, already the
+> file three other test classes read, so **one copy exists and the drift class is gone rather than
+> policed** — and the pin retires with it.
 >
 > Archiving the backlog was not a `git mv` either: **~404 references across 170 files point into it,
 > 31 of them published ADRs.** Those were rewritten in the same commit, or P7's reference contract

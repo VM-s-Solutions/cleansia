@@ -18,6 +18,19 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+### MS-4 — Add `CurrencyCode` to the two payroll DTOs, then regenerate the clients — **owner**
+
+You ruled on 2026-08-07, verbatim: *"NO, DON'T HARDCODE ANYTHING. ADD A DTO."* `PeriodPaySummaryDto`
+and `OrderEmployeePayDto` still carry no currency, so the partner "My Pay" screen prints a hardcoded
+`Kč` (`period-pay.models.ts`). `DashboardStatsDto` already has `CurrencyCode` and the dashboard card
+now reads it, which is why the two screens can disagree.
+
+It bites the day a second country configuration exists: the generated payout invoice — a document the
+cleaner files with their tax return — says EUR while "My Pay" for the same period says Kč.
+
+**Action:** add `CurrencyCode` to both DTOs and their mappers, then regenerate the partner clients
+(`manual_step: nswag-regen`). The frontend change is one constant once the field arrives.
+
 ### MS-3 — Rotate the exposed Mapbox token — **owner**
 
 Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed

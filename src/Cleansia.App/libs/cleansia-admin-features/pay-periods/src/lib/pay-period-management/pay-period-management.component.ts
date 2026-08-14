@@ -187,8 +187,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   closePayPeriod(payPeriod: PayPeriodDto): void {
-    // TODO: Open dialog for confirmation and notes
-    if (confirm('Are you sure you want to close this pay period?')) {
+    if (confirm(this.translate.instant('pay_periods.confirm_close'))) {
       this.facade.closePayPeriod(payPeriod.id!);
     }
   }

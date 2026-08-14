@@ -3,6 +3,10 @@ import { OrderEmployeePayDto } from '@cleansia/partner-services';
 
 export type PeriodStatusKey = 'open' | 'closed' | 'paid' | 'unknown';
 
+// MANUAL_STEP (nswag-regen, MS-4): hardcoded because PeriodPaySummaryDto and OrderEmployeePayDto
+// carry no CurrencyCode. The partner dashboard already reads the server's value — DashboardStatsDto
+// has the field — so this screen is the only one left guessing. Adding it is a backend DTO change and
+// therefore an owner-run client regeneration. → /flows/pay-and-payouts
 const CURRENCY_SUFFIX = 'Kč';
 
 export function formatPayAmount(value: number | undefined): string {

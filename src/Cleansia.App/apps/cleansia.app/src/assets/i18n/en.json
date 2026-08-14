@@ -1035,7 +1035,9 @@
         "upload_error": "Failed to upload evidence",
         "invalid_type": "This file type isn't allowed. Use JPG, PNG, WebP or PDF.",
         "too_large": "The file is too large. Maximum size is 10 MB."
-      }
+      },
+      "author_you": "You",
+      "author_support": "Cleansia support"
     },
     "rewards": {
       "title": "Rewards",

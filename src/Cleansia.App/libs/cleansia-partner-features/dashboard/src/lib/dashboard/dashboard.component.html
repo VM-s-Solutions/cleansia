@@ -79,6 +79,7 @@
         <cleansia-earnings-chart
           [data]="facade.earningsAnalytics()"
           [loading]="facade.earningsLoading()"
+          [currencyCode]="facade.stats()?.currencyCode"
         />
 
         <cleansia-time-analytics-chart
@@ -89,11 +90,13 @@
         <cleansia-order-distribution-chart
           [data]="facade.orderAnalytics()"
           [loading]="facade.orderLoading()"
+          [currencyCode]="facade.stats()?.currencyCode"
         />
 
         <cleansia-productivity-gauges
           [data]="facade.productivityMetrics()"
           [loading]="facade.productivityLoading()"
+          [currencyCode]="facade.stats()?.currencyCode"
         />
       </div>
     </cleansia-section>
@@ -156,7 +159,7 @@
           </div>
           <div class="order-card__footer">
             <div class="order-card__price">
-              {{ order.totalPrice | number : '1.2-2' }} Kč
+              {{ order.totalPrice | number : '1.2-2' }} {{ order.currency.code }}
             </div>
             <i class="pi pi-chevron-right"></i>
           </div>

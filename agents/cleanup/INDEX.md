@@ -261,6 +261,7 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 | CL-058 | `B3` ×21 — the RULE was wrong; narrowed with a paired self-test, sites stand | M | done | #203 |
 | CL-059 | `D2` ×8 — converted; the "behaviour change" the baseline claimed did not exist | M | done | #203 |
 | CL-061 | Admin reveal control — shipped; `MS-5` cleared by the owner mid-PR | S | done | #203 |
+| CL-062 | The three product calls: dashboard chart currencies · dispute author label · stale ADR paths | M | done | #203 |
 
 > **`CL-060` shrank on inspection, which is rule 3 again.** It was filed as a four-platform feature
 > (admin web, partner web, Android, iOS). The *assigned* cleaner's access is correct on every platform

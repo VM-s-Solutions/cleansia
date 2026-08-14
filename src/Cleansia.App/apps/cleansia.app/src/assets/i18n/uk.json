@@ -1035,7 +1035,9 @@
         "upload_error": "Не вдалося завантажити доказ",
         "invalid_type": "Цей тип файлу не дозволено. Використовуйте JPG, PNG, WebP або PDF.",
         "too_large": "Файл завеликий. Максимальний розмір — 10 МБ."
-      }
+      },
+      "author_you": "Ви",
+      "author_support": "Підтримка Cleansia"
     },
     "rewards": {
       "title": "Винагороди",

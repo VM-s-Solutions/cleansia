@@ -450,12 +450,11 @@ private fun StatusPill(label: String, color: Color) {
 
 /* ── Message bubble ──
  *
- * Aligns right + primaryContainer bg for the customer, left + surfaceVariant bg for staff. The label
- * is synthesized from `isStaffMessage` rather than read from `authorName`.
+ * Aligns right + primaryContainer bg for the customer, left + surfaceVariant bg for staff.
  *
- * NOTE: that is no longer because the field is empty — `DisputeMappers` populates it from the author's
- * name, and both web clients render it, so one thread is attributed differently per platform. Aligning
- * them is a product call, not a comment fix. → /flows/cancellation-refund-dispute
+ * The label is the ROLE, not the person: `authorName` is populated and carries a support agent's real
+ * name, which a customer has no business learning. Customer web was aligned to this on 2026-08-14;
+ * admin still renders the name, because admins are staff and need to know who wrote what.
  */
 @Composable
 private fun MessageBubble(message: DisputeMessageDto) {

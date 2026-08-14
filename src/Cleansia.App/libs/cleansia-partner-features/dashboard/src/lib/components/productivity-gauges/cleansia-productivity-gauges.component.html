@@ -156,7 +156,7 @@
           <cleansia-label
             [text]="
               (data()!.personalBests.highestEarningMonth.amount
-                | number : '1.0-0') + ' Kč'
+                | number : '1.0-0') + ' ' + (currencyCode() ?? '')
             "
             size="lg"
             weight="bold"

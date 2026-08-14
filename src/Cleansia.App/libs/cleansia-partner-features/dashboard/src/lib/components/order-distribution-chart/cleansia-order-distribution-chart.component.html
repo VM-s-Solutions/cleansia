@@ -109,7 +109,7 @@
             color="secondary"
           />
           <cleansia-label
-            [text]="(service.totalRevenue | number : '1.0-0') + ' Kč'"
+            [text]="(service.totalRevenue | number : '1.0-0') + ' ' + (currencyCode() ?? '')"
             size="sm"
             weight="semibold"
             color="primary"

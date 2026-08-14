@@ -358,18 +358,13 @@ They are the same bug class as MembershipPlan and correct today only by single-t
 them in **their own batch** (do NOT fold into T-0113 — scope discipline avoids the double-fix collision
 the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs both; cross-reference it.
 
-> **DISCREPANCY TO FLAG TO PM (real, needs reconciliation):** the label **"BSP-9"** is overloaded.
-> - The **T-0123-prod-config** ticket defines **BSP-9** as the anonymous `Order/LookupBatch`
->   secret-pair/cap hardening (`T-0123.md:37-39, 60-62`, `LookupOrderBatch.cs`) — a *different* finding,
->   NOT the four catalogs.
-> - **ADR-0001 Addendum A1 D-A1.4** and the orchestrator's ground truth use **"BSP-9"** to mean the
->   *four sibling anonymous catalogs*.
->
-> These are two different bodies of work under one name. The catalog-tenancy fix currently has **no
-> dedicated ticket** — Addendum A1 routes it "to BSP-9," but the BSP-9 in the backlog is the LookupBatch
-> ticket. **Action:** the PM must either (a) create a dedicated ticket for the four-catalog Option-A fix
-> (recommended; mirror the T-0113 contract per entity) and have A1 D-A1.4 reference *that* id, or
-> (b) explicitly expand T-0123's BSP-9 scope. Do not let the catalog fix fall through the naming gap.
+> **RESOLVED — the label "BSP-9" was overloaded, and both bodies of work have since shipped.**
+> It meant two things at once: the anonymous `Order/LookupBatch` secret-pair and cap hardening (in
+> `LookupOrderBatch.cs`), and — per ADR-0001 Addendum A1 D-A1.4 — the four sibling anonymous catalogs.
+> The worry recorded here was that the catalog fix would fall through the naming gap for want of a
+> dedicated ticket. It did not: all six catalog entities are `: Auditable` today, and the batch lookup
+> is capped at 10 items and keyed on the internal GUID rather than the human-typed number. Kept as the
+> record of a real risk that was handled, not as an action.
 
 ### 7c. What multi-currency PLANS would require (if ever needed)
 

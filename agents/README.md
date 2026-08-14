@@ -83,26 +83,24 @@ agents/
 │   ├── patterns-frontend.md  # facades, signals, NgRx, PrimeNG, i18n (REAL types)
 │   ├── patterns-mobile.md    # Compose, Hilt, MVVM, StateFlow (Android + iOS parity)
 │   ├── consistency.md        # ONE way to do each archetype (paged query, command, list, form, VM)
-│   ├── security-rules.md     # S1–S12 non-negotiable security laws (real-incident derived)
 │   ├── testing.md            # what must be tested + the must-cover list (pay, lifecycle, authz…)
 │   ├── runtime-readiness.md  # observability + graceful degradation when a dependency is down
-│   ├── conventions.md        # naming, file layout, quality bars, owner-only steps
-│   └── roles/                # responsibility map (CRC cards) per aggregate/service
-├── tools/
-│   └── check-consistency.mjs # mechanical checker for the project-specific A/B/C/D/E rules
-├── backlog/
-│   ├── INDEX.md              # the manifest — every ticket, one row, current state
+│   └── conventions.md        # naming, file layout, quality bars, owner-only steps
+├── tools/                    # 7 check-*.mjs repo checkers, six with a self-test
+├── backlog/                  # where new work is filed — see its README for the one rule
+│   ├── INDEX.md              # the manifest: one row per ticket, ONE status, nowhere else
 │   ├── tickets/              # T-NNNN-*.md — one file per unit of work
-│   ├── stories/              # US-<persona>-NNNN-*.md — user stories with AC
-│   ├── adr/                  # NNNN-*.md — immutable architecture decisions
-│   ├── status/               # sprint-N.md — progress reports for the owner
-│   ├── questions/            # open.md / answered.md — the escalation inbox
-│   ├── audits/               # findings from codebase audits (the first real job)
-│   ├── test-plans/           # T-NNNN.md — QA test plans & results
-│   └── security/             # audit checklists & findings
+│   └── questions/open.md     # the escalation inbox; a question here has a `blocked` row behind it
+├── cleanup/                  # the 2026-08 cleanup track — a closed manifest, not a queue
 ├── templates/                # ticket / story / adr / audit / test-plan templates
-└── _legacy/                  # the archived old /plan+/execute YAML system (kept for history)
+└── archive/2026-08/          # ADR deliberation drafts + challenges, cited by published ADRs
 ```
+
+> **What moved out of here, and where it went.** The S1–S12 security laws are
+> `docs/architecture/security-rules.md`; the per-component responsibility map is `docs/domain/roles/`;
+> the 51 ADRs are `docs/decisions/adr-NNNN.md`. All three were published on 2026-08-13 because a reader
+> needs them and this folder is for writers. The old 428-file backlog and the `_legacy/` YAML system
+> were deleted on 2026-08-14 — both are in git history.
 
 > **Why `agents/` and not `docs/`?** `docs/` is the *published* VitePress site for the product.
 > The agent backlog churns constantly and is internal machinery — mixing it into the public docs

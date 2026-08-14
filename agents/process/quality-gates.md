@@ -1,10 +1,5 @@
 # Quality Gates
 
-> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
-> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
-> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
-> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
-> raise the need with the owner rather than inventing a destination.
 
 
 A change does not reach `done` until every **applicable** gate passes. The Reviewer enforces gates
@@ -356,7 +351,7 @@ directly for mechanical certainty.**
 ### Serialize shared-file lanes — and NEVER `git restore` a shared file in a parallel batch
 When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
 (one writer at a time), not run concurrently. The shared-file clusters that bite are:
-`agents/knowledge/consistency.md`, `agents/archive/2026-08/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
+`agents/knowledge/consistency.md`, `agents/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
 `{en,cs,sk,uk,ru}.json` per app), and the `Policy.cs` / `PolicyBuilder.cs` authz cluster (these two
 must move together or `AssertComplete` fails boot). The PM sequences these into a single lane the same
 way `:core` (T-0277/T-0278) and the Policy cluster (T-0285) were serialized — never two instances

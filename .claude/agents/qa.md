@@ -19,13 +19,8 @@ the must-cover list at integration level, edge/negative cases, and manual execut
 app. If a developer's pure-logic was written test-last, flag it to the Reviewer.
 
 ## What you own
-> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
-> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
-> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
-> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
-> raise the need with the owner rather than inventing a destination.
 
-- `agents/archive/2026-08/backlog/test-plans/T-NNNN.md` — one plan per ticket, with executed results
+- The `## Test plan` section of `agents/backlog/tickets/T-NNNN-*.md`, with executed results
 - Automated tests under `src/Cleansia.Tests` / `Cleansia.IntegrationTests` (backend) and the Jest/
   Angular specs (frontend), where the harness supports the case
 - Defect reports — appended to the ticket or raised as new findings for the PM to ticket
@@ -42,7 +37,7 @@ app. If a developer's pure-logic was written test-last, flag it to the Reviewer.
   repro is a question, not a defect) and the order/pay lifecycles in `CLAUDE.md`
 
 ## Workflow per ticket
-1. Read ticket + AC. Write `agents/archive/2026-08/backlog/test-plans/T-NNNN.md` from the template — **one case per
+1. Read ticket + AC. Write the ticket's `## Test plan` section — **one case per
    AC item**, plus edge/negative cases.
 2. Add automated tests for any new **pure logic**: pay calculation (the
    `basePay/extras/expenses/clamp/bonus-deduction` formula and per-employee overrides), pricing,

@@ -35,19 +35,21 @@ import { fileURLToPath } from "node:url";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-// The backlog was archived on 2026-08-13 and is frozen history rather than a work queue, so this
-// checker now guards that history against being edited into disagreeing with itself. The path is
-// built from segments, which is why the archive move did not rewrite it the way it rewrote prose.
-const BACKLOG = join(REPO, "agents", "archive", "2026-08", "backlog");
+// The live backlog. The 428-file predecessor was archived on 2026-08-13 and deleted on 2026-08-14;
+// this reads whatever is being filed NOW. The path is built from segments, which is why the earlier
+// archive move did not rewrite it the way it rewrote prose — worth remembering before the next move.
+const BACKLOG = join(REPO, "agents", "backlog");
 const INDEX = join(BACKLOG, "INDEX.md");
 const TICKETS = join(BACKLOG, "tickets");
 
 const warn = process.argv.includes("--warn");
 const verbose = process.argv.includes("--verbose");
 
-/** Floors. Chosen well below today's counts so they catch a broken reader, not normal churn. */
-const MIN_ROWS = 100;
-const MIN_TICKET_FILES = 50;
+// ANTI-VACUITY, and the distinction that makes it honest: an EMPTY backlog is a legitimate state (it
+// is the state right now), while a backlog with rows that the reader cannot parse is a broken reader.
+// A fixed floor cannot tell those apart, so the check is a CONSISTENCY one instead — rows and ticket
+// files must both be present or both absent. Nothing to report is only ever reported as a pass when
+// there is genuinely nothing.
 
 const DONE = /\b(done|shipped|closed)\b|✅/i;
 const OPEN = /\b(draft|ready|blocked|in_progress|in_review|proposed|qa)\b/i;
@@ -78,9 +80,6 @@ lines.forEach((raw, i) => {
 });
 
 const rowCount = [...rows.values()].reduce((n, l) => n + l.length, 0);
-if (rowCount < MIN_ROWS) {
-    add("P0", `REACH: parsed only ${rowCount} ticket row(s) from INDEX.md (floor ${MIN_ROWS}) — the reader is broken, not the file`);
-}
 
 /** A row's verdict: done wins only when the DONE marker is in the status half, not the prose. */
 const verdictOf = (text) => {
@@ -125,8 +124,14 @@ if (existsSync(TICKETS)) {
         if (sm) fileStatus.set(m[1], sm[1].toLowerCase());
     }
 }
-if (ticketFiles < MIN_TICKET_FILES) {
-    add("P0", `REACH: found only ${ticketFiles} ticket file(s) under ${TICKETS} (floor ${MIN_TICKET_FILES})`);
+// Rows and files must agree about whether the backlog is empty. Either side alone reading zero while
+// the other has content means the reader lost half the corpus — the vacuous-green failure this exists
+// to close. Both at zero is simply an empty backlog and passes.
+if (rowCount === 0 && ticketFiles > 0) {
+    add("P0", `REACH: parsed 0 ticket row(s) from INDEX.md while ${ticketFiles} ticket file(s) exist under ${TICKETS} — the INDEX reader is broken, or every ticket is unfiled`);
+}
+if (ticketFiles === 0 && rowCount > 0) {
+    add("P0", `REACH: found 0 ticket file(s) under ${TICKETS} while INDEX.md carries ${rowCount} ticket row(s) — the files are missing, or the ticket reader is broken`);
 }
 
 let c2 = 0;

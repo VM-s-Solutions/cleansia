@@ -46,7 +46,7 @@ storage, actor-based single-flight refresh, the device-id header contract):
 **The governing decisions** are in the ADRs — read these, don't re-litigate:
 `docs/decisions/0013` (architecture), `0014` (iOS-16 + ObservableObject), `0016` (Apple App Review),
 `0018` (design parity / Gate-DP). Plan + tickets: `agents/archive/2026-08/backlog/status/sprint-12.md`. The big-picture
-handoff: `agents/IOS-AND-AZURE-HANDOFF.md`.
+handoff, deleted 2026-08-14 once Azure DEV was live and the iOS clients were generated — it is in git history if the pre-provisioning reasoning is ever wanted.
 
 ---
 
@@ -129,7 +129,7 @@ You have two ways to work with Claude from here:
   **you** compiling/running on the Mac and feeding back errors. Workable, but slower and re-introduces
   the "can't verify it builds" gap that produced stubs earlier. Prefer the first option.
 
-**To resume cold (either way), point Claude at:** this doc → `agents/IOS-AND-AZURE-HANDOFF.md` →
+**To resume cold (either way), point Claude at:** this doc →
 `sprint-12.md` → the ADRs (0013/0014/0016/0018) → skim the Android reference for the screen you're
 porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 

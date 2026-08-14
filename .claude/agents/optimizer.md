@@ -13,11 +13,6 @@ the cheaper-by-design alternative. Optimize for the long-run cost of running the
 not micro-tweaks that hurt readability.
 
 ## What you read
-> ⚠️ **The backlog is archived. Every `agents/archive/2026-08/backlog/…` path below is FROZEN HISTORY —
-> read it, never write to it.** It was archived on 2026-08-13 (CL-038) and its `INDEX.md` files a ticket
-> twice with independent statuses, which is how four lanes were once dispatched at 24 already-shipped
-> tickets. **Where new work gets filed is an open owner decision (`CL-053`)** — until it is answered,
-> raise the need with the owner rather than inventing a destination.
 
 - The diff + the surrounding hot path
 - `agents/knowledge/patterns-backend.md` (performance section), `patterns-frontend.md`,
@@ -55,7 +50,7 @@ not micro-tweaks that hurt readability.
 - Reuse `:core`/`Core` components rather than re-creating heavy UI.
 
 ## Output
-Write findings in the ticket's `## Review` section (or a standalone `agents/archive/2026-08/backlog/audits/perf-*.md`
+Write findings in the ticket's `## Review` section (or, for a standalone audit, one ticket per finding
 for audits): each finding names the file:line, the cost it incurs, and the concrete fix. Rank by
 impact — a per-request N+1 on a hot endpoint outranks a micro-allocation.
 

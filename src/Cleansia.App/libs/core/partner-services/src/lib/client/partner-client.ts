@@ -10446,6 +10446,7 @@ export class OrderItem implements IOrderItem {
     hasAfterPhotos!: boolean;
     expressWaiverForfeitedOnCancel!: boolean | undefined;
     preferredOffer!: PreferredOfferDetails;
+    hasAccessInstructions!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10538,6 +10539,7 @@ export class OrderItem implements IOrderItem {
             this.hasAfterPhotos = Data["hasAfterPhotos"];
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
+            this.hasAccessInstructions = Data["hasAccessInstructions"];
         }
     }
 
@@ -10630,6 +10632,7 @@ export class OrderItem implements IOrderItem {
         data["hasAfterPhotos"] = this.hasAfterPhotos;
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
+        data["hasAccessInstructions"] = this.hasAccessInstructions;
         return data;
     }
 }
@@ -10685,6 +10688,7 @@ export interface IOrderItem {
     hasAfterPhotos: boolean;
     expressWaiverForfeitedOnCancel: boolean | undefined;
     preferredOffer: PreferredOfferDetails;
+    hasAccessInstructions: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

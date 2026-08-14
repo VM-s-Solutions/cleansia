@@ -8882,6 +8882,10 @@
           },
           "preferredOffer": {
             "$ref": "#/components/schemas/PreferredOfferDetails"
+          },
+          "hasAccessInstructions": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

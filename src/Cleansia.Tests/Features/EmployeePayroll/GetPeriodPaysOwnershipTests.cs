@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Moq;
 
@@ -29,6 +31,7 @@ public class GetPeriodPaysOwnershipTests
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
 
     private GetPeriodPays.Handler CreateHandler() =>
         new(
@@ -37,7 +40,8 @@ public class GetPeriodPaysOwnershipTests
             _invoiceRepository.Object,
             _orderPayRepository.Object,
             _orderAccessService.Object,
-            _session.Object);
+            _session.Object,
+            _currencyResolution.Object);
 
     private void SetRole(UserProfile role) =>
         _session.Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
@@ -127,5 +131,73 @@ public class GetPeriodPaysOwnershipTests
         _orderAccessService.Verify(
             s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    // ── Currency (MS-4) ──
+    //
+    // "My Pay" printed a hardcoded "Kč" until 2026-08-14. The day a second country configuration
+    // exists that disagrees with the cleaner's own payout invoice — a document they file with their tax
+    // return — so the DTO carries the currency and the two sources must not be able to drift.
+
+    /// <summary>
+    /// The invoice wins whenever there is one. Once a period is invoiced, that row IS what the payout
+    /// document says; resolving independently could produce a different answer and reintroduce exactly
+    /// the divergence this field closes.
+    /// </summary>
+    [Fact]
+    public async Task An_Invoiced_Period_Reports_The_Invoices_Own_Currency()
+    {
+        SetRole(UserProfile.Administrator);
+        ArrangeOwnPay();
+        _invoiceRepository
+            .Setup(r => r.GetByEmployeeAndPayPeriodAsync(CallerEmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(InvoiceWithCurrency("EUR"));
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("CZK");
+
+        var result = await CreateHandler().Handle(
+            new GetPeriodPays.Query(CallerEmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("EUR", result.Value!.CurrencyCode);
+    }
+
+    /// <summary>An un-invoiced period has no stamped currency, so it resolves — the same way the
+    /// partner dashboard does, so those two cannot drift either.</summary>
+    [Fact]
+    public async Task An_Un_Invoiced_Period_Resolves_From_The_Employees_Work_Country()
+    {
+        SetRole(UserProfile.Administrator);
+        ArrangeOwnPay();
+        _invoiceRepository
+            .Setup(r => r.GetByEmployeeAndPayPeriodAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((EmployeeInvoice?)null);
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("CZK");
+
+        var result = await CreateHandler().Handle(
+            new GetPeriodPays.Query(CallerEmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("CZK", result.Value!.CurrencyCode);
+    }
+
+    private static EmployeeInvoice InvoiceWithCurrency(string code)
+    {
+        var invoice = (EmployeeInvoice)System.Runtime.CompilerServices.RuntimeHelpers
+            .GetUninitializedObject(typeof(EmployeeInvoice));
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Currency))!
+            .SetValue(invoice, CurrencyWithCode(code));
+        return invoice;
+    }
+
+    private static Currency CurrencyWithCode(string code)
+    {
+        var currency = (Currency)System.Runtime.CompilerServices.RuntimeHelpers
+            .GetUninitializedObject(typeof(Currency));
+        typeof(Currency).GetProperty(nameof(Currency.Code))!.SetValue(currency, code);
+        return currency;
     }
 }

@@ -257,7 +257,7 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 | CL-060 | G-11 — the admin entry-instruction read is now an audited Command | M | done | #203 |
 | CL-057 | Admin pay-period close no longer confirms in hardcoded English | S | done | #203 |
 | CL-056 | Dead camera affordance removed; the dispute author label is reported, not decided | S | done | #203 |
-| CL-054 | Partner dashboard reads the server's currency; "My Pay" is blocked on `MS-4` | M | part done | #203 |
+| CL-054 | `CurrencyCode` on the pay summary + the dashboard card; regen is `MS-4` | M | done | #203 |
 | CL-058 | `B3` ×21 — the RULE was wrong; narrowed with a paired self-test, sites stand | M | done | #203 |
 | CL-059 | `D2` ×8 — converted; the "behaviour change" the baseline claimed did not exist | M | done | #203 |
 | CL-061 | Admin reveal control — shipped; `MS-5` cleared by the owner mid-PR | S | done | #203 |

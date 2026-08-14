@@ -22,18 +22,21 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
-### MS-4 — Add `CurrencyCode` to the two payroll DTOs, then regenerate the clients — **owner**
+### MS-4 — Regenerate the clients for the payroll currency — **owner**
 
-You ruled on 2026-08-07, verbatim: *"NO, DON'T HARDCODE ANYTHING. ADD A DTO."* `PeriodPaySummaryDto`
-and `OrderEmployeePayDto` still carry no currency, so the partner "My Pay" screen prints a hardcoded
-`Kč` (`period-pay.models.ts`). `DashboardStatsDto` already has `CurrencyCode` and the dashboard card
-now reads it, which is why the two screens can disagree.
+**The backend half is done (2026-08-14, owner's word: *"MS-4 you can add on your own"*).**
+`PeriodPaySummaryDto` now carries `CurrencyCode`, sourced from the **invoice** when the period has one
+and from the employee's work country only when it does not — so once a period is invoiced, "My Pay" and
+the payout document read from the same row and cannot diverge.
 
-It bites the day a second country configuration exists: the generated payout invoice — a document the
-cleaner files with their tax return — says EUR while "My Pay" for the same period says Kč.
+**It turned out to be one DTO, not two.** `OrderEmployeePayDto` is never returned on its own: it is
+nested inside `PeriodPaySummaryDto` and `EmployeeInvoiceDetailDto`, and **`EmployeeInvoiceDetailDto`
+already carried `CurrencyCode`**. A per-row copy would have repeated one value on every line of a
+period for no reader.
 
-**Action:** add `CurrencyCode` to both DTOs and their mappers, then regenerate the partner clients
-(`manual_step: nswag-regen`). The frontend change is one constant once the field arrives.
+**Action:** regenerate the partner clients (`manual_step: nswag-regen`). Then
+`period-pay.models.ts`'s `CURRENCY_SUFFIX` constant reads the DTO instead of the literal `Kč` — one
+line, and the `MANUAL_STEP` comment above it comes out with it.
 
 ### MS-3 — Rotate the exposed Mapbox token — **owner**
 

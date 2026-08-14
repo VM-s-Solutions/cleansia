@@ -41,11 +41,16 @@ class PeriodPayViewModel @Inject constructor(
     private val payPeriodId: String = savedStateHandle.get<String>("payPeriodId")
         ?: error("payPeriodId required for PeriodPay")
 
-    /** Threaded through from the launching invoice — the summary DTO carries no currency. */
-    val currencyCode: String? = savedStateHandle.get<String>("currencyCode")
+    /**
+     * The launching invoice's currency, kept only as a fallback. The summary DTO carries the currency
+     * itself as of 2026-08-14, so the response is preferred — an entry point that does not pass this
+     * argument (a deep link, a restored back stack) would otherwise render every amount unlabelled.
+     */
+    val launchCurrencyCode: String? = savedStateHandle.get<String>("currencyCode")
 
     private val _state = MutableStateFlow<PeriodPayUiState>(PeriodPayUiState.Loading)
     val state: StateFlow<PeriodPayUiState> = _state.asStateFlow()
+
 
     init {
         load()

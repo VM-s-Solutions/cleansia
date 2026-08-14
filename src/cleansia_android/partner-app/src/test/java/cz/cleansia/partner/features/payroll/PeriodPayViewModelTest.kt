@@ -48,6 +48,7 @@ class PeriodPayViewModelTest {
         hasInvoice = false,
         invoiceId = null,
         orderPays = emptyList(),
+        currencyCode = "CZK",
     )
 
     @Before

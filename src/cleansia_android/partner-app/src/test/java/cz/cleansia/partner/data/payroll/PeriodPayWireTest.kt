@@ -348,6 +348,7 @@ class PeriodPayWireTest {
             "hasInvoice",
             "invoiceId",
             "orderPays",
+            "currencyCode",
         )
 
         val LINE_SPEC_PROPERTIES = setOf(

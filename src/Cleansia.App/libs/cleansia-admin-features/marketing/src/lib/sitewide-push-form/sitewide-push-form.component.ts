@@ -38,7 +38,7 @@ export class SitewidePushFormComponent {
   private static readonly TITLE_MAX = 120;
   private static readonly BODY_MAX = 500;
 
-  readonly form = this.fb.group({
+  readonly form = this.fb.nonNullable.group({
     titleEn: this.fb.control<string>('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(SitewidePushFormComponent.TITLE_MAX)],

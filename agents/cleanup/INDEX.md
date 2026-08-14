@@ -258,8 +258,8 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 | CL-057 | Admin pay-period close no longer confirms in hardcoded English | S | done | #203 |
 | CL-056 | Dead camera affordance removed; the dispute author label is reported, not decided | S | done | #203 |
 | CL-054 | Partner dashboard reads the server's currency; "My Pay" is blocked on `MS-4` | M | part done | #203 |
-| CL-058 | `B3` ×21 — validators inheriting a shared base | M | blocked — owner |  |
-| CL-059 | `D2` ×8 — `fb.nonNullable.group(...)` | M | blocked — owner |  |
+| CL-058 | `B3` ×21 — the RULE was wrong; narrowed with a paired self-test, sites stand | M | done | #203 |
+| CL-059 | `D2` ×8 — converted; the "behaviour change" the baseline claimed did not exist | M | done | #203 |
 | CL-061 | Admin reveal control — shipped; `MS-5` cleared by the owner mid-PR | S | done | #203 |
 
 > **`CL-060` shrank on inspection, which is rule 3 again.** It was filed as a four-platform feature
@@ -268,16 +268,21 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 > the gap register worried would disappear into the archive, turned out to have **no ticket file at
 > all**; it was only ever an INDEX row.
 >
-> **`CL-058` and `CL-059` are both narrower than P4's baseline said**, and that baseline is mine.
-> `B3`'s 21 sites are two populations: 5 inherit a base that declares **no constructor rules** — only
-> `protected` helpers the derived class calls — which is behaviourally identical to inlining, and 5
-> inherit `LoginValidator`, whose ordering is the deliberate point ("a locked account never evaluates
-> the password"). The real question is the 11 on `UserEmailValidator`, whose constructor declares a
-> `RuleFor` that costs a **database round-trip on every request**, including ones already invalid,
-> because FluentValidation's class-level cascade default is `Continue`. `D2`'s 8 are 2 no-ops (those
-> controls are already `nonNullable: true` individually) and 6 nullable ones, of which exactly one form
-> calls `reset()` — resetting `''` instead of `null`, which neither the user nor `Validators.required`
-> can tell apart. **The baseline's "behaviour change to shipped admin forms" was overstated.**
+> **`CL-058` and `CL-059` both resolved against the tree, and in `B3`'s case the checker was the
+> defect.** Its 21 sites are three populations: 5 inherit a base that declares **no constructor rules**
+> — only `protected` helpers the derived class calls, behaviourally identical to inlining; 5 inherit
+> `LoginValidator`, whose ordering is the deliberate point; and 11 inherit `UserEmailValidator`, whose
+> constructor rule re-checks the caller against the database on every request. **That last one is
+> load-bearing**: the three web hosts install no revocation directory, a Partner access token lives
+> 1440 minutes, and GDPR erasure rewrites `User.Email`, so it is the only thing stopping an erased or
+> unconfirmed principal acting on a still-valid token. Owner confirmed the intent. The rule now exempts
+> the four bases by name with a paired *"STILL flags anything else"* self-test.
+>
+> `D2`'s ×8 were converted, because the risk the baseline stated was not there: 2 are no-ops (those
+> controls already declare `nonNullable: true`), 5 of the remaining 6 forms never call `reset()`, and
+> the one that does resets `''` instead of `null` — indistinguishable to both the user and
+> `Validators.required`. **`check-consistency` drops from 44 to 15, and almost all of that is the
+> checker being wrong rather than the codebase improving.**
 
 ---
 

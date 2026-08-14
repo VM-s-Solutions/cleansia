@@ -359,6 +359,46 @@ public class ApproveThing
     assert.equal(b1.length, 0, `expected 0 B1, got: ${r.out}`);
 });
 
+// B3 — the four exempt validator bases. Narrowed 2026-08-14 after the rule was found to be telling
+// agents to remove a security control: UserEmailValidator's constructor rule is what stops an erased or
+// unconfirmed principal acting on a still-valid token, and the three web hosts have no revocation
+// directory to catch it otherwise. Paired with the STILL-flags case below, per the P4 discipline.
+test("B3 does NOT flag the four exempt validator bases", () => {
+    for (const base of [
+        "AbstractValidator",
+        "BaseAuthValidator",
+        "BaseUserValidator",
+        "LoginValidator",
+        "UserEmailValidator",
+    ]) {
+        const r = run({
+            code: `namespace X;
+public class DoThing
+{
+    public class Validator : ${base}<Command>
+    {
+    }
+}`,
+        });
+        const b3 = r.out.split(/\r?\n/).filter((l) => /\bB3\b/.test(l));
+        assert.equal(b3.length, 0, `${base} should be exempt, got: ${r.out}`);
+    }
+});
+
+test("B3 STILL flags a validator inheriting anything else", () => {
+    const r = run({
+        code: `namespace X;
+public class DoThing
+{
+    public class Validator : SomeOtherBaseValidator<Command>
+    {
+    }
+}`,
+    });
+    const b3 = r.out.split(/\r?\n/).filter((l) => /\bB3\b/.test(l));
+    assert.equal(b3.length, 1, `expected 1 B3, got: ${r.out}`);
+});
+
 test("B1 STILL flags a command record that does not end in Command", () => {
     const r = run({
         code: `namespace X;

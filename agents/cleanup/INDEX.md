@@ -246,20 +246,38 @@ what that promotion bought.
 | CL-043 | `MANUAL_STEPS.md § Open` reads *(none)* while two owner actions are owed | S | done | #203 |
 | CL-051 | ADR-0030 records as OPEN two gates the tree closed — dated correction note | S | done | #203 |
 
-### Handed over — named, not worked here
+### Handed over — and then worked, on the owner's word (2026-08-14)
 
-Each is a decision or a feature. The track's job is to put it on the owner's desk, not absorb it.
+Filed as decisions, six of eight came back with a ruling and were built in the same PR.
 
-| ID | Title | Size | Status |
-|---|---|---|---|
-| CL-053 | **Where does a new ticket get filed now?** After CL-038 the PM's channel table has no live destination | S | blocked — owner |
-| CL-055 | `CLAUDE.md` §4 calls `IsUniqueViolationOn` the worked example of over-building; it has **6 production call sites**, which §4's own test endorses | S | blocked — owner |
-| CL-058 | `B3` ×21 — validators inheriting a shared base. Changes working validation behaviour | M | blocked — owner |
-| CL-059 | `D2` ×8 — `fb.nonNullable.group(...)`. Changes `reset()` semantics | M | blocked — owner |
-| CL-060 | G-11 / T-0483 — admin entry-instruction reveal + audit. A four-platform feature, not a cleanup edit | L | blocked — owner |
-| CL-054 | Q-W3-2 — `CurrencyCode` on the payroll DTOs. Owner ruled *"ADD A DTO"* 2026-08-07; carries `nswag-regen` | M | blocked — owner |
-| CL-056 | Two Android defects the comment sweep exposed — a dead camera affordance, a per-platform dispute author label | M | blocked — UI |
-| CL-057 | Admin pay-period close uses a hardcoded English `confirm()`; the translated key ships in all five locales | S | blocked — UI |
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-053 | Old backlog **deleted**; `agents/backlog/` is live again, one row per ticket | M | done | #203 |
+| CL-055 | `IsUniqueViolationOn` + `DbConstraintNames` deleted — *"it's over engineering, remove it"* | S | done | #203 |
+| CL-060 | G-11 — the admin entry-instruction read is now an audited Command | M | done | #203 |
+| CL-057 | Admin pay-period close no longer confirms in hardcoded English | S | done | #203 |
+| CL-056 | Dead camera affordance removed; the dispute author label is reported, not decided | S | done | #203 |
+| CL-054 | Partner dashboard reads the server's currency; "My Pay" is blocked on `MS-4` | M | part done | #203 |
+| CL-058 | `B3` ×21 — validators inheriting a shared base | M | blocked — owner |  |
+| CL-059 | `D2` ×8 — `fb.nonNullable.group(...)` | M | blocked — owner |  |
+| CL-061 | Admin reveal button — blocked on `MS-5` (owner-run client regeneration) | S | blocked — MS-5 |  |
+
+> **`CL-060` shrank on inspection, which is rule 3 again.** It was filed as a four-platform feature
+> (admin web, partner web, Android, iOS). The *assigned* cleaner's access is correct on every platform
+> and unchanged, so the whole defect was one admin read — backend-only. And `T-0483`, the draft ticket
+> the gap register worried would disappear into the archive, turned out to have **no ticket file at
+> all**; it was only ever an INDEX row.
+>
+> **`CL-058` and `CL-059` are both narrower than P4's baseline said**, and that baseline is mine.
+> `B3`'s 21 sites are two populations: 5 inherit a base that declares **no constructor rules** — only
+> `protected` helpers the derived class calls — which is behaviourally identical to inlining, and 5
+> inherit `LoginValidator`, whose ordering is the deliberate point ("a locked account never evaluates
+> the password"). The real question is the 11 on `UserEmailValidator`, whose constructor declares a
+> `RuleFor` that costs a **database round-trip on every request**, including ones already invalid,
+> because FluentValidation's class-level cascade default is `Continue`. `D2`'s 8 are 2 no-ops (those
+> controls are already `nonNullable: true` individually) and 6 nullable ones, of which exactly one form
+> calls `reset()` — resetting `''` instead of `null`, which neither the user nor `Validators.required`
+> can tell apart. **The baseline's "behaviour change to shipped admin forms" was overstated.**
 
 ---
 

@@ -25,6 +25,19 @@ public static class OrderPiiRedaction
             CustomerAddressLongitude = null,
         };
 
+    /// <summary>
+    /// Withhold the entry instructions from an admin read. They are free text of the form "key under
+    /// the mat" — the one field on this DTO that is a physical key to somebody's home — and until
+    /// 2026-08-14 every admin who opened an order got them, with no reveal step and therefore no record
+    /// of who looked. An admin who needs them asks for them: <c>RevealOrderAccessInstructions</c> is a
+    /// Command precisely so the audit engine writes a row.
+    ///
+    /// <para><c>HasAccessInstructions</c> stays true so the admin UI can offer the reveal rather than
+    /// showing an empty panel for an order that has none.</para>
+    /// </summary>
+    public static OrderItem WithholdAccessInstructions(this OrderItem item) =>
+        item with { AccessInstructions = null };
+
     public static OrderItem RedactForBrowsingCleaner(this OrderItem item) =>
         item with
         {
@@ -36,6 +49,7 @@ public static class OrderPiiRedaction
             Notes = null,
             SpecialInstructions = null,
             AccessInstructions = null,
+            HasAccessInstructions = null,
             CompletionNotes = null,
             RecurringTemplateId = null,
             ReceiptNumber = null,

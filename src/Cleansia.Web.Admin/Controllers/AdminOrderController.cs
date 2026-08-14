@@ -39,6 +39,24 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<OrderItem>(result);
     }
 
+    // A Command, not a GET, and that is the point: AdminMutationGate writes an audit row only for a
+    // request type whose name ends in "Command". Entry instructions are a physical key to somebody's
+    // home, so the compensating control for holding them is knowing who looked — see
+    // RevealOrderAccessInstructions. Rate-limited on the same partition as the payout reveal, because
+    // an audited but unbounded reveal records bulk exfiltration instead of stopping it.
+    [HttpPost("{orderId}/access-instructions/reveal")]
+    [Permission(Policy.CanRevealOrderAccessInstructions)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(RevealOrderAccessInstructions.RevealedAccessInstructions), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RevealAccessInstructions(string orderId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new RevealOrderAccessInstructions.Command(orderId), cancellationToken);
+        return HandleResult<RevealOrderAccessInstructions.RevealedAccessInstructions>(result);
+    }
+
     [HttpGet("photos/{orderId}")]
     [Permission(Policy.CanViewOrderPhotos)]
     [ProducesResponseType(typeof(GetOrderPhotos.Response), StatusCodes.Status200OK)]

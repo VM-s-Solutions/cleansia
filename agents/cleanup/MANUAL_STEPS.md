@@ -18,6 +18,21 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+### MS-5 — Regenerate the admin client for the entry-instruction reveal — **owner**
+
+The backend half of `CL-060` (G-11) is shipped: an admin order read no longer carries
+`AccessInstructions`, and `POST /AdminOrder/{orderId}/access-instructions/reveal` returns them while
+`AdminMutationGate` writes an audit row naming the actor.
+
+**Until the client is regenerated, an admin cannot see entry instructions at all.** That is the
+intended direction — the field was reaching every admin with no record of who looked — but the reveal
+button cannot be built until the generated admin client carries the new endpoint and the new
+`hasAccessInstructions` flag.
+
+**Action:** regenerate the admin client (`manual_step: nswag-regen`). The admin order-detail panel then
+swaps its unconditional `{{ accessInstructions }}` for a reveal control gated on `hasAccessInstructions`
+— a small, well-defined frontend change, filed as `CL-061`.
+
 ### MS-4 — Add `CurrencyCode` to the two payroll DTOs, then regenerate the clients — **owner**
 
 You ruled on 2026-08-07, verbatim: *"NO, DON'T HARDCODE ANYTHING. ADD A DTO."* `PeriodPaySummaryDto`

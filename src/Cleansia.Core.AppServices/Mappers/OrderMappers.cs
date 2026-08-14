@@ -252,6 +252,7 @@ public static class OrderMappers
             Notes: order.Notes,
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
+            HasAccessInstructions: !string.IsNullOrWhiteSpace(order.AccessInstructions),
             RecurringTemplateId: order.RecurringTemplateId,
             SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
             Currency: order.Currency.MapToDetailDto(),

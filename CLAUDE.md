@@ -191,10 +191,18 @@ backs any of them.**
 
 ## Trackers
 
-- **`agents/cleanup/INDEX.md`** — the live track. One row per ticket, one status, cite the PR not a SHA.
-- **`agents/archive/2026-08/backlog/`** — three sprints of feature history, archived 2026-08-13 and
-  kept in git. **It is history, not a work queue.** Its `INDEX.md` files a ticket twice with
-  independent statuses, which is how four lanes were once dispatched at 24 already-shipped tickets.
+- **`agents/backlog/`** — **where new work is filed.** `INDEX.md` (one row per ticket, one status, and
+  the only place a status lives), `tickets/`, `questions/open.md`. Read its `README.md` first: the one
+  rule is there, and so is why the previous backlog was deleted rather than kept.
+- **`agents/cleanup/INDEX.md`** — the 2026-08 cleanup track. **A closed manifest, not a queue** — all
+  its rows are `done`. It is the record of that work, and its three rules at the top are worth reading
+  before starting any track of your own.
+- **`agents/cleanup/MANUAL_STEPS.md`** — what the owner still owes, and what has been discharged.
+
+> The old 428-file backlog was archived on 2026-08-13 and **deleted on 2026-08-14**. It is in git
+> history. The reason it is not here is worth carrying: it filed each ticket **twice**, a filing row
+> and a close-out row with independent statuses, and on 2026-08-11 that sent four lanes at 24 tickets
+> that had all already shipped.
 
 ## Conventions
 

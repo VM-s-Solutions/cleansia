@@ -58,6 +58,12 @@ explicitly classified as kept or stripped.
 `AccessInstructions` is free text of the form *"key under the mat"*. It is correctly withheld from a
 browsing cleaner and needed by an assigned one.
 
-> **Every admin can read it, with no reveal step and therefore no audit record of who looked.** That is
-> a known, accepted residue rather than an oversight — the comparable control already exists for
-> payout identifiers, where revealing is a *command* precisely so the audit engine records it.
+> **An admin does not get it with the order.** It is withheld from an administrator read and comes only
+> from a reveal — `POST /AdminOrder/{orderId}/access-instructions/reveal` — which is a **command**
+> precisely so the audit engine records who asked and when. The order payload carries a
+> `hasAccessInstructions` flag instead, so the admin UI can offer the reveal without holding the text,
+> and the control the reveal is shaped after is the payout-identifier one in
+> [ADR-0034](/decisions/adr-0034).
+>
+> It was not always so: until 2026-08-14 every admin read it unconditionally, with no record of who
+> looked. That was recorded here as an accepted residue, and it stopped being one.

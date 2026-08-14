@@ -61,7 +61,7 @@ ViewModel/Screen/Repository, read the canonical form for that archetype in
 [`consistency.md`](./consistency.md) and match it. Doing the same operation a *different* way than the
 rest of the codebase — even if it "works" — is the spaghetti we are actively removing before PROD, and
 the Reviewer treats a new deviation as a hard fail. Known existing deviations are tracked in
-[`../backlog/audits/consistency-violations.md`](../backlog/audits/consistency-violations.md).
+[`../cleanup/consistency-baseline.md`](../cleanup/consistency-baseline.md).
 
 ## Global rules
 

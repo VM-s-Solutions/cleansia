@@ -154,7 +154,7 @@ reviewer check** — per ADR-0043 §B.6, it is not left carrying a `(gate pendin
 
 The checker found **more** real debt than the manual variance analysis did (e.g. 4 membership
 commands with `nameof(Command)` error codes, ~50 ViewModel `collectAsState()` calls). These are
-tracked in [`../backlog/audits/consistency-violations.md`](../backlog/audits/consistency-violations.md)
+tracked in [`../cleanup/consistency-baseline.md`](../cleanup/consistency-baseline.md)
 and the canonicalization tickets (T-0001…T-0016). **Existing violations do not block unrelated work**
 — the gate (below) is **on new/changed code**, not the whole repo, until the baseline is cleared.
 

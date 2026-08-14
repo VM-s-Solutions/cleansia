@@ -26,21 +26,25 @@ and five more deploy or run operational jobs.
 |----------|---------|---------|
 | `backend-ci` | PR to any branch | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
-| `deploy-dev` | Push to `master` | Deploy everything to DEV |
+| `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
 | `execute-sql` | Manual | Run ad-hoc SQL scripts |
 
 ## Branch Strategy
 
 ```
-feature/* ──PR──> master ──auto──> DEV
+feature/* ──PR──> master ──manual──> DEV
                     |
                     └──manual──> PRO
 ```
 
 - **Feature branches** -- all development work
-- **`master`** -- integration branch, auto-deploys to DEV on push
-- **PRO deployment** -- manual trigger with confirmation (`type "deploy"`)
+- **`master`** -- integration branch. **It does NOT auto-deploy.** The push trigger was removed on
+  owner request 2026-07-17; a DEV deploy is a deliberate button press, like prod. `deploy-dev.yml`
+  offers a `what-if` mode that previews the Bicep change without mutating anything.
+- **PRO deployment** -- manual, gated by **required reviewers on the `prod-weu` GitHub Environment**.
+  That protection is UI configuration rather than YAML — see the PROD section of
+  `deploy/AZURE-DEV-RUNBOOK.md`.
 
 ## Backend CI (`backend-ci.yml`)
 
@@ -191,16 +195,21 @@ Same pipeline as DEV with these differences:
 
 | Aspect | DEV | PRO |
 |--------|-----|-----|
-| Trigger | Auto (push to master) | Manual with confirmation |
-| Confirmation | None | Must type `"deploy"` |
+| Trigger | Manual (`workflow_dispatch`) | Manual (`workflow_dispatch`) |
+| Approval | None | **Required reviewers on the `prod-weu` Environment** |
+| Default mode | `deploy` or `what-if`, chosen at dispatch | `what-if` — the no-thought path is the non-mutating preview |
 | Concurrency | Cancel in-progress | Never cancel |
-| Environment | (default) | `production` (GitHub Environment) |
+| Environment | (default) | `prod-weu` (GitHub Environment) |
 | Angular config | `staging` | `production` |
 | Resource group | `rg-cleansia-dev` | `rg-cleansia-pro` |
 | App names | `*-dev` | `*-pro` |
 
 ::: warning Production Safety
-The PRO workflow requires typing "deploy" to confirm. If the confirmation doesn't match, the workflow fails immediately.
+Two things guard prod, and neither is the typed confirmation this page used to describe — that gate was
+**replaced** by GitHub Environment protection. Every job touching prod runs in the `prod-weu`
+Environment, whose **required reviewers must approve the run before any prod secret is released**; and
+the dispatch mode defaults to `what-if`, so a run started without thinking previews rather than
+mutates.
 :::
 
 ## Authentication

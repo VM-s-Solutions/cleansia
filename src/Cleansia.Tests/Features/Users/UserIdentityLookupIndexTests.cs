@@ -156,14 +156,14 @@ public sealed class UserIdentityLookupIndexTests
     // is the only thing coupling the two: without it a rename turns every mapped duplicate-email
     // refusal back into a 500, silently.
     [Fact]
-    public void Email_UniqueIndex_Name_Matches_The_Constant_The_Writers_Map_On()
+    public void Email_Index_Is_Unique_So_Two_Simultaneous_Registrations_Cannot_Both_Land()
     {
         var user = GetUserEntityType();
 
         var index = user.GetIndexes()
             .Single(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)));
 
-        Assert.Equal(DbConstraintNames.UsersTenantIdEmailUnique, index.GetDatabaseName());
+        Assert.True(index.IsUnique);
     }
 
     /// <summary>Mirrors the membership index tests' tenant provider (null ⇒ anonymous / no JWT).</summary>

@@ -45,10 +45,14 @@ Ask: **what happens if I don't build this, and how likely is that?** If the answ
 error path fails ugly"* — **don't build it.** A new type is paid by every future reader, forever; a
 rare 500 is paid once by support.
 
-The worked example of getting this wrong is `Register.cs`'s `DbConstraintViolation.IsUniqueViolationOn`
-+ `DbConstraintNames`: an app-level pre-check already covered the normal case, the race it defends
-needs two registrations in the same millisecond, and it bought **two new types and five copies of a
-catch block**. The index fix was one line and was right; the mapping around it was not.
+The worked example: `DbConstraintViolation.IsUniqueViolationOn` + a `DbConstraintNames` constants file.
+It classified a unique violation by the *name* of the index that raised it, so that a commit staging
+several rows could tell which one collided. No caller was ever that shape — every one wrapped a
+deliberate flush of a single insert — so the name distinguished nothing, while costing a second type, a
+constants file, a cross-assembly pin to keep them aligned, and five tests feeding those flushes a
+collision they cannot produce. **Deleted 2026-08-14 on owner ruling**; the six call sites now ask
+`IsUniqueViolation(ex)` and read the same. The index fix underneath was one line and was right; the
+machinery around it was not.
 
 Prefer, in order: **do nothing** → **inline at the call site** → **extract only when a second caller
 exists today**.

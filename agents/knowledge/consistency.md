@@ -497,11 +497,18 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
   losing racer stops silently inserting a duplicate and starts raising `23505` at commit — a 500 where
   there was quiet success, which is worse for the user than the bug. Every writer therefore maps that
-  violation to the business error its own pre-check would have produced, **keyed on the constraint name**
-  (`DbConstraintViolation.IsUniqueViolationOn`), never on the driver's message text, and a violation of
-  any other index in the same commit still propagates. Because the pipeline commits *after* the handler
-  returns, the map has to be a **flush inside the handler** (`GenerateInvoice` is the precedent shape).
-  Deviating form: a diff that lands the option without the mapping.
+  violation to the business error its own pre-check would have produced, via
+  `DbConstraintViolation.IsUniqueViolation` — SQLSTATE `23505`, never the driver's message text. Because
+  the pipeline commits *after* the handler returns, the map has to be a **flush inside the handler**
+  (`GenerateInvoice` is the precedent shape), and that flush is what makes SQLSTATE sufficient: it stages
+  ONE insert, so only one unique index can speak. Deviating form: a diff that lands the option without
+  the mapping — or a `try`/`catch` around a merely-tracked `Add`, which catches nothing.
+
+  > A constraint-NAMED variant (`IsUniqueViolationOn` + a `DbConstraintNames` constants file, pinned
+  > across the AppServices/Infra seam by two tests) existed until 2026-08-14 and was **removed on owner
+  > ruling as over-built**. It defended a commit staging several rows with several unique indexes; no
+  > caller was ever that shape. Do not reintroduce it — widen the flush's scope and you have a design
+  > problem the name would only paper over.
 
   **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
   negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
@@ -512,7 +519,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   closed roster — a new sole-arbiter index is not caught until someone adds a row, and
   `LiveActivityTokens` is named in the first bullet above without being on it. The mapping half is
   **`T1-CI`**, **baseline 0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs`
-  (both directions, all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
+  (all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

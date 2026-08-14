@@ -8900,6 +8900,102 @@ export class AdminOrderClient implements IAdminOrderClient {
     }
 }
 
+export interface IAccessInstructionsClient {
+    /**
+     * @return OK
+     */
+    reveal(orderId: string): Observable<RevealOrderAccessInstructionsRevealedAccessInstructions>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AccessInstructionsClient implements IAccessInstructionsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    reveal(orderId: string): Observable<RevealOrderAccessInstructionsRevealedAccessInstructions> {
+        let url = this.baseUrl + "/api/AdminOrder/{orderId}/access-instructions/reveal";
+        if (orderId === undefined || orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' must be defined.");
+        url = url.replace("{orderId}", encodeURIComponent("" + orderId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReveal(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReveal(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RevealOrderAccessInstructionsRevealedAccessInstructions>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RevealOrderAccessInstructionsRevealedAccessInstructions>;
+        }));
+    }
+
+    protected processReveal(response: HttpResponseBase): Observable<RevealOrderAccessInstructionsRevealedAccessInstructions> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RevealOrderAccessInstructionsRevealedAccessInstructions.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminPackageClient {
     /**
      * @param searchTerm (optional) 
@@ -23138,6 +23234,7 @@ export class OrderItem implements IOrderItem {
     hasAfterPhotos!: boolean;
     expressWaiverForfeitedOnCancel!: boolean | undefined;
     preferredOffer!: PreferredOfferDetails;
+    hasAccessInstructions!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -23230,6 +23327,7 @@ export class OrderItem implements IOrderItem {
             this.hasAfterPhotos = Data["hasAfterPhotos"];
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
+            this.hasAccessInstructions = Data["hasAccessInstructions"];
         }
     }
 
@@ -23322,6 +23420,7 @@ export class OrderItem implements IOrderItem {
         data["hasAfterPhotos"] = this.hasAfterPhotos;
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
+        data["hasAccessInstructions"] = this.hasAccessInstructions;
         return data;
     }
 }
@@ -23377,6 +23476,7 @@ export interface IOrderItem {
     hasAfterPhotos: boolean;
     expressWaiverForfeitedOnCancel: boolean | undefined;
     preferredOffer: PreferredOfferDetails;
+    hasAccessInstructions: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -26373,6 +26473,46 @@ export interface IResolveDisputeCommand {
     disputeId: string | undefined;
     refundAmount: number | undefined;
     resolutionNotes: string | undefined;
+}
+
+export class RevealOrderAccessInstructionsRevealedAccessInstructions implements IRevealOrderAccessInstructionsRevealedAccessInstructions {
+    orderId!: string | undefined;
+    accessInstructions!: string | undefined;
+
+    constructor(data?: IRevealOrderAccessInstructionsRevealedAccessInstructions) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.accessInstructions = Data["accessInstructions"];
+        }
+    }
+
+    static fromJS(data: any): RevealOrderAccessInstructionsRevealedAccessInstructions {
+        data = typeof data === 'object' ? data : {};
+        let result = new RevealOrderAccessInstructionsRevealedAccessInstructions();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["accessInstructions"] = this.accessInstructions;
+        return data;
+    }
+}
+
+export interface IRevealOrderAccessInstructionsRevealedAccessInstructions {
+    orderId: string | undefined;
+    accessInstructions: string | undefined;
 }
 
 export class RevealedPayoutDetails implements IRevealedPayoutDetails {

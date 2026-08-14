@@ -66,6 +66,7 @@ public class FrozenPermissionMapTests
         [Policy.CanAdminUpdateEmployee] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewEmployeePayoutDetails] = PhysicalPolicy.EmployeeOrAdmin, // ADR-0034 D8 (additive)
         [Policy.CanRevealEmployeePayoutDetails] = PhysicalPolicy.AdminOnly,     // ADR-0034 D8 (additive)
+        [Policy.CanRevealOrderAccessInstructions] = PhysicalPolicy.AdminOnly,  // G-11 (additive)
 
         // Employee Documents
         [Policy.CanViewEmployeeDocuments] = PhysicalPolicy.EmployeeOrAdmin,

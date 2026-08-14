@@ -1,13 +1,23 @@
 # CI/CD Pipeline
 
-Cleansia uses GitHub Actions for continuous integration and deployment. There are three main workflows plus two utility workflows.
+Cleansia uses GitHub Actions. **Five workflows gate a pull request** — one per stack, plus the docs —
+and five more deploy or run operational jobs.
 
 ::: info Source Files
-- `.github/workflows/backend-ci.yml`
-- `.github/workflows/deploy-dev.yml`
-- `.github/workflows/deploy-pro.yml`
-- `.github/workflows/frontend-ci.yml`
-- `.github/workflows/execute-sql.yml`
+**Gates on a PR**
+
+| Workflow | Guards |
+|---|---|
+| `backend-ci.yml` | the .NET solution — unit, integration (Testcontainers) and host tests. Also runs on pushes to `master`, because direct-to-master commits used to bypass it entirely. Scoped to `src/**` **and `sql-scripts/**`** |
+| `frontend-ci.yml` | the Nx workspace — lint, test, build across the three apps |
+| `android-ci.yml` | the Gradle multi-module build |
+| `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes |
+| `docs-ci.yml` | both halves of the reference contract: two checkers with their own self-tests blocking first, then `vitepress build` with `ignoreDeadLinks: false` |
+
+**Deploy and operational**
+
+- `deploy-dev.yml`, `deploy-pro.yml`, `deploy-azure.yml`, `deploy-docs.yml`
+- `execute-sql.yml` — the manual, environment-gated SQL runner
 :::
 
 ## Workflows Overview

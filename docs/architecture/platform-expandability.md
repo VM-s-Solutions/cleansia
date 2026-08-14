@@ -7,9 +7,20 @@
 > expandability and current situation overall."
 >
 > This is the canonical reference for the question **"is this entity platform-config, tenant-scoped, or
-> country-scoped?"** It grounds three pending decisions: **T-0113** (MembershipPlan tenancy),
-> **the four sibling anonymous catalogs** (Service/Package/Extra/ServiceCity), and **currency-display**.
-> Where it changes a decision it cross-references **ADR-0001 Addendum A1**.
+> country-scoped?"** Where it changes a decision it cross-references **ADR-0001 Addendum A1**.
+>
+> ### ⚠️ Two of the three decisions it grounded have SHIPPED — verified 2026-08-14
+>
+> **T-0113 (MembershipPlan tenancy) and the four sibling anonymous catalogs are done.** All six —
+> `MembershipPlan`, `Service`, `Package`, `Extra`, `ServiceCity` and `ServiceCategory` — are
+> `: Auditable` today, with no `ITenantEntity`, and `MembershipPlanEntityConfiguration` records the
+> `(TenantId, Code)` composite being dropped for a platform-wide unique `(Code)`. §7a and §7b below
+> still describe the *pre-fix* state in the present tense and still issue marching orders to perform it.
+> **Read them as the record of a decision that was carried out, not as work to schedule** — including
+> §7b's instruction to the PM to create a ticket "before scheduling", which is the failure this project
+> has already paid for once: four lanes dispatched at 24 already-shipped tickets.
+>
+> **Currency-display (§7c) is the one that is still open.**
 >
 > **Architect verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
 > Option-A ruling for T-0113 and broadens it into a general entity-classification rule (§6). It does
@@ -302,7 +313,10 @@ Decide along the orthogonal axes:
 
 ### 7a. T-0113 (MembershipPlan tenancy) — Option A is CONFIRMED, and broadened
 
-`MembershipPlan` is today `: Auditable, ITenantEntity` (`MembershipPlan.cs:24`) served on
+> **SHIPPED.** The paragraph below describes the state *before* the fix. `MembershipPlan` is
+> `: Auditable` today and the index swap is in `MembershipPlanEntityConfiguration`.
+
+`MembershipPlan` was `: Auditable, ITenantEntity` served on
 `[AllowAnonymous] GetPlans` (`MembershipController.cs:58`, customer + mobile.customer hosts), with a
 unique index `(TenantId, Code)` and seed rows at `TenantId = NULL`. It is the textbook instance of the
 §1 bug class.
@@ -330,7 +344,10 @@ A1 ruling is warranted.**
 
 ### 7b. The four sibling anonymous catalogs (Service / Package / Extra / ServiceCity) — marching orders
 
-All four are `: Auditable, ITenantEntity` (verified) **and** served `[AllowAnonymous]` on the customer
+> **SHIPPED.** All five entities named below — the four siblings plus `ServiceCategory` — are
+> `: Auditable` today. The marching order was carried out; it is not outstanding work.
+
+All four were `: Auditable, ITenantEntity` **and** served `[AllowAnonymous]` on the customer
 host (`ServiceController`, `PackageController`, `ExtraController`, `ServiceCityController`, all line ~14).
 `ServiceCategory` is **also** `ITenantEntity` — confirm whether it is reachable from any anonymous read
 path; if yes it joins the batch, if no it stays untouched (parity with the `LoyaltyTierConfig` carve-out).
@@ -341,18 +358,13 @@ They are the same bug class as MembershipPlan and correct today only by single-t
 them in **their own batch** (do NOT fold into T-0113 — scope discipline avoids the double-fix collision
 the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs both; cross-reference it.
 
-> **DISCREPANCY TO FLAG TO PM (real, needs reconciliation):** the label **"BSP-9"** is overloaded.
-> - The **T-0123-prod-config** ticket defines **BSP-9** as the anonymous `Order/LookupBatch`
->   secret-pair/cap hardening (`T-0123.md:37-39, 60-62`, `LookupOrderBatch.cs`) — a *different* finding,
->   NOT the four catalogs.
-> - **ADR-0001 Addendum A1 D-A1.4** and the orchestrator's ground truth use **"BSP-9"** to mean the
->   *four sibling anonymous catalogs*.
->
-> These are two different bodies of work under one name. The catalog-tenancy fix currently has **no
-> dedicated ticket** — Addendum A1 routes it "to BSP-9," but the BSP-9 in the backlog is the LookupBatch
-> ticket. **Action:** the PM must either (a) create a dedicated ticket for the four-catalog Option-A fix
-> (recommended; mirror the T-0113 contract per entity) and have A1 D-A1.4 reference *that* id, or
-> (b) explicitly expand T-0123's BSP-9 scope. Do not let the catalog fix fall through the naming gap.
+> **RESOLVED — the label "BSP-9" was overloaded, and both bodies of work have since shipped.**
+> It meant two things at once: the anonymous `Order/LookupBatch` secret-pair and cap hardening (in
+> `LookupOrderBatch.cs`), and — per ADR-0001 Addendum A1 D-A1.4 — the four sibling anonymous catalogs.
+> The worry recorded here was that the catalog fix would fall through the naming gap for want of a
+> dedicated ticket. It did not: all six catalog entities are `: Auditable` today, and the batch lookup
+> is capped at 10 items and keyed on the internal GUID rather than the human-typed number. Kept as the
+> record of a real risk that was handled, not as an action.
 
 ### 7c. What multi-currency PLANS would require (if ever needed)
 

@@ -34,6 +34,9 @@ data class PeriodPaySummary(
     val hasInvoice: Boolean,
     val invoiceId: String?,
     val orderPays: List<OrderPayLine>,
+    /** The currency every amount above is in, from the server — the invoice's own on an invoiced
+     *  period, so this screen and the payout document cannot disagree. Nullable on the wire. */
+    val currencyCode: String?,
 )
 
 data class OrderPayLine(
@@ -84,6 +87,7 @@ internal fun PeriodPaySummaryDto.toDomain() = PeriodPaySummary(
     hasInvoice = hasInvoice.required("hasInvoice"),
     invoiceId = invoiceId,
     orderPays = orderPays.orEmpty().mapNotNull { it.toDomainOrNull() },
+    currencyCode = currencyCode,
 )
 
 internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {

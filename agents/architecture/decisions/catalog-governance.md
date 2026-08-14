@@ -1,11 +1,11 @@
 # Catalog Governance — living decision doc
 
 **Topic:** how the `agents/knowledge/*` catalog acquires, states, and enforces its rules.
-**ADRs:** [ADR-0032](../../backlog/adr/0032-catalog-law-declarations-require-a-named-ci-gate.md)
+**ADRs:** [ADR-0032](/decisions/adr-0032)
 (`accepted` 2026-08-01 — the price of a law) ·
-[ADR-0033](../../backlog/adr/0033-catalog-edit-authority-the-routing-test-and-cross-stack-claim-strength.md)
+[ADR-0033](/decisions/adr-0033)
 (`accepted` 2026-08-05, amended by the T-0471 panel — catalog-edit authority) ·
-[ADR-0018](../../backlog/adr/0018-ios-design-parity-principle.md) (the T3-HUMAN precedent).
+[ADR-0018](/decisions/adr-0018) (the T3-HUMAN precedent).
 **Process:** [`process/enforcement.md`](../../process/enforcement.md) ·
 [`knowledge/conventions.md`](../../knowledge/conventions.md) §"Harvest good patterns back into the catalog".
 
@@ -117,7 +117,7 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    > **paraphrase** of it — the same defect CH-1 removed from the other half of the clause.
    >
    > 🔴 **The first repair was DRAFTED, CHALLENGED and REJECTED — 2026-08-05, panel closed.**
-   > `backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md` proposed the **conflicting-instance
+   > `agents/archive/2026-08/adr-deliberation/drafts/NNNN-what-makes-a-catalog-sentence-govern.md` proposed the **conflicting-instance
    > test** (*`S` governs `E` iff a reader can name one concrete artifact both reach on which their
    > verdicts differ*). **It is `rejected` and is not an ADR.** The blocking defect, found by the lead
    > pass on the draft's own table: the definition is an **existential** (*some* artifact ruled
@@ -139,7 +139,7 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    > file stays on disk as the record of what was tried.
    >
    > 🔴 **Round 2 was DRAFTED, CHALLENGED and REJECTED — 2026-08-05, panel CLOSED, and L1 is closed
-   > with it.** `backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern-round-2.md` proposed
+   > with it.** `agents/archive/2026-08/adr-deliberation/drafts/NNNN-what-makes-a-catalog-sentence-govern-round-2.md` proposed
    > **`governs` = REACH, carrying no verdict term** — *`S` governs `E` iff at least one member of `E`'s
    > **exhibit** (the ticket's diff + the entry's own `file:line` citations) falls under `S`'s
    > **condition**, read at the narrowest scope `S`'s own words support*, ∃ over that finite list, with

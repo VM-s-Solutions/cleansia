@@ -73,7 +73,9 @@ and any backend shape drift becomes a compile error instead of a silent runtime 
 
 ## First real generation is owner-gated
 
-> **`manual_step: mobile-spec-regen`** — the committed specs are stale (pre-T-0272; they are missing
+> **`manual_step: mobile-spec-regen`** — a spec **re-dump** is owner-run (it needs the mobile API hosts
+> running), but the first generation has happened and nothing is gated on it. The paragraph below
+> describes the pre-2026-08-14 state, when the committed specs were missing
 > `Device/Mine`, `Device/{id}` revoke, and `EmployeePayroll/GetPeriodPays`). The **first real client
 > generation** is held until the owner regenerates the shared specs. The toolchain *wiring* (config +
 > scripts + discipline) is complete and runnable now; it just produces a stale client until the regen.

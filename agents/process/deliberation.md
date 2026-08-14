@@ -82,7 +82,7 @@ Each role keeps its own **living documentation**, updated *as part of* finalizin
   (flows, state machines, decision trees) + the living story map for the domain. When a story is
   finalized, the domain's business-logic doc is updated in the same step so it never drifts.
 - **Architects** own `agents/architecture/decisions/<topic>.md` — living design notes, the trade-off
-  space, and the current shape (the **immutable ADRs** stay in `backlog/adr/`; these are the
+  space, and the current shape (the **immutable ADRs** stay in `docs/decisions/`; these are the
   *evolving* companion). Updated when a decision is finalized.
 - **Developers** own their implementation notes alongside the canonical `docs/architecture/*` (kept in
   sync by the `docs` agent). When a ticket lands, the dev updates the implementation pointer.

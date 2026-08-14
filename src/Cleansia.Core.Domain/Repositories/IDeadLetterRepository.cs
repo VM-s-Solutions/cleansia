@@ -4,7 +4,12 @@ namespace Cleansia.Core.Domain.Repositories;
 
 /// <summary>
 /// Persistence for <see cref="DeadLetter"/> — the durable dead-letter rows written by the
-/// <c>&lt;queue&gt;-poison</c> consumers (ADR-0002 D3 / F3) and read by the admin recovery/replay views.
+/// <c>&lt;queue&gt;-poison</c> consumers (ADR-0002 D3 / F3).
+///
+/// There is NO reader. No query, no admin endpoint and no replay command loads one of these rows; the
+/// only path that touches a row after the write is GDPR erasure, below, which deletes it. A row is the
+/// record that a thing failed, never the mechanism for making it succeed.
+/// → /domain/roles/dead-letter-record
 /// </summary>
 public interface IDeadLetterRepository : IRepository<DeadLetter, string>
 {

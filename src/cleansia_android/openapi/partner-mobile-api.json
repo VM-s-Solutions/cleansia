@@ -8882,6 +8882,10 @@
           },
           "preferredOffer": {
             "$ref": "#/components/schemas/PreferredOfferDetails"
+          },
+          "hasAccessInstructions": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9488,6 +9492,10 @@
             "items": {
               "$ref": "#/components/schemas/OrderEmployeePayDto"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },

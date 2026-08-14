@@ -9,6 +9,9 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Web.Partner.Controllers;
 
+// Anonymous, on a public host. Every branch below reports only WHETHER a dependency is reachable —
+// never why. An unauthenticated caller must not learn connection targets, key names or vendor failure
+// text, least of all during the incident that makes this endpoint interesting.
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 [AllowAnonymous]
@@ -71,7 +74,7 @@ public class HealthController(
             return new HealthCheckResult(
                 Name: "Database",
                 IsHealthy: false,
-                Message: $"Database connection failed: {ex.Message}",
+                Message: "Database connection failed",
                 ResponseTime: null
             );
         }
@@ -101,7 +104,7 @@ public class HealthController(
             return new HealthCheckResult(
                 Name: "BlobStorage",
                 IsHealthy: false,
-                Message: $"Blob storage check failed: {ex.Message}",
+                Message: "Blob storage check failed",
                 ResponseTime: null
             );
         }
@@ -125,7 +128,7 @@ public class HealthController(
             return new HealthCheckResult(
                 Name: "SendGrid",
                 IsHealthy: false,
-                Message: $"SendGrid configuration check failed: {ex.Message}",
+                Message: "SendGrid configuration check failed",
                 ResponseTime: null
             );
         }
@@ -150,7 +153,7 @@ public class HealthController(
             return new HealthCheckResult(
                 Name: "Stripe",
                 IsHealthy: false,
-                Message: $"Stripe configuration check failed: {ex.Message}",
+                Message: "Stripe configuration check failed",
                 ResponseTime: null
             );
         }

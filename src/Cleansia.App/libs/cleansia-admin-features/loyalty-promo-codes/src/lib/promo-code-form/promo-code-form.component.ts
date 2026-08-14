@@ -77,7 +77,7 @@ export class PromoCodeFormComponent implements OnInit, OnDestroy {
   // Discount sub-fields are conditionally validated by toggling Validators on
   // `type` change (see `applyTypeValidation`). The cross-field validity-range
   // constraint lives on the FormGroup.
-  readonly form = this.fb.group(
+  readonly form = this.fb.nonNullable.group(
     {
       code: this.fb.control<string>('', {
         nonNullable: true,

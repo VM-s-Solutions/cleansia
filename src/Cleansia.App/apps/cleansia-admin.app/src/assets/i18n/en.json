@@ -681,7 +681,10 @@
       "messages": {
         "load_error": "Failed to load order details",
         "photos_error": "Failed to load order photos"
-      }
+      },
+      "access_instructions_reveal": "Reveal",
+      "access_instructions_reveal_hint": "Revealing entry instructions is recorded against your account.",
+      "access_instructions_reveal_failed": "Could not reveal the entry instructions. Please try again."
     },
     "invoice_management": {
       "title": "Invoice Management",

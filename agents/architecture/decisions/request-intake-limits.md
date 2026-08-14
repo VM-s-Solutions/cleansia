@@ -2,7 +2,7 @@
 
 > **Status: NOTHING BELOW IS IMPLEMENTED YET.** This documents the decided *shape* for T-0557 and the
 > facts it rests on. The immutable record is
-> `../../backlog/adr/drafts/NNNN-host-request-intake-ceiling.md` (**`proposed`**, number not allocated,
+> `agents/archive/2026-08/adr-deliberation/drafts/NNNN-host-request-intake-ceiling.md` (**`proposed`**, number not allocated,
 > **defense panel owed** — T-0557 AC1 requires distinct author/challenger/lead instances).
 > **Ticket:** T-0557. **Related:** ADR-0003 (rate limiting — the pipeline order this depends on),
 > T-0548 (avatar size cap, shipped), T-0556 (`SaveMyDocuments`, shipped).

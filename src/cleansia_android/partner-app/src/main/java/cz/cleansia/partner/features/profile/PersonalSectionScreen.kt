@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -159,10 +158,11 @@ fun PersonalSectionScreen(
 }
 
 /**
- * Centered initials avatar + camera-pill overlay. The pill has no
- * onClick yet (no backend endpoint), mirrors the customer's
- * EditProfileScreen which also leaves it as a visual placeholder
- * with a TODO. Initials update live as the name fields change.
+ * Centered initials avatar. Initials update live as the name fields change.
+ *
+ * There is no camera affordance: the partner app renders no profile photo on any surface, so a badge
+ * offering to change one would be an invitation to tap something that cannot respond. It carried one
+ * until 2026-08-14, justified by "no backend endpoint" — which had stopped being true.
  */
 @Composable
 private fun AvatarPreview(initials: String) {
@@ -172,40 +172,22 @@ private fun AvatarPreview(initials: String) {
             .padding(top = Spacing.M),
         contentAlignment = Alignment.Center,
     ) {
-        Box {
-            Box(
-                modifier = Modifier
-                    .size(104.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
-                    .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = initials,
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 36.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .border(3.dp, MaterialTheme.colorScheme.background, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Outlined.CameraAlt,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+        Box(
+            modifier = Modifier
+                .size(104.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = initials,
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 36.sp,
+                ),
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

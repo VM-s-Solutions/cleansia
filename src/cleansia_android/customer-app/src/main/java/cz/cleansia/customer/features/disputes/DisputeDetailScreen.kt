@@ -450,10 +450,11 @@ private fun StatusPill(label: String, color: Color) {
 
 /* ── Message bubble ──
  *
- * Aligns right + primaryContainer bg for the customer, left + surfaceVariant
- * bg for staff. `authorName` on the wire is currently always empty string
- * (backend mapper has a TODO), so we synthesize the author label from the
- * `isStaffMessage` flag — which IS reliable per the wire contract.
+ * Aligns right + primaryContainer bg for the customer, left + surfaceVariant bg for staff.
+ *
+ * The label is the ROLE, not the person: `authorName` is populated and carries a support agent's real
+ * name, which a customer has no business learning. Customer web was aligned to this on 2026-08-14;
+ * admin still renders the name, because admins are staff and need to know who wrote what.
  */
 @Composable
 private fun MessageBubble(message: DisputeMessageDto) {

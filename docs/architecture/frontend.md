@@ -296,12 +296,18 @@ So every `BusinessErrorMessage` value (`order.not_takeable`, `employee.not_appro
 translation at `api.<same.dotted.key>` in all five locale files of every app that can reach the
 endpoint. A key placed anywhere else silently renders *"An error occurred. Please try again."*
 
-The **admin** app additionally carries a legacy `errors.*` block, read by per-feature
-`XXX_ERROR_KEY_MAP` resolvers (orders, disputes, refunds, referrals, pay-periods, invoices, packages,
-services, membership plans, admin users, profile). It is live — do not delete it — but new work uses
-`api.*` everywhere. Partner and customer locales carry `api` only.
+**`api.*` is the only namespace, in all three apps.** Admin carried a second, legacy `errors.*` block
+until 2026-08-13; it was **97 % redundant** — 164 of its 169 keys already existed under `api.*` — so it
+was deleted rather than migrated. Its retirement is now asserted, not merely documented: a locale that
+reacquires an `errors` block, or an admin source that references one, fails
+`error-contract-parity.spec.ts`. The per-feature `XXX_ERROR_KEY_MAP` resolvers survive, but every value
+in them is an `api.*` key.
 
-Both namespaces are pinned by `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`, which parses
+Deleting the block also closed a live gap it had been hiding: `refund.failed` is a real
+`BusinessErrorMessage` that had **no** `api.*` translation at all, so any admin who hit it through the
+shared interceptor saw the generic message.
+
+The namespace is pinned by `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`, which parses
 `BusinessErrorMessage.cs` directly and asserts locale-set equality.
 
 ## Testing

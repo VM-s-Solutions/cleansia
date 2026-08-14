@@ -134,9 +134,19 @@ public class GetOrderDetails
                     ? await ResolvePreferredOfferAsync(order, DateTime.UtcNow, cancellationToken)
                     : null);
 
-            return BusinessResult.Success(isEntitledToCustomerData
-                ? detail
-                : detail.RedactForBrowsingCleaner());
+            if (!isEntitledToCustomerData)
+            {
+                return BusinessResult.Success(detail.RedactForBrowsingCleaner());
+            }
+
+            // The customer wrote these instructions and the assigned cleaner is standing at the door;
+            // an admin is neither. They get the reveal route, which is audited — see
+            // OrderPiiRedaction.WithholdAccessInstructions.
+            var isAdminCaller = role == UserProfile.Administrator.ToString();
+
+            return BusinessResult.Success(isAdminCaller
+                ? detail.WithholdAccessInstructions()
+                : detail);
         }
 
         /// <summary>

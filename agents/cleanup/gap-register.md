@@ -197,11 +197,18 @@ The comparable control is already shipped and proven in this codebase: revealing
 identifiers is a **command**, not a query, precisely so the audit engine records it and the entity can
 stamp `LastRevealedAt`/`RevealCount` (ADR-0034). The shape to copy exists.
 
-**Verdict: accept — but carry it out of the archive.** The fix is a genuine four-platform feature
-(admin web, partner web, Android, iOS), not a cleanup edit, so it does not belong in this track. It is
-recorded here because **T-0483 is a draft ticket inside the backlog P9 is about to archive**, and it is
-the only privacy item in there. It must land on your desk as a decision, not disappear into
-`agents/archive/`.
+**Verdict: accepted, then CLOSED on 2026-08-14 (`CL-060`).** The "four-platform feature" framing was
+wrong, and checking the tree is what showed it: the *assigned* cleaner's access is correct on every
+platform and unchanged, so the whole defect was one admin read. The fix is therefore backend-only —
+`GetOrderDetails` withholds `AccessInstructions` from an administrator caller, and
+`RevealOrderAccessInstructions` returns them as a **Command**, which is what makes `AdminMutationGate`
+write an audit row naming the actor. It copies `RevealEmployeePayoutDetails` (ADR-0034 D8.4) exactly,
+minus the entity stamp: a `LastRevealedAt` column would cost a migration to record what the audit row
+already records.
+
+T-0483 turned out to have no ticket file at all — only an INDEX row — so nothing was lost when the
+backlog was deleted. The remaining half is the admin reveal button, which needs an owner-run client
+regeneration first (`MANUAL_STEPS.md` MS-5).
 
 ### G-18 — Recurring materialization is protected by the Functions timer lease, not by a constraint
 

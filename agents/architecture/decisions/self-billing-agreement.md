@@ -3,7 +3,7 @@
 **Topic:** how the platform records that a cleaner **agreed in advance** to have invoices issued in their
 name and on their behalf (*samofakturace* / self-billing) — what is recorded, who owns the text, when it
 binds, and what happens to a cleaner nobody has asked yet.
-**ADRs:** [ADR-0041](../../backlog/adr/0041-self-billing-agreement-is-a-versioned-append-only-acceptance-record.md)
+**ADRs:** [ADR-0041](/decisions/adr-0041)
 (**`proposed` — rev 4, 2026-08-07. Three panels have run and returned rev 1, rev 2 and rev 3; the
 round-3 verdict FROZE the schema block and scoped rev 4 to a closed list of sentence-and-check edits.
 Rev 4 executes that list and applies FOUR owner answers of 2026-08-07 — the acceptance gate
@@ -11,16 +11,16 @@ Rev 4 executes that list and applies FOUR owner answers of 2026-08-07 — the ac
 NOTHING MAY BE BUILT until it is `accepted`.** Read in this order: §Status → §Owner rulings →
 §Defense — rev 4 → §Verdict — round 3 (which governs where the verdicts disagree))
 · **plus a SEVERED decision the PM files and numbers — specified in this document, below** · composes
-with [ADR-0034](../../backlog/adr/0034-partner-payout-details-shape.md) (the gate-decoupling rule §D7,
+with [ADR-0034](/decisions/adr-0034) (the gate-decoupling rule §D7,
 the jurisdiction rule §D2 and the nullable-by-variant precedent are reused) ·
-[ADR-0033](../../backlog/adr/0033-catalog-edit-authority-the-routing-test-and-cross-stack-claim-strength.md)
+[ADR-0033](/decisions/adr-0033)
 (why a new archetype cannot ride in as an amendment) ·
-[ADR-0017](../../backlog/adr/0017-multi-region-expansion-seam-and-its-composition-with-app-level-tenancy.md)
+[ADR-0017](/decisions/adr-0017)
 (per-country variation is config-driven) ·
-[ADR-0012](../../backlog/adr/0012-admin-action-audit-log.md) (the admin record-on-behalf command is
+[ADR-0012](/decisions/adr-0012) (the admin record-on-behalf command is
 audited for free, ids not PII — **and, new in rev 3, its `BaseEntity + ITenantEntity` writer
-obligation**) · [ADR-0007](../../backlog/adr/0007-soft-delete-policy.md) (what erasure keeps).
-**No longer composed with [ADR-0035](../../backlog/adr/0035-metered-membership-benefit-usage.md)** — rev
+obligation**) · [ADR-0007](/decisions/adr-0007) (what erasure keeps).
+**No longer composed with [ADR-0035](/decisions/adr-0035)** — rev
 2 borrowed its atomic-append shape for a `Sequence` column and rev 3 drops both.
 **Tickets:** to be filed — schema (`db`) → backend → admin → partner web → partner Android → partner iOS
 → copy, plus routed-out follow-ups, **the severed coverage decision, and the catalog-lane

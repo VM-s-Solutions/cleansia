@@ -123,5 +123,17 @@ public record OrderItem(
     /// it and behaves exactly as before. An absent block must render as "no offer" and must never drop
     /// the order row — both mobile mappers carry a row-dropping idiom that would.</para>
     /// </summary>
-    PreferredOfferDetails? PreferredOffer = null
+    PreferredOfferDetails? PreferredOffer = null,
+    /// <summary>
+    /// Whether this order carries entry instructions at all — WITHOUT carrying them.
+    ///
+    /// <para>An admin read has <c>AccessInstructions</c> withheld (see
+    /// <c>OrderPiiRedaction.WithholdAccessInstructions</c>), so the admin UI needs a way to tell
+    /// "nothing to reveal" from "something to reveal" — otherwise it offers a reveal on every order and
+    /// half of them return nothing. Every other caller gets both this flag and the text.</para>
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field omits
+    /// it and behaves exactly as before.</para>
+    /// </summary>
+    bool? HasAccessInstructions = null
 );

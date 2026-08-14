@@ -406,14 +406,14 @@ failure the user is waiting on.
   above it (`:108-145`), because action bodies routinely delegate elsewhere
   (`Cleansia.Web.Customer/Controllers/SavedAddressController.cs:19-52` — five actions, every one a
   one-line call into a helper).
-- **Admin ships two error namespaces and only one of them is canonical — write `api.*`.** Its bundle
-  carries a legacy `errors.*` block (~169 keys) that mirrors `api.*`, read by the per-feature
-  `XXX_ERROR_KEY_MAP` resolvers a few admin features still carry (orders, disputes, refunds,
-  referrals). Admin also registers `COMMON_INTERCEPTORS_FN`, so the shared interceptor fires on every
-  admin error and resolves `api.${code}` — a new key written only under `errors.*` is therefore
-  invisible unless you also hand-write a resolver, which is the thing you are not supposed to add.
+- **`api.*` is the only error namespace admin has — and a resurrected `errors.*` fails CI.** The legacy
+  block (~169 keys) was deleted on 2026-08-13; 164 of them already existed under `api.*`. Admin registers
+  `COMMON_INTERCEPTORS_FN`, so the shared interceptor fires on every admin error and resolves
+  `api.${code}`. The per-feature `XXX_ERROR_KEY_MAP` resolvers remain for the features that had them,
+  but every value they map to is an `api.*` key — do not add a resolver to reach a key you could have
+  written under `api.*` in the first place.
   `apps/cleansia-admin.app/src/app/i18n/error-contract-parity.spec.ts` is the admin twin; it guards
-  five-locale key-set parity and non-emptiness over **both** namespaces, and its roster is derived from
+  five-locale key-set parity and non-emptiness, plus the retirement of `errors.*`; its roster is derived from
   every `Cleansia.Web.Admin/Controllers/*.cs` (31 files). **A partial admin contract list is no longer
   permitted** — the coverage assertion above forbids it.
 

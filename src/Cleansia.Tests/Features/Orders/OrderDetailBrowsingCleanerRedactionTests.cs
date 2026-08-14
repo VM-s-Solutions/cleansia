@@ -264,7 +264,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     }
 
     [Fact]
-    public async Task The_Administrator_Still_Gets_Everything()
+    public async Task The_Administrator_Gets_Everything_Except_The_Entry_Instructions()
     {
         var order = BuildFullyPopulatedOrder();
         ArrangeCommon(order);
@@ -276,7 +276,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
         var detail = result.Value!;
         Assert.Equal(CustomerName, detail.CustomerName);
         Assert.Equal(CustomerPhone, detail.CustomerPhone);
-        Assert.Equal(AccessInstructions, detail.AccessInstructions);
         Assert.Equal(Latitude, detail.Address!.Latitude);
         Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
         Assert.Equal(ReceiptNumber, detail.ReceiptNumber);
@@ -284,6 +283,44 @@ public class OrderDetailBrowsingCleanerRedactionTests
         var crewMember = Assert.Single(detail.AssignedEmployees);
         Assert.Equal($"{CleanerFirstName} {CleanerLastName}", crewMember.FullName);
         Assert.Equal(CleanerPhone, crewMember.PhoneNumber);
+    }
+
+    /// <summary>
+    /// G-11. Until 2026-08-14 this test asserted the admin "still gets everything", and the entry
+    /// instructions rode along with it — free text of the form "key under the mat", reaching every admin
+    /// who opened an order, with no reveal step and therefore no record of who looked.
+    ///
+    /// <para>They now come only from <c>RevealOrderAccessInstructions</c>, which is a Command so the
+    /// audit engine writes a row. The flag stays true so the UI can tell "nothing to reveal" from
+    /// "something to reveal" without holding the text.</para>
+    /// </summary>
+    [Fact]
+    public async Task The_Administrator_Does_Not_Get_The_Entry_Instructions_Only_That_There_Are_Some()
+    {
+        var order = BuildFullyPopulatedOrder();
+        ArrangeCommon(order);
+        ArrangeCaller(order, UserProfile.Administrator, callerEmployeeId: null, isEntitled: true, isCustomer: false);
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        var detail = result.Value!;
+        Assert.Null(detail.AccessInstructions);
+        Assert.True(detail.HasAccessInstructions);
+    }
+
+    /// <summary>The assigned cleaner is standing at the door; withholding from them would be the bug.</summary>
+    [Fact]
+    public async Task The_Assigned_Cleaner_Still_Gets_The_Entry_Instructions()
+    {
+        var order = BuildFullyPopulatedOrder();
+        ArrangeCommon(order);
+        ArrangeCaller(order, UserProfile.Employee, callerEmployeeId: AssignedEmployeeId, isEntitled: true, isCustomer: false);
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        var detail = result.Value!;
+        Assert.Equal(AccessInstructions, detail.AccessInstructions);
+        Assert.True(detail.HasAccessInstructions);
     }
 
     // ── Arrangement ──

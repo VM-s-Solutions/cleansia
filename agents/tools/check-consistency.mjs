@@ -167,9 +167,36 @@ function checkBackend(roots) {
                     "B1",
                     "Command returns a raw scalar — wrap it in a Response record",
                 );
-            // B3 — validator must inherit AbstractValidator
+            // B3 — validator must inherit AbstractValidator.
+            //
+            // NARROWED 2026-08-14, after the rule was found to be flagging a security control and two
+            // kinds of nothing. The 21 sites it fired on were three populations:
+            //
+            //   BaseAuthValidator / BaseUserValidator — declare NO rules in a constructor, only
+            //     `protected void AddEmailRules(...)` helpers the derived class calls explicitly. The
+            //     rules land exactly as if written inline, so the flag was about the `: Base…` token
+            //     and nothing observable.
+            //   LoginValidator — its rule ORDER is the point ("Cascade.Stop so a locked account never
+            //     evaluates the password"). Composing it away would remove a deliberate gate.
+            //   UserEmailValidator — its constructor declares a rule that re-checks the caller against
+            //     the database on every request. That is load-bearing: the three WEB hosts install no
+            //     revocation directory (UserRevocationWiringPinTests pins that they must not), a
+            //     Partner access token lives 1440 minutes, and GDPR erasure rewrites User.Email to
+            //     deleted_{id}@anonymized.local — so this lookup is what stops an erased or
+            //     unconfirmed principal acting on a still-valid token. Owner confirmed the intent on
+            //     2026-08-14.
+            //
+            // A validator inheriting SOMETHING ELSE is still worth a look, so the rule survives with an
+            // exemption list rather than being deleted. Add to it only with the same kind of reason.
+            const VALIDATOR_BASE_EXEMPT = new Set([
+                "AbstractValidator",
+                "BaseAuthValidator",
+                "BaseUserValidator",
+                "LoginValidator",
+                "UserEmailValidator",
+            ]);
             const vb = ln.match(/class\s+Validator\s*:\s*(\w+)</);
-            if (vb && vb[1] !== "AbstractValidator")
+            if (vb && !VALIDATOR_BASE_EXEMPT.has(vb[1]))
                 add(
                     f,
                     n,

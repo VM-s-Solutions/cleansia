@@ -8,12 +8,11 @@ The customer app supports two authentication methods: **email/password** login a
 
 1. User enters email and password on `/login`
 2. `LoginFacade.login()` calls `CustomerAuthService.login(email, password, rememberMe)`
-3. Backend returns a `JwtTokenResponse` containing:
-   - `accessToken` -- JWT access token
-   - `refreshToken` -- Refresh token
-   - `isEmailConfirmed` -- Whether email is verified
+3. The server issues the **access and refresh tokens as HttpOnly cookies** via `Set-Cookie`. The
+   response body carries only what JavaScript is allowed to see: `csrfToken`, `role`,
+   `refreshTokenExpiresAt` and `isEmailConfirmed`
 4. If `isEmailConfirmed` is `false`, user is redirected to `/confirm-email?email=...`
-5. If confirmed, `CustomerAuthService.setSession(authResult)` stores the tokens
+5. If confirmed, `CustomerAuthService.setSession(authResult)` persists those JS-readable companions
 6. Guest order data is cleared via `GuestOrderService.clear()`
 7. NgRx action `loadCustomerUser()` is dispatched to fetch user profile
 8. User is redirected to `/orders`
@@ -69,17 +68,27 @@ The `/confirm-email` page accepts a token via query parameter. When the page loa
 4. User clicks the link, enters a new password
 5. On success, redirected to `/login`
 
-## JWT Token Management
+## Session tokens {#session-tokens}
 
-Tokens are stored via `CustomerAuthService.setSession()`:
+**The web customer app never holds a token in JavaScript.** Both the access and the refresh token are
+HttpOnly cookies set by the server, so an XSS payload cannot read or exfiltrate either one. This is the
+security property of the design — do not add a token to `localStorage`, to a service field, or to an
+`Authorization` header on this client.
 
-- **Access token** -- Used in Authorization header via HTTP interceptor
-- **Refresh token** -- Used to obtain new access tokens when expired
-- The `rememberMe` flag determines storage persistence
+`setSession()` persists only the three JS-readable companions: `role` (a UI hint for permission
+gating — the server remains the source of truth), `refreshTokenExp` (so the app can tell a live session
+from an expired one without a round-trip), and `csrfToken`.
 
-The `CUSTOMER_INTERCEPTORS_FN` interceptor chain automatically:
-1. Attaches the `Authorization: Bearer <token>` header to API requests
-2. Handles 401 responses by attempting token refresh
+The interceptor chain therefore does two things on every request:
+
+1. Sends `withCredentials: true`, which carries the HttpOnly auth cookie and lets the browser accept
+   `Set-Cookie` on the way back. **Required end to end — omit it and the request is anonymous.**
+2. On a state-changing method, echoes the stored CSRF token as `X-CSRF-Token`. The server verifies it
+   against the cookie's half — a **double-submit pair**, which is why the CSRF token is deliberately
+   JS-readable while the auth token is not.
+
+Mobile is the other shape: no cookies, `Authorization: Bearer`, `csrfToken` null — bearer auth is not
+forgeable by CSRF, so it needs no second factor. Do not read this page for mobile behaviour.
 3. Retries the failed request with the new token
 
 ## Guards
@@ -109,10 +118,15 @@ Prevents authenticated users from accessing login/register pages. Redirects to `
 
 ## Session Management
 
-- `CustomerAuthService.isLoggedIn()` -- Checks for valid stored tokens
-- `CustomerAuthService.setSession(authResult)` -- Stores tokens from login response
-- `CustomerAuthService.logout()` -- Clears stored tokens and state
-- Token decoding uses the `jwt-decode` library
+- `isLoggedIn` -- a signal, backed by `hasValidSession()`: a CSRF token exists **and** the persisted
+  refresh expiry is still in the future. JS cannot observe the auth cookie, so session existence is
+  inferred from those two rather than read directly
+- `setSession(authResult)` -- persists `role`, `refreshTokenExp` and `csrfToken` (see
+  [Session tokens](#session-tokens))
+- `logout()` -- POSTs so the server can revoke the refresh token it reads from the cookie, then wipes
+  local state **even if that call fails**: the user's intent is unambiguous
+- Nothing decodes the JWT. It is HttpOnly, so decoding is impossible by design; `role` is emitted in
+  the response body precisely so no client needs to
 
 ::: tip
 The order wizard works for both authenticated and guest users. Authenticated users get their profile data pre-filled; guest users must enter contact info manually. Guest orders are tracked via `GuestOrderService` using localStorage.

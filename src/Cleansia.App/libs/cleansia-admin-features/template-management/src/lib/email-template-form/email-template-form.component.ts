@@ -72,11 +72,11 @@ export class EmailTemplateFormComponent implements OnInit, OnDestroy {
   }
 
   private initForm(): void {
-    this.form = this.fb.group({
+    this.form = this.fb.nonNullable.group({
       value: ['', [Validators.required, Validators.maxLength(10000)]],
     });
 
-    this.testEmailForm = this.fb.group({
+    this.testEmailForm = this.fb.nonNullable.group({
       recipientEmail: ['', [Validators.required, Validators.email]],
     });
   }

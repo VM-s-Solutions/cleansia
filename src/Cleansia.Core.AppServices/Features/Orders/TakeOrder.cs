@@ -284,8 +284,7 @@ public class TakeOrder
                 await orderRepository.CommitAsync(cancellationToken);
             }
             catch (DbUpdateException ex)
-                when (DbConstraintViolation.IsUniqueViolationOn(
-                    ex, DbConstraintNames.OrderEmployeesOrderIdSeatOrdinalUnique))
+                when (DbConstraintViolation.IsUniqueViolation(ex))
             {
                 // Someone else took this seat between our read and our commit. Same refusal the in-memory
                 // path gives, so the two cannot disagree and TC-TAKE-ONE-ERROR still holds.

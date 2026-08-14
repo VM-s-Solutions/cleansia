@@ -1569,7 +1569,7 @@ tests — `T1-CI`, over both employee-document intakes, both download handlers, 
 > unpinned** — T-0561 carries the AC.
 > **Scope, descriptively:** the `Enforced by:` clause above does not cover this intake, and the general
 > form of the sentence below is written scoped to exclude it. **Drafted, panel owed:**
-> `backlog/adr/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md` — rev 2, one
+> `agents/archive/2026-08/adr-deliberation/drafts/NNNN-stored-content-type-is-byte-derived-on-every-intake.md` — rev 2, one
 > independent challenge round run, lead owed; its D2 carries the general sentence, its tier and its
 > enforcer, and its D4 the read-side divergence. No new intake has been written in this shape since;
 > whether the shape is available to a new one is that ruling's to make, not this callout's.

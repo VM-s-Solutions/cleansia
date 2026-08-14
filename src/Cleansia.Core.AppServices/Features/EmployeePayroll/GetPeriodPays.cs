@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -44,7 +45,8 @@ public class GetPeriodPays
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IOrderAccessService orderAccessService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICurrencyResolutionService currencyResolutionService)
         : IQueryHandler<Query, PeriodPaySummaryDto>
     {
         public async Task<BusinessResult<PeriodPaySummaryDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -81,7 +83,14 @@ public class GetPeriodPays
                 GrandTotal: orderPays.Sum(p => p.TotalPay),
                 HasInvoice: invoice is not null,
                 InvoiceId: invoice?.Id,
-                OrderPays: orderPays.Select(p => p.MapToDto())
+                OrderPays: orderPays.Select(p => p.MapToDto()),
+                // Prefer the invoice's own currency. Once a period is invoiced that row is what the
+                // cleaner's payout document says, and "My Pay" disagreeing with it is the whole defect
+                // this field exists to close. Only an un-invoiced period needs resolving, and it resolves
+                // the same way the partner dashboard does, so those two cannot drift either.
+                CurrencyCode: invoice?.Currency?.Code
+                    ?? await currencyResolutionService.ResolveCurrencyCodeForEmployeeAsync(
+                        query.EmployeeId, cancellationToken)
             );
 
             return BusinessResult.Success(summary);

@@ -1,5 +1,7 @@
 # Shared-File Lanes — the serialization list
 
+
+
 When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
 into a single lane (one writer at a time). This file is the **maintained data list** of those files.
 The PM validates every parallel batch's lane assignments against this list **before dispatch**; a
@@ -17,7 +19,7 @@ the serialization rule + the restore ban (`quality-gates.md` §"Serialize shared
 | Cluster | Files | Why it collides |
 |---|---|---|
 | Consistency catalog | `agents/knowledge/consistency.md` | Every canonicalization/deviation ticket appends its note; two concurrent writers (or one blanket revert) destroy each other's hunks — the 2026-06-23 incident file. |
-| Backlog manifest | `agents/archive/2026-08/backlog/INDEX.md` | One row per ticket in one table — every ticket in a batch wants to update its own row at close-out. |
+| Backlog manifest | `agents/backlog/INDEX.md` | One row per ticket in one table — every ticket in a batch wants to update its own row at close-out. |
 | i18n bundles (15 files) | `src/Cleansia.App/apps/{cleansia.app, cleansia-partner.app, cleansia-admin.app}/src/assets/i18n/{en,cs,sk,uk,ru}.json` | Any FE ticket adding a user-visible string edits all 5 locale files of its app; two FE tickets on the same app collide on all 5. Serialize **per app** (the three apps' bundles are independent). |
 | Policy cluster (3 files — they move together) | `src/Cleansia.Core.AppServices/Authentication/Policy.cs` + `src/Cleansia.Core.AppServices/Authentication/PolicyBuilder.cs` + `src/Cleansia.Tests/Authentication/FrozenPermissionMapTests.cs` | A new `Policy.*` const needs all three in ONE change or `AssertComplete` bricks host boot / the frozen snapshot fails. Exactly one cluster editor per pass (the T-0285 rule). |
 | Project guardrails | `CLAUDE.md` (repo root) | Read by every agent at spawn; a mid-batch edit changes the rules under running lanes. Owner/orchestrator-gated — never a ticket-lane edit. |

@@ -12,19 +12,19 @@ Keep the team moving and keep every hand-off traceable. You own the backlog, the
 the sequencing of work across specialists. You are the only agent that reports progress to the owner.
 
 ## What you own
-- `agents/archive/2026-08/backlog/tickets/T-NNNN-*.md` — every ticket file
-- `agents/archive/2026-08/backlog/INDEX.md` — the backlog manifest (keep it current on every transition)
-- `agents/archive/2026-08/backlog/status/sprint-N.md` — sprint status reports for the owner
+
+- `agents/backlog/tickets/T-NNNN-*.md` — every ticket file
+- `agents/backlog/INDEX.md` — the backlog manifest (keep it current on every transition)
 - The `status` and `owner` fields in every ticket's frontmatter — **no other agent edits these**
 
 ## What you read
 - `CLAUDE.md` — project guardrails
 - `agents/process/*.md` — your operating rules (lifecycle, routing, quality-gates, communication)
-- `agents/archive/2026-08/backlog/stories/**`, `docs/decisions/**` — what we're building and the decisions in force
-- `agents/archive/2026-08/backlog/questions/open.md` — open blockers
+- `docs/**` — what the platform does and why; `docs/decisions/**` — the decisions in force
+- `agents/backlog/questions/open.md` — open blockers
 
 ## Workflow
-1. Read `agents/archive/2026-08/backlog/INDEX.md` and the current sprint status.
+1. Read `agents/backlog/INDEX.md` and the current sprint status.
 2. Turn the owner's request into one or more tickets (use `agents/templates/ticket.md`). **First
    dedup:** search `INDEX.md` and `backlog/audits/` — if the work is already an open ticket or an
    audit finding, extend that instead of creating a new one.

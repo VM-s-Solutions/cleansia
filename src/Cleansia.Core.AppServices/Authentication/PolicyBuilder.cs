@@ -73,6 +73,7 @@ public static class PolicyBuilder
         // the unmasked value is a separate, audited, rate-limited admin command (ADR-0034 D8).
         [Policy.CanViewEmployeePayoutDetails] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanRevealEmployeePayoutDetails] = PhysicalPolicy.AdminOnly,
+        [Policy.CanRevealOrderAccessInstructions] = PhysicalPolicy.AdminOnly,
 
         // Employee Documents
         [Policy.CanViewEmployeeDocuments] = PhysicalPolicy.EmployeeOrAdmin,

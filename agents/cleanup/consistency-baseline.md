@@ -36,9 +36,39 @@ also violated *"Commands never return collections"*.
 
 ---
 
-## The declared 46
+## The declared 46 — now **15**, and the drop is mostly the checker
 
-### `B3` ×21 — validators inheriting a shared base — **not doing**
+`B3` (21) was the rule being wrong; `D2` (8) was a stated risk that did not exist; `conv` (2) went with
+`CL-024`. What remains is `E1` ×9, `B1` ×5 and `E5` ×1, all declared below with reasons and none with a
+user-visible cost.
+
+### `B3` ×21 — **RESOLVED 2026-08-14: the rule was wrong, not the code**
+
+The rule was narrowed and the sites stand. Checking what each base actually does split them three ways:
+
+- **`BaseAuthValidator` ×4, `BaseUserValidator` ×1** — declare **no rules in a constructor**, only
+  `protected void AddEmailRules(...)` helpers the derived class calls explicitly. The rules land exactly
+  as if written inline. The flag was about the `: Base…` token and nothing observable.
+- **`LoginValidator` ×5** — its rule **order** is the point. Its own comment: *"Cascade.Stop so a locked
+  account never evaluates the password."* Composing it away removes a deliberate gate.
+- **`UserEmailValidator` ×11** — its constructor declares a rule that re-checks the caller against the
+  database on every request, and **that is load-bearing.** The three web hosts install no revocation
+  directory — `UserRevocationWiringPinTests` pins that they must not — a Partner access token lives
+  **1440 minutes**, and GDPR erasure rewrites `User.Email` to `deleted_{id}@anonymized.local`. So this
+  lookup is the only thing stopping an erased or unconfirmed principal from acting on a token that is
+  still signature-valid for up to a day. The owner confirmed that intent on 2026-08-14.
+
+> **What P4 got wrong, recorded because the shape recurs.** This entry originally called the rule
+> *"deliberate reuse, not sloppiness"* and left it at that — right conclusion, no evidence. It then
+> raised a *hazard*: FluentValidation runs the base's `RuleFor` as a separate chain, so it executes even
+> when the derived validator's own rules have failed. That is true, and it is the **correct** design
+> here: a security precondition that only ran when the payload happened to be valid would be a weaker
+> gate. It costs one indexed lookup on an already-invalid request, which is the right trade.
+
+`check-consistency.mjs` now exempts the four bases by name, with a paired *"STILL flags anything else"*
+self-test so the narrowing cannot quietly become a deletion.
+
+
 
 Every one inherits `LoginValidator`, `BaseAuthValidator`, `UserEmailValidator` or `BaseUserValidator`.
 That is deliberate reuse, not sloppiness. Satisfying the rule means either duplicating the base rules
@@ -57,12 +87,21 @@ user-visible gain.
 Nine ViewModels across both apps. Converting to sealed interfaces means rewriting each ViewModel and
 every `when` that reads it. Real churn, no user impact, no observed defect.
 
-### `D2` ×8 — `fb.group(...)` → `fb.nonNullable.group(...)` — **not doing**
+### `D2` ×8 — **DONE 2026-08-14. The stated risk did not exist.**
 
-`nonNullable` changes what `reset()` does: controls return to their initial value rather than `null`.
-**Two of the five affected forms call `reset()`**, so this is a behaviour change to shipped admin
-forms in service of a style rule, with nothing observed wrong. Doing three of five would be worse than
-doing none.
+The baseline claimed *"two of the five affected forms call `reset()`, so this is a behaviour change to
+shipped admin forms."* Checking each site:
+
+- **2 of the 8 group calls are no-ops** — every control inside them already declares `nonNullable: true`
+  individually, so converting the group changes nothing at all.
+- **Of the remaining 6, five forms never call `reset()`.**
+- **The one that does** resets a `recipientEmail` control: today to `null`, now to `''`. Both render as
+  an empty box and both fail `Validators.required`. Neither the user nor the validator can tell them
+  apart.
+
+So there was no behaviour change to protect. All eight converted; the admin app builds and its 34 tests
+pass. **The lesson is the one this track keeps relearning: "it changes behaviour" is a claim about the
+tree, and it needs checking like any other.**
 
 ### `B1` ×5 — commands returning a raw scalar — **not doing**
 

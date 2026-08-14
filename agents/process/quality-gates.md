@@ -1,5 +1,7 @@
 # Quality Gates
 
+
+
 A change does not reach `done` until every **applicable** gate passes. The Reviewer enforces gates
 1–2 and 6–7 on every ticket; Security (gate 3), Architecture (gate 4), and Optimizer (gate 5) are
 conditional. The PM will not merge until the gates that apply are green.
@@ -327,7 +329,7 @@ partner,admin}`) and fix the consumers before pushing. The blocking frontend pro
 this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
 already fails on the drift symptom.)
 
-**Mechanized after the second occurrence — [ADR-0031](../backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md).**
+**Mechanized after the second occurrence — [ADR-0031](/decisions/adr-0031).**
 The rule above is unchanged and still binds; it is now carried by two mechanisms instead of by memory.
 Every `generate-*-client` script ends in `npm run typecheck`, which runs the Angular compiler over
 **all** app compilation units and names the offending file:line before anything is pushed
@@ -349,7 +351,7 @@ directly for mechanical certainty.**
 ### Serialize shared-file lanes — and NEVER `git restore` a shared file in a parallel batch
 When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
 (one writer at a time), not run concurrently. The shared-file clusters that bite are:
-`agents/knowledge/consistency.md`, `agents/archive/2026-08/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
+`agents/knowledge/consistency.md`, `agents/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
 `{en,cs,sk,uk,ru}.json` per app), and the `Policy.cs` / `PolicyBuilder.cs` authz cluster (these two
 must move together or `AssertComplete` fails boot). The PM sequences these into a single lane the same
 way `:core` (T-0277/T-0278) and the Policy cluster (T-0285) were serialized — never two instances

@@ -1,7 +1,7 @@
 # Client price display — living decision doc
 
 > **Status: the shape below is IMPLEMENTED on all three clients and pinned by CI on two of them.**
-> The immutable record is `../../backlog/adr/drafts/NNNN-client-price-display-splits-the-server-total.md`
+> The immutable record is `agents/archive/2026-08/adr-deliberation/drafts/NNNN-client-price-display-splits-the-server-total.md`
 > (**`proposed`** — number not yet allocated; a defense panel of distinct instances is owed before it
 > can be `accepted`, per `../../process/deliberation.md`).
 > **Catalog:** `../../knowledge/patterns-mobile.md` → *"The client SPLITS the server's total; it never

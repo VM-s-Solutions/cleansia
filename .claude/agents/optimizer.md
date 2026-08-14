@@ -13,6 +13,7 @@ the cheaper-by-design alternative. Optimize for the long-run cost of running the
 not micro-tweaks that hurt readability.
 
 ## What you read
+
 - The diff + the surrounding hot path
 - `agents/knowledge/patterns-backend.md` (performance section), `patterns-frontend.md`,
   `patterns-mobile.md`
@@ -49,7 +50,7 @@ not micro-tweaks that hurt readability.
 - Reuse `:core`/`Core` components rather than re-creating heavy UI.
 
 ## Output
-Write findings in the ticket's `## Review` section (or a standalone `agents/archive/2026-08/backlog/audits/perf-*.md`
+Write findings in the ticket's `## Review` section (or, for a standalone audit, one ticket per finding
 for audits): each finding names the file:line, the cost it incurs, and the concrete fix. Rank by
 impact — a per-request N+1 on a hot endpoint outranks a micro-allocation.
 

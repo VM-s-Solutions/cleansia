@@ -5,12 +5,12 @@
 > §4–§6, which it corrects in ten places. §7 is the content-type ruling — a separate lane whose
 > **§7.1 has now been RULED — lead, 2026-08-06: verdict REVISE on a closed list, no further round, then
 > it lands as `ADR-0044`** — while **§7.2 is still author-only**.** The immutable record for §4–§6 is
-> **`../../backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`**
+> **`/decisions/adr-0043`**
 > — **rev N+1 landed 2026-08-06** and the PM has since stamped it **`accepted`** (that ADR's `:3`, per
 > its §Verdict §E), carrying the full `## Challenge` / `## Defense` / `## Verdict` trail. **The sole gate
 > on T-0459 is therefore discharged** — and T-0459's scrub is on disk at both order-photo handlers; see
 > the dated note under §2's table. The old draft path
-> (`backlog/adr/drafts/NNNN-user-artifact-content-policy-no-decoder.md`) is a **tombstone** — it held
+> (`agents/archive/2026-08/adr-deliberation/drafts/NNNN-user-artifact-content-policy-no-decoder.md`) is a **tombstone** — it held
 > rev N, whose map was stale in ~7 citations. Do not cite it.
 > **Tickets:** T-0458 (policy + seam), T-0459 (application), T-0460 (the S-series law) — **all three are
 > re-scoped by ADR-0043; do not read their `## Context` as current.**
@@ -290,7 +290,7 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
 
 The T-0556 follow-up brought thirteen of the fourteen intakes onto a byte-derived stored type and routed
 two calls here rather than deciding them. Both are now drafted. **Neither is `accepted`.** §7.1 has had
-an **independent challenge round** (`backlog/adr/challenges/0044-stored-content-type-byte-derived.md`,
+an **independent challenge round** (`agents/archive/2026-08/adr-deliberation/challenges/0044-stored-content-type-byte-derived.md`,
 five blocking findings), the author's **rev 2** answered it, and a **lead ruled (2026-08-06): verdict
 REVISE on a closed twelve-item list, zero blocking challenges surviving, no further round.** That list
 is now **transcribed (rev 3)** and the decision has **landed as `ADR-0044`, status `proposed`** — the
@@ -299,11 +299,11 @@ an author-mode draft awaiting both.
 
 ### 7.1 `SaveOrderPhotos` — the exception closes
 
-`backlog/adr/0044-stored-content-type-is-byte-derived-on-every-intake.md`
-*(was `backlog/adr/drafts/NNNN-…`; the draft path is a tombstone)*
+`/decisions/adr-0044`
+*(was `agents/archive/2026-08/adr-deliberation/drafts/NNNN-…`; the draft path is a tombstone)*
 
 **The trade-off space, so the next reader does not re-derive it.** ⚠️ **Rewritten 2026-08-06 after the
-independent challenge round** (`backlog/adr/challenges/0044-stored-content-type-byte-derived.md`). Three
+independent challenge round** (`agents/archive/2026-08/adr-deliberation/challenges/0044-stored-content-type-byte-derived.md`). Three
 rows changed: the read path was one row and is three; the `Opaque` row's why-not was backwards; the
 refuse-vs-`Opaque` branch is now an owner call.
 
@@ -344,7 +344,7 @@ re-encode every pick to JPEG and cannot emit anything else* — iOS `ImageCompre
 of uploads that succeed today, render correctly, and would newly fail is **empty**.
 
 **A second, independent lane reached the same verdict from the other direction.** The challenge on the
-content-policy draft (`backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4,
+content-policy draft (`agents/archive/2026-08/adr-deliberation/challenges/NNNN-user-artifact-content-policy-threat-model.md` CH-4,
 `c6370115`) attacks that draft for electing this surface as its metadata-scrub **pilot**: a per-format
 scrub dispatching on the client's `data:` prefix runs the PNG chunk walker over JPEG bytes when the
 uploader says so — **a no-op the attacker selects, under a green "scrub applied" test**
@@ -467,7 +467,7 @@ the "keep the exception" option the panel convened to weigh.
 
 ### 7.2 `DisputeEvidence` — the column is refused, the round-trip is pinned
 
-`backlog/adr/drafts/NNNN-dispute-evidence-type-carrier-is-the-blob-name.md`
+`agents/archive/2026-08/adr-deliberation/drafts/NNNN-dispute-evidence-type-carrier-is-the-blob-name.md`
 
 **Ruling: the server-minted blob-name extension is sufficient. No migration.** The name is
 content-addressed — minted from the bytes in the same statement that reads them — which makes
@@ -504,9 +504,9 @@ here so it is not lost between two ADRs that are not about it.
 ## 8. Panel verdict on the content policy — 2026-08-06 (the current shape)
 
 Author (2026-08-05) · independent challenger
-(`backlog/adr/challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) · lead
+(`agents/archive/2026-08/adr-deliberation/challenges/NNNN-user-artifact-content-policy-threat-model.md`, 2026-08-06) · lead
 (2026-08-06), all distinct instances. Full trail and the closed change list live in the ADR's `## Verdict`
-— **`backlog/adr/0043-user-artifact-metadata-is-scrubbed-at-intake-by-audience-without-a-decoder.md`**.
+— **`/decisions/adr-0043`**.
 
 **Outcome: REVISE — the rulings survive, the map and several reasons do not. No further challenge round.**
 ~~Rev N+1 is a transcription pass~~ — **rev N+1 landed 2026-08-06 as ADR-0043 (`proposed`)**, applying

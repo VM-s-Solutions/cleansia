@@ -89,7 +89,7 @@ public class RegisterEmployee
                     await userRepository.CommitAsync(cancellationToken);
                 }
                 catch (DbUpdateException ex)
-                    when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+                    when (DbConstraintViolation.IsUniqueViolation(ex))
                 {
                     return BusinessResult.Failure<bool>(
                         new Error(nameof(Command.Email), BusinessErrorMessage.ExistingUserWithEmail));

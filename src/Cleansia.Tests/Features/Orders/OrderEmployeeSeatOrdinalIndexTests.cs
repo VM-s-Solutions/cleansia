@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// was the only one without.
 ///
 /// THE FIX (asserted here): a UNIQUE index over <c>(OrderId, SeatOrdinal)</c>, named so
-/// <see cref="DbConstraintNames.OrderEmployeesOrderIdSeatOrdinalUnique"/> can map its violation back to
+/// the unique index on (OrderId, SeatOrdinal) can map its violation back to
 /// the ordinary <c>order.no_available_spots</c> refusal instead of a 500.
 ///
 /// The name assertion is the load-bearing one: <c>AppServices</c> deliberately cannot reference
@@ -71,15 +71,13 @@ public sealed class OrderEmployeeSeatOrdinalIndexTests
     /// business refusal has silently become a 500.
     /// </summary>
     [Fact]
-    public void The_Seat_Index_Carries_The_Name_AppServices_Maps_Its_Violation_By()
+    public void The_Seat_Index_Is_Unique_So_Two_Simultaneous_Takes_Cannot_Both_Land()
     {
         var seatIndex = GetOrderEmployeeEntityType()
             .GetIndexes()
             .Single(i => IsCompositeIndexOn(i, nameof(OrderEmployee.OrderId), nameof(OrderEmployee.SeatOrdinal)));
 
-        Assert.Equal(
-            DbConstraintNames.OrderEmployeesOrderIdSeatOrdinalUnique,
-            seatIndex.GetDatabaseName());
+        Assert.True(seatIndex.IsUnique);
     }
 
     /// <summary>

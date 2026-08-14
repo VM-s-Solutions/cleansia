@@ -15,7 +15,7 @@
         color="secondary"
       />
       <cleansia-label 
-        [text]="(data()!.totalEarnings | number : '1.0-0') + ' Kč'" 
+        [text]="(data()!.totalEarnings | number : '1.0-0') + ' ' + (currencyCode() ?? '')" 
         size="base" 
         weight="semibold"
       />
@@ -27,7 +27,7 @@
         color="secondary"
       />
       <cleansia-label 
-        [text]="(data()!.averageMonthlyEarnings | number : '1.0-0') + ' Kč'" 
+        [text]="(data()!.averageMonthlyEarnings | number : '1.0-0') + ' ' + (currencyCode() ?? '')" 
         size="base" 
         weight="semibold"
       />

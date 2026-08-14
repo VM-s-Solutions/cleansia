@@ -10,7 +10,7 @@ docs rotting into fiction.
 | Role | Owns | Location | Contains |
 |---|---|---|---|
 | **Analysts** | the **business-logic** view | `agents/analysts/<domain>.md` | the domain's business rules in prose **+ Mermaid diagrams** (flows, state machines, decision trees), the living **story map** (which stories cover which capability), open questions |
-| **Architects** | the **decision** view | `agents/architecture/decisions/<topic>.md` | living design notes, the trade-off space, current shape, links to the immutable ADRs. (The **ADRs** themselves stay in `backlog/adr/` — immutable once accepted; these decision docs are the *evolving* companion that explains the current state.) |
+| **Architects** | the **decision** view | `agents/architecture/decisions/<topic>.md` | living design notes, the trade-off space, current shape, links to the immutable ADRs. (The **ADRs** themselves stay in `docs/decisions/` — immutable once accepted; these decision docs are the *evolving* companion that explains the current state.) |
 | **Developers** | the **implementation** view | `docs/architecture/*` (canonical, published) + short impl notes in the ticket | how it's actually built; kept in sync by the `docs` agent when behavior ships |
 | **Docs agent** | the **published** site | `docs/**` (VitePress) + [`CHANGELOG.md`](../../CHANGELOG.md) (repo root) | the polished, user/dev-facing output synced from the above |
 

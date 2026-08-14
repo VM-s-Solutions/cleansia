@@ -210,6 +210,80 @@ the working spec, and it appears when the phase opens. Rows with no file yet are
 > string segments rather than a literal, so the prose rewrite missed it and the checker went red on the
 > next run — it now reads the archive and guards that history against being edited into disagreeing
 > with itself.
+>
+> **Correction, 2026-08-13 (P10).** The paragraph above is wrong in exactly the way this track exists
+> to catch. P9 rewrote every `agents/backlog/` string it found, which made dead paths *resolve* — and
+> resolving to the wrong place is worse than breaking, because nothing complains. **22 instructions
+> across 10 live files were left telling agents to WRITE into frozen history**, including step 1 of
+> `/feature` (`.claude/agents/pm.md:27`). A separate **63 links across 13 files** pointed at
+> `backlog/adr/…`, a path that has existed nowhere since P6 — untouched, because they do not contain
+> the string the rewrite searched for. Both closed by `CL-042`.
+
+---
+
+## P10 — Loose ends
+
+The nine phases each wrote sentences that were true when written. This phase checks which of them
+still are. Every row was ground-truthed against the tree first; **29 of 60 candidates were refuted**
+under adversarial verification.
+
+The finding that frames the rest: **`docs/` was declared the source of truth, but only the ~100 pages
+this track authored were ever verified.** 24 pages under `docs/{api,deployment,customer-app,partner-app,admin-app}`
+were written in **April 2026** and promoted to authoritative without a read. `CL-045`–`CL-048` are
+what that promotion bought.
+
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-044 | `Web.Partner`'s anonymous health endpoint returned `ex.Message` to the public internet | S | done | #203 |
+| CL-042 | 63 dead `backlog/adr/` links; 22 instructions telling agents to write into frozen history | M | done | #203 |
+| CL-045 | `docs/customer-app/authentication.md` documents a bearer/localStorage session the tree replaced | M | done | #203 |
+| CL-049 | Gate holes — `check-docs-refs` passes having read zero files; Backend CI blind to `sql-scripts/` | M | done | #203 |
+| CL-047 | Three P7 pages carry domain claims the tree contradicts | M | done | #203 |
+| CL-046 | `platform-expandability.md` still orders a catalog-tenancy migration that shipped in June | M | done | #203 |
+| CL-048 | Operator pages — two config keys that bind nothing, a CI inventory missing five of ten | S | done | #203 |
+| CL-050 | iOS — eight live files still call the first client generation owner-gated; it shipped | S | done | #203 |
+| CL-052 | A dead 299-line `PayCalculator`, and three comments asserting constraints the tree lifted | S | done | #203 |
+| CL-043 | `MANUAL_STEPS.md § Open` reads *(none)* while two owner actions are owed | S | done | #203 |
+| CL-051 | ADR-0030 records as OPEN two gates the tree closed — dated correction note | S | done | #203 |
+
+### Handed over — and then worked, on the owner's word (2026-08-14)
+
+Filed as decisions, six of eight came back with a ruling and were built in the same PR.
+
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-053 | Old backlog **deleted**; `agents/backlog/` is live again, one row per ticket | M | done | #203 |
+| CL-055 | `IsUniqueViolationOn` + `DbConstraintNames` deleted — *"it's over engineering, remove it"* | S | done | #203 |
+| CL-060 | G-11 — the admin entry-instruction read is now an audited Command | M | done | #203 |
+| CL-057 | Admin pay-period close no longer confirms in hardcoded English | S | done | #203 |
+| CL-056 | Dead camera affordance removed; the dispute author label is reported, not decided | S | done | #203 |
+| CL-054 | `CurrencyCode` on the pay summary + the dashboard card; regen is `MS-4` | M | done | #203 |
+| CL-058 | `B3` ×21 — the RULE was wrong; narrowed with a paired self-test, sites stand | M | done | #203 |
+| CL-059 | `D2` ×8 — converted; the "behaviour change" the baseline claimed did not exist | M | done | #203 |
+| CL-061 | Admin reveal control — shipped; `MS-5` cleared by the owner mid-PR | S | done | #203 |
+| CL-062 | The three product calls: dashboard chart currencies · dispute author label · stale ADR paths | M | done | #203 |
+
+> **`CL-060` shrank on inspection, which is rule 3 again.** It was filed as a four-platform feature
+> (admin web, partner web, Android, iOS). The *assigned* cleaner's access is correct on every platform
+> and unchanged, so the whole defect was one admin read — backend-only. And `T-0483`, the draft ticket
+> the gap register worried would disappear into the archive, turned out to have **no ticket file at
+> all**; it was only ever an INDEX row.
+>
+> **`CL-058` and `CL-059` both resolved against the tree, and in `B3`'s case the checker was the
+> defect.** Its 21 sites are three populations: 5 inherit a base that declares **no constructor rules**
+> — only `protected` helpers the derived class calls, behaviourally identical to inlining; 5 inherit
+> `LoginValidator`, whose ordering is the deliberate point; and 11 inherit `UserEmailValidator`, whose
+> constructor rule re-checks the caller against the database on every request. **That last one is
+> load-bearing**: the three web hosts install no revocation directory, a Partner access token lives
+> 1440 minutes, and GDPR erasure rewrites `User.Email`, so it is the only thing stopping an erased or
+> unconfirmed principal acting on a still-valid token. Owner confirmed the intent. The rule now exempts
+> the four bases by name with a paired *"STILL flags anything else"* self-test.
+>
+> `D2`'s ×8 were converted, because the risk the baseline stated was not there: 2 are no-ops (those
+> controls already declare `nonNullable: true`), 5 of the remaining 6 forms never call `reset()`, and
+> the one that does resets `''` instead of `null` — indistinguishable to both the user and
+> `Validators.required`. **`check-consistency` drops from 44 to 15, and almost all of that is the
+> checker being wrong rather than the codebase improving.**
 
 ---
 

@@ -229,7 +229,7 @@ This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100
 | `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query |
 | `EmployeePayConfig` | Pay rates per service/package; nullable `EmployeeId` = per-employee override, with a filtered unique index on `(EmployeeId, ServiceId, PackageId) WHERE "EmployeeId" IS NOT NULL` |
 | `MembershipPlan` / `UserMembership` | Cleansia Plus plans and enrolments |
-| `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger, keyed `(TenantId, UserId, BenefitKind, PeriodKey)` with a filtered `NULLS NOT DISTINCT` unique index that is the sole arbiter of the reservation race |
+| `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger. Two indexes, and confusing them is the trap: `IX_MembershipBenefitUsages_Slot` on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` is unique, `NULLS NOT DISTINCT`, filtered to live rows, and **is the sole arbiter of the reservation race** — the `SlotOrdinal` column is what lets a quota be N rather than 1. `IX_MembershipBenefitUsages_Quota`, the same key **without** `SlotOrdinal`, is **not unique**; it only serves the remaining-count read |
 | `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
 | `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
 

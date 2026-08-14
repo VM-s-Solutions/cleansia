@@ -19,5 +19,7 @@ As a **<persona>**, I want **<capability>**, so that **<value>**.
 - Explicitly excluded behavior.
 
 ## Open questions
-- Link to any Q-NNNN raised in `agents/archive/2026-08/backlog/questions/open.md`. The default assumption taken is
+- Link to any Q-NNNN raised with the owner. (The historical register is
+  `agents/backlog/questions/open.md` — **frozen, read-only**; where new questions are
+  filed is an open owner decision, `CL-053`.) The default assumption taken is
   noted here until the owner answers.

@@ -7,6 +7,12 @@ name: Backend CI
 # trees have their own CIs, so their changes must not spin the full Testcontainers
 # suite here. The sln + Directory.Packages.props live under src/, so 'src/**'
 # covers them.
+# sql-scripts/ is in scope and is NOT under src/: P9 (#202) made it the single copy
+# of insert_seed_data.sql, which CleansiaStartupBase reads on a Development boot and
+# which PayConfigSeedTests, CountryInvoiceLegalNoticeSeedTests and
+# SeededCataloguePayCoverageTests assert against. Without this line a PR that edits
+# only the seed — a new pay config, a country legal notice, a catalogue service —
+# runs no backend test at all.
 on:
   pull_request:
     branches:
@@ -16,6 +22,7 @@ on:
       - '!src/Cleansia.App/**'
       - '!src/cleansia_android/**'
       - '!src/cleansia_ios/**'
+      - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
   push:
     branches:
@@ -25,6 +32,7 @@ on:
       - '!src/Cleansia.App/**'
       - '!src/cleansia_android/**'
       - '!src/cleansia_ios/**'
+      - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
 
 # A newer push to the same ref supersedes the in-flight run — the container-backed

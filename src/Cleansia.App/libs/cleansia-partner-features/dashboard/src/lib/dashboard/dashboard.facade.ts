@@ -147,9 +147,12 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       },
       {
         title: 'pages.dashboard.pending_earnings',
+        // The server tells us the currency; do not hardcode it. The day a second country
+        // configuration exists, a hardcoded "Kč" here disagrees with the cleaner's own
+        // payout invoice, which is a filed tax document. → /flows/pay-and-payouts
         value: `${stats.currentPeriodEarnings.toLocaleString(
           this.translate.currentLang || 'en-GB'
-        )} Kč`,
+        )} ${stats.currencyCode ?? ''}`.trim(),
         icon: 'pi pi-wallet',
         color: '#8b5cf6',
         route: '/invoices',

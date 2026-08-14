@@ -681,7 +681,10 @@
       "messages": {
         "load_error": "Не вдалося завантажити деталі замовлення",
         "photos_error": "Не вдалося завантажити фотографії замовлення"
-      }
+      },
+      "access_instructions_reveal": "Показати",
+      "access_instructions_reveal_hint": "Перегляд інструкцій для входу фіксується у вашому обліковому записі.",
+      "access_instructions_reveal_failed": "Не вдалося показати інструкції для входу. Спробуйте ще раз."
     },
     "invoice_management": {
       "title": "Управління рахунками",

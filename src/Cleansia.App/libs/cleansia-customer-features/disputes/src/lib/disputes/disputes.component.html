@@ -275,7 +275,15 @@
           <div class="customer-disputes__message" [class.customer-disputes__message--staff]="msg.isStaffMessage">
             <div class="customer-disputes__message-bubble">
               <div class="customer-disputes__message-header">
-                <strong>{{ msg.authorName }}</strong>
+                <!-- Role, not the person. A customer has no business learning which support agent
+                     handled their thread, and Android has always labelled it this way — rendering the
+                     raw authorName here made one conversation read differently per platform. -->
+                <strong>{{
+                  (msg.isStaffMessage
+                    ? 'pages.disputes.author_support'
+                    : 'pages.disputes.author_you'
+                  ) | translate
+                }}</strong>
                 <small>{{ formatDate(msg.createdOn) }}</small>
               </div>
               <p>{{ msg.message }}</p>

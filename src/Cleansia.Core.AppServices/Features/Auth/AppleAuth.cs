@@ -200,7 +200,7 @@ public class AppleAuth
                 await userRepository.CommitAsync(cancellationToken);
             }
             catch (DbUpdateException ex)
-                when (DbConstraintViolation.IsUniqueViolationOn(ex, DbConstraintNames.UsersTenantIdEmailUnique))
+                when (DbConstraintViolation.IsUniqueViolation(ex))
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.ExistingUserWithEmail));

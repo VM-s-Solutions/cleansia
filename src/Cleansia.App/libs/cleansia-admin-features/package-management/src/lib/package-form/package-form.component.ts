@@ -79,7 +79,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     description: ['', [Validators.maxLength(500)]],
     price: [0, [Validators.required, Validators.min(0)]],
     serviceIds: [[] as string[]],
-    translations: this.fb.group({}),
+    translations: this.fb.nonNullable.group({}),
   });
 
   readonly selectedServices = signal<ServiceListItem[]>([]);
@@ -135,7 +135,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       if (!translationsGroup.contains(lang.code)) {
         translationsGroup.addControl(
           lang.code,
-          this.fb.group({
+          this.fb.nonNullable.group({
             name: ['', [Validators.required, Validators.maxLength(100)]],
             description: ['', [Validators.maxLength(500)]],
           })

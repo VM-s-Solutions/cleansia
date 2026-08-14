@@ -66,9 +66,14 @@ fun PeriodPayScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    // The response wins. The launch argument only covers the window before it arrives, and entry
+    // points that never pass it (a deep link, a restored back stack) now render correctly too.
+    val currencyCode = (state as? PeriodPayUiState.Loaded)?.summary?.currencyCode
+        ?: viewModel.launchCurrencyCode
+
     PeriodPayScreenContent(
         state = state,
-        currencyCode = viewModel.currencyCode,
+        currencyCode = currencyCode,
         onNavigateBack = onNavigateBack,
         onRetry = viewModel::load,
     )

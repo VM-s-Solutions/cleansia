@@ -17,7 +17,7 @@ point.
 | A unit of work + its state | `backlog/tickets/T-NNNN-*.md` | PM (state), devs (notes) | everyone on the ticket |
 | The backlog at a glance | `backlog/INDEX.md` | PM | PM, owner |
 | Requirements / behavior | `backlog/stories/US-*.md` | Analyst | PM, devs, QA |
-| Architecture decisions | `backlog/adr/NNNN-*.md` | Architect | everyone |
+| Architecture decisions | `docs/decisions//NNNN-*.md` | Architect | everyone |
 | How we build (patterns) | `knowledge/*.md` | Architect | every developer |
 | Progress for the owner | `backlog/status/sprint-N.md` | PM | owner |
 | Blockers & questions | `backlog/questions/open.md` | any agent | owner (answers), PM |

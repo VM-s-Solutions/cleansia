@@ -22,6 +22,13 @@ import { Skeleton } from 'primeng/skeleton';
 export class CleansiaProductivityGaugesComponent {
   data = input<ProductivityMetricsDto | null>(null);
   loading = input<boolean>(false);
+  /**
+   * The currency the amounts are denominated in, from the server. Never assumed: the cleaner's
+   * currency derives from their approved work country, and a hardcoded symbol here would disagree
+   * with their payout invoice the day a second country configuration exists. An absent code renders
+   * the number with no symbol rather than guessing one. → /flows/pay-and-payouts
+   */
+  currencyCode = input<string | undefined>(undefined);
 
   constructor(private translate: TranslateService) {}
 

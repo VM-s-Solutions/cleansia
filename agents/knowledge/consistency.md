@@ -222,7 +222,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   the target over customer-app's `T?`-with-snackbar-in-repo because it carries the error explicitly, enables
   retry, and doesn't bury UI concerns in the data layer. customer-app's `T?` repos are the legacy form to
   migrate — this is a cross-cutting change, so it's a tracked refactor, not a same-day edit.)* **Ratified by
-  ADR-0011** (`../backlog/adr/0011-mobile-apiresult-contract.md`): `ApiResult<T>` is THE mobile repository
+  ADR-0011** (`/decisions/adr-0011`): `ApiResult<T>` is THE mobile repository
   contract; the type **lives in the shared `:core` module** (`cz.cleansia.core.network`) so partner-app,
   customer-app, and the incoming iOS app consume **one** contract (fire-and-forget returns `ApiResult<Unit>`);
   the app-local localizers (`ApiErrorTranslator`/`ApiErrorParser`) stay per-app (E3); and the iOS Swift
@@ -497,11 +497,18 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
   losing racer stops silently inserting a duplicate and starts raising `23505` at commit — a 500 where
   there was quiet success, which is worse for the user than the bug. Every writer therefore maps that
-  violation to the business error its own pre-check would have produced, **keyed on the constraint name**
-  (`DbConstraintViolation.IsUniqueViolationOn`), never on the driver's message text, and a violation of
-  any other index in the same commit still propagates. Because the pipeline commits *after* the handler
-  returns, the map has to be a **flush inside the handler** (`GenerateInvoice` is the precedent shape).
-  Deviating form: a diff that lands the option without the mapping.
+  violation to the business error its own pre-check would have produced, via
+  `DbConstraintViolation.IsUniqueViolation` — SQLSTATE `23505`, never the driver's message text. Because
+  the pipeline commits *after* the handler returns, the map has to be a **flush inside the handler**
+  (`GenerateInvoice` is the precedent shape), and that flush is what makes SQLSTATE sufficient: it stages
+  ONE insert, so only one unique index can speak. Deviating form: a diff that lands the option without
+  the mapping — or a `try`/`catch` around a merely-tracked `Add`, which catches nothing.
+
+  > A constraint-NAMED variant (`IsUniqueViolationOn` + a `DbConstraintNames` constants file, pinned
+  > across the AppServices/Infra seam by two tests) existed until 2026-08-14 and was **removed on owner
+  > ruling as over-built**. It defended a commit staging several rows with several unique indexes; no
+  > caller was ever that shape. Do not reintroduce it — widen the flush's scope and you have a design
+  > problem the name would only paper over.
 
   **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
   negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
@@ -512,7 +519,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   closed roster — a new sole-arbiter index is not caught until someone adds a row, and
   `LiveActivityTokens` is named in the first bullet above without being on it. The mapping half is
   **`T1-CI`**, **baseline 0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs`
-  (both directions, all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
+  (all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release
@@ -561,7 +568,7 @@ These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-
 ## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)
 
 > **Enforced by:** `InterimMarkerTripwireTests` in `Cleansia.Tests` (walks `src/`, validates the marker
-> pattern, resolves each id against `agents/archive/2026-08/backlog/INDEX.md`) — **`(gate pending: FT-38.2)` → T1-CI**
+> pattern, resolves each id against the backlog manifest) — **`(gate pending: FT-38.2)` → T1-CI**
 > via `backend-ci.yml:71` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
 > that tool appears in **zero** `.github/` workflows, so it can never set an exit code, and a
 > T2-ADVISORY orphan-check on a code comment is — precisely — a comment with a ticket number in it.*
@@ -578,7 +585,7 @@ temporary implementation shipped ahead of its end state carries, on the changed 
   `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)` — `§Dn` **explicit and optional**. *(AM-7: the
   first version of this rule stated the pattern without `§Dn` while the template and the only shipped
   marker both had one, so a checker built to spec would have matched **zero** markers and reported OK.)*
-- The ticket id must be **filled, present in `agents/archive/2026-08/backlog/INDEX.md`, open, *and not blocked*** before
+- The ticket id must be **filled, present in the live manifest, open, *and not blocked*** before
   the interim merges — an unfilled marker blocks review, and so does an id whose row carries a 🔴
   do-not-start gate. *(AM-7: "open" alone goes green while the retirement work is forbidden — which is
   the exact state ADR-0038's own interim shipped in, blocked on the ADR that authorized it.)*

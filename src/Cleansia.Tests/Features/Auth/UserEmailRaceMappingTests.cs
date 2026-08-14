@@ -24,15 +24,16 @@ namespace Cleansia.Tests.Features.Auth;
 /// produced; without the mapping the fix would trade a silent duplicate for an unhandled 500, which is
 /// the worse user-facing outcome.
 ///
-/// <para>The mapping is keyed on the CONSTRAINT NAME, never on the driver's message text, and every
-/// writer is pinned in both directions: the email index maps, and a unique violation from any OTHER
-/// index in the same commit still propagates.</para>
+/// <para>The mapping keys on SQLSTATE 23505 alone. Each of these try/catch blocks wraps a deliberate
+/// flush of ONE <see cref="User"/> insert, so the email index is the only unique index that can speak
+/// there — a constraint-NAMED variant existed until 2026-08-14 and was removed as over-built, along
+/// with the five tests that fed these flushes a collision on an unrelated index they cannot
+/// produce.</para>
 /// </summary>
 public class UserEmailRaceMappingTests
 {
     private const string Email = "racer@example.com";
     private const string Password = "Password1!@abc";
-    private const string OtherIndex = "IX_Carts_UserId";
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<ICartRepository> _cartRepository = new();
@@ -44,8 +45,8 @@ public class UserEmailRaceMappingTests
             .Setup(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new JwtTokenResponse(Token: "jwt", IsEmailConfirmed: true));
 
-    private static DbUpdateException UniqueViolationOn(string constraintName) =>
-        new("insert failed", new FakePostgresException("23505", constraintName));
+    private static DbUpdateException UniqueViolation() =>
+        new("insert failed", new FakePostgresException("23505", constraintName: null));
 
     private void CommitThrows(DbUpdateException exception) =>
         _userRepository
@@ -132,7 +133,7 @@ public class UserEmailRaceMappingTests
     public async Task Register_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
         _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
-        CommitThrows(UniqueViolationOn(DbConstraintNames.UsersTenantIdEmailUnique));
+        CommitThrows(UniqueViolation());
 
         var result = await NewRegisterHandler().Handle(RegisterCommand(), CancellationToken.None);
 
@@ -143,15 +144,6 @@ public class UserEmailRaceMappingTests
         Assert.Empty(_pending.Drain());
     }
 
-    [Fact]
-    public async Task Register_Lets_A_Unique_Violation_On_Another_Index_Propagate()
-    {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
-        CommitThrows(UniqueViolationOn(OtherIndex));
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            () => NewRegisterHandler().Handle(RegisterCommand(), CancellationToken.None));
-    }
 
     [Fact]
     public async Task Register_Does_Not_Flush_On_The_Re_Registration_Path()
@@ -171,7 +163,7 @@ public class UserEmailRaceMappingTests
     public async Task RegisterEmployee_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
         _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
-        CommitThrows(UniqueViolationOn(DbConstraintNames.UsersTenantIdEmailUnique));
+        CommitThrows(UniqueViolation());
 
         var result = await NewRegisterEmployeeHandler().Handle(RegisterEmployeeCommand(), CancellationToken.None);
 
@@ -181,20 +173,11 @@ public class UserEmailRaceMappingTests
         Assert.Empty(_pending.Drain());
     }
 
-    [Fact]
-    public async Task RegisterEmployee_Lets_A_Unique_Violation_On_Another_Index_Propagate()
-    {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
-        CommitThrows(UniqueViolationOn(OtherIndex));
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            () => NewRegisterEmployeeHandler().Handle(RegisterEmployeeCommand(), CancellationToken.None));
-    }
 
     [Fact]
     public async Task CreateAdminUser_Maps_The_Email_Unique_Violation_To_AdminUserEmailExists()
     {
-        CommitThrows(UniqueViolationOn(DbConstraintNames.UsersTenantIdEmailUnique));
+        CommitThrows(UniqueViolation());
 
         var result = await InvokeCreateAdminUser(_userRepository.Object, AdminCommand());
 
@@ -204,20 +187,12 @@ public class UserEmailRaceMappingTests
         Assert.Equal(nameof(CreateAdminUser.Command.Email), result.Error!.Code);
     }
 
-    [Fact]
-    public async Task CreateAdminUser_Lets_A_Unique_Violation_On_Another_Index_Propagate()
-    {
-        CommitThrows(UniqueViolationOn(OtherIndex));
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            () => InvokeCreateAdminUser(_userRepository.Object, AdminCommand()));
-    }
 
     [Fact]
     public async Task GoogleAuth_Provisioning_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
         var verifier = NewGoogleVerifier();
-        CommitThrows(UniqueViolationOn(DbConstraintNames.UsersTenantIdEmailUnique));
+        CommitThrows(UniqueViolation());
 
         var result = await NewGoogleHandler(verifier).Handle(GoogleCommand(), CancellationToken.None);
 
@@ -229,21 +204,12 @@ public class UserEmailRaceMappingTests
         AssertNoTokenMinted();
     }
 
-    [Fact]
-    public async Task GoogleAuth_Lets_A_Unique_Violation_On_Another_Index_Propagate()
-    {
-        var verifier = NewGoogleVerifier();
-        CommitThrows(UniqueViolationOn(OtherIndex));
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            () => NewGoogleHandler(verifier).Handle(GoogleCommand(), CancellationToken.None));
-    }
 
     [Fact]
     public async Task AppleAuth_Provisioning_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
         var verifier = NewAppleVerifier();
-        CommitThrows(UniqueViolationOn(DbConstraintNames.UsersTenantIdEmailUnique));
+        CommitThrows(UniqueViolation());
 
         var result = await NewAppleHandler(verifier).Handle(AppleCommand(), CancellationToken.None);
 
@@ -253,15 +219,6 @@ public class UserEmailRaceMappingTests
         AssertNoTokenMinted();
     }
 
-    [Fact]
-    public async Task AppleAuth_Lets_A_Unique_Violation_On_Another_Index_Propagate()
-    {
-        var verifier = NewAppleVerifier();
-        CommitThrows(UniqueViolationOn(OtherIndex));
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            () => NewAppleHandler(verifier).Handle(AppleCommand(), CancellationToken.None));
-    }
 
     // The happy path still flushes exactly once; the pipeline's own commit is what persists everything
     // staged after the flush.

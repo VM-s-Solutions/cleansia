@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, computed } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -36,7 +36,11 @@ export class PeriodPayComponent implements OnInit {
   private readonly router = inject(Router);
 
   protected readonly periodControl = new FormControl<string | null>(null);
-  protected readonly periodPayColumns = getPeriodPayTableDefinition().columns;
+  // Computed, not a field initializer: the currency arrives with the summary, so the column formatters
+  // have to be rebuilt when it does or every row would render with whatever was known at construction.
+  protected readonly periodPayColumns = computed(
+    () => getPeriodPayTableDefinition(this.facade.summary()?.currencyCode).columns
+  );
 
   ngOnInit(): void {
     this.facade.connectPeriodControl(this.periodControl);

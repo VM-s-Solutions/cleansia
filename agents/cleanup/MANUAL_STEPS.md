@@ -22,22 +22,6 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
-### MS-4 — Regenerate the clients for the payroll currency — **owner**
-
-**The backend half is done (2026-08-14, owner's word: *"MS-4 you can add on your own"*).**
-`PeriodPaySummaryDto` now carries `CurrencyCode`, sourced from the **invoice** when the period has one
-and from the employee's work country only when it does not — so once a period is invoiced, "My Pay" and
-the payout document read from the same row and cannot diverge.
-
-**It turned out to be one DTO, not two.** `OrderEmployeePayDto` is never returned on its own: it is
-nested inside `PeriodPaySummaryDto` and `EmployeeInvoiceDetailDto`, and **`EmployeeInvoiceDetailDto`
-already carried `CurrencyCode`**. A per-row copy would have repeated one value on every line of a
-period for no reader.
-
-**Action:** regenerate the partner clients (`manual_step: nswag-regen`). Then
-`period-pay.models.ts`'s `CURRENCY_SUFFIX` constant reads the DTO instead of the literal `Kč` — one
-line, and the `MANUAL_STEP` comment above it comes out with it.
-
 ### MS-3 — Rotate the exposed Mapbox token — **owner**
 
 Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed
@@ -48,6 +32,20 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-4 — Payroll currency: DTO + regeneration — **DONE 2026-08-14**
+
+Backend by Claude on the owner's instruction (*"MS-4 you can add on your own"*), regeneration by the
+owner (`d10a2cc2`). `PeriodPaySummaryDto.CurrencyCode` is sourced from the **invoice** when the period
+has one, so "My Pay" and the cleaner's payout document read the same row and cannot diverge; only an
+un-invoiced period resolves, through the same service the partner dashboard uses.
+
+It was one DTO, not the two this step originally named: `OrderEmployeePayDto` is never returned on its
+own, and its other parent `EmployeeInvoiceDetailDto` already carried the field.
+
+The partner "My Pay" screen no longer hardcodes `Kč` — six template symbols and the table formatter all
+read the server's value, and an absent code renders the amount with no symbol rather than guessing one.
+
 
 ### MS-5 — Regenerate the admin client for the entry-instruction reveal — **DONE 2026-08-14**
 

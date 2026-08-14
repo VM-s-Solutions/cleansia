@@ -9493,6 +9493,10 @@
               "$ref": "#/components/schemas/OrderEmployeePayDto"
             },
             "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

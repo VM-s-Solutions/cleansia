@@ -11831,6 +11831,7 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
     hasInvoice!: boolean;
     invoiceId!: string | undefined;
     orderPays!: OrderEmployeePayDto[] | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IPeriodPaySummaryDto) {
         if (data) {
@@ -11861,6 +11862,7 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
                 for (let item of Data["orderPays"])
                     this.orderPays!.push(OrderEmployeePayDto.fromJS(item));
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -11891,6 +11893,7 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
             for (let item of this.orderPays)
                 data["orderPays"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -11910,6 +11913,7 @@ export interface IPeriodPaySummaryDto {
     hasInvoice: boolean;
     invoiceId: string | undefined;
     orderPays: OrderEmployeePayDto[] | undefined;
+    currencyCode: string | undefined;
 }
 
 export class PersonalBests implements IPersonalBests {

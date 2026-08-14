@@ -16,6 +16,7 @@ import {
   AdminLoyaltyTierClient,
   AdminMarketingClient,
   AdminOrderClient,
+  AccessInstructionsClient,
   AdminPackageClient,
   AdminPayConfigClient,
   AdminPayPeriodClient,
@@ -40,6 +41,7 @@ import {
   IAdminLoyaltyTierClient,
   IAdminMarketingClient,
   IAdminOrderClient,
+  IAccessInstructionsClient,
   IAdminPackageClient,
   IAdminPayConfigClient,
   IAdminPayPeriodClient,
@@ -68,6 +70,7 @@ interface IAdminClient {
   adminInvoiceClient: IAdminInvoiceClient;
   adminLanguageClient: IAdminLanguageClient;
   adminOrderClient: IAdminOrderClient;
+  accessInstructionsClient: IAccessInstructionsClient;
   adminPackageClient: IAdminPackageClient;
   adminPayPeriodClient: IAdminPayPeriodClient;
   adminPayrollClient: IAdminPayrollClient;
@@ -130,6 +133,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminOrderClient: IAdminOrderClient = new AdminOrderClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  accessInstructionsClient: IAccessInstructionsClient = new AccessInstructionsClient(
     this.httpClient,
     this.apiBaseUrl
   );

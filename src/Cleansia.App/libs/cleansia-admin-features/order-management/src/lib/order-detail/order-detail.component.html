@@ -342,7 +342,7 @@
 
       <!-- Instructions -->
       @if (facade.order()?.specialInstructions ||
-      facade.order()?.accessInstructions || facade.order()?.notes) {
+      facade.order()?.hasAccessInstructions || facade.order()?.notes) {
       <cleansia-section [title]="'pages.order_detail.instructions' | translate">
         <div class="instructions-content">
           @if (facade.order()?.specialInstructions) {
@@ -354,12 +354,27 @@
             >
             <p class="value">{{ facade.order()?.specialInstructions }}</p>
           </div>
-          } @if (facade.order()?.accessInstructions) {
+          } @if (facade.order()?.hasAccessInstructions) {
           <div class="instruction-item">
             <span class="label"
               >{{ 'pages.order_detail.access_instructions' | translate }}:</span
             >
-            <p class="value">{{ facade.order()?.accessInstructions }}</p>
+            @if (facade.revealedAccessInstructions() !== null) {
+            <p class="value">{{ facade.revealedAccessInstructions() }}</p>
+            } @else {
+            <cleansia-button
+              [label]="'pages.order_detail.access_instructions_reveal' | translate"
+              icon="pi pi-eye"
+              severity="secondary"
+              [text]="true"
+              [loading]="facade.revealingAccessInstructions()"
+              [size]="'small-width'"
+              (onClick)="facade.revealAccessInstructions(facade.order()!.id!)"
+            />
+            <p class="hint">
+              {{ 'pages.order_detail.access_instructions_reveal_hint' | translate }}
+            </p>
+            }
           </div>
           } @if (facade.order()?.notes) {
           <div class="instruction-item">

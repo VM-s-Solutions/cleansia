@@ -681,7 +681,10 @@
       "messages": {
         "load_error": "Не удалось загрузить детали заказа",
         "photos_error": "Не удалось загрузить фотографии заказа"
-      }
+      },
+      "access_instructions_reveal": "Показать",
+      "access_instructions_reveal_hint": "Просмотр инструкций для входа фиксируется в вашей учётной записи.",
+      "access_instructions_reveal_failed": "Не удалось показать инструкции для входа. Попробуйте ещё раз."
     },
     "invoice_management": {
       "title": "Управление счетами",

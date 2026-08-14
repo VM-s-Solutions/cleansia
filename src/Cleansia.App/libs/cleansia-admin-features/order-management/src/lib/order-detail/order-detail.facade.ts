@@ -20,6 +20,15 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly order = signal<OrderItem | null>(null);
   readonly loading = signal<boolean>(false);
 
+  /**
+   * Entry instructions are NOT on the order payload for an admin — the server withholds them and hands
+   * them out only through a reveal, which is a command so the action is recorded against the admin who
+   * asked. Null means "not revealed in this session"; it is never cached across a reload.
+   * → /decisions/adr-0034
+   */
+  readonly revealedAccessInstructions = signal<string | null>(null);
+  readonly revealingAccessInstructions = signal<boolean>(false);
+
   loadOrderDetail(orderId: string): void {
     this.loading.set(true);
 
@@ -33,6 +42,31 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.order.set(response);
+          // Never carry a reveal across orders: the audit row says the admin asked for THIS order.
+          this.revealedAccessInstructions.set(null);
+        }
+      });
+  }
+
+  revealAccessInstructions(orderId: string): void {
+    if (this.revealingAccessInstructions()) return;
+    this.revealingAccessInstructions.set(true);
+
+    this.adminClient.accessInstructionsClient
+      .reveal(orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.snackbarService.showErrorTranslated(
+            'pages.order_detail.access_instructions_reveal_failed'
+          );
+          return of(null);
+        }),
+        finalize(() => this.revealingAccessInstructions.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.revealedAccessInstructions.set(response.accessInstructions ?? '');
         }
       });
   }

@@ -5,7 +5,11 @@ step, cleared when done.
 
 ## Open
 
-### MS-2 — Drop the DEV database before the next deploy — **owner**
+### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
+
+> **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
+> Deferred deliberately — not overlooked. It stays open until the drop happens.
+
 
 `MS-1` regenerated the single `Initial` migration, so its id changed from `20260811192214` to
 `20260813085249`. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
@@ -17,21 +21,6 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
-
-### MS-5 — Regenerate the admin client for the entry-instruction reveal — **owner**
-
-The backend half of `CL-060` (G-11) is shipped: an admin order read no longer carries
-`AccessInstructions`, and `POST /AdminOrder/{orderId}/access-instructions/reveal` returns them while
-`AdminMutationGate` writes an audit row naming the actor.
-
-**Until the client is regenerated, an admin cannot see entry instructions at all.** That is the
-intended direction — the field was reaching every admin with no record of who looked — but the reveal
-button cannot be built until the generated admin client carries the new endpoint and the new
-`hasAccessInstructions` flag.
-
-**Action:** regenerate the admin client (`manual_step: nswag-regen`). The admin order-detail panel then
-swaps its unconditional `{{ accessInstructions }}` for a reveal control gated on `hasAccessInstructions`
-— a small, well-defined frontend change, filed as `CL-061`.
 
 ### MS-4 — Add `CurrencyCode` to the two payroll DTOs, then regenerate the clients — **owner**
 
@@ -56,6 +45,13 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-5 — Regenerate the admin client for the entry-instruction reveal — **DONE 2026-08-14**
+
+Run by the owner (`ac6eebd0`). The admin client carries `AccessInstructionsClient.reveal` and
+`OrderItem.hasAccessInstructions`; the reveal control shipped in the same PR, so the interim state where
+an admin could not see entry instructions at all lasted only as long as the PR was open.
+
 
 ### MS-1 — Regenerate the `Initial` migration for the order seat ordinal — **DONE 2026-08-13**
 

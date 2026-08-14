@@ -260,7 +260,7 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 | CL-054 | Partner dashboard reads the server's currency; "My Pay" is blocked on `MS-4` | M | part done | #203 |
 | CL-058 | `B3` ×21 — validators inheriting a shared base | M | blocked — owner |  |
 | CL-059 | `D2` ×8 — `fb.nonNullable.group(...)` | M | blocked — owner |  |
-| CL-061 | Admin reveal button — blocked on `MS-5` (owner-run client regeneration) | S | blocked — MS-5 |  |
+| CL-061 | Admin reveal control — shipped; `MS-5` cleared by the owner mid-PR | S | done | #203 |
 
 > **`CL-060` shrank on inspection, which is rule 3 again.** It was filed as a four-platform feature
 > (admin web, partner web, Android, iOS). The *assigned* cleaner's access is correct on every platform

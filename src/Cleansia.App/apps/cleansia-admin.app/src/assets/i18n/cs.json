@@ -681,7 +681,10 @@
       "messages": {
         "load_error": "Nepodařilo se načíst detail objednávky",
         "photos_error": "Nepodařilo se načíst fotografie objednávky"
-      }
+      },
+      "access_instructions_reveal": "Zobrazit",
+      "access_instructions_reveal_hint": "Zobrazení pokynů ke vstupu se zaznamenává k vašemu účtu.",
+      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu."
     },
     "invoice_management": {
       "title": "Správa faktur",

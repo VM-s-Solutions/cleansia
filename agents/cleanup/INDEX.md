@@ -356,8 +356,10 @@ regenerated `Initial` and a DEV drop, so the migration both were waiting on had 
 > them within half a day of each other and every session quietly becomes short-lived. The flag is now
 > stored; the arithmetic survives only as the fallback for rows predating the column, which self-heal.
 >
-> **Both are model-only until `MS-6` runs** — the integration suite will fail `PendingModelChangesWarning`
-> until then, by design, because the model and the migration genuinely disagree.
+> **Both are model-only until `MS-6` runs.** Backend CI's integration job is red until then with
+> `42703: column "RememberMe" of relation "RefreshTokens" does not exist` — the suite builds its Postgres
+> from the migration, so every test that writes a refresh token fails at insert. Same failure `MS-1`
+> produced for `SeatOrdinal` in P2, and it clears the same way.
 
 ---
 

@@ -18,8 +18,20 @@ Two schema changes landed with `CL-072`, and both are **model-only** until `Init
 migration id, so this folds into the same regeneration and the same drop — which is why it was worth
 doing today rather than deferring it again.
 
-**Until it runs, `dotnet test` on the integration suite will fail `PendingModelChangesWarning`** — by
-design; the model and the migration genuinely disagree.
+**Until it runs, Backend CI's integration job is RED**, and this is the observed symptom rather than a
+predicted one:
+
+```
+Npgsql.PostgresException : 42703: column "RememberMe" of relation "RefreshTokens" does not exist
+```
+
+The integration suite builds a real Postgres from the **migration**, so any test that writes a
+`RefreshToken` fails at insert. It is the same failure `MS-1` produced for `SeatOrdinal` in P2, and it
+clears the same way.
+
+> This step originally predicted `PendingModelChangesWarning`. It is not that — that warning guards a
+> model/migration mismatch at *startup*; what actually happens here is a column-missing error at
+> *insert*. Corrected from the CI log rather than from expectation.
 
 **Action:** regenerate `Initial`, then drop and reseed DEV (`MS-2`).
 

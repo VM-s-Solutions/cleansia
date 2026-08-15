@@ -189,6 +189,32 @@ Partner and Admin apps deploy to Azure Static Web Apps:
     skip_app_build: true
 ```
 
+### Warming is one job, after every deploy {#warm-dev-sites}
+
+`warm-dev-sites` runs once all five APIs and the SSR app have deployed, and proves each answers before
+the run is called green. A site that never answers is still a failed deploy — the job reports **every**
+unreachable site rather than stopping at the first.
+
+**It used to be a step inside each deploy job, and that made two of them fail every time.** Six sites
+share a single **B2** plan — 2 vCPU, 3.5 GB, five .NET APIs plus the Node SSR app, all `alwaysOn` — and
+they deploy in parallel, so they all cold-start at once. Whichever finishes deploying last warms
+straight into the worst of that contention.
+
+That is why it was always the same two. `partner-mobile` and `customer-mobile` are last in the
+`apiHosts` array, so they deploy last and start last. They failed together on 2026-08-12 and again on
+2026-08-15 while `partner-api` warmed in **one second** — and both were serving normally within the
+hour. Nothing was wrong with them except *when* they were asked.
+
+::: warning If this starts failing again, the answer is the plan
+Do not raise the retry budget and do not re-serialise the deploys. The parallel fan-out is
+[ADR-0015](/decisions/adr-0015) D5/B2 and the B2 SKU is its D2 owner cost override — a genuine
+trade, deliberately made. A warm failure here means six cold starts no longer fit in two cores, and
+the honest response is the SKU or fewer always-on sites, not a longer wait.
+:::
+
+**Prod is untouched.** There, each job warms its own **staging slot** and only then swaps it, because a
+slot must be proven healthy before it takes traffic. That ordering cannot be moved to the end.
+
 ## Deploy to PRO (`deploy-pro.yml`)
 
 Same pipeline as DEV with these differences:

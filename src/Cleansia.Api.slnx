@@ -17,7 +17,6 @@
     <Project Path="Cleansia.Infra.Common/Cleansia.Infra.Common.csproj" />
     <Project Path="Cleansia.Infra.Database/Cleansia.Infra.Database.csproj" />
     <Project Path="Cleansia.Infra.Fiscal/Cleansia.Infra.Fiscal.csproj" />
-    <Project Path="Cleansia.Infra.Scripts/Cleansia.Infra.Scripts.csproj" />
     <Project Path="Cleansia.Infra.Services/Cleansia.Infra.Services.csproj" />
   </Folder>
   <Folder Name="/04 Core/">

@@ -283,7 +283,7 @@ const resolveCache = new Map();
  *   3. an ELLIPSIS abbreviation                 `…EntityConfiguration.cs`, `customer-app/…/Foo.kt`
  *   4. an ABBREVIATED path whose segments are substrings of the real ones, in order
  *                                               `Web.Customer/ServiceCityController.cs`
- *   5. a ticket stem                            `T-0123.md` -> `agents/archive/2026-08/backlog/tickets/T-0123-*.md`
+ *   5. a ticket stem                            `T-0123.md` -> `agents/backlog/tickets/T-0123-*.md`
  * Ambiguity is not resolved by guessing: every candidate is returned and the caller decides under the
  * all/none/mixed rule, so an ambiguous citation can only fail when it fails under EVERY reading.
  */
@@ -421,7 +421,7 @@ const adrs = new Map();
     if (existsSync(dir)) {
         for (const name of readdirSync(dir)) {
             // Records live at docs/decisions/adr-NNNN.md — the id IS the filename, so a retitle cannot
-            // break a citation. The old agents/archive/2026-08/backlog/adr/NNNN-<slug>.md form is still accepted so a
+            // break a citation. The old backlog/adr/NNNN-<slug>.md form is still accepted so a
             // stale checkout reports honestly rather than silently reading zero.
             const m = /^(?:adr-)?(\d{4})(?:-.*)?\.md$/.exec(name);
             if (!m) continue;

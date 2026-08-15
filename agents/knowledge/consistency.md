@@ -8,7 +8,7 @@ a canonicalization ticket.
 
 **How to read a rule:** `C#` = the canonical form (do this). `✗` = a real deviation found in the
 codebase (don't add new ones; existing ones are tracked in
-[`../backlog/audits/consistency-violations.md`](../backlog/audits/consistency-violations.md)).
+[`../cleanup/consistency-baseline.md`](../cleanup/consistency-baseline.md)).
 Where a rule encodes a genuine judgment call (not just majority), it says **why**.
 
 ---

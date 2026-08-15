@@ -15,7 +15,7 @@
  *
  * These are heuristic, line-based checks: a clean run is necessary, not sufficient — the Reviewer
  * still reads the diff. Intended to graduate into backend-ci.yml / frontend-ci.yml once the existing
- * violations in agents/archive/2026-08/backlog/audits/consistency-violations.md are cleared.
+ * violations declared in agents/cleanup/consistency-baseline.md are cleared.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";

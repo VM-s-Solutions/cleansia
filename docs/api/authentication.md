@@ -7,9 +7,9 @@ Cleansia uses JWT bearer tokens for API authentication with role-based access co
 | Component | Details |
 |-----------|---------|
 | Token type | JWT (HS256) |
-| Token storage | Client-side (cookie or header) |
-| Default expiration | 6 hours |
-| Remember me expiration | 1 hour (cookie-based) |
+| Token storage | HttpOnly cookie on the web hosts; `Authorization: Bearer` on the two mobile hosts |
+| Access-token lifetime | **Per host** — Admin 15 min, Partner 1440 min, Mobile Customer 30 min |
+| Remember me | Selects the **refresh** lifetime, 30 days (Mobile Customer 90) versus 1 day — it does not change the access token |
 | Rate limiting | `auth` policy on all auth endpoints |
 | Identity | Custom user model with `UserProfile` enum |
 

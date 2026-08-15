@@ -285,6 +285,52 @@ Filed as decisions, six of eight came back with a ruling and were built in the s
 > `Validators.required`. **`check-consistency` drops from 44 to 15, and almost all of that is the
 > checker being wrong rather than the codebase improving.**
 
+## P11 — Verifying P10
+
+P10 verified P1–P9 and was itself never verified. Six lenses swept **its own diff**: 19 candidates,
+**10 refuted**, and six rows survived — **none of them code**.
+
+**Nothing P10 changed is wrong.** Every behavioural change verified correct against the tree: the
+withheld `AccessInstructions`, the audited reveal Command, the currency threading on four platforms,
+the `B3` narrowing and its paired self-test, the deleted `PayCalculator`, the deleted
+`IsUniqueViolationOn`. What P10 left behind is the **other half of the sentence** — a correction made
+in one place while the same claim survived elsewhere on the page, or in the map at the top of the repo.
+
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-063 | `Cleansia.Api.slnx` named a project P9 deleted — that solution could not restore | S | done | #204 |
+| CL-068 | The review gate's hard-fail discriminator named a deleted file; 7 live sites cited it | S | done | #204 |
+| CL-066 | A flow page called a shipped, audited control an accepted privacy hole | S | done | #204 |
+| CL-064 | `CLAUDE.md` § Trackers: a dead path, a closed manifest called *live*, the live backlog unnamed | S | done | #204 |
+| CL-065 | `ci-cd.md` still documented a DEV auto-deploy and a typed-`deploy` PRO gate; both are gone | M | done | #204 |
+| CL-067 | `api/authentication.md`'s first table taught the lifetimes the same page calls phantom | S | done | #204 |
+| CL-069 | `enforcement.md`'s "44 declared violations" — count removed, not reset | S | done | #204 |
+| CL-070 | `partner-app/dashboard.md` documented the hardcoded suffix P10 replaced | S | done | #204 |
+| CL-071 | The twelve `conv` narrowings had no regression test — and pinning them disproved the risk | S | done | #204 |
+
+> **The two with real teeth.** `CL-063`: there are **two** solution manifests in `src/`, and P9 removed
+> `Infra.Scripts` from only one — `dotnet restore Cleansia.Api.slnx` hard-failed `MSB3202` on a project
+> deleted on purpose. CI never noticed because every workflow names the `.sln` explicitly. `CL-068`: the
+> reviewer charter makes "a violation not in `backlog/audits/consistency-violations.md`" a **hard fail**,
+> and that file no longer exists — so with 15 live declared violations, any PR touching those files
+> tripped a gate with no way to show the violation was baselined. Seven live sites cited it; the
+> replacement, `consistency-baseline.md`, was linked from exactly one.
+>
+> **`CL-066` is the one worth remembering.** `OrderPiiRedaction.cs` — the file that *implements* the
+> withholding — carries a `→` pointer to a page that said every admin could read entry instructions
+> with no audit record, and that this was *deliberately accepted*. A security file arguing against its
+> own control. That is what a half-finished correction costs once `docs/` is the source of truth.
+>
+> **Two were dropped on proportionality and the owner overrode both (2026-08-15: *"do all of the tasks
+> that the investigation found"*).** They are `CL-069` and `CL-070`, and doing them was cheap enough
+> that the override costs nothing to honour.
+>
+> `CL-069` is the more interesting of the two. The fix is **not** to change 44 to 15: the file's own
+> §*"A claim about the tree carries its own retirement condition"* names this decay class, and its iOS
+> row already records being burned by it twice in one afternoon. So the count came **out**, with the
+> shape rule stated — *never enumerate a count of tree instances* — and a pointer to
+> `consistency-baseline.md`, which is allowed to hold the number because it is the thing being counted.
+
 ---
 
 ## Out of scope — named, so it stays out

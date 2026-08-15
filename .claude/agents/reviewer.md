@@ -36,7 +36,7 @@ author.
 3.5. **Run the mechanical checks first (cheap, deterministic).** Before reading line-by-line, run
    `node agents/tools/check-consistency.mjs --paths=<changed dirs>` and, for the touched stack,
    `dotnet build`/`dotnet test` or `nx build`/`nx lint`. Paste the result into the ticket. A **new**
-   consistency violation (one not in `backlog/audits/consistency-violations.md`) is a hard fail; name
+   consistency violation (one not declared in `agents/cleanup/consistency-baseline.md`) is a hard fail; name
    the rule. This is Gate 8 — see `agents/process/enforcement.md`. Mechanical checks catch what
    careful reading misses, and free your attention for the judgment calls reading is actually for.
 
@@ -53,7 +53,7 @@ author.
    the rest of the codebase does. If the change introduces a *new* deviation from a canonical rule,
    that's a hard fail; name the rule (e.g. "C3: reset loading via `finalize`, not inline in
    `catchError`"). If the change merely *touches* an already-known violation listed in
-   `backlog/audits/consistency-violations.md`, note it (don't block on pre-existing debt unless the
+   `agents/cleanup/consistency-baseline.md`, note it (don't block on pre-existing debt unless the
    ticket is the canonicalization ticket).
 
 4b. **Strong-type / reuse check (highest-value gate).** Verify the change reuses the REAL repository

@@ -17,7 +17,7 @@
  *
  *   C1  SELF-AGREEMENT — a ticket with more than one row in INDEX.md must not have one row saying
  *       done and another saying draft/ready/blocked. This is the defect that burned the three lanes.
- *   C2  FILE AGREEMENT — a ticket whose `agents/archive/2026-08/backlog/tickets/T-*.md` says `status: done` must not
+ *   C2  FILE AGREEMENT — a ticket whose `agents/backlog/tickets/T-*.md` says `status: done` must not
  *       have an INDEX row claiming otherwise.
  *
  * WHAT IT DELIBERATELY DOES NOT CHECK. Whether a `done` row is *true* — that needs the tree, and the

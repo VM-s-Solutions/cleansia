@@ -142,10 +142,18 @@ The dashboard can be refreshed via:
 
 ## Currency Formatting
 
-Earnings values are formatted using the partner's current locale:
+Amounts are formatted with the partner's current locale, and **the currency comes from the server** —
+`DashboardStatsDto.currencyCode`, resolved from the cleaner's approved work country. Do not hardcode a
+symbol here: it would disagree with that cleaner's payout invoice, a document they file with their tax
+return, the day a second country configuration exists.
 
 ```typescript
-stats.currentPeriodEarnings.toLocaleString(
+value: `${stats.currentPeriodEarnings.toLocaleString(
   this.translate.currentLang || 'en-GB'
-) + ' Kc'
+)} ${stats.currencyCode ?? ''}`.trim(),
 ```
+
+An absent code renders the number with **no** symbol rather than a guessed one — visibly incomplete
+beats silently wrong. The chart widgets take the same value as a `currencyCode` input, and the
+upcoming-order card uses the **order's** own currency (`order.currency.code`) rather than the viewing
+cleaner's, because that price was struck in it. → [Pay and payouts](/flows/pay-and-payouts)

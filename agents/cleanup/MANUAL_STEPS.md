@@ -5,6 +5,24 @@ step, cleared when done.
 
 ## Open
 
+### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **owner**
+
+Two schema changes landed with `CL-072`, and both are **model-only** until `Initial` is regenerated:
+
+- `RefreshToken.RememberMe` (nullable `bool`) — G-03. Rotation reads it instead of re-deriving the flag
+  from the gap between two tunable lifetimes.
+- `IX_Orders_RecurringTemplateId_CleaningDateTime` — a unique, filtered index. G-18. It is what makes a
+  duplicate recurring order impossible rather than merely unlikely.
+
+**This costs nothing extra right now.** `MS-2` already requires a DEV drop because `MS-1` changed the
+migration id, so this folds into the same regeneration and the same drop — which is why it was worth
+doing today rather than deferring it again.
+
+**Until it runs, `dotnet test` on the integration suite will fail `PendingModelChangesWarning`** — by
+design; the model and the migration genuinely disagree.
+
+**Action:** regenerate `Initial`, then drop and reseed DEV (`MS-2`).
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

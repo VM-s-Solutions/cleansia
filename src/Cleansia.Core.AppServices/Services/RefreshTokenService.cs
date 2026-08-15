@@ -36,7 +36,8 @@ public class RefreshTokenService(
             audience: audience,
             deviceLabel: deviceLabel,
             ipAddress: ipAddress,
-            deviceId: deviceId);
+            deviceId: deviceId,
+            rememberMe: rememberMe);
 
         repository.Add(record);
         return new IssuedRefreshToken(raw, record);
@@ -83,13 +84,18 @@ public class RefreshTokenService(
             throw new RefreshTokenValidationException("Refresh token expired");
         }
 
-        // Issue a new token with a fresh sliding-window expiry. Use the same rememberMe
-        // semantics: if the original token had the long (30d) lifetime, keep it long;
-        // if it was the short (1d) kind, keep it short. We infer from the original's
-        // lifetime at creation time — a token within RefreshTokenShortExpDays of now
-        // was issued as "short", otherwise "long".
-        var originalLifetime = existing.ExpiresAt - existing.CreatedOn;
-        var rememberMe = originalLifetime.TotalDays > jwtSettings.RefreshTokenShortExpDays + 0.5;
+        // Carry the original session's rememberMe across rotation: long stays long, short stays short.
+        //
+        // READ IT, do not re-derive it. This used to measure `ExpiresAt - CreatedOn` against
+        // RefreshTokenShortExpDays + 0.5, which is correct for every shipped configuration (30 vs 1, and
+        // 90 vs 1 on Mobile.Customer) but couples a security property to the GAP between two settings
+        // that are independently tunable: set them within half a day of each other and every session
+        // silently becomes short-lived. G-03.
+        //
+        // The arithmetic survives as the fallback for rows written before the column existed, where
+        // RememberMe is null. Those self-heal on first rotation, because the new row stores the flag.
+        var rememberMe = existing.RememberMe
+            ?? (existing.ExpiresAt - existing.CreatedOn).TotalDays > jwtSettings.RefreshTokenShortExpDays + 0.5;
 
         // Note: Issue() calls repository.Add for the NEW token. We need to get its Id
         // before revoking the old one so we can set ReplacedByTokenId for the forensic chain.

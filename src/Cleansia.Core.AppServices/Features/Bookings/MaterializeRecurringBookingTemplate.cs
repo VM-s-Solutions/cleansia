@@ -132,6 +132,11 @@ public class MaterializeRecurringBookingTemplate
             //     about the order's later lifecycle: excluding cancelled rows would let a template edit
             //     resurrect an occurrence the customer cancelled, or one AutoCancelStaleRecurringOrders
             //     retracted an hour before the slot.
+            // This read is the fast path, not the guarantee. The guarantee is the unique index
+            // IX_Orders_RecurringTemplateId_CleaningDateTime, which speaks at commit: if two sweeps ever
+            // run concurrently, the loser's insert is refused and this tick fails, rather than a second
+            // order — and on a card template a second charge — reaching the customer. A failed tick
+            // self-heals on the next one, which reads the committed row and skips the occurrence.
             var alreadyMaterialized = (await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.RecurringTemplateId == template.Id && occurrences.Contains(o.CleaningDateTime))
                 .Select(o => o.CleaningDateTime)

@@ -59,11 +59,15 @@ until the customer confirms it, so *"pending for over an hour"* is its **normal*
 abandoned checkout — which is why the stale-checkout sweep explicitly excludes rows with a
 `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the slot.
 
-> The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and there is
-> no unique index behind it. What actually prevents a duplicate — and therefore a duplicate charge — is
-> that Azure Functions timer triggers hold a singleton lease. **That guarantee lives in the hosting
-> model, not in the schema**: moving this sweep to another scheduler, or fanning it out, reintroduces
-> duplicate billing silently.
+> The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and **the
+> answer is enforced by a unique index** — `IX_Orders_RecurringTemplateId_CleaningDateTime`, on the
+> template plus the exact occurrence instant, filtered to spawned orders. The read is the fast path; the
+> index is the arbiter, and it speaks at commit.
+>
+> Until 2026-08-15 there was no index, and what actually prevented a duplicate charge was that Azure
+> Functions timer triggers hold a singleton lease — **a guarantee in the hosting model rather than the
+> schema**, so moving the sweep to another scheduler or fanning it out would have reintroduced duplicate
+> billing silently. The lease still holds; it is no longer the only thing holding.
 
 ## Guest order lookup
 

@@ -331,6 +331,34 @@ in one place while the same claim survived elsewhere on the page, or in the map 
 > shape rule stated — *never enumerate a count of tree instances* — and a pointer to
 > `consistency-baseline.md`, which is allowed to hold the number because it is the thing being counted.
 
+## P12 — The two latent risks
+
+Not archaeology. `G-03` and `G-18` were **accepted** by the P1 analysis with a documentation
+obligation, which P7 discharged; the code half was deferred because both needed a schema change. The
+owner chose to close them on 2026-08-15, and the timing is the point — `MS-2` already owed a
+regenerated `Initial` and a DEV drop, so the migration both were waiting on had become free.
+
+| ID | Title | Size | Status | PR |
+|---|---|---|---|---|
+| CL-072 | `G-03` persist `rememberMe` · `G-18` make the recurring occurrence key unique | M | done | #205 |
+
+> **`G-18` is the one with money attached.** The materializer decides "did we already spawn this
+> occurrence" with an unlocked read, and nothing enforced the answer — what prevented a duplicate order,
+> and on a card template a duplicate **charge**, was that Azure Functions timer triggers hold a singleton
+> lease. That is a guarantee in the **hosting model**, not the schema: move the sweep to another
+> scheduler or fan it out and duplicate billing returns with nothing to catch it. Now a unique filtered
+> index over `(RecurringTemplateId, CleaningDateTime)` is the arbiter, and the failure becomes one
+> background tick that fails and self-heals.
+>
+> **`G-03` was silent rather than expensive.** Rotation inferred `rememberMe` by measuring
+> `ExpiresAt - CreatedOn` against `RefreshTokenShortExpDays + 0.5` — correct for every shipped config,
+> but it couples a security property to the *gap* between two independently-tunable numbers. Configure
+> them within half a day of each other and every session quietly becomes short-lived. The flag is now
+> stored; the arithmetic survives only as the fallback for rows predating the column, which self-heal.
+>
+> **Both are model-only until `MS-6` runs** — the integration suite will fail `PendingModelChangesWarning`
+> until then, by design, because the model and the migration genuinely disagree.
+
 ---
 
 ## Out of scope — named, so it stays out

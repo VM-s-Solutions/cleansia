@@ -701,6 +701,11 @@ module ssr 'modules/appService.bicep' = {
     // ahead of the static handler and the Angular engine catch-all, so it answers 200 JSON without
     // ever entering a render. (It was previously disabled on the false premise that the Node host had
     // no such route, which left the one browser-facing site as the only host Azure never probed.)
+    //
+    // Kept at /health, and explicitly, because this host has no /alive — that endpoint comes from the
+    // .NET MapDefaultEndpoints the API hosts share. The distinction the API hosts now draw (Azure
+    // recycles on LIVENESS, never on a slow shared dependency) does not apply here: server.ts's /health
+    // touches no database and no storage, so it is already a liveness probe by construction.
     healthCheckPath: '/health'
     tags: commonTags
   }

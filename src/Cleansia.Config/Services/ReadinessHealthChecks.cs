@@ -7,21 +7,61 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Cleansia.Config.Services;
 
 /// <summary>
-/// The readiness half of the health split: <c>/alive</c> is liveness only, <c>/health</c> — what the
-/// App Service probe polls — additionally runs dependency checks.
+/// The readiness half of the health split: <c>/alive</c> is liveness only, <c>/health</c> additionally
+/// runs dependency checks. **The App Service probe polls <c>/alive</c>, not this** — see below.
 ///
-/// <para><b>The failure semantics are deliberate.</b> Database reports Unhealthy, because every request
-/// on that instance would fail anyway and a recycle can rebuild a wedged pool. Blob reports Degraded and
-/// still 200, because storage is shared by the whole fleet and recycling everything during a storage
-/// outage only amplifies it. → /architecture/infrastructure</para>
+/// <para><b>Database is still Unhealthy and blob still Degraded-but-200.</b> That distinction is right:
+/// every request on an instance with no database fails anyway, while storage is shared by the whole
+/// fleet. What changed on 2026-08-15 is who acts on it.</para>
+///
+/// <para><b>These checks are BOUNDED, and that is not a detail.</b> Unbounded, the database check was
+/// measured at <b>95 seconds</b> and blob at <b>56</b> against a saturated dev Postgres. Nothing can use
+/// an answer that slow: the deploy warm loop gives each probe 15 seconds, and App Service's probe gives
+/// less. A health check that cannot answer within its caller's patience is indistinguishable from one
+/// that answers "down" — so it must answer, quickly, and say what it found.</para>
+///
+/// <para><b>Why App Service no longer restarts on this.</b> Its probe used to poll <c>/health</c>, so a
+/// slow shared database recycled the instance — which cold-started onto the same contended plan,
+/// rebuilt a 70-entity model and a fresh pool against the same saturated server, and failed the next
+/// probe. On 2026-08-15 that loop made both mobile APIs unusable. The blob check's own reasoning —
+/// "recycling everything during an outage only amplifies it" — turned out to apply to the database too:
+/// the recycle rebuilds a WEDGED pool, but this was never a wedged pool. It was a shared server with no
+/// capacity left, and restarting every instance took more of it.
+/// → /architecture/infrastructure#health-probes</para>
 /// </summary>
 public static class ReadinessHealthChecks
 {
+    /// <summary>
+    /// Well under the 15 seconds the deploy warm loop allows, so a bounded check still produces an
+    /// answer the caller can act on rather than a timeout it has to interpret.
+    /// </summary>
+    public static readonly TimeSpan ReadinessCheckTimeout = TimeSpan.FromSeconds(5);
+
     public static IServiceCollection AddCleansiaReadinessChecks(this IServiceCollection services)
     {
         services.AddHealthChecks()
             .AddDbContextCheck<CleansiaDbContext>("database", tags: ["ready"])
             .AddCheck<BlobStorageHealthCheck>("blob_storage", failureStatus: HealthStatus.Degraded, tags: ["ready"]);
+
+        // Bound every readiness check. The registrations above take no timeout, so this rewrites them
+        // in place rather than duplicating the roster — a second list would drift from the first.
+        services.Configure<HealthCheckServiceOptions>(options =>
+        {
+            var unbounded = options.Registrations
+                .Where(r => r.Timeout == Timeout.InfiniteTimeSpan || r.Timeout > ReadinessCheckTimeout)
+                .ToList();
+
+            foreach (var existing in unbounded)
+            {
+                options.Registrations.Remove(existing);
+                options.Registrations.Add(new HealthCheckRegistration(
+                    existing.Name,
+                    existing.Factory,
+                    existing.FailureStatus,
+                    existing.Tags,
+                    ReadinessCheckTimeout));
+            }
+        });
 
         return services;
     }

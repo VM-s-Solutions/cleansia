@@ -258,6 +258,45 @@ public class EmailService(ISendGridClient client) : IEmailService
 }
 ```
 
+## Health probes — liveness restarts, readiness reports {#health-probes}
+
+Two endpoints, and the difference is a restart policy rather than a naming preference.
+
+| Endpoint | Answers | Who acts on it |
+|---|---|---|
+| `/alive` | is this process broken? | **Azure App Service** — it responds by **recycling the instance** |
+| `/health` | are my dependencies reachable? | the deploy warm loop, and monitoring |
+
+**Azure's probe polls `/alive`.** It must, because the only honest input to "kill and restart this
+instance" is whether the instance itself is broken. Handing a supervisor a signal that goes red when a
+*shared* dependency slows down means every instance restarts at once, and the restart is the most
+expensive thing you can do to a dependency that is already short of capacity.
+
+::: danger This was learned the hard way, on 2026-08-15
+`healthCheckPath` pointed at `/health`. A saturated dev Postgres — `Standard_B1ms`, one burstable vCore,
+shared by five APIs and the Functions host — made that probe take **95 seconds**. App Service recycled
+the instance; the restart cold-started onto the contended B2 plan, rebuilt a 70-entity EF model and a
+fresh connection pool against the same saturated server, and failed the next probe. Both mobile APIs
+became unusable, and every recycle took capacity from the database that had none to give.
+
+The blob check had already reasoned its way to the right answer — *"recycling everything during a
+storage outage only amplifies it"* — and returned Degraded-but-200 for exactly that reason. It simply
+was not applied to the database, where the premise was a **per-instance wedged pool** rather than a
+shared server with nothing left. A recycle does rebuild a wedged pool; it cannot manufacture capacity.
+:::
+
+**Both readiness checks are bounded at 5 seconds.** An unbounded check cannot be acted on by anyone: the
+deploy warm loop allows 15 seconds per probe, so a 95-second answer is indistinguishable from no answer.
+`ReadinessHealthChecks.ReadinessCheckTimeout` is the single value, and `AppServiceHealthProbeTests` pins
+it against the warm loop's patience so the two cannot drift apart.
+
+`/health` keeps its failure semantics: database Unhealthy (an instance with no database fails every
+request anyway), blob Degraded-but-200. What changed is only who is allowed to respond by killing things.
+
+> The SSR host is the one exception and is set explicitly in `main.bicep`. It has no `/alive` — that
+> comes from the .NET `MapDefaultEndpoints` — and its `/health` touches no database and no storage, so
+> it is already a liveness probe by construction.
+
 ## Observability
 
 ::: tip What changed, and what did not (T-0500)

@@ -304,6 +304,8 @@ in one place while the same claim survived elsewhere on the page, or in the map 
 | CL-064 | `CLAUDE.md` § Trackers: a dead path, a closed manifest called *live*, the live backlog unnamed | S | done | #204 |
 | CL-065 | `ci-cd.md` still documented a DEV auto-deploy and a typed-`deploy` PRO gate; both are gone | M | done | #204 |
 | CL-067 | `api/authentication.md`'s first table taught the lifetimes the same page calls phantom | S | done | #204 |
+| CL-069 | `enforcement.md`'s "44 declared violations" — count removed, not reset | S | done | #204 |
+| CL-070 | `partner-app/dashboard.md` documented the hardcoded suffix P10 replaced | S | done | #204 |
 
 > **The two with real teeth.** `CL-063`: there are **two** solution manifests in `src/`, and P9 removed
 > `Infra.Scripts` from only one — `dotnet restore Cleansia.Api.slnx` hard-failed `MSB3202` on a project
@@ -318,10 +320,15 @@ in one place while the same claim survived elsewhere on the page, or in the map 
 > with no audit record, and that this was *deliberately accepted*. A security file arguing against its
 > own control. That is what a half-finished correction costs once `docs/` is the source of truth.
 >
-> **Two candidates were dropped on proportionality, named so the decision is visible:** a stale
-> violation count in `enforcement.md` that nothing reads and that flips no decision at either value,
-> and a stale code fence in `docs/partner-app/dashboard.md` whose only cost would be a developer
-> copying it — into widgets that already bind `currencyCode`.
+> **Two were dropped on proportionality and the owner overrode both (2026-08-15: *"do all of the tasks
+> that the investigation found"*).** They are `CL-069` and `CL-070`, and doing them was cheap enough
+> that the override costs nothing to honour.
+>
+> `CL-069` is the more interesting of the two. The fix is **not** to change 44 to 15: the file's own
+> §*"A claim about the tree carries its own retirement condition"* names this decay class, and its iOS
+> row already records being burned by it twice in one afternoon. So the count came **out**, with the
+> shape rule stated — *never enumerate a count of tree instances* — and a pointer to
+> `consistency-baseline.md`, which is allowed to hold the number because it is the thing being counted.
 
 ---
 

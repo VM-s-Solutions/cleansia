@@ -38,9 +38,15 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 >
 > **What the five ungated checkers would still catch, so the trade stays visible:** customer→partner
 > module-boundary regressions, offerability-status drift between the C# source of truth and eight client
-> literals across three languages, libraries becoming invisible to Nx, the 44 declared convention
-> violations moving, and the archived backlog being edited into disagreeing with itself. Each is a real
-> defect class with a measured baseline.
+> literals across three languages, libraries becoming invisible to Nx, the **declared** convention
+> violations moving, and the backlog being edited into disagreeing with itself. Each is a real defect
+> class with a measured baseline.
+>
+> The declared set lives in `agents/cleanup/consistency-baseline.md` and **is deliberately not counted
+> here.** This sentence said "44" for one day: P10 authored that number and invalidated it in the same
+> commit by narrowing the `B3` rule. It is the decay class §*"A claim about the tree carries its own
+> retirement condition"* exists to stop, and the shape rule that follows from it — **never enumerate a
+> count of tree instances** — is what this paragraph now obeys, as the iOS row below already does.
 >
 > **Retires when:** the set of `node agents/tools/check-*.mjs` steps under `.github/workflows/` stops
 > matching the two `yes, blocking` rows above.

@@ -399,6 +399,61 @@ public class DoThing
     assert.equal(b3.length, 1, `expected 1 B3, got: ${r.out}`);
 });
 
+// conv `: any` — the twelve narrowings CL-024 made and never pinned, added 2026-08-15 (CL-071).
+// The exemption is FILE-scoped and keyed on tokens as ordinary as `onChange`, so a new file that
+// merely mentions ControlValueAccessor blinds the rule over everything in it. Today it correctly
+// suppresses 11 `: any` lines across 9 design-system components — correct, and until now unpinned.
+test("conv does NOT flag `: any` on a real ControlValueAccessor member", () => {
+    const r = runTs(`export class Input implements ControlValueAccessor {
+  writeValue(value: any): void {}
+  registerOnChange(fn: any): void {}
+}`, "cleansia-input.component.ts");
+    const conv = r.out.split(/\r?\n/).filter((l) => /\bconv\b/.test(l));
+    assert.equal(conv.length, 0, r.out);
+});
+
+test("conv does NOT flag `: any` on a trackBy — Angular declares TrackByFunction returning any", () => {
+    const r = runTs(`export class ListComponent {
+  trackByRow(index: number, row: any): any { return row.id; }
+}`, "list.component.ts");
+    const conv = r.out.split(/\r?\n/).filter((l) => /\bconv\b/.test(l));
+    assert.equal(conv.length, 0, r.out);
+});
+
+test("conv STILL flags `: any` in a file with no CVA and no trackBy", () => {
+    const r = runTs(`export class PlainFacade {
+  load(payload: any): void {}
+}`);
+    const conv = r.out.split(/\r?\n/).filter((l) => /\bconv\b/.test(l));
+    assert.equal(conv.length, 1, `expected 1 conv, got: ${r.out}`);
+});
+
+// The one that matters, and it is NARROWER than it looks. `implementsCva` is computed over the whole
+// file, but the suppression is `implementsCva && CVA_ANY.test(ln)` — the second half is per LINE. So a
+// CVA file does not go blind: only lines that themselves name a CVA member are exempt, and an
+// unrelated `: any` two lines down is still flagged. Pin that, because "the exemption is file-scoped"
+// is the reasonable misreading, and acting on it would narrow a rule that is already tight.
+test("conv STILL flags an unrelated `: any` inside a ControlValueAccessor file", () => {
+    const r = runTs(`export class Widget implements ControlValueAccessor {
+  writeValue(value: any): void {}
+  unrelatedHelper(payload: any): void {}
+}`, "cleansia-widget.component.ts");
+    const conv = r.out.split(/\r?\n/).filter((l) => /\bconv\b/.test(l));
+    assert.equal(conv.length, 1, `expected the unrelated any to be flagged, got: ${r.out}`);
+});
+
+// And the token match is word-BOUNDED, which is the second reason this is tighter than it reads:
+// `onChangeHandler` does not satisfy /\bonChange\b/, so a field whose name merely starts with a CVA
+// token is still flagged. The exemption reaches the CVA members themselves and nothing adjacent.
+test("conv STILL flags a field whose name only STARTS with a CVA token", () => {
+    const r = runTs(`export class Widget implements ControlValueAccessor {
+  writeValue(value: any): void {}
+  private onChangeHandler: any = null;
+}`, "cleansia-widget2.component.ts");
+    const conv = r.out.split(/\r?\n/).filter((l) => /\bconv\b/.test(l));
+    assert.equal(conv.length, 1, `expected the near-miss token to be flagged, got: ${r.out}`);
+});
+
 test("B1 STILL flags a command record that does not end in Command", () => {
     const r = run({
         code: `namespace X;

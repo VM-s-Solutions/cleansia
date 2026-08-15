@@ -306,6 +306,7 @@ in one place while the same claim survived elsewhere on the page, or in the map 
 | CL-067 | `api/authentication.md`'s first table taught the lifetimes the same page calls phantom | S | done | #204 |
 | CL-069 | `enforcement.md`'s "44 declared violations" — count removed, not reset | S | done | #204 |
 | CL-070 | `partner-app/dashboard.md` documented the hardcoded suffix P10 replaced | S | done | #204 |
+| CL-071 | The twelve `conv` narrowings had no regression test — and pinning them disproved the risk | S | done | #204 |
 
 > **The two with real teeth.** `CL-063`: there are **two** solution manifests in `src/`, and P9 removed
 > `Infra.Scripts` from only one — `dotnet restore Cleansia.Api.slnx` hard-failed `MSB3202` on a project

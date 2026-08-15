@@ -13,9 +13,23 @@ So this file is the deliverable. The number is not zero, and each remaining entr
 
 ## What was actually wrong — the checker (CL-024)
 
-Twenty phantom violations, in four classes. Each is now guarded by its own case in
-`check-consistency.test.mjs` (26 tests, up from 19), including a matching **"STILL flags"** case so a
-narrowing cannot quietly become blindness.
+Twenty phantom violations, in four classes, guarded by `check-consistency.test.mjs` — **33 cases**,
+each narrowing paired with a **"STILL flags"** case so it cannot quietly become blindness.
+
+> **This sentence used to overclaim, and the correction is more interesting than the error.** It said
+> every one of the twenty was guarded; at 26 cases only `B10`, `C3`, `B1` and `E9` were, and the twelve
+> `conv` narrowings — the largest class — had none. Writing the missing cases in 2026-08-15 (`CL-071`)
+> **disproved the reason they were thought to matter.** The concern was that the `: any` exemption is
+> file-scoped and keyed on tokens as ordinary as `onChange`, so one mention of `ControlValueAccessor`
+> would blind the rule over a whole design-system component. It does not:
+>
+> - the suppression is `implementsCva && CVA_ANY.test(ln)` — the file decides *eligibility*, the **line**
+>   decides the match, so an unrelated `: any` two lines below `writeValue` is still flagged; and
+> - the token match is **word-bounded**, so `onChangeHandler` does not satisfy `\bonChange\b` and is
+>   flagged too.
+>
+> Both are now pinned. The exemption reaches the CVA members themselves and nothing adjacent — which is
+> what it was supposed to do, and now what it is *held* to do.
 
 | Rule | Phantoms | What the rule got wrong |
 |---|---|---|

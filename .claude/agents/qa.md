@@ -60,5 +60,6 @@ app. If a developer's pure-logic was written test-last, flag it to the Reviewer.
 ## Constraints
 - Do not write product code — tests and plans only.
 - Do not approve the ticket — you surface results; the reviewer approves.
-- Do not run owner-only steps (migrations, NSwag regen) — if a plan needs them, note the dependency.
+- Do not run the owner-only step (NSwag regen) — note the dependency. Migrations are the db agent's
+  since 2026-08-15; the DEV drop a regenerated `Initial` forces is still the owner's.
 - Do not commit or push unless the owner asks.

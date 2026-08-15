@@ -204,7 +204,7 @@ Full record: ADR-0002 §"Partial supersede — 2026-08-10 (architect, T-0584)".
 - **Idempotency only** — stops double-processing but not the *phantom* (message for a never-committed
   row). Post-commit removes the phantom at source.
 - **Skip the in-memory buffer, do the DB outbox in Wave-0** — that *is* Wave-1; needs the table, an
-  owner-only migration, and a drainer. The buffer is the bridge; reconciliation is the honesty.
+  migration, and a drainer. The buffer is the bridge; reconciliation is the honesty.
 - **Random Guid message id** — defeats the duplicate-enqueue case (each enqueue gets a new id).
 - **Dispatch failure → 500** — fails an already-committed customer operation (violates the
   fiscal-compliance "customer completion is never blocked by a downstream effect" invariant).

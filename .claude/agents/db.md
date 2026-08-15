@@ -53,7 +53,9 @@ migrations precisely — but the **owner runs them** (`manual_step: ef-migration
 ## Constraints
 - No raw schema changes outside EF migrations — the migration history is the source of truth.
 - No controllers, handlers, or UI — escalate to backend/frontend.
-- Do not run `dotnet ef migrations add` / `database update` — the owner does.
+- **You may regenerate `Initial`** (owner ruling 2026-08-15) — see `CLAUDE.md` § *Manual steps* for the
+  exact commands and why the startup project must be a web host. Prove it with the integration suite.
+  Do not run `database update`, and the **DEV drop** a changed migration id forces stays the owner's.
 - **Comment almost nothing** (`conventions.md` → "Comments — write almost none"): default to no
   comment, let names carry meaning, comment only genuinely non-obvious critical logic (a query-filter
   subtlety, an index's purpose when not self-evident). Never WHAT comments, banners, or

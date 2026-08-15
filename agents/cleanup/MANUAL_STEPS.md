@@ -5,44 +5,14 @@ step, cleared when done.
 
 ## Open
 
-### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **owner**
-
-Two schema changes landed with `CL-072`, and both are **model-only** until `Initial` is regenerated:
-
-- `RefreshToken.RememberMe` (nullable `bool`) — G-03. Rotation reads it instead of re-deriving the flag
-  from the gap between two tunable lifetimes.
-- `IX_Orders_RecurringTemplateId_CleaningDateTime` — a unique, filtered index. G-18. It is what makes a
-  duplicate recurring order impossible rather than merely unlikely.
-
-**This costs nothing extra right now.** `MS-2` already requires a DEV drop because `MS-1` changed the
-migration id, so this folds into the same regeneration and the same drop — which is why it was worth
-doing today rather than deferring it again.
-
-**Until it runs, Backend CI's integration job is RED**, and this is the observed symptom rather than a
-predicted one:
-
-```
-Npgsql.PostgresException : 42703: column "RememberMe" of relation "RefreshTokens" does not exist
-```
-
-The integration suite builds a real Postgres from the **migration**, so any test that writes a
-`RefreshToken` fails at insert. It is the same failure `MS-1` produced for `SeatOrdinal` in P2, and it
-clears the same way.
-
-> This step originally predicted `PendingModelChangesWarning`. It is not that — that warning guards a
-> model/migration mismatch at *startup*; what actually happens here is a column-missing error at
-> *insert*. Corrected from the CI log rather than from expectation.
-
-**Action:** regenerate `Initial`, then drop and reseed DEV (`MS-2`).
-
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
 
 
-`MS-1` regenerated the single `Initial` migration, so its id changed from `20260811192214` to
-`20260813085249`. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+`MS-1` regenerated the single `Initial` migration and `MS-6` regenerated it again, so its id has moved
+from `20260811192214` to `20260813085249` to **`20260815094107`**. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 
@@ -62,6 +32,21 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **DONE 2026-08-15**
+
+**Run by Claude, and the rule changed with it.** The owner ruled that regenerating `Initial` is no
+longer a manual step: *"Regenerate the migration on your own and also mark this step as non MS. It can
+be done by you as well."*
+
+`20260813085249_Initial` → **`20260815094107_Initial`**, carrying `RefreshToken.RememberMe` (G-03) and
+`IX_Orders_RecurringTemplateId_CleaningDateTime` (G-18), with the P2 seat index and all six
+`NULLS NOT DISTINCT` options intact. Verified by the integration suite — **197 tests against real
+Postgres**, which is the only thing that proves the model and the schema agree.
+
+The commands, and the trap that the startup project must be a web host rather than
+`Cleansia.MigrationService`, are now in `CLAUDE.md` § *Manual steps*.
+
 
 ### MS-4 — Payroll currency: DTO + regeneration — **DONE 2026-08-14**
 

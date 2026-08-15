@@ -112,15 +112,31 @@ Mobile :5004. `README.md` has the full run/test/build commands.
 > Nx project names carry a **dot** before `app` — `cleansia-partner.app`, not `cleansia-partner-app`,
 > which fails with "Cannot find project". Check `npx nx show projects` before hand-writing one.
 
-## Manual steps — the owner does these, never Claude
+## Manual steps
 
-- **EF Core migrations.** Do not run `dotnet ef migrations add` or `database update`. When a migration
-  is needed, record a `MANUAL_STEP` and stop there.
-- **NSwag client regeneration.** Do not run `npm run generate-*-client`. When a backend DTO or endpoint
-  changes, flag `manual_step: nswag-regen` so the owner regenerates before frontend work starts.
+- **NSwag client regeneration — owner only.** Do not run `npm run generate-*-client`. When a backend
+  DTO or endpoint changes, flag `manual_step: nswag-regen` so the owner regenerates before frontend
+  work starts.
+
+### EF Core migrations — Claude may regenerate `Initial` (owner ruling, 2026-08-15)
 
 There is **one** committed migration, `Initial`. Pre-prod, schema changes are folded back into it by
-regenerating rather than stacking — which changes its id, so DEV needs a database drop when it moves.
+**regenerating** rather than stacking:
+
+```bash
+export PATH="$HOME/.dotnet/tools:$PATH"        # dotnet-ef is a global tool, not on PATH by default
+cd src
+dotnet ef migrations remove --force --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner
+dotnet ef migrations add   Initial --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner
+```
+
+> The startup project must be a **web host** — `Cleansia.MigrationService` does not reference
+> `Microsoft.EntityFrameworkCore.Design` and the tool refuses it.
+
+**Regenerating changes the migration id, so DEV needs a database drop.** That drop is still the
+owner's. Never fold a schema change into the migration by hand: regenerate, then verify with the
+integration suite, which builds a real Postgres from the migration and is the only thing that proves
+the model and the schema agree.
 
 ## How to write code here
 
@@ -153,7 +169,8 @@ Four things that look like bugs, are not, and have each cost a session:
   nullable and Postgres treats NULLs as distinct, so `(TenantId, …)` admits unlimited duplicates while
   it is null — which is production today. No design may use such an index as its only concurrency
   arbiter. `.AreNullsDistinct(false)` is shipped on five tables, but adding it to an **existing** index
-  is an owner-run migration and fails on pre-existing duplicates. → `/architecture/security-rules`
+  means regenerating `Initial` and **dropping DEV**, and it fails on pre-existing duplicates.
+  → `/architecture/security-rules`
 
 - **System jobs run with no JWT context.** Query with `GetQueryableIgnoringTenant()`, then
   `SetTenantOverride` per tenant group and commit **inside** the loop — rows are stamped from the

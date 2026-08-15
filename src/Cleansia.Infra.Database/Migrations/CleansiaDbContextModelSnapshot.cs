@@ -3331,6 +3331,11 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("PaymentType", "CreatedOn");
 
+                    b.HasIndex("RecurringTemplateId", "CleaningDateTime")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Orders_RecurringTemplateId_CleaningDateTime")
+                        .HasFilter("\"RecurringTemplateId\" IS NOT NULL");
+
                     b.ToTable("Orders");
                 });
 
@@ -5016,6 +5021,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset?>("LastUsedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("RememberMe")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ReplacedByTokenId")
                         .HasMaxLength(26)

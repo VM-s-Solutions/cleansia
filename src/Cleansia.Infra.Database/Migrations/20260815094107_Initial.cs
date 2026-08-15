@@ -1190,6 +1190,7 @@ namespace Cleansia.Infra.Database.Migrations
                     DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     Audience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    RememberMe = table.Column<bool>(type: "boolean", nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
@@ -3125,6 +3126,13 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Orders_RecurringTemplateId",
                 table: "Orders",
                 column: "RecurringTemplateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_RecurringTemplateId_CleaningDateTime",
+                table: "Orders",
+                columns: new[] { "RecurringTemplateId", "CleaningDateTime" },
+                unique: true,
+                filter: "\"RecurringTemplateId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_StripePaymentIntentId",

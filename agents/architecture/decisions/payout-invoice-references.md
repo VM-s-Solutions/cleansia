@@ -162,7 +162,7 @@ The reasoning must be stated at its true strength, because the draft overstated 
 finding. **Global is the cheapest correct shape *today*:**
 
 - the shipped index is **already** global, so this costs zero index DDL where the alternative costs an
-  owner-only migration;
+  migration;
 - it has **no NULLS-DISTINCT hole**, because it carries no `TenantId` — the retrofit CLAUDE.md warns
   about is not in play;
 - production is **single-tenant**, so a tenant term would discriminate nothing.

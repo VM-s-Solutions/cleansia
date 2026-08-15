@@ -356,10 +356,18 @@ regenerated `Initial` and a DEV drop, so the migration both were waiting on had 
 > them within half a day of each other and every session quietly becomes short-lived. The flag is now
 > stored; the arithmetic survives only as the fallback for rows predating the column, which self-heal.
 >
-> **Both are model-only until `MS-6` runs.** Backend CI's integration job is red until then with
-> `42703: column "RememberMe" of relation "RefreshTokens" does not exist` — the suite builds its Postgres
-> from the migration, so every test that writes a refresh token fails at insert. Same failure `MS-1`
-> produced for `SeatOrdinal` in P2, and it clears the same way.
+> **The migration is regenerated and both are live.** `20260813085249_Initial` →
+> `20260815094107_Initial`, verified by **197 integration tests against real Postgres** — which is the
+> only thing that proves the model and the schema agree, and is why the unit suite passing meant
+> nothing here. Backend CI was briefly red with
+> `42703: column "RememberMe" of relation "RefreshTokens" does not exist`, the same failure `MS-1`
+> produced for `SeatOrdinal` in P2.
+>
+> **And the rule moved.** Regenerating `Initial` was owner-only; the owner made it an agent step on
+> 2026-08-15. `CLAUDE.md` § *Manual steps* now carries the commands and the trap that the startup
+> project must be a web host, because `Cleansia.MigrationService` does not reference
+> `Microsoft.EntityFrameworkCore.Design` and the tool refuses it. **The DEV drop stays the owner's** —
+> the id changed again, so `MS-2` is now owed against `20260815094107`.
 
 ---
 

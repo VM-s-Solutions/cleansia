@@ -697,19 +697,6 @@ jobs:
       # before the job is called green: a deploy that never goes healthy is a failed deploy, not a
       # green one you find out about from a white screen. Same loop the prod path runs against the
       # staging slot, pointed at the live dev hostname.
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::api-cleansia-partner never went healthy at $SITE_URL after the deploy"
-          exit 1
-
       # Slots are not Always On (deliberate — see appService.bicep), so the freshly-deployed slot is
       # cold: warm it and PROVE it healthy before the swap. Failing here fails the job — a slot that
       # never answers /health must not be swapped into production.
@@ -767,19 +754,6 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./admin-api
 
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::api-cleansia-admin never went healthy at $SITE_URL after the deploy"
-          exit 1
-
       - name: Warm the staging slot
         if: inputs.env == 'prod'
         run: |
@@ -833,19 +807,6 @@ jobs:
           app-name: api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-api
-
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::api-cleansia-customer never went healthy at $SITE_URL after the deploy"
-          exit 1
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'
@@ -901,19 +862,6 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./partner-mobile-api
 
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::api-cleansia-partner-mobile never went healthy at $SITE_URL after the deploy"
-          exit 1
-
       - name: Warm the staging slot
         if: inputs.env == 'prod'
         run: |
@@ -967,19 +915,6 @@ jobs:
           app-name: api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-mobile-api
-
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::api-cleansia-customer-mobile never went healthy at $SITE_URL after the deploy"
-          exit 1
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'
@@ -1096,19 +1031,6 @@ jobs:
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-app
 
-      - name: Warm the deployed site
-        if: inputs.env != 'prod'
-        run: |
-          SITE_URL="https://web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/"
-          for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL" || true)"
-            if [ "$code" = "200" ]; then echo "site warm (attempt $attempt)"; exit 0; fi
-            echo "  site not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
-            sleep 10
-          done
-          echo "::error::web-cleansia-customer never went healthy at $SITE_URL after the deploy"
-          exit 1
-
       - name: Warm the staging slot
         if: inputs.env == 'prod'
         run: |
@@ -1189,3 +1111,81 @@ jobs:
           action: upload
           app_location: ./admin-app
           skip_app_build: true
+
+  # ===========================================================================================
+  # Warm the dev sites — ONE job, AFTER every deploy. Prod is untouched: it warms each staging slot
+  # inside its own job, because a slot must be proven healthy before it is swapped.
+  #
+  # WHY THIS IS NOT PER-HOST ANY MORE. Each deploy job used to warm its own site the moment its
+  # artifact landed. Six sites deploy in parallel onto ONE B2 plan — 2 vCPU, 3.5 GB, shared by five
+  # .NET APIs and the Node SSR app, every one of them alwaysOn. So all six cold-start at once, and the
+  # ones that finish deploying last warm straight into the worst of that contention.
+  #
+  # It was not flaky, it was ordered: partner-mobile and customer-mobile are LAST in the apiHosts
+  # array, deploy last, and start last. They failed on 2026-08-12 and again on 2026-08-15, both times
+  # together, while partner-api warmed in ONE second because it was already up. Both were serving
+  # normally within the hour — nothing was wrong with them except when they were asked.
+  #
+  # Warming after the storm keeps the check honest: a site that never answers is still a failed
+  # deploy. What it stops being is a race between six starts for two cores. If this begins failing
+  # again the answer is the plan, not this budget — see ADR-0015 D2 (B2 is an owner cost override)
+  # and D5/B2 (the deploys are deliberately parallel; do not re-serialise them to hide a SKU).
+  warm-dev-sites:
+    name: Warm dev sites
+    needs:
+      - deploy-partner-api
+      - deploy-admin-api
+      - deploy-customer-api
+      - deploy-partner-mobile-api
+      - deploy-customer-mobile-api
+      - deploy-customer-ssr
+    if: inputs.mode == 'deploy' && inputs.env != 'prod'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        region: ["${{ inputs.region }}"]
+    environment: ${{ inputs.githubEnvironment }}
+    steps:
+      # Sequential on purpose. Warming all six at once would re-create in miniature the contention
+      # this job exists to step out of — and the point is to give each site the plan's attention for
+      # as long as it needs it, not to finish quickly.
+      - name: Warm every dev site
+        run: |
+          set -u
+          REGION="${{ matrix.region }}"
+          ENVN="${{ inputs.env }}"
+          FAILED=""
+
+          warm() {
+            local name="$1" url="$2"
+            for attempt in $(seq 1 30); do
+              code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url" || true)"
+              if [ "$code" = "200" ]; then
+                echo "::notice::$name warm after ${attempt} attempt(s)"
+                return 0
+              fi
+              echo "  $name not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+              sleep 10
+            done
+            echo "::error::$name never went healthy at $url"
+            FAILED="$FAILED $name"
+            return 1
+          }
+
+          for host in partner admin customer partner-mobile customer-mobile; do
+            warm "api-cleansia-$host" \
+              "https://api-cleansia-${host}-${REGION}-${ENVN}.azurewebsites.net/health" || true
+          done
+
+          # '/' rather than a health path: it forces a real SSR render, so this gates the render path
+          # itself and not just the process being alive.
+          warm "web-cleansia-customer" \
+            "https://web-cleansia-customer-${REGION}-${ENVN}.azurewebsites.net/" || true
+
+          if [ -n "$FAILED" ]; then
+            echo "::error::sites never went healthy:$FAILED"
+            exit 1
+          fi
+          echo "all dev sites warm"

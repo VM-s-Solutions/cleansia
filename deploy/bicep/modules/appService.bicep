@@ -33,8 +33,8 @@ param httpsOnly bool = true
 @description('Always-On. True keeps the host warm; off (default) suits dev cost on B2.')
 param alwaysOn bool = false
 
-@description('Health-check path Azure pings to gauge instance health. Every host we deploy serves the default: the .NET hosts expose /health (all checks) + /alive (liveness only) via MapDefaultEndpoints, and the Angular SSR host registers /health in server.ts before its Angular catch-all. Empty string disables the probe entirely — no caller passes it today.')
-param healthCheckPath string = '/health'
+@description('Health-check path Azure pings to decide whether to RECYCLE an instance. Defaults to /alive — LIVENESS, not readiness. Azure acts on this by replacing the instance, so it must answer "is this process broken", never "is a shared dependency slow": on 2026-08-15 this pointed at /health, a saturated dev Postgres made that probe take 95s, and both mobile APIs entered a restart loop that cold-started onto the same contended plan and made the database slower still. /health remains the dependency check and is what the deploy warm loop verifies — it is just not a restart trigger. The SSR host registers /health in server.ts and has no /alive, so main.bicep passes it explicitly. Empty string disables the probe.')
+param healthCheckPath string = '/alive'
 
 @description('Deploy a "staging" deployment slot for swap-based zero-downtime deploys (T-0359 prod posture). Requires a Standard+ plan SKU (S1) — B-series plans reject slot creation, so dev keeps the default false.')
 param stagingSlotEnabled bool = false

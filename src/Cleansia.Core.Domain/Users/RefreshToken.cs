@@ -63,6 +63,18 @@ public class RefreshToken : Auditable, ITenantEntity
     [MaxLength(40)]
     public string? Audience { get; private set; }
 
+    /// <summary>
+    /// Whether this session was issued as "remember me", i.e. with the long refresh lifetime.
+    ///
+    /// <para>Stored rather than re-derived. Rotation used to infer it by measuring
+    /// <c>ExpiresAt - CreatedOn</c> against <c>RefreshTokenShortExpDays</c>, which coupled a security
+    /// property to the GAP between two independently-tunable settings: configure them within half a day
+    /// of each other and every session silently becomes short-lived. Nullable so a row written before
+    /// this shipped is distinguishable from one written as short — <c>null</c> means "ask the old
+    /// arithmetic", and the column self-heals on first rotation.</para>
+    /// </summary>
+    public bool? RememberMe { get; private set; }
+
     public bool IsAlive => RevokedAt is null && ExpiresAt > DateTimeOffset.UtcNow;
 
     public static RefreshToken Create(
@@ -72,7 +84,8 @@ public class RefreshToken : Auditable, ITenantEntity
         string audience,
         string? deviceLabel,
         string? ipAddress,
-        string? deviceId = null)
+        string? deviceId = null,
+        bool? rememberMe = null)
         => new()
         {
             UserId = userId,
@@ -82,6 +95,7 @@ public class RefreshToken : Auditable, ITenantEntity
             DeviceLabel = deviceLabel,
             IpAddress = ipAddress,
             DeviceId = deviceId,
+            RememberMe = rememberMe,
         };
 
     public RefreshToken MarkUsed(DateTimeOffset at)

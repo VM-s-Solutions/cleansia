@@ -220,7 +220,7 @@ The ruling *"no express waivers during the trial"* was **not expressible**: `"tr
 | **Derived** | `bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc` |
 | **Why an instant, not a `bool`** | a boolean needs a **writer** to flip it on conversion and there is no sweep — it goes stale and grants waivers forever. A stored deadline **expires by clock, no actor**. Same argument as `Order.PreferredHoldUntilUtc` (ADR-0036 D2). |
 | **Additive?** | **yes** — nullable, no backfill, no index. Existing rows read `null` ⇒ not trialing ⇒ **fail-open**, which is safe **only** because the DB is being dropped and `Initial` regenerated. On a live DB this default would be wrong. |
-| **Migration** | ⚠️ **owner-only `ef-migration`. BATCH it into the regenerated `Initial`** — do not stack (see §3.8) |
+| **Migration** | ⚠️ **BATCH it into the regenerated `Initial`** — do not stack (see §3.8). Regeneration is an agent step since 2026-08-15; the DEV drop it forces is the owner's |
 | **Fed by** | (1) `SubscriptionResult` (`IStripeClient.cs:208-211`) gains a 4th nullable field → `UserMembership.Create`; (2) `StripeSubscriptionWebhookHandler.ExtractSubscriptionShape` (`:75-101`) gains a 5th tuple element |
 | ⚠️ **The trap** | the `invoice.payment_failed` branch (`:78-89`) returns `default` bounds and the handler **passes existing values through** (`:63-64`). `trial_end` must get the same treatment. Writing `null` there clears the marker for a trialing member whose first invoice failed — **re-enabling waivers for exactly the customer the ruling is about.** |
 | **Enforced in** | `IExpressWaiverResolver` only — **one extra conjunct**, never in the shared predicate (§1) |
@@ -264,7 +264,7 @@ and the 3 granted waivers are **not clawed back** (the ADR-0009 D2 freeze).
 
 ### 3.8 Pending schema wave — batch, do not stack
 
-⚠️ **All owner-only `ef-migration`.** The owner is dropping the DB and regenerating the single `Initial`
+⚠️ **All fold into the regenerated `Initial`.** The owner is dropping the DB and regenerating the single `Initial`
 migration; every row below folds into that regeneration.
 
 | Change | Source | Ticket |

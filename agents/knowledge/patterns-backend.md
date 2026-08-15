@@ -340,7 +340,8 @@ public class UpdateXxx
   list. Don't hand-roll Skip/Take/sorting.
 - `CustomerApiController`/`PartnerApiController`/`AdminApiController` + `HandleResult` + `Policy.CanXxx`.
 - `IUserSessionProvider.GetUserId()` for identity (S1). Ownership check in the handler (S3).
-- `manual_step: ef-migration` (schema) and `manual_step: nswag-regen` (DTO/endpoint) — owner-only.
+- `manual_step: nswag-regen` (DTO/endpoint) — owner-only. Schema is **not**: regenerate `Initial`
+  yourself (owner ruling 2026-08-15) and raise `manual_step: dev-db-drop` for the drop it forces.
   **Pre-prod there is exactly ONE migration, `Initial`, and it is REGENERATED — never hand-folded.**
   Editing `<id>_Initial.cs`, `<id>_Initial.Designer.cs` and `CleansiaDbContextModelSnapshot.cs` by
   hand to slot in a new table or column is **withdrawn** (owner ruling, 2026-08-09). It was not
@@ -1697,7 +1698,8 @@ for it — but every backend agent should know the shape so it never hard-codes 
   a code/zip deploy fails PDF generation at runtime). **Storage is mandatory** (blob + queue + the
   Functions runtime store).
 - **CI keeps OIDC + the migrate-before-deploy EF bundle.** The pipeline only *applies* an
-  already-committed migration; it never runs `migrations add` (schema authoring stays owner-gated —
+  already-committed migration; the MigrationService itself never runs `migrations add` (an agent does,
+  at author time —
   `manual_step: ef-migration`). GitHub Environments are `dev-weu` (auto on merge) / `prod-weu` (protected:
   required reviewers + manual approval).
 - **No real secret is ever committed** — see [`conventions.md`](./conventions.md). Bicep/param/YAML carry

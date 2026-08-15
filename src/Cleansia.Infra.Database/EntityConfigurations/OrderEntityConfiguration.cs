@@ -87,6 +87,27 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired(false);
         builder.HasIndex(o => o.RecurringTemplateId);
 
+        // G-18. "Did we already spawn THIS occurrence" is decided in MaterializeRecurringBookingTemplate
+        // by an UNLOCKED read, and until 2026-08-15 nothing behind it enforced the answer. What actually
+        // prevented a duplicate was the Azure Functions singleton timer lease — a property of the HOSTING
+        // MODEL, not of the schema — so moving that sweep to any other scheduler, or fanning it out,
+        // would silently have produced a second order for the same slot and, on a card template, a
+        // second charge.
+        //
+        // This is the arbiter. The key is exactly the one the handler reasons with: the template plus the
+        // exact occurrence instant, both whole minutes built by ComputeOccurrences, so equality asks the
+        // handler's own question and nothing wider.
+        //
+        // Filtered to spawned orders because every one-off order carries RecurringTemplateId NULL and
+        // they must not collide with each other. Note what the filter buys beyond that: it keeps
+        // TenantId OUT of the key. A unique index containing nullable TenantId enforces nothing in
+        // single-tenant mode — Postgres treats NULLs as distinct — which is the landmine CLAUDE.md
+        // names, and it is why this index is on two non-null columns instead.
+        builder.HasIndex(o => new { o.RecurringTemplateId, o.CleaningDateTime })
+            .IsUnique()
+            .HasFilter("\"RecurringTemplateId\" IS NOT NULL")
+            .HasDatabaseName("IX_Orders_RecurringTemplateId_CleaningDateTime");
+
         // The fiscal receipt-reconciliation sweep runs 288x/day:
         //   WHERE (PaymentType = Cash OR PaymentStatus = Paid) AND CreatedOn <= cutoff ORDER BY CreatedOn
         // over the unboundedly growing Orders table. The sweep query is split into one arm per

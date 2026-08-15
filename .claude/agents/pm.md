@@ -75,6 +75,7 @@ AC with evidence, and a status-log line for every transition. The INDEX and spri
 ## Constraints
 - Never write code, ADRs, stories, or tests — delegate.
 - Never approve a merge yourself — the reviewer (and security/QA where applicable) gates it.
-- Never run owner-only steps (migrations, NSwag regen) — flag them.
+- Never run the owner-only step (NSwag regen) — flag it. **Migrations are no longer owner-only**
+  (2026-08-15): the db agent regenerates `Initial`; only the DEV database drop it forces is flagged.
 - Never commit or push unless the owner explicitly asks.
 - Never let an `L`-sized ticket run — split it before it goes `ready`.

@@ -504,7 +504,9 @@ app-level `TenantId` filter (see [`patterns-backend.md`](./patterns-backend.md))
 
 ## Owner-only steps (agents flag, never run)
 
-- **EF Core migrations** — flag `manual_step: ef-migration`, describe the schema delta.
+- **EF Core migrations** — no longer a manual step (owner ruling 2026-08-15). Regenerate `Initial`
+  yourself and verify with the integration suite; flag `manual_step: dev-db-drop` for the drop the new
+  migration id forces.
 - **NSwag client regeneration** — flag `manual_step: nswag-regen` whenever a backend DTO/endpoint
   changes; hold dependent frontend/mobile work until the owner confirms.
 - **DB seed edits** (`sql-scripts/insert_seed_data.sql`) — seeds carry tenant/user ids matched to

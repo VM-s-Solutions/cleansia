@@ -70,7 +70,7 @@ is single-tenant** — two otherwise-identical rows both insert and `ON CONFLICT
   ```
   `.AreNullsDistinct(false)` is a **shipped, precedented** construct on this database (it is emitted in
   the committed `Initial`), so *"we don't do that here"* is a false invariant — but adding it to an
-  **existing** index is an owner-only `ef-migration` and index creation fails on pre-existing duplicates,
+  **existing** index means regenerating `Initial` plus a DEV drop, and index creation fails on pre-existing duplicates,
   so de-duplication comes first. **The reviewer checks the emitted DDL, not the C# builder call.**
 - **What already guards it:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs`
   asserts the option on each sole-arbiter index **and** carries a negative control (`UserMemberships`,
@@ -146,7 +146,7 @@ a tenant sees its own override falling back to the platform row), pinned by a te
 **non-null** tenant. A test that only ever seeds `null` cannot fail either way.
 
 **Nothing here changes an index, an entity or the filter.** This is a note; any index change is a
-separate ticket with an owner-run `ef-migration`.
+separate ticket carrying a regenerated `Initial` and the DEV drop it forces.
 
 ### (3) The read half — which reads stand OUTSIDE the filter, and why the other two halves needed it
 

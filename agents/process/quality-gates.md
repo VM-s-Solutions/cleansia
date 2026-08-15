@@ -301,13 +301,16 @@ Mechanics and scope:
 
 ## Owner-only steps (the agents never do these)
 
-Per `CLAUDE.md`, two steps are **owner-only**. Agents detect the need, flag it as a `manual_steps`
-entry on the ticket, and **block the dependent work** until the owner confirms it's done:
+Per `CLAUDE.md`, **one** step is owner-only. Agents detect the need, flag it as a `manual_steps` entry
+on the ticket, and **block the dependent work** until the owner confirms it's done:
 
-- **EF Core migrations** — `dotnet ef migrations add` / `database update`. Agents describe the
-  schema delta; the owner creates & applies the migration.
 - **NSwag client regeneration** — `npm run generate-*-client`. Agents flag it; the owner regenerates
   the TypeScript clients before dependent frontend/mobile work begins.
+
+**EF Core migrations are no longer owner-only** (owner ruling, 2026-08-15). Pre-prod, an agent
+regenerates `Initial` itself and proves it with the integration suite — see `CLAUDE.md` § *Manual
+steps*. The **DEV database drop** that a changed migration id forces is still the owner's, and is
+still a `manual_steps` entry.
 
 A ticket that needs either and hasn't had it confirmed cannot reach `done`.
 

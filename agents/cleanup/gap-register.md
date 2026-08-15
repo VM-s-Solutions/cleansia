@@ -178,9 +178,15 @@ config (30 vs 1, and 90 vs 1 on Mobile.Customer) but couples a security property
 two independently-tunable numbers. Set them within half a day of each other and every session
 silently becomes short-lived.
 
-**Verdict: accept.** No shipped config is near the boundary, the failure is fail-safe (shorter
-sessions, not longer), and storing the flag explicitly costs a column and a migration. Document the
-constraint alongside the config in P7 instead.
+**Verdict: accepted 2026-08-12, CLOSED 2026-08-15 (`CL-072`).** The accept was reasonable — no shipped
+config is near the boundary and the failure is fail-safe in direction — but the reason to defer was
+"it costs a column and a migration", and that cost went to nil: `MS-2` already required a regenerated
+`Initial` and a DEV drop, so the column folded into a migration the owner already owed.
+
+`RefreshToken.RememberMe` is now persisted at issue and read at rotation. It is **nullable on purpose**:
+a row written before the column existed is distinguishable from one issued as short, so it falls back to
+the old arithmetic rather than silently downgrading a long session on its first rotation after deploy —
+and it self-heals, because the row rotation writes stores the flag.
 
 ### G-11 — Entry instructions reach every admin unconditionally, with no reveal and no audit
 
@@ -221,10 +227,18 @@ What actually prevents it is outside the code: Azure Functions timer triggers ho
 so `MaterializeRecurringBookingsFunction`'s `[TimerTrigger]` cannot run twice concurrently. There is no
 `IIdempotencyGuard` on this sweep and no unique index behind it.
 
-**Verdict: accept, and document the dependency.** The behaviour is correct today. The risk is that the
-guarantee lives in the hosting model rather than the schema, so moving this sweep to any other
-scheduler — or fanning it out — silently reintroduces duplicate billing. That belongs in the P7
-operations page next to the cron config, not in a code change now.
+**Verdict: accepted 2026-08-12, CLOSED 2026-08-15 (`CL-072`).** Documenting the dependency was the right
+first move and it happened; closing it needed a schema change, and the same regeneration G-03 rode on
+carried this too.
+
+`IX_Orders_RecurringTemplateId_CleaningDateTime` is now the arbiter: unique, over the exact key the
+handler reasons with, and **filtered to `RecurringTemplateId IS NOT NULL`** — which excludes one-off
+orders from contending with each other and, deliberately, keeps nullable `TenantId` out of the key,
+since a unique index containing it would enforce nothing in single-tenant mode.
+
+The unlocked read stays as the fast path. The index converts the failure from *a duplicate order and a
+duplicate charge, silently* into *one failed background tick that self-heals on the next one*, which is
+the whole requirement. The singleton lease still holds — it is simply no longer the only thing holding.
 
 ---
 

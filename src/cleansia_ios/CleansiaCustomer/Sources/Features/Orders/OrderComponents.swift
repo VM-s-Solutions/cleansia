@@ -14,11 +14,12 @@ struct OrderCardSurface<Content: View>: View {
         // order number it belongs under. With the card flat there is no container edge for an inset to
         // hold away from anyway.
         .padding(.vertical, Spacing.m)
-        // Flat, exactly like the partner sheet's `OrderSectionCard`: a surface-coloured block with no
-        // border and no shadow. The 1pt outline this used to carry drew a hard edge around every
-        // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.
-        // The rule under each section title is what separates them now.
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        // A SQUARE, full-bleed fill — no border, no shadow, and deliberately no corner radius. Removing
+        // the 1pt outline was not enough on its own: a rounded white rectangle still reads as a card
+        // floating over whatever is behind it, which is what kept looking like a drop shadow. Square
+        // and full-width, consecutive sections merge into one continuous panel, which is the thing
+        // `OrderSectionCard.kt` actually achieves by being the same colour as the sheet it sits on.
+        .background(CleansiaColors.surface)
     }
 }
 

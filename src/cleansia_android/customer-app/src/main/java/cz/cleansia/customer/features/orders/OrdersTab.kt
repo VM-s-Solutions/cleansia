@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -534,7 +535,7 @@ private fun servicesSummary(order: OrderListItemDto): String {
     val remaining = combined.size - shown.size
     val base = shown.joinToString(", ")
     return if (remaining > 0) {
-        "$base ${stringResource(R.string.orders_services_more, remaining)}"
+        "$base ${pluralStringResource(R.plurals.orders_services_more, remaining, remaining)}"
     } else {
         base
     }

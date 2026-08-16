@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1037,7 +1038,7 @@ private fun recentBookingTitle(order: OrderListItemDto, fallback: String): Strin
     val first = names.first()
     val remaining = names.size - 1
     return if (remaining > 0) {
-        "$first ${stringResource(R.string.orders_services_more, remaining)}"
+        "$first ${pluralStringResource(R.plurals.orders_services_more, remaining, remaining)}"
     } else {
         first
     }
@@ -1193,7 +1194,12 @@ private fun MilestoneProgressCard(account: LoyaltyAccountDto) {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            stringResource(R.string.home_milestone_subtitle_v2, pointsToNext, nextTierLabel),
+            pluralStringResource(
+                R.plurals.home_milestone_subtitle_v2,
+                pointsToNext,
+                pointsToNext,
+                nextTierLabel,
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

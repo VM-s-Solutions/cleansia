@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -250,7 +251,7 @@ private fun StarRow(
             ) {
                 Icon(
                     imageVector = if (isFilled) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                    contentDescription = stringResource(R.string.order_review_star_content_desc, star),
+                    contentDescription = pluralStringResource(R.plurals.order_review_star_content_desc, star, star),
                     tint = if (isFilled) WarningStar else MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.size(32.dp),
                 )

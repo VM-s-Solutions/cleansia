@@ -82,7 +82,6 @@
     <string name="rewards_next_milestone">%1$d more to unlock %2$s</string>
     <string name="rewards_all_tiers_unlocked">You\'ve unlocked all tiers — thank you!</string>
     <string name="rewards_tiers_title">Milestones</string>
-    <string name="rewards_tier_threshold">· %1$d bookings</string>
     <string name="rewards_tier_unlocked">Unlocked</string>
     <string name="rewards_tier_regular">Regular</string>
     <string name="rewards_tier_regular_perk">Priority rescheduling &amp; cleaning tips guide</string>
@@ -95,7 +94,6 @@
     <string name="rewards_referral_subtitle">They get a welcome treat, you get a free add-on.</string>
     <string name="rewards_referral_your_code">Your code</string>
     <string name="rewards_referral_share">Share your code</string>
-    <string name="rewards_referral_joined">%1$d friend joined so far</string>
     <string name="rewards_referral_no_joins">Be the first — share your code</string>
 
     <!-- Home — address bar -->
@@ -166,10 +164,8 @@
 
     <!-- Home — milestone -->
     <string name="home_milestone_title">Progress to next tier</string>
-    <string name="home_milestone_subtitle">%1$d more bookings to unlock the next tier</string>
     <!-- Loyalty-driven milestone (replaces totalOrders booking count) -->
     <string name="home_milestone_title_v2">%1$s — Progress to next tier</string>
-    <string name="home_milestone_subtitle_v2">%1$d more points to %2$s</string>
 
     <!-- Home — seasonal -->
     <string name="home_seasonal_title">Spring deep clean season</string>
@@ -237,7 +233,6 @@
     <string name="orders_error_title">Couldn\'t load your orders</string>
     <string name="orders_error_retry">Try again</string>
     <string name="orders_empty_cta">Book your first cleaning</string>
-    <string name="orders_services_more">+ %1$d more</string>
 
     <!-- Order detail -->
     <string name="order_detail_title">Order #%1$s</string>
@@ -291,7 +286,6 @@
     <string name="order_detail_discount_tier">Loyalty discount applied</string>
     <string name="order_detail_discount_membership">Cleansia Plus discount applied</string>
     <string name="order_detail_discount_promo">Promo code applied</string>
-    <string name="order_detail_rooms_bathrooms">%1$d rooms · %2$d bath</string>
     <string name="order_detail_duration_minutes">%1$d min</string>
     <string name="order_detail_extras">Extras</string>
     <string name="order_detail_services_header">Services</string>
@@ -345,7 +339,6 @@
 
     <!-- Order review (Wave 2 Phase 3) -->
     <string name="order_review_sheet_title">Rate your cleaning</string>
-    <string name="order_review_star_content_desc">Rate %1$d stars</string>
     <string name="order_review_rating_hint">Tap a star to rate</string>
     <string name="order_review_rating_1">Terrible</string>
     <string name="order_review_rating_2">Poor</string>
@@ -604,7 +597,6 @@
     <string name="booking_packages_featured">Featured packages</string>
     <string name="booking_package_includes">INCLUDES</string>
     <string name="booking_package_includes_prefix">Includes:</string>
-    <string name="booking_package_more">+ %1$d more</string>
     <string name="booking_price_from">from %1$d CZK</string>
     <string name="booking_price_per_room">+ %1$d CZK/room</string>
     <string name="details_base_price">Base price</string>
@@ -612,8 +604,6 @@
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
     <string name="booking_your_home">Your home</string>
-    <string name="booking_rooms_short">%1$d rooms</string>
-    <string name="booking_bath_short">%1$d bath</string>
     <string name="booking_search_services">Search services</string>
     <string name="booking_no_results">No services match your search</string>
     <string name="booking_cat_all">All</string>
@@ -1145,7 +1135,6 @@
     <string name="loyalty_tier_label_short_platinum">Platinum</string>
     <string name="loyalty_lifetime_points">Lifetime points</string>
     <string name="loyalty_points_unit">pts</string>
-    <string name="loyalty_bookings_completed">%1$d cleanings completed</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d points to %3$s</string>
     <string name="loyalty_max_tier_reached">You\'ve reached the top — thank you!</string>
     <string name="loyalty_current_perks_title">Your perks</string>
@@ -1183,7 +1172,6 @@
     <string name="loyalty_referral_copied_toast">Code copied</string>
     <string name="loyalty_referral_share_text">Get 150 bonus points on your first Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
     <string name="loyalty_referral_stats_empty">Be the first — share your code</string>
-    <string name="loyalty_referral_stats_waiting">%1$d friend joined — waiting on first booking</string>
     <string name="loyalty_referral_stats_qualified">%1$d friend joined · %2$d qualified</string>
     <string name="loyalty_referral_share_failed">Couldn\'t open share. Code copied to clipboard.</string>
     <string name="referral_code_field_collapsed">I have a referral code</string>
@@ -1315,4 +1303,36 @@
     <string name="notifications_bell_unread_content_description">Notifications, %1$d unread</string>
     <string name="notifications_badge_overflow">99+</string>
     <string name="dispute_evidence_encode_failed">Couldn\'t process file.</string>
+    <plurals name="booking_rooms_short">
+        <item quantity="one">%1$d room</item>
+        <item quantity="other">%1$d rooms</item>
+    </plurals>
+    <plurals name="booking_bath_short">
+        <item quantity="one">%1$d bath</item>
+        <item quantity="other">%1$d bath</item>
+    </plurals>
+    <plurals name="order_review_star_content_desc">
+        <item quantity="one">Rate %1$d star</item>
+        <item quantity="other">Rate %1$d stars</item>
+    </plurals>
+    <plurals name="loyalty_bookings_completed">
+        <item quantity="one">%1$d cleaning completed</item>
+        <item quantity="other">%1$d cleanings completed</item>
+    </plurals>
+    <plurals name="loyalty_referral_stats_waiting">
+        <item quantity="one">%1$d friend joined — waiting on first booking</item>
+        <item quantity="other">%1$d friends joined — waiting on first booking</item>
+    </plurals>
+    <plurals name="home_milestone_subtitle_v2">
+        <item quantity="one">%1$d more point to %2$s</item>
+        <item quantity="other">%1$d more points to %2$s</item>
+    </plurals>
+    <plurals name="booking_package_more">
+        <item quantity="one">+ %1$d more</item>
+        <item quantity="other">+ %1$d more</item>
+    </plurals>
+    <plurals name="orders_services_more">
+        <item quantity="one">+ %1$d more</item>
+        <item quantity="other">+ %1$d more</item>
+    </plurals>
 </resources>

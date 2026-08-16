@@ -193,7 +193,7 @@ fun ConfirmStep(
             LabeledInfoRow(
                 Icons.Outlined.Home,
                 stringResource(R.string.booking_summary_property),
-                stringResource(R.string.order_detail_rooms_bathrooms, state.rooms, state.bathrooms),
+                roomsAndBathrooms(state.rooms, state.bathrooms),
             )
             LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
             LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })

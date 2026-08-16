@@ -82,7 +82,6 @@
     <string name="rewards_next_milestone">Ещё %1$d до открытия %2$s</string>
     <string name="rewards_all_tiers_unlocked">Вы открыли все уровни — спасибо!</string>
     <string name="rewards_tiers_title">Этапы</string>
-    <string name="rewards_tier_threshold">· %1$d бронирований</string>
     <string name="rewards_tier_unlocked">Открыто</string>
     <string name="rewards_tier_regular">Постоянный</string>
     <string name="rewards_tier_regular_perk">Приоритетный перенос &amp; гид с советами по уборке</string>
@@ -95,7 +94,6 @@
     <string name="rewards_referral_subtitle">Они получат приветственный бонус, вы — дополнение бесплатно.</string>
     <string name="rewards_referral_your_code">Ваш код</string>
     <string name="rewards_referral_share">Поделиться кодом</string>
-    <string name="rewards_referral_joined">%1$d друзей присоединились</string>
     <string name="rewards_referral_no_joins">Будьте первым — поделитесь своим кодом</string>
 
     <!-- Home — address bar -->
@@ -165,9 +163,7 @@
 
     <!-- Home — milestone -->
     <string name="home_milestone_title">Прогресс к следующему уровню</string>
-    <string name="home_milestone_subtitle">Ещё %1$d бронирований до открытия следующего уровня</string>
     <string name="home_milestone_title_v2">%1$s — Прогресс к следующему уровню</string>
-    <string name="home_milestone_subtitle_v2">Ещё %1$d баллов до уровня %2$s</string>
 
     <!-- Home — seasonal -->
     <string name="home_seasonal_title">Сезон весенней уборки</string>
@@ -235,7 +231,6 @@
     <string name="orders_error_title">Не удалось загрузить заказы</string>
     <string name="orders_error_retry">Попробовать снова</string>
     <string name="orders_empty_cta">Заказать первую уборку</string>
-    <string name="orders_services_more">+ %1$d ещё</string>
 
     <!-- Order detail -->
     <string name="order_detail_title">Заказ №%1$s</string>
@@ -288,7 +283,6 @@
     <string name="order_detail_discount_tier">Скидка за лояльность применена</string>
     <string name="order_detail_discount_membership">Скидка Cleansia Plus применена</string>
     <string name="order_detail_discount_promo">Промокод применён</string>
-    <string name="order_detail_rooms_bathrooms">%1$d комнат · %2$d ванн</string>
     <string name="order_detail_duration_minutes">%1$d мин</string>
     <string name="order_detail_extras">Дополнения</string>
     <string name="order_detail_services_header">Услуги</string>
@@ -339,7 +333,6 @@
 
     <!-- Order review -->
     <string name="order_review_sheet_title">Оцените уборку</string>
-    <string name="order_review_star_content_desc">Оценить %1$d звёзд</string>
     <string name="order_review_rating_hint">Нажмите звезду для оценки</string>
     <string name="order_review_rating_1">Ужасно</string>
     <string name="order_review_rating_2">Плохо</string>
@@ -593,7 +586,6 @@
     <string name="booking_packages_featured">Рекомендуемые пакеты</string>
     <string name="booking_package_includes">ВКЛЮЧАЕТ</string>
     <string name="booking_package_includes_prefix">Включает:</string>
-    <string name="booking_package_more">+ %1$d ещё</string>
     <string name="booking_price_from">от %1$d CZK</string>
     <string name="booking_price_per_room">+ %1$d CZK/комната</string>
     <string name="details_base_price">Базовая цена</string>
@@ -601,8 +593,6 @@
     <string name="details_add_to_booking">Добавить в бронирование</string>
     <string name="details_remove_from_booking">Убрать из бронирования</string>
     <string name="booking_your_home">Ваш дом</string>
-    <string name="booking_rooms_short">%1$d комнат</string>
-    <string name="booking_bath_short">%1$d ванн</string>
     <string name="booking_search_services">Поиск услуг</string>
     <string name="booking_no_results">Нет услуг по вашему запросу</string>
     <string name="booking_cat_all">Все</string>
@@ -1119,7 +1109,6 @@
     <string name="loyalty_tier_label_short_platinum">Платина</string>
     <string name="loyalty_lifetime_points">Баллы за всё время</string>
     <string name="loyalty_points_unit">б.</string>
-    <string name="loyalty_bookings_completed">%1$d уборок завершено</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d баллов до %3$s</string>
     <string name="loyalty_max_tier_reached">Вы достигли вершины — спасибо!</string>
     <string name="loyalty_current_perks_title">Ваши преимущества</string>
@@ -1157,7 +1146,6 @@
     <string name="loyalty_referral_copied_toast">Код скопирован</string>
     <string name="loyalty_referral_share_text">Получите 150 бонусных баллов на первую уборку Cleansia! Используйте мой код %1$s при регистрации: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте первым — поделитесь кодом</string>
-    <string name="loyalty_referral_stats_waiting">%1$d друг присоединился — ждём первое бронирование</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг присоединился · %2$d квалифицированы</string>
     <string name="loyalty_referral_share_failed">Не удалось поделиться. Код скопирован в буфер.</string>
     <string name="referral_code_field_collapsed">У меня есть реферальный код</string>
@@ -1286,4 +1274,52 @@
     <string name="notifications_bell_unread_content_description">Уведомления, непрочитанных: %1$d</string>
     <string name="notifications_badge_overflow">99+</string>
     <string name="dispute_evidence_encode_failed">Не удалось обработать файл.</string>
+    <plurals name="booking_rooms_short">
+        <item quantity="one">%1$d комната</item>
+        <item quantity="few">%1$d комнаты</item>
+        <item quantity="many">%1$d комнат</item>
+        <item quantity="other">%1$d комнаты</item>
+    </plurals>
+    <plurals name="booking_bath_short">
+        <item quantity="one">%1$d ванна</item>
+        <item quantity="few">%1$d ванны</item>
+        <item quantity="many">%1$d ванн</item>
+        <item quantity="other">%1$d ванны</item>
+    </plurals>
+    <plurals name="order_review_star_content_desc">
+        <item quantity="one">Оценить %1$d звезду</item>
+        <item quantity="few">Оценить %1$d звезды</item>
+        <item quantity="many">Оценить %1$d звёзд</item>
+        <item quantity="other">Оценить %1$d звезды</item>
+    </plurals>
+    <plurals name="loyalty_bookings_completed">
+        <item quantity="one">%1$d уборка завершена</item>
+        <item quantity="few">%1$d уборки завершены</item>
+        <item quantity="many">%1$d уборок завершено</item>
+        <item quantity="other">%1$d уборки завершено</item>
+    </plurals>
+    <plurals name="loyalty_referral_stats_waiting">
+        <item quantity="one">%1$d друг присоединился — ждём первое бронирование</item>
+        <item quantity="few">%1$d друга присоединились — ждём первое бронирование</item>
+        <item quantity="many">%1$d друзей присоединились — ждём первое бронирование</item>
+        <item quantity="other">%1$d друга присоединились — ждём первое бронирование</item>
+    </plurals>
+    <plurals name="home_milestone_subtitle_v2">
+        <item quantity="one">Ещё %1$d балл до уровня %2$s</item>
+        <item quantity="few">Ещё %1$d балла до уровня %2$s</item>
+        <item quantity="many">Ещё %1$d баллов до уровня %2$s</item>
+        <item quantity="other">Ещё %1$d балла до уровня %2$s</item>
+    </plurals>
+    <plurals name="booking_package_more">
+        <item quantity="one">+ %1$d ещё</item>
+        <item quantity="few">+ %1$d ещё</item>
+        <item quantity="many">+ %1$d ещё</item>
+        <item quantity="other">+ %1$d ещё</item>
+    </plurals>
+    <plurals name="orders_services_more">
+        <item quantity="one">+ %1$d ещё</item>
+        <item quantity="few">+ %1$d ещё</item>
+        <item quantity="many">+ %1$d ещё</item>
+        <item quantity="other">+ %1$d ещё</item>
+    </plurals>
 </resources>

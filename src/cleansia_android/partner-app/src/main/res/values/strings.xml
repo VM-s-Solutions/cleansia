@@ -1348,4 +1348,7 @@
     <string name="offers_card_cta">See what\'s waiting</string>
     <string name="bank_account">Bank account</string>
     <string name="bank_account_helper">Prefix, account number and bank code.</string>
+    <string name="bank_account_prefix_placeholder">Prefix</string>
+    <string name="bank_account_number_placeholder">Account number</string>
+    <string name="bank_code_placeholder">Code</string>
 </resources>

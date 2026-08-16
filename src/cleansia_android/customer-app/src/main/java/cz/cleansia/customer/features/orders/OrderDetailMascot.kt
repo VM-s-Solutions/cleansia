@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -30,13 +31,21 @@ internal val FloatingMascotSize: Dp = 120.dp
  * The character breaking out of the sheet's top edge, following the drag and clamped under the status
  * bar so the deepest anchor cannot push it off screen.
  *
- * **The sheet position is a lambda, not a value** — read inside the offset, the drag recomposes only
- * the offset rather than the whole subtree.
+ * **It belongs to the top of the sheet CONTENT, not to the sheet.** It is drawn in the overlay — above
+ * everything, clipped by nothing — so anchoring it to the sheet's edge alone left it parked over
+ * whatever the reader scrolled underneath it: on Android it came to rest on the cleaning-details card,
+ * on iOS across the date row. Subtracting the content's scroll offset makes it travel with the block it
+ * is drawn against, and the fade retires it once that block is off screen rather than leaving it
+ * hovering at the sheet edge with unrelated content sliding beneath.
+ *
+ * **Both positions are lambdas, not values** — read inside `offset`/`graphicsLayer`, a drag or a scroll
+ * re-runs only that layer rather than recomposing the subtree.
  */
 @Composable
 internal fun OrderFloatingMascot(
     status: OrderStatus?,
     sheetTopPx: () -> Float,
+    contentScrollPx: () -> Float,
     modifier: Modifier = Modifier,
     size: Dp = FloatingMascotSize,
     rightPadding: Dp = 16.dp,
@@ -47,13 +56,22 @@ internal fun OrderFloatingMascot(
     val density = LocalDensity.current
     val sizePx = with(density) { size.toPx() }
     val statusBarPx = WindowInsets.statusBars.getTop(density).toFloat()
+    // Gone by the time the reader has scrolled past the mascot's own overlap with the sheet — half its
+    // height, the part that was ever over content in the first place.
+    val fadeDistancePx = sizePx / 2f
 
     Box(
         modifier = modifier
             .padding(end = rightPadding)
             .offset {
-                val y = (sheetTopPx() - sizePx / 2f).coerceAtLeast(statusBarPx)
-                IntOffset(x = 0, y = y.roundToInt())
+                // The clamp keeps the sheet's own drag from pushing the mascot under the status bar. The
+                // scroll is applied AFTER it, on purpose: scrolling should be able to carry the mascot
+                // off the top of the screen, which is the whole point of it not being sticky.
+                val restingY = (sheetTopPx() - sizePx / 2f).coerceAtLeast(statusBarPx)
+                IntOffset(x = 0, y = (restingY - contentScrollPx()).roundToInt())
+            }
+            .graphicsLayer {
+                alpha = (1f - contentScrollPx() / fadeDistancePx).coerceIn(0f, 1f)
             }
             .size(size),
     ) {

@@ -35,13 +35,6 @@ enum LiveProgress {
         }
     }
 
-    /// Whether the hero shows the live "in-progress" treatment (mascot +
-    /// progress bar) — only for active statuses (`liveHero` in
-    /// `OrderDetailScreen.kt`).
-    static func usesLiveHero(_ status: OrderStatus?) -> Bool {
-        OrderStatusGroup.isActive(status)
-    }
-
     /// Progress fraction (0…0.97) since the InProgress entry was recorded vs the
     /// estimated duration. Returns nil when either anchor is missing — never a
     /// guess (`computeInProgressProgress` in `LiveProgressHero.kt`).

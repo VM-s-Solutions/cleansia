@@ -1320,4 +1320,7 @@
     <string name="offers_card_cta">Посмотреть, что ждёт</string>
     <string name="bank_account">Банковский счёт</string>
     <string name="bank_account_helper">Префикс, номер счёта и код банка.</string>
+    <string name="bank_account_prefix_placeholder">Префикс</string>
+    <string name="bank_account_number_placeholder">Номер счёта</string>
+    <string name="bank_code_placeholder">Код</string>
 </resources>

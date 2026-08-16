@@ -30,8 +30,6 @@ struct LiveProgressHero: View {
             if status == ._4 {
                 progressBar
             }
-
-            StepIndicator(activeStep: LiveProgress.activeStep(for: status))
         }
         .padding(Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,6 +73,8 @@ struct LiveProgressHero: View {
             cleanerName.map(L10n.OrderDetail.headlineOnTheWayNamed) ?? L10n.OrderDetail.headlineOnTheWay
         case ._4:
             cleanerName.map(L10n.OrderDetail.headlineInProgressNamed) ?? L10n.OrderDetail.headlineInProgress
+        case ._5:
+            L10n.OrderDetail.headlineCompleted
         default:
             L10n.OrderDetail.headlineDefault
         }
@@ -89,42 +89,6 @@ struct LiveProgressHero: View {
                 ? L10n.OrderDetail.subheadInProgressEta(order.estimatedMinutes)
                 : L10n.OrderDetail.subheadInProgress
         default: nil
-        }
-    }
-}
-
-private struct StepIndicator: View {
-    let activeStep: LiveProgressStep?
-
-    private var activeIndex: Int {
-        activeStep?.rawValue ?? -1
-    }
-
-    var body: some View {
-        VStack(spacing: Spacing.xs) {
-            HStack(spacing: Spacing.xxs) {
-                ForEach(LiveProgressStep.allCases, id: \.self) { step in
-                    Circle()
-                        .fill(step.rawValue <= activeIndex ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                        .frame(width: 10, height: 10)
-                    if step != LiveProgressStep.allCases.last {
-                        Rectangle()
-                            .fill(step.rawValue < activeIndex ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                            .frame(height: 2)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            HStack(spacing: 0) {
-                ForEach(LiveProgressStep.allCases, id: \.self) { step in
-                    Text(step.label)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(step.rawValue == activeIndex ? CleansiaColors.primary : CleansiaColors
-                            .onSurfaceVariant)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-            }
         }
     }
 }

@@ -1335,4 +1335,7 @@
     <string name="offers_card_cta">Zobrazit, co čeká</string>
     <string name="bank_account">Bankovní účet</string>
     <string name="bank_account_helper">Předčíslí, číslo účtu a kód banky.</string>
+    <string name="bank_account_prefix_placeholder">Předčíslí</string>
+    <string name="bank_account_number_placeholder">Číslo účtu</string>
+    <string name="bank_code_placeholder">Kód</string>
 </resources>

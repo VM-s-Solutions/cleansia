@@ -150,7 +150,12 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
     /// Preferred entries arrive region/script-qualified ("cs-CZ", "zh-Hant-TW");
     /// the supported set is bare language codes, so they must be narrowed before
     /// matching. The split covers identifiers `Locale` refuses to parse.
-    private static func bareLanguageCode(_ tag: String) -> String? {
+    ///
+    /// Public because server-side translation maps are keyed the same way — bare `"cs"`, never
+    /// `"cs-CZ"` — so anything looking one up off a device locale needs exactly this narrowing.
+    /// Matching without it silently never hits, which is how the country pickers ended up rendering
+    /// English names on an otherwise translated screen.
+    public static func bareLanguageCode(_ tag: String) -> String? {
         let trimmed = tag.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         if let code = Locale(identifier: trimmed).language.languageCode?.identifier, !code.isEmpty {

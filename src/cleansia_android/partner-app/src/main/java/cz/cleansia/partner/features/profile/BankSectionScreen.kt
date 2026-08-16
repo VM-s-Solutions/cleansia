@@ -48,7 +48,7 @@ fun BankSectionScreen(
     ) {
         val form = (uiState as? BankSectionUiState.Loaded)?.form ?: BankForm()
         val countryOptions = form.countries.map { country ->
-            country.id.orEmpty() to (country.name ?: country.isoCode ?: country.id.orEmpty())
+            country.id.orEmpty() to country.localizedName()
         }
 
         FormSectionCard(title = stringResource(R.string.bank_details)) {
@@ -70,6 +70,9 @@ fun BankSectionScreen(
                 onNumberChange = viewModel::onAccountNumberChange,
                 onBankCodeChange = viewModel::onBankCodeChange,
                 label = stringResource(R.string.bank_account),
+                prefixPlaceholder = stringResource(R.string.bank_account_prefix_placeholder),
+                numberPlaceholder = stringResource(R.string.bank_account_number_placeholder),
+                bankCodePlaceholder = stringResource(R.string.bank_code_placeholder),
                 helper = stringResource(R.string.bank_account_helper),
                 enabled = !saving,
             )

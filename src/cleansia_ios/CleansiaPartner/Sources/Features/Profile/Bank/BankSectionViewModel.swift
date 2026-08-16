@@ -136,7 +136,7 @@ final class BankSectionViewModel: ViewModel {
 
     private static func option(_ country: CountryListItem) -> CleansiaDropdownOption? {
         guard let id = country.id else { return nil }
-        return CleansiaDropdownOption(id: id, label: country.name ?? country.isoCode ?? id)
+        return CleansiaDropdownOption(id: id, label: country.localizedName())
     }
 }
 

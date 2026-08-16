@@ -252,7 +252,7 @@ class OrderDetailViewModel @Inject constructor(
 
             // Whenever a fresh detail comes in, re-evaluate whether to keep the
             // background status poller running. Active orders (Confirmed /
-            // InProgress) get a quiet 30s tick so the LiveProgressHero stays
+            // InProgress) get a quiet 30s tick so the sheet's hero card stays
             // current without the user pulling to refresh; everything else
             // cancels the poller so we don't burn battery on a finished order.
             evaluateAutoRefresh()
@@ -277,7 +277,7 @@ class OrderDetailViewModel @Inject constructor(
      * can no longer disagree — they did: the loop compared the raw wire value
      * against `listOf(2, 3)` and so killed itself the moment the cleaner
      * started work (InProgress = 4), which is exactly the stretch the
-     * LiveProgressHero needs fresh data for. Nothing re-armed it afterwards.
+     * hero card needs fresh data for. Nothing re-armed it afterwards.
      */
     private fun isPollableStatus(statusValue: Int?): Boolean =
         when (orderStatusFromValue(statusValue)) {

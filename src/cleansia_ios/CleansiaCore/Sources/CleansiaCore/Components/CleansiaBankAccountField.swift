@@ -14,6 +14,12 @@ import SwiftUI
 /// server-side, each with its own validation, and joining them here would mean splitting them again on
 /// save — a round trip that can only lose information.
 ///
+/// **Each segment carries its own placeholder**, because one border around three boxes removes the only
+/// other cue for which box is which. Czech online banking (Raiffeisen among them) names all three in
+/// place; without that, an empty control is three anonymous gaps around a dash and a slash. The segment
+/// widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
+/// clipped to "Předčí…" answers nothing.
+///
 /// Twins: `cleansia-bank-account` (web) and `CleansiaBankAccountInput` (Android). Keep the three in step.
 public struct CleansiaBankAccountField: View {
     /// Czech account maxima — prefix 6 digits, number 10, bank code 4.
@@ -26,6 +32,9 @@ public struct CleansiaBankAccountField: View {
     @Binding private var bankCode: String
 
     private let label: String
+    private let prefixPlaceholder: String
+    private let numberPlaceholder: String
+    private let bankCodePlaceholder: String
     private let helper: String?
     private let errorText: String?
     private let enabled: Bool
@@ -41,6 +50,9 @@ public struct CleansiaBankAccountField: View {
         number: Binding<String>,
         bankCode: Binding<String>,
         label: String,
+        prefixPlaceholder: String = "",
+        numberPlaceholder: String = "",
+        bankCodePlaceholder: String = "",
         helper: String? = nil,
         errorText: String? = nil,
         enabled: Bool = true
@@ -49,6 +61,9 @@ public struct CleansiaBankAccountField: View {
         _number = number
         _bankCode = bankCode
         self.label = label
+        self.prefixPlaceholder = prefixPlaceholder
+        self.numberPlaceholder = numberPlaceholder
+        self.bankCodePlaceholder = bankCodePlaceholder
         self.helper = helper
         self.errorText = errorText
         self.enabled = enabled
@@ -74,20 +89,23 @@ public struct CleansiaBankAccountField: View {
                 .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
 
             HStack(spacing: 0) {
-                // Prefix is right-aligned and narrow: it is optional and usually empty, so
-                // left-aligning it would leave a gap before the dash and break the account's shape.
+                // Prefix is right-aligned: it is optional and usually empty, so left-aligning it would
+                // leave a gap before the dash and break the account's shape. Its width is set by the
+                // longest placeholder we ship ("Predčíslie"), not by its six digits.
                 segment(
                     text: $prefix,
+                    placeholder: prefixPlaceholder,
                     maxLength: Self.prefixMaxLength,
                     focus: .prefix,
                     alignment: .trailing
                 )
-                .frame(width: 56)
+                .frame(width: 76)
 
                 separator("–")
 
                 segment(
                     text: $number,
+                    placeholder: numberPlaceholder,
                     maxLength: Self.numberMaxLength,
                     focus: .number,
                     alignment: .leading
@@ -98,11 +116,12 @@ public struct CleansiaBankAccountField: View {
 
                 segment(
                     text: $bankCode,
+                    placeholder: bankCodePlaceholder,
                     maxLength: Self.bankCodeMaxLength,
                     focus: .bankCode,
                     alignment: .leading
                 )
-                .frame(width: 44)
+                .frame(width: 52)
             }
             .padding(.horizontal, Spacing.m)
             .frame(minHeight: 56)
@@ -122,13 +141,27 @@ public struct CleansiaBankAccountField: View {
         }
     }
 
+    /// The placeholder is drawn as an overlay rather than passed to `TextField`, so it can carry its own
+    /// (smaller) font — the segments are narrow and the system placeholder inherits `bodyLarge`, which
+    /// clips "Predčíslie". It stays visible while the segment is empty and focused: the person is mid-way
+    /// through an account number, and "which box am I in" is exactly what a caret does not answer.
     private func segment(
         text: Binding<String>,
+        placeholder: String,
         maxLength: Int,
         focus: Segment,
         alignment: TextAlignment
     ) -> some View {
         TextField("", text: text)
+            .background(alignment: alignment == .trailing ? .trailing : .leading) {
+                if text.wrappedValue.isEmpty, !placeholder.isEmpty {
+                    Text(placeholder)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .lineLimit(1)
+                        .allowsHitTesting(false)
+                }
+            }
             .keyboardType(.numberPad)
             .textContentType(nil)
             .multilineTextAlignment(alignment)

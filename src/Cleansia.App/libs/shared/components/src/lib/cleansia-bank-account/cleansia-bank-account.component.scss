@@ -47,20 +47,22 @@
       opacity: 0.6;
     }
 
-    // Widths are proportional to the Czech format's own maxima — prefix 6, number 10, bank code 4 —
-    // so the control reads as an account number rather than three equal boxes.
+    // Widths track the Czech format's own maxima — prefix 6, number 10, bank code 4 — so the control
+    // reads as an account number rather than three equal boxes. The two fixed segments are then sized
+    // to their PLACEHOLDER rather than their digits, because a hint clipped to "Předčí…" answers
+    // nothing; `ch` is the digit width, and the hints are proportional text, hence the headroom.
     &--prefix {
-      flex: 0 1 5.5ch;
+      flex: 0 0 9ch;
       padding-left: var(--p-inputtext-padding-x, 0.75rem);
       text-align: right;
     }
 
     &--number {
-      flex: 1 1 10ch;
+      flex: 1 1 12ch;
     }
 
     &--bank-code {
-      flex: 0 1 4.5ch;
+      flex: 0 0 5ch;
       padding-right: var(--p-inputtext-padding-x, 0.75rem);
     }
   }

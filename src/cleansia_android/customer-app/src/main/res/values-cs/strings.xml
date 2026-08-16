@@ -1325,4 +1325,11 @@
         <item quantity="many">+ %1$d dalších</item>
         <item quantity="other">+ %1$d dalších</item>
     </plurals>
+    <string name="order_detail_headline_completed">Úklid dokončen</string>
+    <string name="tracker_step_counter">Krok %1$d / %2$d</string>
+    <string name="tracker_countdown_starts_in">Začíná za %1$s</string>
+    <string name="tracker_arriving_at">Příjezd %1$s</string>
+    <string name="tracker_completed_in">Hotovo za %1$s</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_minutes_only">%1$d min</string>
 </resources>

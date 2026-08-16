@@ -130,7 +130,9 @@ class AddressSectionViewModel @Inject constructor(
                     // through the cached countries list when present,
                     // normalising the backend's alpha-3 to the alpha-2
                     // form GeocodedAddress promises.
-                    val countryName = countries.firstOrNull { it.id == e.countryId }?.name.orEmpty()
+                    val countryName = countries.firstOrNull { it.id == e.countryId }
+                        ?.localizedName()
+                        .orEmpty()
                     val countryIso = IsoCountryCodes.toAlpha2(
                         countries.firstOrNull { it.id == e.countryId }?.isoCode,
                     )

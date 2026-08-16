@@ -258,6 +258,14 @@ extension L10n {
             localized("order_detail_headline_default")
         }
 
+        static var headlineCompleted: String {
+            localized("order_detail_headline_completed")
+        }
+
+        static func trackerStepCounter(_ step: Int, _ total: Int) -> String {
+            format("tracker_step_counter", step, total)
+        }
+
         static var subheadConfirmed: String {
             localized("order_detail_subhead_confirmed")
         }

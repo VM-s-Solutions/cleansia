@@ -25,37 +25,20 @@
           formControlName="bankCountryId"
         />
       </div>
-      <div class="cleansia-profile__field">
-        <cleansia-text-input
-          [label]="'pages.profile.bank_account_prefix' | translate"
-          [floatVariant]="'on'"
-          formControlName="accountPrefix"
-          dataType="text"
+      <!-- One control, three segments. The account is a single thing to the person typing it, so the
+           three columns it is stored in are not three boxes to fill. -->
+      <div class="cleansia-profile__field cleansia-profile__field--full">
+        <cleansia-bank-account
+          [label]="'pages.profile.bank_account' | translate"
+          [prefix]="facade.formGroup.controls.accountPrefix"
+          [number]="facade.formGroup.controls.accountNumber"
+          [bankCode]="facade.formGroup.controls.bankCode"
+          [prefixLabel]="'pages.profile.bank_account_prefix' | translate"
+          [numberLabel]="'pages.profile.bank_account_number' | translate"
+          [bankCodeLabel]="'pages.profile.bank_code' | translate"
         />
         <small class="cleansia-profile__field-hint">
-          {{ 'pages.profile.bank_account_prefix_hint' | translate }}
-        </small>
-      </div>
-      <div class="cleansia-profile__field">
-        <cleansia-text-input
-          [label]="'pages.profile.bank_account_number' | translate"
-          [floatVariant]="'on'"
-          formControlName="accountNumber"
-          dataType="text"
-        />
-        <small class="cleansia-profile__field-hint">
-          {{ 'pages.profile.bank_account_number_hint' | translate }}
-        </small>
-      </div>
-      <div class="cleansia-profile__field">
-        <cleansia-text-input
-          [label]="'pages.profile.bank_code' | translate"
-          [floatVariant]="'on'"
-          formControlName="bankCode"
-          dataType="text"
-        />
-        <small class="cleansia-profile__field-hint">
-          {{ 'pages.profile.bank_code_hint' | translate }}
+          {{ 'pages.profile.bank_account_hint' | translate }}
         </small>
       </div>
       <div class="cleansia-profile__field">

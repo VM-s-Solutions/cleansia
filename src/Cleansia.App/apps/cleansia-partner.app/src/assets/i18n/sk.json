@@ -177,7 +177,9 @@
       "job_radius_limit": "Upozorňovať len na zákazky v okolí",
       "job_radius_off_hint": "Budeme vás upozorňovať na každú novú zákazku vo vašej krajine.",
       "job_radius_distance": "Vzdialenosť od domova (km)",
-      "job_radius_distance_hint": "Medzi {{min}} a {{max}} km."
+      "job_radius_distance_hint": "Medzi {{min}} a {{max}} km.",
+      "bank_account": "Bankový účet",
+      "bank_account_hint": "Predčíslie, číslo účtu a kód banky — vložte celý účet a rozdelí sa sám."
     },
     "dashboard": {
       "title": "Prehľad",

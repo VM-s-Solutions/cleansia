@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+// One bordered control, three segments. The border belongs to the WRAPPER and never to a segment —
+// that is the whole illusion: three inputs the user reads as one account number.
+.cleansia-bank-account {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--p-inputtext-border-color, #d1d5db);
+  border-radius: var(--p-inputtext-border-radius, 6px);
+  background: var(--p-inputtext-background, #ffffff);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--p-inputtext-hover-border-color, #94a3b8);
+  }
+
+  // Focus is drawn on the WRAPPER, not the focused segment, or the ring would cut the control into
+  // thirds and undo the grouping.
+  &--focused {
+    border-color: var(--p-inputtext-focus-border-color, var(--p-primary-color, #3b82f6));
+    box-shadow: var(--p-inputtext-focus-ring-shadow, 0 0 0 0.2rem rgba(59, 130, 246, 0.2));
+  }
+
+  &--invalid {
+    border-color: var(--p-inputtext-invalid-border-color, #e24c4c);
+  }
+
+  &__segment {
+    border: none;
+    outline: none;
+    background: transparent;
+    min-width: 0;
+    padding: var(--p-inputtext-padding-y, 0.5rem) 0;
+    color: var(--p-inputtext-color, #334155);
+    font-size: var(--p-inputtext-font-size, 1rem);
+    font-variant-numeric: tabular-nums;
+
+    &::placeholder {
+      color: var(--p-inputtext-placeholder-color, #94a3b8);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+
+    // Widths are proportional to the Czech format's own maxima — prefix 6, number 10, bank code 4 —
+    // so the control reads as an account number rather than three equal boxes.
+    &--prefix {
+      flex: 0 1 5.5ch;
+      padding-left: var(--p-inputtext-padding-x, 0.75rem);
+      text-align: right;
+    }
+
+    &--number {
+      flex: 1 1 10ch;
+    }
+
+    &--bank-code {
+      flex: 0 1 4.5ch;
+      padding-right: var(--p-inputtext-padding-x, 0.75rem);
+    }
+  }
+
+  // The separators are the format, so they are rendered rather than typed: a customer copying
+  // "19-2000145399/0800" off a statement should not have to decide where the dash goes.
+  &__separator {
+    padding: 0 0.35rem;
+    color: var(--p-inputtext-placeholder-color, #94a3b8);
+    user-select: none;
+  }
+}

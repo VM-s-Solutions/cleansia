@@ -1718,10 +1718,13 @@ Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with ca
 - **The 7-state `OrderStatus` (open risk) — map EXACTLY (`OrderEnums.kt:11`):** `New=0·Pending=1·Confirmed=2·**OnTheWay=3**·
   InProgress=4·Completed=5·Cancelled=6`. The generated `OrderStatus` enum is `_0…_6` (raw == backend int); read the read-path
   `Code` envelope through the **one** `Code.toOrderStatus()` extension (`value.flatMap(OrderStatus.init(rawValue:))`) — never a raw
-  `.value == N` compare. **Do NOT use the CLAUDE.md 6-state lifecycle (it omits OnTheWay)** — the timeline/LiveProgressHero/status
-  labels MUST handle all 7 or OnTheWay orders render wrong. The LiveProgressHero step indicator is **5 steps** (Booked·Accepted·On
-  the way·Started·Finished) with the active index from a pure `LiveProgress.activeStep(for:)` (the `LiveProgressHero.kt:296-303`
+  `.value == N` compare. **Do NOT use the CLAUDE.md 6-state lifecycle (it omits OnTheWay)** — the timeline/hero/status
+  labels MUST handle all 7 or OnTheWay orders render wrong. The order-detail tracker is **5 steps** (Booked·Accepted·On
+  the way·Started·Finished) with the active index from a pure `LiveProgress.activeStep(for:)` (the `OrderDetailHeader.kt:301-307`
   table — strict-TDD'd, esp. that `_3` is its own `.onTheWay` step, not folded into InProgress). Status labels are `.xcstrings` ×5.
+  The two heroes were merged in 2026-08: one `OrderStatusHero` serves every status on both platforms and the step indicator it
+  used to carry is now the shared `OrderTrackerBar` (`:core` / `CleansiaCore`), which takes a step INDEX because the two apps do
+  not share a status type.
 - **The paged Orders list** is a sealed `UiState<[OrderListItem]>` + `RefreshPhase` (PTR binds `.userRefreshing`; on-appear refresh is
   `.backgroundRefreshing`) over a `@Singleton`-parity **`OrderRepository`** (an injected `@MainActor` class registered in the
   `SessionScopedCacheRegistry`) that owns the list cache + **ADDITIVE** pagination (`refresh()` replaces page 0, `loadNextPage()`

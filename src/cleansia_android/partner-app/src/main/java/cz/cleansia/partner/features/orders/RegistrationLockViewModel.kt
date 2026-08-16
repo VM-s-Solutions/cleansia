@@ -183,10 +183,19 @@ class RegistrationLockViewModel @Inject constructor(
      * First-ever entry (lastFetchedAt == null) is treated as stale by
      * [Staleness.isStale], so the initial load still happens here and
      * the screen's centered spinner kicks in while hasLoadedOnce=false.
+     *
+     * **A fresh watermark alone may not suppress the fetch.** The repository stores the WATERMARK, not
+     * the status — `getRegistrationStatus()` is the only way to obtain one, and nothing refills
+     * [RegistrationLockUiState.status] when the fetch is skipped. The watermark outlives this view
+     * model, so re-entering onboarding inside the 15s window guarded out of the fetch and left the
+     * screen on its centered spinner with `status == null`, with pull-to-refresh the only way out.
+     * Hence [holdsStatus]: "fresh" is only allowed to mean "what the fetch would give us is already
+     * here". Same rule as `OrdersListViewModel.ensureFreshOrCachedAsync`.
      */
     private fun ensureFreshOrCachedAsync() {
+        val holdsStatus = _uiState.value.status != null
         val staleness = profileRepository.getRegistrationStatusStaleness()
-        if (!staleness.isStale(STALE_WINDOW_MS)) return
+        if (holdsStatus && !staleness.isStale(STALE_WINDOW_MS)) return
         viewModelScope.launch { fetchRegistrationStatus(userInitiated = false) }
     }
 

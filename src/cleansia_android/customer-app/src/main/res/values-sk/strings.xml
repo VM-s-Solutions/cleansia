@@ -1322,4 +1322,6 @@
         <item quantity="many">+ %1$d ďalšej</item>
         <item quantity="other">+ %1$d ďalších</item>
     </plurals>
+    <string name="order_detail_headline_completed">Upratovanie dokončené</string>
+    <string name="tracker_step_counter">Krok %1$d / %2$d</string>
 </resources>

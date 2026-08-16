@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -46,6 +46,12 @@ private const val BankCodeMaxLength = 4
  * columns server-side, each with its own validation, and joining them here would mean splitting them
  * again on save — a round trip that can only lose information.
  *
+ * **Each segment carries its own placeholder**, because one border around three boxes removes the only
+ * other cue for which box is which. Czech online banking (Raiffeisen among them) names all three in
+ * place; without that, an empty control is three anonymous gaps around a dash and a slash. The segment
+ * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
+ * clipped to "Předčí…" answers nothing.
+ *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
 @Composable
@@ -58,6 +64,9 @@ fun CleansiaBankAccountInput(
     onBankCodeChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    prefixPlaceholder: String? = null,
+    numberPlaceholder: String? = null,
+    bankCodePlaceholder: String? = null,
     helper: String? = null,
     errorText: String? = null,
     enabled: Boolean = true,
@@ -100,15 +109,17 @@ fun CleansiaBankAccountInput(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
-            // Prefix is right-aligned and narrow: it is optional and usually empty, so left-aligning it
-            // would leave a gap before the dash and break the account's shape.
+            // Every segment reads from the left, placeholder and digits alike. Right-aligning the
+            // prefix kept its digits against the dash, but it also right-aligned its hint, so the three
+            // labels in an empty control started at three different places. Its width is set by the
+            // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
                 onValueChange = { onPrefixChange(it.filter(Char::isDigit).take(PrefixMaxLength)) },
                 interactionSource = prefixInteraction,
                 enabled = enabled,
-                modifier = Modifier.width(56.dp),
-                textAlign = TextAlign.End,
+                placeholder = prefixPlaceholder,
+                modifier = Modifier.width(76.dp),
             )
             Separator("–")
             AccountSegment(
@@ -116,6 +127,7 @@ fun CleansiaBankAccountInput(
                 onValueChange = { onNumberChange(it.filter(Char::isDigit).take(NumberMaxLength)) },
                 interactionSource = numberInteraction,
                 enabled = enabled,
+                placeholder = numberPlaceholder,
                 modifier = Modifier.weight(1f),
             )
             Separator("/")
@@ -124,7 +136,8 @@ fun CleansiaBankAccountInput(
                 onValueChange = { onBankCodeChange(it.filter(Char::isDigit).take(BankCodeMaxLength)) },
                 interactionSource = bankCodeInteraction,
                 enabled = enabled,
-                modifier = Modifier.width(44.dp),
+                placeholder = bankCodePlaceholder,
+                modifier = Modifier.width(52.dp),
             )
         }
 
@@ -139,6 +152,11 @@ fun CleansiaBankAccountInput(
     }
 }
 
+/**
+ * One segment. The placeholder stays on screen while the segment is empty — including while it is
+ * focused — because the person is mid-way through an account number and "which box am I in" is exactly
+ * the question a caret does not answer.
+ */
 @Composable
 private fun AccountSegment(
     value: String,
@@ -146,7 +164,7 @@ private fun AccountSegment(
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Start,
+    placeholder: String? = null,
 ) {
     BasicTextField(
         value = value,
@@ -158,10 +176,23 @@ private fun AccountSegment(
         textStyle = LocalTextStyle.current.copy(
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp,
-            textAlign = textAlign,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        decorationBox = { innerTextField ->
+            Box(contentAlignment = Alignment.CenterStart) {
+                if (value.isEmpty() && !placeholder.isNullOrBlank()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                innerTextField()
+            }
+        },
     )
 }
 

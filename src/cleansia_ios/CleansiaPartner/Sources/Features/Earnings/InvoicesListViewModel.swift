@@ -29,8 +29,12 @@ final class InvoicesListViewModel: ViewModel {
         await fetch(phase: .userRefreshing)
     }
 
+    /// **A warm watermark alone may not suppress the fetch.** `InvoicesStaleness` is built once in
+    /// `PartnerAppContainer` and outlives this view model, whose `state` is rebuilt at `.loading` every
+    /// time `InvoicesListView` is. Guarding on the watermark alone therefore left a fresh view model
+    /// spinning with nothing on the way. Same rule as `OrdersListViewModel.ensureFreshOrCached`.
     private func ensureFreshOrCached() async {
-        guard staleness.isStale else { return }
+        guard state.loadedValue == nil || staleness.isStale else { return }
         await fetch(phase: .backgroundRefreshing)
     }
 

@@ -57,7 +57,7 @@ fun IdentificationSectionScreen(
     LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
     val countryOptions = form.countries.map { country ->
-        country.id.orEmpty() to (country.name ?: country.isoCode ?: country.id.orEmpty())
+        country.id.orEmpty() to country.localizedName()
     }
 
     SectionScaffold(

@@ -188,27 +188,53 @@ struct OrderHeroFactsStrip: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-            if let code = facts.confirmationCode {
-                Text(L10n.OrderDetail.codeLabel)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                Text(code)
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                if let code = facts.confirmationCode {
+                    Text(L10n.OrderDetail.codeLabel)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Text(code)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
+                Spacer(minLength: Spacing.xs)
+                Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
+                    .foregroundColor(CleansiaColors.primary)
+                if let struck = facts.struckSubtotal {
+                    Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
+                        .font(CleansiaTypography.labelSmall)
+                        .strikethrough()
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
             }
-            Spacer(minLength: Spacing.xs)
-            Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.primary)
-            if let struck = facts.struckSubtotal {
-                Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.labelSmall)
-                    .strikethrough()
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+
+            // What the struck-through price is explained by. The breakdown card further down names each
+            // source with its amount, but that is several screens of scrolling away from the number it
+            // accounts for — the chip answers "why is this cheaper" where the question is asked.
+            if facts.struckSubtotal != nil, !facts.discountChips.isEmpty {
+                HStack(spacing: Spacing.xs) {
+                    ForEach(facts.discountChips, id: \.self) { source in
+                        OrderDiscountChip(label: L10n.OrderDetail.discountLabel(source))
+                    }
+                }
             }
         }
         .padding(.horizontal, Spacing.xs)
+    }
+}
+
+struct OrderDiscountChip: View {
+    let label: String
+
+    var body: some View {
+        Text(label)
+            .font(CleansiaTypography.labelSmall)
+            .foregroundColor(CleansiaColors.onSecondaryContainer)
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.xxs)
+            .background(CleansiaColors.secondaryContainer, in: Capsule())
     }
 }
 

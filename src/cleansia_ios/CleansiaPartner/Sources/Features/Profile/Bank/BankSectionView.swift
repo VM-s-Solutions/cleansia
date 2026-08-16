@@ -110,6 +110,9 @@ struct BankFormFields: View {
                 number: $accountNumber,
                 bankCode: $bankCode,
                 label: L10n.Profile.bankAccount,
+                prefixPlaceholder: L10n.Profile.bankAccountPrefixPlaceholder,
+                numberPlaceholder: L10n.Profile.bankAccountNumberPlaceholder,
+                bankCodePlaceholder: L10n.Profile.bankCodePlaceholder,
                 helper: L10n.Profile.bankAccountHelper,
                 enabled: enabled
             )

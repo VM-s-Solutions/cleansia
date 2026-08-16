@@ -129,6 +129,27 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertEqual(client.getPagedCallCount, 1)
     }
 
+    /// THE REGRESSION. The two tests around this one re-enter on the SAME view model, whose `paneState`
+    /// still holds the rows — so skipping is right there. In the app the view model does not survive:
+    /// `OrdersStaleness` is built once in `PartnerAppContainer` and lives as long as the process, while
+    /// `OrdersListView` rebuilds its `@StateObject` and every pane starts at `.loading`. Guarding on the
+    /// watermark alone therefore left a fresh view model spinning with nothing on the way, and only a
+    /// pull-to-refresh could end it.
+    func testAFreshViewModelLoadsEvenWhenTheWatermarkIsStillWarm() async {
+        client.pagedResult = .success([.sample(id: "o1")])
+        let warm = makeVM()
+        await warm.onAppear()
+        XCTAssertEqual(client.getPagedCallCount, 1)
+
+        // Same staleness object, brand-new view model — exactly what re-entering the tab does.
+        let reentered = makeVM()
+        XCTAssertTrue(reentered.currentState.isLoading)
+        await reentered.onAppear()
+
+        XCTAssertEqual(client.getPagedCallCount, 2, "the fresh view model never fetched")
+        XCTAssertEqual(reentered.currentState.loadedValue?.map(\.id), ["o1"])
+    }
+
     func testStaleCacheRefetchesOnReentry() async {
         client.pagedResult = .success([.sample(id: "o1")])
         let vm = makeVM()

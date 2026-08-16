@@ -1322,4 +1322,6 @@
         <item quantity="many">+ %1$d ще</item>
         <item quantity="other">+ %1$d ще</item>
     </plurals>
+    <string name="order_detail_headline_completed">Прибирання завершено</string>
+    <string name="tracker_step_counter">Крок %1$d / %2$d</string>
 </resources>

@@ -48,6 +48,14 @@ export class CleansiaBankAccountComponent {
   readonly prefixLabel = input<string>('');
   readonly numberLabel = input<string>('');
   readonly bankCodeLabel = input<string>('');
+
+  // In-field hints, separate from the aria labels above. One border around three boxes removes the
+  // only other cue for which box is which, so an empty control without these is three anonymous gaps
+  // around a dash and a slash. They are their own strings rather than the labels reused because the
+  // labels are full ("Account prefix", "Номер рахунку") and the segments are sized in `ch`.
+  readonly prefixPlaceholder = input<string>('');
+  readonly numberPlaceholder = input<string>('');
+  readonly bankCodePlaceholder = input<string>('');
   readonly floatVariant = input<'on' | 'in' | 'over'>('on');
   readonly id = input<string>(`cleansia-bank-account-${Math.random().toString(36).slice(2, 9)}`);
 
@@ -65,6 +73,25 @@ export class CleansiaBankAccountComponent {
 
   protected onBlur(): void {
     this.focused.set(false);
+  }
+
+  /**
+   * Drives PrimeNG's `.p-floatlabel:has(input.p-filled) label` rule by hand.
+   *
+   * PrimeNG floats the label on `input:focus`, `input.p-filled` or an autofill — and `.p-filled` is
+   * put there by its own `InputText` directive, which these segments deliberately do not use (the
+   * border belongs to the wrapper). So without this the label floats on focus and drops back over the
+   * typed digits on blur, and once there are placeholders it would sit on top of them permanently.
+   *
+   * Placeholders count as content for this purpose: they occupy the same space the resting label
+   * would, so the label has to be out of the way whenever they are on screen.
+   */
+  protected filled(): boolean {
+    return (
+      [this.prefixPlaceholder(), this.numberPlaceholder(), this.bankCodePlaceholder()].some(
+        (hint) => hint !== ''
+      ) || [this.prefix(), this.number(), this.bankCode()].some((control) => control.value !== '')
+    );
   }
 
   /**

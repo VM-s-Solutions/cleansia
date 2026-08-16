@@ -205,11 +205,18 @@ final class OrdersListViewModel: ViewModel {
         }
     }
 
-    /// Skip the network when the pane's cache is warm (no-flash resume); else a
-    /// silent background fetch (the `ensureFreshOrCachedAsync` parity). User
-    /// pulls go through `userRefresh`, never here.
+    /// Skip the network when this view model is already showing the pane's rows AND its watermark is
+    /// warm (no-flash resume); else a silent background fetch. User pulls go through `userRefresh`,
+    /// never here.
+    ///
+    /// **A warm watermark alone is not enough to skip.** `OrdersStaleness` is built once in
+    /// `PartnerAppContainer` and lives as long as the app, while `paneState` is rebuilt with every
+    /// `OrdersListView` and starts every pane at `.loading`. So re-entering the tab inside the freshness
+    /// window guarded out of the fetch and left all three panes spinning, with pull-to-refresh the only
+    /// way out. `OrdersListViewModel.kt` carries the same rule for the same reason.
     private func ensureFreshOrCached(_ pane: OrdersPane, background: Bool) async {
-        guard staleness.isPaneStale(pane) else { return }
+        let holdsRows = paneState[pane]?.loadedValue != nil
+        guard !holdsRows || staleness.isPaneStale(pane) else { return }
         await fetch(pane, phase: background ? .backgroundRefreshing : .userRefreshing)
     }
 

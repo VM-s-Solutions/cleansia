@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -27,16 +28,24 @@ import kotlin.math.roundToInt
 internal val FloatingMascotSize: Dp = 120.dp
 
 /**
- * The character breaking out of the sheet's top edge, following the drag and clamped under the status
- * bar so the deepest anchor cannot push it off screen.
+ * The character breaking out of the sheet's top edge, following the drag and the scroll and fading out
+ * rather than ever coming to rest.
  *
- * **The sheet position is a lambda, not a value** — read inside the offset, the drag recomposes only
- * the offset rather than the whole subtree.
+ * **It belongs to the top of the sheet CONTENT, not to the sheet.** It is drawn in the overlay — above
+ * everything, clipped by nothing — so anchoring it to the sheet's edge alone left it parked over
+ * whatever the reader scrolled underneath it: on Android it came to rest on the cleaning-details card,
+ * on iOS across the date row. Subtracting the content's scroll offset makes it travel with the block it
+ * is drawn against, and the fade retires it once that block is off screen rather than leaving it
+ * hovering at the sheet edge with unrelated content sliding beneath.
+ *
+ * **Both positions are lambdas, not values** — read inside `offset`/`graphicsLayer`, a drag or a scroll
+ * re-runs only that layer rather than recomposing the subtree.
  */
 @Composable
 internal fun OrderFloatingMascot(
     status: OrderStatus?,
     sheetTopPx: () -> Float,
+    contentScrollPx: () -> Float,
     modifier: Modifier = Modifier,
     size: Dp = FloatingMascotSize,
     rightPadding: Dp = 16.dp,
@@ -47,13 +56,29 @@ internal fun OrderFloatingMascot(
     val density = LocalDensity.current
     val sizePx = with(density) { size.toPx() }
     val statusBarPx = WindowInsets.statusBars.getTop(density).toFloat()
+    // Gone by the time the reader has scrolled past the mascot's own overlap with the sheet — half its
+    // height, the part that was ever over content in the first place.
+    val fadeDistancePx = sizePx / 2f
 
     Box(
         modifier = modifier
             .padding(end = rightPadding)
-            .offset {
-                val y = (sheetTopPx() - sizePx / 2f).coerceAtLeast(statusBarPx)
-                IntOffset(x = 0, y = y.roundToInt())
+            .offset { IntOffset(x = 0, y = mascotTopPx(sheetTopPx, contentScrollPx, sizePx).roundToInt()) }
+            .graphicsLayer {
+                // Two fades, whichever is further along. The scroll one retires the character once the
+                // block it is drawn against has gone; the edge one retires it as it approaches the
+                // status bar.
+                //
+                // The edge fade replaces a `coerceAtLeast(statusBarPx)` clamp, and that clamp was the
+                // bug: the moment the sheet rose far enough for it to bite, the character stopped
+                // tracking the sheet edge and pinned itself to a fixed screen position — it jumped
+                // slightly DOWN as the clamp engaged and then rode the viewport instead of the panel,
+                // which is exactly backwards. Untethered it follows the panel all the way and simply
+                // fades out rather than ever standing still.
+                val top = mascotTopPx(sheetTopPx, contentScrollPx, sizePx)
+                val scrollFade = 1f - contentScrollPx() / fadeDistancePx
+                val edgeFade = (top - statusBarPx) / fadeDistancePx
+                alpha = minOf(scrollFade, edgeFade).coerceIn(0f, 1f)
             }
             .size(size),
     ) {
@@ -81,6 +106,17 @@ internal fun OrderFloatingMascot(
         }
     }
 }
+
+/**
+ * Where the character's top edge sits: centred on the sheet's top edge, then carried up by however far
+ * the sheet's content has scrolled.
+ *
+ * **Unclamped, deliberately.** It is anchored to the panel, so it must follow the panel wherever the
+ * panel goes — including off the top of the screen. Holding it back at the status bar made it stick to
+ * the viewport instead, which is the one thing it must never do.
+ */
+private fun mascotTopPx(sheetTopPx: () -> Float, contentScrollPx: () -> Float, sizePx: Float): Float =
+    sheetTopPx() - sizePx / 2f - contentScrollPx()
 
 /**
  *  - New / Pending: leaning — nothing to do yet, waiting on a cleaner

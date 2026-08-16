@@ -174,6 +174,20 @@ extension L10n {
             localized("bank_account_prefix_helper")
         }
 
+        /// Short in-field hints, deliberately not the `*_prefix` / `*_number` / `bank_code` labels: those
+        /// are full sentences-worth ("Account prefix", "Номер рахунку") and the segments are narrow.
+        static var bankAccountPrefixPlaceholder: String {
+            localized("bank_account_prefix_placeholder")
+        }
+
+        static var bankAccountNumberPlaceholder: String {
+            localized("bank_account_number_placeholder")
+        }
+
+        static var bankCodePlaceholder: String {
+            localized("bank_code_placeholder")
+        }
+
         static var accountNumber: String {
             localized("account_number")
         }

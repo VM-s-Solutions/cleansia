@@ -107,15 +107,37 @@ class OrderDetailViewModelTest {
         io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
     }
 
+    /**
+     * This used to assert the sheet STAYS on Loading — the defect written down as intent. The
+     * repository stores a per-order WATERMARK, not the order, and the watermark outlives the view
+     * model, so opening a job inside the freshness window left the sheet spinning with nothing on the
+     * way and pull-to-refresh the only way out.
+     */
     @Test
-    fun `warm cache skips the network and stays Loading until refreshed`() = runTest {
+    fun `a warm watermark still loads a sheet that is holding nothing`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns false
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
 
         val vm = viewModel()
         advanceUntilIdle()
 
-        io.mockk.coVerify(exactly = 0) { ordersRepository.getById(orderId) }
-        assertEquals(OrderDetailUiState.Loading, vm.uiState.value)
+        io.mockk.coVerify(exactly = 1) { ordersRepository.getById(orderId) }
+        assertEquals(OrderDetailUiState.Loaded(order), vm.uiState.value)
+    }
+
+    /** The other half: once the order IS on screen, a warm watermark must still spare the round-trip. */
+    @Test
+    fun `a warm watermark skips the refetch once the sheet is loaded`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns false
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onResume()
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 1) { ordersRepository.getById(orderId) }
     }
 
     @Test

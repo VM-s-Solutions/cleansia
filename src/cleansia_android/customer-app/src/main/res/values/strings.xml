@@ -1335,4 +1335,6 @@
         <item quantity="one">+ %1$d more</item>
         <item quantity="other">+ %1$d more</item>
     </plurals>
+    <string name="order_detail_headline_completed">Cleaning complete</string>
+    <string name="tracker_step_counter">Step %1$d / %2$d</string>
 </resources>

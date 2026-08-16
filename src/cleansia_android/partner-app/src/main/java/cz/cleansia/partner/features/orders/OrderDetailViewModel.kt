@@ -77,7 +77,11 @@ class OrderDetailViewModel @Inject constructor(
      * mounted through a background re-fetch (no spinner flash).
      */
     fun ensureFreshOrCachedAsync() {
-        if (!ordersRepository.isOrderStale(orderId)) return
+        // The repository stores a per-order WATERMARK, not the order: `fetch()` is the only thing that
+        // puts one into [uiState], which starts at Loading and does not survive this view model. So a
+        // warm watermark may only suppress the fetch once the sheet is already showing the order —
+        // otherwise opening a job inside the freshness window left it spinning forever.
+        if (uiState.value is OrderDetailUiState.Loaded && !ordersRepository.isOrderStale(orderId)) return
         viewModelScope.launch { fetch() }
     }
 

@@ -1,8 +1,8 @@
 package cz.cleansia.customer.features.orders
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -51,6 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -381,6 +386,10 @@ private fun OrderDetailMapLayout(
     val darkTheme = isSystemInDarkTheme()
     val sheetState = rememberSnapSheetState()
     val scope = rememberCoroutineScope()
+    // Hoisted out of the sheet content because the mascot in the overlay needs it too: it is anchored to
+    // the TOP OF THE CONTENT, not to the viewport, and the only way an overlay can know where the
+    // content's top has got to is to read the same scroll state.
+    val contentScroll = rememberScrollState()
 
     val showMap = canShowOrderMap(
         latitude = order.address?.latitude,
@@ -428,6 +437,7 @@ private fun OrderDetailMapLayout(
             OrderFloatingMascot(
                 status = status,
                 sheetTopPx = { sheetState.sheetTopPx },
+                contentScrollPx = { contentScroll.value.toFloat() },
                 modifier = Modifier.align(Alignment.TopEnd),
             )
         },
@@ -435,6 +445,7 @@ private fun OrderDetailMapLayout(
         OrderDetailSheetContent(
             order = order,
             status = status,
+            scrollState = contentScroll,
             photosState = photosState,
             showCancel = showCancel,
             showReportIssue = showReportIssue,
@@ -477,6 +488,7 @@ private fun MapFocusToggle(
 private fun OrderDetailSheetContent(
     order: OrderDetailDto,
     status: OrderStatus?,
+    scrollState: ScrollState,
     photosState: PhotosUiState,
     showCancel: Boolean,
     showReportIssue: Boolean,
@@ -494,11 +506,6 @@ private fun OrderDetailSheetContent(
     onViewPhotos: () -> Unit,
     onConfirmRecurring: () -> Unit,
 ) {
-    // The live hero carries status but no schedule, price or code; the static
-    // one carries all three. OrderMetaStrip fills whichever gap is left.
-    val liveHero = status == OrderStatus.Confirmed ||
-        status == OrderStatus.OnTheWay ||
-        status == OrderStatus.InProgress
     // Wave 3.3 — Pending recurring-template orders need an explicit customer
     // confirm step. Show the CTA when both conditions hold; everything else
     // is a no-op render (already-confirmed orders go through the standard
@@ -507,12 +514,47 @@ private fun OrderDetailSheetContent(
         order.paymentStatus?.value == 1
     val hasFooter = showCancel || showReportIssue || showRebook || showMakeRecurring
 
+    // Gesture-priority guard, the same one the partner sheet carries: once the customer has scrolled
+    // INTO the sheet content, a vertical drag must keep scrolling that content rather than collapsing
+    // the sheet. SnapSheet's own connection implements the stock Material hand-off — drag up expands the
+    // sheet first, and only at the deepest anchor does the content move — and that hand-off does not
+    // reliably win the race against the content's own scroll, which is what made the details unscrollable
+    // on the customer side. Declared here so it sits CLOSER to the scroll source than the sheet's own
+    // connection and therefore gets the delta first.
+    val sheetGuard = remember(scrollState) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
+                val dy = available.y
+                // Drag up (dy < 0): the reader wants to reveal more below. While the content can still
+                // scroll down, consume the delta into the scroll state so the sheet doesn't expand past
+                // its current snap point instead.
+                if (dy < 0 && scrollState.value < scrollState.maxValue) {
+                    return Offset(0f, -scrollState.dispatchRawDelta(-dy))
+                }
+                // Drag down (dy > 0): the reverse — scroll the content back to its top before the sheet
+                // starts collapsing underneath it.
+                if (dy > 0 && scrollState.value > 0) {
+                    return Offset(0f, -scrollState.dispatchRawDelta(-dy))
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(),
+            .fillMaxHeight()
+            .nestedScroll(sheetGuard),
     ) {
         SheetGrabber()
+
+        // Identity, pinned: it does not scroll, so dragging the sheet down onto the map still leaves
+        // the customer looking at which order this is. The mascot rides the sheet's top edge on the
+        // RIGHT, so this row keeps its trailing half clear — that is why the date sits under the order
+        // number rather than opposite it. The iOS twin is `OrderDetailCompactHeader`.
+        OrderDetailCompactHeader(order = order)
 
         Column(
             modifier = Modifier
@@ -521,18 +563,20 @@ private fun OrderDetailSheetContent(
                 // it the scroll column takes its content height and pushes the
                 // footer past the bottom edge at every anchor but Expanded.
                 .weight(1f, fill = true)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.ML),
             verticalArrangement = Arrangement.spacedBy(Spacing.S),
         ) {
-            // Together with the grabber block and the column gap this clears
-            // the half of the mascot that lands on the sheet; without it the
-            // character sits on the hero card's top-right corner.
-            Spacer(Modifier.height(if (status == OrderStatus.Cancelled) Spacing.XS else 32.dp))
+            // Hero block: the status headline sits directly on the tracker bar with no gap, so the two
+            // read as one group — and the inner Column is why it overrides the parent's spacedBy.
+            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                OrderStatusHero(order = order, status = status)
+                OrderTrackerBar(status = status)
+            }
 
-            if (liveHero) LiveProgressHero(order) else HeroCard(order)
-
-            OrderMetaStrip(order = order, showFacts = liveHero)
+            // Confirmation code and price. Everything that identifies the order is in the pinned
+            // header above; this carries only what the header has no room for.
+            OrderFactsStrip(order = order)
 
             // Sits right under the hero so it's the first thing the customer
             // sees after tapping the recurring-scheduled push.
@@ -861,17 +905,20 @@ private fun LoadingState(onBack: () -> Unit) {
 
 @Composable
 internal fun Card(content: @Composable () -> Unit) {
+    // Flat, exactly like the partner sheet's `OrderSectionCard`: a surface-coloured block with no
+    // border and no elevation. The 1dp outline this used to carry drew a hard edge around every
+    // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.
+    // The section divider under each title is what separates them now.
+    // No horizontal inset. The scroll column already insets everything by Spacing.ML, the same as the
+    // pinned header, so a further 16dp here started every section's text 16dp to the right of the
+    // order number it belongs under. With the card flat there is no container edge for an inset to
+    // hold away from anyway — only the vertical padding, which is what separates one section from the
+    // next.
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant,
-                RoundedCornerShape(16.dp),
-            )
-            .padding(16.dp),
+            .padding(vertical = 16.dp),
     ) { content() }
 }
 
@@ -891,6 +938,11 @@ internal fun SectionHeader(
             color = MaterialTheme.colorScheme.onBackground,
         )
     }
+    // The rule that separates a section from its content now that the cards carry no border —
+    // the partner sheet's `OrderSectionCard` spacing, to the pixel.
+    Spacer(Modifier.height(8.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Spacer(Modifier.height(12.dp))
 }
 
 @Composable
@@ -959,6 +1011,7 @@ private fun PreviewSheet() {
             OrderDetailSheetContent(
                 order = previewOrder,
                 status = OrderStatus.InProgress,
+                scrollState = rememberScrollState(),
                 photosState = PhotosUiState.Idle,
                 showCancel = false,
                 showReportIssue = true,

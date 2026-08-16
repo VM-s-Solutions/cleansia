@@ -49,8 +49,8 @@ final class IdentificationSectionViewModel: ViewModel {
         state = .loading
         let countries = await (client.getAllCountries()).valueOrNil ?? []
         countryOptions = countries.compactMap { country in
-            guard let id = country.id, let name = country.name else { return nil }
-            return CleansiaDropdownOption(id: id, label: name)
+            guard let id = country.id else { return nil }
+            return CleansiaDropdownOption(id: id, label: country.localizedName())
         }
         switch await client.getCurrentEmployee() {
         case let .success(employee):

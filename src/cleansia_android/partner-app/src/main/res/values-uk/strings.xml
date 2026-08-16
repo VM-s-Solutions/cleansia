@@ -1320,4 +1320,7 @@
     <string name="offers_card_cta">Подивитися, що чекає</string>
     <string name="bank_account">Банківський рахунок</string>
     <string name="bank_account_helper">Префікс, номер рахунку та код банку.</string>
+    <string name="bank_account_prefix_placeholder">Префікс</string>
+    <string name="bank_account_number_placeholder">Номер рахунку</string>
+    <string name="bank_code_placeholder">Код</string>
 </resources>

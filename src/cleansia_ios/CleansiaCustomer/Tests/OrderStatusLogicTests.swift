@@ -225,14 +225,6 @@ final class LiveProgressLogicTests: XCTestCase {
         XCTAssertEqual(LiveProgressStep.allCases.count, 5)
     }
 
-    func testUsesLiveHeroOnlyForActiveStates() {
-        XCTAssertTrue(LiveProgress.usesLiveHero(._2))
-        XCTAssertTrue(LiveProgress.usesLiveHero(._3))
-        XCTAssertTrue(LiveProgress.usesLiveHero(._4))
-        XCTAssertFalse(LiveProgress.usesLiveHero(._5))
-        XCTAssertFalse(LiveProgress.usesLiveHero(._0))
-    }
-
     func testInProgressFractionFromStartedEntry() {
         let started = Date(timeIntervalSince1970: 1000)
         let now = started.addingTimeInterval(30 * 60)

@@ -2,7 +2,16 @@ import CleansiaCore
 import CleansiaCustomerApi
 import SwiftUI
 
-struct LiveProgressHero: View {
+/// What is happening to the booking, in a sentence — plus a subhead and, while the clean is running, an
+/// elapsed-over-estimated bar.
+///
+/// It carries no date and no price. Both are already on screen: the date in `OrderDetailCompactHeader`
+/// above, the price in `OrderHeroFactsStrip` below.
+///
+/// **It draws no container.** The gradient card it used to sit in fenced it off from the tracker bar it
+/// is meant to read as one block with, and cost a band of whitespace above and below it. The sheet is
+/// the surface. `OrderDetailHeader.kt` is the Android twin; keep the two in step.
+struct OrderStatusHero: View {
     let order: CustomerOrderDetail
 
     private var status: OrderStatus? {
@@ -14,11 +23,28 @@ struct LiveProgressHero: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
+        if status != ._6 {
+            hero
+        }
+    }
+
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(headline)
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
+                // The step counter shares the headline's line. On its own row it was a full-width band
+                // with an empty left half, which read as a gap between the headline and the bar it
+                // belongs to — and it is the bar's own label, so it belongs beside the phase.
+                HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
+                    Text(headline)
+                        .font(CleansiaTypography.titleLarge)
+                        .fontWeight(.bold)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Spacer(minLength: Spacing.xs)
+                    Text(stepCounter)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize()
+                }
                 if let subhead {
                     Text(subhead)
                         .font(CleansiaTypography.bodyMedium)
@@ -30,23 +56,11 @@ struct LiveProgressHero: View {
             if status == ._4 {
                 progressBar
             }
-
-            StepIndicator(activeStep: LiveProgress.activeStep(for: status))
         }
-        .padding(Spacing.m)
+        // No bottom padding: the headline sits directly on the tracker bar, the way the partner sheet's
+        // timer text does. The gap that used to be here read as a break between two unrelated things
+        // when they are one block — the phase, said in words and then drawn.
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(
-                colors: [CleansiaColors.primary.opacity(0.10), CleansiaColors.surface],
-                startPoint: .top,
-                endPoint: .bottom
-            ),
-            in: RoundedRectangle(cornerRadius: CornerRadius.large)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
     }
 
     private var progressBar: some View {
@@ -75,9 +89,22 @@ struct LiveProgressHero: View {
             cleanerName.map(L10n.OrderDetail.headlineOnTheWayNamed) ?? L10n.OrderDetail.headlineOnTheWay
         case ._4:
             cleanerName.map(L10n.OrderDetail.headlineInProgressNamed) ?? L10n.OrderDetail.headlineInProgress
+        case ._5:
+            L10n.OrderDetail.headlineCompleted
         default:
             L10n.OrderDetail.headlineDefault
         }
+    }
+
+    /// Drawn here rather than by `OrderTrackerBar`, which is passed no label for exactly this reason.
+    private var stepCounter: String {
+        let step = OrderTrackerRule.state(
+            step: LiveProgress.activeStep(for: status)?.rawValue ?? 0,
+            cancelled: false,
+            completed: status == ._5
+        )
+        guard case let .steps(_, stepNumber) = step else { return "" }
+        return L10n.OrderDetail.trackerStepCounter(stepNumber, OrderTrackerRule.stepCount)
     }
 
     private var subhead: String? {
@@ -89,42 +116,6 @@ struct LiveProgressHero: View {
                 ? L10n.OrderDetail.subheadInProgressEta(order.estimatedMinutes)
                 : L10n.OrderDetail.subheadInProgress
         default: nil
-        }
-    }
-}
-
-private struct StepIndicator: View {
-    let activeStep: LiveProgressStep?
-
-    private var activeIndex: Int {
-        activeStep?.rawValue ?? -1
-    }
-
-    var body: some View {
-        VStack(spacing: Spacing.xs) {
-            HStack(spacing: Spacing.xxs) {
-                ForEach(LiveProgressStep.allCases, id: \.self) { step in
-                    Circle()
-                        .fill(step.rawValue <= activeIndex ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                        .frame(width: 10, height: 10)
-                    if step != LiveProgressStep.allCases.last {
-                        Rectangle()
-                            .fill(step.rawValue < activeIndex ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                            .frame(height: 2)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            HStack(spacing: 0) {
-                ForEach(LiveProgressStep.allCases, id: \.self) { step in
-                    Text(step.label)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(step.rawValue == activeIndex ? CleansiaColors.primary : CleansiaColors
-                            .onSurfaceVariant)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-            }
         }
     }
 }

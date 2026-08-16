@@ -162,6 +162,13 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
             )
             .fill(CleansiaColors.surface)
         )
+        // FLATTEN BEFORE SHADOWING. `.shadow` applies to every opaque thing drawn in the subtree, not
+        // to the composite silhouette — so without this the sheet's shadow was re-drawn around each
+        // card inside it, and the gap between two neighbouring cards caught both. That is the "shadow
+        // on every inner container" the order-detail panel showed, and why removing the cards' own
+        // borders never made any difference: the halo was never theirs. `compositingGroup` renders the
+        // subtree into one layer first, so the shadow falls where it was meant to — the sheet's edge.
+        .compositingGroup()
         .shadow(color: .black.opacity(0.12), radius: 12, y: -2)
     }
 

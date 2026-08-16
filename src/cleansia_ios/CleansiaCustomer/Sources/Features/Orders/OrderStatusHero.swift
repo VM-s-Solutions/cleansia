@@ -47,7 +47,9 @@ struct OrderStatusHero: View {
                 progressBar
             }
         }
-        .padding(.bottom, Spacing.s)
+        // No bottom padding: the headline sits directly on the tracker bar, the way the partner sheet's
+        // timer text does. The gap that used to be here read as a break between two unrelated things
+        // when they are one block — the phase, said in words and then drawn.
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

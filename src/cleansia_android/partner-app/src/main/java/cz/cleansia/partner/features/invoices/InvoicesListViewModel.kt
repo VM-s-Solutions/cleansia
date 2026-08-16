@@ -95,16 +95,13 @@ class InvoicesListViewModel @Inject constructor(
      */
     private fun ensureFreshOrCachedAsync() {
         viewModelScope.launch {
+            // The repository stores the WATERMARK, not the rows, so a fresh watermark may only suppress
+            // the fetch once this view model is already holding them. Forcing `hasLoadedOnce` instead
+            // did clear the spinner it was written for — and then showed an EMPTY list to a cleaner who
+            // has invoices, because nothing had filled `invoices`. Same rule as
+            // `OrdersListViewModel.ensureFreshOrCachedAsync`.
             val staleness = invoicesRepository.getMyInvoicesStaleness()
-            if (!staleness.isStale()) {
-                // Cache is fresh — make sure hasLoadedOnce is true so
-                // the screen doesn't get stuck on the initial spinner
-                // when the repo cache was warmed by another screen.
-                _uiState.update {
-                    if (it.hasLoadedOnce) it else it.copy(hasLoadedOnce = true)
-                }
-                return@launch
-            }
+            if (_uiState.value.hasLoadedOnce && !staleness.isStale()) return@launch
             _uiState.update { it.copy(isBackgroundRefreshing = true, error = null) }
             fetchAndUpdate(
                 clearFlags = { it.copy(isBackgroundRefreshing = false) },

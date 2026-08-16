@@ -15,6 +15,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -37,6 +38,7 @@ import kotlin.math.roundToInt
 fun FloatingMascot(
     status: OrderStatus?,
     sheetState: SheetState,
+    contentScrollPx: () -> Float,
     modifier: Modifier = Modifier,
     size: Dp = 128.dp,
     rightPadding: Dp = 16.dp,
@@ -47,15 +49,26 @@ fun FloatingMascot(
 
     val density = LocalDensity.current
     val sizePx = with(density) { size.toPx() }
-    val sheetTopPx = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
-    // Visual center of the mascot sits ON the sheet edge — half over
-    // the map, half over the panel.
-    val offsetY = (sheetTopPx - sizePx / 2f).roundToInt()
+    // Gone by the time the cleaner has scrolled past the mascot's own overlap with the sheet — half its
+    // height, the part that was ever over content in the first place.
+    val fadeDistancePx = sizePx / 2f
 
     Box(
         modifier = modifier
             .padding(end = rightPadding)
-            .offset { IntOffset(x = 0, y = offsetY) }
+            .offset {
+                // Visual centre sits ON the sheet edge — half over the map, half over the panel — and
+                // then travels up with the content. Anchoring to the sheet edge ALONE left it parked
+                // over whatever the cleaner scrolled underneath it; it belongs to the top of the sheet
+                // content, not to the viewport. Read inside the offset so a drag or a scroll re-runs
+                // only this layer rather than recomposing the subtree.
+                val sheetTopPx = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
+                val restingY = sheetTopPx - sizePx / 2f
+                IntOffset(x = 0, y = (restingY - contentScrollPx()).roundToInt())
+            }
+            .graphicsLayer {
+                alpha = (1f - contentScrollPx() / fadeDistancePx).coerceIn(0f, 1f)
+            }
             .size(size),
     ) {
         AnimatedContent(

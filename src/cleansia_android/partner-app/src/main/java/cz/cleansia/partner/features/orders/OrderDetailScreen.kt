@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -284,6 +285,10 @@ private fun OrderDetailBottomSheetLayout(
         skipHiddenState = true,
     )
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState)
+    // Hoisted out of the sheet content because the mascot in the overlay needs it too: it is anchored
+    // to the TOP OF THE CONTENT, not to the viewport, and the only way an overlay can know where the
+    // content's top has got to is to read the same scroll state.
+    val contentScroll = rememberScrollState()
 
     // Outer wrapping Box hosts:
     //   1. BottomSheetScaffold (map + sheet)
@@ -306,6 +311,7 @@ private fun OrderDetailBottomSheetLayout(
                 OrderDetailSheetContent(
                     order = order,
                     status = status,
+                    contentScroll = contentScroll,
                     location = location,
                     isMine = isMine,
                     isInProgress = isInProgress,
@@ -353,6 +359,7 @@ private fun OrderDetailBottomSheetLayout(
         FloatingMascot(
             status = status,
             sheetState = sheetState,
+            contentScrollPx = { contentScroll.value.toFloat() },
             modifier = Modifier.align(Alignment.TopEnd),
         )
     }
@@ -463,6 +470,7 @@ private fun FloatingBackButton(
 private fun OrderDetailSheetContent(
     order: OrderItem,
     status: OrderStatus?,
+    contentScroll: ScrollState,
     location: OrderLocation,
     isMine: Boolean,
     isInProgress: Boolean,
@@ -499,7 +507,7 @@ private fun OrderDetailSheetContent(
     // the sticky footer below — without weight, the scroll Column
     // expands to its natural content height and the footer is pushed
     // off-screen at the peek snap point.
-    val scrollState = rememberScrollState()
+    val scrollState = contentScroll
     // Gesture-priority guard: once the cleaner has scrolled INTO the sheet content, a vertical drag must
     // keep scrolling that content rather than collapsing the sheet. The stock nested-scroll integration
     // does not reliably win that race, so the priority is asserted here.

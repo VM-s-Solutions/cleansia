@@ -10,11 +10,11 @@ struct OrderCardSurface<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
+        // Flat, exactly like the partner sheet's `OrderSectionCard`: a surface-coloured block with no
+        // border and no shadow. The 1pt outline this used to carry drew a hard edge around every
+        // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.
+        // The rule under each section title is what separates them now.
         .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
     }
 }
 
@@ -23,16 +23,22 @@ struct OrderSectionHeaderRow: View {
     var systemImage: String?
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: 18))
-                    .foregroundColor(CleansiaColors.primary)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.xs) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 18))
+                        .foregroundColor(CleansiaColors.primary)
+                }
+                Text(title)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onBackground)
             }
-            Text(title)
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
+            // The rule that separates a section from its content now that the cards carry no border —
+            // the partner sheet's `OrderSectionCard` arrangement.
+            Divider().overlay(CleansiaColors.outlineVariant)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

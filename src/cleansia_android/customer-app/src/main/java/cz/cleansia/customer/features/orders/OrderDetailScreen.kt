@@ -3,7 +3,6 @@ package cz.cleansia.customer.features.orders
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -905,16 +905,15 @@ private fun LoadingState(onBack: () -> Unit) {
 
 @Composable
 internal fun Card(content: @Composable () -> Unit) {
+    // Flat, exactly like the partner sheet's `OrderSectionCard`: a surface-coloured block with no
+    // border and no elevation. The 1dp outline this used to carry drew a hard edge around every
+    // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.
+    // The section divider under each title is what separates them now.
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant,
-                RoundedCornerShape(16.dp),
-            )
             .padding(16.dp),
     ) { content() }
 }
@@ -935,6 +934,11 @@ internal fun SectionHeader(
             color = MaterialTheme.colorScheme.onBackground,
         )
     }
+    // The rule that separates a section from its content now that the cards carry no border —
+    // the partner sheet's `OrderSectionCard` spacing, to the pixel.
+    Spacer(Modifier.height(8.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Spacer(Modifier.height(12.dp))
 }
 
 @Composable

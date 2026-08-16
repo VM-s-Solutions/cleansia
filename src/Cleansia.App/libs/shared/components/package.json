@@ -2,8 +2,13 @@
   "name": "@cleansia.app/components",
   "version": "0.0.1",
   "peerDependencies": {
-    "@angular/common": "^20.0.0",
-    "@angular/core": "^20.0.0"
+    "@angular/common": "~19.2.0",
+    "@angular/core": "~19.2.0",
+    "@angular/forms": "~19.2.0",
+    "@angular/router": "~19.2.0",
+    "@ngx-translate/core": "^16.0.4",
+    "primeng": "^19.1.4",
+    "rxjs": "~7.8.0"
   },
   "sideEffects": false
 }

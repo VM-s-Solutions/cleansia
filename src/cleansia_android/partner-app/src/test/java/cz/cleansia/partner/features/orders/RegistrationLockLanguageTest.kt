@@ -6,6 +6,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.core.settings.LiveLanguagePreferenceSync
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
@@ -23,6 +24,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -65,11 +68,14 @@ class RegistrationLockLanguageTest {
         coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(unapprovedCleaner())
         coEvery { userRepository.updateCurrentUser(any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
+        // init now always fetches on a view model that holds no status, so this has to answer.
+        coEvery { profileRepository.getRegistrationStatus() } returns
+            ApiResult.Success(RegistrationCompletionStatus(hasCompletedProfile = false))
     }
 
     private fun TestScope.viewModel(): RegistrationLockViewModel {
-        // Fresh watermark → init's silent-stale path is a true no-op, so the
-        // test never has to stand up the status-fetch machinery.
+        // Warm watermark. It no longer suppresses init's fetch — see
+        // `a warm watermark does not strand a fresh view model on the spinner` below.
         every { profileRepository.getRegistrationStatusStaleness() } returns
             Staleness().apply { markFresh() }
         return RegistrationLockViewModel(
@@ -108,6 +114,26 @@ class RegistrationLockLanguageTest {
                 languageCode = "uk",
             )
         }
+    }
+
+    /**
+     * THE ONBOARDING STALL. `ensureFreshOrCachedAsync` skipped the fetch on a warm watermark — but the
+     * repository stores the WATERMARK, not the status, so nothing filled `status` and the screen sat on
+     * its centered spinner (`!hasLoadedOnce && status == null`) until the cleaner pulled to refresh.
+     * The watermark outlives the view model, so this reproduced on every entry into onboarding inside
+     * the 15s window.
+     */
+    @Test
+    fun `a warm watermark does not strand a fresh view model on the spinner`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { profileRepository.getRegistrationStatus() }
+        assertNotNull("the screen never got a status", vm.uiState.value.status)
+        assertFalse(
+            "the centered spinner never cleared",
+            !vm.uiState.value.hasLoadedOnce && vm.uiState.value.status == null,
+        )
     }
 
     /** Stands in for the injected `@ApplicationScope`, on the scheduler `advanceUntilIdle` drives. */

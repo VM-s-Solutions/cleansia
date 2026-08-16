@@ -159,10 +159,12 @@ internal fun OrderStatusHero(
         ?.fullName
         ?.takeIf { it.isNotBlank() }
 
+    // No bottom padding: the headline sits directly on the tracker bar, the way the partner sheet's
+    // timer text does. The gap that used to be here read as a break between two unrelated things when
+    // they are one block — the phase, said in words and then drawn.
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = Spacing.S)
             .animateContentSize(),
     ) {
         AnimatedContent(
@@ -305,8 +307,9 @@ internal fun OrderFactsStrip(
     val hasDiscount = order.appliedDiscountSource != 0 &&
         order.originalSubtotal > order.totalPrice
 
+    Column(modifier = modifier.fillMaxWidth()) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -348,6 +351,45 @@ internal fun OrderFactsStrip(
             )
         }
     }
+        // What the struck-through price is explained by. The breakdown card further down names each
+        // source with its amount, but that is several screens of scrolling away from the number it
+        // accounts for — the chip answers "why is this cheaper" where the question is asked.
+        if (hasDiscount) {
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                discountLabelsFor(order.appliedDiscountSource).forEach { DiscountChip(it) }
+            }
+        }
+    }
+}
+
+/** LOY-003 — `Combined` (4) means Plus AND tier applied additively, so it earns both chips. */
+@Composable
+private fun discountLabelsFor(source: Int): List<String> = when (source) {
+    1 -> listOf(stringResource(R.string.order_detail_discount_tier))
+    2 -> listOf(stringResource(R.string.order_detail_discount_membership))
+    3 -> listOf(stringResource(R.string.order_detail_discount_promo))
+    4 -> listOf(
+        stringResource(R.string.order_detail_discount_membership),
+        stringResource(R.string.order_detail_discount_tier),
+    )
+    else -> emptyList()
+}
+
+@Composable
+private fun DiscountChip(label: String) {
+    Text(
+        text = label,
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+        color = MaterialTheme.colorScheme.onTertiaryContainer,
+    )
 }
 
 @Composable

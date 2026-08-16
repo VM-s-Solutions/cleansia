@@ -1,0 +1,50 @@
+@if (floatVariant(); as variant) {
+<p-floatlabel [variant]="variant">
+  <div
+    class="cleansia-bank-account"
+    [class.cleansia-bank-account--focused]="focused()"
+    [class.cleansia-bank-account--invalid]="invalid()"
+  >
+    <input
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      class="cleansia-bank-account__segment cleansia-bank-account__segment--prefix"
+      [id]="id()"
+      [attr.aria-label]="prefixLabel()"
+      [maxlength]="PrefixMaxLength"
+      [formControl]="prefix()"
+      (focus)="focused.set(true)"
+      (blur)="onBlur()"
+      (paste)="onPaste($event)"
+    />
+    <span class="cleansia-bank-account__separator" aria-hidden="true">–</span>
+    <input
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      class="cleansia-bank-account__segment cleansia-bank-account__segment--number"
+      [attr.aria-label]="numberLabel()"
+      [maxlength]="NumberMaxLength"
+      [formControl]="number()"
+      (focus)="focused.set(true)"
+      (blur)="onBlur()"
+      (paste)="onPaste($event)"
+    />
+    <span class="cleansia-bank-account__separator" aria-hidden="true">/</span>
+    <input
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      class="cleansia-bank-account__segment cleansia-bank-account__segment--bank-code"
+      [attr.aria-label]="bankCodeLabel()"
+      [maxlength]="BankCodeMaxLength"
+      [formControl]="bankCode()"
+      (focus)="focused.set(true)"
+      (blur)="onBlur()"
+      (paste)="onPaste($event)"
+    />
+  </div>
+  <label [for]="id()">{{ label() }}</label>
+</p-floatlabel>
+}

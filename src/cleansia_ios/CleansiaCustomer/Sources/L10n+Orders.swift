@@ -40,7 +40,7 @@ extension L10n {
         }
 
         static func servicesMore(_ count: Int) -> String {
-            format("orders_services_more", count)
+            plural("orders_services_more", count)
         }
 
         static var errorTitle: String {
@@ -109,8 +109,14 @@ extension L10n {
             localized("order_detail_rooms")
         }
 
+        /// Two counts, so it cannot be one plural entry — a plural variation selects on ONE argument
+        /// and would freeze the other noun. Composed from the two the booking wizard already uses,
+        /// which also keeps the wizard and the order detail reading identically. Mirrors Android's
+        /// `roomsAndBathrooms`.
         static func roomsBathrooms(_ rooms: Int, _ bathrooms: Int) -> String {
-            format("order_detail_rooms_bathrooms", rooms, bathrooms)
+            let roomsText = plural("booking_rooms_short", rooms)
+            let bathText = plural("booking_bath_short", bathrooms)
+            return "\(roomsText) · \(bathText)"
         }
 
         static var estimated: String {

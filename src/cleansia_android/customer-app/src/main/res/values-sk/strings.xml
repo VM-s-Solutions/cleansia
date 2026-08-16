@@ -82,7 +82,6 @@
     <string name="rewards_next_milestone">Ešte %1$d na odomknutie %2$s</string>
     <string name="rewards_all_tiers_unlocked">Odomkli ste všetky úrovne — ďakujeme!</string>
     <string name="rewards_tiers_title">Míľniky</string>
-    <string name="rewards_tier_threshold">· %1$d rezervácií</string>
     <string name="rewards_tier_unlocked">Odomknuté</string>
     <string name="rewards_tier_regular">Pravidelný</string>
     <string name="rewards_tier_regular_perk">Prednostná zmena termínu &amp; sprievodca čistiacimi tipmi</string>
@@ -95,7 +94,6 @@
     <string name="rewards_referral_subtitle">Oni získajú uvítací bonus, vy doplnok zdarma.</string>
     <string name="rewards_referral_your_code">Váš kód</string>
     <string name="rewards_referral_share">Zdieľať kód</string>
-    <string name="rewards_referral_joined">Pripojilo sa %1$d kamarátov</string>
     <string name="rewards_referral_no_joins">Buďte prvý — zdieľajte svoj kód</string>
 
     <!-- Home — address bar -->
@@ -165,9 +163,7 @@
 
     <!-- Home — milestone -->
     <string name="home_milestone_title">Pokrok k ďalšej úrovni</string>
-    <string name="home_milestone_subtitle">Ešte %1$d rezervácií na odomknutie ďalšej úrovne</string>
     <string name="home_milestone_title_v2">%1$s — Pokrok k ďalšej úrovni</string>
-    <string name="home_milestone_subtitle_v2">Ešte %1$d bodov do úrovne %2$s</string>
 
     <!-- Home — seasonal -->
     <string name="home_seasonal_title">Sezóna jarného upratovania</string>
@@ -235,7 +231,6 @@
     <string name="orders_error_title">Nepodarilo sa načítať vaše objednávky</string>
     <string name="orders_error_retry">Skúsiť znova</string>
     <string name="orders_empty_cta">Rezervovať prvé upratovanie</string>
-    <string name="orders_services_more">+ %1$d ďalších</string>
 
     <!-- Order detail -->
     <string name="order_detail_title">Objednávka č. %1$s</string>
@@ -288,7 +283,6 @@
     <string name="order_detail_discount_tier">Vernostná zľava uplatnená</string>
     <string name="order_detail_discount_membership">Zľava Cleansia Plus uplatnená</string>
     <string name="order_detail_discount_promo">Zľavový kód uplatnený</string>
-    <string name="order_detail_rooms_bathrooms">%1$d izieb · %2$d kúp.</string>
     <string name="order_detail_duration_minutes">%1$d min</string>
     <string name="order_detail_extras">Doplnky</string>
     <string name="order_detail_services_header">Služby</string>
@@ -339,7 +333,6 @@
 
     <!-- Order review -->
     <string name="order_review_sheet_title">Ohodnoťte upratovanie</string>
-    <string name="order_review_star_content_desc">Hodnotenie %1$d hviezdičiek</string>
     <string name="order_review_rating_hint">Ťuknite na hviezdičku</string>
     <string name="order_review_rating_1">Hrozné</string>
     <string name="order_review_rating_2">Zlé</string>
@@ -593,7 +586,6 @@
     <string name="booking_packages_featured">Odporúčané balíčky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
-    <string name="booking_package_more">+ %1$d ďalších</string>
     <string name="booking_price_from">od %1$d Kč</string>
     <string name="booking_price_per_room">+ %1$d Kč/izba</string>
     <string name="details_base_price">Základná cena</string>
@@ -601,8 +593,6 @@
     <string name="details_add_to_booking">Pridať do rezervácie</string>
     <string name="details_remove_from_booking">Odobrať z rezervácie</string>
     <string name="booking_your_home">Váš domov</string>
-    <string name="booking_rooms_short">%1$d izieb</string>
-    <string name="booking_bath_short">%1$d kúp.</string>
     <string name="booking_search_services">Hľadať služby</string>
     <string name="booking_no_results">Žiadne služby nezodpovedajú vášmu hľadaniu</string>
     <string name="booking_cat_all">Všetko</string>
@@ -1119,7 +1109,6 @@
     <string name="loyalty_tier_label_short_platinum">Platina</string>
     <string name="loyalty_lifetime_points">Body za celé obdobie</string>
     <string name="loyalty_points_unit">b.</string>
-    <string name="loyalty_bookings_completed">%1$d upratovaní dokončených</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d bodov do %3$s</string>
     <string name="loyalty_max_tier_reached">Dosiahli ste najvyšší stupeň — ďakujeme!</string>
     <string name="loyalty_current_perks_title">Vaše výhody</string>
@@ -1157,7 +1146,6 @@
     <string name="loyalty_referral_copied_toast">Kód skopírovaný</string>
     <string name="loyalty_referral_share_text">Získajte 150 bonusových bodov na prvé upratovanie Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte prvý — zdieľajte svoj kód</string>
-    <string name="loyalty_referral_stats_waiting">%1$d priateľ sa pripojil — čaká na prvú rezerváciu</string>
     <string name="loyalty_referral_stats_qualified">%1$d priateľ sa pripojil · %2$d kvalifikovaných</string>
     <string name="loyalty_referral_share_failed">Zdieľanie sa nepodarilo otvoriť. Kód bol skopírovaný.</string>
     <string name="referral_code_field_collapsed">Mám kód odporúčania</string>
@@ -1286,4 +1274,52 @@
     <string name="notifications_bell_unread_content_description">Oznámenia, neprečítaných: %1$d</string>
     <string name="notifications_badge_overflow">99+</string>
     <string name="dispute_evidence_encode_failed">Súbor sa nepodarilo spracovať.</string>
+    <plurals name="booking_rooms_short">
+        <item quantity="one">%1$d izba</item>
+        <item quantity="few">%1$d izby</item>
+        <item quantity="many">%1$d izby</item>
+        <item quantity="other">%1$d izieb</item>
+    </plurals>
+    <plurals name="booking_bath_short">
+        <item quantity="one">%1$d kúp.</item>
+        <item quantity="few">%1$d kúp.</item>
+        <item quantity="many">%1$d kúp.</item>
+        <item quantity="other">%1$d kúp.</item>
+    </plurals>
+    <plurals name="order_review_star_content_desc">
+        <item quantity="one">Hodnotenie %1$d hviezdička</item>
+        <item quantity="few">Hodnotenie %1$d hviezdičky</item>
+        <item quantity="many">Hodnotenie %1$d hviezdičky</item>
+        <item quantity="other">Hodnotenie %1$d hviezdičiek</item>
+    </plurals>
+    <plurals name="loyalty_bookings_completed">
+        <item quantity="one">%1$d upratovanie dokončené</item>
+        <item quantity="few">%1$d upratovania dokončené</item>
+        <item quantity="many">%1$d upratovania dokončené</item>
+        <item quantity="other">%1$d upratovaní dokončených</item>
+    </plurals>
+    <plurals name="loyalty_referral_stats_waiting">
+        <item quantity="one">%1$d priateľ sa pripojil — čaká na prvú rezerváciu</item>
+        <item quantity="few">%1$d priatelia sa pripojili — čakajú na prvú rezerváciu</item>
+        <item quantity="many">%1$d priateľa sa pripojilo — čaká na prvú rezerváciu</item>
+        <item quantity="other">%1$d priateľov sa pripojilo — čaká na prvú rezerváciu</item>
+    </plurals>
+    <plurals name="home_milestone_subtitle_v2">
+        <item quantity="one">Ešte %1$d bod do úrovne %2$s</item>
+        <item quantity="few">Ešte %1$d body do úrovne %2$s</item>
+        <item quantity="many">Ešte %1$d bodu do úrovne %2$s</item>
+        <item quantity="other">Ešte %1$d bodov do úrovne %2$s</item>
+    </plurals>
+    <plurals name="booking_package_more">
+        <item quantity="one">+ %1$d ďalší</item>
+        <item quantity="few">+ %1$d ďalšie</item>
+        <item quantity="many">+ %1$d ďalšieho</item>
+        <item quantity="other">+ %1$d ďalších</item>
+    </plurals>
+    <plurals name="orders_services_more">
+        <item quantity="one">+ %1$d ďalšia</item>
+        <item quantity="few">+ %1$d ďalšie</item>
+        <item quantity="many">+ %1$d ďalšej</item>
+        <item quantity="other">+ %1$d ďalších</item>
+    </plurals>
 </resources>

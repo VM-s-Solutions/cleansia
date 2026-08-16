@@ -177,7 +177,9 @@
       "job_radius_limit": "Only notify me about nearby jobs",
       "job_radius_off_hint": "We'll notify you about every new job in your country.",
       "job_radius_distance": "Distance from home (km)",
-      "job_radius_distance_hint": "Between {{min}} and {{max}} km."
+      "job_radius_distance_hint": "Between {{min}} and {{max}} km.",
+      "bank_account": "Bank account",
+      "bank_account_hint": "Prefix, account number and bank code — paste a whole account and it splits itself."
     },
     "dashboard": {
       "title": "Dashboard",

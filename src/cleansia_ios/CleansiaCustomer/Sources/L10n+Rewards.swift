@@ -24,7 +24,7 @@ extension L10n {
         }
 
         static func bookingsCompleted(_ count: Int) -> String {
-            format("loyalty_bookings_completed", count)
+            plural("loyalty_bookings_completed", count)
         }
 
         static func progressToNext(_ current: Int, _ threshold: Int, _ nextTier: String) -> String {
@@ -136,7 +136,7 @@ extension L10n {
         }
 
         static func referralStatsWaiting(_ accepted: Int) -> String {
-            format("loyalty_referral_stats_waiting", accepted)
+            plural("loyalty_referral_stats_waiting", accepted)
         }
 
         static func referralStatsQualified(_ accepted: Int, _ qualified: Int) -> String {

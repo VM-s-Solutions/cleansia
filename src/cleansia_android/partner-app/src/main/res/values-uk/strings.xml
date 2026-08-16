@@ -1318,4 +1318,6 @@
     <string name="offers_card_title">Клієнт попросив саме вас</string>
     <string name="offers_card_more">+%1$d ще</string>
     <string name="offers_card_cta">Подивитися, що чекає</string>
+    <string name="bank_account">Банківський рахунок</string>
+    <string name="bank_account_helper">Префікс, номер рахунку та код банку.</string>
 </resources>

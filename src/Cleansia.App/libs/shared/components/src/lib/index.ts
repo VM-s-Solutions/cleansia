@@ -5,6 +5,7 @@ export * from './cleansia-brand-name';
 export * from './cleansia-button';
 export * from './cleansia-calendar';
 export * from './cleansia-checkbox';
+export * from './cleansia-bank-account';
 export * from './cleansia-code-input';
 export * from './cleansia-code-input-dialog';
 export * from './cleansia-cookie-consent';

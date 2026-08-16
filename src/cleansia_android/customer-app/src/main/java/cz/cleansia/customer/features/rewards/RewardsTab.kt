@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -365,7 +366,7 @@ private fun HeroCard(
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            stringResource(R.string.loyalty_bookings_completed, bookingsCount),
+            pluralStringResource(R.plurals.loyalty_bookings_completed, bookingsCount, bookingsCount),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White.copy(alpha = 0.85f),
         )
@@ -819,7 +820,11 @@ private fun InviteFriendsCard(referral: ReferralAccountDto) {
         referral.acceptedCount <= 0 ->
             stringResource(R.string.loyalty_referral_stats_empty)
         referral.qualifiedCount <= 0 ->
-            stringResource(R.string.loyalty_referral_stats_waiting, referral.acceptedCount)
+            pluralStringResource(
+                R.plurals.loyalty_referral_stats_waiting,
+                referral.acceptedCount,
+                referral.acceptedCount,
+            )
         else ->
             stringResource(
                 R.string.loyalty_referral_stats_qualified,

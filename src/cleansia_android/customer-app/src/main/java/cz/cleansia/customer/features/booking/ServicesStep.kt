@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -436,7 +437,7 @@ private fun buildIncludesSummary(included: List<cz.cleansia.customer.core.catalo
     return when {
         names.size <= 2 -> "$prefix ${names.joinToString(", ")}"
         else -> "$prefix ${names.take(2).joinToString(", ")} " +
-            stringResource(R.string.booking_package_more, names.size - 2)
+            pluralStringResource(R.plurals.booking_package_more, names.size - 2, names.size - 2)
     }
 }
 
@@ -646,13 +647,13 @@ private fun PropertyCompactRow(
             modifier = Modifier.weight(1f),
         )
         CompactCounter(
-            label = stringResource(R.string.booking_rooms_short, rooms),
+            label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
             onMinus = { onRoomsChange(rooms - 1) },
             onPlus = { onRoomsChange(rooms + 1) },
         )
         Spacer(Modifier.width(8.dp))
         CompactCounter(
-            label = stringResource(R.string.booking_bath_short, bathrooms),
+            label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
             onMinus = { onBathroomsChange(bathrooms - 1) },
             onPlus = { onBathroomsChange(bathrooms + 1) },
         )

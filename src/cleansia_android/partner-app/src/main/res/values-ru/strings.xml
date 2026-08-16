@@ -1318,4 +1318,6 @@
     <string name="offers_card_title">Клиент попросил именно вас</string>
     <string name="offers_card_more">+%1$d ещё</string>
     <string name="offers_card_cta">Посмотреть, что ждёт</string>
+    <string name="bank_account">Банковский счёт</string>
+    <string name="bank_account_helper">Префикс, номер счёта и код банка.</string>
 </resources>

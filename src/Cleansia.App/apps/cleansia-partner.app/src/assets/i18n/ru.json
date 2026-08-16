@@ -177,7 +177,9 @@
       "job_radius_limit": "Уведомлять только о заказах поблизости",
       "job_radius_off_hint": "Мы будем сообщать вам о каждом новом заказе в вашей стране.",
       "job_radius_distance": "Расстояние от дома (км)",
-      "job_radius_distance_hint": "От {{min}} до {{max}} км."
+      "job_radius_distance_hint": "От {{min}} до {{max}} км.",
+      "bank_account": "Банковский счёт",
+      "bank_account_hint": "Префикс, номер счёта и код банка — вставьте счёт целиком, и он разделится сам."
     },
     "dashboard": {
       "title": "Панель управления",

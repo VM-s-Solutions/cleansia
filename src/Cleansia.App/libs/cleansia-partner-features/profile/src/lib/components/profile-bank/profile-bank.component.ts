@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
+  CleansiaBankAccountComponent,
   CleansiaButtonComponent,
   CleansiaFormSkeletonComponent,
   CleansiaSectionComponent,
@@ -24,6 +25,7 @@ import { ProfileBankFacade } from '../../profile/profile-bank.facade';
     ReactiveFormsModule,
     TranslatePipe,
     CleansiaSectionComponent,
+    CleansiaBankAccountComponent,
     CleansiaTextInputComponent,
     CleansiaSelectComponent,
     CleansiaButtonComponent,

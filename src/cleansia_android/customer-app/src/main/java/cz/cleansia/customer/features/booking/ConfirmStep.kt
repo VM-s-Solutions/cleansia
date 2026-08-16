@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -193,7 +194,7 @@ fun ConfirmStep(
             LabeledInfoRow(
                 Icons.Outlined.Home,
                 stringResource(R.string.booking_summary_property),
-                stringResource(R.string.order_detail_rooms_bathrooms, state.rooms, state.bathrooms),
+                roomsAndBathrooms(state.rooms, state.bathrooms),
             )
             LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
             LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })

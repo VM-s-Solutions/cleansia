@@ -53,11 +53,10 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
         // Rooms + bathrooms (backend always returns 0 if unset — show anyway).
         InfoRow(
             label = stringResource(R.string.order_detail_rooms),
-            value = stringResource(
-                R.string.order_detail_rooms_bathrooms,
-                order.rooms,
-                order.bathrooms,
-            ),
+            // Two counts, so this cannot be one <plurals> — Android selects on a single quantity.
+            // Composed from the two resources the booking wizard already uses, which also keeps the
+            // wizard and the order detail reading identically.
+            value = roomsAndBathrooms(order.rooms, order.bathrooms),
         )
         Spacer(Modifier.height(6.dp))
         InfoRow(

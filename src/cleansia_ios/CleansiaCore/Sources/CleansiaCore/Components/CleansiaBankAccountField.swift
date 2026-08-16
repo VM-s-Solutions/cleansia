@@ -54,8 +54,13 @@ public struct CleansiaBankAccountField: View {
         self.enabled = enabled
     }
 
-    private var isError: Bool { errorText != nil }
-    private var isFocused: Bool { focusedSegment != nil }
+    private var isError: Bool {
+        errorText != nil
+    }
+
+    private var isFocused: Bool {
+        focusedSegment != nil
+    }
 
     private var borderColor: Color {
         if isError { return CleansiaColors.error }

@@ -9,7 +9,11 @@ struct OrderCardSurface<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.m)
+        // Vertical only. The scroll view already insets everything by Spacing.ml, the same as the
+        // pinned header, so a further 16pt here started every section's text 16pt to the right of the
+        // order number it belongs under. With the card flat there is no container edge for an inset to
+        // hold away from anyway.
+        .padding(.vertical, Spacing.m)
         // Flat, exactly like the partner sheet's `OrderSectionCard`: a surface-coloured block with no
         // border and no shadow. The 1pt outline this used to carry drew a hard edge around every
         // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.

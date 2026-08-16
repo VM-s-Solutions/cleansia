@@ -32,11 +32,11 @@ struct OrderSectionCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
+        // Flat: a surface-coloured block with no border and no shadow, matching `OrderSectionCard.kt`.
+        // The 1pt outline this used to carry drew a hard edge around every section, so a sheet of six
+        // read as six boxes stacked on a page rather than one panel — and it was the reason iOS still
+        // looked boxed after Android went flat.
         .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
     }
 }
 

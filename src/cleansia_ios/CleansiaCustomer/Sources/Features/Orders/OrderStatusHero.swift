@@ -31,10 +31,20 @@ struct OrderStatusHero: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(headline)
-                    .font(CleansiaTypography.titleLarge)
-                    .fontWeight(.bold)
-                    .foregroundColor(CleansiaColors.onSurface)
+                // The step counter shares the headline's line. On its own row it was a full-width band
+                // with an empty left half, which read as a gap between the headline and the bar it
+                // belongs to — and it is the bar's own label, so it belongs beside the phase.
+                HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
+                    Text(headline)
+                        .font(CleansiaTypography.titleLarge)
+                        .fontWeight(.bold)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Spacer(minLength: Spacing.xs)
+                    Text(stepCounter)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize()
+                }
                 if let subhead {
                     Text(subhead)
                         .font(CleansiaTypography.bodyMedium)
@@ -84,6 +94,17 @@ struct OrderStatusHero: View {
         default:
             L10n.OrderDetail.headlineDefault
         }
+    }
+
+    /// Drawn here rather than by `OrderTrackerBar`, which is passed no label for exactly this reason.
+    private var stepCounter: String {
+        let step = OrderTrackerRule.state(
+            step: LiveProgress.activeStep(for: status)?.rawValue ?? 0,
+            cancelled: false,
+            completed: status == ._5
+        )
+        guard case let .steps(_, stepNumber) = step else { return "" }
+        return L10n.OrderDetail.trackerStepCounter(stepNumber, OrderTrackerRule.stepCount)
     }
 
     private var subhead: String? {

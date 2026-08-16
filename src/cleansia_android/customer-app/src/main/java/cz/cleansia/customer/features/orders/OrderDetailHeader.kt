@@ -167,16 +167,33 @@ internal fun OrderStatusHero(
             .fillMaxWidth()
             .animateContentSize(),
     ) {
-        AnimatedContent(
-            targetState = headlineFor(status, cleanerName),
-            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-            label = "heroHeadlineCrossfade",
-        ) { current ->
-            Text(
-                text = current,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+        // The step counter shares the headline's line. On its own row it was a full-width band with an
+        // empty left half, which read as a gap between the headline and the bar it belongs to — and it
+        // is the bar's own label, so it belongs beside the phase, not above it.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            AnimatedContent(
+                targetState = headlineFor(status, cleanerName),
+                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                label = "heroHeadlineCrossfade",
+                modifier = Modifier.weight(1f),
+            ) { current ->
+                Text(
+                    text = current,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            if (status != OrderStatus.Cancelled) {
+                Spacer(Modifier.width(Spacing.XS))
+                Text(
+                    text = stepCounterLabel(status),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         subheadFor(status, order.estimatedTime)?.let { subhead ->
             Spacer(Modifier.height(2.dp))
@@ -267,26 +284,35 @@ private fun InProgressBar(order: OrderDetailDto, nowMillis: Long) {
  */
 @Composable
 internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier) {
-    val currentStep = when (status) {
-        OrderStatus.Confirmed -> 1
-        OrderStatus.OnTheWay -> 2
-        OrderStatus.InProgress -> 3
-        OrderStatus.Completed -> 4
-        else -> 0
-    }
     val isCompleted = status == OrderStatus.Completed
 
     CoreOrderTrackerBar(
-        currentStep = if (isCompleted) TotalSteps else currentStep,
-        stepCounterLabel = stringResource(
-            R.string.tracker_step_counter,
-            if (isCompleted) TotalSteps else currentStep + 1,
-            TotalSteps,
-        ),
+        currentStep = if (isCompleted) TotalSteps else trackerStep(status),
+        // Null: the counter is drawn on the headline's line by [OrderStatusHero], so the bar is bars
+        // only and sits flush under the phase it describes.
+        stepCounterLabel = null,
         modifier = modifier,
         totalSteps = TotalSteps,
         cancelled = status == OrderStatus.Cancelled,
         cancelledLabel = stringResource(R.string.orders_status_cancelled),
+    )
+}
+
+private fun trackerStep(status: OrderStatus?): Int = when (status) {
+    OrderStatus.Confirmed -> 1
+    OrderStatus.OnTheWay -> 2
+    OrderStatus.InProgress -> 3
+    OrderStatus.Completed -> 4
+    else -> 0
+}
+
+@Composable
+private fun stepCounterLabel(status: OrderStatus?): String {
+    val isCompleted = status == OrderStatus.Completed
+    return stringResource(
+        R.string.tracker_step_counter,
+        if (isCompleted) TotalSteps else trackerStep(status) + 1,
+        TotalSteps,
     )
 }
 

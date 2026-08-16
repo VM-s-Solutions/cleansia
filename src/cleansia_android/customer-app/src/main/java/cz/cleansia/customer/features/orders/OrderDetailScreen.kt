@@ -909,12 +909,17 @@ internal fun Card(content: @Composable () -> Unit) {
     // border and no elevation. The 1dp outline this used to carry drew a hard edge around every
     // section, so a sheet of six cards read as six boxes stacked on a page rather than one panel.
     // The section divider under each title is what separates them now.
+    // No horizontal inset. The scroll column already insets everything by Spacing.ML, the same as the
+    // pinned header, so a further 16dp here started every section's text 16dp to the right of the
+    // order number it belongs under. With the card flat there is no container edge for an inset to
+    // hold away from anyway — only the vertical padding, which is what separates one section from the
+    // next.
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp),
+            .padding(vertical = 16.dp),
     ) { content() }
 }
 

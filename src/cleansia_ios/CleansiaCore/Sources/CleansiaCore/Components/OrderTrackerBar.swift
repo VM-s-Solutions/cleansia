@@ -55,13 +55,15 @@ enum TrackerMetrics {
 /// Twin: `OrderTrackerBar` (Android, `:core`). Keep the two in step.
 public struct OrderTrackerBar: View {
     private let state: OrderTrackerState
-    private let stepCounterLabel: (Int, Int) -> String
+    /// Nil draws the bars alone — for callers that put the counter on their own headline's line, so the
+    /// bar sits flush under the phase it describes instead of below a band with an empty left half.
+    private let stepCounterLabel: ((Int, Int) -> String)?
     private let cancelledLabel: String
 
     public init(
         state: OrderTrackerState,
         cancelledLabel: String,
-        stepCounterLabel: @escaping (Int, Int) -> String
+        stepCounterLabel: ((Int, Int) -> String)? = nil
     ) {
         self.state = state
         self.stepCounterLabel = stepCounterLabel
@@ -74,9 +76,11 @@ public struct OrderTrackerBar: View {
             CancelledTrack(label: cancelledLabel)
         case let .steps(segments, stepNumber):
             VStack(alignment: .trailing, spacing: TrackerMetrics.counterGap) {
-                Text(stepCounterLabel(stepNumber, OrderTrackerRule.stepCount))
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                if let stepCounterLabel {
+                    Text(stepCounterLabel(stepNumber, OrderTrackerRule.stepCount))
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
                 HStack(spacing: TrackerMetrics.gap) {
                     ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                         TrackerSegment(state: segment)

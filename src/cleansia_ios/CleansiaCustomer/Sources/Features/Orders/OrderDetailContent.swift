@@ -149,8 +149,7 @@ struct CustomerOrderTrackerHero: View {
                 cancelled: status == ._6,
                 completed: status == ._5
             ),
-            cancelledLabel: OrderStatusPresentation.label(Code(value: 6)),
-            stepCounterLabel: { step, total in L10n.OrderDetail.trackerStepCounter(step, total) }
+            cancelledLabel: OrderStatusPresentation.label(Code(value: 6))
         )
         .id(locale.identifier)
     }

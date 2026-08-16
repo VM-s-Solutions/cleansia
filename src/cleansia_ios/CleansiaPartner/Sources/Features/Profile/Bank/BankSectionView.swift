@@ -104,25 +104,13 @@ struct BankFormFields: View {
                 enabled: enabled,
                 searchable: true
             )
-            CleansiaTextField(
-                value: $accountPrefix,
-                label: L10n.Profile.bankAccountPrefix,
-                helper: L10n.Profile.bankAccountPrefixHelper,
-                keyboardType: .numberPad,
-                enabled: enabled
-            )
-            CleansiaTextField(
-                value: $accountNumber,
-                label: L10n.Profile.accountNumber,
-                helper: L10n.Profile.bankAccountNumberHelper,
-                keyboardType: .numberPad,
-                enabled: enabled
-            )
-            CleansiaTextField(
-                value: $bankCode,
-                label: L10n.Profile.bankCode,
-                helper: L10n.Profile.bankCodeHelper,
-                keyboardType: .numberPad,
+            // One control, three segments — the account is a single thing to the cleaner typing it.
+            CleansiaBankAccountField(
+                prefix: $accountPrefix,
+                number: $accountNumber,
+                bankCode: $bankCode,
+                label: L10n.Profile.bankAccount,
+                helper: L10n.Profile.bankAccountHelper,
                 enabled: enabled
             )
             CleansiaTextField(

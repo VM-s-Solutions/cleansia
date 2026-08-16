@@ -158,6 +158,14 @@ extension L10n {
             localized("bank_country")
         }
 
+        static var bankAccount: String {
+            localized("bank_account")
+        }
+
+        static var bankAccountHelper: String {
+            localized("bank_account_helper")
+        }
+
         static var bankAccountPrefix: String {
             localized("bank_account_prefix")
         }

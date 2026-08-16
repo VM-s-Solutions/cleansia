@@ -1313,4 +1313,6 @@
     <string name="offers_card_title">Zákazník si vyžiadal vás</string>
     <string name="offers_card_more">+%1$d ďalšie</string>
     <string name="offers_card_cta">Zobraziť, čo čaká</string>
+    <string name="bank_account">Bankový účet</string>
+    <string name="bank_account_helper">Predčíslie, číslo účtu a kód banky.</string>
 </resources>

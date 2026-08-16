@@ -7,10 +7,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaBankAccountInput
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
@@ -61,34 +61,17 @@ fun BankSectionScreen(
                 searchable = true,
             )
             Spacer(Modifier.height(Spacing.XS))
-            CleansiaTextField(
-                value = form.accountPrefix,
-                onValueChange = viewModel::onAccountPrefixChange,
-                label = stringResource(R.string.bank_account_prefix),
-                helper = stringResource(R.string.bank_account_prefix_helper),
-                keyboardType = KeyboardType.Number,
+            // One control, three segments — the account is a single thing to the cleaner typing it.
+            CleansiaBankAccountInput(
+                prefix = form.accountPrefix,
+                number = form.accountNumber,
+                bankCode = form.bankCode,
+                onPrefixChange = viewModel::onAccountPrefixChange,
+                onNumberChange = viewModel::onAccountNumberChange,
+                onBankCodeChange = viewModel::onBankCodeChange,
+                label = stringResource(R.string.bank_account),
+                helper = stringResource(R.string.bank_account_helper),
                 enabled = !saving,
-                transparentContainer = true,
-            )
-            Spacer(Modifier.height(Spacing.XS))
-            CleansiaTextField(
-                value = form.accountNumber,
-                onValueChange = viewModel::onAccountNumberChange,
-                label = stringResource(R.string.account_number),
-                helper = stringResource(R.string.bank_account_number_helper),
-                keyboardType = KeyboardType.Number,
-                enabled = !saving,
-                transparentContainer = true,
-            )
-            Spacer(Modifier.height(Spacing.XS))
-            CleansiaTextField(
-                value = form.bankCode,
-                onValueChange = viewModel::onBankCodeChange,
-                label = stringResource(R.string.bank_code),
-                helper = stringResource(R.string.bank_code_helper),
-                keyboardType = KeyboardType.Number,
-                enabled = !saving,
-                transparentContainer = true,
             )
             Spacer(Modifier.height(Spacing.XS))
             CleansiaTextField(

@@ -1346,4 +1346,6 @@
     <string name="offers_card_title">A customer asked for you</string>
     <string name="offers_card_more">+%1$d more</string>
     <string name="offers_card_cta">See what\'s waiting</string>
+    <string name="bank_account">Bank account</string>
+    <string name="bank_account_helper">Prefix, account number and bank code.</string>
 </resources>

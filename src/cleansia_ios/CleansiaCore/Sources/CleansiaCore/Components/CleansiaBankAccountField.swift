@@ -89,15 +89,15 @@ public struct CleansiaBankAccountField: View {
                 .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
 
             HStack(spacing: 0) {
-                // Prefix is right-aligned: it is optional and usually empty, so left-aligning it would
-                // leave a gap before the dash and break the account's shape. Its width is set by the
-                // longest placeholder we ship ("Predčíslie"), not by its six digits.
+                // Every segment reads from the left, placeholder and digits alike. Right-aligning the
+                // prefix kept its digits against the dash, but it also right-aligned its hint, so the
+                // three labels in an empty control started at three different places. Its width is set
+                // by the longest placeholder we ship ("Predčíslie"), not by its six digits.
                 segment(
                     text: $prefix,
                     placeholder: prefixPlaceholder,
                     maxLength: Self.prefixMaxLength,
-                    focus: .prefix,
-                    alignment: .trailing
+                    focus: .prefix
                 )
                 .frame(width: 76)
 
@@ -107,8 +107,7 @@ public struct CleansiaBankAccountField: View {
                     text: $number,
                     placeholder: numberPlaceholder,
                     maxLength: Self.numberMaxLength,
-                    focus: .number,
-                    alignment: .leading
+                    focus: .number
                 )
                 .frame(maxWidth: .infinity)
 
@@ -118,8 +117,7 @@ public struct CleansiaBankAccountField: View {
                     text: $bankCode,
                     placeholder: bankCodePlaceholder,
                     maxLength: Self.bankCodeMaxLength,
-                    focus: .bankCode,
-                    alignment: .leading
+                    focus: .bankCode
                 )
                 .frame(width: 52)
             }
@@ -149,11 +147,10 @@ public struct CleansiaBankAccountField: View {
         text: Binding<String>,
         placeholder: String,
         maxLength: Int,
-        focus: Segment,
-        alignment: TextAlignment
+        focus: Segment
     ) -> some View {
         TextField("", text: text)
-            .background(alignment: alignment == .trailing ? .trailing : .leading) {
+            .background(alignment: .leading) {
                 if text.wrappedValue.isEmpty, !placeholder.isEmpty {
                     Text(placeholder)
                         .font(CleansiaTypography.bodyMedium)
@@ -164,7 +161,7 @@ public struct CleansiaBankAccountField: View {
             }
             .keyboardType(.numberPad)
             .textContentType(nil)
-            .multilineTextAlignment(alignment)
+            .multilineTextAlignment(.leading)
             .font(CleansiaTypography.bodyLarge)
             .foregroundColor(CleansiaColors.onSurface)
             .disabled(!enabled)

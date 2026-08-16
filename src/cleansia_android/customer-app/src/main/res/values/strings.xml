@@ -1337,9 +1337,4 @@
     </plurals>
     <string name="order_detail_headline_completed">Cleaning complete</string>
     <string name="tracker_step_counter">Step %1$d / %2$d</string>
-    <string name="tracker_countdown_starts_in">Starts in %1$s</string>
-    <string name="tracker_arriving_at">Arriving %1$s</string>
-    <string name="tracker_completed_in">Done in %1$s</string>
-    <string name="duration_hours_minutes">%1$dh %2$dm</string>
-    <string name="duration_minutes_only">%1$dm</string>
 </resources>

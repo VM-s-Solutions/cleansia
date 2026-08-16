@@ -134,11 +134,15 @@ class OrdersListViewModel @Inject constructor(
     ))
     val uiState: StateFlow<OrdersListUiState> = _uiState.asStateFlow()
 
+    // Which pane's rows [OrdersListUiState.orders] is currently holding, or null when it holds none.
+    //
+    // This exists because the repository caches freshness WATERMARKS, not rows: `getPaged` is the only
+    // way to obtain a list and nothing refills `orders` when a fetch is skipped. Without it,
+    // "the pane is fresh, skip the fetch" left the screen on its initial spinner with an empty list
+    // until the user pulled to refresh — see [ensureFreshOrCachedAsync].
+    private var loadedTab: OrdersTab? = null
+
     init {
-        // Cached/stale-checking path — first ever launch will treat the
-        // cache as stale and fetch; subsequent VM recreations within the
-        // freshness window (process death + rapid restart) will skip the
-        // network and render the cached singleton-repo state immediately.
         ensureFreshOrCachedAsync(OrdersTab.Available)
         refreshLocation()
     }
@@ -150,6 +154,7 @@ class OrdersListViewModel @Inject constructor(
         // still lives on the singleton repo, so a fresh pane will refill
         // in a frame or two; a stale pane will refetch silently.
         _uiState.update { it.copy(tab = tab, orders = emptyList()) }
+        loadedTab = null
         ensureFreshOrCachedAsync(tab)
     }
 
@@ -210,12 +215,22 @@ class OrdersListViewModel @Inject constructor(
     }
 
     /**
-     * If the [tab]'s pane is stale (or has never been fetched), kick a
-     * silent background refresh. Fresh cache => no-op. Never sets
-     * [OrdersListUiState.isUserRefreshing] — that's reserved for [onRefresh].
+     * If the [tab]'s pane is stale — or this view model is not holding its rows — kick a silent
+     * background refresh. Never sets [OrdersListUiState.isUserRefreshing]; that's reserved for
+     * [onRefresh].
+     *
+     * **A fresh watermark alone is not enough to skip.** The repository stores watermarks, not rows, so
+     * skipping left `orders` empty and [OrdersListUiState.isInitialLoad] true — a spinner that never
+     * ended until the cleaner pulled to refresh. It reproduced on every route back into the tab within
+     * the freshness window, and on every tab switch, because [selectTab] empties the list first.
+     * [loadedTab] is what makes "fresh" mean "the rows are already on screen".
+     *
+     * `InvoicesListViewModel` hit the same failure mode and patched it by force-setting
+     * `hasLoadedOnce`; that clears the spinner but would show an empty list here, so orders tracks the
+     * rows instead of the flag.
      */
     private fun ensureFreshOrCachedAsync(tab: OrdersTab) {
-        if (!ordersRepository.isPaneStale(tab.toPane())) return
+        if (loadedTab == tab && !ordersRepository.isPaneStale(tab.toPane())) return
         fetchAsync(tab, background = true)
     }
 
@@ -286,6 +301,7 @@ class OrdersListViewModel @Inject constructor(
                     // already swapped tabs while the call was in flight —
                     // otherwise we'd flash the wrong rows for a frame.
                     val sameTab = it.tab == tab
+                    if (sameTab) loadedTab = tab
                     it.copy(
                         isUserRefreshing = false,
                         isBackgroundRefreshing = false,

@@ -550,6 +550,12 @@ private fun OrderDetailSheetContent(
     ) {
         SheetGrabber()
 
+        // Identity, pinned: it does not scroll, so dragging the sheet down onto the map still leaves
+        // the customer looking at which order this is. The mascot rides the sheet's top edge on the
+        // RIGHT, so this row keeps its trailing half clear — that is why the date sits under the order
+        // number rather than opposite it. The iOS twin is `OrderDetailCompactHeader`.
+        OrderDetailCompactHeader(order = order)
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -561,23 +567,16 @@ private fun OrderDetailSheetContent(
                 .padding(horizontal = Spacing.ML),
             verticalArrangement = Arrangement.spacedBy(Spacing.S),
         ) {
-            // Together with the grabber block and the column gap this clears
-            // the half of the mascot that lands on the sheet; without it the
-            // character sits on the hero card's top-right corner. It only has
-            // to hold at rest — past that the mascot scrolls away with it.
-            Spacer(Modifier.height(if (status == OrderStatus.Cancelled) Spacing.XS else 32.dp))
-
             // Hero block: the status headline sits directly on the tracker bar with no gap, so the two
-            // read as one group — the partner sheet's arrangement, and the reason the inner Column
-            // overrides the parent's spacedBy.
+            // read as one group — and the inner Column is why it overrides the parent's spacedBy.
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                OrderStatusHeroCard(order = order, status = status)
+                OrderStatusHero(order = order, status = status)
                 OrderTrackerBar(status = status)
             }
 
-            // Order # + status pill + price on one line, date underneath. The identity strip below the
-            // active-state block, matching the partner sheet.
-            OrderMetadataRow(order = order)
+            // Confirmation code and price. Everything that identifies the order is in the pinned
+            // header above; this carries only what the header has no room for.
+            OrderFactsStrip(order = order)
 
             // Sits right under the hero so it's the first thing the customer
             // sees after tapping the recurring-scheduled push.

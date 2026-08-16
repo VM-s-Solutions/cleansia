@@ -21,7 +21,7 @@ enum LiveProgressStep: Int, CaseIterable {
 
 enum LiveProgress {
     /// Active step index for the five-dot indicator, mirroring `StepIndicator`
-    /// in `LiveProgressHero.kt`. New/Pending → Booked, Confirmed →
+    /// in `OrderDetailHeader.kt`. New/Pending → Booked, Confirmed →
     /// Accepted, OnTheWay → On the way, InProgress → Started, Completed →
     /// Finished; Cancelled (or unknown) → none.
     static func activeStep(for status: OrderStatus?) -> LiveProgressStep? {
@@ -37,7 +37,7 @@ enum LiveProgress {
 
     /// Progress fraction (0…0.97) since the InProgress entry was recorded vs the
     /// estimated duration. Returns nil when either anchor is missing — never a
-    /// guess (`computeInProgressProgress` in `LiveProgressHero.kt`).
+    /// guess (`computeInProgressProgress` in `OrderDetailHeader.kt`).
     static func inProgressFraction(
         history: [OrderStatusTrackDto]?,
         estimatedMinutes: Int,

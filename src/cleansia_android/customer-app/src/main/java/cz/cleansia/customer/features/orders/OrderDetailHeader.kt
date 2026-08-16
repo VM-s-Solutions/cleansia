@@ -9,7 +9,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,11 +38,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.core.format.formatOrderTime
 import cz.cleansia.core.ui.components.OrderTrackerBar as CoreOrderTrackerBar
+import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.ui.format.orderStatusColor
@@ -52,62 +49,108 @@ import kotlinx.coroutines.delay
 import java.time.Instant
 
 /**
- * The sheet header, built to the same three-part shape the partner sheet uses — hero card, tracker bar
- * glued straight to its underside, identity row beneath — because a customer and a cleaner looking at
- * the same order were reading two different screens: the customer's had no phase tracker at all outside
- * the three live statuses, and put the cleaning date inside the hero where the partner puts the price.
+ * The sheet header, in four parts: a pinned identity row, then a headline, the five-phase tracker glued
+ * to its underside, and a facts strip.
  *
- * **The shape is shared; the words are not.** The partner's copy is instructional to a worker ("Slide
- * below to take this job"); the customer's answers "what is happening to my booking". Only the layout,
- * the type scale and the ordering are held in common.
+ * **Android and iOS render the same four parts in the same order**, because they were two different
+ * screens: iOS pinned the order number and date at the top while Android put the date inside the hero
+ * and then repeated it in a metadata row below — the same timestamp twice, forty pixels apart.
+ * `OrderDetailContent.swift` is the twin; keep the two in step.
+ *
+ * **Nothing here draws a container.** The headline used to sit in a surface with its own radius, which
+ * fenced it off from the tracker bar it is supposed to read as one block with, and cost a band of
+ * whitespace above and below. The sheet is the surface.
  *
  * → /domain/order-lifecycle for what the five phases mean.
  */
 private const val TotalSteps = 5
 
-/* ── 1. Hero ── */
+/* ── 1. Pinned identity ── */
 
 /**
- * Phase-appropriate big text with a one-line eyebrow above it — the customer twin of the partner's
- * `OrderTimerCard`. Bottom padding is deliberately 0: the tracker bar renders flush underneath, and the
- * two are one visual group.
+ * `#ORD-…  (New)` over `📅 Sun, Aug 16 at 08:00`, pinned above the scroll area.
  *
- * Cancelled renders nothing. There is no phase to narrate on a dead order, and the tracker below draws
- * its own red bar.
+ * The trailing half is deliberately empty: the mascot rides the sheet's top edge at the right, and this
+ * is the row its lower half lands on.
  */
 @Composable
-internal fun OrderStatusHeroCard(
+internal fun OrderDetailCompactHeader(
+    order: OrderDetailDto,
+    modifier: Modifier = Modifier,
+) {
+    val dateLabel = order.cleaningDateTime
+        ?.takeIf { it.isNotBlank() }
+        ?.let { formatOrderDateTime(it) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = Spacing.ML, end = Spacing.ML, bottom = Spacing.XS),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = order.displayOrderNumber?.let { "#$it" } ?: "—",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            val statusLabel = orderStatusLabelRes(order.orderStatus?.value)
+                ?.let { stringResource(it) }
+                ?: order.orderStatus?.name
+            if (statusLabel != null) {
+                StatusPill(
+                    label = statusLabel,
+                    color = orderStatusColor(order.orderStatus?.value),
+                )
+            }
+        }
+        if (dateLabel != null) {
+            Spacer(Modifier.height(2.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarToday,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = dateLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/* ── 2. Hero ── */
+
+/**
+ * What is happening to the booking, in a sentence — plus a subhead and, while the clean is running, an
+ * elapsed-over-estimated bar.
+ *
+ * It carries no date and no price. Both are already on screen: the date in the pinned header above, the
+ * price in the facts strip below. Cancelled renders nothing at all — there is no phase to narrate on a
+ * dead order, and the tracker below draws its own red bar.
+ */
+@Composable
+internal fun OrderStatusHero(
     order: OrderDetailDto,
     status: OrderStatus?,
     modifier: Modifier = Modifier,
 ) {
     if (status == OrderStatus.Cancelled) return
 
-    val scheduledMillis = remember(order.cleaningDateTime) {
-        order.cleaningDateTime
-            ?.takeIf { it.isNotBlank() }
-            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
-    }
-    val startedAtMillis = remember(order.statusHistory) {
-        order.statusHistory.orEmpty()
-            .firstOrNull { orderStatusFromValue(it.status?.value) == OrderStatus.InProgress }
-            ?.createdOn
-            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
-    }
-
-    // Phase-aware ticker, matching the partner's: 1Hz while the clock is running, 1/min while a
-    // countdown is ticking down, idle otherwise so a settled order costs no battery.
-    val tickIntervalMs: Long? = when (status) {
-        OrderStatus.InProgress -> 1_000L
-        OrderStatus.Confirmed -> 60_000L
-        else -> null
-    }
+    // Only the in-progress bar needs a clock, and only while the clean is running.
     var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(tickIntervalMs, status) {
-        val interval = tickIntervalMs ?: return@LaunchedEffect
+    LaunchedEffect(status) {
+        if (status != OrderStatus.InProgress) return@LaunchedEffect
         while (true) {
             nowMillis = System.currentTimeMillis()
-            delay(interval)
+            delay(30_000L)
         }
     }
 
@@ -116,137 +159,62 @@ internal fun OrderStatusHeroCard(
         ?.fullName
         ?.takeIf { it.isNotBlank() }
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = Spacing.S)
+            .animateContentSize(),
     ) {
-        Column(
-            modifier = Modifier
-                // The 4dp inset matches [OrderMetadataRow] so the eyebrow, the big text, the order
-                // number and the date all share one left edge. 0dp at the bottom keeps the big text
-                // flush against the tracker bar drawn directly below in the parent column.
-                .padding(PaddingValues(start = 4.dp, end = 4.dp, top = 12.dp, bottom = 0.dp))
-                .animateContentSize(),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            HeroEyebrow(status = status, cleanerName = cleanerName)
+        AnimatedContent(
+            targetState = headlineFor(status, cleanerName),
+            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+            label = "heroHeadlineCrossfade",
+        ) { current ->
+            Text(
+                text = current,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        subheadFor(status, order.estimatedTime)?.let { subhead ->
             Spacer(Modifier.height(2.dp))
-            HeroPrimaryText(
-                status = status,
-                scheduledMillis = scheduledMillis,
-                startedAtMillis = startedAtMillis,
-                nowMillis = nowMillis,
-            )
-            heroSubhead(status, order.estimatedTime)?.let { subhead ->
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = subhead,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            // Elapsed-over-estimated. This answers a different question from the phase tracker below —
-            // "how far through THIS clean are we" rather than "which phase is it in" — so it stays.
-            if (status == OrderStatus.InProgress) {
-                InProgressBar(order = order, nowMillis = nowMillis)
-            }
-            Spacer(Modifier.height(10.dp))
-        }
-    }
-}
-
-@Composable
-private fun HeroEyebrow(status: OrderStatus?, cleanerName: String?) {
-    val text = when (status) {
-        OrderStatus.Confirmed -> if (cleanerName != null) {
-            stringResource(R.string.order_detail_headline_confirmed_named, cleanerName)
-        } else {
-            stringResource(R.string.order_detail_headline_confirmed)
-        }
-        OrderStatus.OnTheWay -> if (cleanerName != null) {
-            stringResource(R.string.order_detail_headline_on_the_way_named, cleanerName)
-        } else {
-            stringResource(R.string.order_detail_headline_on_the_way)
-        }
-        OrderStatus.InProgress -> if (cleanerName != null) {
-            stringResource(R.string.order_detail_headline_in_progress_named, cleanerName)
-        } else {
-            stringResource(R.string.order_detail_headline_in_progress)
-        }
-        OrderStatus.Completed -> stringResource(R.string.order_detail_headline_completed)
-        else -> stringResource(R.string.order_detail_headline_default)
-    }
-    AnimatedContent(
-        targetState = text,
-        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-        label = "heroEyebrowCrossfade",
-    ) { current ->
-        Text(
-            text = current,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/**
- * The one number the phase is actually about: when it starts, how long until it does, when the cleaner
- * arrives, how long they have been working, how long it took.
- */
-@Composable
-private fun HeroPrimaryText(
-    status: OrderStatus?,
-    scheduledMillis: Long?,
-    startedAtMillis: Long?,
-    nowMillis: Long,
-) {
-    val text: String = when (status) {
-        OrderStatus.Confirmed -> {
-            val remainingMs = (scheduledMillis ?: 0L) - nowMillis
-            if (scheduledMillis != null && remainingMs > 0) {
-                stringResource(
-                    R.string.tracker_countdown_starts_in,
-                    formatHoursMinutesDuration((remainingMs / 60_000L).toInt()),
-                )
-            } else {
-                formatOrderDateTime(toIso(scheduledMillis))
-            }
-        }
-        OrderStatus.OnTheWay -> stringResource(
-            R.string.tracker_arriving_at,
-            formatOrderTime(toIso(scheduledMillis)),
-        )
-        OrderStatus.InProgress ->
-            formatElapsedClock((nowMillis - (startedAtMillis ?: nowMillis)).coerceAtLeast(0L))
-        OrderStatus.Completed -> {
-            val durationMillis = if (startedAtMillis != null) {
-                (nowMillis.coerceAtLeast(startedAtMillis) - startedAtMillis).coerceAtLeast(0L)
-            } else {
-                0L
-            }
-            stringResource(
-                R.string.tracker_completed_in,
-                formatHoursMinutesDuration((durationMillis / 60_000L).toInt()),
+            Text(
+                text = subhead,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // New / Pending: nothing has happened yet, so the date it is booked for IS the headline.
-        else -> formatOrderDateTime(toIso(scheduledMillis))
+        // Elapsed over estimated. A different question from the phase tracker below — "how far through
+        // THIS clean are we" rather than "which phase is it in" — so it stays.
+        if (status == OrderStatus.InProgress) {
+            InProgressBar(order = order, nowMillis = nowMillis)
+        }
     }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.headlineMedium.copy(
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-0.5).sp,
-        ),
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 1,
-    )
 }
 
 @Composable
-private fun heroSubhead(status: OrderStatus?, estimatedMinutes: Int): String? = when (status) {
+private fun headlineFor(status: OrderStatus?, cleanerName: String?): String = when (status) {
+    OrderStatus.Confirmed -> if (cleanerName != null) {
+        stringResource(R.string.order_detail_headline_confirmed_named, cleanerName)
+    } else {
+        stringResource(R.string.order_detail_headline_confirmed)
+    }
+    OrderStatus.OnTheWay -> if (cleanerName != null) {
+        stringResource(R.string.order_detail_headline_on_the_way_named, cleanerName)
+    } else {
+        stringResource(R.string.order_detail_headline_on_the_way)
+    }
+    OrderStatus.InProgress -> if (cleanerName != null) {
+        stringResource(R.string.order_detail_headline_in_progress_named, cleanerName)
+    } else {
+        stringResource(R.string.order_detail_headline_in_progress)
+    }
+    OrderStatus.Completed -> stringResource(R.string.order_detail_headline_completed)
+    else -> stringResource(R.string.order_detail_headline_default)
+}
+
+@Composable
+private fun subheadFor(status: OrderStatus?, estimatedMinutes: Int): String? = when (status) {
     OrderStatus.Confirmed -> stringResource(R.string.order_detail_subhead_confirmed)
     OrderStatus.OnTheWay -> stringResource(R.string.order_detail_subhead_on_the_way)
     OrderStatus.InProgress -> if (estimatedMinutes > 0) {
@@ -287,12 +255,13 @@ private fun InProgressBar(order: OrderDetailDto, nowMillis: Long) {
     )
 }
 
-/* ── 2. Tracker ── */
+/* ── 3. Tracker ── */
 
 /**
- * The five-phase bar, drawn from `:core` off the customer's own status enum. Rendered for EVERY status,
- * which is the point: before this, an order that was merely booked or already finished showed no phase
- * indicator at all, and the customer had no way to see where in the run it sat.
+ * The five-phase bar, drawn from `:core` off the customer's own status enum.
+ *
+ * Rendered for EVERY status, which is the point: before this, an order that was merely booked or already
+ * finished showed no phase indicator at all, and the customer had no way to see where in the run it sat.
  */
 @Composable
 internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier) {
@@ -319,100 +288,70 @@ internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier
     )
 }
 
-/* ── 3. Identity row ── */
+/* ── 4. Facts ── */
 
 /**
- * `#ORD-…  (Confirmed)                    [1 200 Kč]` / `📅 22 May 2026, 9:00` / `Code 4821`
+ * `Code D23AF7 ......... 1 660 Kč` — the two facts the pinned header has no room for.
  *
- * The partner's `OrderMetadataRow`, plus the confirmation code — which the partner has no equivalent of,
- * and which is how the customer identifies the person at their door. Transparent, no card: it reads as
- * metadata between the hero above and the section cards below.
+ * The confirmation code is how the customer identifies the person at their door, so it stays reachable
+ * at every status rather than only while a cleaner is on the way.
  */
 @Composable
-internal fun OrderMetadataRow(
+internal fun OrderFactsStrip(
     order: OrderDetailDto,
     modifier: Modifier = Modifier,
 ) {
     val currencyCode = order.currency?.code
-    val dateLabel = order.cleaningDateTime
-        ?.takeIf { it.isNotBlank() }
-        ?.let { formatOrderDateTime(it) }
     val hasDiscount = order.appliedDiscountSource != 0 &&
         order.originalSubtotal > order.totalPrice
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+        order.confirmationCode?.takeIf { it.isNotBlank() }?.let { code ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f, fill = false),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    text = order.displayOrderNumber?.let { "#$it" } ?: "—",
+                    text = stringResource(R.string.order_detail_code_label),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = code,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val statusLabel = orderStatusLabelRes(order.orderStatus?.value)
-                    ?.let { stringResource(it) }
-                    ?: order.orderStatus?.name
-                if (statusLabel != null) {
-                    MetadataStatusPill(
-                        label = statusLabel,
-                        color = orderStatusColor(order.orderStatus?.value),
-                    )
-                }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                PriceChip(formatOrderPrice(order.totalPrice, currencyCode))
-                if (hasDiscount) {
-                    Text(
-                        text = formatOrderPrice(order.originalSubtotal, currencyCode),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            textDecoration = TextDecoration.LineThrough,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
-        if (dateLabel != null) {
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.CalendarToday,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(Spacing.XS))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (hasDiscount) {
                 Text(
-                    text = dateLabel,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = formatOrderPrice(order.originalSubtotal, currencyCode),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        textDecoration = TextDecoration.LineThrough,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-        order.confirmationCode?.takeIf { it.isNotBlank() }?.let { code ->
-            Spacer(Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.order_detail_code_label) + " " + code,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = formatOrderPrice(order.totalPrice, currencyCode),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }
 }
 
 @Composable
-private fun MetadataStatusPill(label: String, color: Color) {
+private fun StatusPill(label: String, color: Color) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -424,24 +363,6 @@ private fun MetadataStatusPill(label: String, color: Color) {
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = color,
-        )
-    }
-}
-
-@Composable
-private fun PriceChip(label: String) {
-    Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.2).sp,
-            ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }
@@ -472,31 +393,4 @@ private fun computeInProgressProgress(
     val elapsedSec = (nowEpoch - startedEpoch).coerceAtLeast(0L)
 
     return (elapsedSec.toFloat() / totalSec.toFloat()).coerceIn(0f, 0.97f)
-}
-
-private fun toIso(epochMillis: Long?): String? =
-    epochMillis?.let { Instant.ofEpochMilli(it).toString() }
-
-/** "1:42:08" past an hour, "02:08" for shorter jobs. */
-private fun formatElapsedClock(millis: Long): String {
-    val totalSeconds = millis / 1_000L
-    val hours = totalSeconds / 3_600L
-    val minutes = (totalSeconds % 3_600L) / 60L
-    val seconds = totalSeconds % 60L
-    return if (hours > 0) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%02d:%02d".format(minutes, seconds)
-    }
-}
-
-@Composable
-private fun formatHoursMinutesDuration(totalMinutes: Int): String {
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    return if (hours > 0) {
-        stringResource(R.string.duration_hours_minutes, hours, minutes)
-    } else {
-        stringResource(R.string.duration_minutes_only, minutes)
-    }
 }

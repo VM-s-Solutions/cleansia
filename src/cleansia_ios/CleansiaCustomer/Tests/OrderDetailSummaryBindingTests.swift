@@ -17,7 +17,7 @@ final class OrderDetailSummaryBindingTests: XCTestCase {
     /// asks for at the door is unreachable.
     func testTheHeroIsFollowedByTheFactsStrip() throws {
         let source = try read(Self.content)
-        XCTAssertTrue(source.contains("LiveProgressHero(order: order)"))
+        XCTAssertTrue(source.contains("OrderStatusHero(order: order)"))
         XCTAssertTrue(
             source.contains("OrderHeroFactsStrip(order: order)"),
             "the code is unreachable under the hero"

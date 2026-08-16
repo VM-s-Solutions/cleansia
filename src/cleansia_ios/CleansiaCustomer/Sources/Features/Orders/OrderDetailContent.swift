@@ -22,7 +22,7 @@ struct OrderDetailContent: View {
                     // Zero spacing: the headline and the segmented bar are one hero block, not two
                     // stacked sections — the partner sheet's arrangement.
                     VStack(alignment: .leading, spacing: 0) {
-                        LiveProgressHero(order: order)
+                        OrderStatusHero(order: order)
                         CustomerOrderTrackerHero(status: status)
                     }
                     OrderHeroFactsStrip(order: order)

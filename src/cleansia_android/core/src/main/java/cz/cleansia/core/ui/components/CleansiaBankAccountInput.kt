@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,8 +109,9 @@ fun CleansiaBankAccountInput(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
-            // Prefix is right-aligned: it is optional and usually empty, so left-aligning it would
-            // leave a gap before the dash and break the account's shape. Its width is set by the
+            // Every segment reads from the left, placeholder and digits alike. Right-aligning the
+            // prefix kept its digits against the dash, but it also right-aligned its hint, so the three
+            // labels in an empty control started at three different places. Its width is set by the
             // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
@@ -120,7 +120,6 @@ fun CleansiaBankAccountInput(
                 enabled = enabled,
                 placeholder = prefixPlaceholder,
                 modifier = Modifier.width(76.dp),
-                textAlign = TextAlign.End,
             )
             Separator("–")
             AccountSegment(
@@ -166,7 +165,6 @@ private fun AccountSegment(
     enabled: Boolean,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
-    textAlign: TextAlign = TextAlign.Start,
 ) {
     BasicTextField(
         value = value,
@@ -178,18 +176,11 @@ private fun AccountSegment(
         textStyle = LocalTextStyle.current.copy(
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp,
-            textAlign = textAlign,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         decorationBox = { innerTextField ->
-            Box(
-                contentAlignment = if (textAlign == TextAlign.End) {
-                    Alignment.CenterEnd
-                } else {
-                    Alignment.CenterStart
-                },
-            ) {
+            Box(contentAlignment = Alignment.CenterStart) {
                 if (value.isEmpty() && !placeholder.isNullOrBlank()) {
                     Text(
                         text = placeholder,

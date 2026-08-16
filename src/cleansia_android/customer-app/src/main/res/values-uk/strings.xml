@@ -1324,9 +1324,4 @@
     </plurals>
     <string name="order_detail_headline_completed">Прибирання завершено</string>
     <string name="tracker_step_counter">Крок %1$d / %2$d</string>
-    <string name="tracker_countdown_starts_in">Починається через %1$s</string>
-    <string name="tracker_arriving_at">Прибуття %1$s</string>
-    <string name="tracker_completed_in">Готово за %1$s</string>
-    <string name="duration_hours_minutes">%1$d год %2$d хв</string>
-    <string name="duration_minutes_only">%1$d хв</string>
 </resources>

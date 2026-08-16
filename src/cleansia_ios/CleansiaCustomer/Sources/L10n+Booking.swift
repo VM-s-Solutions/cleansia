@@ -44,7 +44,7 @@ extension L10n {
         }
 
         static func packageMore(_ count: Int) -> String {
-            format("booking_package_more", count)
+            plural("booking_package_more", count)
         }
 
         static func priceFrom(_ amount: Int) -> String {
@@ -60,11 +60,11 @@ extension L10n {
         }
 
         static func roomsShort(_ count: Int) -> String {
-            format("booking_rooms_short", count)
+            plural("booking_rooms_short", count)
         }
 
         static func bathShort(_ count: Int) -> String {
-            format("booking_bath_short", count)
+            plural("booking_bath_short", count)
         }
 
         static var noResults: String {

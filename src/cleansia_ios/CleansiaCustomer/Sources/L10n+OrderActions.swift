@@ -125,7 +125,7 @@ extension L10n {
         }
 
         static func starContentDesc(_ star: Int) -> String {
-            format("order_review_star_content_desc", star)
+            plural("order_review_star_content_desc", star)
         }
 
         static func ratingDescription(_ rating: Int) -> String {

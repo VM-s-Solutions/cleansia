@@ -127,7 +127,7 @@ extension L10n {
         }
 
         static func milestoneSubtitle(_ pointsToNext: Int, _ nextTier: String) -> String {
-            format("home_milestone_subtitle_v2", pointsToNext, nextTier)
+            plural("home_milestone_subtitle_v2", pointsToNext, nextTier)
         }
 
         static var seasonalTitle: String {

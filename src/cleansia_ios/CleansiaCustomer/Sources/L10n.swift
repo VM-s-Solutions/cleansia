@@ -55,6 +55,18 @@ enum L10n {
         String(format: localized(key), arguments: args)
     }
 
+    /// A key whose `.xcstrings` entry carries PLURAL VARIATIONS.
+    ///
+    /// `String(format:)` is not enough: plural selection is applied by
+    /// `String.localizedStringWithFormat`, which resolves the variation against the current locale's
+    /// rules before substituting. Calling `format` on a plural key returns whichever form happens to be
+    /// the base and silently ignores the count — which is the bug this whole migration exists to fix,
+    /// so it must not be reintroduced by using the wrong helper.
+    static func plural(_ key: String, _ count: Int, _ extra: CVarArg...) -> String {
+        // locale: .current is what applies the plural rules; String(format:) without it does not.
+        String(format: localized(key), locale: .current, arguments: [count as CVarArg] + extra)
+    }
+
     static func format(_ key: String, arguments: [CVarArg]) -> String {
         String(format: localized(key), arguments: arguments)
     }

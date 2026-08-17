@@ -63,7 +63,11 @@ struct SubscribePlusScreen: View {
             }
             .background(CleansiaColors.background.ignoresSafeArea())
         }
-        .navigationBarBackButtonHidden(true)
+        // The bar is hidden, so there is no back button to see — but hiding it EXPLICITLY also sets
+        // `hidesBackButton`, and UIKit's own interactive-pop delegate refuses to begin when that is on.
+        // `InteractivePopGestureEnabler` (CustomerShellView) re-enables the recognizer stack-wide and
+        // deliberately keeps the native delegate, so this screen was the one thing still vetoing the
+        // swipe. Hiding the toolbar alone gets the same look and keeps the gesture.
         .toolbar(.hidden, for: .navigationBar)
         .task {
             await vm.load()
@@ -119,6 +123,11 @@ struct SubscribePlusScreen: View {
     }
 }
 
+/// The character perched on the plan switcher: his size, and how much of him sits below the control's
+/// top edge so he reads as resting on it rather than hovering.
+private let mascotSize: CGFloat = 84
+private let mascotPerch: CGFloat = 14
+
 private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
@@ -128,50 +137,54 @@ private struct HeroBlock: View {
     let onBack: () -> Void
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                HStack {
-                    Button(action: onBack) {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                }
-                HStack(spacing: Spacing.xs) {
-                    Spacer()
-                    Text(verbatim: "Cleansia")
-                        .cleansiaFont(CleansiaTypography.displayMedium)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
-                    Text(L10n.Membership.inactiveBadge)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(MembershipPalette.slate900)
-                        .padding(.horizontal, Spacing.s)
-                        .padding(.vertical, 4)
-                        .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
-                    Spacer()
                 }
-                Text(L10n.Membership.heroHeadline)
-                    .cleansiaFont(CleansiaTypography.headlineMedium)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .multilineTextAlignment(.center)
-                priceBlock
-                if plans.count >= 2 {
-                    PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
-                }
-                Spacer().frame(height: 56)
+                Spacer()
             }
-            .padding(.horizontal, Spacing.ml)
-            .padding(.bottom, Spacing.ml)
-            .padding(.top, Spacing.ml + topInset)
-            Mascot.waving.image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 96, height: 96)
-                .padding(.trailing, Spacing.s)
-                .padding(.bottom, Spacing.xxs)
+            HStack(spacing: Spacing.xs) {
+                Spacer()
+                Text(verbatim: "Cleansia")
+                    .cleansiaFont(CleansiaTypography.displayMedium)
+                    .foregroundColor(.white)
+                Text(L10n.Membership.inactiveBadge)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(MembershipPalette.slate900)
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.vertical, 4)
+                    .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
+                Spacer()
+            }
+            Text(L10n.Membership.heroHeadline)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
+            priceBlock
+            if plans.count >= 2 {
+                PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
+                    // He sits ON the Annual segment: anchored to the switcher's top-trailing corner
+                    // and lifted by his own height less an overlap, so his feet rest on the control's
+                    // top edge rather than floating above it. Non-interactive, or he would eat the
+                    // taps meant for the segment he is sitting on.
+                    .overlay(alignment: .topTrailing) {
+                        Mascot.waving.image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: mascotSize, height: mascotSize)
+                            .offset(x: -Spacing.m, y: -mascotSize + mascotPerch)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+            }
         }
+        .padding(.horizontal, Spacing.ml)
+        .padding(.bottom, Spacing.ml)
+        .padding(.top, Spacing.ml + topInset)
         .frame(maxWidth: .infinity)
         .background(
             LinearGradient(

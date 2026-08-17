@@ -38,7 +38,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
-    private const string ApproximateAddress = "Praha · 120";
+    private const string ApproximateAddress = "Praha · 120 xx";
     private const double Latitude = 50.0755;
     private const double Longitude = 14.4378;
     private const string AccessInstructions = "Code 1234 at the gate.";

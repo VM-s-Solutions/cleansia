@@ -107,10 +107,7 @@ struct OrderDetailCompactHeader: View {
                             .font(CleansiaTypography.titleMedium)
                             .foregroundColor(CleansiaColors.onSurface)
                     }
-                    OrderStatusPill(
-                        label: OrderStatusPresentation.label(order.statusCode),
-                        color: OrderStatusPresentation.color(order.statusCode)
-                    )
+                    OrderStatusPill(code: order.statusCode)
                 }
                 Label(
                     OrdersFormat.dateTime(order.cleaningDateTime, locale: locale),

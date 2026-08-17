@@ -955,6 +955,17 @@
     <string name="scope_section_title">Objekt &amp; rozsah</string>
     <string name="scope_services_label">Služby a balíčky</string>
     <string name="scope_extras_label">Doplňky</string>
+
+    <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
+    <string name="extra_name_inside_oven">Čištění vnitřku trouby</string>
+    <string name="extra_name_inside_fridge">Čištění vnitřku ledničky</string>
+    <string name="extra_name_interior_windows">Vnitřní okna</string>
+    <string name="extra_name_laundry_ironing">Praní a žehlení</string>
+    <string name="extra_name_pet_hair_supplement">Důkladné odstranění zvířecích chlupů</string>
+
+    <!-- Shown instead of the map when the order has no street address to point at. -->
+    <string name="map_approximate_area">Přibližná oblast — přesnou adresu uvidíte, jakmile objednávku přijmete.</string>
+
     <string name="from_customer_section_title">Od zákazníka</string>
     <string name="note_general_label">Poznámka</string>
     <string name="note_access_label">Přístup</string>

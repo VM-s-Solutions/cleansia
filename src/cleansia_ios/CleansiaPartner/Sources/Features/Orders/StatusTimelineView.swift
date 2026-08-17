@@ -61,7 +61,12 @@ private struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
             VStack(spacing: 0) {
-                dot
+                OrderTimelinePoint(
+                    segment: entry.isCurrent ? .current : .past,
+                    // Keeps the green the sheet already used for a step that is behind us; the SHAPE,
+                    // not the fill, is now what separates it from the step we are on.
+                    tint: entry.isCurrent ? CleansiaColors.primary : CleansiaColors.successText
+                )
                 if !isLast {
                     Rectangle()
                         .fill(CleansiaColors.outlineVariant)
@@ -80,24 +85,6 @@ private struct TimelineRow: View {
             }
             .padding(.bottom, isLast ? 0 : Spacing.s)
             Spacer()
-        }
-    }
-
-    @ViewBuilder
-    private var dot: some View {
-        if entry.isCurrent {
-            Circle()
-                .fill(CleansiaColors.primary)
-                .frame(width: 20, height: 20)
-        } else {
-            Circle()
-                .fill(CleansiaColors.successText)
-                .frame(width: 20, height: 20)
-                .overlay(
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white)
-                )
         }
     }
 }

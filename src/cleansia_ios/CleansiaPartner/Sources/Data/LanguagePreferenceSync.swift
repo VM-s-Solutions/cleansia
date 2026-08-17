@@ -70,12 +70,13 @@ final class LiveLanguagePreferenceSync: LanguagePreferenceSync, @unchecked Senda
               case let .success(user) = await client.getCurrentUser(),
               let push = LanguagePreferencePush.forUser(user, languageCode: languageCode)
         else { return }
-        _ = await client.updateCurrentUser(
+        // No photo members: this save says nothing about the avatar, which is what leaves it untouched.
+        _ = await client.updateCurrentUser(CurrentUserUpdate(
             firstName: push.firstName,
             lastName: push.lastName,
             phoneNumber: push.phoneNumber,
             birthDate: push.birthDate,
             languageCode: push.languageCode
-        )
+        ))
     }
 }

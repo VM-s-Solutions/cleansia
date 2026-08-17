@@ -159,6 +159,14 @@ extension L10n {
             localized("order_detail_notes")
         }
 
+        static var copy: String {
+            localized("order_detail_copy")
+        }
+
+        static var copied: String {
+            localized("order_detail_copied")
+        }
+
         static var cleaners: String {
             localized("order_detail_cleaners")
         }

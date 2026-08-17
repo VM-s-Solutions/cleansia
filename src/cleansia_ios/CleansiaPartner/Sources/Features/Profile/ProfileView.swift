@@ -4,8 +4,12 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var vm: ProfileViewModel
+    @StateObject private var avatarVM: ProfileAvatarViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
     @ObservedObject private var preferences: PreferencesModel
+    /// Scoped to this screen because the avatar is the only remote image the partner app caches, and it
+    /// is the cleaner's own: the hub is torn down with the shell at sign-out, and the cache with it.
+    @StateObject private var avatarCache = RemoteImageCache()
     @State private var path = NavigationPath()
     @State private var showLogoutDialog = false
 
@@ -27,6 +31,9 @@ struct ProfileView: View {
         mapProvider: MapProvider,
         serviceArea: ServiceAreaProvider,
         preferences: PreferencesModel,
+        // Defaulted rather than threaded through the shell: the live client holds nothing — the
+        // generated layer carries the session — so this parameter exists for the tests, not the app.
+        userClient: PartnerUserClient = LivePartnerUserClient(),
         onSignedOut: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: ProfileViewModel(
@@ -34,6 +41,7 @@ struct ProfileView: View {
             authClient: authClient,
             snackbar: snackbar
         ))
+        _avatarVM = StateObject(wrappedValue: ProfileAvatarViewModel(client: userClient, snackbar: snackbar))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: client))
         self.preferences = preferences
         self.client = client
@@ -56,6 +64,9 @@ struct ProfileView: View {
                 .navigationDestination(for: ProfileRoute.self, destination: destination)
         }
         .task { await vm.load() }
+        // Its own task, not a second await inside the hub's: the avatar comes from a different endpoint
+        // and neither read is worth making the other wait for.
+        .task { await avatarVM.load() }
         .onReceive(vm.signedOut) { onSignedOut() }
         .overlay { logoutOverlay }
     }
@@ -72,6 +83,8 @@ struct ProfileView: View {
         case let .loaded(data):
             ProfileHubContent(
                 data: data,
+                avatar: avatarVM,
+                avatarCache: avatarCache,
                 languageSummary: PreferencesLabels.languageSummary(
                     isFollowingSystem: preferences.isFollowingSystemLanguage,
                     tag: preferences.languageTag

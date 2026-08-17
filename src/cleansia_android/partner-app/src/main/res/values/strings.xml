@@ -937,6 +937,19 @@
     <string name="scope_section_title">Property &amp; scope</string>
     <string name="scope_services_label">Services &amp; packages</string>
     <string name="scope_extras_label">Extras</string>
+
+    <!-- Extra names, `extra_name_<slug with - as _>`. The wire carries the bare slug and
+         nothing else, so the names live here; the values are the seed's own translations
+         (insert_seed_data.sql §7b) copied verbatim, not a second translation of them. -->
+    <string name="extra_name_inside_oven">Inside oven cleaning</string>
+    <string name="extra_name_inside_fridge">Inside fridge cleaning</string>
+    <string name="extra_name_interior_windows">Interior windows</string>
+    <string name="extra_name_laundry_ironing">Laundry &amp; ironing</string>
+    <string name="extra_name_pet_hair_supplement">Pet hair deep-clean</string>
+
+    <!-- Shown instead of the map when the order has no street address to point at. -->
+    <string name="map_approximate_area">Approximate area — the exact address appears once you take the order.</string>
+
     <string name="from_customer_section_title">From customer</string>
     <string name="note_general_label">Notes</string>
     <string name="note_access_label">Access</string>

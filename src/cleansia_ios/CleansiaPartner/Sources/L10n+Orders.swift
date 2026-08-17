@@ -177,6 +177,10 @@ extension L10n {
             localized("action_navigate")
         }
 
+        static var mapApproximateArea: String {
+            localized("map_approximate_area")
+        }
+
         static var scopeSectionTitle: String {
             localized("scope_section_title")
         }

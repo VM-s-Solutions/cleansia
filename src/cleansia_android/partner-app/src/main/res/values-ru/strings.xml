@@ -940,6 +940,17 @@
     <string name="scope_section_title">Объект и объём</string>
     <string name="scope_services_label">Услуги и пакеты</string>
     <string name="scope_extras_label">Дополнения</string>
+
+    <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
+    <string name="extra_name_inside_oven">Чистка духовки изнутри</string>
+    <string name="extra_name_inside_fridge">Чистка холодильника изнутри</string>
+    <string name="extra_name_interior_windows">Окна изнутри</string>
+    <string name="extra_name_laundry_ironing">Стирка и глажка</string>
+    <string name="extra_name_pet_hair_supplement">Глубокая уборка шерсти животных</string>
+
+    <!-- Shown instead of the map when the order has no street address to point at. -->
+    <string name="map_approximate_area">Приблизительный район — точный адрес появится, когда вы возьмёте заказ.</string>
+
     <string name="from_customer_section_title">От клиента</string>
     <string name="note_general_label">Примечание</string>
     <string name="note_access_label">Доступ</string>

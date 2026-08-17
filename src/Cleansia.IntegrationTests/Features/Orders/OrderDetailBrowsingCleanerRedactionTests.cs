@@ -58,7 +58,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
-    private const string ApproximateAddress = "Praha · 120";
+    private const string ApproximateAddress = "Praha · 120 xx";
     private const double Latitude = 50.073658;
     private const double Longitude = 14.418540;
     private const string AccessInstructions = "Code 1234 at the gate, second door on the left.";

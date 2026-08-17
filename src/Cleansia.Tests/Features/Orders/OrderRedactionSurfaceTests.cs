@@ -19,7 +19,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 public class OrderRedactionSurfaceTests
 {
-    private const string ApproximateAddress = "Praha · 120";
+    private const string ApproximateAddress = "Praha · 120 xx";
 
     // A multi-seat order one cleaner short of its crew. Every seat member is therefore non-default:
     // an unpopulated fixture yields 0 and false, which is precisely what a half-crewed 2-seat order

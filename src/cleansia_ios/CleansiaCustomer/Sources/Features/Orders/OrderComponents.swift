@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderCardSurface<Content: View>: View {
@@ -64,16 +65,19 @@ struct OrderInfoRow: View {
     }
 }
 
+/// The customer-side adapter onto the shared `OrderStatusBadge`: it turns a status `Code` into the
+/// badge's tint and tone so the three call sites (list, detail header, home recent-booking) can't drift
+/// into three different-looking pills again. `label` overrides the resolved text for the one caller
+/// that has its own — the home card, which hides itself rather than show a placeholder.
 struct OrderStatusPill: View {
-    let label: String
-    let color: Color
+    let code: Code?
+    var label: String?
 
     var body: some View {
-        Text(label)
-            .font(CleansiaTypography.labelSmall)
-            .foregroundColor(color)
-            .padding(.horizontal, Spacing.xs)
-            .padding(.vertical, Spacing.xxs)
-            .background(color.opacity(0.14), in: Capsule())
+        OrderStatusBadge(
+            label: label ?? OrderStatusPresentation.label(code),
+            tint: OrderStatusPresentation.color(code),
+            tone: OrderStatusPresentation.tone(code)
+        )
     }
 }

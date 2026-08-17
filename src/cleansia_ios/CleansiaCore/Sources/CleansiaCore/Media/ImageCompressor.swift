@@ -24,20 +24,42 @@
     /// The encoded JPEG carries no EXIF/GPS metadata: the bitmap is re-rendered
     /// into a fresh context and re-encoded through ImageIO with an empty
     /// properties dictionary, so capture-location and other source metadata are
-    /// dropped by construction rather than incidentally (security P3).
+    /// dropped by construction rather than incidentally (security P3). Because
+    /// that strip also takes the Orientation tag with it, a rotated capture is
+    /// uprighted into its pixels first — see `uprighted(_:)`.
     public enum ImageCompressor {
         public static func encode(
             _ image: UIImage,
             maxDimension: CGFloat = 1920,
             quality: CGFloat = 0.7
         ) -> EncodedImage? {
-            guard let bitmap = redrawnBitmap(from: image, maxDimension: maxDimension) else { return nil }
+            guard let bitmap = redrawnBitmap(from: uprighted(image), maxDimension: maxDimension) else { return nil }
             guard let data = jpegData(from: bitmap, quality: quality) else { return nil }
             return EncodedImage(
                 base64: data.base64EncodedString(),
                 contentType: "image/jpeg",
                 fileName: "photo.jpg"
             )
+        }
+
+        /// Bakes a capture's rotation into its pixels. A camera image is the raw sensor buffer
+        /// plus an `imageOrientation` flag — `cgImage` is that buffer alone, so a portrait shot
+        /// re-encoded straight from it comes out sideways. The tag that would have carried the
+        /// rotation is exactly what the EXIF strip below removes, leaving nothing downstream to
+        /// recover it from, so the rotation has to be in the pixels (as it already is on Android).
+        ///
+        /// `image.size` is the ORIENTED display size, so rendering the image into a context of
+        /// that size applies the transform; `.up` images are handed back untouched rather than
+        /// paying a re-encode they do not need.
+        private static func uprighted(_ image: UIImage) -> UIImage {
+            guard image.imageOrientation != .up else { return image }
+
+            let format = UIGraphicsImageRendererFormat.default()
+            format.scale = image.scale
+            format.opaque = true
+            return UIGraphicsImageRenderer(size: image.size, format: format).image { _ in
+                image.draw(in: CGRect(origin: .zero, size: image.size))
+            }
         }
 
         /// Re-renders the source into a fresh `CGImage` at the target size. A new

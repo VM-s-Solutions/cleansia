@@ -23,7 +23,7 @@ public class PendingOfferItemSurfaceTests
     private const string City = "Brno";
     private const string ZipCode = "60200";
     private const string Street = "Held St 7";
-    private const string ApproximateAddress = "Brno · 602";
+    private const string ApproximateAddress = "Brno · 602 xx";
 
     /// <summary>
     /// The ONE location member, and the ceiling on it: city + zip prefix, from the shared builder every

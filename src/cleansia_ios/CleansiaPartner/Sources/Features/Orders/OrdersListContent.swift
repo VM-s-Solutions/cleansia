@@ -80,6 +80,7 @@ private struct AvailablePane: View {
                     Text(L10n.Orders.noMatchingOrders)
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .ordersRow()
                 }
                 ForEach(orders, id: \.id) { order in
                     AvailableOrderRow(
@@ -317,6 +318,7 @@ private struct HistoryPane: View {
                 Text(L10n.Orders.noCompletedOrders)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .ordersRow()
             }
             ForEach(grouped, id: \.0) { day, rows in
                 Section(OrdersFormat.dayHeader(day, locale: locale)) {
@@ -360,7 +362,7 @@ private struct HistorySummaryRow: View {
 
     var body: some View {
         HStack {
-            SummaryStat(value: OrdersFormat.totalEarnings(orders), label: L10n.Orders.earnings)
+            SummaryStat(value: OrdersFormat.totalEarnings(orders), label: L10n.Orders.earnings, isPrimary: true)
             Spacer()
             SummaryStat(value: "\(orders.count)", label: L10n.Orders.jobs)
         }
@@ -374,19 +376,32 @@ private struct HistorySummaryRow: View {
     }
 }
 
+/// Two stats, deliberately unequal. A cleaner opens History to answer "what did I earn"; the job count
+/// is the context for that number, not a second headline. So the money is a size larger and sits on a
+/// tint of its own — enough to find at a glance on a dark page — while the count stays plain. This is
+/// not the bordered card that used to wrap the whole row: that made the header compete with the list it
+/// introduces, which is the opposite of what a summary is for.
 private struct SummaryStat: View {
     let value: String
     let label: String
+    var isPrimary = false
 
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .cleansiaFont(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.primary)
+                .cleansiaFont(isPrimary ? CleansiaTypography.headlineMedium : CleansiaTypography.headlineSmall)
+                .foregroundColor(isPrimary ? CleansiaColors.primary : CleansiaColors.onSurface)
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, isPrimary ? Spacing.xs : 0)
+        .background {
+            if isPrimary {
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .fill(CleansiaColors.primary.opacity(0.12))
+            }
+        }
     }
 }

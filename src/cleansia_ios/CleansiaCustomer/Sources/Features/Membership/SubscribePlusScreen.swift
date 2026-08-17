@@ -63,6 +63,10 @@ struct SubscribePlusScreen: View {
             }
             .background(CleansiaColors.background.ignoresSafeArea())
         }
+        // Mounted here as well as at the shell root: the root's SwiftUI update pass runs BEFORE this
+        // screen's appearance transition, and the bar is hidden inside that transition. Safe to mount
+        // per-screen because the delegate is static — see `InteractivePopGestureEnabler`.
+        .background(InteractivePopGestureEnabler())
         // No `.navigationBarBackButtonHidden` here. The bar is hidden anyway so nothing shows either
         // way, but setting it also sets `hidesBackButton`, which is a second thing UIKit's own
         // interactive-pop delegate refuses on. Swipe-back itself is owned by

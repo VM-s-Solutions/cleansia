@@ -156,7 +156,6 @@ enum OrderInstructions {
 }
 
 struct OrderInstructionsCard: View {
-    @Environment(\.snackbarController) private var snackbar
     let order: CustomerOrderDetail
 
     var body: some View {
@@ -167,13 +166,9 @@ struct OrderInstructionsCard: View {
                 ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
                     if index > 0 { Divider().background(CleansiaColors.outlineVariant) }
                     VStack(alignment: .leading, spacing: Spacing.hair) {
-                        HStack(spacing: Spacing.xs) {
-                            Text(block.label)
-                                .font(CleansiaTypography.labelMedium)
-                                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                            Spacer()
-                            CopyInstructionButton(text: block.text, onCopy: copy)
-                        }
+                        Text(block.label)
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
                         Text(block.text)
                             .font(CleansiaTypography.bodyMedium)
                             .foregroundColor(CleansiaColors.onSurface)
@@ -181,56 +176,19 @@ struct OrderInstructionsCard: View {
                 }
                 if let secret = OrderInstructions.secret(order) {
                     CleansiaRevealPanel(title: L10n.OrderDetail.accessInstructions) {
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(secret)
-                                .font(CleansiaTypography.bodyMedium)
-                                .foregroundColor(CleansiaColors.onSurface)
-                                .textSelection(.enabled)
-                            // Under the secret, never in the panel's header: the panel's contract is
-                            // that the door code is not composed until it is revealed, and a copy
-                            // control in the header would put it one tap from the clipboard while
-                            // the panel still reads as concealed.
-                            CopyInstructionButton(text: secret, showsTitle: true, onCopy: copy)
-                        }
+                        Text(secret)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurface)
+                            .textSelection(.enabled)
                     }
                     // The tinted panel is its own section, not one more block in the run above it.
-                    // The card's uniform Spacing.xs is right between plain blocks and too tight here,
-                    // so the break is doubled locally rather than by loosening the card for everyone.
-                    .padding(.top, Spacing.xs)
+                    // The card's uniform Spacing.xs reads as "next paragraph"; this needs to read as
+                    // "different thing", so the break is widened locally rather than by loosening the
+                    // card for every other section on the screen.
+                    .padding(.top, Spacing.m)
                 }
             }
         }
-    }
-
-    private func copy(_ text: String) {
-        UIPasteboard.general.string = text
-        snackbar.showSuccess(L10n.OrderDetail.copied)
-    }
-}
-
-/// Label-weight on purpose — the instructions are read, not acted on, so the affordance sits
-/// beside the label instead of competing with the card's own buttons.
-private struct CopyInstructionButton: View {
-    let text: String
-    var showsTitle = false
-    let onCopy: (String) -> Void
-
-    var body: some View {
-        Button { onCopy(text) } label: {
-            HStack(spacing: Spacing.xxs) {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 14))
-                if showsTitle {
-                    Text(L10n.OrderDetail.copy)
-                        .font(CleansiaTypography.labelMedium)
-                }
-            }
-            .foregroundColor(CleansiaColors.primary)
-            .frame(minWidth: 28, minHeight: 28, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(L10n.OrderDetail.copy))
     }
 }
 

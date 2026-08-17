@@ -1,4 +1,3 @@
-import AVFoundation
 import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
@@ -11,10 +10,6 @@ struct ProfileHubContent: View {
     let themeSummary: String
     let onOpen: (ProfileRoute) -> Void
     let onLogout: () -> Void
-
-    @State private var showPhotoSourceDialog = false
-    @State private var pickerSource: UIImagePickerController.SourceType?
-    @State private var showCameraPermissionAlert = false
 
     private var employee: EmployeeItem {
         data.employee
@@ -32,20 +27,11 @@ struct ProfileHubContent: View {
                             topInset: proxy.safeAreaInsets.top,
                             display: avatar.display,
                             avatarCache: avatarCache,
-                            onTapAvatar: { showPhotoSourceDialog = true },
                             onAvatarLoadFailure: { photo in
                                 Task { await avatar.loadFailed(fileName: photo.fileName) }
                             },
                             onAvatarLoadSuccess: avatar.loadSucceeded
                         )
-                        if avatar.hasPendingEdit {
-                            PendingAvatarBar(
-                                isSubmitting: avatar.action.isSubmitting,
-                                onSave: { Task { await avatar.save() } },
-                                onCancel: avatar.discard
-                            )
-                            .padding(.horizontal, Spacing.m)
-                        }
                         sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
                         sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
@@ -57,51 +43,6 @@ struct ProfileHubContent: View {
                 .ignoresSafeArea(.container, edges: .top)
             }
         }
-        .confirmationDialog(L10n.Profile.photoAdd, isPresented: $showPhotoSourceDialog, titleVisibility: .visible) {
-            Button(L10n.Profile.photoTake) { requestCamera() }
-            Button(L10n.Profile.photoLibrary) { pickerSource = .photoLibrary }
-            if avatar.canRemove {
-                Button(L10n.Profile.photoRemove, role: .destructive) { avatar.remove() }
-            }
-            Button(L10n.cancel, role: .cancel) {}
-        }
-        .sheet(item: $pickerSource) { source in
-            CameraOrLibraryPicker(
-                sourceType: source,
-                onImagePicked: { image in
-                    pickerSource = nil
-                    avatar.pick(image)
-                },
-                onCancel: { pickerSource = nil }
-            )
-            .ignoresSafeArea()
-        }
-        .alert(L10n.Profile.cameraPermissionTitle, isPresented: $showCameraPermissionAlert) {
-            Button(L10n.Profile.openSettings) { openSettings() }
-            Button(L10n.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Profile.cameraPermissionMessage)
-        }
-    }
-
-    private func requestCamera() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            pickerSource = .camera
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                Task { @MainActor in
-                    if granted { pickerSource = .camera } else { showCameraPermissionAlert = true }
-                }
-            }
-        default:
-            showCameraPermissionAlert = true
-        }
-    }
-
-    private func openSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
     }
 
     private var accountRows: [ProfileHubRowItem] {
@@ -218,41 +159,18 @@ private struct ProfileHubRowItem {
     let route: ProfileRoute
 }
 
-/// The pick is not the save. It sits on the hero until the cleaner says so — the customer's edit screen
-/// stages its avatar behind the same explicit Save — because an upload fired by the tap that chose the
-/// image leaves no way back from a wrong pick but a second upload.
-private struct PendingAvatarBar: View {
-    let isSubmitting: Bool
-    let onSave: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        HStack(spacing: Spacing.s) {
-            CleansiaOutlinedButton(L10n.cancel, size: .medium, enabled: !isSubmitting, action: onCancel)
-            CleansiaPrimaryButton(
-                L10n.Profile.save,
-                size: .medium,
-                loading: isSubmitting,
-                enabled: !isSubmitting,
-                action: onSave
-            )
-        }
-    }
-}
-
 private struct ProfileHero: View {
     let employee: EmployeeItem
     let contractStatus: ContractStatus?
     var topInset: CGFloat = 0
     let display: AvatarDisplay
     let avatarCache: RemoteImageCache
-    let onTapAvatar: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
     let onAvatarLoadSuccess: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
-            avatarButton
+            portrait
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .cleansiaFont(CleansiaTypography.headlineSmall)
@@ -280,27 +198,20 @@ private struct ProfileHero: View {
         )
     }
 
-    /// The whole disc is the target, not the badge: the badge is 24pt of it and only says what the tap
-    /// does. The label names the action rather than the picture, so it reads the same either way.
-    private var avatarButton: some View {
-        Button(action: onTapAvatar) {
-            ZStack(alignment: .bottomTrailing) {
-                ProfileAvatar(
-                    display: display,
-                    initials: initials,
-                    cache: avatarCache,
-                    onLoadFailure: onAvatarLoadFailure,
-                    onLoadSuccess: onAvatarLoadSuccess
-                )
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(CleansiaColors.onPrimary)
-                    .padding(Spacing.xs)
-                    .background(CleansiaColors.primary, in: Circle())
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.Profile.photoAdd)
+    /// A portrait, not a control: the photo is changed on the Personal data section, where the rest of
+    /// the cleaner's own details are edited, so nothing here is tappable and there is no camera badge to
+    /// promise otherwise. Hidden from VoiceOver because the name it illustrates is read out beside it.
+    ///
+    /// The load callbacks stay: this is still a rendered remote image, and its signed URL still expires.
+    private var portrait: some View {
+        ProfileAvatar(
+            display: display,
+            initials: initials,
+            cache: avatarCache,
+            onLoadFailure: onAvatarLoadFailure,
+            onLoadSuccess: onAvatarLoadSuccess
+        )
+        .accessibilityHidden(true)
     }
 
     private var name: String {

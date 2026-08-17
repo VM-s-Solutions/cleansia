@@ -364,7 +364,13 @@ private struct HistorySummaryRow: View {
             Spacer()
             SummaryStat(value: "\(orders.count)", label: L10n.Orders.jobs)
         }
-        .ordersCard()
+        // No card. This is a header for the rows below, not a row itself, and `.ordersCard()` gave it a
+        // surface and a stroke that made it the loudest thing on a screen whose subject is the list.
+        // `.ordersRow()` is still required: without it the cell keeps UIKit's `systemBackground`, which
+        // is pure black in dark mode — the band that framed this block before.
+        .padding(.vertical, Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ordersRow()
     }
 }
 

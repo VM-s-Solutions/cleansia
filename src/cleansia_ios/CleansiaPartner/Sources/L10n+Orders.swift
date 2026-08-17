@@ -193,6 +193,16 @@ extension L10n {
             localized("scope_extras_label")
         }
 
+        /// The cleaner retypes these into a keypad at a door, so both blocks are copyable. Neutral keys
+        /// rather than the invoice ones: the values match, but `invoice_field_copy` would lie here.
+        static var copyInstruction: String {
+            localized("instructions_copy")
+        }
+
+        static var copiedInstruction: String {
+            localized("instructions_copied")
+        }
+
         static var accessSectionTitle: String {
             localized("access_section_title")
         }

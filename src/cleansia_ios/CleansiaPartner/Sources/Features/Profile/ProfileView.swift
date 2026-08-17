@@ -66,6 +66,10 @@ struct ProfileView: View {
         .task { await vm.load() }
         // Its own task, not a second await inside the hub's: the avatar comes from a different endpoint
         // and neither read is worth making the other wait for.
+        //
+        // It stays at the root even though the photo is *edited* on the Personal data section — the hero
+        // draws that photo, so the read has to happen when the profile opens, not when the section does.
+        // The section adds no load of its own, so entering it re-reads nothing.
         .task { await avatarVM.load() }
         .onReceive(vm.signedOut) { onSignedOut() }
         .overlay { logoutOverlay }
@@ -105,6 +109,8 @@ struct ProfileView: View {
                 snackbar: snackbar,
                 chainVM: chainVM,
                 onboarding: onboarding,
+                avatar: avatarVM,
+                avatarCache: avatarCache,
                 onSaved: { popOrAdvance(onboarding: onboarding) }
             )
         case let .address(onboarding):

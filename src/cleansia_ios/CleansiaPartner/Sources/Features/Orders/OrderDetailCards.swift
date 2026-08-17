@@ -62,6 +62,8 @@ struct AccessCard: View {
             Text(instructions)
                 .font(CleansiaTypography.bodyLarge)
                 .foregroundColor(CleansiaColors.onSurface)
+                .textSelection(.enabled)
+            CopyInstructionButton(text: instructions)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
@@ -262,12 +264,17 @@ struct FromCustomerNotesCard: View {
     private func noteBlock(_ label: String, _ body: String?) -> some View {
         if let body, !body.trimmingCharacters(in: .whitespaces).isEmpty {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                HStack(spacing: Spacing.xs) {
+                    Text(label)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Spacer()
+                    CopyInstructionButton(text: body)
+                }
                 Text(body)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurface)
+                    .textSelection(.enabled)
             }
         }
     }
@@ -360,5 +367,26 @@ private struct PaymentStatusPill: View {
             .padding(.horizontal, Spacing.xs)
             .padding(.vertical, 2)
             .background(tint.opacity(0.12), in: Capsule())
+    }
+}
+
+/// Copy for the two blocks a cleaner has to retype at a door — the customer's instructions and the
+/// access note. Label-weight and trailing, the same shape `CopyableField` uses on the invoice screen,
+/// so the app has one copy gesture rather than a second dialect of it.
+struct CopyInstructionButton: View {
+    @Environment(\.snackbarController) private var snackbar
+    let text: String
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = text
+            snackbar.showSuccess(L10n.Orders.copiedInstruction)
+        } label: {
+            Label(L10n.Orders.copyInstruction, systemImage: "doc.on.doc")
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.primary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Orders.copyInstruction)
     }
 }

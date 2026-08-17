@@ -63,6 +63,10 @@ struct SubscribePlusScreen: View {
             }
             .background(CleansiaColors.background.ignoresSafeArea())
         }
+        // Re-assert the pop gesture for THIS screen: hiding the toolbar below turns it off again, and
+        // the shell root's enabler does not update at that moment, so the paywall would arrive with the
+        // gesture dead however the root left it.
+        .background(InteractivePopGestureEnabler())
         // The bar is hidden, so there is no back button to see — but hiding it EXPLICITLY also sets
         // `hidesBackButton`, and UIKit's own interactive-pop delegate refuses to begin when that is on.
         // `InteractivePopGestureEnabler` (CustomerShellView) re-enables the recognizer stack-wide and
@@ -167,6 +171,9 @@ private struct HeroBlock: View {
             priceBlock
             if plans.count >= 2 {
                 PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
+                    // The switcher and the character riding it sit lower than the stack's own rhythm
+                    // would put them, so the price above has room and he is not crowding it.
+                    .padding(.top, Spacing.l)
                     // He sits ON the Annual segment: anchored to the switcher's top-trailing corner
                     // and lifted by his own height less an overlap, so his feet rest on the control's
                     // top edge rather than floating above it. Non-interactive, or he would eat the

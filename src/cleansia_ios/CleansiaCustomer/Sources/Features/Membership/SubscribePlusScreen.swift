@@ -63,15 +63,11 @@ struct SubscribePlusScreen: View {
             }
             .background(CleansiaColors.background.ignoresSafeArea())
         }
-        // Re-assert the pop gesture for THIS screen: hiding the toolbar below turns it off again, and
-        // the shell root's enabler does not update at that moment, so the paywall would arrive with the
-        // gesture dead however the root left it.
-        .background(InteractivePopGestureEnabler())
-        // The bar is hidden, so there is no back button to see — but hiding it EXPLICITLY also sets
-        // `hidesBackButton`, and UIKit's own interactive-pop delegate refuses to begin when that is on.
-        // `InteractivePopGestureEnabler` (CustomerShellView) re-enables the recognizer stack-wide and
-        // deliberately keeps the native delegate, so this screen was the one thing still vetoing the
-        // swipe. Hiding the toolbar alone gets the same look and keeps the gesture.
+        // No `.navigationBarBackButtonHidden` here. The bar is hidden anyway so nothing shows either
+        // way, but setting it also sets `hidesBackButton`, which is a second thing UIKit's own
+        // interactive-pop delegate refuses on. Swipe-back itself is owned by
+        // `InteractivePopGestureEnabler` at the shell root, which replaces that delegate — see the note
+        // there for why the earlier `isEnabled`-only version could never have worked on this screen.
         .toolbar(.hidden, for: .navigationBar)
         .task {
             await vm.load()
@@ -171,9 +167,10 @@ private struct HeroBlock: View {
             priceBlock
             if plans.count >= 2 {
                 PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
-                    // The switcher and the character riding it sit lower than the stack's own rhythm
-                    // would put them, so the price above has room and he is not crowding it.
-                    .padding(.top, Spacing.l)
+                    // ORDER MATTERS: the overlay goes on FIRST, so it anchors to the control itself.
+                    // With the padding applied before it, the overlay measured the PADDED frame and the
+                    // character rose by exactly that padding while the switcher went down — the two
+                    // moved apart instead of together.
                     // He sits ON the Annual segment: anchored to the switcher's top-trailing corner
                     // and lifted by his own height less an overlap, so his feet rest on the control's
                     // top edge rather than floating above it. Non-interactive, or he would eat the
@@ -187,6 +184,8 @@ private struct HeroBlock: View {
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
+                    // Applied last, so it moves the control AND the character riding it as one.
+                    .padding(.top, Spacing.l)
             }
         }
         .padding(.horizontal, Spacing.ml)

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, join, relative } from 'path';
+import { basename, dirname, join, relative, sep } from 'path';
 
 const LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
 type Locale = (typeof LOCALES)[number];
@@ -87,7 +87,12 @@ function listCsFiles(dir: string): string[] {
 function featureFilesByClassName(): Map<string, string[]> {
   const index = new Map<string, string[]>();
   for (const file of listCsFiles(FEATURES_DIR)) {
-    const className = file.slice(file.lastIndexOf('/') + 1, -'.cs'.length);
+    // basename, not lastIndexOf('/'): `file` comes from join(), which uses the platform
+    // separator. On Windows that is a backslash, lastIndexOf('/') returns -1, and the key
+    // becomes the whole absolute path — so every featureFiles.has(name) lookup missed and
+    // this scanner silently resolved nothing. It passed on CI, which is Linux, for as long
+    // as it has existed.
+    const className = basename(file, '.cs');
     index.set(className, [...(index.get(className) ?? []), file]);
   }
   return index;
@@ -205,10 +210,15 @@ function deriveHostSurface(): HostSurface {
         while ((match = emitted.exec(fileSource)) !== null) {
           const value = constants.get(match[1]);
           if (!value) continue;
+          // Forward slashes always. This string is an identity compared against literals in the
+          // assertions below, so it must not carry the platform separator — relative() hands back
+          // backslashes on Windows and every one of those comparisons missed.
           const provenance = `${controller.replace('.cs', '')} -> ${relative(
             FEATURES_DIR,
             file
-          )}`;
+          )
+            .split(sep)
+            .join('/')}`;
           keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
         }
       }

@@ -290,7 +290,7 @@ public sealed class AuditSensitiveSnapshotTests
         var auditContext = new AuditContext();
         var deletionService = new Mock<IGdprDeletionService>();
         deletionService.Setup(s => s.DeleteUserAccountAsync(
-                "subject-1", It.IsAny<string>(), It.IsAny<Func<Core.Domain.Users.User, (string, string?)>>(), It.IsAny<CancellationToken>()))
+                "subject-1", It.IsAny<string>(), It.IsAny<Func<Core.Domain.Users.User, (string, string?)>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success());
 
         var handler = new AdminDeleteUserAccount.Handler(AdminSession(), deletionService.Object, auditContext);
@@ -312,7 +312,7 @@ public sealed class AuditSensitiveSnapshotTests
         var auditContext = new AuditContext();
         var deletionService = new Mock<IGdprDeletionService>();
         deletionService.Setup(s => s.DeleteUserAccountAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Core.Domain.Users.User, (string, string?)>>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Core.Domain.Users.User, (string, string?)>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Failure(new Error("gdpr.blocked", "active order")));
 
         var handler = new AdminDeleteUserAccount.Handler(AdminSession(), deletionService.Object, auditContext);

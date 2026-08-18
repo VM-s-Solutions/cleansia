@@ -146,6 +146,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
             string userId,
             string deactivationReason,
             Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+            bool deferEmployeeErasure,
             CancellationToken cancellationToken) =>
             Task.FromResult(BusinessResult.Success());
     }

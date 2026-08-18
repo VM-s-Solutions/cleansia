@@ -43,6 +43,7 @@ public class GdprDeletionService(
         string userId,
         string deactivationReason,
         Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        bool deferEmployeeErasure,
         CancellationToken cancellationToken)
     {
         var user = await userRepository.GetQueryable()
@@ -70,6 +71,40 @@ public class GdprDeletionService(
             if (blockingInvoice)
                 return BusinessResult.Failure(new Error(
                     nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByInvoice));
+
+            var blockingAssignment = await HasBlockingAssignedOrderAsync(user.Employee.Id, cancellationToken);
+            if (blockingAssignment)
+                return BusinessResult.Failure(new Error(
+                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByAssignedOrder));
+
+            var unsettledPay = await HasUnsettledPayAsync(user.Employee.Id, cancellationToken);
+            if (unsettledPay)
+                return BusinessResult.Failure(new Error(
+                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByUnsettledPay));
+        }
+
+        if (deferEmployeeErasure && user.Employee is not null)
+        {
+            // A CLEANER IS NOT ERASED HERE. Ending a working relationship needs signed paperwork
+            // and an in-person step, and the records that survive it — invoices, pay rows, the
+            // self-billing agreement — are financial, not the subject's to delete. So the request
+            // is FILED and nothing else happens; an admin fulfils it afterwards through
+            // AdminDeleteUserAccount, which runs the erasure below with an admin actor recorded.
+            //
+            // Everything after this return is deliberately skipped: MarkProcessing, the Stripe
+            // membership cancel, and AnonymizeUserDataAsync. Letting the branch land even one
+            // statement later would file the request AND cancel the subscription or partially
+            // anonymise, and the UnitOfWork behaviour commits any successful result — there is no
+            // rollback. → /flows/gdpr-and-audit
+            //
+            // Success, not Failure, is load-bearing: UnitOfWorkPipelineBehavior only commits when
+            // the response is a successful BusinessResult, so returning a failure here would
+            // discard the very row this branch exists to write. The caller distinguishes "filed"
+            // from "erased" by which app it is, not by the result — the partner clients say
+            // "requested"; re-filing is refused by the pending-request check above.
+            var filedRequest = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
+            gdprRequestRepository.Add(filedRequest);
+            return BusinessResult.Success();
         }
 
         var auditEntry = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
@@ -106,6 +141,29 @@ public class GdprDeletionService(
     private Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
         => orderRepository.GetFiltered(o => o.UserId == userId)
             .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
+
+    /// <summary>
+    /// The EMPLOYEE axis of the same question <see cref="HasBlockingOrderAsync"/> asks of customers.
+    /// That one filters <c>Order.UserId</c> and so never sees a seat a cleaner holds on someone
+    /// else's order — a cleaner could file for deletion while assigned to tomorrow's job.
+    /// Reuses <see cref="ErasureBlockingStatuses"/> so the two axes cannot drift apart.
+    /// </summary>
+    private Task<bool> HasBlockingAssignedOrderAsync(string employeeId, CancellationToken cancellationToken)
+        => orderRepository.GetFiltered(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+            .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
+
+    /// <summary>
+    /// Pay the cleaner is still owed, in the one sense that matters to them: a pay row not yet
+    /// attached to an invoice, OR one whose pay period has not reached <c>Paid</c>. Kept as a
+    /// single predicate because both mean "work I have not been paid for" and have the same
+    /// remedy — settle the period — so two error keys would name a distinction the reader cannot
+    /// act on. → /flows/pay-and-payouts
+    /// </summary>
+    private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)
+        => orderEmployeePayRepository.GetQueryable()
+            .AnyAsync(p => p.EmployeeId == employeeId
+                    && (p.EmployeeInvoiceId == null || p.PayPeriod!.Status != PayPeriodStatus.Paid),
+                cancellationToken);
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)
     {

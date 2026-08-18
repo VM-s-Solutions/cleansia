@@ -200,7 +200,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 NullLogger<GdprDeletionService>.Instance);
 
             var result = await gdpr.DeleteUserAccountAsync(
-                UserId, "gdpr_erasure_test", _ => ("test-actor", null), CancellationToken.None);
+                UserId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             await ctx.CommitAsync(CancellationToken.None);

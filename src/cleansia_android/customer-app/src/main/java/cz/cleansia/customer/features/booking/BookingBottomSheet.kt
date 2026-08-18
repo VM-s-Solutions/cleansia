@@ -590,10 +590,15 @@ private fun SheetContent(
                                                 ephemeralKeySecret = outcome.paymentSheet.ephemeralKey,
                                             ),
                                             googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
-                                                environment = if (cz.cleansia.customer.BuildConfig.DEBUG) {
-                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
-                                                } else {
+                                                // Follows the Stripe key, not the build type — a
+                                                // release build on a pk_test_ key must still ask
+                                                // Google Pay for Test, or the sheet fails after the
+                                                // user has committed. Derived in build.gradle.kts
+                                                // from the key prefix so the two cannot desync.
+                                                environment = if (cz.cleansia.customer.BuildConfig.GOOGLE_PAY_PRODUCTION) {
                                                     com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Production
+                                                } else {
+                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
                                                 },
                                                 countryCode = "CZ",
                                                 currencyCode = "CZK",

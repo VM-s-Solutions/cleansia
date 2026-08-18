@@ -94,8 +94,8 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 | Build type | Minify | `applicationId` suffix | Default `API_BASE_URL` |
 |---|---|---|---|
 | `debug` | no | `.debug` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
-| `staging` | yes | `.staging` | `https://staging-api.cleansia.cz/` |
-| `release` | yes + shrink | — | `https://api.cleansia.cz/` |
+| `staging` | yes | `.staging` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
+| `release` | yes + shrink | — | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
 
 **`:customer-app`** (`debug` and `release` only — there is no staging type)
 
@@ -104,13 +104,21 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 | `debug` | no | `.debug` | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
 | `release` | yes + shrink | — | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
 
-Both apps default to the **Azure DEV host**, deliberately matching what iOS ships in its
-`project.yml`, so a fresh clone of either platform hits the same backend with no local setup.
+**Every build type of both apps points at the Azure DEV host**, deliberately matching what iOS
+ships in its `project.yml`, so a fresh clone of either platform hits the same backend with no local
+setup — and so a release build and a TestFlight build are talking to the same place.
+
+> Partner's `release` and `staging` types used to default to `api.cleansia.cz` and
+> `staging-api.cleansia.cz`. Neither hostname has ever resolved: there is no prod resource group,
+> no binding and no certificate, and the only other mention of the first in the tree is a
+> commented-out line in a bicepparam whose own header reads *"AUTHORED, NOT DEPLOYED"*. A partner
+> release build shipped against them failed every request at DNS. When a real production host
+> exists, set it — do not restore those names on the assumption they mean something.
 
 > The partner app resolves its URL **per build type**; the customer app resolves it **once in
-> `defaultConfig`**, so its `release` build inherits the same DEV default. A customer release build
-> must therefore be given a real `API_BASE_URL` explicitly — it will not pick up a production host on
-> its own.
+> `defaultConfig`**, so its `release` build inherits the same default. Either way a production
+> build must be given a real `API_BASE_URL` explicitly — neither picks up a production host on its
+> own.
 
 Point either app somewhere else **without editing a build file** — the override wins for every build
 type:
@@ -147,23 +155,39 @@ then silently no-ops at runtime. Replace it with the real Firebase config before
 
 ### Permissions
 
-The two apps ask for different things, because they do different work.
+The two apps ask for almost the same things, and the list is deliberately short — it is what a
+Play Data safety declaration is filled in from.
 
 **`:partner-app`** — `AndroidManifest.xml`
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
-`ACCESS_COARSE_LOCATION`.
+`ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE`; that is the only difference.
+
+**Neither app declares a camera or storage permission, and neither needs one.** Every picker in
+both apps goes through the system picker — `GetContent()` on partner (job photos, identity
+documents), `PickVisualMedia()` and `GetMultipleContents()` on customer (avatar, dispute
+evidence) — which returns a URI that already carries a read grant. Every consumer reads it with
+`contentResolver.openInputStream`, never a file path, so no permission applies at any API level.
+
+This matters beyond tidiness. `CAMERA` without a matching
+`<uses-feature android:name="android.hardware.camera" android:required="false" />` makes Play
+infer the hardware as required and filter the store listing to camera devices, and
+`READ_MEDIA_IMAGES` obliges the console's *Photo and video permissions* declaration. Both were
+declared and unused until they were removed; do not reinstate either without a real call site.
+
+Library manifests merge in four more that neither app declares: `WAKE_LOCK` and
+`com.google.android.c2dm.permission.RECEIVE` from Firebase Messaging, `ACCESS_WIFI_STATE` from
+Mapbox, and a signature-level `${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` from
+androidx.core. They appear in the merged manifest and in the APK, so a Play declaration should be
+read from the merged output, not from the source file above.
 
 Both apps set `android:usesCleartextTraffic="false"` with a `network_security_config`, register the
 FCM `MESSAGING_EVENT` service as `exported="false"`, and expose a `FileProvider` under

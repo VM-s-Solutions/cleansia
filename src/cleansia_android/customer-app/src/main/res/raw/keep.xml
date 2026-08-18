@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource-shrinker keep list. Partner-app has the same file with its own globs.
+
+  `isShrinkResources = true` on the release build type removes any resource the shrinker cannot
+  see referenced from code. Two string families are only ever resolved REFLECTIVELY, by a name
+  built at runtime, so nothing statically references them and both are shrink candidates:
+
+    error_*         ApiErrorParser.kt:118 — "error_" + the server error key, dots to underscores,
+                    lowercased.
+    loyalty_perks_* RewardsTab.kt:515 — the perk labelKey the API returns ("loyalty.perks.*"),
+                    dots to underscores. resolveLabelKey has no prefix guard, so a labelKey the
+                    backend sends outside that namespace would fall outside this glob and render
+                    as the raw key; the 7 declared names cover every seeded labelKey today.
+
+  The failure mode this file prevents is silent and reaches only the user: every backend error
+  collapses to the generic fallback, and reward perks render "loyalty.perks.welcome_badge"
+  instead of their label. Nothing fails to build, no test goes red. AGP's shrinker has
+  string-prefix heuristics that may cover some of this, but "may" is not a contract.
+
+  Adding a new reflectively-resolved string family means adding its glob here.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/error_*,@string/loyalty_perks_*" />

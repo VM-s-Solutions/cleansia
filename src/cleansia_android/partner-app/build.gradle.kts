@@ -64,6 +64,22 @@ android {
     val apiBaseUrlOverride: String? = providers.gradleProperty("API_BASE_URL").orNull
         ?: System.getenv("API_BASE_URL")
 
+    // Same shape as customer-app so the two apps sign identically. The keystore is owner-supplied
+    // and gitignored (`*.jks`); the three secrets come from the environment, never a tracked file.
+    // The `exists()` guard keeps debug builds and IDE sync working on a machine without it — the
+    // release-only assertion below is what stops that leniency reaching an upload.
+    signingConfigs {
+        create("release") {
+            val keystoreFile = rootProject.file("keystore/release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -81,7 +97,11 @@ android {
             isMinifyEnabled = true
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
-            val url = apiBaseUrlOverride ?: "https://staging-api.cleansia.cz/"
+            // `staging-api.cleansia.cz` never existed — no DNS, no Azure resource, no bicep binding.
+            // Until a real staging host is provisioned this points where debug points, so a staging
+            // build is a minified build of the same backend rather than a build of nothing.
+            val url = apiBaseUrlOverride
+                ?: "https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -92,12 +112,20 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            val url = apiBaseUrlOverride ?: "https://api.cleansia.cz/"
+            // Was `https://api.cleansia.cz/`, which has never resolved — there is no prod resource
+            // group, no binding, no certificate, and the only other mentions in the tree are a
+            // commented-out line in a bicepparam whose own header says "AUTHORED, NOT DEPLOYED".
+            // A release build shipped against it failed every request at DNS. The Azure DEV host is
+            // what debug uses and what iOS TestFlight already ships; `-PAPI_BASE_URL` redirects it
+            // to a real prod host later without editing this file.
+            val url = apiBaseUrlOverride
+                ?: "https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -131,6 +159,62 @@ android {
         // "Method w in android.util.Log not mocked" — on the error branch, which is the branch most
         // worth testing.
         unitTests.isReturnDefaultValues = true
+    }
+}
+
+// ─── Release signing assertion ──────────────────────────────────────
+// AGP treats an incomplete signingConfig as "package it unsigned" and emits the artifact with
+// no error at all, so the first signal that the keystore or a password was missing is Play
+// rejecting the upload — after a 50 MB round trip. Assert instead.
+//
+// Only fires when an explicit release-packaging task was requested, so debug builds, unit tests
+// and IDE sync are untouched, and so `./gradlew build` on a machine without the keystore still
+// works. CI (`android-ci.yml`) runs only compileDebugKotlin/testDebugUnitTest, so it never trips.
+//
+// Reads `startParameter.taskNames` rather than `gradle.taskGraph.whenReady` because the
+// configuration cache (`org.gradle.configuration-cache=true`) disallows the latter.
+run {
+    // `package*Release` belongs here as much as assemble/bundle: packageRelease and
+    // packageReleaseBundle are public, directly-invokable tasks that produce the artifact.
+    val releaseTask = Regex("(assemble|bundle|install|publish|package)\\w*Release", RegexOption.IGNORE_CASE)
+    // `taskNames` is the whole invocation, not this project's share of it, so an unscoped check
+    // makes `:partner-app:bundleRelease` fail out of customer-app's build file. Match an
+    // unqualified name (which targets every project) or one qualified with this project's path.
+    //
+    // Known limitation: these are the literal strings typed on the command line, before Gradle's
+    // camelCase abbreviation is expanded, so `./gradlew bR` or `:p-a:bundleRelease` slips past.
+    // Not worth solving here — `jarsigner -verify` on the artifact is the real gate, and this
+    // assertion exists to catch the ordinary invocation, not to be a proof.
+    val wantsRelease = gradle.startParameter.taskNames.any { name ->
+        releaseTask.containsMatchIn(name) &&
+            (!name.startsWith(":") || name.startsWith("${project.path}:"))
+    }
+    // Android Studio's "Generate Signed Bundle / APK" wizard passes the keystore as
+    // -Pandroid.injected.signing.*, which AGP honours over the DSL. Signing IS configured on that
+    // path, and asserting would break a flow that worked.
+    val injectedSigning =
+        providers.gradleProperty("android.injected.signing.store.file").orNull != null
+    if (wantsRelease && !injectedSigning) {
+        val missing = buildList {
+            if (!rootProject.file("keystore/release.jks").exists()) add("keystore/release.jks")
+            if (providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull.isNullOrBlank()) {
+                add("RELEASE_KEYSTORE_PASSWORD")
+            }
+            if (providers.environmentVariable("RELEASE_KEY_ALIAS").orNull.isNullOrBlank()) {
+                add("RELEASE_KEY_ALIAS")
+            }
+            if (providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull.isNullOrBlank()) {
+                add("RELEASE_KEY_PASSWORD")
+            }
+        }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Release signing is not configured, so this build would produce an UNSIGNED " +
+                    "artifact that Google Play rejects. Missing: " + missing.joinToString(", ") +
+                    ". The keystore is owner-supplied and gitignored; the three values are " +
+                    "environment variables, never a tracked file."
+            )
+        }
     }
 }
 

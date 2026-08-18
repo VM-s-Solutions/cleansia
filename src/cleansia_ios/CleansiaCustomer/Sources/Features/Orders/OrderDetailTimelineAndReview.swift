@@ -34,9 +34,13 @@ private struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
             VStack(spacing: 0) {
-                Circle()
-                    .fill(OrderStatusPresentation.color(entry.status))
-                    .frame(width: 12, height: 12)
+                // The most recent entry IS the order's current status, so it gets the bullseye and
+                // everything above it the muted check — the same past/current split the partner sheet
+                // draws. Nothing here is a future step: this card lists what has already happened.
+                OrderTimelinePoint(
+                    segment: isLast ? .current : .past,
+                    tint: OrderStatusPresentation.color(entry.status)
+                )
                 if !isLast {
                     Rectangle()
                         .fill(CleansiaColors.outlineVariant)

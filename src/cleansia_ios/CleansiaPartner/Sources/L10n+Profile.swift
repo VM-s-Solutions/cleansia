@@ -74,6 +74,49 @@ extension L10n {
             localized("no_data")
         }
 
+        /// The avatar picker says the same six things the order-photo rail says, so it reads the same
+        /// six catalogue keys rather than a parallel `profile_photo_*` set nobody would keep in step.
+        /// Only the two confirmations are its own — the rail has nothing to confirm.
+        static var photoAdd: String {
+            localized("add_photo")
+        }
+
+        static var photoTake: String {
+            localized("take_photo")
+        }
+
+        static var photoLibrary: String {
+            localized("choose_from_library")
+        }
+
+        static var photoRemove: String {
+            localized("delete_photo")
+        }
+
+        static var photoUnreadable: String {
+            localized("photo_encode_failed")
+        }
+
+        static var photoUploadSuccess: String {
+            localized("profile_photo_upload_success")
+        }
+
+        static var photoRemoveSuccess: String {
+            localized("profile_photo_remove_success")
+        }
+
+        static var cameraPermissionTitle: String {
+            localized("camera_permission_title")
+        }
+
+        static var cameraPermissionMessage: String {
+            localized("camera_permission_message")
+        }
+
+        static var openSettings: String {
+            localized("open_settings")
+        }
+
         static var firstName: String {
             localized("profile_first_name")
         }

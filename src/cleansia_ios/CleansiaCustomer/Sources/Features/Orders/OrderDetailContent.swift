@@ -19,13 +19,17 @@ struct OrderDetailContent: View {
             OrderDetailCompactHeader(order: order)
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.s) {
-                    // Zero spacing: the headline and the segmented bar are one hero block, not two
-                    // stacked sections — the partner sheet's arrangement.
-                    VStack(alignment: .leading, spacing: 0) {
+                    // One hero block — the headline names the phase and the bar draws it — but not
+                    // touching: at zero the label sat ON the bar. Spacing.xs is the smallest gap that
+                    // reads as "these belong together" rather than "these are one control".
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         OrderStatusHero(order: order)
                         CustomerOrderTrackerHero(status: status)
                     }
                     OrderHeroFactsStrip(order: order)
+                        // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row
+                        // crowding it from below.
+                        .padding(.top, Spacing.xxs)
 
                     if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
                         PreferredOfferCard(disclosure: disclosure)
@@ -107,10 +111,7 @@ struct OrderDetailCompactHeader: View {
                             .font(CleansiaTypography.titleMedium)
                             .foregroundColor(CleansiaColors.onSurface)
                     }
-                    OrderStatusPill(
-                        label: OrderStatusPresentation.label(order.statusCode),
-                        color: OrderStatusPresentation.color(order.statusCode)
-                    )
+                    OrderStatusPill(code: order.statusCode)
                 }
                 Label(
                     OrdersFormat.dateTime(order.cleaningDateTime, locale: locale),

@@ -49,6 +49,16 @@ object SnapSheetDefaults {
      */
     val MinSheetHeight: Dp = 240.dp
 
+    /**
+     * Box an ornament straddling the sheet's top edge is drawn in — today the order-detail mascot,
+     * half over the sheet and half over the backdrop.
+     *
+     * Shared because the two apps had each written their own literal and drifted apart, 120 on the
+     * customer against 128 on the partner. A difference that size is invisible on one phone and
+     * obvious with both side by side, which is exactly the kind that survives a review.
+     */
+    val OrnamentSize: Dp = 128.dp
+
     val Shape: Shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 }
 

@@ -181,6 +181,11 @@ struct OrderInstructionsCard: View {
                             .foregroundColor(CleansiaColors.onSurface)
                             .textSelection(.enabled)
                     }
+                    // The tinted panel is its own section, not one more block in the run above it.
+                    // The card's uniform Spacing.xs reads as "next paragraph"; this needs to read as
+                    // "different thing", so the break is widened locally rather than by loosening the
+                    // card for every other section on the screen.
+                    .padding(.top, Spacing.m)
                 }
             }
         }

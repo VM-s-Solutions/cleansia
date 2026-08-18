@@ -59,7 +59,14 @@ struct NotesAndIssuesSection: View {
             CleansiaOutlinedButton(L10n.Orders.addNote, size: .medium, leadingIcon: "plus") {
                 entry = .addNote
             }
-            CleansiaOutlinedButton(L10n.Orders.reportIssue, size: .medium, leadingIcon: "exclamationmark.triangle") {
+            // Error-tinted, which colours the stroke with it: reporting an issue and adding a note are
+            // not the same act, and two identical grey capsules said they were.
+            CleansiaOutlinedButton(
+                L10n.Orders.reportIssue,
+                size: .medium,
+                leadingIcon: "exclamationmark.triangle",
+                contentColor: CleansiaColors.error
+            ) {
                 entry = .reportIssue
             }
         }

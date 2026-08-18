@@ -37,9 +37,12 @@ final class FixedWhiteContrastTests: XCTestCase {
 /// the guard follows it there and covers both surfaces — the initials remain the no-photo fallback
 /// under the uploaded avatar.
 final class AvatarDiscBindingTests: XCTestCase {
+    /// ONE disc now. This list held two because each app drew its own, and the pair could drift; the
+    /// partner's uploader work moved both onto Core's `ProfileAvatar`, so the thing to measure is the
+    /// single shared implementation. If a second entry ever appears here again, that is the drift this
+    /// test exists to catch — not a reason to relax it.
     private static let heroes = [
-        "CleansiaCustomer/Sources/Features/Profile/ProfileAvatar.swift",
-        "CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift"
+        "CleansiaCore/Sources/CleansiaCore/Profile/ProfileAvatar.swift"
     ]
 
     /// The fills a hero disc is known to carry, mapped to what they render. `Color.white` is a
@@ -54,7 +57,7 @@ final class AvatarDiscBindingTests: XCTestCase {
         "CleansiaColors.onFixedWhite": CleansiaColors.onFixedWhiteHex
     ]
 
-    func testBothHeroDiscsPairAMeasuredInkWithAMeasuredFill() throws {
+    func testTheHeroDiscPairsAMeasuredInkWithAMeasuredFill() throws {
         for hero in Self.heroes {
             let block = try discBlock(of: hero)
             let fills = arguments(of: ".fill(", in: block)
@@ -71,7 +74,7 @@ final class AvatarDiscBindingTests: XCTestCase {
         }
     }
 
-    func testNeitherHeroDiscUsesTheThemeAdaptivePrimary() throws {
+    func testTheHeroDiscNeverUsesTheThemeAdaptivePrimary() throws {
         for hero in Self.heroes {
             let block = try discBlock(of: hero)
             let tokens = arguments(of: ".fill(", in: block) + arguments(of: ".foregroundColor(", in: block)

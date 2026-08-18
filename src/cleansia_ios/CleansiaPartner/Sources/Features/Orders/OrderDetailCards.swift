@@ -24,19 +24,29 @@ struct OrderSectionCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             if let title, let systemImage {
-                Label(title, systemImage: systemImage)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Label(title, systemImage: systemImage)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    // What separates a section from its content now that the card has neither border
+                    // nor inset to do it — the customer sheet's `OrderSectionHeaderRow` treatment.
+                    Divider().overlay(CleansiaColors.outlineVariant)
+                }
             }
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.m)
+        // Vertical only. The scroll view already insets every section by Spacing.m, the same as the
+        // pinned header, so a further 16pt here started the section text 16pt to the right of the order
+        // number it belongs under.
+        .padding(.vertical, Spacing.m)
         // Flat: a surface-coloured block with no border and no shadow, matching `OrderSectionCard.kt`.
         // The 1pt outline this used to carry drew a hard edge around every section, so a sheet of six
         // read as six boxes stacked on a page rather than one panel — and it was the reason iOS still
-        // looked boxed after Android went flat.
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        // looked boxed after Android went flat. The corner radius went with the inset: a rounded block
+        // still reads as a card floating over the sheet even in the sheet's own colour, while square
+        // and full-bleed, consecutive sections merge into the one panel `OrderSectionCard.kt` gets.
+        .background(CleansiaColors.surface)
     }
 }
 
@@ -52,6 +62,8 @@ struct AccessCard: View {
             Text(instructions)
                 .font(CleansiaTypography.bodyLarge)
                 .foregroundColor(CleansiaColors.onSurface)
+                .textSelection(.enabled)
+            CopyInstructionButton(text: instructions)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
@@ -252,12 +264,17 @@ struct FromCustomerNotesCard: View {
     private func noteBlock(_ label: String, _ body: String?) -> some View {
         if let body, !body.trimmingCharacters(in: .whitespaces).isEmpty {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                HStack(spacing: Spacing.xs) {
+                    Text(label)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Spacer()
+                    CopyInstructionButton(text: body)
+                }
                 Text(body)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurface)
+                    .textSelection(.enabled)
             }
         }
     }
@@ -350,5 +367,26 @@ private struct PaymentStatusPill: View {
             .padding(.horizontal, Spacing.xs)
             .padding(.vertical, 2)
             .background(tint.opacity(0.12), in: Capsule())
+    }
+}
+
+/// Copy for the two blocks a cleaner has to retype at a door — the customer's instructions and the
+/// access note. Label-weight and trailing, the same shape `CopyableField` uses on the invoice screen,
+/// so the app has one copy gesture rather than a second dialect of it.
+struct CopyInstructionButton: View {
+    @Environment(\.snackbarController) private var snackbar
+    let text: String
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = text
+            snackbar.showSuccess(L10n.Orders.copiedInstruction)
+        } label: {
+            Label(L10n.Orders.copyInstruction, systemImage: "doc.on.doc")
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.primary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Orders.copyInstruction)
     }
 }

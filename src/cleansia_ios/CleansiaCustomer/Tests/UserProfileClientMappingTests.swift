@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 import XCTest

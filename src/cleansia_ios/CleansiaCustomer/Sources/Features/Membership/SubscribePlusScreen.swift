@@ -63,7 +63,15 @@ struct SubscribePlusScreen: View {
             }
             .background(CleansiaColors.background.ignoresSafeArea())
         }
-        .navigationBarBackButtonHidden(true)
+        // Mounted here as well as at the shell root: the root's SwiftUI update pass runs BEFORE this
+        // screen's appearance transition, and the bar is hidden inside that transition. Safe to mount
+        // per-screen because the delegate is static — see `InteractivePopGestureEnabler`.
+        .background(InteractivePopGestureEnabler())
+        // No `.navigationBarBackButtonHidden` here. The bar is hidden anyway so nothing shows either
+        // way, but setting it also sets `hidesBackButton`, which is a second thing UIKit's own
+        // interactive-pop delegate refuses on. Swipe-back itself is owned by
+        // `InteractivePopGestureEnabler` at the shell root, which replaces that delegate — see the note
+        // there for why the earlier `isEnabled`-only version could never have worked on this screen.
         .toolbar(.hidden, for: .navigationBar)
         .task {
             await vm.load()
@@ -119,6 +127,11 @@ struct SubscribePlusScreen: View {
     }
 }
 
+/// The character perched on the plan switcher: his size, and how much of him sits below the control's
+/// top edge so he reads as resting on it rather than hovering.
+private let mascotSize: CGFloat = 84
+private let mascotPerch: CGFloat = 14
+
 private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
@@ -128,50 +141,60 @@ private struct HeroBlock: View {
     let onBack: () -> Void
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                HStack {
-                    Button(action: onBack) {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                }
-                HStack(spacing: Spacing.xs) {
-                    Spacer()
-                    Text(verbatim: "Cleansia")
-                        .cleansiaFont(CleansiaTypography.displayMedium)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
-                    Text(L10n.Membership.inactiveBadge)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(MembershipPalette.slate900)
-                        .padding(.horizontal, Spacing.s)
-                        .padding(.vertical, 4)
-                        .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
-                    Spacer()
                 }
-                Text(L10n.Membership.heroHeadline)
-                    .cleansiaFont(CleansiaTypography.headlineMedium)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .multilineTextAlignment(.center)
-                priceBlock
-                if plans.count >= 2 {
-                    PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
-                }
-                Spacer().frame(height: 56)
+                Spacer()
             }
-            .padding(.horizontal, Spacing.ml)
-            .padding(.bottom, Spacing.ml)
-            .padding(.top, Spacing.ml + topInset)
-            Mascot.waving.image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 96, height: 96)
-                .padding(.trailing, Spacing.s)
-                .padding(.bottom, Spacing.xxs)
+            HStack(spacing: Spacing.xs) {
+                Spacer()
+                Text(verbatim: "Cleansia")
+                    .cleansiaFont(CleansiaTypography.displayMedium)
+                    .foregroundColor(.white)
+                Text(L10n.Membership.inactiveBadge)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(MembershipPalette.slate900)
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.vertical, 4)
+                    .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
+                Spacer()
+            }
+            Text(L10n.Membership.heroHeadline)
+                .cleansiaFont(CleansiaTypography.headlineMedium)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
+            priceBlock
+            if plans.count >= 2 {
+                PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
+                    // ORDER MATTERS: the overlay goes on FIRST, so it anchors to the control itself.
+                    // With the padding applied before it, the overlay measured the PADDED frame and the
+                    // character rose by exactly that padding while the switcher went down — the two
+                    // moved apart instead of together.
+                    // He sits ON the Annual segment: anchored to the switcher's top-trailing corner
+                    // and lifted by his own height less an overlap, so his feet rest on the control's
+                    // top edge rather than floating above it. Non-interactive, or he would eat the
+                    // taps meant for the segment he is sitting on.
+                    .overlay(alignment: .topTrailing) {
+                        Mascot.waving.image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: mascotSize, height: mascotSize)
+                            .offset(x: -Spacing.m, y: -mascotSize + mascotPerch)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                    // Applied last, so it moves the control AND the character riding it as one.
+                    .padding(.top, Spacing.l)
+            }
         }
+        .padding(.horizontal, Spacing.ml)
+        .padding(.bottom, Spacing.ml)
+        .padding(.top, Spacing.ml + topInset)
         .frame(maxWidth: .infinity)
         .background(
             LinearGradient(

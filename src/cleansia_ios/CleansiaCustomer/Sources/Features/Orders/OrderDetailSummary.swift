@@ -221,7 +221,6 @@ struct OrderHeroFactsStrip: View {
                 }
             }
         }
-        .padding(.horizontal, Spacing.xs)
     }
 }
 

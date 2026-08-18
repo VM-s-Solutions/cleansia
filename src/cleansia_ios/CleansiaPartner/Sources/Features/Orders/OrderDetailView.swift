@@ -87,12 +87,54 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func mapBackdrop(_ order: OrderDetail) -> some View {
-        // The View never imports MapKit — the provider encapsulates it. A plain surface stands in
-        // whenever the location resolved to nothing precise to point at.
+        // The View never imports MapKit — the provider encapsulates it.
         if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
-            CleansiaColors.primaryContainer
+            ApproximateAreaBackdrop(zone: order.location.line)
+        }
+    }
+}
+
+/// Stands in for the map when no coordinate was released to this caller. The withheld point is not a
+/// failure — the server nulls the address for a cleaner who has not taken the job — but an empty pane
+/// says "the map broke", so this names the coarse zone that *did* arrive and why the pin is missing.
+private struct ApproximateAreaBackdrop: View {
+    @Environment(\.locale) private var locale
+    let zone: String?
+
+    var body: some View {
+        // Anchored in the strip the sheet leaves uncovered at rest rather than in the container, whose
+        // centre sits behind three quarters of sheet at the anchor this screen opens on — the pane
+        // would read as blank exactly as before.
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                CleansiaColors.primaryContainer
+                legend
+                    .padding(.horizontal, Spacing.xl)
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height * (1 - SnapAnchor.peek.coveredFraction)
+                    )
+            }
+        }
+        .id(locale.identifier)
+    }
+
+    private var legend: some View {
+        VStack(spacing: Spacing.xs) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(.system(size: 32))
+                .foregroundColor(CleansiaColors.onPrimaryContainer)
+            if let zone, !zone.isBlank {
+                Text(zone)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onPrimaryContainer)
+            }
+            Text(L10n.Orders.mapApproximateArea)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onPrimaryContainer.opacity(0.8))
+                .multilineTextAlignment(.center)
         }
     }
 }

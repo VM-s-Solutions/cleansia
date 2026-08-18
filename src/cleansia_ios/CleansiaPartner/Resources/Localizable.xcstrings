@@ -6211,6 +6211,181 @@
         }
       }
     },
+    "extra_name_inside_fridge": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čištění vnitřku ledničky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inside fridge cleaning"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чистка холодильника изнутри"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čistenie vnútra chladničky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чистка холодильника зсередини"
+          }
+        }
+      }
+    },
+    "extra_name_inside_oven": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čištění vnitřku trouby"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inside oven cleaning"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чистка духовки изнутри"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čistenie vnútra rúry"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чистка духовки зсередини"
+          }
+        }
+      }
+    },
+    "extra_name_interior_windows": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vnitřní okna"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interior windows"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Окна изнутри"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vnútorné okná"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Внутрішні вікна"
+          }
+        }
+      }
+    },
+    "extra_name_laundry_ironing": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praní a žehlení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laundry & ironing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стирка и глажка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pranie a žehlenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прання та прасування"
+          }
+        }
+      }
+    },
+    "extra_name_pet_hair_supplement": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Důkladné odstranění zvířecích chlupů"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pet hair deep-clean"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глубокая уборка шерсти животных"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dôkladné odstránenie srsti"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глибоке прибирання шерсті тварин"
+          }
+        }
+      }
+    },
     "first_name": {
       "extractionState": "stale",
       "localizations": {
@@ -6767,6 +6942,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зараз виконується"
+          }
+        }
+      }
+    },
+    "instructions_copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkopírováno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скопировано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopírované"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скопійовано"
+          }
+        }
+      }
+    },
+    "instructions_copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopírovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копировать"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopírovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копіювати"
           }
         }
       }
@@ -8762,6 +9007,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вийти"
+          }
+        }
+      }
+    },
+    "map_approximate_area": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přibližná oblast — přesnou adresu uvidíte, jakmile objednávku přijmete."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approximate area — the exact address appears once you take the order."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приблизительный район — точный адрес появится, когда вы возьмёте заказ."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Približná oblasť — presnú adresu uvidíte, keď zákazku prevezmete."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приблизний район — точна адреса з'явиться, щойно ви візьмете замовлення."
           }
         }
       }
@@ -14187,6 +14467,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Телефон"
+          }
+        }
+      }
+    },
+    "profile_photo_remove_success": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilová fotka byla odstraněna"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile photo removed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото профиля удалено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilová fotka bola odstránená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото профілю видалено"
+          }
+        }
+      }
+    },
+    "profile_photo_upload_success": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilová fotka byla aktualizována"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile photo updated"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото профиля обновлено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilová fotka bola aktualizovaná"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото профілю оновлено"
           }
         }
       }

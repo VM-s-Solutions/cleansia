@@ -4,6 +4,14 @@ import SwiftUI
 struct PersonalSectionView: View {
     @StateObject private var vm: PersonalSectionViewModel
     @ObservedObject private var chainVM: OnboardingChainViewModel
+    /// Held plainly rather than observed: `ProfileAvatarField` is the only thing that reads it, and it
+    /// observes the model itself, so a photo edit redraws the card without redrawing the form.
+    ///
+    /// Optional because the registration lock reaches this same screen and has neither a model nor a
+    /// cache — the photo is not one of the four steps that unlock the account, so it stays off the
+    /// onboarding chain rather than growing a fifth.
+    private let avatar: ProfileAvatarViewModel?
+    private let avatarCache: RemoteImageCache?
     private let onboarding: Bool
     private let onSaved: () -> Void
 
@@ -12,10 +20,14 @@ struct PersonalSectionView: View {
         snackbar: SnackbarController,
         chainVM: OnboardingChainViewModel,
         onboarding: Bool,
+        avatar: ProfileAvatarViewModel? = nil,
+        avatarCache: RemoteImageCache? = nil,
         onSaved: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: PersonalSectionViewModel(client: client, snackbar: snackbar))
         self.chainVM = chainVM
+        self.avatar = avatar
+        self.avatarCache = avatarCache
         self.onboarding = onboarding
         self.onSaved = onSaved
     }
@@ -37,6 +49,11 @@ struct PersonalSectionView: View {
                 }
             },
             form: {
+                // Above the name, because the photo is the first of the person's own details and not an
+                // afterthought under the save button.
+                if let avatar, let avatarCache {
+                    ProfileAvatarField(avatar: avatar, cache: avatarCache)
+                }
                 CleansiaTextField(
                     value: $vm.form.firstName,
                     label: L10n.Profile.firstName,

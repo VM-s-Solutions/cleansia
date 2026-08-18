@@ -4,6 +4,8 @@ import SwiftUI
 
 struct ProfileHubContent: View {
     let data: ProfileData
+    @ObservedObject var avatar: ProfileAvatarViewModel
+    let avatarCache: RemoteImageCache
     let languageSummary: String
     let themeSummary: String
     let onOpen: (ProfileRoute) -> Void
@@ -22,7 +24,13 @@ struct ProfileHubContent: View {
                         ProfileHero(
                             employee: employee,
                             contractStatus: data.contractStatus,
-                            topInset: proxy.safeAreaInsets.top
+                            topInset: proxy.safeAreaInsets.top,
+                            display: avatar.display,
+                            avatarCache: avatarCache,
+                            onAvatarLoadFailure: { photo in
+                                Task { await avatar.loadFailed(fileName: photo.fileName) }
+                            },
+                            onAvatarLoadSuccess: avatar.loadSucceeded
                         )
                         sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
                         sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
@@ -155,18 +163,14 @@ private struct ProfileHero: View {
     let employee: EmployeeItem
     let contractStatus: ContractStatus?
     var topInset: CGFloat = 0
+    let display: AvatarDisplay
+    let avatarCache: RemoteImageCache
+    let onAvatarLoadFailure: (ProfilePhoto) -> Void
+    let onAvatarLoadSuccess: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.white)
-                    .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
-                    .frame(width: 72, height: 72)
-                Text(initials)
-                    .cleansiaFont(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onFixedWhite)
-            }
+            portrait
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .cleansiaFont(CleansiaTypography.headlineSmall)
@@ -192,6 +196,22 @@ private struct ProfileHero: View {
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
         )
+    }
+
+    /// A portrait, not a control: the photo is changed on the Personal data section, where the rest of
+    /// the cleaner's own details are edited, so nothing here is tappable and there is no camera badge to
+    /// promise otherwise. Hidden from VoiceOver because the name it illustrates is read out beside it.
+    ///
+    /// The load callbacks stay: this is still a rendered remote image, and its signed URL still expires.
+    private var portrait: some View {
+        ProfileAvatar(
+            display: display,
+            initials: initials,
+            cache: avatarCache,
+            onLoadFailure: onAvatarLoadFailure,
+            onLoadSuccess: onAvatarLoadSuccess
+        )
+        .accessibilityHidden(true)
     }
 
     private var name: String {
@@ -348,6 +368,8 @@ private extension String? {
                     contractStatus: .approved,
                     payoutSummary: "19-2000145399/0800"
                 ),
+                avatar: ProfileAvatarViewModel(client: LivePartnerUserClient(), snackbar: SnackbarController()),
+                avatarCache: RemoteImageCache(),
                 languageSummary: "Čeština",
                 themeSummary: "Follow system",
                 onOpen: { _ in },

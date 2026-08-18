@@ -392,15 +392,20 @@ public static class OrderMappers
     /// none of the PII that would let them dox the customer.
     ///
     /// Output examples:
-    ///   - "Praha 4 · 14000"   (Czech city districts encoded in the ZIP prefix)
-    ///   - "Brno · 60200"
-    ///   - "Praha"             (no ZIP → fall back to city only)
-    ///   - ""                  (no address at all)
+    ///   - "Praha 4 · 140 xx"   (Czech city districts encoded in the ZIP prefix)
+    ///   - "Brno · 602 xx"
+    ///   - "Praha"              (no ZIP → fall back to city only)
+    ///   - ""                   (no address at all)
     ///
-    /// We deliberately use ZIP prefix not full ZIP because PSČ "14000"
-    /// already identifies the broad district (whole Praha 4); leaving the
-    /// last two digits would narrow it to a specific street group, which
-    /// defeats the privacy intent.
+    /// <para>The prefix is a privacy ceiling, not a formatting choice. PSČ "14000" already identifies
+    /// the broad district — the whole of Praha 4 — which is all a cleaner needs to judge distance;
+    /// the last two digits narrow it to one street group, which is precisely the doxing this field
+    /// exists to prevent. So the missing digits are not an oversight to be tidied up by restoring the
+    /// full postcode: widening this widens what every pre-acceptance surface discloses.</para>
+    ///
+    /// <para>The trailing "xx" masks rather than discloses. Bare "Praha · 180" reads as a mangled
+    /// five-digit PSČ — a cleaner sees a broken postcode and reports a bug — where "Praha · 180 xx"
+    /// reads as an obviously deliberate prefix. It reveals nothing the truncation did not already.</para>
     ///
     /// <para>This is the pre-acceptance ceiling for EVERY cleaner-facing surface, which is why it is
     /// public rather than a mapper-local helper: <c>OrderListItem</c>, <c>OrderItem</c>,
@@ -412,15 +417,16 @@ public static class OrderMappers
         var city = rawCity?.Trim();
         if (string.IsNullOrEmpty(city)) return string.Empty;
 
-        var zipPrefix = rawZipCode?.Trim();
-        if (!string.IsNullOrEmpty(zipPrefix) && zipPrefix.Length >= 3)
+        // Separators come out BEFORE the length is measured, because the two used to disagree: a PSČ
+        // written "180 00" is six raw characters but five digits, so guarding on the raw length and
+        // slicing the stripped value asked for three characters out of a shorter string. Anything
+        // spaced down to two digits threw ArgumentOutOfRangeException instead of falling back to city.
+        var zipDigits = rawZipCode?.Trim().Replace(" ", "");
+        if (!string.IsNullOrEmpty(zipDigits) && zipDigits.Length >= 3)
         {
-            // For Czech PSČ (5 digits, no spaces) keep the first 3 — that's
-            // city + district granularity. International ZIPs vary; the
-            // length>=3 check just prevents emitting "1" as a "prefix".
-            var truncated = zipPrefix.Replace(" ", "")
-                .Substring(0, Math.Min(3, zipPrefix.Length));
-            return $"{city} · {truncated}";
+            // For Czech PSČ (5 digits) the first 3 are city + district granularity. International ZIPs
+            // vary; the length>=3 check just prevents emitting "1" as a "prefix".
+            return $"{city} · {zipDigits[..3]} xx";
         }
 
         return city;

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // The clean's Live Activity card. It lives in Core rather than in the widget extension for two reasons:
 // the extension is a separate binary that links Core (so this is the one copy both the app and the widget
@@ -131,12 +132,28 @@ public struct LiveActivityBrandLockup: View {
         HStack(spacing: 6) {
             ZStack {
                 Circle().fill(CleansiaColors.primaryContainer)
-                Mascot.waving.image.resizable().scaledToFit().padding(1)
+                mark
             }
             .frame(width: 22, height: 22)
 
             Text(verbatim: "Cleansia")
                 .font(.caption.weight(.semibold))
+                .foregroundColor(CleansiaColors.primary)
+        }
+    }
+
+    /// Probe the art before drawing it, and degrade to a symbol when it misses. `Image(_:bundle:)`
+    /// draws NOTHING when the name does not resolve — the lockup renders as a filled circle with a
+    /// dark hole in it, which is what the owner sees on the lock screen — and the widget is a
+    /// separate process with its own bundle graph, so Core's catalog resolving in the app proves
+    /// nothing about the extension. This guard is the one #189 dropped when the card moved into Core.
+    @ViewBuilder
+    private var mark: some View {
+        if UIImage(named: Mascot.waving.rawValue, in: MascotAssets.bundle, compatibleWith: nil) != nil {
+            Mascot.waving.image.resizable().scaledToFit().padding(1)
+        } else {
+            Image(systemName: "sparkles")
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(CleansiaColors.primary)
         }
     }

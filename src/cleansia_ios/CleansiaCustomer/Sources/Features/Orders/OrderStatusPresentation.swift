@@ -32,6 +32,18 @@ enum OrderStatusPresentation {
         case nil: CleansiaColors.outlineVariant
         }
     }
+
+    /// Which of `OrderStatusBadge`'s three groups the status belongs to — the badge's mark comes from
+    /// this, so the grouping is legible without reading the hue. New/Pending/Confirmed/OnTheWay/
+    /// InProgress are all still in flight; Completed and Cancelled are the two terminal ends.
+    static func tone(_ code: Code?) -> OrderStatusTone {
+        switch code?.toOrderStatus() {
+        case ._0, ._1, ._2, ._3, ._4: .live
+        case ._5: .done
+        case ._6: .failed
+        case nil: .unknown
+        }
+    }
 }
 
 #if DEBUG

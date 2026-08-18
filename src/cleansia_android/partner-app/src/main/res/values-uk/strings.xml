@@ -940,6 +940,17 @@
     <string name="scope_section_title">Об\'єкт та обсяг</string>
     <string name="scope_services_label">Послуги та пакети</string>
     <string name="scope_extras_label">Додатки</string>
+
+    <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
+    <string name="extra_name_inside_oven">Чистка духовки зсередини</string>
+    <string name="extra_name_inside_fridge">Чистка холодильника зсередини</string>
+    <string name="extra_name_interior_windows">Внутрішні вікна</string>
+    <string name="extra_name_laundry_ironing">Прання та прасування</string>
+    <string name="extra_name_pet_hair_supplement">Глибоке прибирання шерсті тварин</string>
+
+    <!-- Shown instead of the map when the order has no street address to point at. -->
+    <string name="map_approximate_area">Приблизний район — точна адреса з\'явиться, щойно ви візьмете замовлення.</string>
+
     <string name="from_customer_section_title">Від клієнта</string>
     <string name="note_general_label">Примітка</string>
     <string name="note_access_label">Доступ</string>

@@ -45,6 +45,11 @@ public enum SnapAnchor: CaseIterable, Equatable {
 /// Where an edge-anchored ornament sits: its centre rides the sheet's top edge, so
 /// half of it overlaps the backdrop and half the sheet, and it tracks every drag.
 public enum SnapSheetOrnament {
+    /// The ornament's edge length, and the one place it is written down: because its centre rides the
+    /// sheet edge, the content below has to clear half of it, so the sheet's own top inset is derived
+    /// from this number and the two silently mis-align if either is retyped.
+    public static let defaultSize: CGFloat = 128
+
     public static func offsetY(sheetTop: CGFloat, size: CGFloat) -> CGFloat {
         sheetTop - size / 2
     }
@@ -103,7 +108,7 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
 
     public init(
         anchor: Binding<SnapAnchor>,
-        ornamentSize: CGFloat = 128,
+        ornamentSize: CGFloat = SnapSheetOrnament.defaultSize,
         @ViewBuilder background: () -> Background,
         @ViewBuilder ornament: () -> Ornament,
         @ViewBuilder content: () -> Content

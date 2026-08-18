@@ -147,6 +147,12 @@ struct OrderDetailContent: View {
 
 /// Always-visible header at the top of the sheet (never scrolls) — order #,
 /// status pill, date, pay (the compact-header parity).
+///
+/// **All three lines left-aligned, and the trailing half deliberately empty.** The mascot puck rides
+/// the sheet's top edge at `.trailing` (see `SnapSheet`'s ornament), so its lower half lands on exactly
+/// this row — and while the pay sat in the trailing slot, the character painted over the one number the
+/// cleaner opens this screen for. The customer sheet moved its date off the right half for the same
+/// reason.
 private struct OrderDetailCompactHeader: View {
     let order: OrderDetail
     let locale: Locale
@@ -163,30 +169,34 @@ private struct OrderDetailCompactHeader: View {
                 Text(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale))
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if let pay = order.pay, pay > 0 {
+                    Text(OrdersFormat.money(pay, symbol: order.currencySymbol))
+                        .font(CleansiaTypography.titleLarge)
+                        .foregroundColor(CleansiaColors.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
-            Spacer()
-            if let pay = order.pay, pay > 0 {
-                Text(OrdersFormat.money(pay, symbol: order.currencySymbol))
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.primary)
-            }
+            Spacer(minLength: mascotClearance)
         }
         .padding(.horizontal, Spacing.m)
         .padding(.bottom, Spacing.s)
     }
 }
 
+/// How much of the header's trailing edge the mascot puck occupies: half its 128pt width plus the
+/// trailing inset `SnapSheet` gives it. Reserved rather than merely avoided, so a long cs/uk date
+/// shrinks instead of sliding under the character.
+private let mascotClearance: CGFloat = 80
+
 struct OrderStatusPill: View {
     @Environment(\.locale) private var locale
     let status: OrderStatus?
 
     var body: some View {
-        Text(L10n.Orders.statusLabel(status))
-            .font(CleansiaTypography.labelSmall)
-            .foregroundColor(tint)
-            .padding(.horizontal, Spacing.xs)
-            .padding(.vertical, 2)
-            .background(tint.opacity(0.14), in: Capsule())
+        OrderStatusBadge(label: L10n.Orders.statusLabel(status), tint: tint, tone: tone)
             .id(locale.identifier)
     }
 
@@ -198,6 +208,17 @@ struct OrderStatusPill: View {
         case ._5: CleansiaColors.successText
         case ._6: CleansiaColors.error
         case .none: CleansiaColors.onSurfaceVariant
+        }
+    }
+
+    /// The group the mark draws: hue agrees with it, but shape is what carries it to a reader who cannot
+    /// separate the hues — see `OrderStatusBadge`.
+    private var tone: OrderStatusTone {
+        switch status {
+        case ._0, ._1, ._2, ._3, ._4: .live
+        case ._5: .done
+        case ._6: .failed
+        case .none: .unknown
         }
     }
 }

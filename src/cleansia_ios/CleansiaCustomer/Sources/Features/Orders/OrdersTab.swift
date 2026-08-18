@@ -167,10 +167,7 @@ struct OrderListCard: View {
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
-                    OrderStatusPill(
-                        label: OrderStatusPresentation.label(order.statusCode),
-                        color: OrderStatusPresentation.color(order.statusCode)
-                    )
+                    OrderStatusPill(code: order.statusCode)
                 }
                 Text(OrdersFormat.dateRange(
                     order.cleaningDateTime,

@@ -63,13 +63,13 @@ final class PartnerUserWireTests: XCTestCase {
     /// nothing about which zone the day was read in. Drive the client directly with an instant late in
     /// the UTC day, which is the case that separates the two.
     func testTheBirthDayIsReadInGreenwichWhateverInstantCarriesIt() async throws {
-        _ = await LivePartnerUserClient().updateCurrentUser(
+        _ = await LivePartnerUserClient().updateCurrentUser(CurrentUserUpdate(
             firstName: "Ondrej",
             lastName: "Novak",
             phoneNumber: "",
             birthDate: Date(timeIntervalSince1970: 400_030_200),
             languageCode: "uk"
-        )
+        ))
 
         let body = try XCTUnwrap(bodies.json(ofPath: Self.updatePath))
         XCTAssertEqual(body["birthDate"] as? String, "1982-09-04")

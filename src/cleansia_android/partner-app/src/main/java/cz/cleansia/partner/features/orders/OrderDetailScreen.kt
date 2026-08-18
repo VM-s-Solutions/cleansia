@@ -52,6 +52,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -338,10 +339,9 @@ private fun OrderDetailBottomSheetLayout(
                         sheetCoverHeight = sheetPeekHeight,
                     )
                 } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                    ApproximateAreaBackdrop(
+                        location = location,
+                        sheetCoverHeight = sheetPeekHeight,
                     )
                 }
                 FloatingBackButton(
@@ -422,6 +422,66 @@ private fun MapBackdrop(
     ) {
         ViewAnnotation(options = annotationOptions) {
             MapBackdropPin()
+        }
+    }
+}
+
+/**
+ * What stands in for the map when there is no coordinate to point at — almost always an order the
+ * cleaner has not taken yet, whose street address the server withholds until they do.
+ *
+ * It was a bare `primaryContainer` fill: no pin, no words, no reason given, which reads as a map
+ * that failed to load rather than as one that was never coming. The coarse zone is the answer to
+ * "where is this?" and the server sends it to everyone, so it is said here, where the pin would be.
+ */
+@Composable
+private fun ApproximateAreaBackdrop(
+    location: OrderLocation,
+    sheetCoverHeight: Dp,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // The sheet covers the bottom 75%, so centring against the whole screen would centre
+                // this underneath it. Same correction the map makes with its camera padding.
+                .padding(bottom = sheetCoverHeight)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = Spacing.L),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Place,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(28.dp),
+            )
+            location.line?.let { zone ->
+                Spacer(Modifier.height(Spacing.XS))
+                Text(
+                    text = zone,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            // A precise address that simply has no coordinates is the other way into this branch —
+            // there the address is already on the sheet and promising it "once you take the order"
+            // would be a lie.
+            if (location !is OrderLocation.Precise) {
+                Spacer(Modifier.height(Spacing.XXS))
+                Text(
+                    text = stringResource(R.string.map_approximate_area),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

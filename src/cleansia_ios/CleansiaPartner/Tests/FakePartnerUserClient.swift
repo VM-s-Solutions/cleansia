@@ -58,21 +58,15 @@ final class FakePartnerUserClient: PartnerUserClient, @unchecked Sendable {
         return currentUser
     }
 
-    func updateCurrentUser(
-        firstName: String,
-        lastName: String,
-        phoneNumber: String,
-        birthDate: Date?,
-        languageCode: String?
-    ) async -> ApiResult<Void> {
+    func updateCurrentUser(_ update: CurrentUserUpdate) async -> ApiResult<Void> {
         guard await roundTripCompletes() else { return .failure(ApiError(code: ApiError.cancelledCode)) }
         lock.withLock {
             storedUpdates.append(Update(
-                firstName: firstName,
-                lastName: lastName,
-                phoneNumber: phoneNumber,
-                birthDate: birthDate,
-                languageCode: languageCode
+                firstName: update.firstName,
+                lastName: update.lastName,
+                phoneNumber: update.phoneNumber,
+                birthDate: update.birthDate,
+                languageCode: update.languageCode
             ))
         }
         pushed.fulfill()
@@ -99,7 +93,8 @@ extension CurrentUser {
         lastName: String? = "Novak",
         phoneNumber: String? = "+420777111222",
         birthDate: Date? = Date(timeIntervalSince1970: 400_000_000),
-        preferredLanguageCode: String? = "en"
+        preferredLanguageCode: String? = "en",
+        profilePhoto: ProfilePhoto? = nil
     ) -> CurrentUser {
         CurrentUser(
             email: "ondrej@example.com",
@@ -107,7 +102,8 @@ extension CurrentUser {
             lastName: lastName,
             phoneNumber: phoneNumber,
             birthDate: birthDate,
-            preferredLanguageCode: preferredLanguageCode
+            preferredLanguageCode: preferredLanguageCode,
+            profilePhoto: profilePhoto
         )
     }
 }

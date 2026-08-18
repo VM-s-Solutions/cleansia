@@ -137,7 +137,7 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
                 var offer = result.Value!.Single(o => o.Id == "offer-mine-live");
 
                 Assert.Equal(Live, offer.RespondByUtc, TimeSpan.FromSeconds(1));
-                Assert.Equal("Brno · 602", offer.CustomerAddressApproximate);
+                Assert.Equal("Brno · 602 xx", offer.CustomerAddressApproximate);
                 Assert.Equal("CZK", offer.CurrencyCode);
 
                 // Over the SERIALIZED row, not over the coarse field: the seeded street is real

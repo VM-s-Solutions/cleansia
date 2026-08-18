@@ -44,7 +44,12 @@ fun OrderSectionCard(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        // Vertical only. The sheet content already insets itself by Spacing.M, so a second 16dp all
+        // round pushed every section's text 32dp off the sheet edge while the pinned header, the
+        // metadata row and the footer button all sat at 16dp — a card that reads as indented rather
+        // than as a section. The divider below the title is what separates sections now, and it
+        // gains from running the full width instead of stopping short at both ends.
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

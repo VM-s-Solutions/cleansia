@@ -60,7 +60,7 @@ private struct RecentBookingRow: View {
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(1)
                         if let label = HomeSections.statusChipLabel(order) {
-                            OrderStatusPill(label: label, color: OrderStatusPresentation.color(order.statusCode))
+                            OrderStatusPill(code: order.statusCode, label: label)
                         }
                         Spacer(minLength: 0)
                     }

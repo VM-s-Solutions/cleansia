@@ -103,6 +103,19 @@ android {
                     ?: ""
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"$stripePublishableKey\"")
 
+        // Google Pay environment follows the STRIPE KEY, not the build type.
+        //
+        // It used to be `if (BuildConfig.DEBUG) Test else Production` at the PaymentSheet call
+        // site, which is wrong the moment a release build carries a test key — and every release
+        // build does today, because they point at the Azure DEV backend. Google Pay Production
+        // against pk_test_ fails at the sheet, after the user has committed to paying.
+        //
+        // Deriving it from the key prefix makes the two impossible to desync: there is no second
+        // flag to remember to flip when the live key lands. An empty or unrecognised key falls to
+        // Test, which is the safe direction.
+        val googlePayProduction = stripePublishableKey.startsWith("pk_live_")
+        buildConfigField("boolean", "GOOGLE_PAY_PRODUCTION", googlePayProduction.toString())
+
         // Google Sign-In OAuth 2.0 web client ID — the Cloud-Console "Web client"
         // entry (NOT the Android client). Credential Manager exchanges this for
         // an ID token that the backend's GoogleAuth handler verifies.

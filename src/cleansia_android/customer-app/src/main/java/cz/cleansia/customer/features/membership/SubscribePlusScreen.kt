@@ -237,10 +237,12 @@ fun SubscribePlusScreen(
                                         ephemeralKeySecret = outcome.ephemeralKey,
                                     ),
                                     googlePay = PaymentSheet.GooglePayConfiguration(
-                                        environment = if (BuildConfig.DEBUG) {
-                                            PaymentSheet.GooglePayConfiguration.Environment.Test
-                                        } else {
+                                        // Follows the Stripe key, not the build type. See
+                                        // build.gradle.kts where GOOGLE_PAY_PRODUCTION is derived.
+                                        environment = if (BuildConfig.GOOGLE_PAY_PRODUCTION) {
                                             PaymentSheet.GooglePayConfiguration.Environment.Production
+                                        } else {
+                                            PaymentSheet.GooglePayConfiguration.Environment.Test
                                         },
                                         countryCode = "CZ",
                                         currencyCode = "CZK",

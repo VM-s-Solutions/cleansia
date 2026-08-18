@@ -2,6 +2,13 @@
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.kts.
 
+# Crash readability — customer-app has carried these since it gained Sentry; partner did not,
+# so a minified partner stack trace has no file or line at all and the R8 mapping file has
+# nothing to deobfuscate back to. `-renamesourcefileattribute SourceFile` collapses the leaked
+# source paths while keeping the attribute the mapping needs.
+-keepattributes SourceFile, LineNumberTable
+-renamesourcefileattribute SourceFile
+
 # Keep Kotlin Serialization
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt

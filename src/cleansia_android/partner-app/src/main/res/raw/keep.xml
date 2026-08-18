@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource-shrinker keep list. Customer-app has the same file with its own globs.
+
+  `isShrinkResources = true` on the release build type removes any resource the shrinker cannot
+  see referenced from code. Two string families are only ever resolved REFLECTIVELY, by a name
+  built at runtime, so nothing statically references them and every one is a shrink candidate:
+
+    error_*           ApiErrorTranslator.kt:76 — "error_$normalized" from the server error key,
+                      dots and dashes to underscores, lowercased. The same call site also tries
+                      "error_key_$normalized", which this glob already covers as a prefix.
+    profile_fields_*  RegistrationLockScreen.kt:580, reached only from the StepCategory.Profile
+                      branch at :496, whose detailKeys are the backend's missing-field list
+                      (RegistrationLockViewModel.kt:296 -> profileMissing). Note these are NOT
+                      lowercased at the call site, so the resources are camelCase
+                      (profile_fields_firstName) — unlike the error family.
+
+  Deliberately NOT listed: registration_lock_*. Those keys exist, but they never reach a
+  getIdentifier — resolveDetail is gated to StepCategory.Profile, while the registration_lock.*
+  keys are the Documents and Approval rows' detailKeys and are only ever used as `contains(...)`
+  predicates (RegistrationLockScreen.kt:416, :518) beside a static stringResource. Keeping them
+  would pin 7 provably dead strings x 5 locales into the APK from inside a shrink-safety file.
+
+  The failure mode this file prevents is silent and reaches only the user: every backend error
+  collapses to the generic fallback, and the registration-lock profile checklist renders raw
+  dot-keys. Nothing fails to build, no test goes red. AGP's shrinker has string-prefix heuristics
+  that may cover some of this, but "may" is not a contract.
+
+  Adding a new reflectively-resolved string family means adding its glob here.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/error_*,@string/profile_fields_*" />

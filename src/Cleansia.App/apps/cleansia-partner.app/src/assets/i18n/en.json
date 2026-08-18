@@ -728,11 +728,11 @@
       "delete_title": "Delete my account",
       "delete_description": "Permanently delete your account and anonymize your personal data. This cannot be undone.",
       "delete_button": "Delete my account",
-      "delete_confirm_title": "Delete account?",
-      "delete_confirm_message": "Your account will be permanently deleted and your personal data anonymized. This cannot be undone.",
-      "delete_confirm_yes": "Delete my account",
-      "delete_success": "Your account has been deleted.",
-      "delete_error": "We couldn't delete your account."
+      "delete_confirm_title": "Request account deletion?",
+      "delete_confirm_message": "We will start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed. Invoices, pay records and the self-billing agreement are kept as financial records.",
+      "delete_confirm_yes": "Request deletion",
+      "delete_error": "We couldn't delete your account.",
+      "delete_requested": "Your deletion request has been submitted. We will be in touch to arrange the paperwork."
     }
   },
   "sidebar": {

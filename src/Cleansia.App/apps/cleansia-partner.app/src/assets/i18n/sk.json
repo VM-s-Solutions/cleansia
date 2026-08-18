@@ -728,11 +728,11 @@
       "delete_title": "Vymazať môj účet",
       "delete_description": "Natrvalo vymaže váš účet a anonymizuje vaše osobné údaje. Túto akciu nemožno vrátiť.",
       "delete_button": "Vymazať môj účet",
-      "delete_confirm_title": "Vymazať účet?",
-      "delete_confirm_message": "Váš účet bude natrvalo vymazaný a vaše osobné údaje anonymizované. Túto akciu nemožno vrátiť.",
-      "delete_confirm_yes": "Vymazať môj účet",
-      "delete_success": "Váš účet bol vymazaný.",
-      "delete_error": "Váš účet sa nepodarilo vymazať."
+      "delete_confirm_title": "Požiadať o zmazanie účtu?",
+      "delete_confirm_message": "Začneme proces ukončenia spolupráce. Spolupráca musí byť formálne ukončená osobne a je potrebné podpísať zostávajúce dokumenty, až potom bude účet uzavretý. Faktúry, mzdové záznamy a dohoda o samofakturácii sa uchovávajú ako účtovné doklady.",
+      "delete_confirm_yes": "Požiadať o zmazanie",
+      "delete_error": "Váš účet sa nepodarilo vymazať.",
+      "delete_requested": "Vaša žiadosť o zmazanie bola odoslaná. Ozveme sa vám ohľadom podpisu dokumentov."
     }
   },
   "sidebar": {

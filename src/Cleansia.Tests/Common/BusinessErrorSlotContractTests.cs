@@ -174,8 +174,12 @@ public class BusinessErrorSlotContractTests
             $"Expected the {ScannedProject} scan to find the bulk of its Error constructions but found "
             + $"{constructions.Count} — the scanner, not the codebase, is what regressed.");
 
+        // Normalize, like every other path comparison in this file. RelativePath comes from
+        // Path.GetRelativePath, so it carries the platform separator; the three assertions above
+        // wrap their literals and this one did not, which made the anti-vacuity check itself
+        // vacuous on Windows — it failed there, and passed on CI, which is Linux.
         var grantConsent = Assert.Single(constructions, c =>
-            c.RelativePath == "Features/Gdpr/GrantConsent.cs");
+            c.RelativePath == Normalize("Features/Gdpr/GrantConsent.cs"));
 
         Assert.Equal("nameof(Command.ConsentType)", grantConsent.CodeSlot);
         Assert.Equal("BusinessErrorMessage.ConsentAlreadyGranted", grantConsent.MessageSlot);

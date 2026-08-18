@@ -126,13 +126,14 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
       )
       .subscribe((result) => {
         if (result === 'error') return;
+        // A cleaner is NOT deleted by this call — the backend files a Pending GdprRequest and
+        // changes nothing, because ending a working relationship needs signed paperwork and an
+        // in-person step. Saying "deleted" and signing them out was a lie the endpoint used to
+        // tell truthfully and stopped being able to; they stay signed in and keep working until
+        // an admin fulfils the request.
         this.snackbar.showSuccess(
-          this.translate.instant('pages.gdpr.delete_success')
+          this.translate.instant('pages.gdpr.delete_requested')
         );
-        this.authService
-          .logout()
-          .pipe(takeUntil(this.destroyed$))
-          .subscribe();
       });
   }
 

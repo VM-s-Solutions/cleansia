@@ -2040,7 +2040,9 @@
           "completed_at": "Dokončeno",
           "notes": "Poznámky",
           "created_on": "Vytvořeno"
-        }
+        },
+        "fulfil": "Vyřídit žádost o smazání",
+        "fulfil_title": "Vyřídit tuto žádost o smazání?"
       },
       "request_status": {
         "Pending": "Čeká",

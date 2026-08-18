@@ -156,7 +156,7 @@ public sealed class LiveActivityTokenErasureTests : IDisposable
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(
-            userId, "gdpr_erasure_test", _ => ("test-actor", null), CancellationToken.None);
+            userId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         await ctx.CommitAsync(CancellationToken.None);

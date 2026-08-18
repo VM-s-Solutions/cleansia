@@ -2040,7 +2040,9 @@
           "completed_at": "Completed at",
           "notes": "Notes",
           "created_on": "Created on"
-        }
+        },
+        "fulfil": "Fulfil deletion request",
+        "fulfil_title": "Fulfil this deletion request?"
       },
       "request_status": {
         "Pending": "Pending",

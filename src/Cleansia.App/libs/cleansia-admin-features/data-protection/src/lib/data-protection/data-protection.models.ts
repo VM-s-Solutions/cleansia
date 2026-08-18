@@ -36,7 +36,8 @@ const REQUEST_TYPE_LABEL_KEYS: Readonly<Record<string, string>> = {
 
 export function getGdprRequestTableDefinition(
   translate: TranslateService,
-  formatDate: (d?: Date) => string
+  formatDate: (d?: Date) => string,
+  onFulfil: (row: GdprRequestDto) => void
 ): {
   columns: TableColumn<GdprRequestDto>[];
   actions: TableAction<GdprRequestDto>[];
@@ -107,7 +108,25 @@ export function getGdprRequestTableDefinition(
         width: '13%',
       },
     ],
-    actions: [],
+    actions: [
+      {
+        icon: 'pi pi-user-minus',
+        color: 'danger',
+        tooltip: translate.instant('pages.data_protection.requests.fulfil'),
+        // A cleaner's own deletion only FILES this row — the erasure itself is an admin act, run
+        // after the cooperation has been formally ended and the paperwork signed (ADR-0052). This
+        // is that act, reachable from the row that asked for it rather than by copying the user id
+        // into the form below.
+        //
+        // Shown only on a Pending Deletion: a Completed one has nothing left to fulfil, and an
+        // Export request is not this button's business.
+        visible: (row) =>
+          !!row.userId &&
+          row.status === GdprRequestStatus.Pending &&
+          row.requestType === 'Deletion',
+        onClick: onFulfil,
+      },
+    ],
   };
 }
 

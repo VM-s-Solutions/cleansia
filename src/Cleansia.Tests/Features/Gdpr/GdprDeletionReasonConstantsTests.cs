@@ -37,9 +37,10 @@ public class GdprDeletionReasonConstantsTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<Func<User, (string ProcessedBy, string? Notes)>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, string, Func<User, (string ProcessedBy, string? Notes)>, CancellationToken>(
-                (_, reason, resolveActor, _2) =>
+            .Callback<string, string, Func<User, (string ProcessedBy, string? Notes)>, bool, CancellationToken>(
+                (_, reason, resolveActor, _defer, _2) =>
                 {
                     _capturedReason = reason;
                     (_capturedProcessedBy, _capturedNotes) = resolveActor(probe);

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -29,6 +30,20 @@ public class PayoutDetailsErasureTests(PostgresContainerFixture fixture) : BaseI
     private const string AccountNumber = "5885638003";
     private const string Iban = "CZ3155000000005885638003";
 
+    /// <remarks>
+    /// Calls <c>IGdprDeletionService</c> directly rather than sending <c>DeleteUserAccount.Command</c>,
+    /// which is what it used to do. Per ADR-0052 a cleaner's own deletion now FILES a request and
+    /// erases nothing, so the self path no longer reaches the code this test exists to cover.
+    ///
+    /// <para>The admin COMMAND is not the substitute either: its validator refuses a self-delete, and
+    /// the integration session is the subject. Going straight at the service with
+    /// <c>deferEmployeeErasure: false</c> is both simpler and closer to the stated purpose — this test
+    /// is about the query shape <c>GdprDeletionService</c> loads the aggregate with, not about the
+    /// pipeline that reaches it, and that shape is shared by both paths.</para>
+    ///
+    /// <para>The commit is explicit because the UnitOfWork behaviour is what used to provide it, and
+    /// it only runs for a MediatR request.</para>
+    /// </remarks>
     [Fact]
     public async Task Erasing_A_Cleaner_Deletes_The_Payout_Row_Regardless_Of_What_The_Caller_Loaded()
     {
@@ -36,8 +51,18 @@ public class PayoutDetailsErasureTests(PostgresContainerFixture fixture) : BaseI
             arrange: SeedCleanerWithPayoutDetails,
             act: async provider =>
             {
-                var mediator = provider.GetRequiredService<IMediator>();
-                return await mediator.Send(new DeleteUserAccount.Command());
+                var service = provider.GetRequiredService<IGdprDeletionService>();
+                var context = provider.GetRequiredService<CleansiaDbContext>();
+
+                var result = await service.DeleteUserAccountAsync(
+                    TestConstants.TestUserSession.TestUserId,
+                    GdprAuditReasons.AdminDeletion,
+                    _ => ("integration-admin", null),
+                    deferEmployeeErasure: false,
+                    CancellationToken.None);
+
+                await context.CommitAsync(CancellationToken.None);
+                return result;
             },
             assert: async (CleansiaDbContext context, BusinessResult result) =>
             {

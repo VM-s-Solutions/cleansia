@@ -229,18 +229,21 @@ describe('PartnerGdprFacade', () => {
   });
 
   describe('delete account', () => {
-    it('deletes, shows success and logs the partner out', () => {
+    // The endpoint files a Pending GdprRequest for a cleaner and changes nothing else — ending a
+    // working relationship needs signed paperwork and an in-person step. Announcing "deleted" and
+    // signing them out was true when the backend erased on the spot; it is a lie now, and the
+    // cleaner has to keep working until an admin fulfils the request.
+    it('files the request, says so, and keeps the partner signed in', () => {
       const facade = createFacade(true);
       gdprClient.deleteAccount.mockReturnValue(of(undefined));
-      authService.logout.mockReturnValue(of(true));
 
       facade.deleteAccount();
 
       expect(gdprClient.deleteAccount).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccess).toHaveBeenCalledWith(
-        'pages.gdpr.delete_success'
+        'pages.gdpr.delete_requested'
       );
-      expect(authService.logout).toHaveBeenCalledTimes(1);
+      expect(authService.logout).not.toHaveBeenCalled();
       expect(facade.deleting()).toBe(false);
     });
 

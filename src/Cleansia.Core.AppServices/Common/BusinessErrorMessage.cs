@@ -428,6 +428,21 @@ public static class BusinessErrorMessage
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
     public const string GdprDeletionBlockedByOrder = "gdpr.deletion_blocked_by_order";
     public const string GdprDeletionBlockedByInvoice = "gdpr.deletion_blocked_by_invoice";
+
+    /// <summary>
+    /// A cleaner still holds a seat on an order that has not reached a terminal status.
+    /// Distinct from <see cref="GdprDeletionBlockedByOrder"/>, which is the CUSTOMER axis
+    /// (<c>Order.UserId</c>) and never sees an employee's assignments.
+    /// </summary>
+    public const string GdprDeletionBlockedByAssignedOrder = "gdpr.deletion_blocked_by_assigned_order";
+
+    /// <summary>
+    /// A cleaner has pay that has not been settled — either a pay row not yet attached to an
+    /// invoice, or one whose pay period has not reached <c>Paid</c>. Deliberately ONE key: to the
+    /// cleaner both are the same situation ("work I have not been paid for"), and the remedy is
+    /// the same, so splitting it would name a distinction the reader cannot act on.
+    /// </summary>
+    public const string GdprDeletionBlockedByUnsettledPay = "gdpr.deletion_blocked_by_unsettled_pay";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
 

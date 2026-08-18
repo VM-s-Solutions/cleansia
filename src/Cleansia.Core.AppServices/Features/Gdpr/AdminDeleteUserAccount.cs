@@ -63,6 +63,10 @@ public static class AdminDeleteUserAccount
                 request.UserId,
                 deactivationReason: GdprAuditReasons.AdminDeletion,
                 resolveAuditActor: _ => (adminEmail, $"Admin deletion by {adminEmail}"),
+                // The admin path erases employees too — this is how a cleaner's filed deletion
+                // request is fulfilled once the paperwork is done. The eligibility guards still
+                // apply, so an admin cannot erase someone mid-job or with pay outstanding either.
+                deferEmployeeErasure: false,
                 cancellationToken);
 
             if (result.IsSuccess)

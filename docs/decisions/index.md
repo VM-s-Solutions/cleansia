@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**51 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**52 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -93,6 +93,7 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0049](./adr-0049)** | A disclosure block is withheld by the server when… | `accepted` |
 | **[ADR-0050](./adr-0050)** | A dormant tenant column arbitrates nothing the… | `proposed` |
 | **[ADR-0051](./adr-0051)** | A reads tenancy posture is decided by the write… | `proposed` |
+| **[ADR-0052](./adr-0052)** | A cleaners own deletion files a request; only an admin… | `proposed` |
 
 ⟲ = superseded in whole or in part by a later record.
 

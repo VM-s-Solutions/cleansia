@@ -145,6 +145,7 @@ export default withMermaid(
               { text: "ADR-0049 — A disclosure block is withheld by the server when…", link: '/decisions/adr-0049' },
               { text: "ADR-0050 — A dormant tenant column arbitrates nothing the…", link: '/decisions/adr-0050' },
               { text: "ADR-0051 — A reads tenancy posture is decided by the write…", link: '/decisions/adr-0051' },
+              { text: "ADR-0052 — A cleaners own deletion files a request; only an…", link: '/decisions/adr-0052' },
             ],
           },
         ],

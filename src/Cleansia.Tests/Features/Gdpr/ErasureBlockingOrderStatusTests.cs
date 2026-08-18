@@ -164,7 +164,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             NullLogger<GdprDeletionService>.Instance);
 
         return await service.DeleteUserAccountAsync(
-            SubjectUserId, "gdpr_erasure_test", _ => ("test-actor", null), CancellationToken.None);
+            SubjectUserId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
     }
 
     private async Task SeedAsync(OrderStatus status)

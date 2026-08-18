@@ -2,12 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+      CAMERA, READ_EXTERNAL_STORAGE and READ_MEDIA_IMAGES were declared here and used by nothing.
+      Both file pickers (PhotosSection.kt:153, DocumentsSectionScreen.kt:89) use
+      ActivityResultContracts.GetContent(), which goes through the system picker and returns a URI
+      already carrying a read grant — it needs no permission at any API level. The customer app is
+      the proof: it picks images with GetMultipleContents() and PickVisualMedia() while declaring
+      none of these. CAMERA had no call site at all, and with no
+      <uses-feature android:name="android.hardware.camera" android:required="false" /> beside it
+      Play inferred the hardware as REQUIRED and filtered the store listing accordingly.
+
+      Keeping them also obliged the Play "Photo and video permissions" declaration for an app that
+      never touches the media store.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

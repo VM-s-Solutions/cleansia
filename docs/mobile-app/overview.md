@@ -155,23 +155,39 @@ then silently no-ops at runtime. Replace it with the real Firebase config before
 
 ### Permissions
 
-The two apps ask for different things, because they do different work.
+The two apps ask for almost the same things, and the list is deliberately short — it is what a
+Play Data safety declaration is filled in from.
 
 **`:partner-app`** — `AndroidManifest.xml`
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
-`ACCESS_COARSE_LOCATION`.
+`ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE`; that is the only difference.
+
+**Neither app declares a camera or storage permission, and neither needs one.** Every picker in
+both apps goes through the system picker — `GetContent()` on partner (job photos, identity
+documents), `PickVisualMedia()` and `GetMultipleContents()` on customer (avatar, dispute
+evidence) — which returns a URI that already carries a read grant. Every consumer reads it with
+`contentResolver.openInputStream`, never a file path, so no permission applies at any API level.
+
+This matters beyond tidiness. `CAMERA` without a matching
+`<uses-feature android:name="android.hardware.camera" android:required="false" />` makes Play
+infer the hardware as required and filter the store listing to camera devices, and
+`READ_MEDIA_IMAGES` obliges the console's *Photo and video permissions* declaration. Both were
+declared and unused until they were removed; do not reinstate either without a real call site.
+
+Library manifests merge in four more that neither app declares: `WAKE_LOCK` and
+`com.google.android.c2dm.permission.RECEIVE` from Firebase Messaging, `ACCESS_WIFI_STATE` from
+Mapbox, and a signature-level `${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` from
+androidx.core. They appear in the merged manifest and in the APK, so a Play declaration should be
+read from the merged output, not from the source file above.
 
 Both apps set `android:usesCleartextTraffic="false"` with a `network_security_config`, register the
 FCM `MESSAGING_EVENT` service as `exported="false"`, and expose a `FileProvider` under

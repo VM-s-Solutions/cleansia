@@ -5,7 +5,7 @@ Cleaning-services platform. Customers book, cleaners take and complete the work,
 Three web apps, two Android apps, two iOS apps and five API hosts, over one PostgreSQL database.
 
 **The documentation lives in [`docs/`](docs/) and that site is the source of truth.** It is a
-VitePress project — the product rules, the domain model, the end-to-end flows and all 51 ADRs are
+VitePress project — the product rules, the domain model, the end-to-end flows and all 52 ADRs are
 there, not in this file and not in source comments. Read it there:
 
 ```bash

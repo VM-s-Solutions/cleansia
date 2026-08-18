@@ -17,6 +17,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
   PaginationState,
+  TableAction,
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
@@ -58,6 +59,7 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
   protected readonly Policy = Policy;
 
   requestColumns!: TableColumn<GdprRequestDto>[];
+  requestActions!: TableAction<GdprRequestDto>[];
   consentColumns!: TableColumn<UserConsentDto>[];
 
   private readonly destroy$ = new Subject<void>();
@@ -123,6 +125,35 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Fulfil a filed deletion request — the admin half of ADR-0052. Reuses the same erase command the
+   * form below calls; the only thing this adds is that the user id comes from the row that asked,
+   * so an admin never has to copy one across.
+   */
+  confirmFulfil(row: GdprRequestDto): void {
+    // userId is optional on the generated DTO. A request row without one cannot be fulfilled and
+    // the action is hidden for it, but the guard stays: the caller is a template binding, not a
+    // type the compiler can narrow for us.
+    const userId = row.userId;
+    if (!userId) return;
+
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.data_protection.erase.confirm_message',
+        { userId }
+      ),
+      header: this.translate.instant(
+        'pages.data_protection.requests.fulfil_title'
+      ),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant(
+        'pages.data_protection.erase.confirm_yes'
+      ),
+      rejectLabel: this.translate.instant('global.actions.cancel'),
+      accept: () => this.facade.eraseUserAccount(userId),
+    });
+  }
+
   formatDate(d?: Date): string {
     if (!d) return '—';
     return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
@@ -143,10 +174,13 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
   }
 
   private rebuildTableDefinitions(): void {
-    this.requestColumns = getGdprRequestTableDefinition(
+    const requestTable = getGdprRequestTableDefinition(
       this.translate,
-      (d) => this.formatDate(d)
-    ).columns;
+      (d) => this.formatDate(d),
+      (row) => this.confirmFulfil(row)
+    );
+    this.requestColumns = requestTable.columns;
+    this.requestActions = requestTable.actions;
     this.consentColumns = getConsentTableDefinition(this.translate, (d) =>
       this.formatDate(d)
     ).columns;

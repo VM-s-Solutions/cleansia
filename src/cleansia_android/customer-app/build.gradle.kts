@@ -178,6 +178,64 @@ android {
     }
 }
 
+// ─── Release signing assertion ──────────────────────────────────────
+// The `if (keystoreFile.exists())` guard above is what keeps debug builds and IDE sync working on
+// a machine with no keystore — but AGP then treats the empty signingConfig as "package it
+// unsigned" and emits the artifact with no error, so the first signal is Play rejecting the
+// upload. It also only checks the FILE: a keystore present with any password env var unset fails
+// exactly the same way, just as quietly. Assert both here.
+//
+// Only fires when an explicit release-packaging task was requested, so debug builds, unit tests
+// and IDE sync are untouched, and `./gradlew build` without a keystore still works. CI
+// (`android-ci.yml`) runs only compileDebugKotlin/testDebugUnitTest, so it never trips.
+//
+// Reads `startParameter.taskNames` rather than `gradle.taskGraph.whenReady` because the
+// configuration cache (`org.gradle.configuration-cache=true`) disallows the latter.
+run {
+    // `package*Release` belongs here as much as assemble/bundle: packageRelease and
+    // packageReleaseBundle are public, directly-invokable tasks that produce the artifact.
+    val releaseTask = Regex("(assemble|bundle|install|publish|package)\\w*Release", RegexOption.IGNORE_CASE)
+    // `taskNames` is the whole invocation, not this project's share of it, so an unscoped check
+    // makes `:partner-app:bundleRelease` fail out of customer-app's build file. Match an
+    // unqualified name (which targets every project) or one qualified with this project's path.
+    //
+    // Known limitation: these are the literal strings typed on the command line, before Gradle's
+    // camelCase abbreviation is expanded, so `./gradlew bR` or `:c-a:bundleRelease` slips past.
+    // Not worth solving here — `jarsigner -verify` on the artifact is the real gate, and this
+    // assertion exists to catch the ordinary invocation, not to be a proof.
+    val wantsRelease = gradle.startParameter.taskNames.any { name ->
+        releaseTask.containsMatchIn(name) &&
+            (!name.startsWith(":") || name.startsWith("${project.path}:"))
+    }
+    // Android Studio's "Generate Signed Bundle / APK" wizard passes the keystore as
+    // -Pandroid.injected.signing.*, which AGP honours over the DSL. Signing IS configured on that
+    // path, and asserting would break a flow that worked.
+    val injectedSigning =
+        providers.gradleProperty("android.injected.signing.store.file").orNull != null
+    if (wantsRelease && !injectedSigning) {
+        val missing = buildList {
+            if (!rootProject.file("keystore/release.jks").exists()) add("keystore/release.jks")
+            if (providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull.isNullOrBlank()) {
+                add("RELEASE_KEYSTORE_PASSWORD")
+            }
+            if (providers.environmentVariable("RELEASE_KEY_ALIAS").orNull.isNullOrBlank()) {
+                add("RELEASE_KEY_ALIAS")
+            }
+            if (providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull.isNullOrBlank()) {
+                add("RELEASE_KEY_PASSWORD")
+            }
+        }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Release signing is not configured, so this build would produce an UNSIGNED " +
+                    "artifact that Google Play rejects. Missing: " + missing.joinToString(", ") +
+                    ". The keystore is owner-supplied and gitignored; the three values are " +
+                    "environment variables, never a tracked file."
+            )
+        }
+    }
+}
+
 spotless {
     kotlin {
         target("src/**/*.kt")

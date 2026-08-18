@@ -94,8 +94,8 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 | Build type | Minify | `applicationId` suffix | Default `API_BASE_URL` |
 |---|---|---|---|
 | `debug` | no | `.debug` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
-| `staging` | yes | `.staging` | `https://staging-api.cleansia.cz/` |
-| `release` | yes + shrink | — | `https://api.cleansia.cz/` |
+| `staging` | yes | `.staging` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
+| `release` | yes + shrink | — | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
 
 **`:customer-app`** (`debug` and `release` only — there is no staging type)
 
@@ -104,13 +104,21 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 | `debug` | no | `.debug` | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
 | `release` | yes + shrink | — | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
 
-Both apps default to the **Azure DEV host**, deliberately matching what iOS ships in its
-`project.yml`, so a fresh clone of either platform hits the same backend with no local setup.
+**Every build type of both apps points at the Azure DEV host**, deliberately matching what iOS
+ships in its `project.yml`, so a fresh clone of either platform hits the same backend with no local
+setup — and so a release build and a TestFlight build are talking to the same place.
+
+> Partner's `release` and `staging` types used to default to `api.cleansia.cz` and
+> `staging-api.cleansia.cz`. Neither hostname has ever resolved: there is no prod resource group,
+> no binding and no certificate, and the only other mention of the first in the tree is a
+> commented-out line in a bicepparam whose own header reads *"AUTHORED, NOT DEPLOYED"*. A partner
+> release build shipped against them failed every request at DNS. When a real production host
+> exists, set it — do not restore those names on the assumption they mean something.
 
 > The partner app resolves its URL **per build type**; the customer app resolves it **once in
-> `defaultConfig`**, so its `release` build inherits the same DEV default. A customer release build
-> must therefore be given a real `API_BASE_URL` explicitly — it will not pick up a production host on
-> its own.
+> `defaultConfig`**, so its `release` build inherits the same default. Either way a production
+> build must be given a real `API_BASE_URL` explicitly — neither picks up a production host on its
+> own.
 
 Point either app somewhere else **without editing a build file** — the override wins for every build
 type:

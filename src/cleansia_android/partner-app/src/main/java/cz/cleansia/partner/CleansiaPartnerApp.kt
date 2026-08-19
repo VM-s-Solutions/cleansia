@@ -11,8 +11,12 @@ import coil3.map.Mapper
 import coil3.request.Options
 import coil3.request.crossfade
 import com.mapbox.common.MapboxOptions
+import cz.cleansia.core.sentry.SentryUserTracker
+import cz.cleansia.partner.core.auth.TokenStoreEntryPoint
 import cz.cleansia.partner.core.notifications.NotificationChannels
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
+import io.sentry.android.core.SentryAndroid
 
 /**
  * Partner application entry point. Hosts:
@@ -20,9 +24,7 @@ import dagger.hilt.android.HiltAndroidApp
  *  - Mapbox access-token install (must happen before any MapboxMap composes).
  *  - Coil image-loader configuration (animated WebP support for the
  *    InProgress mascot in [OrderTrackerHero]).
- *
- * The manifest's `tools:node="remove"` on SentryInitProvider stays until
- * partner gets a Sentry DSN provisioned.
+ *  - Sentry, when a DSN is configured.
  */
 @HiltAndroidApp
 class CleansiaPartnerApp : Application(), SingletonImageLoader.Factory {
@@ -32,6 +34,36 @@ class CleansiaPartnerApp : Application(), SingletonImageLoader.Factory {
         // Register FCM channels on every cold start (idempotent) so the cleaner
         // can mute categories at the OS level even before the first push lands.
         NotificationChannels.registerAll(this)
+
+        // Guarded on the DSN: a blank one means Sentry stays dormant rather than initialising into
+        // nothing, which is what lets a clone without SENTRY_DSN run normally.
+        if (BuildConfig.SENTRY_DSN.isNotBlank()) {
+            initSentry()
+            val tokenStore = EntryPointAccessors
+                .fromApplication(this, TokenStoreEntryPoint::class.java)
+                .tokenStore()
+            SentryUserTracker.start(tokenStore)
+        }
+    }
+
+    /**
+     * Verbatim the customer app's configuration, deliberately: two crash pipelines with different
+     * sampling or PII settings would make the two apps' dashboards incomparable, and the reason each
+     * value was chosen is the same on both.
+     */
+    private fun initSentry() {
+        SentryAndroid.init(this) { options ->
+            options.dsn = BuildConfig.SENTRY_DSN
+            options.environment = if (BuildConfig.DEBUG) "debug" else "release"
+            options.release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}"
+            // Full sampling for errors — we want every crash. Performance traces sampled at 20% to
+            // keep quota bounded while still surfacing slow flows.
+            options.tracesSampleRate = 0.2
+            // Don't send PII automatically — SentryUserTracker sets user context explicitly once
+            // there is a session (id only, no email or IP).
+            options.isSendDefaultPii = false
+            options.isDebug = BuildConfig.DEBUG
+        }
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader =

@@ -53,6 +53,14 @@ android {
             ?: System.getenv("MAPBOX_ACCESS_TOKEN")
                     ?: ""
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
+
+        // Sentry DSN — read from ~/.gradle/gradle.properties (SENTRY_DSN) or CI env, same seam the
+        // customer app uses. Empty string = Sentry stays dormant, so a clone without a DSN still
+        // runs; the init in CleansiaPartnerApp guards on it.
+        val sentryDsn = providers.gradleProperty("SENTRY_DSN").orNull
+            ?: System.getenv("SENTRY_DSN")
+                    ?: ""
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
     }
 
     // Backend API base URL override, same seam the customer app exposes. Previously this app
@@ -388,6 +396,11 @@ dependencies {
     // but still the canonical secure-prefs solution; see :core TokenStore for
     // the migration plan.
     implementation(libs.androidx.security.crypto)
+
+    // Crash reporting. Partner shipped without it, so a cleaner's crash produced nothing at all
+    // — no stack trace, no report, no way to know it happened.
+    implementation(libs.sentry.android)
+    implementation(libs.sentry.okhttp)
 
     // Firebase Cloud Messaging — push notifications. The BOM aligns
     // transitive Firebase versions; we only need the messaging artifact.

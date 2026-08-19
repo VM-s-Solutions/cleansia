@@ -1329,4 +1329,22 @@
     <string name="bank_account_prefix_placeholder">Predčíslie</string>
     <string name="bank_account_number_placeholder">Číslo účtu</string>
     <string name="bank_code_placeholder">Kód</string>
+    <string name="profile_delete_account">Požiadať o zmazanie účtu</string>
+    <string name="profile_delete_account_summary">Začať ukončenie spolupráce</string>
+    <string name="delete_account_title">Zmazanie účtu</string>
+    <string name="delete_account_headline">Požiadať o zmazanie účtu</string>
+    <string name="delete_account_body">Začneme proces ukončenia spolupráce. Spolupráca musí byť formálne ukončená osobne a je potrebné podpísať zostávajúce dokumenty, až potom bude účet uzavretý — dnes sa teda nič nemení a môžete ďalej pracovať na zákazkách, ktoré už máte.</string>
+    <string name="delete_account_requested_headline">Žiadosť odoslaná</string>
+    <string name="delete_account_requested_body">Ozveme sa vám ohľadom podpisu dokumentov. Dovtedy môžete pracovať ako zvyčajne.</string>
+    <string name="delete_account_kept_label">Čo musíme uchovať</string>
+    <string name="delete_account_kept_invoices">Vaše faktúry ako účtovné doklady</string>
+    <string name="delete_account_kept_pay">Mzdové záznamy za dokončené zákazky</string>
+    <string name="delete_account_kept_agreement">Dohodu o samofakturácii k týmto faktúram</string>
+    <string name="delete_account_cta">Požiadať o zmazanie</string>
+    <string name="delete_account_confirm_title">Požiadať o zmazanie účtu?</string>
+    <string name="delete_account_confirm_message">Ozveme sa vám a spoluprácu formálne ukončíme. Dnes sa nič nemaže.</string>
+    <string name="delete_account_confirm_yes">Odoslať žiadosť</string>
+    <string name="delete_account_requested">Žiadosť o zmazanie bola odoslaná.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále ste priradení k nadchádzajúcej zákazke. Keď bude dokončená alebo preradená, môžete o zmazanie požiadať znova.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyrovnanú mzdu. Keď bude mzdové obdobie vyplatené, môžete o zmazanie požiadať znova.</string>
 </resources>

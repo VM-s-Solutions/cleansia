@@ -114,4 +114,7 @@ sealed interface NavRoute {
 
     /** Device self-service — list registered devices, revoke a lost one. */
     @Serializable data object Devices : NavRoute
+
+    /** Request account deletion. Files a request; an admin fulfils it. -> /decisions/adr-0052 */
+    @Serializable data object DeleteAccount : NavRoute
 }

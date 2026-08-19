@@ -137,6 +137,7 @@ fun MainScaffold(
                     onNavigateToTheme = { onOpenProfileSection(NavRoute.PreferenceTheme) },
                     onNavigateToJobRadius = { onOpenProfileSection(NavRoute.PreferenceJobRadius) },
                     onNavigateToDevices = { onOpenProfileSection(NavRoute.Devices) },
+                    onNavigateToDeleteAccount = { onOpenProfileSection(NavRoute.DeleteAccount) },
                     onSignedOut = onSignedOut,
                 )
             }

@@ -343,6 +343,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onNavigateToTheme = { navController.navigate(NavRoute.PreferenceTheme) },
                 onNavigateToJobRadius = { navController.navigate(NavRoute.PreferenceJobRadius) },
                 onNavigateToDevices = { navController.navigate(NavRoute.Devices) },
+                onNavigateToDeleteAccount = { navController.navigate(NavRoute.DeleteAccount) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
                         popUpTo(navController.graph.id) { inclusive = true }
@@ -467,6 +468,12 @@ fun PartnerNavHost(navController: NavHostController) {
             // Self-revoke sign-out rides the root-level forced-sign-out observer above — no
             // per-screen wiring needed.
             DevicesScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable<NavRoute.DeleteAccount> {
+            cz.cleansia.partner.features.profile.DeleteAccountScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
         }
 
         composable<NavRoute.AddressPicker> {

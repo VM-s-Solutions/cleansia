@@ -1349,4 +1349,22 @@
     <string name="bank_account_prefix_placeholder">Předčíslí</string>
     <string name="bank_account_number_placeholder">Číslo účtu</string>
     <string name="bank_code_placeholder">Kód</string>
+    <string name="profile_delete_account">Požádat o smazání účtu</string>
+    <string name="profile_delete_account_summary">Zahájit ukončení spolupráce</string>
+    <string name="delete_account_title">Smazání účtu</string>
+    <string name="delete_account_headline">Požádat o smazání účtu</string>
+    <string name="delete_account_body">Zahájíme proces ukončení spolupráce. Spolupráce musí být formálně ukončena osobně a je nutné podepsat zbývající dokumenty, teprve poté bude účet uzavřen — dnes se tedy nic nemění a můžete dál pracovat na zakázkách, které již máte.</string>
+    <string name="delete_account_requested_headline">Žádost odeslána</string>
+    <string name="delete_account_requested_body">Ozveme se vám ohledně podpisu dokumentů. Do té doby můžete pracovat jako obvykle.</string>
+    <string name="delete_account_kept_label">Co musíme uchovat</string>
+    <string name="delete_account_kept_invoices">Vaše faktury jako účetní doklady</string>
+    <string name="delete_account_kept_pay">Mzdové záznamy za dokončené zakázky</string>
+    <string name="delete_account_kept_agreement">Dohodu o samofakturaci k těmto fakturám</string>
+    <string name="delete_account_cta">Požádat o smazání</string>
+    <string name="delete_account_confirm_title">Požádat o smazání účtu?</string>
+    <string name="delete_account_confirm_message">Ozveme se vám a spolupráci formálně ukončíme. Dnes se nic nemaže.</string>
+    <string name="delete_account_confirm_yes">Odeslat žádost</string>
+    <string name="delete_account_requested">Žádost o smazání byla odeslána.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále jste přiřazeni k nadcházející zakázce. Až bude dokončena nebo přeřazena, můžete o smazání požádat znovu.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyrovnanou mzdu. Až bude mzdové období vyplaceno, můžete o smazání požádat znovu.</string>
 </resources>

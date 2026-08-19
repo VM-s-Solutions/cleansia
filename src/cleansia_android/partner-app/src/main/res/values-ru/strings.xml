@@ -1334,4 +1334,22 @@
     <string name="bank_account_prefix_placeholder">Префикс</string>
     <string name="bank_account_number_placeholder">Номер счёта</string>
     <string name="bank_code_placeholder">Код</string>
+    <string name="profile_delete_account">Запрос на удаление аккаунта</string>
+    <string name="profile_delete_account_summary">Начать завершение сотрудничества</string>
+    <string name="delete_account_title">Удаление аккаунта</string>
+    <string name="delete_account_headline">Запрос на удаление аккаунта</string>
+    <string name="delete_account_body">Мы начнём процесс завершения сотрудничества. Сотрудничество нужно официально завершить лично и подписать оставшиеся документы, и только после этого аккаунт будет закрыт — сегодня ничего не меняется, и вы можете продолжать работать над текущими заказами.</string>
+    <string name="delete_account_requested_headline">Запрос отправлен</string>
+    <string name="delete_account_requested_body">Мы свяжемся с вами по поводу подписания документов. До этого работайте как обычно.</string>
+    <string name="delete_account_kept_label">Что мы обязаны сохранить</string>
+    <string name="delete_account_kept_invoices">Ваши счета как финансовые документы</string>
+    <string name="delete_account_kept_pay">Записи об оплате за выполненные заказы</string>
+    <string name="delete_account_kept_agreement">Соглашение о самовыставлении счетов к ним</string>
+    <string name="delete_account_cta">Отправить запрос</string>
+    <string name="delete_account_confirm_title">Отправить запрос на удаление?</string>
+    <string name="delete_account_confirm_message">Мы свяжемся с вами и официально завершим сотрудничество. Сегодня ничего не удаляется.</string>
+    <string name="delete_account_confirm_yes">Отправить</string>
+    <string name="delete_account_requested">Запрос на удаление отправлен.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Вы всё ещё назначены на предстоящий заказ. Когда он будет выполнен или передан, вы сможете отправить запрос снова.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">У вас есть неоплаченная работа. Когда расчётный период будет оплачен, вы сможете отправить запрос снова.</string>
 </resources>

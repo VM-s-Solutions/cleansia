@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AccountBalance
@@ -79,6 +80,7 @@ fun ProfileScreen(
     onNavigateToTheme: () -> Unit,
     onNavigateToJobRadius: () -> Unit,
     onNavigateToDevices: () -> Unit,
+    onNavigateToDeleteAccount: () -> Unit,
     onSignedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
@@ -214,6 +216,16 @@ fun ProfileScreen(
                     }
                 }
                 item {
+                    // Sits with logout because both end the session, but it is NOT destructive
+                    // styling: this files a request an admin fulfils after the paperwork, it does
+                    // not delete anything today. -> /decisions/adr-0052
+                    ProfileSectionRow(
+                        icon = Icons.Outlined.DeleteForever,
+                        title = stringResource(R.string.profile_delete_account),
+                        summary = stringResource(R.string.profile_delete_account_summary),
+                        onClick = onNavigateToDeleteAccount,
+                    )
+                    Spacer(Modifier.height(Spacing.M))
                     LogoutRow(onClick = { showLogoutDialog = true })
                     Spacer(Modifier.height(Spacing.M))
                 }

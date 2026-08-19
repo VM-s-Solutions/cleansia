@@ -1364,4 +1364,22 @@
     <string name="bank_account_prefix_placeholder">Prefix</string>
     <string name="bank_account_number_placeholder">Account number</string>
     <string name="bank_code_placeholder">Code</string>
+    <string name="profile_delete_account">Request account deletion</string>
+    <string name="profile_delete_account_summary">Start the offboarding process</string>
+    <string name="delete_account_title">Delete account</string>
+    <string name="delete_account_headline">Request account deletion</string>
+    <string name="delete_account_body">We\'ll start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed — so nothing changes today, and you can keep working on the jobs you already have.</string>
+    <string name="delete_account_requested_headline">Request submitted</string>
+    <string name="delete_account_requested_body">We\'ll be in touch to arrange the paperwork. You can keep working as normal until then.</string>
+    <string name="delete_account_kept_label">What we have to keep</string>
+    <string name="delete_account_kept_invoices">Your invoices, as accounting records</string>
+    <string name="delete_account_kept_pay">Your pay records for completed jobs</string>
+    <string name="delete_account_kept_agreement">The self-billing agreement behind those invoices</string>
+    <string name="delete_account_cta">Request deletion</string>
+    <string name="delete_account_confirm_title">Request account deletion?</string>
+    <string name="delete_account_confirm_message">We\'ll contact you to end the cooperation formally. Nothing is deleted today.</string>
+    <string name="delete_account_confirm_yes">Send request</string>
+    <string name="delete_account_requested">Deletion request submitted.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">You\'re still assigned to an upcoming job. Once it\'s finished or reassigned you can request deletion again.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">You still have pay that hasn\'t been settled. Once the pay period is paid out you can request deletion again.</string>
 </resources>

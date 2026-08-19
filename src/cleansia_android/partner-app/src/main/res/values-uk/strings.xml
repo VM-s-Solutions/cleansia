@@ -1334,4 +1334,22 @@
     <string name="bank_account_prefix_placeholder">Префікс</string>
     <string name="bank_account_number_placeholder">Номер рахунку</string>
     <string name="bank_code_placeholder">Код</string>
+    <string name="profile_delete_account">Запит на видалення акаунта</string>
+    <string name="profile_delete_account_summary">Розпочати завершення співпраці</string>
+    <string name="delete_account_title">Видалення акаунта</string>
+    <string name="delete_account_headline">Запит на видалення акаунта</string>
+    <string name="delete_account_body">Ми розпочнемо процес завершення співпраці. Співпрацю потрібно офіційно завершити особисто та підписати документи, що залишилися, і лише після цього акаунт буде закрито — тож сьогодні нічого не змінюється, і ви можете продовжувати працювати над наявними замовленнями.</string>
+    <string name="delete_account_requested_headline">Запит надіслано</string>
+    <string name="delete_account_requested_body">Ми зв\'яжемося з вами щодо підписання документів. До того часу працюйте як зазвичай.</string>
+    <string name="delete_account_kept_label">Що ми маємо зберегти</string>
+    <string name="delete_account_kept_invoices">Ваші рахунки як фінансові документи</string>
+    <string name="delete_account_kept_pay">Записи про оплату за виконані замовлення</string>
+    <string name="delete_account_kept_agreement">Угоду про самовиставлення рахунків до них</string>
+    <string name="delete_account_cta">Надіслати запит</string>
+    <string name="delete_account_confirm_title">Надіслати запит на видалення?</string>
+    <string name="delete_account_confirm_message">Ми зв\'яжемося з вами та офіційно завершимо співпрацю. Сьогодні нічого не видаляється.</string>
+    <string name="delete_account_confirm_yes">Надіслати</string>
+    <string name="delete_account_requested">Запит на видалення надіслано.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Ви досі призначені на майбутнє замовлення. Коли воно буде завершене або передане, ви зможете надіслати запит знову.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">У вас досі є неоплачена робота. Коли розрахунковий період буде оплачено, ви зможете надіслати запит знову.</string>
 </resources>

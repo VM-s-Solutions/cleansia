@@ -106,6 +106,14 @@ struct ProfileHubContent: View {
                 title: L10n.Devices.title,
                 summary: L10n.Profile.devicesSummary,
                 route: .devices
+            ),
+            // Not styled destructive: this files a request an admin fulfils after the paperwork,
+            // it does not delete anything today. -> /decisions/adr-0052
+            ProfileHubRowItem(
+                icon: "trash",
+                title: L10n.DeleteAccount.rowTitle,
+                summary: L10n.DeleteAccount.rowSummary,
+                route: .deleteAccount
             )
         ]
     }

@@ -59,6 +59,12 @@ import cz.cleansia.partner.features.settings.ThemePickerScreen
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.ui.components.CleansiaErrorState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Composable
 fun PartnerNavHost(navController: NavHostController) {
@@ -101,6 +107,11 @@ fun PartnerNavHost(navController: NavHostController) {
                 },
                 onNeedsRegistrationLock = {
                     navController.navigate(NavRoute.RegistrationLock) {
+                        popUpTo(NavRoute.Splash) { inclusive = true }
+                    }
+                },
+                onSignOut = {
+                    navController.navigate(NavRoute.Login) {
                         popUpTo(NavRoute.Splash) { inclusive = true }
                     }
                 },
@@ -507,22 +518,43 @@ private fun SplashGate(
     onUnauthenticated: () -> Unit,
     onNeedsOnboarding: () -> Unit,
     onNeedsRegistrationLock: () -> Unit,
+    onSignOut: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
-    val outcome by viewModel.outcome.collectAsState(initial = null)
+    val outcome by viewModel.outcome.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.resolve() }
+
     LaunchedEffect(outcome) {
         when (outcome) {
             SplashOutcome.Authenticated -> onAuthenticated()
             SplashOutcome.Unauthenticated -> onUnauthenticated()
             SplashOutcome.NeedsOnboarding -> onNeedsOnboarding()
             SplashOutcome.NeedsRegistrationLock -> onNeedsRegistrationLock()
+            // Stays on this screen. Navigating anywhere is what the old behaviour did wrong.
+            SplashOutcome.Unreachable -> Unit
             null -> { /* still resolving */ }
         }
     }
-    WordmarkSplash(
-        tagline = stringResource(R.string.splash_tagline),
-        showsPartnerLabel = true,
-    )
+
+    if (outcome == SplashOutcome.Unreachable) {
+        CleansiaErrorState(
+            title = stringResource(R.string.splash_unreachable_title),
+            message = stringResource(R.string.splash_unreachable_message),
+            retryLabel = stringResource(R.string.retry),
+            onRetry = { viewModel.resolve() },
+            // CleansiaErrorState requires a back affordance and the splash has no back stack, so
+            // it signs out — the one thing a stuck cleaner can always do, and the same escape the
+            // registration lock offers.
+            backLabel = stringResource(R.string.logout),
+            onBack = onSignOut,
+        )
+    } else {
+        WordmarkSplash(
+            tagline = stringResource(R.string.splash_tagline),
+            showsPartnerLabel = true,
+        )
+    }
 }
 
 @Preview(widthDp = 390, heightDp = 844)
@@ -533,7 +565,19 @@ private fun SplashBrandingPreview() {
     }
 }
 
-enum class SplashOutcome { Authenticated, Unauthenticated, NeedsOnboarding, NeedsRegistrationLock }
+/**
+ * Where the splash sends a cleaner.
+ *
+ * [Unreachable] is NOT a variant of [NeedsRegistrationLock] and must never collapse back into it.
+ * The registration lock says "you are not approved yet"; a backend that did not answer says nothing
+ * of the kind, and the two used to be indistinguishable — an unanswered call showed the lock screen,
+ * whose only exit is signing out. A cleaner on bad signal, or an app reviewer on hotel wifi, was
+ * told to upload documents they had already uploaded, with no retry and no way forward.
+ *
+ * The fail-closed reading stays: an unanswered call still does NOT admit anyone to Orders. What
+ * changes is that it now says so honestly and offers to try again.
+ */
+enum class SplashOutcome { Authenticated, Unauthenticated, NeedsOnboarding, NeedsRegistrationLock, Unreachable }
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
@@ -541,29 +585,48 @@ class SplashViewModel @Inject constructor(
     private val appSettingsRepository: cz.cleansia.partner.core.settings.AppSettingsRepository,
     private val profileRepository: ProfileRepository,
 ) : ViewModel() {
-    val outcome = kotlinx.coroutines.flow.flow {
-        val hasSession = tokenStore.current()?.accessToken?.isNotBlank() == true
-        if (!hasSession) {
-            if (!appSettingsRepository.hasSeenOnboarding()) {
-                emit(SplashOutcome.NeedsOnboarding)
-            } else {
-                emit(SplashOutcome.Unauthenticated)
-            }
-            return@flow
-        }
-        // Authenticated — ask the backend whether onboarding is finished
-        // AND admin has approved. Both must be true to land in Main; any
-        // missing piece sends the cleaner to the registration lock.
-        // On API error we default to "locked" so a transient failure
-        // doesn't silently let an unapproved cleaner into Orders.
-        when (val result = profileRepository.getRegistrationStatus()) {
-            is ApiResult.Success ->
-                if (result.data.isRegistrationComplete()) {
-                    emit(SplashOutcome.Authenticated)
+    // A StateFlow rather than the cold `flow {}` this used to be: a retry has to re-run the check
+    // in place. The old shape could only be re-run by rebuilding the whole NavBackStackEntry, which
+    // is fine for the post-login bounce and useless for a button.
+    private val _outcome = MutableStateFlow<SplashOutcome?>(null)
+    val outcome: StateFlow<SplashOutcome?> = _outcome.asStateFlow()
+
+    fun resolve() {
+        viewModelScope.launch {
+            _outcome.value = null
+
+            val hasSession = tokenStore.current()?.accessToken?.isNotBlank() == true
+            if (!hasSession) {
+                _outcome.value = if (!appSettingsRepository.hasSeenOnboarding()) {
+                    SplashOutcome.NeedsOnboarding
                 } else {
-                    emit(SplashOutcome.NeedsRegistrationLock)
+                    SplashOutcome.Unauthenticated
                 }
-            is ApiResult.Error -> emit(SplashOutcome.NeedsRegistrationLock)
+                return@launch
+            }
+
+            // Authenticated — ask the backend whether onboarding is finished AND admin has
+            // approved. Both must be true to land in Main.
+            //
+            // A FAILURE still never admits anyone to Orders — that fail-closed reading is
+            // deliberate and unchanged. But only a transport failure becomes [Unreachable]: a 4xx
+            // or 5xx is the backend answering, and "we asked and were refused" is much closer to
+            // "not approved" than to "we could not ask". Sending a 403 to a retry screen would
+            // loop a cleaner forever on a state no retry can change.
+            _outcome.value = when (val result = profileRepository.getRegistrationStatus()) {
+                is ApiResult.Success ->
+                    if (result.data.isRegistrationComplete()) {
+                        SplashOutcome.Authenticated
+                    } else {
+                        SplashOutcome.NeedsRegistrationLock
+                    }
+                is ApiResult.Error ->
+                    if (result.error is ApiError.Network) {
+                        SplashOutcome.Unreachable
+                    } else {
+                        SplashOutcome.NeedsRegistrationLock
+                    }
+            }
         }
     }
 }

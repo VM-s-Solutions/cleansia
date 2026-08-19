@@ -5,6 +5,16 @@ enum L10n {
         static var tagline: String {
             localized("splash_tagline")
         }
+
+        /// Shown when the backend did not answer — deliberately reassuring about the ACCOUNT,
+        /// because the screen this replaces implied the cleaner had done something wrong.
+        static var unreachableTitle: String {
+            localized("splash_unreachable_title")
+        }
+
+        static var unreachableMessage: String {
+            localized("splash_unreachable_message")
+        }
     }
 
     static var welcomeBack: String {

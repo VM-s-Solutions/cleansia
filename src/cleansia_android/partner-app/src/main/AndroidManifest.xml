@@ -95,10 +95,11 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="cleansia.partner.notification.order_updates" />
 
-        <provider
-            android:name="io.sentry.android.core.SentryInitProvider"
-            android:authorities="${applicationId}.SentryInitProvider"
-            tools:node="remove" />
+        <!-- Sentry's auto-init ContentProvider crashes the app when the DSN is blank, which is
+             every dev machine without SENTRY_DSN set. Partner used to delete the provider outright;
+             the customer app turns auto-init off and initialises explicitly in the Application,
+             guarded on the DSN. Mirroring that rather than keeping two answers to one question. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
 
         <!-- FileProvider — exposes cacheDir/invoices/*.pdf to the system
              viewer when the user taps "Open invoice" on an invoice detail. -->

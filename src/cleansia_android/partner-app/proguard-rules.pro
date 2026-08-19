@@ -79,3 +79,7 @@
 }
 -dontwarn java.lang.instrument.ClassFileTransformer
 -dontwarn sun.misc.SignalHandler
+
+# Sentry's OkHttp integration references classes the app does not pull in; same rule the customer
+# app carries.
+-dontwarn io.sentry.android.okhttp.**

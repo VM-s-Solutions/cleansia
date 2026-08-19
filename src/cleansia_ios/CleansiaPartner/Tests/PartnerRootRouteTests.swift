@@ -32,6 +32,10 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.needsRegistrationLock), .registrationLock)
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.needsOnboarding), .onboarding)
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.unauthenticated), .login)
+        // Stays on the splash. SplashGateView does not call afterSplash for this outcome at all;
+        // the mapping exists so the function is total, and this pins that it never acquires a
+        // destination by accident.
+        XCTAssertEqual(PartnerRootView.Route.afterSplash(.unreachable), .splash)
     }
 
     func testRegisterIsADistinctTopLevelAudience() {

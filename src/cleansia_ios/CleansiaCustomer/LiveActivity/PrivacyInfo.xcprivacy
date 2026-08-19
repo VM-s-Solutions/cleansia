@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<!--
+	     The Live Activity extension collects nothing of its own — it renders an order the host app
+	     already has. It still needs the UserDefaults declaration: it links CleansiaCore, which is a
+	     SOURCE SPM package with no manifest of its own, so those symbols compile into this binary.
+	-->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- UserDefaults, reason CA92.1: read and written only by this app for its own settings,
+		     never shared with an app group. There is no app-group entitlement and no suiteName
+		     outside tests, which is what makes CA92.1 the correct code rather than 1C8F.1.
+		     Call sites include AppSettingsStore, PushTokenRegistrar and SignupConsentStore.
+		     This array was empty while those calls shipped. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

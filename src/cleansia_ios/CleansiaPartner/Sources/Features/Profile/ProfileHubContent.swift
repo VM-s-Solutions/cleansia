@@ -11,6 +11,11 @@ struct ProfileHubContent: View {
     let onOpen: (ProfileRoute) -> Void
     let onLogout: () -> Void
 
+    // Opens the legal pages in Safari, which is the same destination the register screen's consent
+    // sentence reaches via its AttributedString link — no SFSafariViewController exists anywhere in
+    // this tree, and introducing one from the profile hub is not the place to start.
+    @Environment(\.openURL) private var openURL
+
     private var employee: EmployeeItem {
         data.employee
     }
@@ -35,6 +40,7 @@ struct ProfileHubContent: View {
                         sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
                         sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                        sectionGroup(title: L10n.Profile.groupLegal, rows: legalRows)
                         LogoutRow(onTap: onLogout)
                             .padding(.horizontal, Spacing.m)
                             .padding(.bottom, Spacing.xxl)
@@ -51,19 +57,19 @@ struct ProfileHubContent: View {
                 icon: "person",
                 title: L10n.Profile.personal,
                 summary: displayName,
-                route: .personal(onboarding: false)
+                action: .route(.personal(onboarding: false))
             ),
             ProfileHubRowItem(
                 icon: "mappin.and.ellipse",
                 title: L10n.Profile.address,
                 summary: displayAddress,
-                route: .address(onboarding: false)
+                action: .route(.address(onboarding: false))
             ),
             ProfileHubRowItem(
                 icon: "phone",
                 title: L10n.Profile.emergencyContact,
                 summary: displayEmergency,
-                route: .emergency
+                action: .route(.emergency)
             )
         ]
     }
@@ -74,19 +80,19 @@ struct ProfileHubContent: View {
                 icon: "person.text.rectangle",
                 title: L10n.Profile.identification,
                 summary: employee.passportId.nonBlankOrNil ?? L10n.Profile.noData,
-                route: .identification(onboarding: false)
+                action: .route(.identification(onboarding: false))
             ),
             ProfileHubRowItem(
                 icon: "building.columns",
                 title: L10n.Profile.bankDetails,
                 summary: data.payoutSummary.nonBlankOrNil ?? L10n.Profile.noData,
-                route: .bank(onboarding: false)
+                action: .route(.bank(onboarding: false))
             ),
             ProfileHubRowItem(
                 icon: "doc.text",
                 title: L10n.Profile.myDocuments,
                 summary: L10n.Profile.documentsSummary,
-                route: .documents
+                action: .route(.documents)
             )
         ]
     }
@@ -97,15 +103,15 @@ struct ProfileHubContent: View {
                 icon: "location.circle",
                 title: L10n.JobRadius.title,
                 summary: JobRadiusSelection(radiusKm: data.jobRadiusKm).summary,
-                route: .jobRadius
+                action: .route(.jobRadius)
             ),
-            ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, route: .language),
-            ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, route: .theme),
+            ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, action: .route(.language)),
+            ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, action: .route(.theme)),
             ProfileHubRowItem(
                 icon: "laptopcomputer.and.iphone",
                 title: L10n.Devices.title,
                 summary: L10n.Profile.devicesSummary,
-                route: .devices
+                action: .route(.devices)
             ),
             // Not styled destructive: this files a request an admin fulfils after the paperwork,
             // it does not delete anything today. -> /decisions/adr-0052
@@ -113,7 +119,30 @@ struct ProfileHubContent: View {
                 icon: "trash",
                 title: L10n.DeleteAccount.rowTitle,
                 summary: L10n.DeleteAccount.rowSummary,
-                route: .deleteAccount
+                action: .route(.deleteAccount)
+            )
+        ]
+    }
+
+    /// A signed-in cleaner previously had no route to the privacy policy: the only link lived in
+    /// the register screen's consent sentence, which they see once and never again. Both stores
+    /// expect it reachable from inside the app.
+    ///
+    /// URLs come from `CleansiaWeb` rather than being spelled out here — that file's own doc
+    /// comment forbids any other source spelling the domain.
+    private var legalRows: [ProfileHubRowItem] {
+        [
+            ProfileHubRowItem(
+                icon: "doc.plaintext",
+                title: L10n.Profile.terms,
+                summary: L10n.Profile.termsSummary,
+                action: .openURL(CleansiaWeb.termsURL)
+            ),
+            ProfileHubRowItem(
+                icon: "hand.raised",
+                title: L10n.Profile.privacy,
+                summary: L10n.Profile.privacySummary,
+                action: .openURL(CleansiaWeb.privacyURL)
             )
         ]
     }
@@ -126,7 +155,12 @@ struct ProfileHubContent: View {
                 .padding(.horizontal, Spacing.m)
             VStack(spacing: 0) {
                 ForEach(rows.indices, id: \.self) { index in
-                    ProfileSectionRow(item: rows[index], onTap: { onOpen(rows[index].route) })
+                    ProfileSectionRow(item: rows[index], onTap: {
+                        switch rows[index].action {
+                        case let .route(route): onOpen(route)
+                        case let .openURL(url): openURL(url)
+                        }
+                    })
                     if index < rows.count - 1 {
                         Divider().padding(.leading, Spacing.xl)
                     }
@@ -164,7 +198,19 @@ private struct ProfileHubRowItem {
     let icon: String
     let title: String
     let summary: String
-    let route: ProfileRoute
+    /// What tapping the row does.
+    ///
+    /// Deliberately an action rather than the `ProfileRoute` this used to be. The legal rows open a
+    /// web page; they are not destinations in the profile navigation stack, and giving them routes
+    /// would mean new `ProfileRoute` cases — which every exhaustive switch over that enum has to
+    /// answer for, including one in `RegistrationLockView` that has no `default` and broke the
+    /// build the last time a case was added. A row that opens a URL should not be able to do that.
+    let action: Action
+
+    enum Action {
+        case route(ProfileRoute)
+        case openURL(URL)
+    }
 }
 
 private struct ProfileHero: View {

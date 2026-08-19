@@ -21,6 +21,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import cz.cleansia.core.config.CleansiaWeb
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Logout
@@ -100,6 +103,7 @@ fun ProfileScreen(
     // sign-out flows (e.g. token revocation from SettingsViewModel) bypass
     // this dialog and route straight through `onSignedOut` above.
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -212,6 +216,30 @@ fun ProfileScreen(
                             title = stringResource(R.string.devices_title),
                             summary = stringResource(R.string.profile_devices_summary),
                             onClick = onNavigateToDevices,
+                        )
+                    }
+
+                    // A signed-in cleaner previously had NO route to the privacy policy: the only
+                    // link lived on the register screen's consent sentence, which they see once
+                    // and never again. Both stores expect it reachable from inside the app.
+                    //
+                    // Opened with LocalUriHandler rather than a hand-built Intent — that is the
+                    // same mechanism the consent sentence uses (CleansiaConsentCheckbox), so the
+                    // two cannot drift, and the URLs come from CleansiaWeb rather than being
+                    // spelled out here.
+                    SectionGroup(title = stringResource(R.string.profile_group_legal)) {
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Description,
+                            title = stringResource(R.string.profile_terms),
+                            summary = stringResource(R.string.profile_terms_summary),
+                            onClick = { uriHandler.openUri(CleansiaWeb.TERMS_URL) },
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.PrivacyTip,
+                            title = stringResource(R.string.profile_privacy),
+                            summary = stringResource(R.string.profile_privacy_summary),
+                            onClick = { uriHandler.openUri(CleansiaWeb.PRIVACY_URL) },
                         )
                     }
                 }

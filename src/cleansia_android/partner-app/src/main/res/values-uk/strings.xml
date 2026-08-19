@@ -1352,4 +1352,11 @@
     <string name="delete_account_requested">Запит на видалення надіслано.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">Ви досі призначені на майбутнє замовлення. Коли воно буде завершене або передане, ви зможете надіслати запит знову.</string>
     <string name="error_gdpr_deletion_blocked_by_unsettled_pay">У вас досі є неоплачена робота. Коли розрахунковий період буде оплачено, ви зможете надіслати запит знову.</string>
+    <string name="splash_unreachable_title">Не вдається зв\'язатися з Cleansia</string>
+    <string name="splash_unreachable_message">Перевірте з\'єднання та спробуйте ще раз. З вашим акаунтом усе гаразд — ми просто не змогли його завантажити.</string>
+    <string name="profile_group_legal">Правова інформація</string>
+    <string name="profile_terms">Умови надання послуг</string>
+    <string name="profile_terms_summary">Відкриється у браузері</string>
+    <string name="profile_privacy">Політика конфіденційності</string>
+    <string name="profile_privacy_summary">Як ми обробляємо ваші дані</string>
 </resources>

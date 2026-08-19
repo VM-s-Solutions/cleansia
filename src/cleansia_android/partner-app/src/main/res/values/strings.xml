@@ -1382,4 +1382,11 @@
     <string name="delete_account_requested">Deletion request submitted.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">You\'re still assigned to an upcoming job. Once it\'s finished or reassigned you can request deletion again.</string>
     <string name="error_gdpr_deletion_blocked_by_unsettled_pay">You still have pay that hasn\'t been settled. Once the pay period is paid out you can request deletion again.</string>
+    <string name="splash_unreachable_title">We can\'t reach Cleansia</string>
+    <string name="splash_unreachable_message">Check your connection and try again. Your account is fine — we just couldn\'t load it.</string>
+    <string name="profile_group_legal">Legal</string>
+    <string name="profile_terms">Terms of service</string>
+    <string name="profile_terms_summary">Opens in your browser</string>
+    <string name="profile_privacy">Privacy policy</string>
+    <string name="profile_privacy_summary">How we handle your data</string>
 </resources>

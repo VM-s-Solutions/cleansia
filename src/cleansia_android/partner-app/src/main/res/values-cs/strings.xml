@@ -1367,4 +1367,11 @@
     <string name="delete_account_requested">Žádost o smazání byla odeslána.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále jste přiřazeni k nadcházející zakázce. Až bude dokončena nebo přeřazena, můžete o smazání požádat znovu.</string>
     <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyrovnanou mzdu. Až bude mzdové období vyplaceno, můžete o smazání požádat znovu.</string>
+    <string name="splash_unreachable_title">Nedaří se nám spojit s Cleansia</string>
+    <string name="splash_unreachable_message">Zkontrolujte připojení a zkuste to znovu. S vaším účtem je vše v pořádku — jen se nám ho nepodařilo načíst.</string>
+    <string name="profile_group_legal">Právní informace</string>
+    <string name="profile_terms">Obchodní podmínky</string>
+    <string name="profile_terms_summary">Otevře se v prohlížeči</string>
+    <string name="profile_privacy">Zásady ochrany osobních údajů</string>
+    <string name="profile_privacy_summary">Jak nakládáme s vašimi údaji</string>
 </resources>

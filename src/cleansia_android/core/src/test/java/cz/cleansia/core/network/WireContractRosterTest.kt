@@ -42,6 +42,9 @@ class WireContractRosterTest {
         "network/NetworkModule.kt",
         // Reads one id off an already-refused ApiResult; owns no mapper.
         "auth/EmployeeIdResolver.kt",
+        // Files an account-deletion request; the endpoint answers 200 with no body, so the client
+        // returns ApiResult<Unit> and there is no field-name contract to pin. -> /decisions/adr-0052
+        "gdpr/GdprDeletionClient.kt",
     )
 
     private val androidRoot: File =

@@ -83,7 +83,7 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Entities and their relationships | `/domain/model` |
 | Per-component contracts (18 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
-| Why a decision was made — 51 ADRs | `/decisions/` |
+| Why a decision was made — 52 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 

@@ -157,7 +157,15 @@ struct RegistrationLockView: View {
             DocumentsSectionView(client: profileClient, snackbar: snackbar)
         case .language:
             LanguagePickerView(preferences: preferences, onSelected: { path.removeLast() })
-        case .emergency, .jobRadius, .theme, .devices:
+        // Reachable only from the profile HUB, not from the registration-lock stack: this switch
+        // drives the onboarding chain, and none of these is a step in it. .deleteAccount belongs
+        // here for the same reason — a cleaner who has not finished registering has nothing filed
+        // to delete, and the hub is where the request lives. -> /decisions/adr-0052
+        //
+        // This switch has no `default` on purpose: a new ProfileRoute must be classified here
+        // deliberately rather than silently rendering nothing. That is working as intended — it is
+        // what caught .deleteAccount.
+        case .emergency, .jobRadius, .theme, .devices, .deleteAccount:
             EmptyView()
         }
     }

@@ -133,6 +133,52 @@ final class SplashViewModelTests: XCTestCase {
         XCTAssertEqual(vm.outcome, .needsRegistrationLock)
     }
 
+    /// The distinction the whole change exists for. A transport failure is "we could not ask",
+    /// which is nothing like "you are not approved" — and the lock screen it used to show has no
+    /// exit but signing out.
+    func testTransportFailureResolvesUnreachableRatherThanTheLock() async {
+        let client = FakeRegistrationClient()
+        client.result = .failure(ApiError(code: "network.unreachable", message: "offline"))
+        let vm = makeViewModel(hasValidSession: true, client: client)
+
+        await vm.resolve()
+
+        XCTAssertEqual(vm.outcome, .unreachable)
+    }
+
+    /// A cancellation is not a failure the cleaner should see anything about — they navigated away.
+    /// Showing them a retry screen for it would be noise, so it keeps the fail-closed destination.
+    func testACancellationIsNotTreatedAsUnreachable() async {
+        let client = FakeRegistrationClient()
+        client.result = .failure(ApiError(code: ApiError.cancelledCode))
+        let vm = makeViewModel(hasValidSession: true, client: client)
+
+        await vm.resolve()
+
+        XCTAssertNotEqual(vm.outcome, .unreachable)
+    }
+
+    /// Retry has to actually re-ask. The old cold-flow shape could only be re-run by rebuilding the
+    /// whole view identity, which a button cannot do.
+    func testResolveCanBeRunAgainAndAsksAgain() async {
+        let client = FakeRegistrationClient()
+        client.result = .failure(ApiError(code: "network.unreachable"))
+        let vm = makeViewModel(hasValidSession: true, client: client)
+
+        await vm.resolve()
+        XCTAssertEqual(vm.outcome, .unreachable)
+
+        client.result = .success(RegistrationCompletionStatus(
+            areDocumentsUploaded: true,
+            hasCompletedProfile: true,
+            contractStatus: .approved
+        ))
+        await vm.resolve()
+
+        XCTAssertEqual(vm.outcome, .authenticated)
+        XCTAssertEqual(client.callCount, 2)
+    }
+
     func testEmptyStatusResolvesRegistrationLockFailClosed() async {
         let client = FakeRegistrationClient()
         client.result = .success(RegistrationCompletionStatus())

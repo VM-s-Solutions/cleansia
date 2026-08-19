@@ -14,6 +14,26 @@ extension L10n {
             localized("profile_group_preferences")
         }
 
+        static var groupLegal: String {
+            localized("profile_group_legal")
+        }
+
+        static var terms: String {
+            localized("profile_terms")
+        }
+
+        static var termsSummary: String {
+            localized("profile_terms_summary")
+        }
+
+        static var privacy: String {
+            localized("profile_privacy")
+        }
+
+        static var privacySummary: String {
+            localized("profile_privacy_summary")
+        }
+
         static var language: String {
             localized("language")
         }

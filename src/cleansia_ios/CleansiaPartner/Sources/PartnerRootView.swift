@@ -68,7 +68,8 @@ struct PartnerRootView: View {
             SplashGateView(
                 hasValidSession: container.hasValidSession,
                 settings: container.appSettings,
-                client: container.registrationClient
+                client: container.registrationClient,
+                onSignOut: { route = .login }
             ) { outcome in
                 route = Route.afterSplash(outcome)
             }
@@ -127,6 +128,10 @@ struct PartnerRootView: View {
             case .needsRegistrationLock: .registrationLock
             case .needsOnboarding: .onboarding
             case .unauthenticated: .login
+            // Unreachable stays put — SplashGateView never hands it over, and mapping it back to
+            // .splash keeps this function total without inventing a destination. This switch has
+            // no `default` on purpose: a new outcome has to be routed deliberately.
+            case .unreachable: .splash
             }
         }
     }

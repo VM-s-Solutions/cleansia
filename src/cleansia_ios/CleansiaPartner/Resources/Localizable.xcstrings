@@ -3971,6 +3971,741 @@
         }
       }
     },
+    "delete_account_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahájíme proces ukončení spolupráce. Spolupráce musí být formálně ukončena osobně a je nutné podepsat zbývající dokumenty, teprve poté bude účet uzavřen — dnes se tedy nic nemění a můžete dál pracovat na zakázkách, které již máte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed — so nothing changes today, and you can keep working on the jobs you already have."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы начнём процесс завершения сотрудничества. Сотрудничество нужно официально завершить лично и подписать оставшиеся документы, и только после этого аккаунт будет закрыт — сегодня ничего не меняется, и вы можете продолжать работать над текущими заказами."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Začneme proces ukončenia spolupráce. Spolupráca musí byť formálne ukončená osobne a je potrebné podpísať zostávajúce dokumenty, až potom bude účet uzavretý — dnes sa teda nič nemení a môžete ďalej pracovať na zákazkách, ktoré už máte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми розпочнемо процес завершення співпраці. Співпрацю потрібно офіційно завершити особисто та підписати документи, що залишилися, і лише після цього акаунт буде закрито — тож сьогодні нічого не змінюється, і ви можете продовжувати працювати над наявними замовленнями."
+          }
+        }
+      }
+    },
+    "delete_account_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o smazání"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request deletion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправить запрос"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o zmazanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Надіслати запит"
+          }
+        }
+      }
+    },
+    "delete_account_dialog_confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odeslat žádost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send request"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odoslať žiadosť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Надіслати"
+          }
+        }
+      }
+    },
+    "delete_account_dialog_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ozveme se vám a spolupráci formálně ukončíme. Dnes se nic nemaže."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll contact you to end the cooperation formally. Nothing is deleted today."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы свяжемся с вами и официально завершим сотрудничество. Сегодня ничего не удаляется."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ozveme sa vám a spoluprácu formálne ukončíme. Dnes sa nič nemaže."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми зв'яжемося з вами та офіційно завершимо співпрацю. Сьогодні нічого не видаляється."
+          }
+        }
+      }
+    },
+    "delete_account_dialog_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o smazání účtu?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request account deletion?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправить запрос на удаление?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o zmazanie účtu?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Надіслати запит на видалення?"
+          }
+        }
+      }
+    },
+    "delete_account_error_already_pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost o smazání již probíhá."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A deletion request is already in progress."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос на удаление уже обрабатывается."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť o zmazanie už prebieha."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит на видалення вже опрацьовується."
+          }
+        }
+      }
+    },
+    "delete_account_error_blocked_by_assigned_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stále jste přiřazeni k nadcházející zakázce. Až bude dokončena nebo přeřazena, můžete o smazání požádat znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're still assigned to an upcoming job. Once it's finished or reassigned you can request deletion again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы всё ещё назначены на предстоящий заказ. Когда он будет выполнен или передан, вы сможете отправить запрос снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stále ste priradení k nadchádzajúcej zákazke. Keď bude dokončená alebo preradená, môžete o zmazanie požiadať znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви досі призначені на майбутнє замовлення. Коли воно буде завершене або передане, ви зможете надіслати запит знову."
+          }
+        }
+      }
+    },
+    "delete_account_error_blocked_by_invoice": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na vašem účtu je stále otevřená faktura. Až bude vyrovnána, můžete o smazání požádat znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's still an open invoice on your account. Once it's settled you can request deletion again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На вашем аккаунте всё ещё есть открытый счёт. Когда он будет закрыт, вы сможете отправить запрос снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na vašom účte je stále otvorená faktúra. Keď bude vyrovnaná, môžete o zmazanie požiadať znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На вашому акаунті досі є відкритий рахунок. Коли його буде закрито, ви зможете надіслати запит знову."
+          }
+        }
+      }
+    },
+    "delete_account_error_blocked_by_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte aktivní objednávku. Až bude dokončena, můžete o smazání požádat znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have an active order. Once it's finished you can request deletion again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть активный заказ. Когда он будет завершён, вы сможете отправить запрос снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte aktívnu objednávku. Keď bude dokončená, môžete o zmazanie požiadať znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас є активне замовлення. Коли воно буде завершене, ви зможете надіслати запит знову."
+          }
+        }
+      }
+    },
+    "delete_account_error_blocked_by_unsettled_pay": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stále máte nevyrovnanou mzdu. Až bude mzdové období vyplaceno, můžete o smazání požádat znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You still have pay that hasn't been settled. Once the pay period is paid out you can request deletion again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть неоплаченная работа. Когда расчётный период будет оплачен, вы сможете отправить запрос снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stále máte nevyrovnanú mzdu. Keď bude mzdové obdobie vyplatené, môžete o zmazanie požiadať znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас досі є неоплачена робота. Коли розрахунковий період буде оплачено, ви зможете надіслати запит знову."
+          }
+        }
+      }
+    },
+    "delete_account_headline": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o smazání účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request account deletion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос на удаление аккаунта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o zmazanie účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит на видалення акаунта"
+          }
+        }
+      }
+    },
+    "delete_account_kept_agreement": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dohodu o samofakturaci k těmto fakturám"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The self-billing agreement behind those invoices"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Соглашение о самовыставлении счетов к ним"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dohodu o samofakturácii k týmto faktúram"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Угоду про самовиставлення рахунків до них"
+          }
+        }
+      }
+    },
+    "delete_account_kept_invoices": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše faktury jako účetní doklady"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your invoices, as accounting records"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши счета как финансовые документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše faktúry ako účtovné doklady"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші рахунки як фінансові документи"
+          }
+        }
+      }
+    },
+    "delete_account_kept_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co musíme uchovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What we have to keep"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что мы обязаны сохранить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo musíme uchovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що ми маємо зберегти"
+          }
+        }
+      }
+    },
+    "delete_account_kept_pay": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mzdové záznamy za dokončené zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your pay records for completed jobs"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записи об оплате за выполненные заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mzdové záznamy za dokončené zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записи про оплату за виконані замовлення"
+          }
+        }
+      }
+    },
+    "delete_account_requested_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ozveme se vám ohledně podpisu dokumentů. Do té doby můžete pracovat jako obvykle."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll be in touch to arrange the paperwork. You can keep working as normal until then."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы свяжемся с вами по поводу подписания документов. До этого работайте как обычно."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ozveme sa vám ohľadom podpisu dokumentov. Dovtedy môžete pracovať ako zvyčajne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми зв'яжемося з вами щодо підписання документів. До того часу працюйте як зазвичай."
+          }
+        }
+      }
+    },
+    "delete_account_requested_headline": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost odeslána"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request submitted"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос отправлен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť odoslaná"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит надіслано"
+          }
+        }
+      }
+    },
+    "delete_account_requested_snackbar": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost o smazání byla odeslána."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletion request submitted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос на удаление отправлен."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť o zmazanie bola odoslaná."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит на видалення надіслано."
+          }
+        }
+      }
+    },
+    "delete_account_row_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zahájit ukončení spolupráce"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start the offboarding process"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Начать завершение сотрудничества"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Začať ukončenie spolupráce"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розпочати завершення співпраці"
+          }
+        }
+      }
+    },
+    "delete_account_row_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o smazání účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request account deletion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос на удаление аккаунта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o zmazanie účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит на видалення акаунта"
+          }
+        }
+      }
+    },
+    "delete_account_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smazání účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление аккаунта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmazanie účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення акаунта"
+          }
+        }
+      }
+    },
     "delete_issue_confirm": {
       "extractionState": "stale",
       "localizations": {

@@ -15,6 +15,7 @@ struct ProfileView: View {
 
     private let client: PartnerProfileClient
     private let devicesClient: PartnerDevicesClient
+    private let deletionClient: PartnerGdprDeletionClient
     private let authClient: AuthClient
     private let snackbar: SnackbarController
     private let geocoding: GeocodingService
@@ -34,6 +35,9 @@ struct ProfileView: View {
         // Defaulted rather than threaded through the shell: the live client holds nothing — the
         // generated layer carries the session — so this parameter exists for the tests, not the app.
         userClient: PartnerUserClient = LivePartnerUserClient(),
+        // Same reasoning as userClient above: the live deletion client holds nothing, so this is
+        // here for the tests rather than the shell.
+        deletionClient: PartnerGdprDeletionClient = LivePartnerGdprDeletionClient(),
         onSignedOut: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: ProfileViewModel(
@@ -46,6 +50,7 @@ struct ProfileView: View {
         self.preferences = preferences
         self.client = client
         self.devicesClient = devicesClient
+        self.deletionClient = deletionClient
         self.authClient = authClient
         self.snackbar = snackbar
         self.geocoding = geocoding
@@ -168,6 +173,10 @@ struct ProfileView: View {
                 snackbar: snackbar,
                 onSignedOut: onSignedOut
             )
+        case .deleteAccount:
+            // No onSaved / onSignedOut: filing a request changes nothing today, so the cleaner
+            // stays signed in and the screen stays put. -> /decisions/adr-0052
+            DeleteAccountView(client: deletionClient, snackbar: snackbar)
         case .language:
             LanguagePickerView(preferences: preferences, onSelected: { popLast() })
         case .theme:

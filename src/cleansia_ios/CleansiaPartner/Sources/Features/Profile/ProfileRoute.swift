@@ -11,6 +11,8 @@ enum ProfileRoute: Hashable {
     case language
     case theme
     case devices
+    /// Request account deletion. Files a request; an admin fulfils it. -> /decisions/adr-0052
+    case deleteAccount
 }
 
 enum ProfileSection: CaseIterable {

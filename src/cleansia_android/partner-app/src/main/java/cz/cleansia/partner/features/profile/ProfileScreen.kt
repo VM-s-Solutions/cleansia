@@ -244,15 +244,7 @@ fun ProfileScreen(
                     }
                 }
                 item {
-                    // Sits with logout because both end the session, but it is NOT destructive
-                    // styling: this files a request an admin fulfils after the paperwork, it does
-                    // not delete anything today. -> /decisions/adr-0052
-                    ProfileSectionRow(
-                        icon = Icons.Outlined.DeleteForever,
-                        title = stringResource(R.string.profile_delete_account),
-                        summary = stringResource(R.string.profile_delete_account_summary),
-                        onClick = onNavigateToDeleteAccount,
-                    )
+                    DeleteAccountRow(onClick = onNavigateToDeleteAccount)
                     Spacer(Modifier.height(Spacing.M))
                     LogoutRow(onClick = { showLogoutDialog = true })
                     Spacer(Modifier.height(Spacing.M))
@@ -552,13 +544,77 @@ private fun themeSummary(theme: ThemePreference): String = stringResource(
     }
 )
 
+/**
+ * The account-deletion request, styled to match the customer app's equivalent: an error-tinted icon
+ * and error-coloured label on a surface card.
+ *
+ * It used to be a plain [ProfileSectionRow] dropped straight into the list, which left it as the one
+ * element on the screen with no horizontal inset — every section card and the logout row sit at
+ * [Spacing.M], and this sat flush to the edges. [EndOfListRowModifier] now carries that inset for
+ * both this and logout, so the two cannot drift from each other or from the groups above.
+ *
+ * Red despite filing a request rather than deleting anything today: the colour marks where the
+ * account-ending actions live, and it is what the customer app already taught users to look for.
+ */
+@Composable
+private fun DeleteAccountRow(onClick: () -> Unit) {
+    Row(
+        modifier = EndOfListRowModifier()
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.M, vertical = Spacing.M),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DeleteForever,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.profile_delete_account),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.error,
+            )
+            Text(
+                text = stringResource(R.string.profile_delete_account_summary),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * The inset and corner the two end-of-list rows share with every [SectionGroup] card above them.
+ * One definition rather than two literals, so "aligned" is structural instead of a coincidence that
+ * survives until someone edits one of them.
+ */
+@Composable
+private fun EndOfListRowModifier(): Modifier =
+    Modifier
+        .fillMaxWidth()
+        .padding(horizontal = Spacing.M)
+        .clip(RoundedCornerShape(18.dp))
+
 @Composable
 private fun LogoutRow(onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.M)
-            .clip(RoundedCornerShape(18.dp))
+        modifier = EndOfListRowModifier()
             .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
             .clickable { onClick() }
             .padding(horizontal = Spacing.M, vertical = Spacing.M),

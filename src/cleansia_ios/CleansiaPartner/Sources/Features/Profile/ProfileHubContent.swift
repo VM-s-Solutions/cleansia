@@ -41,9 +41,17 @@ struct ProfileHubContent: View {
                         sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
                         sectionGroup(title: L10n.Profile.groupLegal, rows: legalRows)
-                        LogoutRow(onTap: onLogout)
-                            .padding(.horizontal, Spacing.m)
-                            .padding(.bottom, Spacing.xxl)
+                        // Out of the preferences group and onto its own card beside logout: the two
+                        // account-ending actions belong together, and grouping deletion with
+                        // "language / theme" read as a preference.
+                        VStack(spacing: Spacing.m) {
+                            DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                            LogoutRow(onTap: onLogout)
+                        }
+                        // One inset for both, matching sectionGroup's — previously each carried its
+                        // own literal, which is how "aligned" survives only until someone edits one.
+                        .padding(.horizontal, Spacing.m)
+                        .padding(.bottom, Spacing.xxl)
                     }
                 }
                 .ignoresSafeArea(.container, edges: .top)
@@ -112,14 +120,6 @@ struct ProfileHubContent: View {
                 title: L10n.Devices.title,
                 summary: L10n.Profile.devicesSummary,
                 action: .route(.devices)
-            ),
-            // Not styled destructive: this files a request an admin fulfils after the paperwork,
-            // it does not delete anything today. -> /decisions/adr-0052
-            ProfileHubRowItem(
-                icon: "trash",
-                title: L10n.DeleteAccount.rowTitle,
-                summary: L10n.DeleteAccount.rowSummary,
-                action: .route(.deleteAccount)
             )
         ]
     }
@@ -369,6 +369,49 @@ private struct ProfileSectionRow: View {
             }
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.s + 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// The account-deletion request, styled to match the customer app's equivalent: an error-tinted
+/// icon and error-coloured label on a surface card.
+///
+/// Red despite filing a request rather than deleting anything today — the colour marks where the
+/// account-ending actions live, and it is what the customer app already taught users to look for.
+private struct DeleteAccountRow: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: Spacing.m) {
+                ZStack {
+                    Circle()
+                        .fill(CleansiaColors.error.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(CleansiaColors.error)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.DeleteAccount.rowTitle)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.error)
+                    Text(L10n.DeleteAccount.rowSummary)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s + 2)
+            .frame(maxWidth: .infinity)
+            .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

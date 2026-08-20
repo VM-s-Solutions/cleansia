@@ -7,12 +7,13 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 
 > ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13. Read this before trusting any `T1-CI` token below.
 >
-> **Two checkers gate a pull request. Five do not.**
+> **Three checkers gate a pull request. Five do not.**
 >
 > | Checker | Gates a PR? | Where |
 > |---|---|---|
 > | `check-docs-refs.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
 > | `check-catalog-claims.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
+> | `check-ios-symbols.mjs` | **yes, blocking** | `ios-symbols-ci.yml` — with its own self-test blocking first |
 > | `check-consistency.mjs` | no | on demand only |
 > | `check-module-boundaries.mjs` | no | on demand only |
 > | `check-available-status-parity.mjs` | no | on demand only |

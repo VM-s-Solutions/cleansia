@@ -271,6 +271,53 @@ Do **not** add `--offline`: the local dependency cache is incomplete (`mockwebse
 and offline resolution fails outright. A plain online resolve does not need `MAPBOX_DOWNLOADS_TOKEN`
 once the cache is warm.
 
+### Shipping to Google Play
+
+Both apps share **one** version code: `VERSION_CODE`, committed in
+`src/cleansia_android/gradle.properties` and read by each app's `defaultConfig` through
+`providers.gradleProperty`. There is deliberately **no fallback** — if the property is missing or
+does not parse as an integer the build fails at configuration time, because the only plausible
+default is `1` and an AAB carrying an already-spent `1` is the exact failure this replaces.
+
+**Bump it by 1 before every upload attempt, including a build you end up discarding.** Play spends a
+version code the moment it accepts an AAB, never returns it, and refuses any number it has already
+seen.
+
+Play scopes version codes **per `applicationId`**, so `cz.cleansia.partner` and
+`cz.cleansia.customer` sharing one counter is legal, and the gaps that sharing creates cost nothing
+against Play's ceiling of 2,100,000,000. Sharing is the point: the two apps kept private copies of
+`versionName` and it drifted to `1.0.0` / `0.1.0`. A number that exists once cannot drift.
+
+Two things do **not** need a bump:
+
+- **Promoting an existing AAB between tracks** (internal → closed → production) — the artifact
+  carries its number along.
+- **A throwaway build handed to a tester** — use Play's Internal App Sharing, where version codes
+  are explicitly reusable, and spend nothing.
+
+Override a single build without editing the committed file:
+
+```bash
+./gradlew :partner-app:bundleRelease  -PVERSION_CODE=9
+./gradlew :customer-app:bundleRelease -PVERSION_CODE=9
+```
+
+::: warning Three inputs outrank the committed file, and only one of them is intended
+Measured on this tree, each beating the value in `src/cleansia_android/gradle.properties` with no
+warning of any kind: `VERSION_CODE` set in `~/.gradle/gradle.properties`; the
+`ORG_GRADLE_PROJECT_VERSION_CODE` environment variable; and `-PVERSION_CODE`, which also beats the
+environment variable. Only the `-P` form is meant to be used.
+
+Do **not** make `VERSION_CODE` sticky in `~/.gradle/gradle.properties` the way the secrets in the
+table above deliberately are — a copy there is wrong for every future build rather than right for
+this machine. The same applies to CI: exporting `ORG_GRADLE_PROJECT_VERSION_CODE` is the standard
+way to inject a Gradle property, and doing it here would take the release number out of version
+control without leaving a trace in any file.
+:::
+
+`VERSION_CODE` starts at **2**. `versionCode = 1` is the only value either build file has held in
+git history, so `1` is the most either Play listing can already have spent.
+
 ---
 
 ## iOS

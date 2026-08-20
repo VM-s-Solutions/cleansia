@@ -40,7 +40,9 @@ android {
         applicationId = "cz.cleansia.partner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // One number, shared by both apps: src/cleansia_android/gradle.properties.
+        versionCode = providers.gradleProperty("VERSION_CODE").orNull?.trim()?.toIntOrNull()
+            ?: throw GradleException("VERSION_CODE must be an integer; set it in src/cleansia_android/gradle.properties.")
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

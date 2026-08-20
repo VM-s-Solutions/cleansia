@@ -1,0 +1,81 @@
+name: iOS Symbols CI
+
+# The compiler-free half of the iOS gate, on LINUX.
+#
+# ios-ci.yml does the real build: xcodegen, SwiftFormat, SwiftLint and a full xcodebuild build+test of
+# all three targets. It is thorough and it is the only thing that can say "this compiles" — and it
+# runs on macos-latest, which bills at 10x the Linux rate. That cost is why it is worth having a
+# second, cheap gate over the same tree: agents/tools/check-ios-symbols.mjs needs no Xcode, no
+# simulator, no network and no Swift toolchain, so it gates on ubuntu-latest in seconds and catches
+# the class of defect that reached the owner's Mac twice while Actions was billing-blocked — a case
+# added to an enum that a default-less switch in an OLD, untouched file no longer covers (#214/#215).
+#
+# WHY THIS IS A SEPARATE WORKFLOW AND NOT A SECOND JOB IN ios-ci.yml.
+#   GitHub path filters are WORKFLOW-level; there is no per-job `paths`. Folding this in would force
+#   one of two bad outcomes:
+#     - leave ios-ci.yml's paths alone, and a change to the CHECKER ITSELF never re-runs the checker
+#       or its self-test — a gate that stops being verified is how check-consistency accumulated 20
+#       phantom violations;
+#     - add agents/tools/** to ios-ci.yml's paths, and every edit to a dependency-free Node file
+#       drags a full macOS build+test along with it, at 10x billing, for a change no Swift file saw.
+#   Split, each workflow gets exactly the trigger set its inputs justify, at the rate its runner
+#   costs. It also keeps the signal legible: a red check here says "symbols", not "iOS CI failed"
+#   about a workflow whose build steps never ran.
+#
+# Same trigger shape as ios-ci.yml, and for the same reason: pushes to master are included because a
+# pull_request-only trigger means a direct-to-master commit is never checked at all.
+on:
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'src/cleansia_ios/**'
+      - 'agents/tools/check-ios-symbols.mjs'
+      - 'agents/tools/check-ios-symbols.test.mjs'
+      - '.github/workflows/ios-symbols-ci.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/cleansia_ios/**'
+      - 'agents/tools/check-ios-symbols.mjs'
+      - 'agents/tools/check-ios-symbols.test.mjs'
+      - '.github/workflows/ios-symbols-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  symbols:
+    runs-on: ubuntu-latest
+    name: Symbols resolve and switches stay exhaustive
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # No `cache: npm` — the checker is dependency-free Node by the same rule as every other tool in
+      # agents/tools, so there is no lock file to key a cache on and nothing to install.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # FIRST, and blocking, exactly as docs-ci.yml runs check-docs-refs.test.mjs first. This gate is
+      # the ONLY iOS signal available on the Windows machine this app is developed on, so a defanged
+      # gate does not read as "broken" — it reads as "clean tree", which is the most expensive lie
+      # this repository can tell itself. 28 of the 62 scenarios assert the tool EXITS 1; stub its body
+      # to `process.exit(0)` and 32 of them go red here.
+      - name: Gate self-test (proves the gate can still fail)
+        run: node agents/tools/check-ios-symbols.test.mjs
+
+      # The gate itself. It also refuses to report a pass over a corpus it did not actually read: a
+      # missing module, or a file/reference/switch count under the floors, fails with a REACH message
+      # rather than a green tick over silence.
+      #
+      # This does NOT replace ios-ci.yml. It knows nothing about types, protocol conformance,
+      # availability or ViewBuilder, and it deliberately declines to judge any switch it cannot anchor
+      # to a locally-declared enum. It is the part of "does it compile?" that a text reader can decide.
+      - name: iOS symbols resolve (L10n, catalog keys, design system, exhaustive switches)
+        run: node agents/tools/check-ios-symbols.mjs

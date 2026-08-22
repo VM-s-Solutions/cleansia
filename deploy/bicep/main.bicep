@@ -463,6 +463,33 @@ var sendGridSettings = {
   SendGrid__ResetPasswordUrl: '/forgot-password'
 }
 
+// Timer schedules for the six functions that declare `[TimerTrigger("%SomeCron%")]` rather than a
+// literal cron. THESE ARE NOT DECORATION AND THEY ARE NOT A DUPLICATE OF appsettings.json.
+//
+// The `%token%` is expanded by the Functions HOST at indexing time, from PLATFORM APPLICATION SETTINGS.
+// `src/Cleansia.Functions/appsettings.json` is loaded by Program.cs into the ISOLATED WORKER's
+// IConfiguration — a different process and a different configuration object, which the host never reads.
+// With no setting here the token does not resolve, the timer listener is never created, and the function
+// simply never runs: no error, no invocation, no telemetry. Exactly the failure mode the SendEmail
+// templateId comment above describes, on a different key.
+//
+// Measured 2026-08-22: SendNewJobsDigest, MaterializeRecurringBookings, SendPreCleaningReminders,
+// SendRecurringOrderReminders, SendMembershipLifecycleNotifications and ExpireStaleReferrals had never
+// fired in DEV. The twelve timers carrying literal crons — OutboxDrainer, CleanupStalePendingOrders and
+// the rest — were unaffected, which is what made the split visible.
+//
+// Values are copied verbatim from src/Cleansia.Functions/appsettings.json so this changes nothing except
+// whether the schedules exist at all. TimerCronSettingsAreDeployedTests fails the build if a tokenized
+// timer is added without a matching key here.
+var cronSettings = {
+  MaterializeRecurringBookingsCron: '0 0 2 * * *'
+  SendRecurringOrderRemindersCron: '0 30 2 * * *'
+  SendPreCleaningRemindersCron: '0 */5 * * * *'
+  SendMembershipLifecycleNotificationsCron: '0 0 3 * * *'
+  SendNewJobsDigestCron: '0 0 * * * *'
+  ExpireStaleReferralsCron: '0 30 3 * * *'
+}
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
@@ -761,7 +788,7 @@ module functionApp 'modules/functionApp.bicep' = {
     // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
     // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
     // while leaving only threshold alerts. Populate it.
-    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

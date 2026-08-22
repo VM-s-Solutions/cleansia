@@ -195,6 +195,17 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaners now actually receive the "new jobs near you" digest — and five other scheduled jobs now
+  run at all.** Six background jobs declared their schedule as an application-setting reference rather
+  than a literal, and that setting was never created in Azure. The Functions host could not resolve it,
+  so it never built the timer for those jobs: they produced no runs, no errors and no telemetry, and
+  had done so for as long as the environment has existed. **What was silently not happening:** cleaners
+  were never told about available jobs near them; recurring bookings were never materialised into real
+  orders; nobody got a pre-cleaning reminder, a recurring-order reminder, or a membership expiry
+  notice; and stale referrals were never expired. The twelve jobs whose schedule is written inline —
+  including the outbox drainer and the stale-checkout sweep — were never affected. A build gate now
+  fails if a scheduled job is added without its schedule being deployed.
+
 - **Operators — ⚠️ the documentation claimed a level of error tracking that does not exist, and now
   says what is really there.** The infrastructure docs stated that all five APIs send telemetry to
   Application Insights and that their structured logs are queryable there. **Neither is true.** Only

@@ -60,7 +60,7 @@ public sealed class ExpressWaiverResolver(
         // window — harmonizing IsInTrial into ActiveForUserQuery would silently strip both.
         // The quota still reports the plan's number so the client can say when waivers start, rather
         // than rendering a bare zero that reads as "you used them up".
-        if (membership.IsInTrial)
+        if (membership.IsInTrialAt(nowUtc))
         {
             return noWaiver with { Quota = plan.ExpressUpgradesPerMonth };
         }

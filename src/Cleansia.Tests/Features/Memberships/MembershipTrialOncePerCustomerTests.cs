@@ -235,7 +235,7 @@ public class MembershipTrialOncePerCustomerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(added);
         Assert.Equal(trialEnd, added!.TrialEndsAtUtc);
-        Assert.True(added.IsInTrial);
+        Assert.True(added.IsInTrialAt(DateTime.UtcNow));
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public class MembershipTrialOncePerCustomerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(added);
         Assert.Null(added!.TrialEndsAtUtc);
-        Assert.False(added.IsInTrial);
+        Assert.False(added.IsInTrialAt(DateTime.UtcNow));
     }
 
     // ── what the subscribe screen is allowed to advertise ──

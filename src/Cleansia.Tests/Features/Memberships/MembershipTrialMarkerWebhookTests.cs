@@ -207,7 +207,7 @@ public class MembershipTrialMarkerWebhookTests
 
         Assert.NotNull(added);
         Assert.Equal(trialEnd, added!.TrialEndsAtUtc);
-        Assert.True(added.IsInTrial);
+        Assert.True(added.IsInTrialAt(DateTime.UtcNow));
     }
 
     [Fact]

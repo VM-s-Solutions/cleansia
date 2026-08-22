@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.customer.ui.theme.WarningStar
 
@@ -295,7 +296,7 @@ private fun ReasonChipGrid(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CancelReasonOption.entries.forEach { option ->
-            ReasonChip(
+            CleansiaChip(
                 label = stringResource(option.labelRes),
                 isSelected = selected == option,
                 enabled = enabled,
@@ -305,40 +306,6 @@ private fun ReasonChipGrid(
     }
 }
 
-@Composable
-private fun ReasonChip(
-    label: String,
-    isSelected: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val border = if (isSelected) MaterialTheme.colorScheme.primary
-                 else MaterialTheme.colorScheme.outlineVariant
-    val bg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-             else MaterialTheme.colorScheme.surface
-    val labelColor = if (isSelected) MaterialTheme.colorScheme.primary
-                     else MaterialTheme.colorScheme.onSurface
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(bg)
-            .border(
-                width = if (isSelected) 1.5.dp else 1.dp,
-                color = border,
-                shape = RoundedCornerShape(999.dp),
-            )
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            ),
-            color = labelColor,
-        )
-    }
-}
 
 /* ── Fee preview ── */
 

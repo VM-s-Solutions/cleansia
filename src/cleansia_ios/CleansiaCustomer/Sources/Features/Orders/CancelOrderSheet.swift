@@ -153,7 +153,7 @@ private struct ReasonChips: View {
 
     var body: some View {
         FlexibleReasonGrid(options: CancelReasonOption.allCases) { option in
-            ChipButton(label: option.label, selected: selected == option, enabled: enabled) {
+            CleansiaChip(label: option.label, isSelected: selected == option, enabled: enabled) {
                 selected = selected == option ? nil : option
                 onSelect()
             }
@@ -163,7 +163,7 @@ private struct ReasonChips: View {
 
 private struct FlexibleReasonGrid: View {
     let options: [CancelReasonOption]
-    let chip: (CancelReasonOption) -> ChipButton
+    let chip: (CancelReasonOption) -> CleansiaChip
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -185,31 +185,6 @@ private struct FlexibleReasonGrid: View {
     }
 }
 
-private struct ChipButton: View {
-    let label: String
-    let selected: Bool
-    let enabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurface)
-                .padding(.horizontal, Spacing.s)
-                .padding(.vertical, Spacing.xs)
-                .background(selected ? CleansiaColors.primary.opacity(0.12) : CleansiaColors.surface, in: Capsule())
-                .overlay(
-                    Capsule().stroke(
-                        selected ? CleansiaColors.primary : CleansiaColors.outlineVariant,
-                        lineWidth: selected ? 1.5 : 1
-                    )
-                )
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-    }
-}
 
 private struct NotesField: View {
     @Binding var notes: String

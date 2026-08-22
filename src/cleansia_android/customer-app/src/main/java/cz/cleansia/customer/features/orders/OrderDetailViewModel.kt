@@ -461,7 +461,7 @@ class OrderDetailViewModel @Inject constructor(
         if (_reviewState.value is ActionState.Submitting) return
         viewModelScope.launch {
             _reviewState.value = ActionState.Submitting
-            val trimmed = comment?.trim()?.take(2000)?.ifBlank { null }
+            val trimmed = comment?.trim()?.take(REVIEW_COMMENT_MAX_LENGTH)?.ifBlank { null }
             val result = orderRepository.submitReview(id, rating, trimmed).surfaceError().getOrNull()
             if (result == null) {
                 _reviewState.value = ActionState.Error(

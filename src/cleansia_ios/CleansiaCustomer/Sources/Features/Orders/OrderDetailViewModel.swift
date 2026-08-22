@@ -263,7 +263,7 @@ final class OrderDetailViewModel: ViewModel {
     func submitReview(rating: Int, comment: String?, isEdit: Bool) async {
         guard !orderId.isBlank, (1 ... 5).contains(rating), !reviewState.isSubmitting else { return }
         reviewState = .submitting
-        let trimmed = comment?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000)
+        let trimmed = comment?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1000)
         let payload = (trimmed?.isEmpty ?? true) ? nil : String(trimmed ?? "")
         switch await client.submitReview(orderId: orderId, rating: rating, comment: payload) {
         case let .success(review):

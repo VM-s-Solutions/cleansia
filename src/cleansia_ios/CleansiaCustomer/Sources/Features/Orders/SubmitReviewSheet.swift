@@ -12,7 +12,9 @@ struct SubmitReviewSheet: View {
     @State private var rating: Int
     @State private var comment: String
 
-    private let maxCommentLength = 2000
+    // 1000, matching SubmitOrderReview.Validator and OrderReview.Comment's [MaxLength]. This said
+    // 2000, so a 1500-character review was accepted by the field and refused after submit.
+    private let maxCommentLength = 1000
 
     init(
         existingReview: CustomerOrderReview?,

@@ -46,7 +46,11 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderReviewDto
 import cz.cleansia.customer.ui.theme.WarningStar
 
-private const val MAX_COMMENT_LENGTH = 2000
+// 1000, because that is what SubmitOrderReview.Validator and OrderReview.Comment's [MaxLength]
+// actually enforce. This said 2000 under a comment claiming it matched the backend, so a customer
+// who typed 1500 characters had every one of them accepted by the field and the whole review
+// refused after submit, with the generic common.max_length key. Web was already correct.
+internal const val REVIEW_COMMENT_MAX_LENGTH = 1000
 
 /**
  * Modal bottom sheet for submitting (or editing) a review on a completed order.
@@ -134,8 +138,8 @@ fun SubmitReviewSheet(
             OutlinedTextField(
                 value = comment,
                 onValueChange = { next ->
-                    comment = if (next.length > MAX_COMMENT_LENGTH) {
-                        next.substring(0, MAX_COMMENT_LENGTH)
+                    comment = if (next.length > REVIEW_COMMENT_MAX_LENGTH) {
+                        next.substring(0, REVIEW_COMMENT_MAX_LENGTH)
                     } else {
                         next
                     }

@@ -260,12 +260,30 @@ final class OrderDetailViewModel: ViewModel {
 
     // MARK: - Review
 
-    func submitReview(rating: Int, comment: String?, isEdit: Bool) async {
+    func submitReview(
+        rating: Int,
+        comment: String?,
+        tags: [CustomerReviewTag] = [],
+        isEdit: Bool
+    ) async {
         guard !orderId.isBlank, (1 ... 5).contains(rating), !reviewState.isSubmitting else { return }
         reviewState = .submitting
         let trimmed = comment?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1000)
         let payload = (trimmed?.isEmpty ?? true) ? nil : String(trimmed ?? "")
-        switch await client.submitReview(orderId: orderId, rating: rating, comment: payload) {
+        // Filtered to the rating's own polarity here as well as in the sheet. The server refuses a
+        // mismatch outright, and a stale selection left behind by a rating change would otherwise
+        // turn a valid review into a 400 the customer cannot act on.
+        let wantPositive = rating >= CustomerReviewTag.positiveRatingFloor
+        let polar = Array(
+            tags.filter { $0.isPositive == wantPositive }
+                .reduce(into: [CustomerReviewTag]()) { acc, tag in
+                    if !acc.contains(tag) { acc.append(tag) }
+                }
+                .prefix(CustomerReviewTag.maxTags)
+        )
+        switch await client.submitReview(
+            orderId: orderId, rating: rating, comment: payload, tags: polar
+        ) {
         case let .success(review):
             snackbar.showSuccess(isEdit ? L10n.OrderReview.updated : L10n.OrderReview.success)
             reviewState = .idle

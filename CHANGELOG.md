@@ -70,6 +70,17 @@ need backfilling.
 
 ### Added
 
+- **Customer — you are now asked to rate the clean, instead of having to go looking.** The review
+  control used to be the second-to-last section inside an order's detail sheet, which most customers
+  never opened. Now, the next time you open the app after a clean finishes, the rating sheet comes to
+  you — for the most recent finished booking, once. Alongside the stars there are quick chips for what
+  went well (on time, thorough, careful with my things, …) or what went wrong (arrived late, missed
+  areas, an extra was skipped, …), so leaving a useful review is a few taps rather than a paragraph.
+  Damage is deliberately **not** one of the chips: it is a dispute, which produces a refund, and a low
+  rating now offers that route instead. On **Android and iOS**; the web order page keeps the review
+  section it already had. Ask once per booking — declining counts, and a review left on another device
+  silences it everywhere.
+
 - **Customer — Cleansia Plus now waives the express booking surcharge.** An express slot is a booking
   placed 2–4 hours ahead, and it carries a +20% surcharge. A paid Plus plan now covers a set number of
   those each month at no extra cost. The allowance is counted **per calendar month**, not per

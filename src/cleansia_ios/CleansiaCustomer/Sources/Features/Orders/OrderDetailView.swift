@@ -18,9 +18,14 @@ struct OrderDetailView: View {
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
+    private let openReviewOnLoad: Bool
+    private let onReviewPromptConsumed: () -> Void
+    @State private var reviewAutoOpened = false
 
     init(
         orderId: String,
+        openReviewOnLoad: Bool = false,
+        onReviewPromptConsumed: @escaping () -> Void = {},
         client: OrderClient,
         repository: OrderRepository,
         membershipRepository: MembershipRepository,
@@ -50,6 +55,8 @@ struct OrderDetailView: View {
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
+        self.openReviewOnLoad = openReviewOnLoad
+        self.onReviewPromptConsumed = onReviewPromptConsumed
     }
 
     var body: some View {
@@ -58,6 +65,17 @@ struct OrderDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .background(CleansiaColors.background.ignoresSafeArea())
             .task { await vm.load() }
+            // The prompted arrival. Waits for the order to actually resolve — raising the sheet over a
+            // spinner shows a card with no date and no cleaner. Fires once, and consumes the shell's
+            // flag either way so a later manual visit to the same order does not re-open it.
+            .onReceive(vm.$state) { state in
+                guard openReviewOnLoad, !reviewAutoOpened, case let .loaded(order) = state else { return }
+                reviewAutoOpened = true
+                onReviewPromptConsumed()
+                // Server truth wins: a review left on another device between the prompt and this
+                // screen means there is nothing left to ask for.
+                if order.review == nil { showReviewSheet = true }
+            }
             .onReceive(vm.cancelSucceeded) { _ in showCancelSheet = false }
             .onReceive(vm.reviewSucceeded) { _ in showReviewSheet = false }
             .onReceive(vm.receiptReady) { url in receiptURL = ReceiptFile(url: url) }
@@ -179,15 +197,25 @@ struct OrderDetailView: View {
                 existingReview: order.review,
                 isSubmitting: vm.reviewState.isSubmitting,
                 errorMessage: vm.reviewState.errorMessage,
-                onConfirm: { rating, comment in
-                    Task { await vm.submitReview(rating: rating, comment: comment, isEdit: order.review != nil) }
+                onConfirm: { rating, comment, tags in
+                    Task {
+                        await vm.submitReview(
+                            rating: rating,
+                            comment: comment,
+                            tags: tags,
+                            isEdit: order.review != nil
+                        )
+                    }
                 },
                 onDismiss: {
                     if !vm.reviewState.isSubmitting {
                         showReviewSheet = false
                         vm.dismissReviewError()
                     }
-                }
+                },
+                // A prompt the customer did not ask for offers "Not now"; the card they tapped
+                // themselves offers "Cancel". Same sheet, honest about which one it is.
+                dismissLabel: reviewAutoOpened ? L10n.OrderReview.promptNotNow : L10n.OrderReview.cancel
             )
             .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }

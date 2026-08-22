@@ -28,6 +28,7 @@ struct CustomerOrderPackage: Equatable, Hashable {
 struct CustomerOrderReview: Equatable {
     let rating: Int
     let comment: String?
+    let tags: [CustomerReviewTag]
 }
 
 /// The order detail as the screen renders it, with the mobile API contract re-asserted at the boundary
@@ -153,5 +154,8 @@ extension CustomerOrderReview {
     init(_ dto: OrderReviewDto) throws {
         rating = try dto.rating.require("rating")
         comment = dto.comment
+        // Unknown codes are DROPPED, not refused: a newer server may name a chip this build has never
+        // heard of, and losing one label is not worth failing the whole order detail over.
+        tags = (dto.tags ?? []).compactMap { CustomerReviewTag(rawValue: $0.rawValue) }
     }
 }

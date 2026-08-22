@@ -47,7 +47,12 @@ protocol OrderClient: Sendable {
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage>
     func getById(orderId: String) async -> ApiResult<CustomerOrderDetail>
     func cancel(orderId: String, reason: String?) async -> ApiResult<OrderCancellation>
-    func submitReview(orderId: String, rating: Int, comment: String?) async -> ApiResult<OrderReviewDto>
+    func submitReview(
+        orderId: String,
+        rating: Int,
+        comment: String?,
+        tags: [CustomerReviewTag]
+    ) async -> ApiResult<OrderReviewDto>
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
     func getPhotos(orderId: String) async -> ApiResult<OrderPhotos>
     func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation>
@@ -84,8 +89,20 @@ struct LiveOrderClient: OrderClient {
         }
     }
 
-    func submitReview(orderId: String, rating: Int, comment: String?) async -> ApiResult<OrderReviewDto> {
-        let command = SubmitOrderReviewCommand(orderId: orderId, rating: rating, comment: comment)
+    func submitReview(
+        orderId: String,
+        rating: Int,
+        comment: String?,
+        tags: [CustomerReviewTag]
+    ) async -> ApiResult<OrderReviewDto> {
+        // The app-side raw values ARE the wire values, so this is the identity — no lookup table to
+        // drift from the server's enum.
+        let command = SubmitOrderReviewCommand(
+            orderId: orderId,
+            rating: rating,
+            comment: comment,
+            tags: tags.compactMap { ReviewTag(rawValue: $0.rawValue) }
+        )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerOrderAPI.orderSubmitReview(submitOrderReviewCommand: command)
         }

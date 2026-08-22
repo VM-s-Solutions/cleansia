@@ -16,7 +16,8 @@ public class SubmitOrderReview
     public record Command(
         string OrderId,
         int Rating,
-        string? Comment
+        string? Comment,
+        IReadOnlyList<ReviewTag>? Tags = null
     ) : ICommand<OrderReviewDto>;
 
     public class Validator : AbstractValidator<Command>
@@ -37,6 +38,30 @@ public class SubmitOrderReview
             RuleFor(x => x.Comment)
                 .MaximumLength(1000)
                 .WithMessage(BusinessErrorMessage.MaxLength);
+
+            // Tags are a chip row, not a questionnaire. Every rule below refuses rather than silently
+            // dropping: a client that sends an out-of-band tag has a bug, and quietly discarding it
+            // would leave the stored review saying something the customer did not choose.
+            When(x => x.Tags is { Count: > 0 }, () =>
+            {
+                RuleFor(x => x.Tags!)
+                    .Cascade(CascadeMode.Stop)
+                    .Must(tags => tags.Count <= ReviewTagPolarity.MaxTagsPerReview)
+                    .WithMessage(BusinessErrorMessage.ReviewTooManyTags)
+                    .Must(tags => tags.Distinct().Count() == tags.Count)
+                    .WithMessage(BusinessErrorMessage.ReviewDuplicateTag)
+                    .Must(tags => tags.All(Enum.IsDefined))
+                    .WithMessage(BusinessErrorMessage.ReviewUnknownTag);
+
+                // The polarity gate reads Rating, so it has to sit on the whole command rather than on
+                // the Tags property. It is deliberately NOT cascaded off the rating rule above: an
+                // invalid rating already failed there, and this arm only ever runs on a valid one.
+                RuleFor(x => x)
+                    .Must(command => command.Tags!.All(tag =>
+                        ReviewTagPolarity.MatchesRating(tag, command.Rating)))
+                    .WithMessage(BusinessErrorMessage.ReviewTagRatingMismatch)
+                    .When(x => x.Rating is >= 1 and <= 5);
+            });
         }
     }
 
@@ -78,12 +103,13 @@ public class SubmitOrderReview
             var existingReview = order.Reviews.FirstOrDefault(r => r.UserId == userId);
             if (existingReview != null)
             {
-                existingReview.Update(command.Rating, command.Comment);
+                existingReview.Update(command.Rating, command.Comment, command.Tags);
                 await RecalculateEmployeeRatings(order, cancellationToken);
                 return BusinessResult.Success(existingReview.MapToDto());
             }
 
-            var review = OrderReview.Create(command.OrderId, userId, command.Rating, command.Comment);
+            var review = OrderReview.Create(
+                command.OrderId, userId, command.Rating, command.Comment, command.Tags);
             order.AddReview(review);
 
             await RecalculateEmployeeRatings(order, cancellationToken);

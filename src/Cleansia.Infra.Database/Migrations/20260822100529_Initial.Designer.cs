@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260815094107_Initial")]
+    [Migration("20260822100529_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3660,6 +3660,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("TenantId")
                         .HasMaxLength(26)

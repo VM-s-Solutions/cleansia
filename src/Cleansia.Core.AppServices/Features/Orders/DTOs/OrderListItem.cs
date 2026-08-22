@@ -53,4 +53,11 @@ public record OrderListItem(
     bool HasAvailableSpots,
     decimal? EstimatedCleanerPay,
     double? CustomerAddressLatitude,
-    double? CustomerAddressLongitude);
+    double? CustomerAddressLongitude,
+    /// <summary>
+    /// Whether this order already carries a review from its customer. Projected server-side rather
+    /// than derived client-side, because the alternative is a per-order detail fetch: the mobile apps
+    /// decide whether to raise the completion rating prompt from the WARM list cache, and the detail
+    /// payload is the only other place a review appears. One bool removes an N+1 before it exists.
+    /// </summary>
+    bool HasReview);

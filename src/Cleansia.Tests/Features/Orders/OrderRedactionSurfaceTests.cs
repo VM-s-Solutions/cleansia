@@ -3,6 +3,7 @@ using System.Reflection;
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Orders;
 
@@ -142,6 +143,11 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.AssignedEmployeesCount),
         nameof(OrderListItem.HasAvailableSpots),
         nameof(OrderListItem.EstimatedCleanerPay),
+        // Kept, not blanked: a bare bool saying the order carries a review. It names no author, no
+        // rating and no text — a browsing cleaner learns only that someone reviewed a job, which the
+        // public rating average already implies. The review CONTENT stays where it was, on the detail
+        // payload behind the same access gate.
+        nameof(OrderListItem.HasReview),
     ];
 
     [Fact]
@@ -342,7 +348,8 @@ public class OrderRedactionSurfaceTests
             ReceiptNumber: "CZ-2026-000123",
             OrderNotes: [new OrderNoteDto("note-1", "employee-1", "Second bathroom needed a re-do.", DateTimeOffset.UtcNow)],
             OrderIssues: [new OrderIssueDto("issue-1", "employee-1", "Broken tile.", false, null, DateTimeOffset.UtcNow)],
-            Review: new OrderReviewDto("review-1", "order-1", 5, "Spotless.", DateTimeOffset.UtcNow, null),
+            Review: new OrderReviewDto(
+                "review-1", "order-1", 5, "Spotless.", [ReviewTag.Thorough], DateTimeOffset.UtcNow, null),
             EstimatedCleanerPay: 620m,
             IsAssignedToCurrentUser: false,
             HasAfterPhotos: true,
@@ -386,5 +393,6 @@ public class OrderRedactionSurfaceTests
             HasAvailableSpots: HasAvailableSpots,
             EstimatedCleanerPay: 620m,
             CustomerAddressLatitude: 50.0755,
-            CustomerAddressLongitude: 14.4378);
+            CustomerAddressLongitude: 14.4378,
+            HasReview: true);
 }

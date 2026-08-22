@@ -3658,6 +3658,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("TenantId")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");

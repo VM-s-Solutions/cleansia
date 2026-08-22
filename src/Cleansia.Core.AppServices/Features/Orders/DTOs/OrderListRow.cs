@@ -37,7 +37,8 @@ public sealed record OrderListRow(
     List<OrderListEmployeeRow> AssignedEmployees,
     int RequiredEmployees,
     int MaxEmployees,
-    decimal? TravelDistance);
+    decimal? TravelDistance,
+    bool HasReview);
 
 public sealed record OrderListAddressRow(
     string Id,

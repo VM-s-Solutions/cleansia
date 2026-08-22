@@ -174,6 +174,10 @@ public static class BusinessErrorMessage
     public const string OrderNotCompleted = "order.not_completed";
     public const string ReviewAlreadyExists = "order.review.already_exists";
     public const string ReviewRatingInvalid = "order.review.rating_invalid";
+    public const string ReviewTooManyTags = "order.review.too_many_tags";
+    public const string ReviewTagRatingMismatch = "order.review.tag_rating_mismatch";
+    public const string ReviewDuplicateTag = "order.review.duplicate_tag";
+    public const string ReviewUnknownTag = "order.review.unknown_tag";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";

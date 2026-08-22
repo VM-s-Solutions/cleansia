@@ -17,6 +17,7 @@ import cz.cleansia.customer.api.model.PaymentStatus
 import cz.cleansia.customer.api.model.PaymentType
 import cz.cleansia.customer.api.model.PhotoType
 import cz.cleansia.customer.api.model.ReferralStatus
+import cz.cleansia.customer.api.model.ReviewTag
 import cz.cleansia.customer.api.model.SortDirection
 import kotlinx.serialization.modules.SerializersModule
 
@@ -107,6 +108,11 @@ val IntEnumSerializersModule = SerializersModule {
         "ReferralStatus",
         { it.value },
         { raw -> ReferralStatus.entries.firstOrNull { it.value == raw } },
+    ))
+    contextual(ReviewTag::class, IntValueEnumSerializer(
+        "ReviewTag",
+        { it.value },
+        { raw -> ReviewTag.entries.firstOrNull { it.value == raw } },
     ))
     contextual(SortDirection::class, IntValueEnumSerializer(
         "SortDirection",

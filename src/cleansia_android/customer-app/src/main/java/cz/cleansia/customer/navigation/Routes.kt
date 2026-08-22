@@ -93,8 +93,14 @@ object Routes {
     data class CreateRecurringBooking(val orderId: String? = null, val templateId: String? = null)
 
     // ── Orders ──
+    /**
+     * [openReview] asks the detail screen to raise the review sheet as soon as the order loads. It is
+     * DEFAULTED so the route's data-class equality is unchanged — every existing
+     * `assertEquals(Routes.OrderDetail("ord-7"), ...)` still holds, and no other caller has to know
+     * the parameter exists.
+     */
     @Serializable
-    data class OrderDetail(val orderId: String)
+    data class OrderDetail(val orderId: String, val openReview: Boolean = false)
 
     @Serializable
     data class OrderPhotos(val orderId: String)

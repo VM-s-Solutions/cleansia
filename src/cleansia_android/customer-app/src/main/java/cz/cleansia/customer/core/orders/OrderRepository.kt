@@ -176,9 +176,16 @@ class OrderRepository @Inject constructor(
     }
 
     /** Submit (or update) a review on a completed order. Returns the persisted review on success. */
-    suspend fun submitReview(orderId: String, rating: Int, comment: String?): ApiResult<OrderReviewDto> = wireResult {
+    suspend fun submitReview(
+        orderId: String,
+        rating: Int,
+        comment: String?,
+        tags: List<ReviewTag> = emptyList(),
+    ): ApiResult<OrderReviewDto> = wireResult {
         val resp = networkCall {
-            api.submitReview(SubmitReviewRequest(orderId = orderId, rating = rating, comment = comment))
+            api.submitReview(
+                SubmitReviewRequest(orderId = orderId, rating = rating, comment = comment, tags = tags),
+            )
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())

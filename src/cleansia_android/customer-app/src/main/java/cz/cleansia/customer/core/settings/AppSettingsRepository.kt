@@ -52,6 +52,24 @@ class AppSettingsRepository(private val context: Context) {
      * user signing in on the same device still gets prompted once. We don't persist
      * this server-side — fresh install = fresh onboarding, which is acceptable.
      */
+    /**
+     * Per-ORDER "we already asked for a review" flag, keyed on the order rather than the user so a
+     * second completed clean still prompts. Set when the prompt is shown, not when it is answered —
+     * declining is an answer, and asking twice about the same clean is the behaviour customers hate
+     * about this pattern everywhere else.
+     *
+     * Fresh install = fresh prompt, same accepted trade-off as onboarding above. The server's own
+     * `hasReview` always wins over this flag, so a review left on another device suppresses it too.
+     */
+    private fun reviewPromptKey(orderId: String) = booleanPreferencesKey("review_prompted_$orderId")
+
+    suspend fun hasPromptedForReview(orderId: String): Boolean =
+        context.dataStore.data.map { it[reviewPromptKey(orderId)] ?: false }.first()
+
+    suspend fun markReviewPrompted(orderId: String) {
+        context.dataStore.edit { it[reviewPromptKey(orderId)] = true }
+    }
+
     private fun onboardingKey(userId: String) = booleanPreferencesKey("onboarding_seen_$userId")
 
     suspend fun hasSeenOnboarding(userId: String): Boolean =

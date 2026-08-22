@@ -322,6 +322,9 @@ fun CleansiaNavHost(
             popExitTransition = { fadeOut(tween(PUSH_DUR)) },
         ) {
             MainShell(
+                onPromptOrderReview = { orderId ->
+                    navController.navigate(Routes.OrderDetail(orderId, openReview = true))
+                },
                 onOrderClick = { orderId ->
                     navController.navigate(Routes.OrderDetail(orderId))
                 },
@@ -668,6 +671,7 @@ fun CleansiaNavHost(
                 },
                 onDownloadReceipt = { /* Phase 4 handles this internally via the VM */ },
                 onViewPhotos = { navController.navigate(Routes.OrderPhotos(args.orderId)) },
+                openReviewOnLoad = args.openReview,
             )
         }
         composable<Routes.OrderPhotos>(

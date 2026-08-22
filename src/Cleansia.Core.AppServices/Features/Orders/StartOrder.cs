@@ -53,7 +53,9 @@ public class StartOrder
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
                 .MustAsync(EmployeeHasNoOrderInProgressAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress);
+                .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress)
+                .MustAsync(NotTooEarlyToStartAsync)
+                .WithMessage(BusinessErrorMessage.OrderTooEarlyToStart);
         }
 
         // StartOrder previously had NO ContractStatus gate, so
@@ -67,6 +69,22 @@ public class StartOrder
 
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
             return employee?.ContractStatus == ContractStatus.Approved;
+        }
+
+        /// <summary>
+        /// The clock gate. LAST on this chain deliberately: a caller who is not on the job must answer
+        /// with <see cref="BusinessErrorMessage.EmployeeNotAssignedToOrder"/> and learn nothing about
+        /// when the booking is — the refusal itself would otherwise leak another customer's schedule.
+        /// </summary>
+        private async Task<bool> NotTooEarlyToStartAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
+
+            if (order == null) return false;
+
+            return !BookingPolicy.IsTooEarlyToStart(order.CleaningDateTime, DateTime.UtcNow);
         }
 
         private async Task<bool> OrderIsConfirmedAsync(string orderId, CancellationToken cancellationToken)

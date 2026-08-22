@@ -1114,6 +1114,7 @@
 
     <string name="error_order_not_in_progress">Táto zákazka nie je v priebehu.</string>
     <string name="error_order_not_confirmed">Táto zákazka ešte nie je potvrdená.</string>
+    <string name="error_order_too_early_to_start">Na štart je príliš skoro — začať môžete až hodinu pred termínom.</string>
     <string name="error_order_not_completed">Táto zákazka ešte nie je dokončená.</string>
     <string name="error_order_actual_time_positive">Skutočný čas musí byť väčší ako nula.</string>
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>

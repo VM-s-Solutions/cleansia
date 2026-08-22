@@ -161,6 +161,7 @@ public static class BusinessErrorMessage
 
     public const string OrderNotInProgress = "order.not_in_progress";
     public const string OrderNotConfirmed = "order.not_confirmed";
+    public const string OrderTooEarlyToStart = "order.too_early_to_start";
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
     public const string ActualTimeMustBePositive = "order.actual_time.positive";
     public const string CompletionNotesRequired = "order.completion_notes.required";

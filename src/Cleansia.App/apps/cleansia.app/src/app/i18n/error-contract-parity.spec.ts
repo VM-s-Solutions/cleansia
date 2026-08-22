@@ -383,7 +383,11 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.creation_failed',
   'order.not_completed',
   'order.review.already_exists',
+  'order.review.duplicate_tag',
   'order.review.rating_invalid',
+  'order.review.tag_rating_mismatch',
+  'order.review.too_many_tags',
+  'order.review.unknown_tag',
   'order.note.content_required',
   'order.issue.description_required',
   // Address — saved addresses + order address

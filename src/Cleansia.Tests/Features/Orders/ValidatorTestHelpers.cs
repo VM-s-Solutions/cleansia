@@ -16,13 +16,28 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class ValidatorTestHelpers
 {
+    /// <summary>
+    /// What a built order's cleaning time defaults to when a case does not care. A day out, which is the
+    /// value every call site was hard-coded to before the start-early gate existed — so the ~20 cases
+    /// that never mention time keep behaving exactly as they did.
+    ///
+    /// <para>Note this is deliberately OUTSIDE <see cref="BookingPolicy.StartGraceWindowMinutes"/>, so a
+    /// case that wants to start or set off must opt in with an explicit near-term time. That is the
+    /// right default: "too early" is the interesting state to have to ask for.</para>
+    /// </summary>
+    public static DateTime DefaultCleaningTime => DateTime.UtcNow.AddDays(1);
+
+    /// <summary>Inside the start grace window — a job the assigned cleaner may legitimately begin.</summary>
+    public static DateTime StartableCleaningTime => DateTime.UtcNow.AddMinutes(15);
+
     public static Order BuildOrder(
         string orderId,
         OrderStatus currentStatus,
         string assignedEmployeeId,
         PaymentType paymentType = PaymentType.Cash,
         PaymentStatus paymentStatus = PaymentStatus.Pending,
-        int maxEmployees = 1)
+        int maxEmployees = 1,
+        DateTime? cleaningDateTime = null)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -33,7 +48,7 @@ internal static class ValidatorTestHelpers
             rooms: 1,
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            cleaningDateTime: cleaningDateTime ?? DefaultCleaningTime,
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
@@ -79,7 +94,8 @@ internal static class ValidatorTestHelpers
         int maxEmployees = 2,
         PaymentType paymentType = PaymentType.Cash,
         PaymentStatus paymentStatus = PaymentStatus.Pending,
-        string? recurringTemplateId = null)
+        string? recurringTemplateId = null,
+        DateTime? cleaningDateTime = null)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -90,7 +106,7 @@ internal static class ValidatorTestHelpers
             rooms: 1,
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            cleaningDateTime: cleaningDateTime ?? DefaultCleaningTime,
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",

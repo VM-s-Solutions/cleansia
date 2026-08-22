@@ -1133,6 +1133,7 @@
       "max_employees_exceeded": "Překročen maximální počet zaměstnanců",
       "not_in_progress": "Objednávka není v průběhu",
       "not_confirmed": "Objednávka musí být ve stavu potvrzena pro zahájení",
+      "too_early_to_start": "Na start je příliš brzy — začít můžete až hodinu před termínem.",
       "cash_not_collected": "Před dokončením objednávky vyberte hotovost a označte ji jako přijatou.",
       "cash_already_collected": "Hotovost za tuto objednávku již byla vybrána.",
       "not_cash_payment": "Toto není objednávka placená hotově.",

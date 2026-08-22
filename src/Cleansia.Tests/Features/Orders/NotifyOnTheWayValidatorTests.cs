@@ -75,7 +75,9 @@ public class NotifyOnTheWayValidatorTests
         const string orderId = "order-1";
         const string employeeId = "emp-1";
 
-        var order = ValidatorTestHelpers.BuildOrder(orderId, OrderStatus.Confirmed, employeeId);
+        var order = ValidatorTestHelpers.BuildOrder(
+            orderId, OrderStatus.Confirmed, employeeId,
+            cleaningDateTime: ValidatorTestHelpers.StartableCleaningTime);
 
         _orderRepository.Setup(r => r.ExistsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());

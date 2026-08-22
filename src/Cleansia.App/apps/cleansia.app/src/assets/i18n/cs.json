@@ -1499,7 +1499,11 @@
       "not_completed": "Tato akce je dostupná až po dokončení úklidu.",
       "review": {
         "already_exists": "Tuto objednávku jste už ohodnotili.",
-        "rating_invalid": "Zvolte hodnocení od 1 do 5."
+        "duplicate_tag": "Stejný štítek byl vybrán dvakrát.",
+        "rating_invalid": "Zvolte hodnocení od 1 do 5.",
+        "tag_rating_mismatch": "Tyto štítky neodpovídají hodnocení, které jste dali.",
+        "too_many_tags": "Vyberte nejvýše čtyři štítky.",
+        "unknown_tag": "Jeden z těchto štítků není rozpoznán."
       },
       "note": {
         "content_required": "Před uložením zadejte poznámku."

@@ -1119,6 +1119,7 @@
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
     <string name="error_order_not_confirmed">Це замовлення ще не підтверджено.</string>
+    <string name="error_order_too_early_to_start">Ще зарано починати — почати можна не раніше ніж за годину до початку.</string>
     <string name="error_order_not_completed">Це замовлення ще не завершено.</string>
     <string name="error_order_actual_time_positive">Фактичний час має бути більший за нуль.</string>
     <string name="error_order_completion_notes_required">Нотатки про завершення обов\'язкові.</string>

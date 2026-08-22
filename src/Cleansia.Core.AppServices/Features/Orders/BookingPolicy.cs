@@ -42,6 +42,24 @@ public static class BookingPolicy
     public const int FirstWindowHour = 8;
     public const int LastWindowHour = 20;
 
+    /// <summary>
+    /// How long before <c>CleaningDateTime</c> a cleaner may mark themselves on the way or start the
+    /// job. Earlier than this and both transitions refuse.
+    ///
+    /// <para><b>60 minutes because that is the customer's own notice period.</b>
+    /// <see cref="SendPreCleaningReminders"/> tells the customer "your cleaning starts in about an
+    /// hour"; making the cleaner's earliest permitted start the same instant means the two can never
+    /// disagree — a cleaner cannot be at the door before the customer has been told to expect them.
+    /// Any wider and the promise breaks; any narrower and a cleaner who arrived early has to stand
+    /// outside doing nothing.</para>
+    ///
+    /// <para>Until 2026-08-22 there was no gate at all: neither <c>StartOrder</c> nor
+    /// <c>NotifyOnTheWay</c> read <c>CleaningDateTime</c>, so a job could be started days ahead. That
+    /// silently cancelled the customer's reminder — the sweep skips anything past <c>Confirmed</c> —
+    /// and an early start-then-complete triggered pay calculation for work not yet done.</para>
+    /// </summary>
+    public const int StartGraceWindowMinutes = 60;
+
     /// <summary>Cancellations earlier than this many hours before the cleaning are free.</summary>
     public const int FreeCancellationHours = 24;
 
@@ -124,6 +142,20 @@ public static class BookingPolicy
     public static bool IsBelowMinimumLeadTime(DateTime cleaningUtc, DateTime nowUtc)
     {
         return (cleaningUtc - nowUtc).TotalHours < ExpressLeadTimeHours;
+    }
+
+    /// <summary>
+    /// True if the cleaning is still further away than <see cref="StartGraceWindowMinutes"/> — i.e. the
+    /// cleaner may not yet set off or start.
+    ///
+    /// <para>One predicate rather than two inline comparisons, because <c>StartOrder</c> and
+    /// <c>NotifyOnTheWay</c> both ask it and two copies would eventually answer differently. There is
+    /// deliberately no upper bound: a cleaner running late is still allowed to start, and refusing
+    /// them would strand a job that is genuinely happening.</para>
+    /// </summary>
+    public static bool IsTooEarlyToStart(DateTime cleaningUtc, DateTime nowUtc)
+    {
+        return (cleaningUtc - nowUtc).TotalMinutes > StartGraceWindowMinutes;
     }
 
     /// <summary>

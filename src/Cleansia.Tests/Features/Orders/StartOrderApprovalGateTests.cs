@@ -61,7 +61,11 @@ public class StartOrderApprovalGateTests
     {
         // Confirmed order already assigned to this cleaner (only one order
         // total, so no other in-progress order exists).
-        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Confirmed, EmployeeId);
+        var order = ValidatorTestHelpers.BuildOrder(
+            OrderId,
+            OrderStatus.Confirmed,
+            EmployeeId,
+            cleaningDateTime: ValidatorTestHelpers.StartableCleaningTime);
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
 
         _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);

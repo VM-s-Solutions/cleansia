@@ -51,7 +51,27 @@ public class NotifyOnTheWay
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
+                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
+                .MustAsync(NotTooEarlyToStartAsync)
+                .WithMessage(BusinessErrorMessage.OrderTooEarlyToStart);
+        }
+
+        /// <summary>
+        /// The clock gate, shared with <see cref="StartOrder"/> through
+        /// <see cref="BookingPolicy.IsTooEarlyToStart"/> so the two transitions cannot drift into two
+        /// definitions of "too early". LAST on this chain deliberately: a caller who is not on the job
+        /// must answer with <see cref="BusinessErrorMessage.EmployeeNotAssignedToOrder"/> and learn
+        /// nothing about when the booking is.
+        /// </summary>
+        private async Task<bool> NotTooEarlyToStartAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
+
+            if (order == null) return false;
+
+            return !BookingPolicy.IsTooEarlyToStart(order.CleaningDateTime, DateTime.UtcNow);
         }
 
         private async Task<bool> OrderIsConfirmedAsync(string orderId, CancellationToken cancellationToken)

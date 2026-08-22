@@ -1140,6 +1140,7 @@
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
     <string name="error_order_not_confirmed">This order isn\'t confirmed yet.</string>
+    <string name="error_order_too_early_to_start">Too early to start — you can begin up to an hour before the booking.</string>
     <string name="error_order_not_completed">This order isn\'t completed yet.</string>
     <string name="error_order_actual_time_positive">Actual time must be greater than zero.</string>
     <string name="error_order_completion_notes_required">Completion notes are required.</string>

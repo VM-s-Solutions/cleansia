@@ -1119,6 +1119,7 @@
 
     <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
     <string name="error_order_not_confirmed">Этот заказ ещё не подтверждён.</string>
+    <string name="error_order_too_early_to_start">Ещё рано начинать — начать можно не раньше чем за час до начала.</string>
     <string name="error_order_not_completed">Этот заказ ещё не завершён.</string>
     <string name="error_order_actual_time_positive">Фактическое время должно быть больше нуля.</string>
     <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>

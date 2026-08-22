@@ -867,7 +867,9 @@ namespace Cleansia.Infra.Database.Migrations
                     AverageRating = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     ComplaintsCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     LastNewJobsDigestAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LastTomorrowDigestAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     JobRadiusKm = table.Column<int>(type: "integer", nullable: true),
+                    WeeklyOrderLimit = table.Column<int>(type: "integer", nullable: true),
                     ContractStatus = table.Column<int>(type: "integer", nullable: false),
                     RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ApprovalNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
@@ -1778,6 +1780,8 @@ namespace Cleansia.Infra.Database.Migrations
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     EmployeeId = table.Column<string>(type: "character varying(26)", nullable: false),
                     SeatOrdinal = table.Column<int>(type: "integer", nullable: false),
+                    ReminderSoonSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ReminderNotStartedSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>

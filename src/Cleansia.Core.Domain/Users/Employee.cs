@@ -81,6 +81,26 @@ public class Employee : Auditable, ITenantEntity
     }
 
     /// <summary>
+    /// When this cleaner last received the day-ahead job digest. Null until the first one.
+    ///
+    /// <para><b>Its own column, deliberately not a reuse of <see cref="LastNewJobsDigestAt"/>.</b> Two
+    /// writers on one watermark suppress each other — the same reason the preferred-offer notification
+    /// refuses to stamp that one. This digest answers "have I already told them about tomorrow", which
+    /// is a different question from "what is new on the board since I last looked".</para>
+    ///
+    /// <para>Per-cleaner rather than per-order because the message is a COUNT over N orders: there is
+    /// no single order it is about, so no order column could express it.</para>
+    /// </summary>
+    public DateTimeOffset? LastTomorrowDigestAt { get; private set; }
+
+    /// <summary>Unconditional overwrite, like <see cref="MarkNewJobsDigestSent"/> — the sweep's cadence is the rate limit.</summary>
+    public Employee MarkTomorrowDigestSent(DateTimeOffset at)
+    {
+        LastTomorrowDigestAt = at;
+        return this;
+    }
+
+    /// <summary>
     /// How far from their home address this cleaner wants to be told about work, in kilometres
     /// (Q-FEED-03). Read by the new-jobs digest through <see cref="Orders.JobProximity"/>.
     ///

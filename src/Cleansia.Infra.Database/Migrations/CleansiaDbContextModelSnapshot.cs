@@ -3356,6 +3356,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<DateTime?>("ReminderNotStartedSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReminderSoonSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("SeatOrdinal")
                         .HasColumnType("integer");
 
@@ -4728,6 +4734,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("LastNewJobsDigestAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("LastTomorrowDigestAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LegalEntityName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -4775,6 +4784,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("VatNumber")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("WeeklyOrderLimit")
+                        .HasColumnType("integer");
 
                     b.Property<string>("WorkCountryId")
                         .HasColumnType("character varying(26)");

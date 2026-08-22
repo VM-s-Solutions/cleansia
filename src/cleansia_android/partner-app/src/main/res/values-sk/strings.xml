@@ -1224,6 +1224,12 @@
     <string name="notification_channel_new_jobs_desc">Pravidelný súhrn nových zákaziek dostupných vo vašej oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zákazky</string>
     <string name="notification_new_jobs_body">Vo vašom okolí je %1$d nových zákaziek. Ťuknutím ich zobrazíte.</string>
+    <string name="notification_reminder_tomorrow_title">Zajtrajšie zákazky</string>
+    <string name="notification_reminder_tomorrow_body">Zákazky na zajtra: %1$d. Klepnutím ich zobrazíte.</string>
+    <string name="notification_reminder_soon_title">Zákazka čoskoro začína</string>
+    <string name="notification_reminder_soon_body">Zákazka %1$s začína približne o dve hodiny.</string>
+    <string name="notification_reminder_not_started_title">Ste už na ceste?</string>
+    <string name="notification_reminder_not_started_body">Zákazka %1$s čoskoro začína a ešte ste nevyrazili.</string>
 
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>

@@ -70,6 +70,14 @@ need backfilling.
 
 ### Added
 
+- **Cleaner — reminders about the jobs you have already taken.** Three of them, and none can be switched
+  off. The evening before, at 18:00 **in your own local time**, a digest saying how many jobs you have
+  tomorrow. About two hours before each job, a reminder naming it. And close to the start, if you still
+  have not marked yourself on the way, a nudge asking whether you are — that last one is skipped entirely
+  once you have set off. On a job booked for two cleaners, both are reminded. The local hour comes from
+  the work country an admin assigned at approval, not from the phone, so it is right even on a device set
+  to the wrong timezone.
+
 - **Customer — you are now asked to rate the clean, instead of having to go looking.** The review
   control used to be the second-to-last section inside an order's detail sheet, which most customers
   never opened. Now, the next time you open the app after a clean finishes, the rating sheet comes to

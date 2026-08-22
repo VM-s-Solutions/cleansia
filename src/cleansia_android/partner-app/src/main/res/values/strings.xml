@@ -1259,6 +1259,12 @@
     <string name="notification_channel_new_jobs_desc">Periodic digest of new jobs you can take in your work area.</string>
     <string name="notification_new_jobs_title">New jobs available</string>
     <string name="notification_new_jobs_body">%1$d new jobs available near you. Tap to view.</string>
+    <string name="notification_reminder_tomorrow_title">Tomorrow\'s jobs</string>
+    <string name="notification_reminder_tomorrow_body">Jobs tomorrow: %1$d. Tap to see them.</string>
+    <string name="notification_reminder_soon_title">Job starting soon</string>
+    <string name="notification_reminder_soon_body">Order %1$s starts in about two hours.</string>
+    <string name="notification_reminder_not_started_title">Are you on your way?</string>
+    <string name="notification_reminder_not_started_body">Order %1$s starts shortly and you have not set off yet.</string>
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>

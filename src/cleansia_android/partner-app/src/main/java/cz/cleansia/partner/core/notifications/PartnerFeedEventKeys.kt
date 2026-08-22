@@ -15,6 +15,9 @@ package cz.cleansia.partner.core.notifications
 object PartnerFeedEventKeys {
     val all: Set<String> = setOf(
         "order.new_available",
+        // The day-ahead digest is a feed row; the two per-job reminders deliberately are not —
+        // they are transient, and a row for each would bury the badge under things already past.
+        "order.reminder_tomorrow",
         "order.preferred_offer",
         "order.assignment_cancelled",
         "payroll.invoice_paid",

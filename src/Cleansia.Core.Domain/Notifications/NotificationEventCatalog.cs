@@ -64,6 +64,40 @@ public static class NotificationEventCatalog
     public const string NewJobsAvailable = "order.new_available";
 
     /// <summary>
+    /// Partner-targeted: the evening before, how many jobs this cleaner has tomorrow. Args:
+    /// <c>count</c> (decimal-string). Body localized client-side.
+    ///
+    /// <para>Sent at 18:00 in the CLEANER's local time, resolved from their
+    /// <c>Employee.WorkCountryId</c> through <c>CountryConfiguration.TimeZoneId</c> — never from a
+    /// client-supplied header, which is spoofable and banned on any path that decides anything.</para>
+    ///
+    /// <para><b>Not mutable.</b> Same reasoning as <see cref="OrderAssigned"/>: a cleaner must not be
+    /// able to silence a job appearing on their own schedule and then not turn up. This one exists
+    /// because they were forgetting. → /architecture/push-notifications#event-catalogue</para>
+    /// </summary>
+    public const string ReminderTomorrow = "order.reminder_tomorrow";
+
+    /// <summary>
+    /// Partner-targeted: this cleaner's job starts in about two hours. One order, not a count — args:
+    /// <c>orderNumber</c> (loc) + <c>orderId</c> (deep link).
+    ///
+    /// <para>Per ASSIGNMENT, not per order: an order's crew is <c>ceil(EstimatedTime / 120)</c>, so a
+    /// two-seat job sends two of these. Not mutable, for the reason above.</para>
+    /// </summary>
+    public const string ReminderSoon = "order.reminder_soon";
+
+    /// <summary>
+    /// Partner-targeted: the job starts shortly and this cleaner has not set off. Args:
+    /// <c>orderNumber</c> (loc) + <c>orderId</c> (deep link).
+    ///
+    /// <para>The only one of the three with a precondition beyond the clock — it fires solely while the
+    /// order is short of <c>OnTheWay</c>, so a cleaner already travelling is never nudged. That
+    /// condition is what keeps it from being noise, and it is why it is the last reminder rather than
+    /// a second copy of <see cref="ReminderSoon"/>. Not mutable.</para>
+    /// </summary>
+    public const string ReminderNotStarted = "order.reminder_not_started";
+
+    /// <summary>
     /// Partner-targeted: a customer this cleaner has worked for before asked for them by name on a new
     /// booking (ADR-0036 D4). One order, not a count — args: <c>orderNumber</c> (loc) + <c>orderId</c>
     /// (deep link). It bypasses the digest cadence entirely and does NOT stamp the digest watermark:

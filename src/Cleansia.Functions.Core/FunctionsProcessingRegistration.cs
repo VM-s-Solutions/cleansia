@@ -53,6 +53,8 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<SendMembershipLifecycleNotificationsHandler>();
         services.AddScoped<SendRecurringOrderRemindersHandler>();
         services.AddScoped<SendPreCleaningRemindersHandler>();
+        services.AddScoped<SendCleanerJobRemindersHandler>();
+        services.AddScoped<SendTomorrowJobDigestHandler>();
         services.AddScoped<NotifyLapsedPreferredOffersHandler>();
         services.AddScoped<SendNewJobsDigestTimerHandler>();
         services.AddScoped<ExpireStaleReferralsHandler>();

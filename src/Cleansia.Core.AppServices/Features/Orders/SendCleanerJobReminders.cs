@@ -1,0 +1,178 @@
+using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Infra.Common.Validations;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+
+namespace Cleansia.Core.AppServices.Features.Orders;
+
+/// <summary>
+/// The two per-job reminders a cleaner gets about work they have already taken: one about two hours
+/// out, and a nudge close to the start if they still have not set off.
+///
+/// <para><b>One sweep, not two.</b> They share a query, a cadence and a tenant loop, and differ only in
+/// which window an assignment falls into and which stamp it writes. Two features would be two timers,
+/// two cron settings and two near-identical files to keep in step.</para>
+///
+/// <para><b>Per ASSIGNMENT, not per order.</b> An order's crew is <c>ceil(EstimatedTime / 120)</c> and
+/// the catalogue contains single 180- and 240-minute services, so a two-seat job sends two of each.
+/// The stamps live on <see cref="Domain.Orders.OrderEmployee"/> for the same reason — a scalar on the
+/// order would remind the first cleaner and silently skip the second.</para>
+///
+/// <para><b>The nudge has a precondition the two-hour notice does not.</b> It fires only while the
+/// order is still <see cref="OrderStatus.Confirmed"/>, so a cleaner already on the way is never told
+/// they have not set off. That condition is the whole difference between a useful nudge and noise.</para>
+///
+/// <para>Both are NON-MUTABLE: a cleaner who can silence a reminder about their own booked work can
+/// silence the thing that stops them forgetting it. Same ruling the catalog already makes about a job
+/// appearing on their schedule. → /architecture/push-notifications#event-catalogue</para>
+/// </summary>
+public class SendCleanerJobReminders
+{
+    /// <param name="SoonLeadMinutesLow">Lower edge of the two-hour notice window.</param>
+    /// <param name="SoonLeadMinutesHigh">Upper edge of the two-hour notice window.</param>
+    /// <param name="NudgeLeadMinutesLow">Lower edge of the not-set-off nudge window.</param>
+    /// <param name="NudgeLeadMinutesHigh">Upper edge of the not-set-off nudge window.</param>
+    public record Command(
+        int SoonLeadMinutesLow = 110,
+        int SoonLeadMinutesHigh = 130,
+        int NudgeLeadMinutesLow = 25,
+        int NudgeLeadMinutesHigh = 40) : ICommand<Response>;
+
+    public class Validator : AbstractValidator<Command>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.NudgeLeadMinutesLow).InclusiveBetween(1, 240);
+            RuleFor(x => x.NudgeLeadMinutesHigh).GreaterThan(x => x.NudgeLeadMinutesLow);
+            RuleFor(x => x.SoonLeadMinutesLow).GreaterThan(x => x.NudgeLeadMinutesHigh);
+            RuleFor(x => x.SoonLeadMinutesHigh).GreaterThan(x => x.SoonLeadMinutesLow);
+        }
+    }
+
+    public record Response(int SoonSent, int NudgesSent, int Considered);
+
+    public class Handler(
+        IOrderRepository orderRepository,
+        INotificationProducer notificationProducer,
+        ITenantProvider tenantProvider,
+        IUnitOfWork unitOfWork,
+        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+    {
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            // One query spanning both windows. The narrower per-reminder decision happens in memory
+            // over the handful of rows this returns, which is cheaper than two round trips and keeps
+            // both reminders reading off one snapshot of the order's status.
+            var scanStart = now.AddMinutes(command.NudgeLeadMinutesLow);
+            var scanEnd = now.AddMinutes(command.SoonLeadMinutesHigh);
+
+            var due = await orderRepository.GetQueryableIgnoringTenant()
+                .Where(o => o.CurrentStatus == OrderStatus.Confirmed
+                    && o.CleaningDateTime >= scanStart
+                    && o.CleaningDateTime <= scanEnd
+                    && o.AssignedEmployees.Any())
+                .Include(o => o.AssignedEmployees)
+                    .ThenInclude(ae => ae.Employee)
+                .ToListAsync(cancellationToken);
+
+            var soonSent = 0;
+            var nudgesSent = 0;
+            var considered = 0;
+
+            foreach (var tenantGroup in due.GroupBy(o => o.TenantId ?? string.Empty))
+            {
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(tenantGroup.Key))
+                {
+                    tenantProvider.SetTenantOverride(tenantGroup.Key);
+                }
+
+                foreach (var order in tenantGroup)
+                {
+                    var minutesOut = (order.CleaningDateTime - now).TotalMinutes;
+                    var soonDue = minutesOut >= command.SoonLeadMinutesLow
+                        && minutesOut <= command.SoonLeadMinutesHigh;
+                    var nudgeDue = minutesOut >= command.NudgeLeadMinutesLow
+                        && minutesOut <= command.NudgeLeadMinutesHigh;
+
+                    if (!soonDue && !nudgeDue)
+                    {
+                        continue;
+                    }
+
+                    foreach (var assignment in order.AssignedEmployees)
+                    {
+                        considered++;
+                        var userId = assignment.Employee?.UserId;
+                        if (string.IsNullOrEmpty(userId))
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            if (soonDue && assignment.ReminderSoonSentAt == null)
+                            {
+                                await NotifyAsync(
+                                    userId, NotificationEventCatalog.ReminderSoon, order, cancellationToken);
+                                assignment.MarkReminderSoonSent(now);
+                                soonSent++;
+                            }
+                            else if (nudgeDue && assignment.ReminderNotStartedSentAt == null)
+                            {
+                                await NotifyAsync(
+                                    userId, NotificationEventCatalog.ReminderNotStarted, order, cancellationToken);
+                                assignment.MarkReminderNotStartedSent(now);
+                                nudgesSent++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex,
+                                "Failed to enqueue a job reminder for order {OrderId} employee {EmployeeId}",
+                                order.Id, assignment.EmployeeId);
+                        }
+                    }
+                }
+
+                // Same reasoning as SendPreCleaningReminders: the stamps and the outbox rows commit
+                // together so each is durable iff the other is, and the commit is what makes the
+                // override mean anything — rows are stamped from the ambient tenant AT COMMIT TIME, so
+                // one deferred commit would stamp every group with whichever tenant went last.
+                await unitOfWork.CommitAsync(cancellationToken);
+            }
+
+            if (soonSent > 0 || nudgesSent > 0)
+            {
+                logger.LogInformation(
+                    "SendCleanerJobReminders sent {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments",
+                    soonSent, nudgesSent, considered);
+            }
+
+            return BusinessResult.Success(new Response(soonSent, nudgesSent, considered));
+        }
+
+        private Task NotifyAsync(string userId, string eventKey, Domain.Orders.Order order, CancellationToken ct) =>
+            notificationProducer.NotifyAsync(
+                userId,
+                eventKey,
+                new Dictionary<string, string>
+                {
+                    ["orderId"] = order.Id,
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                },
+                order.TenantId,
+                // The order id, so a re-tick dedups onto one key per (cleaner, event, order) rather
+                // than minting a fresh message every sweep.
+                order.Id,
+                ct);
+    }
+}

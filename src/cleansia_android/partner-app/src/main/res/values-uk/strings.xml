@@ -1229,6 +1229,12 @@
     <string name="notification_channel_new_jobs_desc">Періодичний дайджест нових замовлень, доступних у вашому регіоні.</string>
     <string name="notification_new_jobs_title">Нові доступні замовлення</string>
     <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень. Торкніться, щоб переглянути.</string>
+    <string name="notification_reminder_tomorrow_title">Завтрашні замовлення</string>
+    <string name="notification_reminder_tomorrow_body">Замовлень на завтра: %1$d. Торкніться, щоб переглянути.</string>
+    <string name="notification_reminder_soon_title">Замовлення скоро починається</string>
+    <string name="notification_reminder_soon_body">Замовлення %1$s починається приблизно за дві години.</string>
+    <string name="notification_reminder_not_started_title">Ви вже в дорозі?</string>
+    <string name="notification_reminder_not_started_body">Замовлення %1$s скоро починається, а ви ще не вирушили.</string>
 
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>

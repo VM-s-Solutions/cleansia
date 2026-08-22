@@ -43,10 +43,16 @@ enum PartnerNotificationDeepLink {
              // conjoined with offerability — would be empty. The detail carries the disclosure and
              // the decline instead, and degrades to an ordinary job where no hold exists.
              "order.preferred_offer",
+             // The two per-job reminders name one order and open it, so the cleaner sets off from the
+             // screen that carries the address.
+             "order.reminder_soon",
+             "order.reminder_not_started",
              "dispute.reply":
             guard let orderId else { return nil }
             return .order(orderId: orderId)
-        case "order.new_available":
+        // A count over N orders has no single order to open, so both digests land on the tab.
+        case "order.new_available",
+             "order.reminder_tomorrow":
             return .ordersTab
         case "payroll.invoice_paid":
             // Open the paid invoice; fall back to the Earnings tab when the

@@ -2953,7 +2953,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<bool>("NewJobsAvailable")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("OrderCancelled")
                         .ValueGeneratedOnAdd()

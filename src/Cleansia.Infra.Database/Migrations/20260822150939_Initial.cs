@@ -1339,7 +1339,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Promo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     DisputeReply = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     RecurringScheduled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    NewJobsAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    NewJobsAvailable = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),

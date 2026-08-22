@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260822142235_Initial")]
+    [Migration("20260822150939_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2956,7 +2956,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<bool>("NewJobsAvailable")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("OrderCancelled")
                         .ValueGeneratedOnAdd()

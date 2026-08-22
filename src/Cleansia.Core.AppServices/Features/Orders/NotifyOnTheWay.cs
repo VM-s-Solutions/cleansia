@@ -115,8 +115,18 @@ public class NotifyOnTheWay
                 .Include(o => o.OrderStatusHistory)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            var transition = OrderStatusTrack.Create(OrderStatus.OnTheWay, order!);
-            order!.AddOrderStatus(transition);
+            // Guarded rather than null-forgiven, matching StartOrder. The validator proved existence,
+            // but its query is not this one — a handler that trusts a DIFFERENT load is how a business
+            // error becomes a 500 the caller cannot act on.
+            if (order is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId),
+                    BusinessErrorMessage.OrderNotFound));
+            }
+
+            var transition = OrderStatusTrack.Create(OrderStatus.OnTheWay, order);
+            order.AddOrderStatus(transition);
 
             await liveActivityProducer.NotifyOrderTransitionAsync(
                 order, LiveActivityEventKeys.Start, transition, cancellationToken);

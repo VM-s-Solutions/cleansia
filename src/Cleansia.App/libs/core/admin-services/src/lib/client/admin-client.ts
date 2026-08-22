@@ -23515,6 +23515,7 @@ export class OrderListItem implements IOrderListItem {
     estimatedCleanerPay!: number | undefined;
     customerAddressLatitude!: number | undefined;
     customerAddressLongitude!: number | undefined;
+    hasReview!: boolean;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -23580,6 +23581,7 @@ export class OrderListItem implements IOrderListItem {
             this.estimatedCleanerPay = Data["estimatedCleanerPay"];
             this.customerAddressLatitude = Data["customerAddressLatitude"];
             this.customerAddressLongitude = Data["customerAddressLongitude"];
+            this.hasReview = Data["hasReview"];
         }
     }
 
@@ -23645,6 +23647,7 @@ export class OrderListItem implements IOrderListItem {
         data["estimatedCleanerPay"] = this.estimatedCleanerPay;
         data["customerAddressLatitude"] = this.customerAddressLatitude;
         data["customerAddressLongitude"] = this.customerAddressLongitude;
+        data["hasReview"] = this.hasReview;
         return data;
     }
 }
@@ -23685,6 +23688,7 @@ export interface IOrderListItem {
     estimatedCleanerPay: number | undefined;
     customerAddressLatitude: number | undefined;
     customerAddressLongitude: number | undefined;
+    hasReview: boolean;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -23740,6 +23744,7 @@ export class OrderReviewDto implements IOrderReviewDto {
     orderId!: string | undefined;
     rating!: number;
     comment!: string | undefined;
+    tags!: ReviewTag[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
 
@@ -23758,6 +23763,11 @@ export class OrderReviewDto implements IOrderReviewDto {
             this.orderId = Data["orderId"];
             this.rating = Data["rating"];
             this.comment = Data["comment"];
+            if (Array.isArray(Data["tags"])) {
+                this.tags = [] as any;
+                for (let item of Data["tags"])
+                    this.tags!.push(item);
+            }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
         }
@@ -23776,6 +23786,11 @@ export class OrderReviewDto implements IOrderReviewDto {
         data["orderId"] = this.orderId;
         data["rating"] = this.rating;
         data["comment"] = this.comment;
+        if (Array.isArray(this.tags)) {
+            data["tags"] = [];
+            for (let item of this.tags)
+                data["tags"].push(item);
+        }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
         return data;
@@ -23787,6 +23802,7 @@ export interface IOrderReviewDto {
     orderId: string | undefined;
     rating: number;
     comment: string | undefined;
+    tags: ReviewTag[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
 }
@@ -26973,6 +26989,24 @@ export interface IReverseReferralResponse {
     referralId: string | undefined;
     pointsRevokedFromReferrer: number;
     pointsRevokedFromReferred: number;
+}
+
+export enum ReviewTag {
+    OnTime = 1,
+    Thorough = 2,
+    Friendly = 3,
+    CarefulWithBelongings = 4,
+    ExtrasDoneWell = 5,
+    FollowedInstructions = 6,
+    GreatPhotos = 7,
+    ArrivedLate = 11,
+    MissedAreas = 12,
+    FeltRushed = 13,
+    ExtraNotDone = 14,
+    DidNotFollowInstructions = 15,
+    Unprofessional = 16,
+    SmellOrProducts = 17,
+    CrewSmallerThanBooked = 18,
 }
 
 export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand {

@@ -252,7 +252,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return await GetDbSet()
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime >= weekStart &&
-                       o.CleaningDateTime < weekEnd)
+                       o.CleaningDateTime < weekEnd &&
+                       // A cancelled order is not work, so it must not consume a capped cleaner's
+                       // week. Without this term a cleaner whose three jobs were all cancelled by the
+                       // customer stayed capped out until Monday, having done nothing. The set is
+                       // SlotBlockingStatuses' own reasoning applied to a different question — an
+                       // order occupies the cleaner only while it is a live commitment.
+                       SlotBlockingStatuses.Contains(o.CurrentStatus))
             .CountAsync(ct);
     }
 

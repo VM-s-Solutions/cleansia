@@ -188,6 +188,16 @@ public class TakeOrder
             return employee?.ContractStatus == ContractStatus.Approved;
         }
 
+        /// <summary>
+        /// The weekly cap, which is now OFF for everyone unless an admin turned it on for one person.
+        ///
+        /// <para>It used to be a rating ladder — 3 a week below 3.5 stars, 6 below 4.5, 10 above. The
+        /// floor caught everybody: <c>AverageRating</c> defaults to 0, and 0 is below 3.5, so every
+        /// newly approved cleaner was capped at three jobs a week and could only climb out by
+        /// accumulating reviews they had little chance of collecting. A platform that throttles a new
+        /// cleaner hardest has the incentive backwards. Now the cap is a deliberate per-person act —
+        /// see <see cref="Domain.Users.Employee.WeeklyOrderLimit"/>.</para>
+        /// </summary>
         private async Task<bool> NotExceedWeeklyOrderLimitAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
@@ -196,14 +206,11 @@ public class TakeOrder
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
             if (employee == null) return false;
 
-            var weeklyCount = await _orderRepository.GetEmployeeOrderCountThisWeekAsync(employeeId, cancellationToken);
+            // Null is unlimited, and it is the default. The count query is not run at all in that case
+            // — the overwhelmingly common path costs nothing.
+            if (employee.WeeklyOrderLimit is not { } limit) return true;
 
-            var limit = employee.AverageRating switch
-            {
-                <= 3.5m => 3,
-                <= 4.5m => 6,
-                _ => 10
-            };
+            var weeklyCount = await _orderRepository.GetEmployeeOrderCountThisWeekAsync(employeeId, cancellationToken);
 
             return weeklyCount < limit;
         }

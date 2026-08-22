@@ -107,6 +107,43 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// How many orders this cleaner may hold in one Monday-to-Sunday week. Read by
+    /// <c>TakeOrder</c>, and by nothing else.
+    ///
+    /// <para><b>NULL means unlimited, and that is the default for every cleaner.</b> It replaces a
+    /// rating ladder — 3 jobs a week below 3.5 stars, 6 below 4.5, 10 above — whose floor caught
+    /// everyone: <see cref="AverageRating"/> defaults to 0, and 0 is below 3.5, so every newly
+    /// approved cleaner was capped at three jobs a week and could only escape by accumulating reviews.
+    /// A platform that throttles a new cleaner hardest has the incentive backwards.</para>
+    ///
+    /// <para>The cap survives as a deliberate, per-person act — an admin restricting one cleaner —
+    /// rather than a rule that applies to everybody by default. Same shape and same reasoning as
+    /// <see cref="JobRadiusKm"/>: no backfilled default, because a number nobody chose would silently
+    /// limit an existing cleaner, and work that stops arriving produces no complaint from the person
+    /// it costs.</para>
+    /// </summary>
+    public int? WeeklyOrderLimit { get; private set; }
+
+    /// <summary>
+    /// Sets or clears the weekly cap. Null clears it back to unlimited; the floor is the validator's
+    /// business error first, so reaching the throw means a non-HTTP caller bypassed it.
+    ///
+    /// <para>One is the floor, not zero: a zero cap is a cleaner who may take nothing, which is
+    /// <see cref="ContractStatus"/>'s job and should not be expressible as a quiet number.</para>
+    /// </summary>
+    public Employee SetWeeklyOrderLimit(int? weeklyOrderLimit)
+    {
+        if (weeklyOrderLimit is { } value && value < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(weeklyOrderLimit), value, "Weekly order limit must be at least 1, or null for unlimited");
+        }
+
+        WeeklyOrderLimit = weeklyOrderLimit;
+        return this;
+    }
+
     public ContractStatus ContractStatus { get; private set; } = ContractStatus.Pending;
 
     [MaxLength(500)]

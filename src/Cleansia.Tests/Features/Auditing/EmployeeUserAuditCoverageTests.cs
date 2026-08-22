@@ -44,6 +44,7 @@ public sealed class EmployeeUserAuditCoverageTests
     [InlineData(typeof(RejectEmployee.Command), "employee.reject")]
     [InlineData(typeof(AdminUpdateEmployee.Command), "employee.update")]
     [InlineData(typeof(AdminUpdateEmployeeAvailability.Command), "employee.availability.update")]
+    [InlineData(typeof(AdminSetEmployeeWeeklyOrderLimit.Command), "employee.weekly_limit.update")]
     [InlineData(typeof(RevealEmployeePayoutDetails.Command), "employee.payout_details.reveal")]
     public void Employee_Admin_Commands_Carry_The_Frozen_User_Typed_Label(Type commandType, string expectedLabel)
     {

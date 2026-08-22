@@ -391,7 +391,7 @@ first that fails. The order of the rules is deliberate: a cancelled order with a
 | 8 | Employee has an address on file | `employee.profile_incomplete` |
 | 9 | `ContractStatus == Approved` | `employee.not_approved` |
 | 10 | Not already assigned to this order | `order.employee_already_assigned` |
-| 11 | Weekly cap by `AverageRating` — ≤ 3.5 → 3/wk, ≤ 4.5 → 6/wk, else 10/wk | `order.weekly_limit_reached` |
+| 11 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
 | 12 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
 
 ::: info The preferred-cleaner hold is folded into the existence check
@@ -578,7 +578,7 @@ POST /api/Order/SubmitReview
 ```
 
 ::: info Rating Recalculation
-When a review is submitted, the `SubmitOrderReview` handler recalculates the assigned employee's `AverageRating` across all their reviewed orders. This updated rating affects the employee's weekly order limit for `TakeOrder`.
+When a review is submitted, the `SubmitOrderReview` handler recalculates the assigned employee's `AverageRating` across all their reviewed orders. It is a displayed and sortable figure only — it no longer gates anything. Until 2026-08-22 it drove a 3/6/10 weekly order cap, which meant a cleaner with no reviews yet (rating `0`) was capped at three jobs a week; the cap is now a deliberate per-cleaner setting an admin applies, and is unset for everyone by default.
 :::
 
 ---

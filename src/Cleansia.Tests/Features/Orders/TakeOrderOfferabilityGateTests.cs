@@ -194,14 +194,61 @@ public class TakeOrderOfferabilityGateTests
         AssertSingleError(result, BusinessErrorMessage.EmployeeAlreadyAssignedToOrder);
     }
 
+    /// <summary>
+    /// A cleaner an admin has explicitly capped. The limit has to be passed in now: unlimited is the
+    /// default, so before this parameter existed the case tripped only because a rating of 0 fell into
+    /// the old ladder's bottom rung — it would have gone green against nothing.
+    /// </summary>
     [Fact]
     public async Task A_Cleaner_At_Their_Weekly_Cap_Returns_Exactly_One_Error()
     {
-        Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2), weeklyCount: 99);
+        Arrange(
+            ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2),
+            weeklyCount: 99,
+            weeklyOrderLimit: 3);
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
 
         AssertSingleError(result, BusinessErrorMessage.WeeklyOrderLimitReached);
+    }
+
+    /// <summary>
+    /// The default, and the whole point of the change: an uncapped cleaner is never refused on volume,
+    /// however many jobs they already hold. Before this, a brand-new cleaner was capped at three.
+    /// </summary>
+    [Fact]
+    public async Task An_Uncapped_Cleaner_Is_Never_Refused_On_Volume()
+    {
+        Arrange(
+            ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2),
+            weeklyCount: 99);
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+
+        Assert.True(result.IsValid);
+    }
+
+    /// <summary>
+    /// Rating no longer decides anything about volume. A one-star cleaner and a five-star cleaner get
+    /// the same answer, because the ladder that made a new cleaner's zero rating a three-job cap is
+    /// gone.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(5)]
+    public async Task Rating_No_Longer_Decides_The_Volume_Cap(int rating)
+    {
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2);
+        Arrange(order, weeklyCount: 99);
+        var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved);
+        employee.UpdateRating(rating, 0);
+        _employeeRepository.Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+
+        Assert.True(result.IsValid);
     }
 
     [Fact]
@@ -225,9 +272,11 @@ public class TakeOrderOfferabilityGateTests
         Order order,
         ContractStatus employeeStatus = ContractStatus.Approved,
         int weeklyCount = 0,
-        bool overlaps = false)
+        bool overlaps = false,
+        int? weeklyOrderLimit = null)
     {
-        var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
+        var employee = ValidatorTestHelpers.BuildEmployee(
+            EmployeeId, employeeStatus, withAddress: true, weeklyOrderLimit: weeklyOrderLimit);
 
         _orderRepository.Setup(r => r.ExistsAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());

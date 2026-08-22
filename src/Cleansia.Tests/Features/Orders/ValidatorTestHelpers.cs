@@ -137,7 +137,15 @@ internal static class ValidatorTestHelpers
     /// the separate profile-complete rule so the approval gate can be tested in
     /// isolation from the address/profile gate.
     /// </summary>
-    public static Employee BuildEmployee(string employeeId, ContractStatus contractStatus, bool withAddress = true)
+    /// <param name="weeklyOrderLimit">
+    /// Null is unlimited and is what every real cleaner has — a case that wants the cap to bite must
+    /// say so, which is the right way round now that the cap is a deliberate per-person act.
+    /// </param>
+    public static Employee BuildEmployee(
+        string employeeId,
+        ContractStatus contractStatus,
+        bool withAddress = true,
+        int? weeklyOrderLimit = null)
     {
         var user = User.CreateWithPassword("emp@example.com", "x", "Emp", "Loyee");
         user.Id = employeeId + "-user";
@@ -150,6 +158,8 @@ internal static class ValidatorTestHelpers
         {
             employee.UpdateAddress(Address.Create("123 Main St", "Prague", "11000", "cz"));
         }
+
+        employee.SetWeeklyOrderLimit(weeklyOrderLimit);
 
         return employee;
     }

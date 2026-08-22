@@ -136,6 +136,14 @@ need backfilling.
 
 ### Changed
 
+- **Cleaner — the weekly limit on how many jobs you can take is gone by default.** It used to scale with
+  your rating: under 3.5 stars you could hold three jobs a week, under 4.5 six, above that ten. A cleaner
+  with no reviews yet counts as zero stars, so **every newly approved cleaner was capped at three jobs a
+  week** and could only climb out by collecting reviews. That cap is now unset for everyone. An admin can
+  still apply one to an individual cleaner, and only then does the old refusal appear. Cancelled orders
+  also no longer count against a capped cleaner's week — three jobs cancelled by the customer used to
+  leave them blocked until Monday having done nothing.
+
 - **Customer — a single booking cannot be longer than 24 hours.** Selections above that are refused
   with a specific message. The previous ceiling was whatever the client asked for.
 
@@ -205,6 +213,13 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way, starting a
+  clean and completing it were all possible from the moment the booking was confirmed — days ahead of the
+  actual date. Both actions now open one hour before the booking, which is the same moment the customer is
+  told their cleaning is starting soon. Running late is still fine: there is no cut-off at the other end.
+  Two things this was quietly breaking — an early start cancelled the customer's own "starting soon"
+  notification, and an early completion started the payout calculation for work that had not happened.
 
 - **Cleaners now actually receive the "new jobs near you" digest — and five other scheduled jobs now
   run at all.** Six background jobs declared their schedule as an application-setting reference rather

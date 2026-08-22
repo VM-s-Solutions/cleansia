@@ -513,6 +513,20 @@ var apiBaseSettings = union({
   // satisfies the "no /0–/8 supernet" guard: it trusts the App Service front end, not the public net.
   ForwardedHeaders__KnownNetworks: '100.64.0.0/10'
   ForwardedHeaders__ForwardLimit: '1'
+  // No ASPNETCORE_ENVIRONMENT is set anywhere in this template or the workflows, so every deployed host
+  // — dev included — runs as Production and binds appsettings.Production.json, which pins
+  // Logging:LogLevel:Default to Warning. That silently withheld every Information-level line the
+  // background sweeps emit, including NewJobsDigest's own "sweep complete" summary, which is the single
+  // most useful triage line in the system.
+  //
+  // Host.CreateDefaultBuilder layers environment variables AFTER the JSON files and App Service surfaces
+  // every app setting as one, so this wins without a code change or a new appsettings file.
+  //
+  // SCOPED TO THE `Cleansia` CATEGORY ON PURPOSE, never Default. Lowering Default would also admit
+  // RequestLoggingMiddleware's request/response body slices and the caller PII they can carry —
+  // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
+  // Warning regardless.
+  Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
 }, sendGridSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a

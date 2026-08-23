@@ -619,3 +619,38 @@ translates it to `IS NULL`).
 | **new, PM to file (D9)** | **the mobile seat switch** — Android `OrdersListViewModel.kt:246-251` + `OrdersRepository.kt:50-57,205-222` and iOS `OrdersListLogic.swift:76-85` + `PartnerOrderClient.swift:83-101`: `isUnassigned: true` → `hasAvailableSpots: true` **+ `excludeEmployeeId: <own id>`**. **No backend change, no NSwag regen.** One ticket per client or one shared — but **never `hasAvailableSpots` without `excludeEmployeeId`** |
 | *new, PM to file (D9.4)* | name the spare seat — `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` (worth doing whichever number `Q-AVAIL-03` returns) |
 | *owner* | ~~Q-AVAIL-01~~ **answered → D9** · Q-AVAIL-02 (card pre-claim, recorded as decided) · **`Q-AVAIL-03` (the seat cap — NEW)** |
+
+---
+
+## 2026-08-22 — ADR-0053 and ADR-0055 (`architect` panel, both `accepted`)
+
+**ADR-0053 — the weekly cap.** The rating ladder (3/6/10 by score, applied to everyone automatically) is
+gone. `Employee.WeeklyOrderLimit` is nullable, `null` means unlimited, and that is every cleaner today;
+an admin sets a number on one person through an audited command. The ladder's floor caught exactly the
+wrong people — `AverageRating` defaults to 0, and 0 is below 3.5, so every newly approved cleaner was
+capped at three jobs a week and could only escape by accumulating reviews they had no work to earn.
+
+**Read the number as OUTSTANDING commitments, not "N jobs a week."** The count gained a status term and
+now excludes `Completed` as well as `Cancelled`, so a finished job leaves the count. The lead recorded
+this as a knowingly permissive reading rather than papering over it, and deferred a third option
+(`!= Cancelled` only) with one binding condition: it must use a locally-declared `WeekConsumingStatuses`,
+**never** a borrowed `SlotBlockingStatuses` — the overlap question and the cap question are not the same
+question and must not share a set.
+
+**The supersession is narrower than the draft claimed.** The lead ruled ADR-0053's supersession of
+**ADR-0036 A6 vacuous AND over-broad, and dropped it in full**: A6 says only that the cap and the
+conflict are *dynamic*, states no universality premise, and `adr-0036.md:1931-1938` is headed "What is
+NOT superseded". The prohibition on consulting the cap from the hold resolver rests on the `UtcNow.Date`
+window, which this change left byte-identical. **One edge only: ADR-0053 → ADR-0037 Fact 3, cap half.**
+
+**ADR-0055 — the start grace window.** `StartOrder` and `NotifyOnTheWay` refuse a job more than 60
+minutes ahead (`order.too_early_to_start`); late is never blocked, and the rule is last on both chains so
+an unassigned caller learns nothing about the schedule. Before this there was no clock gate at all — a
+cleaner could mark next Tuesday's job started today, putting "your cleaner is on the way" on a customer's
+lock screen days early.
+
+**The margin is five minutes and it comes from the cron's phase, not from the constant.** The customer's
+own notice is only guaranteed by T-65 (window high 70, minus a widest cron gap of 5). Widen the sweep's
+cron or narrow its window and the guarantee evaporates with nothing failing — so it is now pinned in
+`TimerScheduleConfigTests`, against operands that test already computed. That assertion was the one
+relation in the whole argument nobody had written.

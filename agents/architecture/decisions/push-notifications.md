@@ -108,6 +108,21 @@ names/addresses/emails/free-text: never, anywhere.
 
 ## History
 
+- 2026-08-22 — **ADR-0054 `accepted`** (panel consensus; author / two challengers / lead). Three cleaner
+  reminder keys: `order.reminder_tomorrow` (day-ahead count, sent inside a local send window opening at
+  18:00), `order.reminder_soon` (T-2h) and `order.reminder_not_started` (T-30m nudge). All three
+  **non-mutable** — no `GetCategoryFor` arm — on the same ground as the two admin-assignment keys: each
+  is about work the cleaner already accepted. **The lead reversed four concessions the author had made**,
+  the record's own prescribed fix among them: a bare `>=` on the digest's hour test would have pushed at
+  23:00 to a cleaner who took a job at 22:50, on a key they cannot silence, with no quiet hours anywhere
+  — replaced by a bounded three-hour catch-up. Also corrected: "365,000 permanent feed rows/year" (~1,600
+  resident; retention hard-deletes at 90 days), "the badge counts every row in the keyset" (it counts
+  unread only), and a whole recipient-direction that rested on `ContractStatus.Active` cleaners —
+  `UpdateContractStatus` has zero production callers and none has ever existed. Shipped with the record:
+  the dedupe stamp lives on `OrderEmployee` per RECIPIENT, never on the outbox key; one shared
+  `JobReminderRecipient` predicate for all three keys; and `ReminderTomorrow` joined
+  `NewJobsAvailable` in `CollapsingDigestKeys`, on correctness rather than volume — the payload carries a
+  count and **no date**, so a stale row does not duplicate, it lies.
 - 2026-07-15 — ADR-0025 **accepted** (panel consensus). Challenges upheld and folded in: CH-1
   (promo inventory corrected — customer Android renders server-shipped literal text; exclusion
   re-justified as a parity gap + follow-up ticket), CH-2 (day-one catalog gate added to D5), CH-3

@@ -111,15 +111,30 @@ The typed business clients are generated from the **shared committed mobile spec
 URLSession). A **spec re-dump stays owner-run** (`manual_step: mobile-spec-regen`) — it needs the mobile
 API hosts running — but generating from the specs already committed does not.
 
+**To regenerate the clients — this is the whole command, and it needs nothing running:**
+
 ```sh
-brew install openapi-generator                                   # once, 7.x
-
-# (owner) refresh the shared specs from the running mobile API hosts first
-src/cleansia_ios/scripts/refresh-mobile-spec.sh                  # partner:5002 + customer:5004
-
-# then generate
 src/cleansia_ios/scripts/generate-api-clients.sh                 # both apps
 ```
+
+It reads the committed specs off disk. It does **not** need the API up, and it is what you want after
+pulling a branch whose backend DTOs changed.
+
+**Only if you changed the backend contract yourself**, refresh the committed specs first — this one
+does need the mobile API hosts running, and it is a separate step, deliberately not chained to the
+line above:
+
+```sh
+src/cleansia_ios/scripts/refresh-mobile-spec.sh                  # partner:5002 + customer:5004
+```
+
+With no host running it now reports a skip and exits 0, leaving the committed specs alone. It used to
+`exit 1`, and because it sat directly above the generate step in one copy-paste block, it took the
+step you actually wanted down with it.
+
+`openapi-generator` must be **7.10.0** — see the pinned install in `.github/workflows/ios-ci.yml`.
+`brew install openapi-generator` now gives 7.15+, and the hand-written request spine subclasses
+generator internals.
 
 After the first generation, wire each generated package into its app: uncomment the
 `Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:` in

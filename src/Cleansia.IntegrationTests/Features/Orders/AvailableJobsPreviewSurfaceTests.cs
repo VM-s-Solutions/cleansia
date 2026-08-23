@@ -5,6 +5,8 @@ using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -46,6 +48,15 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
     /// One more than the server ceiling, written as a literal rather than read off the constant under
     /// test: an expectation derived from the code it guards cannot detect that code being widened.
     /// </summary>
+    private const string PayableCategoryId = "category-preview-payable";
+    private const string PayableServiceId = "service-preview-payable";
+
+    /// <summary>
+    /// Deliberately not a round fraction of the seeded price (1000 + index): a regression that summed
+    /// price, or price times a tidy multiplier, cannot coincide with this.
+    /// </summary>
+    private const decimal PayPerJob = 337m;
+
     private const int SeededOrders = 51;
 
     private const int ServerCeiling = 50;
@@ -137,6 +148,91 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
                 new Claim(TestUserSessionProvider.EmployeeIdClaimType, CallerEmployeeId),
             ])));
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// <b>The banner quotes what the CLEANER earns, never what the customer pays.</b>
+    ///
+    /// <para>It used to sum <c>Order.TotalPrice</c> under the label "Earn up to X". On a real board that
+    /// read 3 731 Kč on the dashboard for a job the orders list offered at 1 275 Kč — the platform
+    /// advertising roughly three times the money it would actually pay. The two figures now come from
+    /// one definition: <c>OrderPayEstimator</c>, the same estimator the list uses.</para>
+    ///
+    /// <para>The seeded pay is deliberately NOT a round fraction of the price, so a regression that
+    /// reverted to price, or applied a multiplier to it, cannot land on the expected number by
+    /// coincidence.</para>
+    /// </summary>
+    [Fact]
+    public async Task The_Headline_Sums_Cleaner_Pay_And_Not_The_Customer_Price()
+    {
+        await TestMethod(
+            setup: ReplaceWithCallerSession,
+            arrange: SeedTwoPayableJobs,
+            act: async provider => await provider
+                .GetRequiredService<IMediator>()
+                .Send(new GetAvailableJobsPreview.Query(Limit: 5)),
+            assert: (CleansiaDbContext _, BusinessResult<AvailableJobsPreviewResponse> result) =>
+            {
+                Assert.True(result.IsSuccess);
+                var response = result.Value!;
+
+                Assert.Equal(2, response.Jobs.Count);
+
+                // Two jobs, PayPerJob each. The prices are far larger and are what the old code summed.
+                Assert.Equal(PayPerJob * 2, response.TotalPotentialEarnings);
+
+                // Stated as its own assertion rather than left implicit: this is the exact number the
+                // defect produced, and naming it is what stops a future "simplification" reinstating it.
+                var customerPriceSum = response.Jobs.Sum(j => j.TotalPrice);
+                Assert.NotEqual(customerPriceSum, response.TotalPotentialEarnings);
+                Assert.True(
+                    response.TotalPotentialEarnings < customerPriceSum,
+                    $"a cleaner cannot earn more than the customer paid: {response.TotalPotentialEarnings} vs {customerPriceSum}");
+
+                return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>
+    /// A board whose orders can actually be priced FOR A CLEANER — the other fixture seeds no services,
+    /// so the estimator has no config to match and every row is unquotable. That is a legitimate state
+    /// (it contributes zero), but it cannot tell price from pay, which is why this fixture exists.
+    /// </summary>
+    private static async Task SeedTwoPayableJobs(CleansiaDbContext context)
+    {
+        context.Languages.Add(Language.Create("en", "English"));
+
+        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        country.Id = CountryId;
+        context.Countries.Add(country);
+
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        currency.Id = CurrencyId;
+        currency.SetAsDefault(true);
+        context.Currencies.Add(currency);
+
+        var category = ServiceCategory.Create("cleaning-preview", "Cleaning", "Cleaning services");
+        category.Id = PayableCategoryId;
+        context.Add(category);
+
+        var service = Service.Create(PayableCategoryId, "Deep clean", "A payable service", 900m, 0m, 120);
+        service.Id = PayableServiceId;
+        context.Add(service);
+
+        // Platform-wide config (no employee id) — the fallback arm of the estimator, which is the arm a
+        // cleaner with no per-person override actually hits.
+        context.Add(EmployeePayConfig.CreateForService(PayableServiceId, PayPerJob, CurrencyId));
+
+        context.Add(NewCleaner());
+
+        for (var index = 0; index < 2; index++)
+        {
+            var order = NewOfferableOrder(index);
+            order.AddSelectedServices([OrderService.Create(order, service)]);
+            context.Add(order);
+        }
+
+        await context.CommitAsync(CancellationToken.None);
     }
 
     private static async Task SeedTheAvailableBoard(CleansiaDbContext context)

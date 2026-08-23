@@ -168,6 +168,11 @@ extension L10n {
         }
 
         /// Chip copy. Exhaustive on purpose — a new tag is a compile error until it has a label.
+        ///
+        /// The complexity rule counts each `case`, so fifteen tags score 16 against a limit of 15. The
+        /// exhaustiveness IS the point here — a dictionary would compile with a tag missing and return
+        /// a blank chip — so the switch stays and the rule is waived for this one function.
+        // swiftlint:disable:next cyclomatic_complexity
         static func tag(_ tag: CustomerReviewTag) -> String {
             switch tag {
             case .onTime: localized("order_review_tag_on_time")

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -37,6 +38,7 @@ public class GetAvailableJobsPreview
 
     internal class Handler(
         IOrderRepository orderRepository,
+        IEmployeePayConfigRepository payConfigRepository,
         IOrderAccessService orderAccessService)
         : IQueryHandler<Query, AvailableJobsPreviewResponse>
     {
@@ -63,10 +65,37 @@ public class GetAvailableJobsPreview
                     o.DisplayOrderNumber,
                     o.CleaningDateTime,
                     o.TotalPrice,
+                    // Carried for the pay estimate below, not for display. The street is still never
+                    // selected.
+                    o.Rooms,
+                    o.Bathrooms,
+                    o.TravelDistance,
+                    ServiceIds = o.SelectedServices.Select(s => s.ServiceId).ToList(),
+                    PackageIds = o.SelectedPackages.Select(p => p.PackageId).ToList(),
                     City = o.CustomerAddress!.City,
                     ZipCode = o.CustomerAddress.ZipCode,
                 })
                 .ToListAsync(cancellationToken);
+
+            // Two batch lookups for the CALLER, the shape GetDashboardStats already uses in this same
+            // folder. Deliberately NO booked-pay lookup: the spec excludes orders the caller is
+            // assigned to, and CalculateOrderPay refuses an unassigned employee, so an OrderEmployeePay
+            // row cannot exist for any row here. Reading one would be a round trip that always misses.
+            var serviceIds = orders.SelectMany(o => o.ServiceIds).Distinct().ToList();
+            var packageIds = orders.SelectMany(o => o.PackageIds).Distinct().ToList();
+
+            IReadOnlyList<Domain.EmployeePayroll.EmployeePayConfig> serviceConfigs = [];
+            IReadOnlyList<Domain.EmployeePayroll.EmployeePayConfig> packageConfigs = [];
+            if (serviceIds.Count > 0)
+            {
+                serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
+                    serviceIds, employeeId, cancellationToken);
+            }
+            if (packageIds.Count > 0)
+            {
+                packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
+                    packageIds, employeeId, cancellationToken);
+            }
 
             var jobs = orders.Select(o => new AvailableJobPreviewDto(
                 Id: o.Id,
@@ -76,9 +105,24 @@ public class GetAvailableJobsPreview
                 TotalPrice: o.TotalPrice
             )).ToList();
 
+            // WHAT THE CLEANER EARNS, not what the customer pays. The banner said "Earn up to X" while
+            // summing TotalPrice, so it quoted roughly three times the real figure — the same job read
+            // 3 731 on the dashboard and 1 275 on the list, which is the number the cleaner is actually
+            // offered. Unquotable rows contribute 0, matching how the orders list sums the same phrase
+            // (`filtered.sumOf { it.estimatedCleanerPay ?: 0.0 }`), so one definition serves both.
+            var potentialEarnings = orders.Sum(o => OrderPayEstimator.Estimate(
+                o.ServiceIds.ToHashSet(),
+                o.PackageIds.ToHashSet(),
+                o.Rooms,
+                o.Bathrooms,
+                o.TravelDistance,
+                employeeId,
+                serviceConfigs,
+                packageConfigs) ?? 0m);
+
             return new AvailableJobsPreviewResponse(
                 Jobs: jobs,
-                TotalPotentialEarnings: jobs.Sum(j => j.TotalPrice),
+                TotalPotentialEarnings: potentialEarnings,
                 TotalAvailableCount: totalCount
             );
         }

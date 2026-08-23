@@ -3633,6 +3633,11 @@ export interface IAdminEmployeeClient {
      * @param body (optional) 
      * @return OK
      */
+    weeklyOrderLimit(employeeId: string, body?: AdminSetEmployeeWeeklyOrderLimitRequest | undefined): Observable<AdminSetEmployeeWeeklyOrderLimitResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     update(employeeId: string, body?: AdminUpdateEmployeeCommand | undefined): Observable<AdminUpdateEmployeeResponse>;
 }
 
@@ -4120,6 +4125,86 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = AdminUpdateEmployeeAvailabilityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    weeklyOrderLimit(employeeId: string, body?: AdminSetEmployeeWeeklyOrderLimitRequest | undefined): Observable<AdminSetEmployeeWeeklyOrderLimitResponse> {
+        let url = this.baseUrl + "/api/AdminEmployee/{employeeId}/weekly-order-limit";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined.");
+        url = url.replace("{employeeId}", encodeURIComponent("" + employeeId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWeeklyOrderLimit(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processWeeklyOrderLimit(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminSetEmployeeWeeklyOrderLimitResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminSetEmployeeWeeklyOrderLimitResponse>;
+        }));
+    }
+
+    protected processWeeklyOrderLimit(response: HttpResponseBase): Observable<AdminSetEmployeeWeeklyOrderLimitResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminSetEmployeeWeeklyOrderLimitResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -15266,6 +15351,82 @@ export interface IAdminServiceDetailDto {
     translations: { [key: string]: Translation; } | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+}
+
+export class AdminSetEmployeeWeeklyOrderLimitRequest implements IAdminSetEmployeeWeeklyOrderLimitRequest {
+    weeklyOrderLimit!: number | undefined;
+
+    constructor(data?: IAdminSetEmployeeWeeklyOrderLimitRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+        }
+    }
+
+    static fromJS(data: any): AdminSetEmployeeWeeklyOrderLimitRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminSetEmployeeWeeklyOrderLimitRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        return data;
+    }
+}
+
+export interface IAdminSetEmployeeWeeklyOrderLimitRequest {
+    weeklyOrderLimit: number | undefined;
+}
+
+export class AdminSetEmployeeWeeklyOrderLimitResponse implements IAdminSetEmployeeWeeklyOrderLimitResponse {
+    employeeId!: string | undefined;
+    weeklyOrderLimit!: number | undefined;
+
+    constructor(data?: IAdminSetEmployeeWeeklyOrderLimitResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+        }
+    }
+
+    static fromJS(data: any): AdminSetEmployeeWeeklyOrderLimitResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminSetEmployeeWeeklyOrderLimitResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        return data;
+    }
+}
+
+export interface IAdminSetEmployeeWeeklyOrderLimitResponse {
+    employeeId: string | undefined;
+    weeklyOrderLimit: number | undefined;
 }
 
 export class AdminUpdateEmployeeAvailabilityRequest implements IAdminUpdateEmployeeAvailabilityRequest {

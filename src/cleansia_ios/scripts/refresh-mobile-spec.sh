@@ -39,19 +39,35 @@ default_url_for() {
 app="${1:-all}"
 override_url="${2:-}"
 
+skipped=0
+
 refresh_one() {
   local name="$1"
   local url="${override_url:-$(default_url_for "$name")}"
   local out="${SPEC_DIR}/${name}-mobile-api.json"
 
   echo "Fetching ${name} spec from ${url} ..."
-  if ! curl -fsS "$url" -o "$out"; then
+  if curl -fsS "$url" -o "$out"; then
+    echo "Wrote $(wc -c < "$out" | tr -d ' ') bytes to ${out#"${IOS_ROOT}/../"}."
+    return 0
+  fi
+
+  # An explicitly named host is a deliberate request, so failing to reach it IS an error.
+  if [ -n "$override_url" ]; then
     echo "error: could not fetch the ${name} OpenAPI spec from ${url}." >&2
-    echo "       Is the ${name}-mobile-api host running? Pass a custom URL as the 2nd arg" >&2
-    echo "       for a remote/dev host." >&2
+    echo "       That URL was passed explicitly, so nothing was assumed." >&2
     exit 1
   fi
-  echo "Wrote $(wc -c < "$out" | tr -d ' ') bytes to ${out#"${IOS_ROOT}/../"}."
+
+  # The default host is not running. That is not a failure: this script exists to pull a spec that
+  # has CHANGED, and if the API is not up there is nothing to pull. The committed spec stays exactly
+  # as it was, and `generate-api-clients.sh` reads it from disk and needs no host at all — so the
+  # common case (regenerating clients from the spec already in git) must not be blocked by this.
+  echo "  skipped: no ${name}-mobile-api host on ${url}." >&2
+  echo "           The committed spec is untouched, which is correct unless you changed the backend" >&2
+  echo "           contract. Start the host (dotnet run in Cleansia.Web.Mobile.${name^}) only if you" >&2
+  echo "           did. To regenerate the CLIENTS you do not need this script at all." >&2
+  skipped=$((skipped + 1))
 }
 
 case "$app" in
@@ -67,5 +83,13 @@ case "$app" in
     exit 1
     ;;
 esac
+
+if [ "$skipped" -gt 0 ]; then
+  echo
+  echo "Nothing was refreshed (${skipped} host(s) unreachable). The committed specs still stand."
+  echo "If you only meant to rebuild the clients, that is ./scripts/generate-api-clients.sh — it reads"
+  echo "the committed specs off disk and needs nothing running."
+  exit 0
+fi
 
 echo "Spec(s) refreshed. Regenerate the clients with ./scripts/generate-api-clients.sh"

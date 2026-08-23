@@ -7,6 +7,8 @@ import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.partner.data.user.CurrentUser
+import cz.cleansia.partner.data.user.UserRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
@@ -35,6 +37,7 @@ class PersonalSectionViewModelTest {
     private lateinit var repository: ProfileRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: ApiErrorTranslator
+    private lateinit var userRepository: UserRepository
     private lateinit var appContext: Context
 
     private val employee = EmployeeItem(
@@ -53,13 +56,28 @@ class PersonalSectionViewModelTest {
         repository = mockk()
         snackbar = mockk(relaxed = true)
         errorTranslator = mockk()
+        userRepository = mockk()
+        // The photo lives on the user row; the form reads it alongside the employee record. These
+        // cases are about the fields, so the cleaner simply has no photo and the avatar shows initials.
+        coEvery { userRepository.getCurrentUser() } returns ApiResult.Success(
+            CurrentUser(
+                email = "ondrej@example.com",
+                firstName = "Ondrej",
+                lastName = "Novak",
+                phoneNumber = null,
+                birthDate = null,
+                preferredLanguageCode = "en",
+                profilePhotoUrl = null,
+            ),
+        )
         appContext = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
         every { appContext.getString(R.string.error_birth_date_required) } returns "Date of birth is required"
         every { appContext.getString(R.string.error_profile_not_loaded) } returns "Profile not loaded yet"
     }
 
-    private fun viewModel() = PersonalSectionViewModel(repository, errorTranslator, snackbar, appContext)
+    private fun viewModel() =
+        PersonalSectionViewModel(repository, userRepository, errorTranslator, snackbar, appContext)
 
     @Test
     fun `load transitions Loading to Loaded with the employee fields`() = runTest {

@@ -1361,4 +1361,12 @@
     <string name="profile_terms_summary">Otvorí sa v prehliadači</string>
     <string name="profile_privacy">Zásady ochrany osobných údajov</string>
     <string name="profile_privacy_summary">Ako nakladáme s vašimi údajmi</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Zmeniť fotku</string>
+    <string name="profile_avatar_remove">Odstrániť fotku</string>
+    <string name="profile_avatar_content_description">Profilová fotka</string>
+    <string name="profile_avatar_encode_failed">Tento obrázok sa nepodarilo použiť. Skúste inú fotku.</string>
+    <string name="profile_avatar_picker_unavailable_title">Žiadny výber fotiek</string>
+    <string name="profile_avatar_picker_unavailable_message">V tomto zariadení nie je žiadna aplikácia na výber fotky.</string>
 </resources>

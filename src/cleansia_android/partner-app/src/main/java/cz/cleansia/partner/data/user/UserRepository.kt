@@ -1,8 +1,10 @@
 package cz.cleansia.partner.data.user
 
+import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.UserApi
+import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.MyProfileDto
 import cz.cleansia.partner.api.model.UpdateCurrentUserCommand
 import kotlinx.serialization.json.Json
@@ -32,6 +34,8 @@ interface UserRepository {
         phoneNumber: String,
         birthDate: String?,
         languageCode: String?,
+        photo: Base64Image? = null,
+        removePhoto: Boolean = false,
     ): ApiResult<Unit>
 }
 
@@ -42,6 +46,8 @@ data class CurrentUser(
     val phoneNumber: String?,
     val birthDate: String?,
     val preferredLanguageCode: String?,
+    /** Read-back URL of the stored photo, if the cleaner has one. Null means initials. */
+    val profilePhotoUrl: String?,
 )
 
 @Singleton
@@ -59,6 +65,8 @@ class UserRepositoryImpl @Inject constructor(
         phoneNumber: String,
         birthDate: String?,
         languageCode: String?,
+        photo: Base64Image?,
+        removePhoto: Boolean,
     ): ApiResult<Unit> = safeApiCall(json) {
         userApi.userUpdateCurrentUser(
             // No id: the row written is always the JWT caller's and the command's id is inert.
@@ -68,7 +76,16 @@ class UserRepositoryImpl @Inject constructor(
                 phoneNumber = phoneNumber,
                 birthDate = birthDate,
                 languageCode = languageCode,
-                removePhoto = false,
+                // A three-way choice, exactly as the customer app sends it: a photo replaces, the flag
+                // clears, and both absent means "nothing to say about the photo".
+                photo = photo?.let {
+                    BlobFileDto(
+                        fileName = it.fileName,
+                        base64Content = it.base64,
+                        contentType = it.contentType,
+                    )
+                },
+                removePhoto = removePhoto,
             ),
         )
     }.map { }
@@ -81,4 +98,5 @@ private fun MyProfileDto.toDomain() = CurrentUser(
     phoneNumber = phoneNumber,
     birthDate = birthDate,
     preferredLanguageCode = preferredLanguageCode,
+    profilePhotoUrl = profilePhoto?.blobUrl,
 )

@@ -1396,4 +1396,12 @@
     <string name="profile_terms_summary">Opens in your browser</string>
     <string name="profile_privacy">Privacy policy</string>
     <string name="profile_privacy_summary">How we handle your data</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Change photo</string>
+    <string name="profile_avatar_remove">Remove photo</string>
+    <string name="profile_avatar_content_description">Profile photo</string>
+    <string name="profile_avatar_encode_failed">Couldn\'t use that image. Try another photo.</string>
+    <string name="profile_avatar_picker_unavailable_title">No photo picker</string>
+    <string name="profile_avatar_picker_unavailable_message">This device has no app that can pick a photo.</string>
 </resources>

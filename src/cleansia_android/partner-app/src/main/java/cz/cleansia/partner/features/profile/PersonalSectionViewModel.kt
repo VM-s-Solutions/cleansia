@@ -1,6 +1,10 @@
 package cz.cleansia.partner.features.profile
 
 import android.content.Context
+import android.net.Uri
+import cz.cleansia.core.media.Base64Image
+import cz.cleansia.core.media.ImageCompressor
+import cz.cleansia.partner.data.user.UserRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
@@ -28,6 +32,8 @@ data class PersonalForm(
     val birthDate: String = "",
     val phone: String = "",
     val email: String = "",
+    /** Read-back URL of the stored photo. Lives on the USER row, not the employee record. */
+    val profilePhotoUrl: String? = null,
     val firstNameError: String? = null,
     val lastNameError: String? = null,
     val birthDateError: String? = null,
@@ -42,6 +48,9 @@ sealed interface PersonalSectionUiState {
 @HiltViewModel
 class PersonalSectionViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
+    // The photo lives on the USER row, not the employee record, so it is a second repository — the
+    // same split ProfileRepository/UserRepository draw everywhere else in this app.
+    private val userRepository: UserRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
@@ -56,6 +65,40 @@ class PersonalSectionViewModel @Inject constructor(
     private val _saved = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val saved: SharedFlow<Unit> = _saved.asSharedFlow()
 
+    /**
+     * The avatar is a three-way choice, not a nullable field — mirroring the customer app. A pick
+     * replaces, a removal clears, and Unchanged says nothing about the photo at all, so a save that is
+     * only about a phone number cannot silently delete a photo.
+     */
+    private val _avatarDraft = MutableStateFlow<PartnerAvatarDraft>(PartnerAvatarDraft.Unchanged)
+    val avatarDraft: StateFlow<PartnerAvatarDraft> = _avatarDraft.asStateFlow()
+
+    private val _avatarState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val avatarState: StateFlow<ActionState> = _avatarState.asStateFlow()
+
+    /** Compress off the main thread, then stage. Nothing is uploaded until the cleaner saves. */
+    fun pickAvatar(uri: Uri) {
+        if (_avatarState.value is ActionState.Submitting) return
+        _avatarState.value = ActionState.Submitting
+        viewModelScope.launch {
+            val encoded = ImageCompressor.compressToBase64(appContext.contentResolver, uri)
+            _avatarState.value = ActionState.Idle
+            if (encoded == null) {
+                snackbar.showError(appContext.getString(R.string.profile_avatar_encode_failed))
+                return@launch
+            }
+            _avatarDraft.value = PartnerAvatarDraft.Picked(previewUri = uri, image = encoded)
+        }
+    }
+
+    fun removeAvatar() {
+        _avatarDraft.value = PartnerAvatarDraft.Removed
+    }
+
+    fun discardAvatarDraft() {
+        _avatarDraft.value = PartnerAvatarDraft.Unchanged
+    }
+
     init { load() }
 
     fun retry() = load()
@@ -66,6 +109,11 @@ class PersonalSectionViewModel @Inject constructor(
             when (val result = profileRepository.getCurrentEmployee()) {
                 is ApiResult.Success -> {
                     val e = result.data
+                    // The photo is on the user row and the rest is on the employee record, so the
+                    // screen needs both. A failure here is not worth failing the screen over — the
+                    // form still works and the avatar simply falls back to initials.
+                    val photoUrl = (userRepository.getCurrentUser() as? ApiResult.Success)
+                        ?.data?.profilePhotoUrl
                     _uiState.value = PersonalSectionUiState.Loaded(
                         PersonalForm(
                             employeeId = e.id.orEmpty(),
@@ -74,6 +122,7 @@ class PersonalSectionViewModel @Inject constructor(
                             birthDate = e.birthDate.orEmpty(),
                             phone = e.phoneNumber.orEmpty(),
                             email = e.email.orEmpty(),
+                            profilePhotoUrl = photoUrl,
                         ),
                     )
                 }
@@ -123,7 +172,16 @@ class PersonalSectionViewModel @Inject constructor(
             )
             when (result) {
                 is ApiResult.Success -> {
+                    // The employee record is saved; the photo is a second row and a second call. It
+                    // runs only when there is something to say about it, so an ordinary save cannot
+                    // touch the photo — and a failure here does NOT undo the fields that just saved.
+                    val photoResult = pushAvatarDraft(form)
                     _saveState.value = ActionState.Idle
+                    if (photoResult is ApiResult.Error) {
+                        snackbar.showError(errorTranslator.translate(photoResult.error))
+                        return@launch
+                    }
+                    _avatarDraft.value = PartnerAvatarDraft.Unchanged
                     _saved.emit(Unit)
                 }
                 is ApiResult.Error -> {
@@ -134,9 +192,35 @@ class PersonalSectionViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Null when the draft says nothing — the common case, and the reason an ordinary save makes no
+     * photo call at all. The names and phone are replayed because the command is a partial save whose
+     * name fields are replaced outright, exactly as `LanguagePreferenceSync` replays them.
+     */
+    private suspend fun pushAvatarDraft(form: PersonalForm): ApiResult<Unit>? {
+        val draft = _avatarDraft.value
+        if (draft is PartnerAvatarDraft.Unchanged) return null
+        return userRepository.updateCurrentUser(
+            firstName = form.firstName.trim(),
+            lastName = form.lastName.trim(),
+            phoneNumber = form.phone.trim(),
+            birthDate = form.birthDate,
+            languageCode = null,
+            photo = (draft as? PartnerAvatarDraft.Picked)?.image,
+            removePhoto = draft is PartnerAvatarDraft.Removed,
+        )
+    }
+
     private inline fun updateForm(transform: (PersonalForm) -> PersonalForm) {
         _uiState.update { state ->
             if (state is PersonalSectionUiState.Loaded) state.copy(form = transform(state.form)) else state
         }
     }
+}
+
+/** What the cleaner has said about their photo, if anything, since the screen opened. */
+sealed interface PartnerAvatarDraft {
+    data object Unchanged : PartnerAvatarDraft
+    data object Removed : PartnerAvatarDraft
+    data class Picked(val previewUri: Uri, val image: Base64Image) : PartnerAvatarDraft
 }

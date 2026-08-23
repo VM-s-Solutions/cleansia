@@ -1366,4 +1366,12 @@
     <string name="profile_terms_summary">Откроется в браузере</string>
     <string name="profile_privacy">Политика конфиденциальности</string>
     <string name="profile_privacy_summary">Как мы обрабатываем ваши данные</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Изменить фото</string>
+    <string name="profile_avatar_remove">Удалить фото</string>
+    <string name="profile_avatar_content_description">Фото профиля</string>
+    <string name="profile_avatar_encode_failed">Не удалось использовать это изображение. Попробуйте другое фото.</string>
+    <string name="profile_avatar_picker_unavailable_title">Нет средства выбора фото</string>
+    <string name="profile_avatar_picker_unavailable_message">На этом устройстве нет приложения для выбора фото.</string>
 </resources>

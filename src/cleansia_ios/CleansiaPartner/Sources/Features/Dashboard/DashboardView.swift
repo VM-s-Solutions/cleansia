@@ -159,7 +159,10 @@ struct DashboardContent: View {
         onOpenOrders: @escaping () -> Void,
         onNotificationTap: @escaping () -> Void = {},
         onChooseJobRadius: @escaping () -> Void = {},
-        onKeepEveryJob: @escaping () -> Void = {}
+        onKeepEveryJob: @escaping () -> Void = {},
+        onOpenProfile: @escaping () -> Void = {},
+        onOpenDocuments: @escaping () -> Void = {},
+        onOpenHelp: @escaping () -> Void = {}
     ) {
         self.data = data
         self.unreadBadge = unreadBadge
@@ -171,6 +174,9 @@ struct DashboardContent: View {
         self.onNotificationTap = onNotificationTap
         self.onChooseJobRadius = onChooseJobRadius
         self.onKeepEveryJob = onKeepEveryJob
+        self.onOpenProfile = onOpenProfile
+        self.onOpenDocuments = onOpenDocuments
+        self.onOpenHelp = onOpenHelp
     }
 
     var body: some View {

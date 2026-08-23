@@ -20,7 +20,7 @@ struct ShortcutsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             Text(L10n.Shortcuts.sectionTitle)
-                .cleansiaFont(CleansiaTypography.titleMedium)
+                .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onBackground)
                 .padding(.leading, Spacing.xs)
 

@@ -270,7 +270,8 @@ private struct OrdersEmptyView: View {
                 total: 1290,
                 currencyCode: "CZK",
                 services: [],
-                packages: []
+                packages: [],
+                hasReview: false
             ))
             .padding()
             .background(CleansiaColors.background)

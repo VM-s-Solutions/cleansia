@@ -103,8 +103,22 @@ public class UserMembership : Auditable, ITenantEntity
     /// </summary>
     public DateTime? TrialEndsAtUtc { get; private set; }
 
-    /// <summary>Computed; do not persist. Expires by clock — no sweep, no job, no state transition.</summary>
-    public bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc;
+    /// <summary>
+    /// Computed; do not persist. Expires by clock — no sweep, no job, no state transition.
+    ///
+    /// <para><b>The clock is a parameter, not <c>DateTime.UtcNow</c>.</b> It used to read the ambient
+    /// clock while its one caller — <c>ExpressWaiverResolver</c> — was already being handed a
+    /// <c>nowUtc</c>, so the two disagreed about what "now" meant. That is not merely untidy: the
+    /// resolver's determinism is what makes a quote and the charge that follows it agree, and a
+    /// benefit decided on a different instant from the price around it is exactly the drift
+    /// ADR-0035's stored period key exists to prevent.</para>
+    ///
+    /// <para>It surfaced as a test that passed for six days and then began failing on 2026-08-21 with
+    /// no commit behind it, when real time crossed a fixture's trial end — the wall clock reached
+    /// into a fixed-clock test. A trialing member was silently being granted the metered waiver the
+    /// 2026-08-03 owner ruling withholds.</para>
+    /// </summary>
+    public bool IsInTrialAt(DateTime nowUtc) => TrialEndsAtUtc != null && nowUtc < TrialEndsAtUtc;
 
     /// <summary>
     /// True when the membership is currently providing benefits — Active status

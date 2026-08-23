@@ -84,7 +84,8 @@ public static class OrderMappers
             o.AssignedEmployees.Select(ae => new OrderListEmployeeRow(ae.Id, ae.EmployeeId)).ToList(),
             o.RequiredEmployees,
             o.MaxEmployees,
-            o.TravelDistance));
+            o.TravelDistance,
+            o.Reviews.Any()));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)
@@ -157,7 +158,8 @@ public static class OrderMappers
             HasAvailableSpots: availableSpots > 0,
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: row.Address?.Latitude,
-            CustomerAddressLongitude: row.Address?.Longitude);
+            CustomerAddressLongitude: row.Address?.Longitude,
+            HasReview: row.HasReview);
     }
 
     public static OrderListItem MapToDto(this Order order)
@@ -200,7 +202,8 @@ public static class OrderMappers
             HasAvailableSpots: order.HasAvailableSpots,
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: order.CustomerAddress?.Latitude,
-            CustomerAddressLongitude: order.CustomerAddress?.Longitude
+            CustomerAddressLongitude: order.CustomerAddress?.Longitude,
+            HasReview: order.Reviews.Count > 0
         );
     }
 
@@ -320,6 +323,7 @@ public static class OrderMappers
             OrderId: review.OrderId,
             Rating: review.Rating,
             Comment: review.Comment,
+            Tags: review.Tags,
             CreatedOn: review.CreatedOn,
             UpdatedOn: review.UpdatedOn
         );

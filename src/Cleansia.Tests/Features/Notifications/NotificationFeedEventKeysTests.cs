@@ -29,14 +29,20 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void The_Non_Mutable_Feed_Keys_Are_Exactly_Assignment_Cancelled_And_Invoice_Paid()
+    public void The_Non_Mutable_Feed_Keys_Are_Exactly_The_Three_A_Cleaner_Must_Not_Silence()
     {
-        // A job cancellation and a payment confirmation must not be silenceable, so they map to no
-        // category (the producer's mute gate is skipped). Every OTHER feed key stays mutable.
+        // A job cancellation, a payment confirmation, and the day-ahead schedule must not be
+        // silenceable, so they map to no category (the producer's mute gate is skipped). Every OTHER
+        // feed key stays mutable.
+        //
+        // The digest joined them because a cleaner who can turn off "tomorrow you have 2 jobs" can
+        // turn off the thing that stops them forgetting — the same argument the catalog already makes
+        // about a job appearing on their own schedule.
         string[] nonMutable =
         [
             NotificationEventCatalog.OrderAssignmentCancelled,
             NotificationEventCatalog.InvoicePaid,
+            NotificationEventCatalog.ReminderTomorrow,
         ];
         foreach (var key in nonMutable)
         {
@@ -82,6 +88,7 @@ public class NotificationFeedEventKeysTests
         Assert.Equal(
             [
                 NotificationEventCatalog.NewJobsAvailable,
+                NotificationEventCatalog.ReminderTomorrow,
                 NotificationEventCatalog.PreferredOffer,
                 NotificationEventCatalog.OrderAssignmentCancelled,
                 NotificationEventCatalog.InvoicePaid,

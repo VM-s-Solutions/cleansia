@@ -8,6 +8,14 @@ final class CustomerShellModel: ViewModel {
     @Published var isBookingPresented = false
     @Published var isAddressManagerPresented = false
 
+    /// The order whose detail should raise the review sheet on arrival.
+    ///
+    /// Model state rather than a `ShellRoute` payload deliberately. Adding an associated value to
+    /// `.orderDetail` would be compile-enforced but would churn all thirteen construction sites — eight
+    /// of them test equality assertions — for a flag that is false on every path but this one. Cleared
+    /// as soon as the detail consumes it, so a later manual visit to the same order does not re-open.
+    @Published var reviewPromptOrderId: String?
+
     private var lastRealTab: CustomerShellTab = .home
 
     func book() {
@@ -40,6 +48,20 @@ final class CustomerShellModel: ViewModel {
     func openOrder(_ orderId: String) {
         selection = .orders
         path = NavigationPath([ShellRoute.orderDetail(orderId)])
+    }
+
+    /// The completion prompt's landing: open the order's own detail with the review sheet raised.
+    ///
+    /// Routed to the detail rather than hosted as a shell sheet because that screen already owns the
+    /// review state, the submit path and the success/close wiring — a second host would be a second
+    /// copy of all three.
+    func openOrderForReview(_ orderId: String) {
+        reviewPromptOrderId = orderId
+        openOrder(orderId)
+    }
+
+    func consumeReviewPrompt() {
+        reviewPromptOrderId = nil
     }
 
     func openOrders() {

@@ -307,9 +307,9 @@ public class CompleteOrder
             // immediately and pay-calc failures (missing pay config, missing
             // pay period, validator rejection) don't block completion or
             // surface as toast errors to the cleaner — the consumer logs and
-            // queue retries handle it. Today AssignedEmployees is always
-            // size 1 (single cleaner per order); the loop is forward-compat
-            // for shared jobs.
+            // queue retries handle it. The loop is NOT forward-compat: an order's crew is
+            // ceil(EstimatedTime / 120), and the catalogue carries single 180- and 240-minute
+            // services, so a two-seat job is an ordinary booking and pays two cleaners today.
             foreach (var assignment in order.AssignedEmployees)
             {
                 pending.Enqueue(

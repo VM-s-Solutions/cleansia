@@ -111,15 +111,70 @@ The typed business clients are generated from the **shared committed mobile spec
 URLSession). A **spec re-dump stays owner-run** (`manual_step: mobile-spec-regen`) — it needs the mobile
 API hosts running — but generating from the specs already committed does not.
 
+**To regenerate the clients — this is the whole command, and it needs nothing running:**
+
 ```sh
-brew install openapi-generator                                   # once, 7.x
-
-# (owner) refresh the shared specs from the running mobile API hosts first
-src/cleansia_ios/scripts/refresh-mobile-spec.sh                  # partner:5002 + customer:5004
-
-# then generate
 src/cleansia_ios/scripts/generate-api-clients.sh                 # both apps
 ```
+
+It reads the committed specs off disk. It does **not** need the API up, and it is what you want after
+pulling a branch whose backend DTOs changed.
+
+**Only if you changed the backend contract yourself**, refresh the committed specs first — this one
+does need the mobile API hosts running, and it is a separate step, deliberately not chained to the
+line above:
+
+```sh
+src/cleansia_ios/scripts/refresh-mobile-spec.sh                  # partner:5002 + customer:5004
+```
+
+With no host running it now reports a skip and exits 0, leaving the committed specs alone. It used to
+`exit 1`, and because it sat directly above the generate step in one copy-paste block, it took the
+step you actually wanted down with it.
+
+### The regeneration "did not take"
+
+If a type the spec clearly defines is still missing after running the generator — `OrderReviewDto` with
+no `tags`, `OrderListItem` with no `hasReview`, `ReviewTag` not in scope — **the generator is not the
+problem and running it again will not help.**
+
+`CleansiaCustomerApi` / `CleansiaPartnerApi` are **local `path:` SPM packages** (`project.yml:39-40`)
+and are gitignored (`.gitignore:14-15`). Rewriting their sources on disk does not change their
+identity, so Xcode and SPM keep serving the copy they already resolved. The generator reports success,
+the files on disk are correct, and the build still sees the old shape.
+
+Order matters — regenerate, then clear what cached it, then rebuild:
+
+```sh
+cd src/cleansia_ios
+./scripts/generate-api-clients.sh customer      # prints the model count it produced
+
+# prove the contract actually landed on disk before blaming the build
+ls CleansiaCustomerApi/Models | grep -i reviewtag
+grep -n "tags" CleansiaCustomerApi/Models/OrderReviewDto.swift
+
+# then clear the caches that are still holding the old package
+rm -rf ~/Library/Developer/Xcode/DerivedData/CleansiaCustomer-*
+rm -rf CleansiaCustomer/.swiftpm CleansiaCustomer/CleansiaCustomer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+(cd CleansiaCustomer && xcodegen generate)
+```
+
+**The models are at `CleansiaCustomerApi/Models/`, NOT `CleansiaCustomerApi/Sources/…`.** Despite
+`useSPMFileStructure: true`, `swiftPackagePath: .` puts every source at the package root and the
+generated `Package.swift` declares `path: "."` to match. Looking in a `Sources/` directory that never
+existed makes a perfectly good generation look like a failed one.
+
+Verified by running the committed config against the committed spec: 160 models, including
+`Models/ReviewTag.swift`, with `OrderReviewDto.tags: [ReviewTag]?` and `OrderListItem.hasReview: Bool?`.
+So if those are missing on a machine, the spec and the config are not the cause.
+
+In Xcode the equivalent is **File → Packages → Reset Package Caches**, then Product → Clean Build
+Folder. If the two `grep`s above find nothing, the generator genuinely did not run — check that
+`openapi-generator` is on PATH and is 7.10.0.
+
+`openapi-generator` must be **7.10.0** — see the pinned install in `.github/workflows/ios-ci.yml`.
+`brew install openapi-generator` now gives 7.15+, and the hand-written request spine subclasses
+generator internals.
 
 After the first generation, wire each generated package into its app: uncomment the
 `Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:` in

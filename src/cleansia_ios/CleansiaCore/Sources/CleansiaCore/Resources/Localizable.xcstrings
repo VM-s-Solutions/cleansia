@@ -4339,6 +4339,41 @@
         }
       }
     },
+    "error.order.too_early_to_start": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na start je příliš brzy — začít můžete až hodinu před termínem."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too early to start — you can begin up to an hour before the booking."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё рано начинать — начать можно не раньше чем за час до начала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na štart je príliš skoro — začať môžete až hodinu pred termínom."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще зарано починати — почати можна не раніше ніж за годину до початку."
+          }
+        }
+      }
+    },
     "error.order.total_price.not_match": {
       "extractionState": "stale",
       "localizations": {

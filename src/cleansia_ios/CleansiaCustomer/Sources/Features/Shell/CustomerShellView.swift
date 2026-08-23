@@ -131,7 +131,35 @@ struct CustomerShellView: View {
         if container.orderRepository.orders.contains(where: { OrderStatusGroup.isActive($0.status) }) {
             AnimatedMascotView.prewarm(.cleaningInProgress)
         }
-        if await needsOnboarding { onNeedsOnboarding() }
+        // RETURN, not fall through: this shell is being replaced by onboarding, so a prompt raised now
+        // is never presented — and raiseReviewPromptIfDue stamps the order as asked BEFORE it opens the
+        // sheet, so falling through spends the one chance to ask and shows nothing.
+        if await needsOnboarding {
+            onNeedsOnboarding()
+            return
+        }
+        await raiseReviewPromptIfDue()
+    }
+
+    /// Ask for a review of the most recently finished clean, once. Runs AFTER the awaited fan-out
+    /// above so it decides against the fresh order snapshot rather than an empty cache, and after the
+    /// onboarding gate so a brand-new customer is never asked two things at once.
+    private func raiseReviewPromptIfDue() async {
+        guard let userId = profileVM.currentUser?.id, !userId.isBlank else { return }
+        let settings = container.appSettings
+        let orders = container.orderRepository.orders
+        let prompted = Set(
+            orders.map(\.id).filter {
+                settings.hasAnsweredPrompt(ReviewPrompt.settingsKey(orderId: $0), userId: userId)
+            }
+        )
+        guard let candidate = ReviewPrompt.candidate(orders: orders, alreadyPrompted: prompted) else {
+            return
+        }
+        // Stamped when the prompt is SHOWN, not when it is answered: declining is an answer, and
+        // asking twice about the same clean is what makes this pattern feel like nagging.
+        settings.markPromptAnswered(ReviewPrompt.settingsKey(orderId: candidate.id), userId: userId)
+        model.openOrderForReview(candidate.id)
     }
 
     private var tabs: some View {
@@ -336,6 +364,10 @@ extension CustomerShellView {
     private func orderDetail(_ orderId: String) -> some View {
         OrderDetailView(
             orderId: orderId,
+            // Only the order the prompt named, and only until it is consumed — a later manual visit to
+            // the same order must not re-raise the sheet.
+            openReviewOnLoad: model.reviewPromptOrderId == orderId,
+            onReviewPromptConsumed: { model.consumeReviewPrompt() },
             client: container.orderClient,
             repository: container.orderRepository,
             membershipRepository: container.membershipRepository,

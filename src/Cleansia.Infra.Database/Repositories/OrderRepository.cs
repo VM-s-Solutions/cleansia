@@ -252,7 +252,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return await GetDbSet()
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime >= weekStart &&
-                       o.CleaningDateTime < weekEnd)
+                       o.CleaningDateTime < weekEnd &&
+                       // A cancelled order is not work, so it must not consume a capped cleaner's
+                       // week. Without this term a cleaner whose three jobs were all cancelled by the
+                       // customer stayed capped out until Monday, having done nothing. The set is
+                       // SlotBlockingStatuses' own reasoning applied to a different question — an
+                       // order occupies the cleaner only while it is a live commitment.
+                       SlotBlockingStatuses.Contains(o.CurrentStatus))
             .CountAsync(ct);
     }
 
@@ -282,6 +288,28 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return LiveCommitmentsInWindow(orders, cleaningDateTime, cleaningDateTime.AddMinutes(estimatedTimeMinutes))
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
             .AnyAsync(ct);
+    }
+
+    public async Task<IReadOnlySet<string>> GetEmployeeIdsCurrentlyOnAJobAsync(
+        IReadOnlyCollection<string> employeeIds,
+        CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        // Ignores the tenant filter for the same reason its caller does: the sweep runs with no JWT and
+        // sets its override per tenant group, so a filtered read here would see nothing.
+        var onAJob = await GetQueryableIgnoringTenant()
+            .Where(o => o.CurrentStatus == OrderStatus.OnTheWay || o.CurrentStatus == OrderStatus.InProgress)
+            .SelectMany(o => o.AssignedEmployees)
+            .Where(ae => employeeIds.Contains(ae.EmployeeId))
+            .Select(ae => ae.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return onAJob.ToHashSet(StringComparer.Ordinal);
     }
 
     public async Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(

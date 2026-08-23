@@ -109,6 +109,27 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
         return HandleResult<AdminUpdateEmployeeAvailability.Response>(result);
     }
 
+    /// <summary>
+    /// Caps or un-caps one cleaner's weekly order count. A null limit clears it back to unlimited,
+    /// which is the default every cleaner has.
+    /// </summary>
+    [HttpPut("{employeeId}/weekly-order-limit")]
+    [Permission(Policy.CanAdminUpdateEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminSetEmployeeWeeklyOrderLimit.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SetWeeklyOrderLimit(
+        string employeeId,
+        [FromBody] AdminSetEmployeeWeeklyOrderLimit.Request request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AdminSetEmployeeWeeklyOrderLimit.Command(employeeId, request.WeeklyOrderLimit);
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminSetEmployeeWeeklyOrderLimit.Response>(result);
+    }
+
     [HttpPut("{employeeId}/update")]
     [Permission(Policy.CanAdminUpdateEmployee)]
     [EnableRateLimiting("auth")]

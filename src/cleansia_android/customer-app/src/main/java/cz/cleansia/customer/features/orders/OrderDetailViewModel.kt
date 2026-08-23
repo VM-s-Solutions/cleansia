@@ -16,6 +16,7 @@ import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.orders.ReviewTag
 import cz.cleansia.customer.core.orders.OrderReviewDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
@@ -454,15 +455,27 @@ class OrderDetailViewModel @Inject constructor(
      * The repo already surfaces failures, so this adds only the success snackbar, the close signal, and a
      * re-fetch so the cached detail carries the new review.
      */
-    fun submitReview(rating: Int, comment: String?, isEdit: Boolean = false) {
+    fun submitReview(
+        rating: Int,
+        comment: String?,
+        tags: List<ReviewTag> = emptyList(),
+        isEdit: Boolean = false,
+    ) {
         val id = orderId
         if (id.isNullOrBlank()) return
         if (rating !in 1..5) return
         if (_reviewState.value is ActionState.Submitting) return
         viewModelScope.launch {
             _reviewState.value = ActionState.Submitting
-            val trimmed = comment?.trim()?.take(2000)?.ifBlank { null }
-            val result = orderRepository.submitReview(id, rating, trimmed).surfaceError().getOrNull()
+            val trimmed = comment?.trim()?.take(REVIEW_COMMENT_MAX_LENGTH)?.ifBlank { null }
+            // Tags are filtered to the rating's own polarity here as well as in the sheet. The server
+            // refuses a mismatch outright, and a stale selection left behind by a rating change would
+            // otherwise turn a valid review into a 400 the customer cannot act on.
+            val polar = tags.filter { it.isPositive == (rating >= ReviewTag.POSITIVE_RATING_FLOOR) }
+                .distinct()
+                .take(ReviewTag.MAX_TAGS)
+            val result = orderRepository.submitReview(id, rating, trimmed, polar)
+                .surfaceError().getOrNull()
             if (result == null) {
                 _reviewState.value = ActionState.Error(
                     appContext.getString(R.string.order_review_retry_hint),

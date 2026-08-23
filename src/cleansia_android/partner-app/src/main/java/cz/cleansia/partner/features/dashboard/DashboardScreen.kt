@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -66,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
@@ -74,8 +77,12 @@ import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
 import cz.cleansia.partner.data.dashboard.DashboardStats
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.orders.toOrderStatus
-import cz.cleansia.partner.features.orders.PendingOffersCard
-import cz.cleansia.partner.features.profile.JobRadiusPromptCard
+import cz.cleansia.partner.features.orders.PendingOffersCardContent
+import cz.cleansia.partner.features.orders.PendingOffersCardUiState
+import cz.cleansia.partner.features.orders.PendingOffersCardViewModel
+import cz.cleansia.partner.features.profile.JobRadiusPromptCardContent
+import cz.cleansia.partner.features.profile.JobRadiusPromptUiState
+import cz.cleansia.partner.features.profile.JobRadiusPromptViewModel
 import cz.cleansia.partner.ui.theme.BrandGradients
 import cz.cleansia.partner.ui.theme.asList
 import java.time.Duration
@@ -111,6 +118,12 @@ fun DashboardScreen(
     val firstName by viewModel.firstName.collectAsStateWithLifecycle()
     val unreadNotifications by viewModel.unreadNotifications.collectAsStateWithLifecycle()
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    // Hoisted so the list can skip the ITEM, not just its contents — see the note at the call sites.
+    val pendingOffersViewModel: PendingOffersCardViewModel = hiltViewModel()
+    val pendingOffersState by pendingOffersViewModel.uiState.collectAsStateWithLifecycle()
+    val jobRadiusViewModel: JobRadiusPromptViewModel = hiltViewModel()
+    val jobRadiusState by jobRadiusViewModel.uiState.collectAsStateWithLifecycle()
 
     // Silent-stale on resume. The VM routes through the staleness check
     // internally and either silently background-refreshes (cache > 60s)
@@ -198,12 +211,31 @@ fun DashboardScreen(
                 }
             }
         } else {
-            item {
-                PendingOffersCard(onOpenOffers = onOpenPendingOffers)
+            // Emitted ONLY when they have something to show. Both cards render nothing in their
+            // Hidden state, but `verticalArrangement = spacedBy` spaces ITEMS, not pixels — an item
+            // that draws nothing still gets a gap on each side. Two of them sat between the greeting
+            // and the first real card and left 32.dp of dead space at the top of a dashboard that is
+            // usually in exactly that state (no reservation, radius already chosen).
+            (pendingOffersState as? PendingOffersCardUiState.Visible)?.let { offers ->
+                item {
+                    PendingOffersCardContent(
+                        count = offers.count,
+                        soonestRespondByUtc = offers.soonestRespondByUtc,
+                        onOpenOffers = onOpenPendingOffers,
+                    )
+                }
             }
 
-            item {
-                JobRadiusPromptCard(onChooseRadius = onOpenJobRadius)
+            if (jobRadiusState == JobRadiusPromptUiState.Visible) {
+                item {
+                    JobRadiusPromptCardContent(
+                        onChooseRadius = {
+                            jobRadiusViewModel.onChooseRadius()
+                            onOpenJobRadius()
+                        },
+                        onKeepEveryJob = jobRadiusViewModel::onKeepEveryJob,
+                    )
+                }
             }
 
             item {
@@ -729,7 +761,13 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
                     text = stringResource(R.string.dash_earnings_week),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.primary,
+                    // fill = false so the label takes only what it needs and yields the rest, rather
+                    // than claiming half a row it does not use.
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(Modifier.width(Spacing.S))
                 Text(
                     text = if (weekJobs == 0)
                         stringResource(R.string.dash_no_completed_yet)
@@ -737,6 +775,10 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
                         stringResource(R.string.dash_jobs_done_count, weekJobs),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // The zero-jobs caption is the long one — uk runs 329dp against a 295dp column,
+                    // and it is the branch every cleaner sees on a Monday.
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Spacer(Modifier.height(2.dp))
@@ -809,23 +851,19 @@ private fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: Str
 }
 
 /**
- * Resolve a display symbol from the server-supplied ISO currency code
- * (e.g. "CZK" → "Kč", "EUR" → "€", "USD" → "$"). Falls back to the
- * device-locale currency symbol only when the server didn't send a
- * code — and as a last resort to an empty string.
+ * Resolve a display symbol from the server-supplied ISO currency code.
  *
- * Why the server code is authoritative: the cleaner's preferred
- * currency lives on the Employee record and is locale-independent.
- * A Czech cleaner running a US-locale emulator should still see "Kč",
- * not "$".
+ * This used to call `Currency.getSymbol(Locale.getDefault())` directly, which returns the bare ISO
+ * code whenever the DEVICE's locale has no symbol for that currency — so a Ukrainian handset rendered
+ * "3 731 CZK" on this screen while the orders list beside it rendered "1 275 Kč" from the symbol the
+ * server sends per order. A currency's symbol belongs to the currency, not to who is looking at it.
+ * → [CurrencySymbols]
  */
 private fun resolveCurrencySymbol(serverCode: String?): String {
     val code = serverCode?.takeIf { it.isNotBlank() }
-    if (code != null) {
-        return runCatching {
-            java.util.Currency.getInstance(code).getSymbol(Locale.getDefault())
-        }.getOrDefault(code)
-    }
+    if (code != null) return CurrencySymbols.forCode(code)
+
+    // No code at all: the device's own currency is the only thing left to guess with.
     return runCatching {
         java.util.Currency.getInstance(Locale.getDefault()).symbol
     }.getOrDefault("")
@@ -1044,27 +1082,34 @@ private fun QuickActionsGrid(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(start = Spacing.XS, bottom = Spacing.S),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+        // IntrinsicSize.Max + fillMaxHeight per tile: the label budget is ~70dp and "Pay history"
+        // is 82dp in cs, 83 in sk/uk and 95 in ru, so that one tile wraps to two lines while its
+        // three neighbours stay on one — which is the uneven row. Equal heights make the wrap
+        // harmless instead of ragged. Same shape ProfileTab already uses for its stat row.
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.S),
+        ) {
             QuickActionTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 icon = Icons.Outlined.Person,
                 label = stringResource(R.string.dash_qa_profile),
                 onClick = onProfile,
             )
             QuickActionTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 icon = Icons.Outlined.History,
                 label = stringResource(R.string.dash_qa_pay_history),
                 onClick = onPayHistory,
             )
             QuickActionTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 icon = Icons.AutoMirrored.Outlined.Article,
                 label = stringResource(R.string.dash_qa_documents),
                 onClick = onDocuments,
             )
             QuickActionTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
                 label = stringResource(R.string.dash_qa_help),
                 onClick = onHelp,
@@ -1115,6 +1160,8 @@ private fun QuickActionTile(
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
+                // Without this a third line is clipped mid-glyph rather than ellipsized.
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

@@ -67,6 +67,27 @@ class ServiceAreaProviderTest {
         assertEquals(2, dataSource.cityFetches)
     }
 
+    /**
+     * The warning must never be STRICTER than the server. It tells a customer "we do not operate here"
+     * before they book, so a false alarm turns away someone the platform would have served — and the
+     * geocoder returning "Plzen" for a serviced "Plzeň", or "Praha 8" for "Praha", is the ordinary case
+     * rather than the exotic one. Same rule as `CreateOrder`, via the same shared matcher.
+     */
+    @Test
+    fun `isCityServiced accepts everything the server would accept`() = runTest {
+        val dataSource = FakeDataSource()
+        dataSource.cityResults.addLast(listOf(prague.copy(name = "Praha"), prague.copy(name = "Plzeň")))
+        val provider = ServiceAreaProvider(dataSource)
+
+        assertEquals(true, provider.isCityServiced("country-cz", "Praha 8"))
+        assertEquals(true, provider.isCityServiced("country-cz", "Praha 4 - Chodov"))
+        assertEquals(true, provider.isCityServiced("country-cz", "Plzen"))
+
+        // Still refuses what the server refuses — an okres is the ring AROUND a city, not the city.
+        assertEquals(false, provider.isCityServiced("country-cz", "Praha-západ"))
+        assertEquals(false, provider.isCityServiced("country-cz", "Kladno"))
+    }
+
     @Test
     fun `isCityServiced answers per country with case and whitespace tolerance`() = runTest {
         val dataSource = FakeDataSource()

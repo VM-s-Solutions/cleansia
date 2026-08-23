@@ -26,6 +26,10 @@ struct CustomerOrderSummary: Equatable {
     let currencyCode: String?
     let services: [CustomerOrderLineName]
     let packages: [CustomerOrderLineName]
+    /// Whether the customer has already reviewed this booking. Server-projected onto the LIST so the
+    /// completion prompt can be decided from the warm cache — the alternative is a detail fetch per
+    /// candidate every time the app opens.
+    let hasReview: Bool
 
     var status: OrderStatus? {
         statusCode?.toOrderStatus()
@@ -50,5 +54,8 @@ extension CustomerOrderSummary {
         packages = (item.selectedPackages ?? []).map {
             CustomerOrderLineName(name: $0.name, translations: $0.translations)
         }
+        // Defaulted rather than required: an older server that omits it yields "not reviewed", which
+        // costs at most one redundant prompt. Refusing would drop the whole row off the orders list.
+        hasReview = item.hasReview ?? false
     }
 }

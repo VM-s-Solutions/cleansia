@@ -1134,6 +1134,7 @@
 
     <string name="error_order_not_in_progress">Tato zakázka není v průběhu.</string>
     <string name="error_order_not_confirmed">Tato zakázka ještě není potvrzena.</string>
+    <string name="error_order_too_early_to_start">Na start je příliš brzy — začít můžete až hodinu před termínem.</string>
     <string name="error_order_not_completed">Tato zakázka ještě není dokončena.</string>
     <string name="error_order_actual_time_positive">Skutečný čas musí být větší než nula.</string>
     <string name="error_order_completion_notes_required">Poznámky k dokončení jsou povinné.</string>
@@ -1243,6 +1244,12 @@
     <string name="notification_channel_new_jobs_desc">Pravidelný souhrn nových zakázek dostupných ve vaší oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zakázky</string>
     <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek. Klepnutím je zobrazíte.</string>
+    <string name="notification_reminder_tomorrow_title">Zítřejší zakázky</string>
+    <string name="notification_reminder_tomorrow_body">Zakázky na zítra: %1$d. Klepnutím je zobrazíte.</string>
+    <string name="notification_reminder_soon_title">Zakázka brzy začíná</string>
+    <string name="notification_reminder_soon_body">Zakázka %1$s začíná přibližně za dvě hodiny.</string>
+    <string name="notification_reminder_not_started_title">Jste už na cestě?</string>
+    <string name="notification_reminder_not_started_body">Zakázka %1$s brzy začíná a ještě jste nevyrazili.</string>
 
     <string name="notification_order_assignment_cancelled_title">Zakázka zrušena</string>
     <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
@@ -1374,4 +1381,12 @@
     <string name="profile_terms_summary">Otevře se v prohlížeči</string>
     <string name="profile_privacy">Zásady ochrany osobních údajů</string>
     <string name="profile_privacy_summary">Jak nakládáme s vašimi údaji</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Změnit fotku</string>
+    <string name="profile_avatar_remove">Odebrat fotku</string>
+    <string name="profile_avatar_content_description">Profilová fotka</string>
+    <string name="profile_avatar_encode_failed">Tento obrázek se nepodařilo použít. Zkuste jinou fotku.</string>
+    <string name="profile_avatar_picker_unavailable_title">Žádný výběr fotek</string>
+    <string name="profile_avatar_picker_unavailable_message">V tomto zařízení není žádná aplikace pro výběr fotky.</string>
 </resources>

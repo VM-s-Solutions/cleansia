@@ -113,6 +113,14 @@ fun OrderDetailScreen(
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
     onViewPhotos: () -> Unit = {},
+    /**
+     * Raise the review sheet as soon as the order resolves — the completion prompt's landing.
+     *
+     * The prompt routes HERE rather than hosting its own sheet in the shell: this screen already owns
+     * the review state, the submit path and the success/close wiring, and a second host would be a
+     * second copy of all three.
+     */
+    openReviewOnLoad: Boolean = false,
     viewModel: OrderDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -139,6 +147,23 @@ fun OrderDetailScreen(
     // and the observed success flow can both drive it.
     var showCancelSheet by remember { mutableStateOf(false) }
     var showReviewSheet by remember { mutableStateOf(false) }
+
+    // Deep-linked / prompted arrival. Waits for the order to actually load — opening over a spinner
+    // would show a sheet with no cleaner name and no date. Fires once: `remember` survives the
+    // recomposition the load itself causes, so dismissing does not immediately re-open.
+    var reviewAutoOpened by remember { mutableStateOf(false) }
+    val autoOpenOrder = (state as? OrderDetailUiState.Loaded)?.order
+    LaunchedEffect(openReviewOnLoad, autoOpenOrder?.id) {
+        if (!openReviewOnLoad || reviewAutoOpened || autoOpenOrder == null) return@LaunchedEffect
+        // Server truth wins: a review left on another device between the prompt and this screen
+        // means there is nothing to ask for.
+        if (autoOpenOrder.review != null) {
+            reviewAutoOpened = true
+            return@LaunchedEffect
+        }
+        reviewAutoOpened = true
+        showReviewSheet = true
+    }
 
     // Close the sheet when the VM confirms the cancel succeeded. The VM itself
     // pushes the success snackbar (it has the currency + refund numbers in
@@ -351,12 +376,25 @@ fun OrderDetailScreen(
                     viewModel.dismissReviewError()
                 }
             },
-            onConfirm = { rating, comment ->
-                viewModel.submitReview(rating, comment, isEdit = currentReview != null)
+            onConfirm = { rating, comment, tags ->
+                viewModel.submitReview(rating, comment, tags, isEdit = currentReview != null)
             },
             isSubmitting = submittingReview,
             errorMessage = reviewError,
             existingReview = currentReview,
+            // A prompt the customer did not ask for offers "Not now" and leads with the question; the
+            // card they tapped themselves keeps "Cancel" and the editorial title. Same sheet, honest
+            // about which one it is — and the same split iOS makes.
+            titleRes = if (reviewAutoOpened && currentReview == null) {
+                R.string.order_review_prompt_title
+            } else {
+                null
+            },
+            dismissLabelRes = if (reviewAutoOpened && currentReview == null) {
+                R.string.order_review_prompt_not_now
+            } else {
+                R.string.order_review_cancel
+            },
         )
     }
 }

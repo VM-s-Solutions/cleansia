@@ -1499,7 +1499,11 @@
       "not_completed": "This action is only available once the cleaning is completed.",
       "review": {
         "already_exists": "You've already reviewed this order.",
-        "rating_invalid": "Please choose a rating between 1 and 5."
+        "duplicate_tag": "The same tag was selected twice.",
+        "rating_invalid": "Please choose a rating between 1 and 5.",
+        "tag_rating_mismatch": "Those tags do not match the rating you gave.",
+        "too_many_tags": "Pick up to four tags.",
+        "unknown_tag": "One of those tags is not recognised."
       },
       "note": {
         "content_required": "Please enter a note before saving."

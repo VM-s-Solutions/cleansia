@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Cleansia.Tests.Functions;
 
-// F5 / AC5-AC6 — the four recurring/notification timers must read their cron from an app-setting via
+// The tokenized timers must read their cron from an app-setting via
 // %AppSetting% TimerTrigger syntax (promotion is config-only), the committed production defaults must
 // match each function's documented cadence, and Materialize must fire strictly before Reminder.
 public class TimerScheduleConfigTests
@@ -17,6 +17,8 @@ public class TimerScheduleConfigTests
     private const string DigestToken = "%SendNewJobsDigestCron%";
     private const string ExpireReferralsToken = "%ExpireStaleReferralsCron%";
     private const string PreCleaningToken = "%SendPreCleaningRemindersCron%";
+    private const string CleanerJobRemindersToken = "%SendCleanerJobRemindersCron%";
+    private const string TomorrowDigestToken = "%SendTomorrowJobDigestCron%";
 
     private const string MaterializeCron = "0 0 2 * * *";
     private const string RemindersCron = "0 30 2 * * *";
@@ -24,6 +26,8 @@ public class TimerScheduleConfigTests
     private const string DigestCron = "0 0 * * * *";
     private const string ExpireReferralsCron = "0 30 3 * * *";
     private const string PreCleaningCron = "0 */5 * * * *";
+    private const string CleanerJobRemindersCron = "0 */5 * * * *";
+    private const string TomorrowDigestCron = "0 0 * * * *";
 
     private static readonly IConfiguration ProductionDefaults = BuildProductionDefaults();
 
@@ -34,6 +38,8 @@ public class TimerScheduleConfigTests
     [InlineData(typeof(SendNewJobsDigestTimerFunction), DigestToken)]
     [InlineData(typeof(ExpireStaleReferralsFunction), ExpireReferralsToken)]
     [InlineData(typeof(SendPreCleaningRemindersFunction), PreCleaningToken)]
+    [InlineData(typeof(SendCleanerJobRemindersFunction), CleanerJobRemindersToken)]
+    [InlineData(typeof(SendTomorrowJobDigestFunction), TomorrowDigestToken)]
     public void Trigger_reads_cron_from_app_setting_token(Type functionType, string expectedToken)
     {
         var schedule = ReadSchedule(functionType);
@@ -48,6 +54,8 @@ public class TimerScheduleConfigTests
     [InlineData(typeof(SendNewJobsDigestTimerFunction), DigestCron)]
     [InlineData(typeof(ExpireStaleReferralsFunction), ExpireReferralsCron)]
     [InlineData(typeof(SendPreCleaningRemindersFunction), PreCleaningCron)]
+    [InlineData(typeof(SendCleanerJobRemindersFunction), CleanerJobRemindersCron)]
+    [InlineData(typeof(SendTomorrowJobDigestFunction), TomorrowDigestCron)]
     public void Effective_schedule_equals_documented_production_cadence(Type functionType, string expectedCron)
     {
         var token = ReadSchedule(functionType);
@@ -122,6 +130,46 @@ public class TimerScheduleConfigTests
             $"the sweep's widest gap is {widestGap.TotalMinutes} minutes but its window is only " +
             $"{windowMinutes} minutes wide — an order can cross the window between two fires and never " +
             "be reminded.");
+    }
+
+    /// <summary>
+    /// <b>The one relation the grace window rests on, and the only one that was not pinned.</b>
+    ///
+    /// <para>ADR-0055 argues 60 minutes is safe because a cleaner who may start an hour early still gets
+    /// their customer's "starting soon" notice first. That is only true while the sweep's FIRST fire
+    /// inside its window lands later than the grace allows — and that margin comes from the cron's
+    /// phase, not from the constant. Widen the cron to 15 minutes, or narrow the window, and the
+    /// guarantee silently evaporates with nothing else failing.</para>
+    ///
+    /// <para>Both operands are already computed by the cadence test above; this is the assertion nobody
+    /// wrote.</para>
+    /// </summary>
+    [Fact]
+    public void The_start_grace_window_cannot_outrun_the_customers_pre_cleaning_notice()
+    {
+        var window = new SendPreCleaningReminders.Command();
+        var schedule = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendPreCleaningRemindersFunction))));
+
+        var dayStart = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+        var previous = dayStart;
+        var widestGap = TimeSpan.Zero;
+        for (var fire = schedule.NextOccurrence(dayStart); fire < dayEnd; fire = schedule.NextOccurrence(fire))
+        {
+            widestGap = fire - previous > widestGap ? fire - previous : widestGap;
+            previous = fire;
+        }
+
+        // Worst case the notice goes out at LeadMinutesHigh minus one whole gap. The grace must stay
+        // strictly inside that, or a cleaner can be at the door before the customer has been told.
+        var guaranteedNoticeMinutes = window.LeadMinutesHigh - widestGap.TotalMinutes;
+
+        Assert.True(
+            BookingPolicy.StartGraceWindowMinutes < guaranteedNoticeMinutes,
+            $"the start grace is {BookingPolicy.StartGraceWindowMinutes} minutes but the customer's " +
+            $"notice is only guaranteed by T-{guaranteedNoticeMinutes} (window high " +
+            $"{window.LeadMinutesHigh} minus a widest cron gap of {widestGap.TotalMinutes}) — a cleaner " +
+            "can start, and the customer finds out afterwards.");
     }
 
     /// <summary>

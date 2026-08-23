@@ -69,6 +69,24 @@ object NotificationTemplates {
             R.string.notification_new_jobs_body,
             NotificationChannels.CHANNEL_NEW_JOBS,
         )
+        // The three job reminders ride CHANNEL_ORDER_UPDATES, not the new-jobs channel: these are
+        // about work the cleaner has ALREADY taken, and the server treats them as non-mutable, so
+        // grouping them with the muteable digest would offer a mute the server will not honour.
+        "order.reminder_tomorrow" -> Template(
+            R.string.notification_reminder_tomorrow_title,
+            R.string.notification_reminder_tomorrow_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
+        "order.reminder_soon" -> Template(
+            R.string.notification_reminder_soon_title,
+            R.string.notification_reminder_soon_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
+        "order.reminder_not_started" -> Template(
+            R.string.notification_reminder_not_started_title,
+            R.string.notification_reminder_not_started_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         // New-jobs channel, not a channel of its own: the server treats this as
         // NotificationCategory.NewJobsAvailable and declines the whole offer for a cleaner who
         // muted new jobs, so a separate channel would be a mute the server cannot honor.
@@ -100,8 +118,12 @@ object NotificationTemplates {
             "order.assigned",
             "order.assignment_revoked",
             "order.preferred_offer",
+            "order.reminder_soon",
+            "order.reminder_not_started",
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
-            "order.new_available" -> {
+            "order.new_available",
+            "order.reminder_tomorrow",
+            -> {
                 val count = args["count"]?.toIntOrNull() ?: 1
                 context.getString(bodyRes, count)
             }

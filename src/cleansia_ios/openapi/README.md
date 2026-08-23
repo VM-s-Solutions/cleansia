@@ -39,11 +39,16 @@ src/cleansia_ios/scripts/generate-api-clients.sh            # both apps
 src/cleansia_ios/scripts/generate-api-clients.sh partner    # one app
 ```
 
-Refresh the committed specs from a running mobile API host (mirrors Android's `dumpOpenApiSpec`):
+Refresh the committed specs from a running mobile API host (mirrors Android's `dumpOpenApiSpec`).
+**Only needed when the backend contract changed** — generating clients from the committed specs does
+not need it, or any host:
 
 ```sh
 src/cleansia_ios/scripts/refresh-mobile-spec.sh             # partner:5002 + customer:5004
 ```
+
+With no host reachable it prints a skip and exits 0 rather than failing, so it can never block a
+client regeneration that did not depend on it.
 
 ## Wiring into the build
 

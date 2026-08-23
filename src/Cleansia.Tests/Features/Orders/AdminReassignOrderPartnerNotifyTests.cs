@@ -56,7 +56,12 @@ public class AdminReassignOrderPartnerNotifyTests
             It.Is<Dictionary<string, string>>(d =>
                 d["orderId"] == OrderId && d["orderNumber"] == order.DisplayOrderNumber),
             order.TenantId,
-            OrderId,
+            // The subject now names the ASSIGNMENT, not just the order — a bare order id collided
+            // across two requests on the unique outbox key. The id is a generated ULID, so the shape
+            // is what is pinned. → AssignmentNotificationSubject
+            It.Is<string>(subject => subject != null
+                && subject.StartsWith(OrderId + ":", StringComparison.Ordinal)
+                && subject.Length > OrderId.Length + 1),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -75,7 +80,12 @@ public class AdminReassignOrderPartnerNotifyTests
             It.Is<Dictionary<string, string>>(d =>
                 d["orderId"] == OrderId && d["orderNumber"] == order.DisplayOrderNumber),
             order.TenantId,
-            OrderId,
+            // The subject now names the ASSIGNMENT, not just the order — a bare order id collided
+            // across two requests on the unique outbox key. The id is a generated ULID, so the shape
+            // is what is pinned. → AssignmentNotificationSubject
+            It.Is<string>(subject => subject != null
+                && subject.StartsWith(OrderId + ":", StringComparison.Ordinal)
+                && subject.Length > OrderId.Length + 1),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

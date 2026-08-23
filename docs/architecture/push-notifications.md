@@ -272,16 +272,70 @@ Most order events sit under the existing `OrderUpdates` category rather than get
 A new category is a boolean **column** plus a toggle in every client, and someone who silenced order
 updates has already answered the question.
 
-Two are deliberately **non-mutable**:
+Five are deliberately **non-mutable**, and every one of them is aimed at a **cleaner**, about a job they
+have already accepted. That is the line: a customer may silence anything, because the consequence of a
+missed message is theirs. A cleaner not turning up is somebody else's morning.
 
-| Event | Why it cannot be silenced |
-|---|---|
-| Admin assigned you a job | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
-| Admin took you off a job | Losing a booked day is not an optional notice |
+| Event | Key | Why it cannot be silenced |
+|---|---|---|
+| Admin assigned you a job | `order.admin_assigned` | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
+| Admin took you off a job | `order.admin_unassigned` | Losing a booked day is not an optional notice |
+| You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
+| Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
+| Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
+
+The three reminders are non-mutable **on the owner's ruling**, on the same reasoning as the two above and
+recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
+already agreed to do.
+
+Both per-job reminders come off **one** query that selects only orders still in `Confirmed`, so marking
+yourself on the way switches off whichever of the two has not already been sent. In practice that only
+ever silences the nudge — nobody is on the way two hours early — but the gate is the same gate, not two.
+
+The nudge carries one further condition, and it is about the **cleaner** rather than the order: it is
+suppressed for anyone already `OnTheWay` or `InProgress` on *any* assignment. Back-to-back jobs put the
+second job's nudge window inside the first, so without it the platform asks a cleaner holding a mop in
+someone else's kitchen whether they have set off. The two-hour notice is deliberately **not** suppressed
+that way — knowing what is next while finishing this one is useful.
+
+**All three go only to cleaners who may actually work**: `ContractStatus.Approved` exactly, on an active
+account. Rejecting a cleaner does not take them off their live orders, so without one shared predicate
+the sweep would tell somebody the platform has just barred from working that their job starts in two
+hours — for work `StartOrder` would then refuse to let them start.
 
 And the admin-unassigned copy is deliberately **not** the assignment-cancelled copy: here the job goes
 ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be telling them
 their booking was gone.
+
+### Why the day-ahead digest runs hourly {#digest-hourly}
+
+`SendTomorrowJobDigest` fires **every hour**, not once a day, and each tick sends to almost nobody. That
+is not waste — it is the only way a UTC cron can deliver at 18:00 *local*.
+
+A timer trigger has no timezone. A once-a-day tick would land at one instant worldwide and be the right
+evening for exactly one country. So the sweep runs hourly, resolves each cleaner's zone from the
+`WorkCountryId` they were assigned at registration, and picks only those inside a **local** send window
+that opens at 18:00. A cleaner in Prague and a cleaner in Warsaw get the same message an hour apart in
+UTC and at the same moment on their own kitchen clock.
+
+**A window, not the hour itself, and that distinction is load-bearing.** An hour *equality* gives a whole
+timezone exactly one attempt per day: a cleaner who takes tomorrow's job at 18:30 is never told, because
+at 19:00 the test is already false — no failure required, that is simply what an equality does. Any tick
+that throws before its group commits loses that evening outright. The window is bounded at **three
+hours** rather than left open: these keys are non-mutable and the platform has no quiet hours, so an
+unbounded catch-up would push at 23:00 to someone who took a job at 22:50.
+
+Two consequences worth knowing before changing it:
+
+- **The suppression watermark is compared in the cleaner's zone too.** Comparing it in UTC would let a
+  cleaner east of Greenwich be told about tomorrow twice on one local evening, when UTC midnight falls
+  inside their evening.
+- **A zero-job evening sends nothing and records nothing.** No digest saying "0" — that message would
+  teach a cleaner to ignore the one that says 2 — and no watermark either, so a job taken later the same
+  evening still earns a digest on the next tick.
+
+A cleaner with no work country is skipped rather than defaulted to UTC: defaulting would send at the
+wrong hour while looking like it worked.
 
 ### One claim the copy still overstates {#near-you}
 

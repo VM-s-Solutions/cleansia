@@ -1140,6 +1140,7 @@
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
     <string name="error_order_not_confirmed">This order isn\'t confirmed yet.</string>
+    <string name="error_order_too_early_to_start">Too early to start — you can begin up to an hour before the booking.</string>
     <string name="error_order_not_completed">This order isn\'t completed yet.</string>
     <string name="error_order_actual_time_positive">Actual time must be greater than zero.</string>
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
@@ -1258,6 +1259,12 @@
     <string name="notification_channel_new_jobs_desc">Periodic digest of new jobs you can take in your work area.</string>
     <string name="notification_new_jobs_title">New jobs available</string>
     <string name="notification_new_jobs_body">%1$d new jobs available near you. Tap to view.</string>
+    <string name="notification_reminder_tomorrow_title">Tomorrow\'s jobs</string>
+    <string name="notification_reminder_tomorrow_body">Jobs tomorrow: %1$d. Tap to see them.</string>
+    <string name="notification_reminder_soon_title">Job starting soon</string>
+    <string name="notification_reminder_soon_body">Order %1$s starts in about two hours.</string>
+    <string name="notification_reminder_not_started_title">Are you on your way?</string>
+    <string name="notification_reminder_not_started_body">Order %1$s starts shortly and you have not set off yet.</string>
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
@@ -1389,4 +1396,12 @@
     <string name="profile_terms_summary">Opens in your browser</string>
     <string name="profile_privacy">Privacy policy</string>
     <string name="profile_privacy_summary">How we handle your data</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Change photo</string>
+    <string name="profile_avatar_remove">Remove photo</string>
+    <string name="profile_avatar_content_description">Profile photo</string>
+    <string name="profile_avatar_encode_failed">Couldn\'t use that image. Try another photo.</string>
+    <string name="profile_avatar_picker_unavailable_title">No photo picker</string>
+    <string name="profile_avatar_picker_unavailable_message">This device has no app that can pick a photo.</string>
 </resources>

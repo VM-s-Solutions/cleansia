@@ -18,7 +18,21 @@ final class DashboardViewModel: ViewModel {
 
     func load() async {
         state = .loading
+        await fetch()
+    }
 
+    /// A pull already has a spinner — the one under the cleaner's finger. Flipping to `.loading` would
+    /// replace the whole dashboard with a second one and throw away the numbers they were looking at,
+    /// so this reloads in place and leaves the last good state visible until the new one arrives. The
+    /// Android twin draws the same distinction with `isUserRefreshing`.
+    ///
+    /// A failure still lands on `.error`, exactly as the initial load does: a pull that silently kept
+    /// stale figures would be worse than one that says it could not refresh them.
+    func userRefresh() async {
+        await fetch()
+    }
+
+    private func fetch() async {
         let employee = try? await client.getCurrentEmployee().get()
         employeeId = employee?.id
 

@@ -64,7 +64,10 @@ public class StartOrderValidatorTests
         const string orderId = "order-1";
         const string employeeId = "emp-1";
 
-        var order = ValidatorTestHelpers.BuildOrder(orderId, status, employeeId);
+        // Inside the start grace window — the default a day out is now a refusal, which is the
+        // point of the gate rather than an inconvenience of the fixture.
+        var order = ValidatorTestHelpers.BuildOrder(
+            orderId, status, employeeId, cleaningDateTime: ValidatorTestHelpers.StartableCleaningTime);
 
         _orderRepository.Setup(r => r.ExistsAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());

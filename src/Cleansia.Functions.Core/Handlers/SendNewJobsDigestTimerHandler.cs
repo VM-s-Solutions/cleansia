@@ -6,10 +6,12 @@ namespace Cleansia.Functions.Core.Handlers;
 /// <summary>
 /// Periodic "new jobs available near you" digest for cleaners.
 ///
-/// Cadence: every 30 minutes (cron <c>0 0,30 * * * *</c>). The sweep
+/// Cadence: hourly, on the hour — the <c>SendNewJobsDigestCron</c> app
+/// setting, whose production default is <c>0 0 * * * *</c>. The sweep
 /// itself is the rate-limit — each cleaner receives at most one digest
 /// per interval, and only when they have at least one newly-eligible
-/// order since their last watermark.
+/// order since their last watermark. Change it in config, never here;
+/// <c>TimerScheduleConfigTests</c> pins the once-per-clock-hour property.
 ///
 /// All targeting (work country, contract status, not-busy) + opt-out +
 /// per-cleaner watermark advance live in <see cref="INewJobsDigestService"/>.

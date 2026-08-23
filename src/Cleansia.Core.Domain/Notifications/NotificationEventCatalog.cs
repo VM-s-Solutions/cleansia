@@ -64,6 +64,41 @@ public static class NotificationEventCatalog
     public const string NewJobsAvailable = "order.new_available";
 
     /// <summary>
+    /// Partner-targeted: the evening before, how many jobs this cleaner has tomorrow. Args:
+    /// <c>count</c> (decimal-string). Body localized client-side.
+    ///
+    /// <para>Sent at 18:00 in the CLEANER's local time, resolved from their
+    /// <c>Employee.WorkCountryId</c> through <c>CountryConfiguration.TimeZoneId</c> — never from a
+    /// client-supplied header, which is spoofable and banned on any path that decides anything.</para>
+    ///
+    /// <para><b>Not mutable.</b> Same reasoning as <see cref="OrderAssigned"/>: a cleaner must not be
+    /// able to silence a job appearing on their own schedule and then not turn up. This one exists
+    /// because they were forgetting. → /architecture/push-notifications#event-catalogue</para>
+    /// </summary>
+    public const string ReminderTomorrow = "order.reminder_tomorrow";
+
+    /// <summary>
+    /// Partner-targeted: this cleaner's job starts in about two hours. One order, not a count — args:
+    /// <c>orderNumber</c> (loc) + <c>orderId</c> (deep link).
+    ///
+    /// <para>Per ASSIGNMENT, not per order: an order's crew is <c>ceil(EstimatedTime / 120)</c>, so a
+    /// two-seat job sends two of these. Not mutable, for the reason above.</para>
+    /// </summary>
+    public const string ReminderSoon = "order.reminder_soon";
+
+    /// <summary>
+    /// Partner-targeted: the job starts shortly and this cleaner has not set off. Args:
+    /// <c>orderNumber</c> (loc) + <c>orderId</c> (deep link).
+    ///
+    /// <para>The only one of the three with a precondition beyond the clock: it is suppressed for a
+    /// cleaner already <c>OnTheWay</c> or <c>InProgress</c> on ANY assignment, not merely this one. That
+    /// is what keeps it from being noise on a full day — back-to-back jobs put this window inside the
+    /// previous job — and it is why this is the last reminder rather than a second copy of
+    /// <see cref="ReminderSoon"/>. Not mutable.</para>
+    /// </summary>
+    public const string ReminderNotStarted = "order.reminder_not_started";
+
+    /// <summary>
     /// Partner-targeted: a customer this cleaner has worked for before asked for them by name on a new
     /// booking (ADR-0036 D4). One order, not a count — args: <c>orderNumber</c> (loc) + <c>orderId</c>
     /// (deep link). It bypasses the digest cadence entirely and does NOT stamp the digest watermark:
@@ -138,4 +173,21 @@ public static class NotificationEventCatalog
         PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,
     };
+
+    /// <summary>
+    /// Feed events that carry a COUNT and must overwrite their own unread row rather than adding one.
+    ///
+    /// <para>The test is membership of this set, not equality with one key, because the property that
+    /// earns the collapse is the payload's shape. Both members answer "how many, right now" and neither
+    /// payload carries a date — so a stale row does not merely duplicate, it <b>lies</b>: a Monday
+    /// evening's <c>reminder_tomorrow</c> row still reads <i>"Jobs tomorrow: 3"</i> when the cleaner
+    /// opens the feed on Thursday. That is the argument, and it is a correctness one; the row count is
+    /// a distant second and is bounded anyway by retention.</para>
+    ///
+    /// <para>The two per-job reminders are deliberately absent, and not by oversight — they are not
+    /// feed events at all. Each is about one specific job at one specific time, so a second one is new
+    /// information rather than a refreshed answer to the same question.</para>
+    /// </summary>
+    public static readonly IReadOnlySet<string> CollapsingDigestKeys =
+        new HashSet<string>(StringComparer.Ordinal) { NewJobsAvailable, ReminderTomorrow };
 }

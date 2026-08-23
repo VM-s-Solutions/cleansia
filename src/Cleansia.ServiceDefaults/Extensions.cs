@@ -44,7 +44,20 @@ public static class Extensions
                 metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    // A MeterProvider emits ONLY the meters it is told about, and the Azure Monitor
+                    // distro adds no wildcard — so these two lines are the whole difference between the
+                    // app's own counters reaching App Insights and being recorded into nothing. They
+                    // were missing from both overloads until 2026-08-22, which is why
+                    // RateLimitMetrics' own doc comment describing "the existing App Insights metric
+                    // pipeline" was describing a pipeline with no subscriber on the other end.
+                    //
+                    // Literals, not IntegrationFailureMetrics.MeterName / RateLimitMetrics.MeterName:
+                    // Cleansia.Config already references this project, so referencing back would be a
+                    // cycle. CustomMeterSubscriptionTests pins the two against the
+                    // constants from Cleansia.Tests, which can see both.
+                    .AddMeter("Cleansia.Integration")
+                    .AddMeter("Cleansia.RateLimiting");
             })
             .WithTracing(tracing =>
             {
@@ -155,7 +168,20 @@ public static class Extensions
                 metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    // A MeterProvider emits ONLY the meters it is told about, and the Azure Monitor
+                    // distro adds no wildcard — so these two lines are the whole difference between the
+                    // app's own counters reaching App Insights and being recorded into nothing. They
+                    // were missing from both overloads until 2026-08-22, which is why
+                    // RateLimitMetrics' own doc comment describing "the existing App Insights metric
+                    // pipeline" was describing a pipeline with no subscriber on the other end.
+                    //
+                    // Literals, not IntegrationFailureMetrics.MeterName / RateLimitMetrics.MeterName:
+                    // Cleansia.Config already references this project, so referencing back would be a
+                    // cycle. CustomMeterSubscriptionTests pins the two against the
+                    // constants from Cleansia.Tests, which can see both.
+                    .AddMeter("Cleansia.Integration")
+                    .AddMeter("Cleansia.RateLimiting");
             })
             .WithTracing(tracing =>
             {

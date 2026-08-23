@@ -150,6 +150,32 @@ final class HomeTabViewModel: ViewModel {
         _ = await (loyalty, orders, membership)
     }
 
+    /// The pull, which deliberately does NOT consult staleness.
+    ///
+    /// `refreshStaleSources` is ambient — it runs on appear and skips anything inside its freshness
+    /// window, which is right for something the customer did not ask for. A pull IS the ask: a customer
+    /// who drags the screen down and gets nothing because a watermark says the data is young enough has
+    /// been told the gesture does not work. So every source refreshes unconditionally.
+    ///
+    /// Silent on failure, like its ambient sibling — the cached snapshot stays on screen, and the pull
+    /// spinner ending is itself the feedback.
+    func pullToRefresh() async {
+        async let loyalty: Void = forceRefreshLoyalty()
+        async let orders: Void = forceRefreshOrders()
+        async let membership: Void = forceRefreshMembership()
+        _ = await (loyalty, orders, membership)
+    }
+
+    // `refresh()` returns an ApiResult, so these wrap it to Void for the concurrent `async let` —
+    // the same shape the staleness-gated siblings below already use. The result is discarded on
+    // purpose: a pull that fails leaves the cached snapshot on screen, and the spinner ending is the
+    // feedback.
+    private func forceRefreshLoyalty() async { _ = await loyaltyRepository.refresh() }
+
+    private func forceRefreshOrders() async { _ = await orderRepository.refresh() }
+
+    private func forceRefreshMembership() async { _ = await membershipRepository.refresh() }
+
     private func refreshLoyaltyIfStale() async {
         guard loyaltyRepository.staleness.isStale else { return }
         await loyaltyRepository.refresh()

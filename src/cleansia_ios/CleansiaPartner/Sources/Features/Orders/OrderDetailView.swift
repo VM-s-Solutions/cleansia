@@ -101,22 +101,26 @@ struct OrderDetailView: View {
 /// says "the map broke", so this names the coarse zone that *did* arrive and why the pin is missing.
 private struct ApproximateAreaBackdrop: View {
     @Environment(\.locale) private var locale
+    /// Where the sheet's top edge is, in THIS view's coordinates, published by SnapSheet itself.
+    @Environment(\.snapSheetTop) private var sheetTop
     let zone: String?
 
     var body: some View {
-        // Anchored in the strip the sheet leaves uncovered at rest rather than in the container, whose
-        // centre sits behind three quarters of sheet at the anchor this screen opens on — the pane
-        // would read as blank exactly as before.
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                CleansiaColors.primaryContainer
-                legend
-                    .padding(.horizontal, Spacing.xl)
-                    .frame(
-                        width: geometry.size.width,
-                        height: geometry.size.height * (1 - SnapAnchor.peek.coveredFraction)
-                    )
-            }
+        // Centred in the strip the sheet actually leaves uncovered, using the sheet's OWN reported
+        // edge rather than re-deriving it here.
+        //
+        // Two earlier attempts got this wrong in the same way. Hardcoding `SnapAnchor.peek` ignored
+        // that the sheet moves at all. Recomputing from the live anchor still measured against THIS
+        // view's height — and this view is laid out with `.ignoresSafeArea()`, so its origin is the top
+        // of the screen while the sheet's offset is measured from the safe-area top. The two differ by
+        // the status bar, which is a rounding error inside a tall strip and half the strip at `.peek`.
+        // Hence "centred only when the panel is collapsed".
+        ZStack(alignment: .top) {
+            CleansiaColors.primaryContainer
+            legend
+                .padding(.horizontal, Spacing.xl)
+                .frame(maxWidth: .infinity)
+                .frame(height: max(sheetTop, 0))
         }
         .id(locale.identifier)
     }

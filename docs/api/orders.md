@@ -293,7 +293,8 @@ GET /api/Order/GetPaged?page=1&pageSize=10
       "customerName": "Jane Doe",
       "cleaningDate": "2026-04-15T10:00:00Z",
       "status": "Confirmed",
-      "totalPrice": 1500.00
+      "totalPrice": 1500.00,
+      "hasReview": false
     }
   ],
   "totalCount": 42,
@@ -301,6 +302,11 @@ GET /api/Order/GetPaged?page=1&pageSize=10
   "pageSize": 10
 }
 ```
+
+**`hasReview`** exists so a client can decide whether to ask for a review **without fetching the order
+detail**. The mobile apps raise the completion prompt off the list, and before this flag the only way to
+know a review already existed was a second round trip per order — which meant the prompt either fired
+late or fired again for a customer who had already answered.
 
 ---
 
@@ -391,7 +397,7 @@ first that fails. The order of the rules is deliberate: a cancelled order with a
 | 8 | Employee has an address on file | `employee.profile_incomplete` |
 | 9 | `ContractStatus == Approved` | `employee.not_approved` |
 | 10 | Not already assigned to this order | `order.employee_already_assigned` |
-| 11 | Weekly cap by `AverageRating` — ≤ 3.5 → 3/wk, ≤ 4.5 → 6/wk, else 10/wk | `order.weekly_limit_reached` |
+| 11 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
 | 12 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
 
 ::: info The preferred-cleaner hold is folded into the existence check
@@ -425,6 +431,11 @@ POST /api/Order/StartOrder
   "orderId": "order-id"
 }
 ```
+
+**Refused when the job is more than 60 minutes away** — `order.too_early_to_start`. The same gate is on
+`NotifyOnTheWay`, because both write to the customer's lock screen. Late is never blocked. The check is
+the **last** rule on the command, so a cleaner who is not assigned learns only that, and nothing about
+when the job is scheduled. → [business rules](/product/business-rules#start-grace-window)
 
 ---
 
@@ -573,12 +584,45 @@ POST /api/Order/SubmitReview
 {
   "orderId": "order-id",
   "rating": 5,
-  "comment": "Excellent service!"
+  "comment": "Excellent service!",
+  "tags": [1, 3, 4]
 }
 ```
 
+**`tags`** is optional and carries **integers**, not strings — the enum's number *is* the wire contract,
+so a value may never be renumbered once shipped. Positive tags occupy the 1–10 band and negative tags
+11–20, with room left in each so a later insert never shifts a shipped value.
+
+| # | Tag | | # | Tag |
+|---|---|---|---|---|
+| 1 | On time | | 11 | Arrived late |
+| 2 | Thorough | | 12 | Missed areas |
+| 3 | Friendly | | 13 | Felt rushed |
+| 4 | Careful with belongings | | 14 | Extra not done |
+| 5 | Extras done well | | 15 | Instructions not followed |
+| 6 | Followed instructions | | 16 | Unprofessional |
+| 7 | Great photos | | 17 | Smell or products |
+| | | | 18 | Crew smaller than booked |
+
+Polarity must match the rating: **4–5 stars accepts only positive tags, 1–3 stars only negative ones.**
+A mismatched, duplicated or unknown tag is **refused**, not silently dropped — a client that sends a tag
+the server does not recognise has a bug, and swallowing it would hide the bug while corrupting the
+counts. At most **4** tags per review.
+
+| Condition | Error |
+|---|---|
+| More than 4 tags | `order.review.too_many_tags` |
+| Same tag twice | `order.review.duplicate_tag` |
+| Value not in the enum | `order.review.unknown_tag` |
+| Positive tag on a 1–3 star review, or the reverse | `order.review.tag_rating_mismatch` |
+| A review already exists for this order | `order.review.already_exists` |
+
+Tags are stored as `jsonb` on `OrderReview`, which is what makes *"the top three complaints this month"*
+a query rather than a text search. The web customer app submits reviews without tags today; the two
+mobile apps render the chips.
+
 ::: info Rating Recalculation
-When a review is submitted, the `SubmitOrderReview` handler recalculates the assigned employee's `AverageRating` across all their reviewed orders. This updated rating affects the employee's weekly order limit for `TakeOrder`.
+When a review is submitted, the `SubmitOrderReview` handler recalculates the assigned employee's `AverageRating` across all their reviewed orders. It is a displayed and sortable figure only — it no longer gates anything. Until 2026-08-22 it drove a 3/6/10 weekly order cap, which meant a cleaner with no reviews yet (rating `0`) was capped at three jobs a week; the cap is now a deliberate per-cleaner setting an admin applies, and is unset for everyone by default.
 :::
 
 ---

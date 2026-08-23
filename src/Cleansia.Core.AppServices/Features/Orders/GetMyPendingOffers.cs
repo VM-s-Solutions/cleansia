@@ -25,8 +25,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para>The assignment conjunct is the one both siblings already carry — <c>NewJobsDigestService</c>'s
 /// <c>AssignedEmployees.All(...)</c> and the available board's <c>excludeEmployeeId</c> — and it is what
 /// keeps a multi-seat booking the caller has ALREADY taken off a list of things they have yet to answer.
-/// <c>RequiredEmployees = ceil(EstimatedTime / 120)</c>, so every booking of four hours or more has a
-/// second seat: the seat arithmetic still admits the order, ADR-0045 D1.1's implicit-decline sweep
+/// <c>RequiredEmployees = ceil(EstimatedTime / 120)</c>, so a booking gains its second seat at 121
+/// minutes — not four hours: the seat arithmetic still admits the order, ADR-0045 D1.1's implicit-decline sweep
 /// deliberately spares the order just taken, and offerability is a property of the order alone. It is
 /// "not me" and never "nobody", because a seat a rival took does not end the reservation on the seats
 /// left.</para>

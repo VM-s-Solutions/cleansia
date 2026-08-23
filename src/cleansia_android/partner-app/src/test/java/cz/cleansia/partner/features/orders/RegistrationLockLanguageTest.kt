@@ -147,5 +147,6 @@ class RegistrationLockLanguageTest {
         phoneNumber = null,
         birthDate = null,
         preferredLanguageCode = "en",
+        profilePhotoUrl = null,
     )
 }

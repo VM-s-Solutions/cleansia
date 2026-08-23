@@ -73,6 +73,41 @@ public class FeedKeysetClientReadinessTests
     }
 
     /// <summary>
+    /// The two per-job cleaner reminders render as push and are deliberately NOT feed events — unlike
+    /// their sibling <see cref="NotificationEventCatalog.ReminderTomorrow"/>, which is.
+    ///
+    /// <para>This is the OPPOSITE of the holds above: the copy shipped on both platforms first, so the
+    /// display registration is complete and intentional. What is withheld is the FEED row, because
+    /// these are transient — a row per job would fill the badge with reminders about work that has
+    /// already started. <c>order.starting_soon</c> is in neither keyset for exactly the same reason.
+    /// Deleting this test to "finish" the pair would be the mistake it exists to prevent.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(NotificationEventCatalog.ReminderSoon)]
+    [InlineData(NotificationEventCatalog.ReminderNotStarted)]
+    public void The_Per_Job_Reminders_Render_As_Push_But_Are_Deliberately_Not_Feed_Events(string eventKey)
+    {
+        Assert.Contains(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
+    }
+
+    /// <summary>
+    /// All three reminders are non-mutable, and nothing else pins the two that are not feed events —
+    /// <see cref="NotificationFeedEventKeysTests"/> can only reach the one in the keyset.
+    ///
+    /// <para>Non-mutability here is an OMISSION: <c>GetCategoryFor</c> has no arm for these keys, so
+    /// they fall through to null. That is the right default direction, but an omission is exactly what
+    /// somebody "tidies up" later by adding the arm they assume was forgotten. A cleaner must not be
+    /// able to silence a reminder about work they accepted and then not turn up.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(NotificationEventCatalog.ReminderTomorrow)]
+    [InlineData(NotificationEventCatalog.ReminderSoon)]
+    [InlineData(NotificationEventCatalog.ReminderNotStarted)]
+    public void The_Job_Reminders_Are_Non_Mutable(string eventKey) =>
+        Assert.Null(NotificationEventCatalog.GetCategoryFor(eventKey));
+
+    /// <summary>
     /// ADR-0045 D10.2 — the one key that ADR mints is held out of both lists on the same terms: no
     /// customer client carries "your favourite didn't take it" copy yet, so the push is data-only on iOS
     /// and the inbox stays empty rather than counting a row no app can draw. The wave that ships

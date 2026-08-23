@@ -256,7 +256,8 @@ struct HomeSkeleton: View {
                 total: 1290,
                 currencyCode: "CZK",
                 services: [CustomerOrderLineName(name: "Deep clean", translations: nil)],
-                packages: [CustomerOrderLineName(name: "Standard cleaning", translations: nil)]
+                packages: [CustomerOrderLineName(name: "Standard cleaning", translations: nil)],
+                hasReview: false
             )
         }
 

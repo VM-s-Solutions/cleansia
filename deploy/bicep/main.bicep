@@ -463,6 +463,37 @@ var sendGridSettings = {
   SendGrid__ResetPasswordUrl: '/forgot-password'
 }
 
+// Timer schedules for every function that declares `[TimerTrigger("%SomeCron%")]` rather than a
+// literal cron. THESE ARE NOT DECORATION AND THEY ARE NOT A DUPLICATE OF appsettings.json.
+//
+// The `%token%` is expanded by the Functions HOST at indexing time, from PLATFORM APPLICATION SETTINGS.
+// `src/Cleansia.Functions/appsettings.json` is loaded by Program.cs into the ISOLATED WORKER's
+// IConfiguration — a different process and a different configuration object, which the host never reads.
+// With no setting here the token does not resolve, the timer listener is never created, and the function
+// simply never runs: no error, no invocation, no telemetry. Exactly the failure mode the SendEmail
+// templateId comment above describes, on a different key.
+//
+// Measured 2026-08-22: SendNewJobsDigest, MaterializeRecurringBookings, SendPreCleaningReminders,
+// SendRecurringOrderReminders, SendMembershipLifecycleNotifications and ExpireStaleReferrals had never
+// fired in DEV. The timers carrying literal crons — OutboxDrainer, CleanupStalePendingOrders and the
+// rest — were unaffected, which is what made the split visible. The map below carries eight keys, not
+// six: SendCleanerJobReminders and SendTomorrowJobDigest were added by the same change and would have
+// landed in exactly the same hole.
+//
+// Values are copied verbatim from src/Cleansia.Functions/appsettings.json so this changes nothing except
+// whether the schedules exist at all. TimerCronSettingsAreDeployedTests fails the build if a tokenized
+// timer is added without a matching key here.
+var cronSettings = {
+  MaterializeRecurringBookingsCron: '0 0 2 * * *'
+  SendRecurringOrderRemindersCron: '0 30 2 * * *'
+  SendPreCleaningRemindersCron: '0 */5 * * * *'
+  SendCleanerJobRemindersCron: '0 */5 * * * *'
+  SendTomorrowJobDigestCron: '0 0 * * * *'
+  SendMembershipLifecycleNotificationsCron: '0 0 3 * * *'
+  SendNewJobsDigestCron: '0 0 * * * *'
+  ExpireStaleReferralsCron: '0 30 3 * * *'
+}
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
@@ -486,6 +517,20 @@ var apiBaseSettings = union({
   // satisfies the "no /0–/8 supernet" guard: it trusts the App Service front end, not the public net.
   ForwardedHeaders__KnownNetworks: '100.64.0.0/10'
   ForwardedHeaders__ForwardLimit: '1'
+  // No ASPNETCORE_ENVIRONMENT is set anywhere in this template or the workflows, so every deployed host
+  // — dev included — runs as Production and binds appsettings.Production.json, which pins
+  // Logging:LogLevel:Default to Warning. That silently withheld every Information-level line the
+  // background sweeps emit, including NewJobsDigest's own "sweep complete" summary, which is the single
+  // most useful triage line in the system.
+  //
+  // Host.CreateDefaultBuilder layers environment variables AFTER the JSON files and App Service surfaces
+  // every app setting as one, so this wins without a code change or a new appsettings file.
+  //
+  // SCOPED TO THE `Cleansia` CATEGORY ON PURPOSE, never Default. Lowering Default would also admit
+  // RequestLoggingMiddleware's request/response body slices and the caller PII they can carry —
+  // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
+  // Warning regardless.
+  Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
 }, sendGridSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
@@ -761,7 +806,7 @@ module functionApp 'modules/functionApp.bicep' = {
     // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
     // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
     // while leaving only threshold alerts. Populate it.
-    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

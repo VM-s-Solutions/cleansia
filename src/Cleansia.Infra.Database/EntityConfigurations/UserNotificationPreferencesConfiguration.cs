@@ -30,6 +30,11 @@ public class UserNotificationPreferencesConfiguration
         builder.Property(p => p.Promo).IsRequired().HasDefaultValue(false);
         builder.Property(p => p.DisputeReply).IsRequired().HasDefaultValue(true);
         builder.Property(p => p.RecurringScheduled).IsRequired().HasDefaultValue(true);
+        // The partner-side category, and the one that was omitted here for its whole life. The CLR
+        // initialiser covers every row EF creates, which is why nothing noticed — but a row inserted
+        // by raw SQL (the seed script, a support fix) got `false`, silently muting that cleaner's
+        // new-jobs digest with no screen anywhere showing it was off.
+        builder.Property(p => p.NewJobsAvailable).IsRequired().HasDefaultValue(true);
 
         builder.HasOne(p => p.User)
             .WithMany()

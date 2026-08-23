@@ -20,6 +20,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var reviewResult: ApiResult<OrderReviewDto> = .success(OrderReviewDto())
     private(set) var reviewCallCount = 0
     private(set) var lastReview: (rating: Int, comment: String?)?
+    private(set) var lastReviewTags: [CustomerReviewTag] = []
 
     var receiptResult: ApiResult<URL> = .success(URL(fileURLWithPath: "/tmp/receipt.pdf"))
     private(set) var receiptCallCount = 0
@@ -55,9 +56,15 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         return cancelResult
     }
 
-    func submitReview(orderId _: String, rating: Int, comment: String?) async -> ApiResult<OrderReviewDto> {
+    func submitReview(
+        orderId _: String,
+        rating: Int,
+        comment: String?,
+        tags: [CustomerReviewTag]
+    ) async -> ApiResult<OrderReviewDto> {
         reviewCallCount += 1
         lastReview = (rating, comment)
+        lastReviewTags = tags
         return reviewResult
     }
 
@@ -105,7 +112,8 @@ enum OrderFixtures {
         total: Double = 0,
         currencyCode: String? = nil,
         services: [CustomerOrderLineName] = [],
-        packages: [CustomerOrderLineName] = []
+        packages: [CustomerOrderLineName] = [],
+        hasReview: Bool = false
     ) -> CustomerOrderSummary {
         CustomerOrderSummary(
             id: id,
@@ -117,7 +125,8 @@ enum OrderFixtures {
             total: total,
             currencyCode: currencyCode,
             services: services,
-            packages: packages
+            packages: packages,
+            hasReview: hasReview
         )
     }
 

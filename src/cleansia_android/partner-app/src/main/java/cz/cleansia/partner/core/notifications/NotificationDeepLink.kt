@@ -77,6 +77,10 @@ object NotificationDeepLink {
         // expired. Either way a link to the list would land on an empty screen, so the detail
         // carries the disclosure and the decline and degrades to an ordinary job.
         "order.preferred_offer",
+        // The two per-job reminders name one order and open it, so the cleaner can set off from the
+        // screen that has the address on it.
+        "order.reminder_soon",
+        "order.reminder_not_started",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Payroll payout — open the paid invoice; fall back to the Earnings
         // summary when the payload carries no invoiceId. Both are root
@@ -92,6 +96,9 @@ object NotificationDeepLink {
         // bottom-nav Orders tab let the cleaner land on Available in one
         // tap. orderId arg is ignored.
         "order.new_available" -> NavRoute.Main
+        // Same reasoning as the new-jobs digest: a count over N orders has no single order to open,
+        // so it lands on Main and the Orders tab is one tap away.
+        "order.reminder_tomorrow" -> NavRoute.Main
         else -> null
     }
 }

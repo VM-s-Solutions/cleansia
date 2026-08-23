@@ -15,7 +15,7 @@ event is in its display map — deterministically and without I/O.
 - `FcmPushDispatcher` — its only caller; hands the factory's `MulticastMessage` to
   `FirebaseMessaging.SendEachForMulticastAsync` and owns everything after the wire (init, failure
   classification, dead-token prune signaling).
-- The **APNs display map** it owns internally: the 12 displayable event keys (ADR-0025 D2 — union
+- The **APNs display map** it owns internally: the 23 displayable event keys (ADR-0025 D2 — union
   of what the two Android apps render *from fixed client-side templates*; `promo.new_sitewide`
   excluded **by nature**: it is a literal-text event with no fixed template anywhere — panel
   finding CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.
@@ -41,7 +41,7 @@ event is in its display map — deterministically and without I/O.
   main-bundle `Localizable.xcstrings` (client-first rule, ADR-0025 D2) — otherwise version-skew
   renders a raw key on the lock screen.
 - **Day-one catalog gate (ADR-0025 D5, CH-2):** the map must not go live before the first public
-  release of both iOS apps carrying the full 12-event catalog — both AppDelegates already register
+  release of both iOS apps carrying the full 23-event catalog — both AppDelegates already register
   FCM tokens, so a catalog-less build + live map = raw `push.*` keys on lock screens.
 - **Per-tier loyalty text is a factory concern, not an NSE** (CH-3): if wanted, map known `tier`
   values to `push.loyalty.tier_upgrade.body.<Tier>` with a factory-side fallback to the generic

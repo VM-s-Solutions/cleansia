@@ -208,7 +208,9 @@ public class ExpressWaiverResolverTests
     [Fact]
     public async Task MemberWhoseTrialHasEnded_GetsTheWaiver()
     {
-        ArrangeMembership(trialEndsAtUtc: DateTime.UtcNow.AddDays(-1));
+        // NowUtc, not DateTime.UtcNow: every other instant in this class is derived from the fixed
+        // clock, and mixing the wall clock in is what let the sibling case above rot silently.
+        ArrangeMembership(trialEndsAtUtc: NowUtc.AddDays(-1));
 
         var waiver = await CreateResolver()
             .ResolveForUserAsync(UserId, ExpressCleaningUtc, NowUtc, CancellationToken.None);

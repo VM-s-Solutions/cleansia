@@ -113,7 +113,12 @@ struct ProfileHubContent: View {
                 summary: JobRadiusSelection(radiusKm: data.jobRadiusKm).summary,
                 action: .route(.jobRadius)
             ),
-            ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, action: .route(.language)),
+            ProfileHubRowItem(
+                icon: "globe",
+                title: L10n.Profile.language,
+                summary: languageSummary,
+                action: .route(.language)
+            ),
             ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, action: .route(.theme)),
             ProfileHubRowItem(
                 icon: "laptopcomputer.and.iphone",

@@ -126,6 +126,48 @@ public class TimerSweepFailureBranchTests
     }
 
     [Fact]
+    public async Task SendCleanerJobReminders_Failure_Result_Does_Not_Throw()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<SendCleanerJobReminders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<SendCleanerJobReminders.Response>());
+
+        var handler = new SendCleanerJobRemindersHandler(
+            _mediator.Object, NullLogger<SendCleanerJobRemindersHandler>.Instance);
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
+
+        Assert.Null(ex);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<SendCleanerJobReminders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// This sweep runs HOURLY and each tick only serves the cleaners whose local clock has just struck
+    /// the send hour, so a thrown tick is not retried a few minutes later like the five-minute sweeps —
+    /// it loses that zone's evening entirely. The swallow is what keeps one bad country config from
+    /// taking the invocation down with it.
+    /// </summary>
+    [Fact]
+    public async Task SendTomorrowJobDigest_Failure_Result_Does_Not_Throw()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<SendTomorrowJobDigest.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<SendTomorrowJobDigest.Response>());
+
+        var handler = new SendTomorrowJobDigestHandler(
+            _mediator.Object, NullLogger<SendTomorrowJobDigestHandler>.Instance);
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
+
+        Assert.Null(ex);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<SendTomorrowJobDigest.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task ExpireStaleReferrals_Failure_Result_Does_Not_Throw()
     {
         _mediator

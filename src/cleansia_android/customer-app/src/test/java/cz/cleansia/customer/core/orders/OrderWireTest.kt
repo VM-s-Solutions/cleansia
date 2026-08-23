@@ -649,6 +649,7 @@ class OrderWireTest {
             "estimatedCleanerPay",
             "customerAddressLatitude",
             "customerAddressLongitude",
+            "hasReview",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "exchangeRate", "isDefault")

@@ -124,12 +124,18 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   `WHERE` clause, and consumption is a row appearing in `OrderEmployees`. **If anything ever needs to
   "release" a hold on a schedule, the shape is wrong.** (The two sanctioned writes are a cleaner-side
   *decline* and a future return-to-board path, both of which call `Order.ClearPreferredHold()`.)
-- **`TakeOrder`'s WEEKLY ORDER LIMIT** (`TakeOrder.cs:125-143`) — **deliberately not consulted, and this
-  half is settled on evidence.** `GetEmployeeOrderCountThisWeekAsync` (`OrderRepository.cs:247-258`)
-  derives its window from **`DateTime.UtcNow.Date`** (`:249-252`), so at creation, for a booking more
+- **`TakeOrder`'s WEEKLY ORDER LIMIT** (`TakeOrder.cs:201-215`) — **deliberately not consulted, and this
+  half is settled on evidence.** `GetEmployeeOrderCountThisWeekAsync` (`OrderRepository.cs:245-262`)
+  derives its window from **`DateTime.UtcNow.Date`** (`:247-250`), so at creation, for a booking more
   than a week out, it answers about a week that **does not contain the booking**. A creation-time cap
   check is not a wrong answer — it is an answer to a different question. **Adding it is a finding.**
   A hold never overrides a `TakeOrder` gate.
+
+  **[2026-08-22 — ADR-0053] The cap is now off for everyone by default.** It stopped being a rating
+  ladder applied to all cleaners and became `Employee.WeeklyOrderLimit`, a nullable per-cleaner column
+  that an admin sets on one person; `null` short-circuits the gate before the count is ever taken
+  (`TakeOrder.cs:211`). Every word above still holds — it just describes a gate that almost nobody is
+  behind, which makes consulting it here even less defensible than it already was.
 - **[ADR-0039] ~~The TIME CONFLICT~~ — this is now KNOWN, and knowing it is the point.** The resolver
   **does** consult the cleaner's slot conflict at the booking's own date and time, via
   `IOrderRepository.GetBusyEmployeeIdsInWindowAsync` — **the same call the picker makes, with the same

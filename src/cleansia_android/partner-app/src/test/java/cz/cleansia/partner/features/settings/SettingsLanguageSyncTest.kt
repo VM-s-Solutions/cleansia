@@ -133,5 +133,6 @@ class SettingsLanguageSyncTest {
         phoneNumber = "+420777111222",
         birthDate = "1982-09-04",
         preferredLanguageCode = "en",
+        profilePhotoUrl = null,
     )
 }

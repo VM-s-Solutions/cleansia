@@ -1499,7 +1499,11 @@
       "not_completed": "Táto akcia je dostupná až po dokončení upratovania.",
       "review": {
         "already_exists": "Túto objednávku ste už ohodnotili.",
-        "rating_invalid": "Zvoľte hodnotenie od 1 do 5."
+        "duplicate_tag": "Rovnaký štítok bol vybraný dvakrát.",
+        "rating_invalid": "Zvoľte hodnotenie od 1 do 5.",
+        "tag_rating_mismatch": "Tieto štítky nezodpovedajú hodnoteniu, ktoré ste dali.",
+        "too_many_tags": "Vyberte najviac štyri štítky.",
+        "unknown_tag": "Jeden z týchto štítkov nie je rozpoznaný."
       },
       "note": {
         "content_required": "Pred uložením zadajte poznámku."

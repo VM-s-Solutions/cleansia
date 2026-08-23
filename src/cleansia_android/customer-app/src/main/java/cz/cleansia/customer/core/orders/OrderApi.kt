@@ -18,6 +18,7 @@ import cz.cleansia.customer.api.model.OrderItem as GenOrderItem
 import cz.cleansia.customer.api.model.OrderListItem as GenOrderListItem
 import cz.cleansia.customer.api.model.OrderNoteDto as GenOrderNoteDto
 import cz.cleansia.customer.api.model.OrderReviewDto as GenOrderReviewDto
+import cz.cleansia.customer.api.model.ReviewTag as GenReviewTag
 import cz.cleansia.customer.api.model.OrderStatusTrackDto as GenOrderStatusTrackDto
 import cz.cleansia.customer.api.model.PackageDetails as GenPackageDetails
 import cz.cleansia.customer.api.model.PackageListItem as GenPackageListItem
@@ -76,6 +77,7 @@ class OrderApi(
                 orderId = body.orderId,
                 rating = body.rating,
                 comment = body.comment,
+                tags = body.tags.map { it.toWireTag() },
             ),
         )
         return raw.mapWire { it.toAppDto() }
@@ -167,6 +169,9 @@ private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListIte
     availableSpots = availableSpots.required("availableSpots"),
     assignedEmployeesCount = assignedEmployeesCount.required("assignedEmployeesCount"),
     hasAvailableSpots = hasAvailableSpots.required("hasAvailableSpots"),
+    // Defaulted rather than required: an older server that does not send it yields "not reviewed",
+    // which costs at most one redundant prompt. Refusing would drop the whole row from the list.
+    hasReview = hasReview ?: false,
 )
 
 /**
@@ -250,10 +255,19 @@ private fun GenOrderReviewDto?.toAppDto(): OrderReviewDto {
         userId = null, // not on generated DTO
         rating = review.rating.required("rating"),
         comment = review.comment,
+        // The raw codes, not resolved tags: a value this build has no name for must be carried, not
+        // crashed on, so an older app talking to a newer server drops the unknown chip and renders
+        // the rest. `OrderReviewDto.tags` does the naming.
+        tagCodes = review.tags.orEmpty().map { it.value },
         createdOn = review.createdOn?.toString(),
         updatedOn = review.updatedOn?.toString(),
     )
 }
+
+// The generated enum's members are named `_1`.._18` after their wire values, so the app-side enum's
+// own `code` IS the lookup key — no hand-written table to fall out of step with the backend.
+private fun ReviewTag.toWireTag(): GenReviewTag =
+    GenReviewTag.entries.first { it.value == code }
 
 private fun GenOrderNoteDto.toAppDto(): OrderNoteDto = OrderNoteDto(
     id = id,

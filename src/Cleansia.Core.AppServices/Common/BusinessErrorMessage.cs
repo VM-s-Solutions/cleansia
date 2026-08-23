@@ -96,6 +96,7 @@ public static class BusinessErrorMessage
     public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
+    public const string WeeklyOrderLimitInvalid = "employee.weekly_limit_invalid";
     public const string TimeConflict = "order.time_conflict";
     public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
     public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
@@ -161,6 +162,7 @@ public static class BusinessErrorMessage
 
     public const string OrderNotInProgress = "order.not_in_progress";
     public const string OrderNotConfirmed = "order.not_confirmed";
+    public const string OrderTooEarlyToStart = "order.too_early_to_start";
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
     public const string ActualTimeMustBePositive = "order.actual_time.positive";
     public const string CompletionNotesRequired = "order.completion_notes.required";
@@ -174,6 +176,10 @@ public static class BusinessErrorMessage
     public const string OrderNotCompleted = "order.not_completed";
     public const string ReviewAlreadyExists = "order.review.already_exists";
     public const string ReviewRatingInvalid = "order.review.rating_invalid";
+    public const string ReviewTooManyTags = "order.review.too_many_tags";
+    public const string ReviewTagRatingMismatch = "order.review.tag_rating_mismatch";
+    public const string ReviewDuplicateTag = "order.review.duplicate_tag";
+    public const string ReviewUnknownTag = "order.review.unknown_tag";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";

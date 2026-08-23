@@ -18,20 +18,27 @@ public static class OrderAssignmentChangeNotifier
     public static Task NotifyCleanerOfAssignmentAsync(
         Order order,
         Employee cleaner,
+        string assignmentId,
         INotificationProducer notificationProducer,
         CancellationToken cancellationToken) =>
-        NotifyAsync(order, cleaner, NotificationEventCatalog.OrderAssigned, notificationProducer, cancellationToken);
+        NotifyAsync(
+            order, cleaner, assignmentId, NotificationEventCatalog.OrderAssigned,
+            notificationProducer, cancellationToken);
 
     public static Task NotifyCleanerOfRevocationAsync(
         Order order,
         Employee cleaner,
+        string assignmentId,
         INotificationProducer notificationProducer,
         CancellationToken cancellationToken) =>
-        NotifyAsync(order, cleaner, NotificationEventCatalog.OrderAssignmentRevoked, notificationProducer, cancellationToken);
+        NotifyAsync(
+            order, cleaner, assignmentId, NotificationEventCatalog.OrderAssignmentRevoked,
+            notificationProducer, cancellationToken);
 
     private static Task NotifyAsync(
         Order order,
         Employee cleaner,
+        string assignmentId,
         string eventKey,
         INotificationProducer notificationProducer,
         CancellationToken cancellationToken)
@@ -50,7 +57,7 @@ public static class OrderAssignmentChangeNotifier
                 ["orderNumber"] = order.DisplayOrderNumber,
             },
             order.TenantId,
-            order.Id,
+            AssignmentNotificationSubject.For(order.Id, assignmentId),
             cancellationToken);
     }
 }

@@ -68,6 +68,12 @@ data class OrderListItemDto(
     val availableSpots: Int = 0,
     val assignedEmployeesCount: Int = 0,
     val hasAvailableSpots: Boolean = false,
+    /**
+     * Whether this order already carries the customer's review. Projected server-side precisely so the
+     * completion prompt can be decided from the WARM list cache — the alternative is a detail fetch per
+     * candidate order every time the app opens.
+     */
+    val hasReview: Boolean = false,
 )
 
 /** Mirrors backend `OrderItem` (GetById response). */
@@ -170,6 +176,52 @@ data class AssignedEmployeeDto(
     val email: String? = null,
 )
 
+/**
+ * The chips a customer may attach to a review. Mirrors the backend `ReviewTag` enum, whose INTEGER is
+ * the wire contract — positive tags occupy 1..10 and negative 11..20, banded so a later insert never
+ * renumbers a shipped value.
+ *
+ * **Hand-written rather than the generated enum**, for the reason every other enum here is: the
+ * generator emits members named `_1`.._18`, which read as nothing at a call site. [ReviewTagCodes]
+ * maps to the generated type at the adapter boundary, exactly as disputes do.
+ *
+ * There is deliberately no damage tag — damage is a dispute reason and belongs on the money path.
+ */
+enum class ReviewTag(val code: Int, val isPositive: Boolean) {
+    OnTime(1, true),
+    Thorough(2, true),
+    Friendly(3, true),
+    CarefulWithBelongings(4, true),
+    ExtrasDoneWell(5, true),
+    FollowedInstructions(6, true),
+    GreatPhotos(7, true),
+    ArrivedLate(11, false),
+    MissedAreas(12, false),
+    FeltRushed(13, false),
+    ExtraNotDone(14, false),
+    DidNotFollowInstructions(15, false),
+    Unprofessional(16, false),
+    SmellOrProducts(17, false),
+    CrewSmallerThanBooked(18, false),
+    ;
+
+    companion object {
+        /** The lowest rating that offers the positive set — mirrors `ReviewTagPolarity`. */
+        const val POSITIVE_RATING_FLOOR = 4
+
+        /** The server refuses more than this, so the sheet stops offering at it. */
+        const val MAX_TAGS = 4
+
+        fun fromCode(code: Int): ReviewTag? = entries.firstOrNull { it.code == code }
+
+        /** The set to offer for [rating]; empty outside 1..5. */
+        fun forRating(rating: Int): List<ReviewTag> = when (rating) {
+            in 1..5 -> entries.filter { it.isPositive == (rating >= POSITIVE_RATING_FLOOR) }
+            else -> emptyList()
+        }
+    }
+}
+
 /** Mirrors backend `OrderReviewDto`. */
 @Serializable
 data class OrderReviewDto(
@@ -178,9 +230,14 @@ data class OrderReviewDto(
     val userId: String? = null,
     val rating: Int = 0,
     val comment: String? = null,
+    // Wire codes, not [ReviewTag]: an unknown code from a newer server must not crash an older app, so
+    // the raw list is carried and [tags] drops what it cannot name.
+    val tagCodes: List<Int> = emptyList(),
     val createdOn: String? = null,
     val updatedOn: String? = null,
-)
+) {
+    val tags: List<ReviewTag> get() = tagCodes.mapNotNull(ReviewTag::fromCode)
+}
 
 /** Mirrors backend `OrderNoteDto`. */
 @Serializable
@@ -356,6 +413,7 @@ data class SubmitReviewRequest(
     val orderId: String,
     val rating: Int,
     val comment: String? = null,
+    val tags: List<ReviewTag> = emptyList(),
 )
 
 /** Mirrors backend `GetOrderPhotos.Response`. */

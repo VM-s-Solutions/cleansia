@@ -15,6 +15,9 @@ struct DashboardView: View {
     let onOpenOrders: () -> Void
     let onOpenPendingOffers: () -> Void
     let onNotificationDestination: (PartnerNotificationDestination) -> Void
+    let onOpenProfile: () -> Void
+    let onOpenDocuments: () -> Void
+    let onOpenHelp: () -> Void
 
     init(
         client: PartnerDashboardClient,
@@ -27,7 +30,10 @@ struct DashboardView: View {
         onOpenEarnings: @escaping () -> Void = {},
         onOpenOrders: @escaping () -> Void = {},
         onOpenPendingOffers: @escaping () -> Void = {},
-        onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in }
+        onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in },
+        onOpenProfile: @escaping () -> Void = {},
+        onOpenDocuments: @escaping () -> Void = {},
+        onOpenHelp: @escaping () -> Void = {}
     ) {
         _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings))
         self.notificationBadge = notificationBadge
@@ -39,6 +45,9 @@ struct DashboardView: View {
         self.onOpenOrders = onOpenOrders
         self.onOpenPendingOffers = onOpenPendingOffers
         self.onNotificationDestination = onNotificationDestination
+        self.onOpenProfile = onOpenProfile
+        self.onOpenDocuments = onOpenDocuments
+        self.onOpenHelp = onOpenHelp
     }
 
     var body: some View {
@@ -94,8 +103,12 @@ struct DashboardView: View {
                     vm.answerJobRadiusPrompt()
                     showJobRadius = true
                 },
-                onKeepEveryJob: vm.answerJobRadiusPrompt
+                onKeepEveryJob: vm.answerJobRadiusPrompt,
+                onOpenProfile: onOpenProfile,
+                onOpenDocuments: onOpenDocuments,
+                onOpenHelp: onOpenHelp
             )
+            .refreshable { await vm.userRefresh() }
         }
     }
 }
@@ -133,6 +146,9 @@ struct DashboardContent: View {
     let onNotificationTap: () -> Void
     let onChooseJobRadius: () -> Void
     let onKeepEveryJob: () -> Void
+    let onOpenProfile: () -> Void
+    let onOpenDocuments: () -> Void
+    let onOpenHelp: () -> Void
 
     init(
         data: DashboardData,
@@ -144,7 +160,10 @@ struct DashboardContent: View {
         onOpenOrders: @escaping () -> Void,
         onNotificationTap: @escaping () -> Void = {},
         onChooseJobRadius: @escaping () -> Void = {},
-        onKeepEveryJob: @escaping () -> Void = {}
+        onKeepEveryJob: @escaping () -> Void = {},
+        onOpenProfile: @escaping () -> Void = {},
+        onOpenDocuments: @escaping () -> Void = {},
+        onOpenHelp: @escaping () -> Void = {}
     ) {
         self.data = data
         self.unreadBadge = unreadBadge
@@ -156,6 +175,9 @@ struct DashboardContent: View {
         self.onNotificationTap = onNotificationTap
         self.onChooseJobRadius = onChooseJobRadius
         self.onKeepEveryJob = onKeepEveryJob
+        self.onOpenProfile = onOpenProfile
+        self.onOpenDocuments = onOpenDocuments
+        self.onOpenHelp = onOpenHelp
     }
 
     var body: some View {
@@ -187,6 +209,12 @@ struct DashboardContent: View {
                     )
                 }
                 LastMonthCard(data: data)
+                ShortcutsSection(
+                    onProfile: onOpenProfile,
+                    onPayHistory: onOpenEarnings,
+                    onDocuments: onOpenDocuments,
+                    onHelp: onOpenHelp
+                )
             }
             .padding(.vertical, Spacing.m)
         }

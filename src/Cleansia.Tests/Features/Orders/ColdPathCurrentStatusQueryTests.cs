@@ -137,7 +137,10 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             employee.Approve(approvedByUserId: "admin-cold");
             seed.Add(employee);
 
-            var target = NewOrder("cold-start-target", "user-cold-c1");
+            // Inside BookingPolicy.StartGraceWindowMinutes: this case is about whether a sibling
+            // in-progress order blocks the start, and the clock gate would otherwise refuse first.
+            var target = NewOrder(
+                "cold-start-target", "user-cold-c1", cleaningDateTime: DateTime.UtcNow.AddMinutes(20));
             target.AddAssignedEmployee(OrderEmployee.Create(target, employee));
             AppendTracks(target, OrderStatus.New, OrderStatus.Confirmed);
             seed.Add(target);
@@ -291,7 +294,11 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         Assert.Equal(OrderStatus.Confirmed, export.Orders.Single(o => o.Id == "cold-gdpr-inflight").Status);
     }
 
-    private static Order NewOrder(string orderId, string? userId, string countryId = "cz")
+    private static Order NewOrder(
+        string orderId,
+        string? userId,
+        string countryId = "cz",
+        DateTime? cleaningDateTime = null)
     {
         var order = Order.Create(
             customerName: "Cold Path Customer",
@@ -301,7 +308,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             rooms: 2,
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(2),
+            cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
             currencyId: "czk",

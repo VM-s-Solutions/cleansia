@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 /// The two free-text notes on a booking — special requests and how to get in.
@@ -10,16 +11,7 @@ enum BookingInstructions {
     static let maxUtf16Length = 2000
 
     static func capped(_ value: String) -> String {
-        guard value.utf16.count > maxUtf16Length else { return value }
-        var capped = ""
-        var width = 0
-        for character in value {
-            let next = width + character.utf16.count
-            if next > maxUtf16Length { break }
-            capped.append(character)
-            width = next
-        }
-        return capped
+        value.cappedToUtf16(maxUtf16Length)
     }
 
     static func trimmedOrNil(_ value: String) -> String? {

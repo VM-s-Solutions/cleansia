@@ -1,5 +1,6 @@
 package cz.cleansia.core.servicearea
 
+import cz.cleansia.core.serviceareas.CityNameMatch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,8 +73,11 @@ class ServiceAreaProvider(
      */
     suspend fun isCityServiced(countryId: String, cityName: String): Boolean? {
         val cities = loadCities(countryId) ?: return null
-        val normalized = cityName.trim().lowercase()
-        return cities.any { it.name.trim().lowercase() == normalized }
+        // The SERVER's rule, not a second one. This compared trimmed-lowercased names for equality,
+        // which is stricter than what CreateOrder now accepts — so it warned "we do not serve here"
+        // for an address the server would happily book, which is the one direction this warning must
+        // never get wrong. A geocoder returning "Plzen" for a serviced "Plzeň" was enough.
+        return CityNameMatch.isServiced(cities.map { it.name }, cityName)
     }
 
     /** Force re-fetch — call after sign-in or when admin pushes a config change. */

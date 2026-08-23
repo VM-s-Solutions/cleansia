@@ -43,6 +43,10 @@ public static class NotificationFeedEventKeys
     public static readonly IReadOnlyList<string> Partner =
     [
         NotificationEventCatalog.NewJobsAvailable,
+        // The day-ahead digest only. The T-2h and T-30m reminders are deliberately push-only, like
+        // the customer's own order.starting_soon, which is in neither keyset: they are transient, and
+        // a feed row per job would fill the badge with things that have already happened.
+        NotificationEventCatalog.ReminderTomorrow,
         NotificationEventCatalog.PreferredOffer,
         NotificationEventCatalog.OrderAssignmentCancelled,
         NotificationEventCatalog.InvoicePaid,

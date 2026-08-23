@@ -63,6 +63,36 @@ overrides the platform-wide row for the same service or package; `CalculateOrder
 employee-specific config when one exists and falls back to the global one otherwise. The bulk apply
 seeds a whole grade at once (junior 0.5×, medior 0.75×, senior 1.0×).
 
+### Weekly Order Limit — a brake, and nobody is behind it by default
+
+```
+PUT /api/AdminEmployee/{employeeId}/weekly-order-limit
+```
+
+`Employee.WeeklyOrderLimit` is nullable and `null` means **unlimited**, which is every cleaner unless an
+admin has typed a number for that one person. Send `null` to lift a cap; the floor is `1`, and anything
+below it is refused with `employee.weekly_limit_invalid`.
+
+Until 2026-08-22 this was not a setting at all but a rating ladder — 3, 6 or 10 jobs a week by score —
+applied to everyone automatically. It throttled hardest exactly the cleaners who most needed the work,
+because a new cleaner's rating starts at zero for want of reviews rather than for want of quality. The
+owner's ruling was to remove the automatic cap and keep the mechanism as something an admin **chooses**,
+for a cleaner whose behaviour warrants it.
+
+Treat it accordingly. It caps somebody's earnings, so it is a narrow audited command
+(`employee.weekly_limit.update`) with a real before/after snapshot, not a field on the bulk profile
+save — an admin should not be able to throttle a cleaner as a side effect of correcting their address.
+A cleaner at their cap sees `order.weekly_limit_reached` when they try to take a job.
+
+**Read the number as "outstanding commitments", not "jobs this week".** The count behind it includes only
+orders in a slot-blocking status, which excludes `Completed` as well as `Cancelled` — so a finished job
+leaves the count and the cleaner may take another. A cancelled job no longer eats the week, which is the
+half that was wanted; a completed one no longer counts either, which is the half that came with it. An
+admin who types 3 is capping how much a cleaner may have *open at once*, and the real weekly ceiling is
+well above three.
+
+→ [ADR-0053](/decisions/adr-0053)
+
 ### Inline Profile Editing
 
 Admins can edit employee profiles directly from the detail page. Each section supports an **Edit / Save / Cancel** pattern:

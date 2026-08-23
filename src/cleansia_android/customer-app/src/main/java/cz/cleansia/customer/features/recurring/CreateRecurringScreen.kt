@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -67,6 +68,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -409,18 +411,20 @@ private fun WizardBottomBar(
             OutlinedButton(
                 onClick = onPrevious,
                 enabled = !submitting,
-                modifier = Modifier.weight(1f).height(54.dp),
+                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
             ) {
                 Text(
                     text = stringResource(R.string.recurring_create_back),
                     style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
         Button(
             onClick = onNext,
             enabled = canAdvance && !submitting,
-            modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).height(54.dp),
+            modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).defaultMinSize(minHeight = 54.dp),
         ) {
             Text(
                 text = stringResource(
@@ -431,6 +435,11 @@ private fun WizardBottomBar(
                     },
                 ),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                // ru "Сохранить изменения" is 166dp against a 131.5dp slot, and the button used to be
+                // a FIXED 54.dp — so the label wrapped to two lines and the second one was cut off
+                // inside the button. defaultMinSize above lets it grow; this keeps it to one line.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

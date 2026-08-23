@@ -310,5 +310,6 @@ class LanguagePreferenceSyncTest {
         phoneNumber = phone,
         birthDate = birthDate,
         preferredLanguageCode = language,
+        profilePhotoUrl = null,
     )
 }

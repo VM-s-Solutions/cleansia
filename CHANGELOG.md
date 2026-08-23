@@ -70,6 +70,28 @@ need backfilling.
 
 ### Added
 
+- **Cleaner — reminders about the jobs you have already taken.** Three of them, and none can be switched
+  off. The evening before, from 18:00 **in your own local time**, a digest saying how many jobs you have
+  tomorrow. About two hours before each job, a reminder naming it. And close to the start, if you still
+  have not marked yourself on the way, a nudge asking whether you are — that last one is skipped once you
+  have set off, and skipped as well if you are already out on a different job, so a full day of
+  back-to-back work does not interrupt you mid-clean. On a job booked for two cleaners, both are
+  reminded. The local hour comes from the work country an admin assigned at approval, not from the phone,
+  so it is right even on a device set to the wrong timezone. Taking a job later in the evening still
+  earns tomorrow's digest — the send window stays open for three hours rather than firing on one stroke
+  of the clock. All three go only to cleaners whose contract is approved and whose account is active.
+
+- **Customer — you are now asked to rate the clean, instead of having to go looking.** The review
+  control used to be the second-to-last section inside an order's detail sheet, which most customers
+  never opened. Now, the next time you open the app after a clean finishes, the rating sheet comes to
+  you — for the most recent finished booking, once. Alongside the stars there are quick chips for what
+  went well (on time, thorough, careful with my things, …) or what went wrong (arrived late, missed
+  areas, an extra was skipped, …), so leaving a useful review is a few taps rather than a paragraph.
+  Damage is deliberately **not** one of the chips: it is a dispute, which produces a refund, and a low
+  rating now offers that route instead. On **Android and iOS**; the web order page keeps the review
+  section it already had. Ask once per booking — declining counts, and a review left on another device
+  silences it everywhere.
+
 - **Customer — Cleansia Plus now waives the express booking surcharge.** An express slot is a booking
   placed 2–4 hours ahead, and it carries a +20% surcharge. A paid Plus plan now covers a set number of
   those each month at no extra cost. The allowance is counted **per calendar month**, not per
@@ -125,6 +147,14 @@ need backfilling.
 
 ### Changed
 
+- **Cleaner — the weekly limit on how many jobs you can take is gone by default.** It used to scale with
+  your rating: under 3.5 stars you could hold three jobs a week, under 4.5 six, above that ten. A cleaner
+  with no reviews yet counts as zero stars, so **every newly approved cleaner was capped at three jobs a
+  week** and could only climb out by collecting reviews. That cap is now unset for everyone. An admin can
+  still apply one to an individual cleaner, and only then does the old refusal appear. Cancelled orders
+  also no longer count against a capped cleaner's week — three jobs cancelled by the customer used to
+  leave them blocked until Monday having done nothing.
+
 - **Customer — a single booking cannot be longer than 24 hours.** Selections above that are refused
   with a specific message. The previous ceiling was whatever the client asked for.
 
@@ -169,6 +199,39 @@ need backfilling.
   payout scheme for each country (without it, no cleaner in that country can save bank details), the
   Czech constant symbol for invoices, and the Czech invoice legal notice.
 
+- **Operators — ⚠️ the admin API client must be regenerated before the weekly-limit control can be
+  built.** `PUT /api/AdminEmployee/{employeeId}/weekly-order-limit` ships and is audited, but
+  `admin-client.ts` carries no method for it, so the admin web app cannot call it yet. Run
+  `npm run generate-admin-client`. The other four clients already carry this release's contract changes
+  (review tags, `hasReview`) and need nothing. `manual_step: nswag-regen`
+
+- **Operators — ⚠️ eight timer functions had never run in Azure, and now will.** Their schedules are
+  written as `%SomeCron%` tokens, which the Functions **host** expands from platform application
+  settings — but the only place those keys existed was the isolated worker's own `appsettings.json`, a
+  different process the host never reads. With no setting, the token did not resolve, the timer listener
+  was never created, and the function simply never fired: no error, no invocation, no telemetry. Among
+  them were the new-jobs digest, recurring-booking materialisation and membership lifecycle notices.
+  They are now set in `main.bicep`, so **the first deploy after this change starts running work that has
+  never run before** — expect a burst of previously-undelivered notifications on that deploy.
+
+### Fixed
+
+- **Cleaner — the second cleaner on a two-person job can now take it.** Jobs long enough to need two
+  cleaners were impossible to fully crew: the first cleaner's take went through, and the second got an
+  error and no seat, every time. The platform was telling the customer *"a cleaner is assigned"* under
+  an identifier that named only the booking, so the second cleaner's message looked to the database like
+  a duplicate of the first — and the rejection took their seat down with it. The message now names which
+  assignment it is about. The same fault made an admin reassignment fail on any booking a cleaner had
+  taken in the previous fortnight, and made the new job reminders fail after a reassignment; both are
+  fixed by the same change.
+
+- **⚠️ Operators — data retention had never run, on any database.** The sweep that deletes expired
+  codes and stale devices, clears old GDPR requests and withdrawn consents, prunes superseded documents
+  and notifications, and **anonymises customer personal data on old orders**, is gated on a feature flag
+  — and that flag was never seeded. An absent flag counts as off, so the job logged *"disabled by feature
+  flag"*, reported success, and did nothing. It is now seeded **on**, so retention starts working on the
+  next fresh database. Nothing in the seed data is old enough to be affected on day one.
+
 ### Deprecated
 
 - **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
@@ -194,6 +257,24 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way and starting
+  a clean were both possible from the moment the booking was confirmed — days ahead of the actual date,
+  and completing it followed from there. Both now open one hour before the booking, which is the same moment the customer is
+  told their cleaning is starting soon. Running late is still fine: there is no cut-off at the other end.
+  Two things this was quietly breaking — an early start cancelled the customer's own "starting soon"
+  notification, and an early completion started the payout calculation for work that had not happened.
+
+- **Cleaners now actually receive the "new jobs near you" digest — and five other scheduled jobs now
+  run at all.** Six background jobs declared their schedule as an application-setting reference rather
+  than a literal, and that setting was never created in Azure. The Functions host could not resolve it,
+  so it never built the timer for those jobs: they produced no runs, no errors and no telemetry, and
+  had done so for as long as the environment has existed. **What was silently not happening:** cleaners
+  were never told about available jobs near them; recurring bookings were never materialised into real
+  orders; nobody got a pre-cleaning reminder, a recurring-order reminder, or a membership expiry
+  notice; and stale referrals were never expired. The twelve jobs whose schedule is written inline —
+  including the outbox drainer and the stale-checkout sweep — were never affected. A build gate now
+  fails if a scheduled job is added without its schedule being deployed.
 
 - **Operators — ⚠️ the documentation claimed a level of error tracking that does not exist, and now
   says what is really there.** The infrastructure docs stated that all five APIs send telemetry to

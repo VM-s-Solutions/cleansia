@@ -1119,6 +1119,7 @@
 
     <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
     <string name="error_order_not_confirmed">Этот заказ ещё не подтверждён.</string>
+    <string name="error_order_too_early_to_start">Ещё рано начинать — начать можно не раньше чем за час до начала.</string>
     <string name="error_order_not_completed">Этот заказ ещё не завершён.</string>
     <string name="error_order_actual_time_positive">Фактическое время должно быть больше нуля.</string>
     <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>
@@ -1228,6 +1229,12 @@
     <string name="notification_channel_new_jobs_desc">Периодический дайджест новых доступных заказов в вашем регионе.</string>
     <string name="notification_new_jobs_title">Новые доступные заказы</string>
     <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_reminder_tomorrow_title">Завтрашние заказы</string>
+    <string name="notification_reminder_tomorrow_body">Заказов на завтра: %1$d. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_reminder_soon_title">Заказ скоро начинается</string>
+    <string name="notification_reminder_soon_body">Заказ %1$s начинается примерно через два часа.</string>
+    <string name="notification_reminder_not_started_title">Вы уже в пути?</string>
+    <string name="notification_reminder_not_started_body">Заказ %1$s скоро начинается, а вы ещё не выехали.</string>
 
     <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
     <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
@@ -1359,4 +1366,12 @@
     <string name="profile_terms_summary">Откроется в браузере</string>
     <string name="profile_privacy">Политика конфиденциальности</string>
     <string name="profile_privacy_summary">Как мы обрабатываем ваши данные</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Изменить фото</string>
+    <string name="profile_avatar_remove">Удалить фото</string>
+    <string name="profile_avatar_content_description">Фото профиля</string>
+    <string name="profile_avatar_encode_failed">Не удалось использовать это изображение. Попробуйте другое фото.</string>
+    <string name="profile_avatar_picker_unavailable_title">Нет средства выбора фото</string>
+    <string name="profile_avatar_picker_unavailable_message">На этом устройстве нет приложения для выбора фото.</string>
 </resources>

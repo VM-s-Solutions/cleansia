@@ -60,6 +60,7 @@ import cz.cleansia.customer.features.addresses.AddressManagerSheet
 import cz.cleansia.customer.features.booking.BookingBottomSheet
 import cz.cleansia.customer.features.home.HomeTab
 import cz.cleansia.customer.features.orders.OrdersTab
+import cz.cleansia.customer.features.orders.ReviewPromptGate
 import cz.cleansia.customer.features.profile.ProfileTab
 import cz.cleansia.customer.features.profile.ProfileViewModel
 import cz.cleansia.customer.features.rewards.RewardsTab
@@ -70,6 +71,7 @@ enum class MainTab { Home, Orders, Rewards, Profile }
 @Composable
 fun MainShell(
     onOrderClick: (orderId: String) -> Unit = {},
+    onPromptOrderReview: (orderId: String) -> Unit = {},
     onLogout: () -> Unit = {},
     onProfileRow: (key: String) -> Unit = {},
     onBookingComplete: (confirmationCode: String, orderId: String) -> Unit = { _, _ -> },
@@ -220,6 +222,29 @@ fun MainShell(
         if (!orderRepo.loaded.value) {
             orderRepo.refresh()
         }
+    }
+
+    // ── The completion review prompt ──
+    // Placed AFTER the orders warm above and keyed on its `loaded` flag so it cannot race it: the
+    // gate reads the warm cache, and running before the fetch lands would decide against an empty
+    // list and then never re-run. Mirrors the onboarding gate's re-entry guard.
+    val ordersLoaded by orderRepo.loaded.collectAsStateWithLifecycle()
+    val cachedOrders by orderRepo.orders.collectAsStateWithLifecycle()
+    var reviewPromptChecked by remember { mutableStateOf(false) }
+    LaunchedEffect(ordersLoaded, currentUser?.id) {
+        val userId = currentUser?.id
+        if (!ordersLoaded || reviewPromptChecked || userId.isNullOrBlank()) return@LaunchedEffect
+        reviewPromptChecked = true
+        val settings = shellViewModel.appSettings
+        val prompted = cachedOrders
+            .map { it.id }
+            .filter { settings.hasPromptedForReview(userId, it) }
+            .toSet()
+        val candidate = ReviewPromptGate.candidate(cachedOrders, prompted) ?: return@LaunchedEffect
+        // Stamped when the prompt is SHOWN, not when it is answered: declining is an answer, and
+        // asking twice about the same clean is what makes this pattern feel like nagging.
+        settings.markReviewPrompted(userId, candidate.id)
+        onPromptOrderReview(candidate.id)
     }
 
     // Warm the loyalty cache so the Rewards tab is instant on first tap. The

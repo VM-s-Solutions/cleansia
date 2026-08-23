@@ -331,6 +331,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.employee_not_assigned',
   'order.no_available_spots',
   'order.not_confirmed',
+  'order.too_early_to_start',
   'order.not_found',
   'order.not_in_progress',
   'order.not_takeable',

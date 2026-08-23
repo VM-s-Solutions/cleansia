@@ -2337,7 +2337,8 @@
       "not_existing_email": "No employee found with this email",
       "not_found": "Employee not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
-      "profile_incomplete": "Employee profile is incomplete"
+      "profile_incomplete": "Employee profile is incomplete",
+      "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit"
     },
     "employee_document": {
       "not_found": "Document not found",

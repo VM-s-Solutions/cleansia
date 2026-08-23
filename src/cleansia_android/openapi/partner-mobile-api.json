@@ -9044,6 +9044,9 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "hasReview": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9087,6 +9090,13 @@
           },
           "comment": {
             "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewTag"
+            },
             "nullable": true
           },
           "createdOn": {
@@ -9822,6 +9832,44 @@
           }
         },
         "additionalProperties": false
+      },
+      "ReviewTag": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "OnTime",
+          "Thorough",
+          "Friendly",
+          "CarefulWithBelongings",
+          "ExtrasDoneWell",
+          "FollowedInstructions",
+          "GreatPhotos",
+          "ArrivedLate",
+          "MissedAreas",
+          "FeltRushed",
+          "ExtraNotDone",
+          "DidNotFollowInstructions",
+          "Unprofessional",
+          "SmellOrProducts",
+          "CrewSmallerThanBooked"
+        ]
       },
       "RevokeDevice_Response": {
         "type": "object",

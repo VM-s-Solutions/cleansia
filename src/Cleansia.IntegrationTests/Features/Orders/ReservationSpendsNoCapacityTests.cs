@@ -21,9 +21,14 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// different purpose that would silently start counting a reservation the day somebody added the
 /// row:</para>
 /// <list type="number">
-///   <item><c>GetEmployeeOrderCountThisWeekAsync</c> has no status term and no confirmation term, so a
-///   row would spend the cleaner's rating-tiered 3/6/10 weekly cap on a job they never agreed to —
-///   three unanswered offers in a morning would exhaust a 3-cap cleaner's whole week.</item>
+///   <item><c>GetEmployeeOrderCountThisWeekAsync</c> has no CONFIRMATION term — it counts an assignment
+///   row whether or not the cleaner ever agreed to it — so a row would spend a capped cleaner's weekly
+///   allowance on a job they never accepted: three unanswered offers in a morning would exhaust a
+///   3-a-week cleaner's whole week. (It gained a STATUS term on 2026-08-22 and no longer counts
+///   cancelled or completed work; that narrows the damage and removes none of it, because a live
+///   unanswered reservation is exactly what the status term still admits.) The cap is now
+///   opt-in per cleaner (<c>Employee.WeeklyOrderLimit</c>, null = unlimited) rather than the old
+///   rating ladder, but the count this asserts is the same one the cap reads.</item>
 ///   <item><c>LiveCommitmentsInWindow</c> is the ONE overlap predicate, read by both the TakeOrder
 ///   conflict gate and ADR-0039's picker, so a row would mark the cleaner busy for a window they have
 ///   not accepted — against jobs they would have taken.</item>

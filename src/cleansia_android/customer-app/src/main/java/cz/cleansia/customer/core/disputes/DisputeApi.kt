@@ -27,6 +27,7 @@ import retrofit2.Response
  */
 class DisputeApi(
     private val disputeApi: GenDisputeApi,
+    private val evidenceUploadApi: DisputeEvidenceUploadApi,
 ) {
     suspend fun getPaged(offset: Int = 0, limit: Int = 20): Response<DisputeListResponseDto> {
         val raw = disputeApi.disputeGetPagedDisputes(offset = offset, limit = limit)
@@ -60,22 +61,12 @@ class DisputeApi(
         disputeId: RequestBody,
         file: MultipartBody.Part,
     ): Response<UploadDisputeEvidenceResponse> {
-        // Generated client takes `disputeId` as a `String?`, so we extract the
-        // single text part the hand-written API was sending via @Part("disputeId")
-        // RequestBody. Trade-off: small, but it keeps the adapter API unchanged
-        // for the existing `DisputeRepository` call site.
-        val disputeIdString = disputeId.asString()
-        val raw = disputeApi.disputeUploadEvidence(disputeId = disputeIdString, file = file)
+        // Routed around the generated client on purpose — see DisputeEvidenceUploadApi. Its signature
+        // takes the id as a String, which this app's only converter factory serialises as JSON, so the
+        // part arrived quoted and no upload ever matched a dispute.
+        val raw = evidenceUploadApi.uploadEvidence(disputeId = disputeId, file = file)
         return raw.mapWire { it.toAppDto() }
     }
-}
-
-private fun RequestBody.asString(): String? = try {
-    val buffer = okio.Buffer()
-    writeTo(buffer)
-    buffer.readUtf8()
-} catch (_: Throwable) {
-    null
 }
 
 // ─── Generated → app DTO mappers ───

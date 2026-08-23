@@ -32,24 +32,6 @@ import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
  * the country-wide preference, not a "later" — so the card never returns either way.
  */
 @Composable
-fun JobRadiusPromptCard(
-    onChooseRadius: () -> Unit,
-    viewModel: JobRadiusPromptViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    if (uiState == JobRadiusPromptUiState.Visible) {
-        JobRadiusPromptCardContent(
-            onChooseRadius = {
-                viewModel.onChooseRadius()
-                onChooseRadius()
-            },
-            onKeepEveryJob = viewModel::onKeepEveryJob,
-        )
-    }
-}
-
-@Composable
 fun JobRadiusPromptCardContent(
     onChooseRadius: () -> Unit,
     onKeepEveryJob: () -> Unit,

@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -101,7 +103,18 @@ fun SlideToCommit(
                     alpha = (1f - progress).coerceIn(0f, 1f),
                 ),
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.align(Alignment.Center),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    // Reserve the thumb's lane on BOTH sides so the label stays centred in the track
+                    // rather than centred under the thumb. The thumb owns thumbInset..thumbInset+
+                    // thumbSize at rest, and the label was laid out across the whole track: uk
+                    // "Проведіть, щоб повідомити «У дорозі»" is 256dp against a 347dp track, so its
+                    // left edge landed at x=45 — behind a solid 48dp circle. On a 360dp screen roughly
+                    // 32dp of the instruction was hidden.
+                    .padding(horizontal = thumbSize + thumbInset * 2),
             )
         }
 

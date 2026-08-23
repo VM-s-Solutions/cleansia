@@ -1114,6 +1114,7 @@
 
     <string name="error_order_not_in_progress">Táto zákazka nie je v priebehu.</string>
     <string name="error_order_not_confirmed">Táto zákazka ešte nie je potvrdená.</string>
+    <string name="error_order_too_early_to_start">Na štart je príliš skoro — začať môžete až hodinu pred termínom.</string>
     <string name="error_order_not_completed">Táto zákazka ešte nie je dokončená.</string>
     <string name="error_order_actual_time_positive">Skutočný čas musí byť väčší ako nula.</string>
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>
@@ -1223,6 +1224,12 @@
     <string name="notification_channel_new_jobs_desc">Pravidelný súhrn nových zákaziek dostupných vo vašej oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zákazky</string>
     <string name="notification_new_jobs_body">Vo vašom okolí je %1$d nových zákaziek. Ťuknutím ich zobrazíte.</string>
+    <string name="notification_reminder_tomorrow_title">Zajtrajšie zákazky</string>
+    <string name="notification_reminder_tomorrow_body">Zákazky na zajtra: %1$d. Klepnutím ich zobrazíte.</string>
+    <string name="notification_reminder_soon_title">Zákazka čoskoro začína</string>
+    <string name="notification_reminder_soon_body">Zákazka %1$s začína približne o dve hodiny.</string>
+    <string name="notification_reminder_not_started_title">Ste už na ceste?</string>
+    <string name="notification_reminder_not_started_body">Zákazka %1$s čoskoro začína a ešte ste nevyrazili.</string>
 
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
@@ -1354,4 +1361,12 @@
     <string name="profile_terms_summary">Otvorí sa v prehliadači</string>
     <string name="profile_privacy">Zásady ochrany osobných údajov</string>
     <string name="profile_privacy_summary">Ako nakladáme s vašimi údajmi</string>
+
+    <!-- Profile photo. Copy shared verbatim with the customer app. -->
+    <string name="profile_avatar_change">Zmeniť fotku</string>
+    <string name="profile_avatar_remove">Odstrániť fotku</string>
+    <string name="profile_avatar_content_description">Profilová fotka</string>
+    <string name="profile_avatar_encode_failed">Tento obrázok sa nepodarilo použiť. Skúste inú fotku.</string>
+    <string name="profile_avatar_picker_unavailable_title">Žiadny výber fotiek</string>
+    <string name="profile_avatar_picker_unavailable_message">V tomto zariadení nie je žiadna aplikácia na výber fotky.</string>
 </resources>

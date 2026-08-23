@@ -31,6 +31,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.components.CleansiaTextLink
+import androidx.compose.foundation.layout.fillMaxSize
+import cz.cleansia.core.ui.state.ActionState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -77,6 +89,9 @@ fun PersonalSectionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val saveState by viewModel.saveState.collectAsStateWithLifecycle()
+    val avatarDraft by viewModel.avatarDraft.collectAsStateWithLifecycle()
+    val avatarStateValue by viewModel.avatarState.collectAsStateWithLifecycle()
+    val avatarBusy = avatarStateValue is ActionState.Submitting
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
     val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
     val form = (uiState as? PersonalSectionUiState.Loaded)?.form ?: PersonalForm()
@@ -100,6 +115,11 @@ fun PersonalSectionScreen(
         form = {
             AvatarPreview(
                 initials = initialsOf(form.firstName, form.lastName),
+                savedPhotoUrl = form.profilePhotoUrl,
+                draft = avatarDraft,
+                busy = avatarBusy,
+                onPick = viewModel::pickAvatar,
+                onRemove = viewModel::removeAvatar,
             )
             Spacer(Modifier.height(Spacing.L))
 
@@ -158,19 +178,86 @@ fun PersonalSectionScreen(
 }
 
 /**
- * Centered initials avatar. Initials update live as the name fields change.
+ * The cleaner's profile photo, with initials as the fallback.
  *
- * There is no camera affordance: the partner app renders no profile photo on any surface, so a badge
- * offering to change one would be an invitation to tap something that cannot respond. It carried one
- * until 2026-08-14, justified by "no backend endpoint" — which had stopped being true.
+ * **The affordance is back, and now it works.** It was removed on 2026-08-14 on the sound reasoning
+ * that the app rendered no photo anywhere, so a badge offering to change one had nothing to change.
+ * The reason it rendered none was a comment claiming the partner backend had no photo endpoint — which
+ * was already false: `UpdateCurrentUser_Command` carries `photo` and `removePhoto`, and
+ * `MyProfileDto` returns `profilePhoto`, exactly as the customer contract does.
+ *
+ * The pick is staged, not uploaded — it goes with the rest of the form on Save, so backing out of the
+ * screen leaves the stored photo alone.
  */
 @Composable
-private fun AvatarPreview(initials: String) {
-    Box(
+private fun AvatarPreview(
+    initials: String,
+    savedPhotoUrl: String?,
+    draft: PartnerAvatarDraft,
+    busy: Boolean,
+    onPick: (Uri) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var pickerUnavailable by remember { mutableStateOf(false) }
+    // The system photo picker grants per-item access to exactly what was chosen, so it needs no
+    // storage permission on any API level this app supports and there is no denial branch to write.
+    val pickImage = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> uri?.let(onPick) },
+    )
+    val launchPicker = {
+        // A device with neither picker nor document provider throws rather than returning empty, and
+        // an uncaught throw here takes the screen down. Same guard the customer app carries.
+        runCatching {
+            pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }.onFailure { pickerUnavailable = true }
+        Unit
+    }
+
+    if (pickerUnavailable) {
+        CleansiaDialog(
+            onDismiss = { pickerUnavailable = false },
+            title = stringResource(R.string.profile_avatar_picker_unavailable_title),
+            confirmLabel = stringResource(android.R.string.ok),
+            onConfirm = { pickerUnavailable = false },
+            message = stringResource(R.string.profile_avatar_picker_unavailable_message),
+        )
+    }
+
+    AvatarPreviewContent(
+        initials = initials,
+        // What the cleaner will see after saving: the pick if there is one, nothing if they removed
+        // it, the stored photo otherwise.
+        shownPhoto = when (draft) {
+            is PartnerAvatarDraft.Picked -> draft.previewUri
+            PartnerAvatarDraft.Removed -> null
+            PartnerAvatarDraft.Unchanged -> savedPhotoUrl
+        },
+        busy = busy,
+        canRemove = draft is PartnerAvatarDraft.Picked ||
+            (draft is PartnerAvatarDraft.Unchanged && savedPhotoUrl != null),
+        onPick = launchPicker,
+        onRemove = onRemove,
+    )
+}
+
+@Composable
+private fun AvatarPreviewContent(
+    initials: String,
+    shownPhoto: Any?,
+    busy: Boolean,
+    canRemove: Boolean,
+    onPick: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    // A Column, not a Box. Both children in one Box meant the links were aligned to the BOTTOM of a
+    // box whose height is the 104.dp avatar — so they were drawn across the face, and wider than the
+    // circle at that. Stacking puts them under it, which is also where the customer app has them.
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = Spacing.M),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
@@ -180,14 +267,44 @@ private fun AvatarPreview(initials: String) {
                 .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = initials,
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 36.sp,
-                ),
-                color = MaterialTheme.colorScheme.primary,
+            if (shownPhoto != null) {
+                AsyncImage(
+                    model = shownPhoto,
+                    contentDescription = stringResource(R.string.profile_avatar_content_description),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                )
+            } else {
+                Text(
+                    text = initials,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 36.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (busy) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
+        }
+
+        Spacer(Modifier.height(Spacing.XS))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.S),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CleansiaTextLink(
+                text = stringResource(R.string.profile_avatar_change),
+                onClick = onPick,
             )
+            if (canRemove) {
+                CleansiaTextLink(
+                    text = stringResource(R.string.profile_avatar_remove),
+                    onClick = onRemove,
+                )
+            }
         }
     }
 }

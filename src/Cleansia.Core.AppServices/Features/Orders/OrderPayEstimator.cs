@@ -55,7 +55,18 @@ internal static class OrderPayEstimator
             serviceConfigs,
             packageConfigs);
 
-    private static decimal? Estimate(
+    /// <summary>
+    /// The primitive form both overloads above funnel into, public because a caller with a lean
+    /// projection has neither an <c>Order</c> nor an <c>OrderListRow</c> to hand — the dashboard's
+    /// available-jobs preview selects six columns and would otherwise have to materialise an aggregate
+    /// it does not want, or grow a second copy of this arithmetic. Same math, still one implementation.
+    ///
+    /// <para><c>internal</c>, not <c>public</c>: the only caller outside this file is in the same
+    /// assembly, and the enclosing type is internal anyway. It also keeps
+    /// <c>PayCoverageEstimatorAgreementTests</c>'s reflection lookup working — that test reaches this
+    /// overload with <c>BindingFlags.NonPublic</c>, which still finds an internal method.</para>
+    /// </summary>
+    internal static decimal? Estimate(
         HashSet<string> orderServiceIds,
         HashSet<string> orderPackageIds,
         int rooms,

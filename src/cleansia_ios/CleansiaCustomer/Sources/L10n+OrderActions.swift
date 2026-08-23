@@ -150,6 +150,48 @@ extension L10n {
         static var retryHint: String {
             localized("order_review_retry_hint")
         }
+
+        static var tagsPositivePrompt: String {
+            localized("order_review_tags_positive_prompt")
+        }
+
+        static var tagsNegativePrompt: String {
+            localized("order_review_tags_negative_prompt")
+        }
+
+        static var promptTitle: String {
+            localized("order_review_prompt_title")
+        }
+
+        static var promptNotNow: String {
+            localized("order_review_prompt_not_now")
+        }
+
+        /// Chip copy. Exhaustive on purpose — a new tag is a compile error until it has a label.
+        ///
+        /// The complexity rule counts each `case`, so fifteen tags score 16 against a limit of 15. The
+        /// exhaustiveness IS the point here — a dictionary would compile with a tag missing and return
+        /// a blank chip — so the switch stays and the rule is waived for this one function.
+        // swiftlint:disable:next cyclomatic_complexity
+        static func tag(_ tag: CustomerReviewTag) -> String {
+            switch tag {
+            case .onTime: localized("order_review_tag_on_time")
+            case .thorough: localized("order_review_tag_thorough")
+            case .friendly: localized("order_review_tag_friendly")
+            case .carefulWithBelongings: localized("order_review_tag_careful")
+            case .extrasDoneWell: localized("order_review_tag_extras_done_well")
+            case .followedInstructions: localized("order_review_tag_followed_instructions")
+            case .greatPhotos: localized("order_review_tag_great_photos")
+            case .arrivedLate: localized("order_review_tag_arrived_late")
+            case .missedAreas: localized("order_review_tag_missed_areas")
+            case .feltRushed: localized("order_review_tag_felt_rushed")
+            case .extraNotDone: localized("order_review_tag_extra_not_done")
+            case .didNotFollowInstructions: localized("order_review_tag_ignored_instructions")
+            case .unprofessional: localized("order_review_tag_unprofessional")
+            case .smellOrProducts: localized("order_review_tag_smell")
+            case .crewSmallerThanBooked: localized("order_review_tag_small_crew")
+            }
+        }
     }
 
     enum OrderPhotos {

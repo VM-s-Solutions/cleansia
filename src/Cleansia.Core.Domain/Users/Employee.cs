@@ -81,6 +81,26 @@ public class Employee : Auditable, ITenantEntity
     }
 
     /// <summary>
+    /// When this cleaner last received the day-ahead job digest. Null until the first one.
+    ///
+    /// <para><b>Its own column, deliberately not a reuse of <see cref="LastNewJobsDigestAt"/>.</b> Two
+    /// writers on one watermark suppress each other — the same reason the preferred-offer notification
+    /// refuses to stamp that one. This digest answers "have I already told them about tomorrow", which
+    /// is a different question from "what is new on the board since I last looked".</para>
+    ///
+    /// <para>Per-cleaner rather than per-order because the message is a COUNT over N orders: there is
+    /// no single order it is about, so no order column could express it.</para>
+    /// </summary>
+    public DateTimeOffset? LastTomorrowDigestAt { get; private set; }
+
+    /// <summary>Unconditional overwrite, like <see cref="MarkNewJobsDigestSent"/> — the sweep's cadence is the rate limit.</summary>
+    public Employee MarkTomorrowDigestSent(DateTimeOffset at)
+    {
+        LastTomorrowDigestAt = at;
+        return this;
+    }
+
+    /// <summary>
     /// How far from their home address this cleaner wants to be told about work, in kilometres
     /// (Q-FEED-03). Read by the new-jobs digest through <see cref="Orders.JobProximity"/>.
     ///
@@ -104,6 +124,48 @@ public class Employee : Auditable, ITenantEntity
         }
 
         JobRadiusKm = radiusKm;
+        return this;
+    }
+
+    /// <summary>
+    /// How many OUTSTANDING orders this cleaner may hold at once, counted over the current
+    /// Monday-to-Sunday UTC week. Read by <c>TakeOrder</c>, and by nothing else.
+    ///
+    /// <para><b>Read that first line literally — it is not "N jobs a week".</b> The count behind it
+    /// filters slot-blocking statuses, which excludes <c>Completed</c> as well as <c>Cancelled</c>, so a
+    /// finished job leaves the count and the cleaner may take another. An admin who types 3 is capping
+    /// concurrent commitments, not the week's work. → ADR-0053.</para>
+    ///
+    /// <para><b>NULL means unlimited, and that is the default for every cleaner.</b> It replaces a
+    /// rating ladder — 3 jobs a week below 3.5 stars, 6 below 4.5, 10 above — whose floor caught
+    /// everyone: <see cref="AverageRating"/> defaults to 0, and 0 is below 3.5, so every newly
+    /// approved cleaner was capped at three jobs a week and could only escape by accumulating reviews.
+    /// A platform that throttles a new cleaner hardest has the incentive backwards.</para>
+    ///
+    /// <para>The cap survives as a deliberate, per-person act — an admin restricting one cleaner —
+    /// rather than a rule that applies to everybody by default. Same shape and same reasoning as
+    /// <see cref="JobRadiusKm"/>: no backfilled default, because a number nobody chose would silently
+    /// limit an existing cleaner, and work that stops arriving produces no complaint from the person
+    /// it costs.</para>
+    /// </summary>
+    public int? WeeklyOrderLimit { get; private set; }
+
+    /// <summary>
+    /// Sets or clears the weekly cap. Null clears it back to unlimited; the floor is the validator's
+    /// business error first, so reaching the throw means a non-HTTP caller bypassed it.
+    ///
+    /// <para>One is the floor, not zero: a zero cap is a cleaner who may take nothing, which is
+    /// <see cref="ContractStatus"/>'s job and should not be expressible as a quiet number.</para>
+    /// </summary>
+    public Employee SetWeeklyOrderLimit(int? weeklyOrderLimit)
+    {
+        if (weeklyOrderLimit is { } value && value < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(weeklyOrderLimit), value, "Weekly order limit must be at least 1, or null for unlimited");
+        }
+
+        WeeklyOrderLimit = weeklyOrderLimit;
         return this;
     }
 

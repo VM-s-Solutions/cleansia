@@ -82,22 +82,6 @@ class PendingOffersCardViewModel @Inject constructor(
 }
 
 @Composable
-fun PendingOffersCard(
-    onOpenOffers: () -> Unit,
-    viewModel: PendingOffersCardViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    (uiState as? PendingOffersCardUiState.Visible)?.let { visible ->
-        PendingOffersCardContent(
-            count = visible.count,
-            soonestRespondByUtc = visible.soonestRespondByUtc,
-            onOpenOffers = onOpenOffers,
-        )
-    }
-}
-
-@Composable
 fun PendingOffersCardContent(
     count: Int,
     soonestRespondByUtc: String?,

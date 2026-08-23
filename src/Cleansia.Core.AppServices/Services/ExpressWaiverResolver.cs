@@ -57,10 +57,10 @@ public sealed class ExpressWaiverResolver(
         // A benefit-specific narrowing layered OVER the shared predicate, and deliberately not folded
         // into it: the shared predicate answers "is there a live membership", this conjunct answers "has
         // it been paid for yet". A trialing member IS active and keeps the discount and the cancellation
-        // window — harmonizing IsInTrial into ActiveForUserQuery would silently strip both.
+        // window — harmonizing IsInTrialAt into ActiveForUserQuery would silently strip both.
         // The quota still reports the plan's number so the client can say when waivers start, rather
         // than rendering a bare zero that reads as "you used them up".
-        if (membership.IsInTrial)
+        if (membership.IsInTrialAt(nowUtc))
         {
             return noWaiver with { Quota = plan.ExpressUpgradesPerMonth };
         }

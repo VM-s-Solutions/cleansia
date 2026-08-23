@@ -74,12 +74,15 @@ class DisputeWireTest {
                     .setHeader("Content-Type", "application/json")
                     .setBody(body),
             )
+            val retrofit = Retrofit.Builder()
+                .baseUrl(server.url("/"))
+                .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                .build()
             val api = DisputeApi(
-                Retrofit.Builder()
-                    .baseUrl(server.url("/"))
-                    .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-                    .build()
-                    .create(GenDisputeApi::class.java),
+                retrofit.create(GenDisputeApi::class.java),
+                // The evidence upload takes its own hand-written interface off the same Retrofit —
+                // the generated signature encodes the id part as JSON. → DisputeEvidenceUploadApi
+                retrofit.create(DisputeEvidenceUploadApi::class.java),
             )
             call(api).also { onRequest(server.takeRequest()) }
         } finally {

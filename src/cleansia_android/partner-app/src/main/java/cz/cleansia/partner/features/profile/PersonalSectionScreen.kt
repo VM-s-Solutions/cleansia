@@ -250,11 +250,14 @@ private fun AvatarPreviewContent(
     onPick: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Box(
+    // A Column, not a Box. Both children in one Box meant the links were aligned to the BOTTOM of a
+    // box whose height is the 104.dp avatar — so they were drawn across the face, and wider than the
+    // circle at that. Stacking puts them under it, which is also where the customer app has them.
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = Spacing.M),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
@@ -286,8 +289,9 @@ private fun AvatarPreviewContent(
             }
         }
 
+        Spacer(Modifier.height(Spacing.XS))
+
         Row(
-            modifier = Modifier.align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.spacedBy(Spacing.S),
             verticalAlignment = Alignment.CenterVertically,
         ) {

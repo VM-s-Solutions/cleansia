@@ -49,6 +49,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -619,6 +620,10 @@ private fun LogoutRow(onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = Spacing.M, vertical = Spacing.M),
         verticalAlignment = Alignment.CenterVertically,
+        // Centred, unlike the navigation rows above it. Those are list items with a leading icon and a
+        // trailing chevron, so their content reads from the left edge; this is an action, and the row
+        // IS the button — centring it says so.
+        horizontalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Outlined.Logout,
@@ -626,11 +631,13 @@ private fun LogoutRow(onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.width(Spacing.M))
+        Spacer(Modifier.width(Spacing.S))
         Text(
             text = stringResource(R.string.logout),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.error,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

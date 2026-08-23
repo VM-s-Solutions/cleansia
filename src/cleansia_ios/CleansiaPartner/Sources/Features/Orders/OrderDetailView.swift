@@ -91,7 +91,7 @@ struct OrderDetailView: View {
         if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
-            ApproximateAreaBackdrop(zone: order.location.line)
+            ApproximateAreaBackdrop(zone: order.location.line, anchor: snapAnchor)
         }
     }
 }
@@ -102,11 +102,17 @@ struct OrderDetailView: View {
 private struct ApproximateAreaBackdrop: View {
     @Environment(\.locale) private var locale
     let zone: String?
+    /// The sheet's CURRENT position, so the legend centres in the strip that is actually visible.
+    let anchor: SnapAnchor
 
     var body: some View {
-        // Anchored in the strip the sheet leaves uncovered at rest rather than in the container, whose
-        // centre sits behind three quarters of sheet at the anchor this screen opens on — the pane
-        // would read as blank exactly as before.
+        // Centred in the strip the sheet leaves uncovered — measured from where the sheet ACTUALLY is,
+        // not from where it opens. This was pinned to `SnapAnchor.peek`, so dragging the sheet down (or
+        // tapping the handle, which toggles to `.mapFocus`) grew the visible area from a quarter of the
+        // screen to seventy percent while the legend stayed centred in the old quarter — pinned to the
+        // top of a pane with a lot of empty blue beneath it.
+        //
+        // It animates with the sheet because `anchor` is the same state the sheet is driven by.
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 CleansiaColors.primaryContainer
@@ -114,10 +120,11 @@ private struct ApproximateAreaBackdrop: View {
                     .padding(.horizontal, Spacing.xl)
                     .frame(
                         width: geometry.size.width,
-                        height: geometry.size.height * (1 - SnapAnchor.peek.coveredFraction)
+                        height: geometry.size.height * (1 - anchor.coveredFraction)
                     )
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: anchor)
         .id(locale.identifier)
     }
 

@@ -361,40 +361,40 @@ private struct HistorySummaryRow: View {
     let orders: [OrderListItem]
 
     var body: some View {
-        // No Spacer. `SummaryStat` already ends in `.frame(maxWidth: .infinity)`, and a Spacer has the
-        // same flexibility and the same layout priority — so a third one split the row into THIRDS
-        // rather than halves. That left the primary stat's tinted rounded fill covering the leading
-        // third with the job count floating in the middle, which is the visual grammar of a selected
-        // segment: it read as an active tab sitting above the list.
+        // ONE bordered container holding both stats, matching the Android twin
+        // (`OrdersListScreen.kt:1000-1021`). Two separate treatments — a tinted fill under the money and
+        // nothing under the count — put a rounded, tinted, part-width band directly above a list, which
+        // is the visual grammar of a selected segment: it read as an active tab rather than a summary.
+        // The container says "these two belong together" and neither stat has to shout it.
         HStack(spacing: 0) {
-            SummaryStat(value: OrdersFormat.totalEarnings(orders), label: L10n.Orders.earnings, isPrimary: true)
+            SummaryStat(value: OrdersFormat.totalEarnings(orders), label: L10n.Orders.earnings)
             SummaryStat(value: "\(orders.count)", label: L10n.Orders.jobs)
         }
-        // No card. This is a header for the rows below, not a row itself, and `.ordersCard()` gave it a
-        // surface and a stroke that made it the loudest thing on a screen whose subject is the list.
-        // `.ordersRow()` is still required: without it the cell keeps UIKit's `systemBackground`, which
-        // is pure black in dark mode — the band that framed this block before.
-        .padding(.vertical, Spacing.xs)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(CleansiaColors.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
         .ordersRow()
     }
 }
 
-/// Two stats, deliberately unequal. A cleaner opens History to answer "what did I earn"; the job count
-/// is the context for that number, not a second headline. So the money is a size larger and sits on a
-/// tint of its own — enough to find at a glance on a dark page — while the count stays plain. This is
-/// not the bordered card that used to wrap the whole row: that made the header compete with the list it
-/// introduces, which is the opposite of what a summary is for.
+/// Two stats of equal weight, as on Android. A cleaner opens History to read both numbers — what they
+/// earned and over how many jobs — and neither is context for the other, so neither is styled down.
 private struct SummaryStat: View {
     let value: String
     let label: String
-    var isPrimary = false
 
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .cleansiaFont(isPrimary ? CleansiaTypography.headlineMedium : CleansiaTypography.headlineSmall)
-                .foregroundColor(isPrimary ? CleansiaColors.primary : CleansiaColors.onSurface)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
+                .foregroundColor(CleansiaColors.primary)
                 // Shrink before wrapping: the All-time filter makes six-figure totals reachable, and
                 // "118 450 Kč" already exceeds this column in every language including English.
                 .lineLimit(1)
@@ -403,14 +403,8 @@ private struct SummaryStat: View {
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, isPrimary ? Spacing.xs : 0)
-        .background {
-            if isPrimary {
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .fill(CleansiaColors.primary.opacity(0.12))
-            }
-        }
     }
 }

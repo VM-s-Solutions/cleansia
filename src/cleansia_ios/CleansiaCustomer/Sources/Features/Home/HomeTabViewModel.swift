@@ -160,11 +160,21 @@ final class HomeTabViewModel: ViewModel {
     /// Silent on failure, like its ambient sibling — the cached snapshot stays on screen, and the pull
     /// spinner ending is itself the feedback.
     func pullToRefresh() async {
-        async let loyalty: Void = loyaltyRepository.refresh()
-        async let orders: Void = orderRepository.refresh()
-        async let membership: Void = membershipRepository.refresh()
+        async let loyalty: Void = forceRefreshLoyalty()
+        async let orders: Void = forceRefreshOrders()
+        async let membership: Void = forceRefreshMembership()
         _ = await (loyalty, orders, membership)
     }
+
+    // `refresh()` returns an ApiResult, so these wrap it to Void for the concurrent `async let` —
+    // the same shape the staleness-gated siblings below already use. The result is discarded on
+    // purpose: a pull that fails leaves the cached snapshot on screen, and the spinner ending is the
+    // feedback.
+    private func forceRefreshLoyalty() async { _ = await loyaltyRepository.refresh() }
+
+    private func forceRefreshOrders() async { _ = await orderRepository.refresh() }
+
+    private func forceRefreshMembership() async { _ = await membershipRepository.refresh() }
 
     private func refreshLoyaltyIfStale() async {
         guard loyaltyRepository.staleness.isStale else { return }

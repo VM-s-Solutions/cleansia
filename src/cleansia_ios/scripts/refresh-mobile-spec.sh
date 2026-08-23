@@ -47,10 +47,33 @@ refresh_one() {
   local out="${SPEC_DIR}/${name}-mobile-api.json"
 
   echo "Fetching ${name} spec from ${url} ..."
-  if curl -fsS "$url" -o "$out"; then
-    echo "Wrote $(wc -c < "$out" | tr -d ' ') bytes to ${out#"${IOS_ROOT}/../"}."
+
+  # Fetch to a temp file first. Writing straight over the committed spec means a host running an OLDER
+  # build silently downgrades the contract every client is generated from — and the symptom lands much
+  # later as "the generator will not emit a type the spec clearly defines", with nothing pointing here.
+  local before=0
+  [[ -f "$out" ]] && before="$(wc -c < "$out" | tr -d ' ')"
+  local tmp="${out}.fetched"
+
+  if curl -fsS "$url" -o "$tmp"; then
+    local after
+    after="$(wc -c < "$tmp" | tr -d ' ')"
+
+    if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
+      echo "  refusing: the fetched ${name} spec is SMALLER than the committed one" >&2
+      echo "            (${after} bytes vs ${before}). That means the host you fetched from is behind" >&2
+      echo "            the contract in git, and overwriting would delete types the apps already use." >&2
+      echo "            Rebuild and restart the ${name} mobile API, or keep the committed spec." >&2
+      echo "            Kept: ${out#"${IOS_ROOT}/../"} (unchanged). Fetched copy left at ${tmp##*/}." >&2
+      skipped=$((skipped + 1))
+      return 0
+    fi
+
+    mv "$tmp" "$out"
+    echo "Wrote ${after} bytes to ${out#"${IOS_ROOT}/../"}."
     return 0
   fi
+  rm -f "$tmp"
 
   # An explicitly named host is a deliberate request, so failing to reach it IS an error.
   if [ -n "$override_url" ]; then

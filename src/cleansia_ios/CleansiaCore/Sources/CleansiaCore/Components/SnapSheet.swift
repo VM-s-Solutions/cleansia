@@ -131,6 +131,13 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                 background
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
+                    // Where the sheet's top edge sits IN THE BACKDROP'S OWN COORDINATES. The backdrop
+                    // ignores the safe area, so its origin is the top of the screen, while `currentTop`
+                    // is measured from the safe-area top — the inset converts between the two. Without
+                    // this a backdrop cannot lay anything out against the sheet without silently
+                    // guessing, and a guess is only visibly wrong at the anchors where the uncovered
+                    // strip is small.
+                    .environment(\.snapSheetTop, currentTop + geometry.safeAreaInsets.top)
 
                 sheet(bottomOverhang: currentTop)
                     .frame(height: height)
@@ -274,3 +281,21 @@ private extension Comparable {
         }
     }
 #endif
+
+private struct SnapSheetTopKey: EnvironmentKey {
+    /// 0 means "no sheet above me", so a backdrop used outside a SnapSheet lays out against its own
+    /// full height rather than collapsing to nothing.
+    static let defaultValue: CGFloat = 0
+}
+
+public extension EnvironmentValues {
+    /// The y of the sheet's top edge, in the coordinate space of the SnapSheet's BACKGROUND view.
+    ///
+    /// Published so a backdrop can centre its content in the strip the sheet actually leaves visible,
+    /// at any anchor and mid-drag, instead of recomputing it from an anchor constant and its own
+    /// geometry — which is measured in a different space and only agrees by luck.
+    var snapSheetTop: CGFloat {
+        get { self[SnapSheetTopKey.self] }
+        set { self[SnapSheetTopKey.self] = newValue }
+    }
+}

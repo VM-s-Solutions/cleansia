@@ -91,7 +91,7 @@ struct OrderDetailView: View {
         if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
-            ApproximateAreaBackdrop(zone: order.location.line, anchor: snapAnchor)
+            ApproximateAreaBackdrop(zone: order.location.line)
         }
     }
 }
@@ -101,30 +101,27 @@ struct OrderDetailView: View {
 /// says "the map broke", so this names the coarse zone that *did* arrive and why the pin is missing.
 private struct ApproximateAreaBackdrop: View {
     @Environment(\.locale) private var locale
+    /// Where the sheet's top edge is, in THIS view's coordinates, published by SnapSheet itself.
+    @Environment(\.snapSheetTop) private var sheetTop
     let zone: String?
-    /// The sheet's CURRENT position, so the legend centres in the strip that is actually visible.
-    let anchor: SnapAnchor
 
     var body: some View {
-        // Centred in the strip the sheet leaves uncovered — measured from where the sheet ACTUALLY is,
-        // not from where it opens. This was pinned to `SnapAnchor.peek`, so dragging the sheet down (or
-        // tapping the handle, which toggles to `.mapFocus`) grew the visible area from a quarter of the
-        // screen to seventy percent while the legend stayed centred in the old quarter — pinned to the
-        // top of a pane with a lot of empty blue beneath it.
+        // Centred in the strip the sheet actually leaves uncovered, using the sheet's OWN reported
+        // edge rather than re-deriving it here.
         //
-        // It animates with the sheet because `anchor` is the same state the sheet is driven by.
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                CleansiaColors.primaryContainer
-                legend
-                    .padding(.horizontal, Spacing.xl)
-                    .frame(
-                        width: geometry.size.width,
-                        height: geometry.size.height * (1 - anchor.coveredFraction)
-                    )
-            }
+        // Two earlier attempts got this wrong in the same way. Hardcoding `SnapAnchor.peek` ignored
+        // that the sheet moves at all. Recomputing from the live anchor still measured against THIS
+        // view's height — and this view is laid out with `.ignoresSafeArea()`, so its origin is the top
+        // of the screen while the sheet's offset is measured from the safe-area top. The two differ by
+        // the status bar, which is a rounding error inside a tall strip and half the strip at `.peek`.
+        // Hence "centred only when the panel is collapsed".
+        ZStack(alignment: .top) {
+            CleansiaColors.primaryContainer
+            legend
+                .padding(.horizontal, Spacing.xl)
+                .frame(maxWidth: .infinity)
+                .frame(height: max(sheetTop, 0))
         }
-        .animation(.easeInOut(duration: 0.2), value: anchor)
         .id(locale.identifier)
     }
 

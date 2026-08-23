@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 enum class CleansiaButtonSize(
@@ -68,7 +69,12 @@ fun CleansiaPrimaryButton(
                 Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text = text, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (trailingIcon != null) {
                 Spacer(Modifier.width(8.dp))
                 Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -144,7 +150,12 @@ fun CleansiaDestructiveButton(
                 Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text = text, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -177,11 +188,20 @@ fun CleansiaOutlinedButton(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** Inline link — primary-colored text, no chrome. */
+/**
+ * Inline link — primary-colored text, no chrome.
+ *
+ * Single-line and ellipsized like the other three variants. Most callers give a button the full width
+ * so it never mattered, but a label in a `weight(1f)` slot wraps mid-word instead of truncating — cs
+ * "Poznámka" is 76dp against a 74dp budget in the notes row. Truncating is the safe default for the
+ * next constrained caller; the reference is the bottom nav, which has done this since it shipped.
+ */
 @Composable
 fun CleansiaTextLink(
     text: String,
@@ -197,6 +217,8 @@ fun CleansiaTextLink(
             text = text,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

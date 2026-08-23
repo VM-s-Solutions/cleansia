@@ -19,5 +19,13 @@ object DisputeModule {
 
     @Provides
     @Singleton
-    fun provideDisputeApi(genDisputeApi: GenDisputeApi): DisputeApi = DisputeApi(genDisputeApi)
+    fun provideDisputeEvidenceUploadApi(@AuthRetrofit retrofit: Retrofit): DisputeEvidenceUploadApi =
+        retrofit.create(DisputeEvidenceUploadApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDisputeApi(
+        genDisputeApi: GenDisputeApi,
+        evidenceUploadApi: DisputeEvidenceUploadApi,
+    ): DisputeApi = DisputeApi(genDisputeApi, evidenceUploadApi)
 }

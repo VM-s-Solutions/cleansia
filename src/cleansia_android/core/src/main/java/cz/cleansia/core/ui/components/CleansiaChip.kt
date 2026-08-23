@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
@@ -68,6 +69,10 @@ fun CleansiaChip(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             ),
             color = labelColor,
+            // A chip is a pill: it must get narrower, never taller. Selecting one also switches the
+            // weight to SemiBold, so the same label measures wider when picked than when offered.
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

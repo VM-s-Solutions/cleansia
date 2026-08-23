@@ -14,7 +14,8 @@ namespace Cleansia.Core.Domain.Enums;
 ///
 /// <para><b>Polarity is encoded in the numbering, not in a second column.</b> Positive tags occupy
 /// 1–10 and negative tags 11–20, with room left in each band so a later insert never renumbers a
-/// shipped value — an enum member's integer IS the wire contract, and three clients decode it.
+/// shipped value — an enum member's integer IS the wire contract, and the two mobile clients decode it
+/// (the web customer app submits reviews without tags).
 /// <c>ReviewTagPolarity</c> is the single reader of that convention.</para>
 ///
 /// <para><b>There is deliberately no "something was damaged" tag.</b> Damage is

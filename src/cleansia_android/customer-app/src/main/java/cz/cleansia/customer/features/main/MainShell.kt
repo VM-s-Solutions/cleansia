@@ -232,17 +232,18 @@ fun MainShell(
     val cachedOrders by orderRepo.orders.collectAsStateWithLifecycle()
     var reviewPromptChecked by remember { mutableStateOf(false) }
     LaunchedEffect(ordersLoaded, currentUser?.id) {
-        if (!ordersLoaded || reviewPromptChecked) return@LaunchedEffect
+        val userId = currentUser?.id
+        if (!ordersLoaded || reviewPromptChecked || userId.isNullOrBlank()) return@LaunchedEffect
         reviewPromptChecked = true
         val settings = shellViewModel.appSettings
         val prompted = cachedOrders
             .map { it.id }
-            .filter { settings.hasPromptedForReview(it) }
+            .filter { settings.hasPromptedForReview(userId, it) }
             .toSet()
         val candidate = ReviewPromptGate.candidate(cachedOrders, prompted) ?: return@LaunchedEffect
         // Stamped when the prompt is SHOWN, not when it is answered: declining is an answer, and
         // asking twice about the same clean is what makes this pattern feel like nagging.
-        settings.markReviewPrompted(candidate.id)
+        settings.markReviewPrompted(userId, candidate.id)
         onPromptOrderReview(candidate.id)
     }
 

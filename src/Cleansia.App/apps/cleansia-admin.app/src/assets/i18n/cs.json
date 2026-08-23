@@ -2337,7 +2337,8 @@
       "not_existing_email": "Zaměstnanec s tímto e-mailem nebyl nalezen",
       "not_found": "Zaměstnanec nenalezen",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
-      "profile_incomplete": "Profil zaměstnance je nekompletní"
+      "profile_incomplete": "Profil zaměstnance je nekompletní",
+      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet"
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",

@@ -382,6 +382,19 @@ fun OrderDetailScreen(
             isSubmitting = submittingReview,
             errorMessage = reviewError,
             existingReview = currentReview,
+            // A prompt the customer did not ask for offers "Not now" and leads with the question; the
+            // card they tapped themselves keeps "Cancel" and the editorial title. Same sheet, honest
+            // about which one it is — and the same split iOS makes.
+            titleRes = if (reviewAutoOpened && currentReview == null) {
+                R.string.order_review_prompt_title
+            } else {
+                null
+            },
+            dismissLabelRes = if (reviewAutoOpened && currentReview == null) {
+                R.string.order_review_prompt_not_now
+            } else {
+                R.string.order_review_cancel
+            },
         )
     }
 }

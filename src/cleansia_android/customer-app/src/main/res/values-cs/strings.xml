@@ -362,6 +362,8 @@
     <string name="order_review_tag_smell">Zápach nebo přípravky</string>
     <string name="order_review_tag_small_crew">Menší tým než objednaný</string>
     <string name="order_review_cancel">Zrušit</string>
+    <string name="order_review_prompt_not_now">Teď ne</string>
+    <string name="order_review_prompt_title">Jaký byl váš úklid?</string>
     <string name="order_review_submit">Odeslat hodnocení</string>
     <string name="order_review_success">Děkujeme — vaše hodnocení bylo odesláno.</string>
     <string name="order_review_retry_hint">Odeslání se nezdařilo — zkuste to znovu.</string>

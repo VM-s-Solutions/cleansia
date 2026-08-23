@@ -2337,7 +2337,8 @@
       "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
       "not_found": "Zamestnanec nebol nájdený",
       "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
-      "profile_incomplete": "Profil zamestnanca nie je kompletný"
+      "profile_incomplete": "Profil zamestnanca nie je kompletný",
+      "weekly_limit_invalid": "Týždenný limit zakázok musí byť aspoň 1, alebo prázdny pre neobmedzený počet"
     },
     "employee_document": {
       "not_found": "Dokument nebol nájdený",

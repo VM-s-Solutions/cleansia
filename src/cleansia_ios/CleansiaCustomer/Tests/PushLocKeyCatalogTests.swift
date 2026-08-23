@@ -38,7 +38,10 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.assignment_cancelled",
         "order.assigned",
         "order.assignment_revoked",
-        "payroll.invoice_paid"
+        "payroll.invoice_paid",
+        "order.reminder_tomorrow",
+        "order.reminder_soon",
+        "order.reminder_not_started"
     ]
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
@@ -55,7 +58,10 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.preferred_offer_closed",
         "order.assignment_cancelled",
         "order.assigned",
-        "order.assignment_revoked"
+        "order.assignment_revoked",
+        "order.reminder_tomorrow",
+        "order.reminder_soon",
+        "order.reminder_not_started"
     ]
 
     /// The word each locale uses for the person — i.e. the claim being made.

@@ -365,6 +365,8 @@
     <string name="order_review_tag_smell">Smell or products</string>
     <string name="order_review_tag_small_crew">Smaller crew than booked</string>
     <string name="order_review_cancel">Cancel</string>
+    <string name="order_review_prompt_not_now">Not now</string>
+    <string name="order_review_prompt_title">How was your clean?</string>
     <string name="order_review_submit">Submit review</string>
     <string name="order_review_success">Thanks — your review is in.</string>
     <string name="order_review_retry_hint">Couldn\'t submit — please try again.</string>

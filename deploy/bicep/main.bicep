@@ -463,7 +463,7 @@ var sendGridSettings = {
   SendGrid__ResetPasswordUrl: '/forgot-password'
 }
 
-// Timer schedules for the six functions that declare `[TimerTrigger("%SomeCron%")]` rather than a
+// Timer schedules for every function that declares `[TimerTrigger("%SomeCron%")]` rather than a
 // literal cron. THESE ARE NOT DECORATION AND THEY ARE NOT A DUPLICATE OF appsettings.json.
 //
 // The `%token%` is expanded by the Functions HOST at indexing time, from PLATFORM APPLICATION SETTINGS.
@@ -475,8 +475,10 @@ var sendGridSettings = {
 //
 // Measured 2026-08-22: SendNewJobsDigest, MaterializeRecurringBookings, SendPreCleaningReminders,
 // SendRecurringOrderReminders, SendMembershipLifecycleNotifications and ExpireStaleReferrals had never
-// fired in DEV. The twelve timers carrying literal crons — OutboxDrainer, CleanupStalePendingOrders and
-// the rest — were unaffected, which is what made the split visible.
+// fired in DEV. The timers carrying literal crons — OutboxDrainer, CleanupStalePendingOrders and the
+// rest — were unaffected, which is what made the split visible. The map below carries eight keys, not
+// six: SendCleanerJobReminders and SendTomorrowJobDigest were added by the same change and would have
+// landed in exactly the same hole.
 //
 // Values are copied verbatim from src/Cleansia.Functions/appsettings.json so this changes nothing except
 // whether the schedules exist at all. TimerCronSettingsAreDeployedTests fails the build if a tokenized

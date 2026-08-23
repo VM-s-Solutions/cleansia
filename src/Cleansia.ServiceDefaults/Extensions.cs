@@ -54,7 +54,7 @@ public static class Extensions
                     //
                     // Literals, not IntegrationFailureMetrics.MeterName / RateLimitMetrics.MeterName:
                     // Cleansia.Config already references this project, so referencing back would be a
-                    // cycle. CustomMeterNamesMatchTheirDeclarationsTests pins the two against the
+                    // cycle. CustomMeterSubscriptionTests pins the two against the
                     // constants from Cleansia.Tests, which can see both.
                     .AddMeter("Cleansia.Integration")
                     .AddMeter("Cleansia.RateLimiting");
@@ -178,7 +178,7 @@ public static class Extensions
                     //
                     // Literals, not IntegrationFailureMetrics.MeterName / RateLimitMetrics.MeterName:
                     // Cleansia.Config already references this project, so referencing back would be a
-                    // cycle. CustomMeterNamesMatchTheirDeclarationsTests pins the two against the
+                    // cycle. CustomMeterSubscriptionTests pins the two against the
                     // constants from Cleansia.Tests, which can see both.
                     .AddMeter("Cleansia.Integration")
                     .AddMeter("Cleansia.RateLimiting");

@@ -15,11 +15,34 @@ All values below are the shipped ones, read from `BookingPolicy` and the pay cal
 | Express lead time | **2 h** — the hard floor; below this a booking is refused |
 | Express surcharge | **+20 %** of the base price |
 | Bookable hours | **08:00 – 20:00**, in 60-minute customer-facing windows |
+| Start grace window | **60 min** — a cleaner may start a job at most this far ahead of its time |
 
 Between 2 and 4 hours' notice a booking is accepted but carries the express surcharge. Under 2 hours
 it is refused outright — not priced higher, refused.
 
 The customer-facing window is 60 minutes; the internal scheduling grid stays at 30.
+
+### The start grace window — 60 min, and why it is not zero {#start-grace-window}
+
+`StartGraceWindowMinutes = 60`. Until 2026-08-22 there was **no** clock gate at all: a cleaner could
+open a job booked for next Tuesday and mark it started today. Nothing downstream noticed, because the
+duration a cleaner is paid for comes from the service, not from the elapsed clock — so the only visible
+symptom was a customer being told their cleaner had arrived, days early.
+
+The gate is deliberately a **grace window, not an exact time**. Cleaners arrive early; a cleaner
+standing at the door at 09:50 for a 10:00 job must be able to start, and a rule that refuses them would
+be one the platform loses to reality within a week. An hour is wide enough to cover early arrival and
+travel, and narrow enough that "next Tuesday" is refused today.
+
+It bounds **both** the start and the on-the-way notice, because both write to the customer's lock
+screen. Late is never blocked — a job started three hours late is a real thing that happened and the
+platform records it rather than refusing to.
+
+The error is `order.too_early_to_start`, and it is the **last** rule on both commands: a cleaner who is
+not assigned to the order learns that they are not assigned, and learns nothing about when it is
+scheduled.
+
+→ [ADR-0055](/decisions/adr-0055)
 
 ### Maximum booked duration — 24 h, and it is not about calendars
 

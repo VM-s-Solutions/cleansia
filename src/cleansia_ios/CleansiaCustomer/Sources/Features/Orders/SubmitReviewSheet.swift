@@ -10,6 +10,9 @@ struct SubmitReviewSheet: View {
     let onDismiss: () -> Void
     /// The prompt says "Not now"; the detail screen's own entry point says "Cancel".
     var dismissLabel: String = L10n.OrderReview.cancel
+    /// Non-nil on a prompt the customer did not ask for, which leads with the question rather than the
+    /// editorial title. Android makes the same split.
+    var titleOverride: String?
 
     @State private var rating: Int
     @State private var comment: String
@@ -25,7 +28,8 @@ struct SubmitReviewSheet: View {
         errorMessage: String?,
         onConfirm: @escaping (Int, String?, [CustomerReviewTag]) -> Void,
         onDismiss: @escaping () -> Void,
-        dismissLabel: String = L10n.OrderReview.cancel
+        dismissLabel: String = L10n.OrderReview.cancel,
+        titleOverride: String? = nil
     ) {
         self.existingReview = existingReview
         self.isSubmitting = isSubmitting
@@ -33,6 +37,7 @@ struct SubmitReviewSheet: View {
         self.onConfirm = onConfirm
         self.onDismiss = onDismiss
         self.dismissLabel = dismissLabel
+        self.titleOverride = titleOverride
         _rating = State(initialValue: existingReview?.rating ?? 0)
         _comment = State(initialValue: existingReview?.comment ?? "")
         _selectedTags = State(initialValue: Set(existingReview?.tags ?? []))
@@ -49,7 +54,7 @@ struct SubmitReviewSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
-                Text(isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle)
+                Text(titleOverride ?? (isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle))
                     .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
 

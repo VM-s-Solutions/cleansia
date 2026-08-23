@@ -71,12 +71,15 @@ need backfilling.
 ### Added
 
 - **Cleaner — reminders about the jobs you have already taken.** Three of them, and none can be switched
-  off. The evening before, at 18:00 **in your own local time**, a digest saying how many jobs you have
+  off. The evening before, from 18:00 **in your own local time**, a digest saying how many jobs you have
   tomorrow. About two hours before each job, a reminder naming it. And close to the start, if you still
-  have not marked yourself on the way, a nudge asking whether you are — that last one is skipped entirely
-  once you have set off. On a job booked for two cleaners, both are reminded. The local hour comes from
-  the work country an admin assigned at approval, not from the phone, so it is right even on a device set
-  to the wrong timezone.
+  have not marked yourself on the way, a nudge asking whether you are — that last one is skipped once you
+  have set off, and skipped as well if you are already out on a different job, so a full day of
+  back-to-back work does not interrupt you mid-clean. On a job booked for two cleaners, both are
+  reminded. The local hour comes from the work country an admin assigned at approval, not from the phone,
+  so it is right even on a device set to the wrong timezone. Taking a job later in the evening still
+  earns tomorrow's digest — the send window stays open for three hours rather than firing on one stroke
+  of the clock. All three go only to cleaners whose contract is approved and whose account is active.
 
 - **Customer — you are now asked to rate the clean, instead of having to go looking.** The review
   control used to be the second-to-last section inside an order's detail sheet, which most customers
@@ -196,6 +199,21 @@ need backfilling.
   payout scheme for each country (without it, no cleaner in that country can save bank details), the
   Czech constant symbol for invoices, and the Czech invoice legal notice.
 
+- **Operators — ⚠️ the admin API client must be regenerated before the weekly-limit control can be
+  built.** `PUT /api/AdminEmployee/{employeeId}/weekly-order-limit` ships and is audited, but
+  `admin-client.ts` carries no method for it, so the admin web app cannot call it yet. Run
+  `npm run generate-admin-client`. The other four clients already carry this release's contract changes
+  (review tags, `hasReview`) and need nothing. `manual_step: nswag-regen`
+
+- **Operators — ⚠️ eight timer functions had never run in Azure, and now will.** Their schedules are
+  written as `%SomeCron%` tokens, which the Functions **host** expands from platform application
+  settings — but the only place those keys existed was the isolated worker's own `appsettings.json`, a
+  different process the host never reads. With no setting, the token did not resolve, the timer listener
+  was never created, and the function simply never fired: no error, no invocation, no telemetry. Among
+  them were the new-jobs digest, recurring-booking materialisation and membership lifecycle notices.
+  They are now set in `main.bicep`, so **the first deploy after this change starts running work that has
+  never run before** — expect a burst of previously-undelivered notifications on that deploy.
+
 ### Deprecated
 
 - **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
@@ -222,9 +240,9 @@ need backfilling.
 
 ### Fixed
 
-- **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way, starting a
-  clean and completing it were all possible from the moment the booking was confirmed — days ahead of the
-  actual date. Both actions now open one hour before the booking, which is the same moment the customer is
+- **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way and starting
+  a clean were both possible from the moment the booking was confirmed — days ahead of the actual date,
+  and completing it followed from there. Both now open one hour before the booking, which is the same moment the customer is
   told their cleaning is starting soon. Running late is still fine: there is no cut-off at the other end.
   Two things this was quietly breaking — an early start cancelled the customer's own "starting soon"
   notification, and an early completion started the payout calculation for work that had not happened.

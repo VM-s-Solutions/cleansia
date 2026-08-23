@@ -32,6 +32,25 @@ order**, not merely on being a cleaner. A non-participant cannot advance somebod
 The customer-facing cancel is the mirror image: it is customer-only and checks `order.UserId` against
 the caller in the handler.
 
+## And not before the job's own clock {#start-grace-window}
+
+`StartOrder` and `NotifyOnTheWay` are also gated on **time**: a job may be moved at most
+[60 minutes](/product/business-rules#start-grace-window) ahead of when it is booked for. Earlier is
+`order.too_early_to_start`. Later is never blocked.
+
+Before 2026-08-22 there was no such gate, and a cleaner could mark next Tuesday's job started today —
+which put *"your cleaner is on the way"* on a customer's lock screen days early.
+
+The rule is deliberately the **last** one evaluated on both commands. A cleaner who is not on the crew
+is told they are not on the crew and learns nothing about when the job is scheduled; a test pins that
+ordering, because moving the clock check earlier would turn the board into a schedule oracle.
+
+The reminders run off the same clock from the other side: a cleaner is told two hours out, and nudged
+about half an hour out. Both come off one query that selects only orders still in `Confirmed`, so
+marking yourself on the way switches off whichever has not already been sent — in practice the nudge,
+since nobody is on the way two hours early. The nudge is additionally suppressed for a cleaner already
+out on another job, because asking someone mid-clean whether they have set off is noise.
+
 ## What a cleaner who has *not* taken the job can see
 
 A cleaner browsing the board gets **the job, not the household**. The redaction strips the customer's
@@ -50,6 +69,9 @@ explicitly classified as kept or stripped.
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |
 | Status moved out of order | Refused by the transition guard. |
+| Cleaner opens tomorrow's job and taps Start | Refused with `order.too_early_to_start` until the job is within an hour. |
+| Cleaner is early at the door — 09:50 for a 10:00 job | Allowed. The window is a grace, not an exact time; cleaners arrive early and the platform must not argue with that. |
+| Cleaner starts three hours late | Allowed and recorded. Late is a real thing that happened. |
 | Admin needs to force a status | A separate admin-only override, which is audited. |
 | Live Activity token stale | The push is dropped; the activity ends on its own. |
 

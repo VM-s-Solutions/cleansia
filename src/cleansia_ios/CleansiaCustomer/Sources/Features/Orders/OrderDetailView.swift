@@ -215,7 +215,8 @@ struct OrderDetailView: View {
                 },
                 // A prompt the customer did not ask for offers "Not now"; the card they tapped
                 // themselves offers "Cancel". Same sheet, honest about which one it is.
-                dismissLabel: reviewAutoOpened ? L10n.OrderReview.promptNotNow : L10n.OrderReview.cancel
+                dismissLabel: reviewAutoOpened ? L10n.OrderReview.promptNotNow : L10n.OrderReview.cancel,
+                titleOverride: reviewAutoOpened ? L10n.OrderReview.promptTitle : nil
             )
             .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }

@@ -163,13 +163,65 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 
 ### Function Inventory
 
-| Function | Trigger | Schedule | Purpose |
-|----------|---------|----------|---------|
-| `GenerateReceipt` | Queue: `generate-receipt` | On message | Generates receipt PDF with QuestPDF, uploads to blob storage, sends email via SendGrid |
-| `GenerateInvoice` | Queue: `generate-invoice` | On message | Generates employee invoice PDF, uploads to blob storage |
-| `CloseExpiredPayPeriods` | Timer | Daily at 2:00 AM UTC | Finds pay periods past their end date and marks them as closed |
-| `SendPeriodEndReminders` | Timer | Daily at 9:00 AM UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | Timer | Weekly, Sunday 3:00 AM UTC | GDPR compliance — deletes expired user data, anonymizes old orders |
+**34 functions**, 20 timers and 14 queue consumers. This inventory listed five of them until
+2026-08-22, which is a large part of why nobody noticed that eight timers had never fired at all — see
+[the schedule tokens](#timer-schedules) below.
+
+#### Timers
+
+| Function | Schedule | Purpose |
+|---|---|---|
+| `OutboxDrainer` | every 10 s | Drains the transactional outbox onto the queues |
+| `FiscalReconciliation` | every 5 min | Reconciles fiscal registrations against the EET API |
+| `RetryFailedFiscalRegistrations` | every 5 min | Retries registrations that failed transiently |
+| `NotifyLapsedPreferredOffers` | every 5 min | Closes a preferred-cleaner hold that expired and reopens the order |
+| `SendPreCleaningReminders` | `%Cron%` — every 5 min | Reminds a **customer** their cleaning is coming up |
+| `SendCleanerJobReminders` | `%Cron%` — every 5 min | Reminds a **cleaner** two hours out; nudges them close to the start if they have not set off |
+| `CleanupStalePendingOrders` | every 15 min | Releases orders stuck awaiting payment |
+| `SendNewJobsDigest` | `%Cron%` — hourly | Tells cleaners how many new offerable jobs are near them |
+| `SendTomorrowJobDigest` | `%Cron%` — hourly | Tells each cleaner how many jobs they have tomorrow, at 18:00 **local** — hourly because a UTC cron cannot be timezone-aware |
+| `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances nobody took in time |
+| `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed |
+| `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders |
+| `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |
+| `SendMembershipLifecycleNotifications` | `%Cron%` — daily 03:00 UTC | Expiry, renewal and cancellation notices |
+| `RefreshTokenCleanup` | daily 03:30 UTC | Deletes expired refresh tokens |
+| `ExpireStaleReferrals` | `%Cron%` — daily 03:30 UTC | Expires referrals nobody redeemed |
+| `LiveActivityJanitor` | daily 04:00 UTC | Ends Live Activities whose orders are long finished |
+| `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
+| `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders |
+
+#### Queue consumers
+
+| Function | Queue | Purpose |
+|---|---|---|
+| `GenerateReceipt` | `generate-receipt` | Receipt PDF via QuestPDF → blob storage → SendGrid |
+| `GenerateInvoice` | `generate-invoice` | Employee invoice PDF → blob storage |
+| `CalculateOrderPay` | `calculate-order-pay` | Computes a cleaner's pay for a finished order |
+| `SendEmail` | `send-email` | SendGrid delivery |
+| `SendPushNotification` | `notifications-dispatch` | FCM delivery |
+| `SendLiveActivityUpdate` | `live-activity-dispatch` | APNs Live Activity updates |
+| `SendSitewidePromoFanout` | `sitewide-promo-fanout` | Fans a sitewide promo out to recipients |
+
+Each of those seven has a matching `*Poison` consumer on `<queue>-poison`.
+
+### The eight `%Cron%` schedules — and how they never ran {#timer-schedules}
+
+Eight timers above declare their schedule as `[TimerTrigger("%SomeCron%")]` rather than a literal. That
+token is expanded by the Functions **host**, from platform **application settings**.
+
+`src/Cleansia.Functions/appsettings.json` is loaded by `Program.cs` into the **isolated worker's**
+`IConfiguration` — a different process and a different configuration object, which the host never reads.
+Nothing in `deploy/bicep` set a single one of these keys until 2026-08-22, so the tokens never resolved,
+the timer listeners were never created, and those functions **simply never ran in Azure**: no error, no
+invocation, no telemetry. The timers carrying literal crons were unaffected, which is the only reason
+the split was ever visible.
+
+They now live in the `cronSettings` var in `main.bicep`, unioned into the Function App's app settings.
+`TimerCronSettingsAreDeployedTests` discovers the tokens by **reflection** and fails the build if a
+tokenized timer is added without a matching key — a hand-maintained list would not have caught the two
+timers added the same day.
 
 ### Docker Deployment
 
@@ -412,6 +464,17 @@ That is load-bearing in both directions. **Warning and above ships** — which i
 **Information does not** — which is why `RequestLoggingMiddleware`'s request/response body slices, and
 the caller PII they can carry, do not leave the process at all. Lowering `Default` to `Information` on
 a deployed host would send both the volume and that PII to App Insights.
+
+**Since 2026-08-22 there is one exception, and only on non-prod.** `main.bicep:533` sets
+`Logging__LogLevel__Cleansia` to `Information` when `env != 'prod'` (prod stays `Warning`). App Service
+surfaces every app setting as an environment variable and `Host.CreateDefaultBuilder` layers those
+**after** the JSON files, so it wins without a code change.
+
+It is scoped to the **`Cleansia` category, never `Default`** — that is the whole point. Our own
+`LogInformation` calls ("this sweep considered 40 assignments and sent 3") now reach App Insights on
+DEV, while `Default` stays at `Warning` so `RequestLoggingMiddleware` and the framework's Information
+chatter still do not. Before this, a DEV timer that ran and did nothing was indistinguishable from one
+that never ran at all — which is exactly the bug that took a day to find.
 :::
 
 `deploy/bicep/modules/appService.bicep` still configures no `Microsoft.Insights/diagnosticSettings` for

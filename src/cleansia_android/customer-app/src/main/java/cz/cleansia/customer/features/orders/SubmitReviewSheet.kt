@@ -185,8 +185,8 @@ fun SubmitReviewSheet(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Comment textarea — capped at 2000 chars client-side to match the
-            // backend validator. Optional field.
+            // Comment textarea — capped client-side at the backend validator's real limit; see
+            // REVIEW_COMMENT_MAX_LENGTH above for why that number is 1000 and not 2000. Optional field.
             OutlinedTextField(
                 value = comment,
                 onValueChange = { next ->
@@ -287,13 +287,8 @@ fun SubmitReviewSheet(
     }
 }
 
-/* ── Star row ── */
+/* ── Review tags ── */
 
-/**
- * Centered row of 5 tappable star icons. Filled + amber up to and including
- * [rating]; outlined + muted beyond it. IconButton provides the 40dp hit
- * target out of the box.
- */
 /**
  * The offered chips, wrapped. Multi-select under [ReviewTag.MAX_TAGS] — the caller owns that policy,
  * which is why [CleansiaChip] does not.
@@ -344,6 +339,13 @@ private fun ReviewTag.labelRes(): Int = when (this) {
     ReviewTag.CrewSmallerThanBooked -> R.string.order_review_tag_small_crew
 }
 
+/* ── Star row ── */
+
+/**
+ * Centered row of 5 tappable star icons. Filled + amber up to and including
+ * [rating]; outlined + muted beyond it. IconButton provides the 40dp hit
+ * target out of the box.
+ */
 @Composable
 private fun StarRow(
     rating: Int,

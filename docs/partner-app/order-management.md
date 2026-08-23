@@ -116,13 +116,26 @@ takeable → `order.not_takeable`.
 the order's first seat is theirs. Everyone else sees `order.not_found`, identical to a genuinely
 missing order.
 
-**Weekly order limit** (based on partner rating):
+**Weekly order limit** — **unlimited by default.** A cleaner takes as much work as they can find, and
+nothing in the platform caps them unless an admin has said so for that one person.
 
-| Rating Range | Weekly Limit |
-|---|---|
-| 0 -- 3.5 | 3 orders/week |
-| 3.6 -- 4.5 | 6 orders/week |
-| 4.6+ | 10 orders/week |
+The cap used to be a rating ladder — 3, 6 or 10 orders a week depending on the cleaner's score — applied
+to everybody automatically. It was removed on 2026-08-22 (owner ruling): a new cleaner's rating starts
+low because they have done nothing yet, so the ladder throttled hardest exactly the people who most
+needed the work, and no admin ever chose it for anyone.
+
+What replaced it is `Employee.WeeklyOrderLimit`, a nullable per-cleaner column. `null` means unlimited,
+which is every cleaner today. An admin sets a number on one cleaner through
+`PUT /api/AdminEmployee/{employeeId}/weekly-order-limit`; the action is audited with a real before/after
+snapshot, because throttling someone's earnings is a thing they may later ask about. Taking a job past
+the cap fails with `order.weekly_limit_reached`.
+
+The count behind the cap is **status-aware**: only orders in a slot-blocking status count. A cancelled
+order no longer consumes a week's allowance the way it did under the ladder — and neither does a
+completed one, so the cap bounds what a cleaner holds *open at once* rather than what they get through in
+a week.
+
+→ [ADR-0053](/decisions/adr-0053)
 
 **Time conflict detection:** the server checks for overlaps against the partner's live commitments
 (`New`, `Pending`, `Confirmed`, `OnTheWay`, `InProgress` — terminal orders free the slot).

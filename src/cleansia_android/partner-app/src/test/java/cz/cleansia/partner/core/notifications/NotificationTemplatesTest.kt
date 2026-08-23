@@ -22,6 +22,21 @@ class NotificationTemplatesTest {
 
     private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
 
+    /**
+     * The three job reminders. Their own roster rather than an extension of [reassignKeys], because the
+     * digest body takes a COUNT (`%1${'$'}d`) where every reassign body takes an order number
+     * (`%1${'$'}s`) — folding them together would have meant weakening the slot assertion to accept
+     * either, which is the assertion's whole value.
+     */
+    private val reminderKeys = listOf(
+        "notification_reminder_tomorrow_title",
+        "notification_reminder_tomorrow_body",
+        "notification_reminder_soon_title",
+        "notification_reminder_soon_body",
+        "notification_reminder_not_started_title",
+        "notification_reminder_not_started_body",
+    )
+
     private val reassignKeys = listOf(
         "notification_order_assigned_title",
         "notification_order_assigned_body",
@@ -300,6 +315,56 @@ class NotificationTemplatesTest {
                 assertTrue(
                     "$locale/strings.xml left $key in English",
                     valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the job-reminder copy is translated in all five locales`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reminderKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `the four translations of the job-reminder copy are not the English string copied over`() {
+        val english = reminderKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            reminderKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    /**
+     * The digest body takes an integer count and the two per-job bodies take an order number. A bare
+     * `%s` beside a positional one crashes getString at runtime, and a `%s` where the code passes an
+     * Int is a format exception on the cleaner's lock screen — neither shows up until it ships.
+     */
+    @Test
+    fun `each job-reminder body takes its own argument and each title takes nothing`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            reminderKeys.forEach { key ->
+                val expected = when {
+                    key == "notification_reminder_tomorrow_body" -> listOf("%1${'$'}d")
+                    key.endsWith("_body") -> listOf("%1${'$'}s")
+                    else -> emptyList()
+                }
+                assertEquals(
+                    "$locale/strings.xml passes the wrong format arguments to $key",
+                    expected,
+                    formatSlots(valueOf(xml, key)!!),
                 )
             }
         }

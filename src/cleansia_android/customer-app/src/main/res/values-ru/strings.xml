@@ -359,6 +359,8 @@
     <string name="order_review_tag_smell">Запах или средства</string>
     <string name="order_review_tag_small_crew">Команда меньше заказанной</string>
     <string name="order_review_cancel">Отмена</string>
+    <string name="order_review_prompt_not_now">Не сейчас</string>
+    <string name="order_review_prompt_title">Как прошла уборка?</string>
     <string name="order_review_submit">Отправить отзыв</string>
     <string name="order_review_success">Спасибо — ваш отзыв принят.</string>
     <string name="order_review_retry_hint">Не удалось отправить — попробуйте снова.</string>

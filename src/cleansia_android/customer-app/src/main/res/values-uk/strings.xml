@@ -359,6 +359,8 @@
     <string name="order_review_tag_smell">Запах або засоби</string>
     <string name="order_review_tag_small_crew">Менша команда, ніж замовлено</string>
     <string name="order_review_cancel">Скасувати</string>
+    <string name="order_review_prompt_not_now">Не зараз</string>
+    <string name="order_review_prompt_title">Як пройшло прибирання?</string>
     <string name="order_review_submit">Надіслати відгук</string>
     <string name="order_review_success">Дякуємо — ваш відгук прийнято.</string>
     <string name="order_review_retry_hint">Не вдалося надіслати — спробуйте знову.</string>

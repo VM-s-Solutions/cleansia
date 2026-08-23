@@ -10,30 +10,34 @@ namespace Cleansia.Tests.Functions;
 /// That every <c>%AppSetting%</c> timer schedule actually EXISTS as a Function App application setting
 /// in the deployed template.
 ///
-/// <para><b>The history is the point.</b> Six of the eighteen timers declare their schedule as
+/// <para><b>The history is the point.</b> Eight of the twenty timers declare their schedule as
 /// <c>[TimerTrigger("%SomeCron%")]</c>. That token is expanded by the Functions HOST at indexing time,
 /// from platform application settings. <c>src/Cleansia.Functions/appsettings.json</c> is loaded by
 /// <c>Program.cs</c> into the ISOLATED WORKER's <c>IConfiguration</c> — a different process, a different
 /// configuration object, which the host never reads. Until 2026-08-22 nothing in <c>deploy/bicep</c> set
-/// any of the six, so the tokens never resolved, the timer listeners were never created, and all six
-/// functions simply never ran in Azure: no error, no invocation, no telemetry. The twelve timers with
-/// literal crons were unaffected, which is the only reason the split was ever noticed.</para>
+/// a single one of them, so the tokens never resolved, the timer listeners were never created, and those
+/// functions simply never ran in Azure: no error, no invocation, no telemetry. The timers with literal
+/// crons were unaffected, which is the only reason the split was ever noticed.</para>
 ///
-/// <para><see cref="TimerScheduleConfigTests"/> pins the six by name in <c>[InlineData]</c> and compares
-/// them against the worker's own <c>appsettings.json</c> — it cannot see this defect, because it never
-/// looks at the deployment, and a SEVENTH tokenized timer would be invisible to it entirely. This class
-/// discovers the tokens by reflection instead, so it fails on the next one somebody adds.</para>
+/// <para><see cref="TimerScheduleConfigTests"/> pins each one BY NAME in <c>[InlineData]</c> and compares
+/// it against the worker's own <c>appsettings.json</c> — it cannot see this defect, because it never
+/// looks at the deployment, and a newly added tokenized timer is invisible to it until somebody
+/// remembers to add a row. That is not hypothetical: the two timers added alongside this class were
+/// missed there and caught here. This class discovers the tokens by REFLECTION, so it fails on the next
+/// one somebody adds whether or not they remember.</para>
 /// </summary>
 public class TimerCronSettingsAreDeployedTests
 {
     /// <summary>
     /// Anti-vacuity floors. A reflection walk that silently finds nothing reads as a clean tree, which
     /// is the most expensive lie available — so the walk asserts its own reach before it asserts
-    /// anything about what it found. Measured 2026-08-22: 18 timers, 6 of them tokenized.
+    /// anything about what it found. Measured 2026-08-22: 20 timers, 8 of them tokenized — two of each
+    /// added by the same change that wrote this class, which is why the floors are a floor and not an
+    /// equality.
     /// </summary>
-    private const int MinimumTimerFunctions = 18;
+    private const int MinimumTimerFunctions = 20;
 
-    private const int MinimumTokenizedTimers = 6;
+    private const int MinimumTokenizedTimers = 8;
 
     private static readonly Regex TokenPattern = new(@"^%(?<name>[A-Za-z0-9_]+)%$", RegexOptions.Compiled);
 

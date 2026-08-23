@@ -374,6 +374,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee.not_found',
   'employee.pay_config_missing',
   'employee.profile_incomplete',
+  'employee.weekly_limit_invalid',
   'employee_document.not_found',
   'payout.not_found',
   // Orders, disputes, refunds, receipts

@@ -17,10 +17,15 @@ struct SubmitReviewSheet: View {
     @State private var rating: Int
     @State private var comment: String
     @State private var selectedTags: Set<CustomerReviewTag>
+    /// The rating the current selection was made under — `onChange` gives the new value only, and the
+    /// decision needs both sides to know whether the polarity actually flipped.
+    @State private var previousRating: Int
 
     // 1000, matching SubmitOrderReview.Validator and OrderReview.Comment's [MaxLength]. This said
     // 2000, so a 1500-character review was accepted by the field and refused after submit.
-    private let maxCommentLength = 1000
+    /// UTF-16, matching the server's `MaximumLength(1000)` — see `String.cappedToUtf16`. A `count`
+    /// cap would let 600 emoji through the field and be refused at submit.
+    private let maxCommentUtf16Length = 1000
 
     init(
         existingReview: CustomerOrderReview?,
@@ -41,6 +46,7 @@ struct SubmitReviewSheet: View {
         _rating = State(initialValue: existingReview?.rating ?? 0)
         _comment = State(initialValue: existingReview?.comment ?? "")
         _selectedTags = State(initialValue: Set(existingReview?.tags ?? []))
+        _previousRating = State(initialValue: existingReview?.rating ?? 0)
     }
 
     private var isEdit: Bool {
@@ -59,6 +65,10 @@ struct SubmitReviewSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 StarPicker(rating: $rating, enabled: !isSubmitting)
+                    .onChange(of: rating) { next in
+                        clearTagsOnPolarityChange(from: previousRating, to: next)
+                        previousRating = next
+                    }
 
                 Text(L10n.OrderReview.ratingDescription(rating))
                     .font(CleansiaTypography.bodyMedium)
@@ -82,7 +92,8 @@ struct SubmitReviewSheet: View {
                         )
                         .disabled(isSubmitting)
                         .onChange(of: comment) { value in
-                            if value.count > maxCommentLength { comment = String(value.prefix(maxCommentLength)) }
+                            let capped = value.cappedToUtf16(maxCommentUtf16Length)
+                            if capped != value { comment = capped }
                         }
                 }
 
@@ -144,6 +155,17 @@ struct SubmitReviewSheet: View {
                 }
             }
         }
+    }
+
+    /// The offered set flips polarity at `positiveRatingFloor`, so tags picked under the old rating are
+    /// no longer offerable — and the server REFUSES a mismatched tag rather than dropping it
+    /// (`order.review.tag_rating_mismatch`). Left in place they also hold the cap, which is what made
+    /// every chip go inert after a rating change: four positive tags still counted, so the newly
+    /// offered negative ones were all disabled and none of them was selected to explain why.
+    private func clearTagsOnPolarityChange(from previous: Int, to next: Int) {
+        let wasPositive = previous >= CustomerReviewTag.positiveRatingFloor
+        let isPositive = next >= CustomerReviewTag.positiveRatingFloor
+        if wasPositive != isPositive { selectedTags.removeAll() }
     }
 
     private func toggle(_ tag: CustomerReviewTag) {

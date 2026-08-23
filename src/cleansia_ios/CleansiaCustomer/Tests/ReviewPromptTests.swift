@@ -1,19 +1,20 @@
-@testable import CleansiaCustomer
+import CleansiaCustomerApi
+import Foundation
 import XCTest
+@testable import CleansiaCustomer
 
 /// The rule that decides whether to interrupt a customer on app open, and the chip set it offers.
 ///
 /// Pure functions on purpose — the same reasoning as `JobRadiusPrompt` on the partner side. A rule
 /// that decides to interrupt someone should be assertable without standing up a view.
 final class ReviewPromptTests: XCTestCase {
-
     private func order(
         _ id: String,
         statusValue: Int = 5,
         hasReview: Bool = false,
         cleaningDateTime: Date? = Date(timeIntervalSince1970: 1_755_000_000)
     ) -> CustomerOrderSummary {
-        OrderFakes.summary(
+        OrderFixtures.summary(
             id: id,
             statusCode: Code(type: "OrderStatus", name: nil, value: statusValue),
             cleaningDateTime: cleaningDateTime,
@@ -53,7 +54,7 @@ final class ReviewPromptTests: XCTestCase {
             orders: [
                 order("old", cleaningDateTime: Date(timeIntervalSince1970: 1_750_000_000)),
                 order("new", cleaningDateTime: Date(timeIntervalSince1970: 1_756_000_000)),
-                order("middle", cleaningDateTime: Date(timeIntervalSince1970: 1_753_000_000)),
+                order("middle", cleaningDateTime: Date(timeIntervalSince1970: 1_753_000_000))
             ],
             alreadyPrompted: []
         )
@@ -75,7 +76,6 @@ final class ReviewPromptTests: XCTestCase {
 }
 
 final class CustomerReviewTagTests: XCTestCase {
-
     func testLowRatingsOfferOnlyNegativeTags() {
         for rating in 1 ... 3 {
             let offered = CustomerReviewTag.forRating(rating)

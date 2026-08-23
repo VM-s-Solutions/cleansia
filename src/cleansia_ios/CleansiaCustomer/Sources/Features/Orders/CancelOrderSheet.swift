@@ -185,7 +185,6 @@ private struct FlexibleReasonGrid: View {
     }
 }
 
-
 private struct NotesField: View {
     @Binding var notes: String
     let isOther: Bool

@@ -131,7 +131,13 @@ struct CustomerShellView: View {
         if container.orderRepository.orders.contains(where: { OrderStatusGroup.isActive($0.status) }) {
             AnimatedMascotView.prewarm(.cleaningInProgress)
         }
-        if await needsOnboarding { onNeedsOnboarding() }
+        // RETURN, not fall through: this shell is being replaced by onboarding, so a prompt raised now
+        // is never presented — and raiseReviewPromptIfDue stamps the order as asked BEFORE it opens the
+        // sheet, so falling through spends the one chance to ask and shows nothing.
+        if await needsOnboarding {
+            onNeedsOnboarding()
+            return
+        }
         await raiseReviewPromptIfDue()
     }
 

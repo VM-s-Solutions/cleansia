@@ -150,14 +150,23 @@ cd src/cleansia_ios
 ./scripts/generate-api-clients.sh customer      # prints the model count it produced
 
 # prove the contract actually landed on disk before blaming the build
-ls CleansiaCustomerApi/Sources/CleansiaCustomerApi/Models | grep -i reviewtag
-grep -n "tags" CleansiaCustomerApi/Sources/CleansiaCustomerApi/Models/OrderReviewDto.swift
+ls CleansiaCustomerApi/Models | grep -i reviewtag
+grep -n "tags" CleansiaCustomerApi/Models/OrderReviewDto.swift
 
 # then clear the caches that are still holding the old package
 rm -rf ~/Library/Developer/Xcode/DerivedData/CleansiaCustomer-*
 rm -rf CleansiaCustomer/.swiftpm CleansiaCustomer/CleansiaCustomer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
 (cd CleansiaCustomer && xcodegen generate)
 ```
+
+**The models are at `CleansiaCustomerApi/Models/`, NOT `CleansiaCustomerApi/Sources/…`.** Despite
+`useSPMFileStructure: true`, `swiftPackagePath: .` puts every source at the package root and the
+generated `Package.swift` declares `path: "."` to match. Looking in a `Sources/` directory that never
+existed makes a perfectly good generation look like a failed one.
+
+Verified by running the committed config against the committed spec: 160 models, including
+`Models/ReviewTag.swift`, with `OrderReviewDto.tags: [ReviewTag]?` and `OrderListItem.hasReview: Bool?`.
+So if those are missing on a machine, the spec and the config are not the cause.
 
 In Xcode the equivalent is **File → Packages → Reset Package Caches**, then Product → Clean Build
 Folder. If the two `grep`s above find nothing, the generator genuinely did not run — check that

@@ -196,6 +196,7 @@ struct HomeTab: View {
             // section crossfades in instead of shoving the layout down.
             .animation(.easeInOut(duration: 0.3), value: vm.sectionVisibility)
         }
+        .refreshable { await vm.pullToRefresh() }
     }
 
     /// Slide CTA → callback mapping (`MainShell.kt:265-280`).

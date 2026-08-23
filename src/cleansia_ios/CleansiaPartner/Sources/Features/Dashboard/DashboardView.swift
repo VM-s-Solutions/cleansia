@@ -108,6 +108,7 @@ struct DashboardView: View {
                 onOpenDocuments: onOpenDocuments,
                 onOpenHelp: onOpenHelp
             )
+            .refreshable { await vm.userRefresh() }
         }
     }
 }

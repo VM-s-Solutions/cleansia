@@ -83,7 +83,21 @@ extension AnyCodable: JSONEncodable {
 SWIFT
     echo "  + added AnyCodable JSONEncodable conformance"
   fi
+
+  # Say what actually landed. Without this, a run that generated the WRONG app — or did not run at
+  # all — is indistinguishable from a good one until Xcode reports a missing type twenty minutes
+  # later, which is exactly how a stale client survived three build attempts.
+  models="${CONFIG_DIR}/../Cleansia${cap}Api/Sources/Cleansia${cap}Api/Models"
+  if [[ -d "$models" ]]; then
+    count="$(find "$models" -name '*.swift' | wc -l | tr -d ' ')"
+    echo "  ${count} model(s) in Cleansia${cap}Api/Sources/Cleansia${cap}Api/Models"
+  else
+    echo "  warning: no Models directory at ${models} — the generator produced nothing." >&2
+  fi
 done
 
+echo
 echo "Done. Generated clients live under CleansiaPartnerApi/ and CleansiaCustomerApi/ (gitignored)."
+echo "To confirm a contract change landed, look for its type by name, e.g.:"
+echo "  ls CleansiaCustomerApi/Sources/CleansiaCustomerApi/Models | grep -i reviewtag"
 echo "Open Cleansia.xcworkspace and let SPM resolve the local packages."

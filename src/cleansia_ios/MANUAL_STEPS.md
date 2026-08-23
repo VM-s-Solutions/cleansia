@@ -132,6 +132,37 @@ With no host running it now reports a skip and exits 0, leaving the committed sp
 `exit 1`, and because it sat directly above the generate step in one copy-paste block, it took the
 step you actually wanted down with it.
 
+### The regeneration "did not take"
+
+If a type the spec clearly defines is still missing after running the generator — `OrderReviewDto` with
+no `tags`, `OrderListItem` with no `hasReview`, `ReviewTag` not in scope — **the generator is not the
+problem and running it again will not help.**
+
+`CleansiaCustomerApi` / `CleansiaPartnerApi` are **local `path:` SPM packages** (`project.yml:39-40`)
+and are gitignored (`.gitignore:14-15`). Rewriting their sources on disk does not change their
+identity, so Xcode and SPM keep serving the copy they already resolved. The generator reports success,
+the files on disk are correct, and the build still sees the old shape.
+
+Order matters — regenerate, then clear what cached it, then rebuild:
+
+```sh
+cd src/cleansia_ios
+./scripts/generate-api-clients.sh customer      # prints the model count it produced
+
+# prove the contract actually landed on disk before blaming the build
+ls CleansiaCustomerApi/Sources/CleansiaCustomerApi/Models | grep -i reviewtag
+grep -n "tags" CleansiaCustomerApi/Sources/CleansiaCustomerApi/Models/OrderReviewDto.swift
+
+# then clear the caches that are still holding the old package
+rm -rf ~/Library/Developer/Xcode/DerivedData/CleansiaCustomer-*
+rm -rf CleansiaCustomer/.swiftpm CleansiaCustomer/CleansiaCustomer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+(cd CleansiaCustomer && xcodegen generate)
+```
+
+In Xcode the equivalent is **File → Packages → Reset Package Caches**, then Product → Clean Build
+Folder. If the two `grep`s above find nothing, the generator genuinely did not run — check that
+`openapi-generator` is on PATH and is 7.10.0.
+
 `openapi-generator` must be **7.10.0** — see the pinned install in `.github/workflows/ios-ci.yml`.
 `brew install openapi-generator` now gives 7.15+, and the hand-written request spine subclasses
 generator internals.

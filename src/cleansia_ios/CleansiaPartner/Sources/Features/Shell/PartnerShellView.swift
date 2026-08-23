@@ -12,6 +12,10 @@ final class ShellModel: ViewModel {
     func selectEarnings() {
         selection = .invoices
     }
+
+    func selectProfile() {
+        selection = .profile
+    }
 }
 
 struct PartnerShellView: View {
@@ -74,7 +78,16 @@ struct PartnerShellView: View {
                 onOpenPendingOffers: { dashboardPath.append(.pendingOffers) },
                 // Feed-row taps land exactly where a push tap does — the same
                 // resolver, the same routing plan (FD-AC9).
-                onNotificationDestination: { apply(PushTapRouting.plan(for: $0)) }
+                onNotificationDestination: { apply(PushTapRouting.plan(for: $0)) },
+                onOpenProfile: { model.selectProfile() },
+                // Documents are a SECTION of the profile screen on iOS, not a screen of their own as
+                // on Android — so both tiles land on the same tab. Kept as a separate tile because the
+                // owner asked for parity with Android's row; it is a real shortcut, just a shallower
+                // one until documents get their own route.
+                onOpenDocuments: { model.selectProfile() },
+                // Android's Help tile is a stub too (`onHelp = { /* Phase 9 */ }`). Parity includes
+                // the gap; a tile that silently does nothing is at least the same nothing.
+                onOpenHelp: {}
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: DashboardRoute.self) { route in

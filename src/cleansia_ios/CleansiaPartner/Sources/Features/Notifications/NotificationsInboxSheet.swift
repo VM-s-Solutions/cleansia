@@ -159,7 +159,7 @@ private struct NotificationsInboxErrorView: View {
 private struct NotificationsInboxEmptyView: View {
     var body: some View {
         MascotEmptyState(
-            image: Mascot.leaning.image,
+            image: Mascot.resting.image,
             text: L10n.NotificationsInbox.emptyTitle,
             subtitle: L10n.NotificationsInbox.emptySubtitle,
             verticallyCentered: true,

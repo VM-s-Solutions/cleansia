@@ -361,9 +361,13 @@ private struct HistorySummaryRow: View {
     let orders: [OrderListItem]
 
     var body: some View {
-        HStack {
+        // No Spacer. `SummaryStat` already ends in `.frame(maxWidth: .infinity)`, and a Spacer has the
+        // same flexibility and the same layout priority — so a third one split the row into THIRDS
+        // rather than halves. That left the primary stat's tinted rounded fill covering the leading
+        // third with the job count floating in the middle, which is the visual grammar of a selected
+        // segment: it read as an active tab sitting above the list.
+        HStack(spacing: 0) {
             SummaryStat(value: OrdersFormat.totalEarnings(orders), label: L10n.Orders.earnings, isPrimary: true)
-            Spacer()
             SummaryStat(value: "\(orders.count)", label: L10n.Orders.jobs)
         }
         // No card. This is a header for the rows below, not a row itself, and `.ordersCard()` gave it a
@@ -391,9 +395,14 @@ private struct SummaryStat: View {
             Text(value)
                 .cleansiaFont(isPrimary ? CleansiaTypography.headlineMedium : CleansiaTypography.headlineSmall)
                 .foregroundColor(isPrimary ? CleansiaColors.primary : CleansiaColors.onSurface)
+                // Shrink before wrapping: the All-time filter makes six-figure totals reachable, and
+                // "118 450 Kč" already exceeds this column in every language including English.
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, isPrimary ? Spacing.xs : 0)

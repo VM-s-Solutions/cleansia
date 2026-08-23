@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
@@ -850,23 +851,19 @@ private fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: Str
 }
 
 /**
- * Resolve a display symbol from the server-supplied ISO currency code
- * (e.g. "CZK" → "Kč", "EUR" → "€", "USD" → "$"). Falls back to the
- * device-locale currency symbol only when the server didn't send a
- * code — and as a last resort to an empty string.
+ * Resolve a display symbol from the server-supplied ISO currency code.
  *
- * Why the server code is authoritative: the cleaner's preferred
- * currency lives on the Employee record and is locale-independent.
- * A Czech cleaner running a US-locale emulator should still see "Kč",
- * not "$".
+ * This used to call `Currency.getSymbol(Locale.getDefault())` directly, which returns the bare ISO
+ * code whenever the DEVICE's locale has no symbol for that currency — so a Ukrainian handset rendered
+ * "3 731 CZK" on this screen while the orders list beside it rendered "1 275 Kč" from the symbol the
+ * server sends per order. A currency's symbol belongs to the currency, not to who is looking at it.
+ * → [CurrencySymbols]
  */
 private fun resolveCurrencySymbol(serverCode: String?): String {
     val code = serverCode?.takeIf { it.isNotBlank() }
-    if (code != null) {
-        return runCatching {
-            java.util.Currency.getInstance(code).getSymbol(Locale.getDefault())
-        }.getOrDefault(code)
-    }
+    if (code != null) return CurrencySymbols.forCode(code)
+
+    // No code at all: the device's own currency is the only thing left to guess with.
     return runCatching {
         java.util.Currency.getInstance(Locale.getDefault()).symbol
     }.getOrDefault("")

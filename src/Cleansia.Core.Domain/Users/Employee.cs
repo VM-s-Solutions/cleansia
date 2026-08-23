@@ -128,8 +128,13 @@ public class Employee : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// How many orders this cleaner may hold in one Monday-to-Sunday week. Read by
-    /// <c>TakeOrder</c>, and by nothing else.
+    /// How many OUTSTANDING orders this cleaner may hold at once, counted over the current
+    /// Monday-to-Sunday UTC week. Read by <c>TakeOrder</c>, and by nothing else.
+    ///
+    /// <para><b>Read that first line literally — it is not "N jobs a week".</b> The count behind it
+    /// filters slot-blocking statuses, which excludes <c>Completed</c> as well as <c>Cancelled</c>, so a
+    /// finished job leaves the count and the cleaner may take another. An admin who types 3 is capping
+    /// concurrent commitments, not the week's work. → ADR-0053.</para>
     ///
     /// <para><b>NULL means unlimited, and that is the default for every cleaner.</b> It replaces a
     /// rating ladder — 3 jobs a week below 3.5 stars, 6 below 4.5, 10 above — whose floor caught

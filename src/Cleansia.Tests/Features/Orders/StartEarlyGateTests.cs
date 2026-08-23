@@ -84,6 +84,10 @@ public class StartEarlyGateTests
     }
 
     [Theory]
+    // Exactly at the boundary. The rule refuses only what is MORE than the grace ahead, so 60 is
+    // admitted — and it is deterministic despite the wall clock: the fixture computes the cleaning time
+    // as t0 + 60 and the validator reads t1 >= t0, so `cleaning - t1 > 60` can never hold.
+    [InlineData(60)]
     [InlineData(30)]
     [InlineData(0)]
     [InlineData(-15)]
@@ -121,6 +125,21 @@ public class StartEarlyGateTests
     public void The_Grace_Window_Matches_The_Customers_Notice()
     {
         Assert.Equal(60, BookingPolicy.StartGraceWindowMinutes);
+    }
+
+    /// <summary>
+    /// The boundary in BOTH directions, on a fixed clock — the theory above can only prove the
+    /// admitting side, and a rule that had drifted to <c>&gt;=</c> would still satisfy every case in it
+    /// except this one.
+    /// </summary>
+    [Fact]
+    public void Exactly_The_Grace_Window_Is_Admitted_And_One_Minute_More_Is_Not()
+    {
+        var now = new DateTime(2026, 8, 22, 12, 0, 0, DateTimeKind.Utc);
+        var grace = BookingPolicy.StartGraceWindowMinutes;
+
+        Assert.False(BookingPolicy.IsTooEarlyToStart(now.AddMinutes(grace), now));
+        Assert.True(BookingPolicy.IsTooEarlyToStart(now.AddMinutes(grace + 1), now));
     }
 
     /// <summary>

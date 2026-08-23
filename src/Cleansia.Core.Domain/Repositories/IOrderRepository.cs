@@ -118,6 +118,20 @@ public interface IOrderRepository : IRepository<Order, string>
     /// A background sweep asking about ONE cleaner already has
     /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
     /// </summary>
+    /// <summary>
+    /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on
+    /// some assignment, with no time window at all.
+    ///
+    /// <para><b>Deliberately not <see cref="GetBusyEmployeeIdsInWindowAsync"/>.</b> That set is the
+    /// overlap question and includes <c>Confirmed</c>, so it answers "does this cleaner hold a
+    /// commitment here" — which is true of every cleaner the not-started nudge is about, and using it
+    /// would suppress the nudge for everyone. This answers the different question the nudge actually
+    /// needs: "is this person already out working, so that asking them to set off is nonsense".</para>
+    /// </summary>
+    Task<IReadOnlySet<string>> GetEmployeeIdsCurrentlyOnAJobAsync(
+        IReadOnlyCollection<string> employeeIds,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,

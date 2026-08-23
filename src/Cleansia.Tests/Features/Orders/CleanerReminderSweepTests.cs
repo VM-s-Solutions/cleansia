@@ -49,8 +49,16 @@ public class CleanerReminderSweepTests
 
         _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(new[] { order }.AsQueryable().BuildMock());
+        OnAJobRightNow();
         return order;
     }
+
+    /// <summary>Nobody is out working unless a case says so.</summary>
+    private void OnAJobRightNow(params string[] employeeIds) =>
+        _orderRepository
+            .Setup(r => r.GetEmployeeIdsCurrentlyOnAJobAsync(
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HashSet<string>(employeeIds, StringComparer.Ordinal));
 
     private List<string> SentEventKeys()
     {
@@ -132,6 +140,65 @@ public class CleanerReminderSweepTests
     {
         SentEventKeys();
         ArrangeOrder(minutesOut: 60, crew: 1);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.SoonSent);
+        Assert.Equal(0, result.Value.NudgesSent);
+    }
+
+    /// <summary>
+    /// The nudge asks a cleaner to SET OFF. A cleaner already <c>OnTheWay</c> or <c>InProgress</c> on
+    /// another job cannot, and telling them to is the reminder reading as noise.
+    ///
+    /// <para>This is not an edge case: back-to-back jobs are the normal shape of a full day, and the
+    /// second job's nudge window falls inside the first job. The two-hour notice is deliberately NOT
+    /// suppressed — knowing what is next while finishing this one is useful.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_Cleaner_Already_Out_On_Another_Job_Is_Not_Nudged()
+    {
+        SentEventKeys();
+        ArrangeOrder(minutesOut: 30, crew: 1);
+        OnAJobRightNow("emp-1");
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.NudgesSent);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Out_On_Another_Job_Still_Gets_The_Two_Hour_Notice()
+    {
+        SentEventKeys();
+        ArrangeOrder(minutesOut: 120, crew: 1);
+        OnAJobRightNow("emp-1");
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.SoonSent);
+    }
+
+    /// <summary>
+    /// Rejecting a cleaner does not take them off their live orders, so without a recipient predicate
+    /// the platform tells somebody it has just barred from working that their job starts in two hours —
+    /// for work <c>StartOrder</c> would then refuse to let them start.
+    /// </summary>
+    [Theory]
+    [InlineData(ContractStatus.Rejected)]
+    [InlineData(ContractStatus.Terminated)]
+    [InlineData(ContractStatus.Pending)]
+    public async Task A_Cleaner_Who_May_No_Longer_Work_Is_Not_Reminded(ContractStatus status)
+    {
+        SentEventKeys();
+        var order = ValidatorTestHelpers.BuildEmptyOrder(
+            "order-1", OrderStatus.Confirmed, maxEmployees: 1,
+            cleaningDateTime: DateTime.UtcNow.AddMinutes(120));
+        order.AddAssignedEmployee(
+            OrderEmployee.Create(order, ValidatorTestHelpers.BuildEmployee("emp-1", status)));
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+        OnAJobRightNow();
 
         var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
 

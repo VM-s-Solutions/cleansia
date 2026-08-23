@@ -24,8 +24,8 @@ public class OrderEmployee : BaseEntity
     /// <para><b>On the assignment, not on the Order.</b> An order's crew is
     /// <c>ceil(EstimatedTime / 120)</c> and the seeded catalogue contains single 180- and 240-minute
     /// services, so two-seat orders exist today — a scalar on <c>Order</c> would remind the first
-    /// cleaner and silently skip the second. Two in-tree comments claim crews are always size 1; both
-    /// are wrong.</para>
+    /// cleaner and silently skip the second. <c>CompleteOrder</c> carried a comment asserting the
+    /// opposite until 2026-08-22, which is how long the belief survived unexamined.</para>
     ///
     /// <para>An unassign hard-DELETEs this row, so a reassignment correctly reminds the replacement
     /// cleaner with a fresh null stamp rather than inheriting the previous one's receipt.</para>
@@ -34,9 +34,10 @@ public class OrderEmployee : BaseEntity
 
     /// <summary>
     /// When this cleaner was nudged that the job starts shortly and they had not set off. Null until
-    /// the sweep fires; never cleared. Distinct from <see cref="ReminderSoonSentAt"/> in both timing
-    /// and precondition — that one is unconditional at T-2h, this one fires only while the assignment
-    /// is still short of <c>OnTheWay</c>.
+    /// the sweep fires; never cleared. Distinct from <see cref="ReminderSoonSentAt"/> in both timing and
+    /// precondition — that one is unconditional at T-2h, this one is suppressed when the cleaner is
+    /// already out on another job. Neither is gated on THIS assignment's own progress: the sweep selects
+    /// only <c>Confirmed</c> orders, so both stop once the order itself moves.
     /// </summary>
     public DateTime? ReminderNotStartedSentAt { get; private set; }
 

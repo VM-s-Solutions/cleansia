@@ -44,7 +44,7 @@ public class NotificationProducer(
     {
         var argsJson = JsonSerializer.Serialize(args);
 
-        if (eventKey == NotificationEventCatalog.NewJobsAvailable)
+        if (NotificationEventCatalog.CollapsingDigestKeys.Contains(eventKey))
         {
             var unreadDigest = await userNotificationRepository
                 .GetUnreadByUserAndEventAsync(userId, eventKey, cancellationToken);

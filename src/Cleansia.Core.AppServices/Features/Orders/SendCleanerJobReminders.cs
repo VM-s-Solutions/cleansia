@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Specifications;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,13 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// The stamps live on <see cref="Domain.Orders.OrderEmployee"/> for the same reason — a scalar on the
 /// order would remind the first cleaner and silently skip the second.</para>
 ///
-/// <para><b>The nudge has a precondition the two-hour notice does not.</b> It fires only while the
-/// order is still <see cref="OrderStatus.Confirmed"/>, so a cleaner already on the way is never told
-/// they have not set off. That condition is the whole difference between a useful nudge and noise.</para>
+/// <para><b>The nudge has a precondition the two-hour notice does not — but it is about the CLEANER,
+/// not the order.</b> Both reminders come off one query that selects only orders still
+/// <see cref="OrderStatus.Confirmed"/>, so that term distinguishes nothing between them; in practice it
+/// only ever silences the nudge, because nobody is on the way two hours early. The nudge's own
+/// condition is that the cleaner is not <c>OnTheWay</c> or <c>InProgress</c> on some OTHER assignment:
+/// back-to-back jobs put the second job's nudge window inside the first, and asking a cleaner holding a
+/// mop in someone else's kitchen whether they have set off is exactly the noise this avoids.</para>
 ///
 /// <para>Both are NON-MUTABLE: a cleaner who can silence a reminder about their own booked work can
 /// silence the thing that stops them forgetting it. Same ruling the catalog already makes about a job
@@ -81,7 +86,21 @@ public class SendCleanerJobReminders
                     && o.AssignedEmployees.Any())
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(ae => ae.Employee)
+                        .ThenInclude(e => e!.User)
                 .ToListAsync(cancellationToken);
+
+            // The nudge asks a cleaner to SET OFF. Anyone already OnTheWay or InProgress on another
+            // assignment is out working and cannot act on that — back-to-back jobs put the second job's
+            // nudge window squarely inside the first job, so this is not an edge case but the normal
+            // shape of a full day. Read once for the whole tick, before the tenant loop, because the
+            // question is about the cleaner rather than about any one order.
+            var candidateIds = due
+                .SelectMany(o => o.AssignedEmployees)
+                .Select(a => a.EmployeeId)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            var alreadyOnAJob = await orderRepository
+                .GetEmployeeIdsCurrentlyOnAJobAsync(candidateIds, cancellationToken);
 
             var soonSent = 0;
             var nudgesSent = 0;
@@ -117,6 +136,14 @@ public class SendCleanerJobReminders
                             continue;
                         }
 
+                        // One predicate for all three reminder keys. Rejecting a cleaner does not take
+                        // them off their live orders, so without this the platform tells somebody it
+                        // has just barred from working that their job starts in two hours.
+                        if (!JobReminderRecipient.IsEligible(assignment.Employee))
+                        {
+                            continue;
+                        }
+
                         try
                         {
                             if (soonDue && assignment.ReminderSoonSentAt == null)
@@ -126,7 +153,9 @@ public class SendCleanerJobReminders
                                 assignment.MarkReminderSoonSent(now);
                                 soonSent++;
                             }
-                            else if (nudgeDue && assignment.ReminderNotStartedSentAt == null)
+                            else if (nudgeDue
+                                && assignment.ReminderNotStartedSentAt == null
+                                && !alreadyOnAJob.Contains(assignment.EmployeeId))
                             {
                                 await NotifyAsync(
                                     userId, NotificationEventCatalog.ReminderNotStarted, order, cancellationToken);

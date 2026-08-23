@@ -16,8 +16,13 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 public static class OrderCleanerAssignedNotifier
 {
+    /// <param name="assignment">
+    /// The assignment row this message is about. It supplies the dedup subject — see
+    /// <see cref="AssignmentNotificationSubject"/> for why the order id alone was not enough.
+    /// </param>
     public static Task NotifyCustomerOfAssignmentAsync(
         Order order,
+        OrderEmployee assignment,
         INotificationProducer notificationProducer,
         CancellationToken cancellationToken)
     {
@@ -35,7 +40,7 @@ public static class OrderCleanerAssignedNotifier
                 ["orderNumber"] = order.DisplayOrderNumber,
             },
             order.TenantId,
-            order.Id,
+            AssignmentNotificationSubject.For(order.Id, assignment.Id),
             cancellationToken);
     }
 }

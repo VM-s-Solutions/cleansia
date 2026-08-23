@@ -307,7 +307,7 @@ public class TakeOrder
             }
 
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
-                order, notificationProducer, cancellationToken);
+                order, orderEmployee, notificationProducer, cancellationToken);
 
             await EndReservationsThisCommitmentCannotHonourAsync(
                 order, employeeId!, DateTime.UtcNow, cancellationToken);

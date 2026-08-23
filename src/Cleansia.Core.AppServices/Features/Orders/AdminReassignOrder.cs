@@ -78,14 +78,22 @@ public class AdminReassignOrder
             }
 
             Employee? removed = null;
+            string? removedAssignmentId = null;
             if (!string.IsNullOrEmpty(command.FromEmployeeId))
             {
-                if (order.AssignedEmployees.All(oe => oe.EmployeeId != command.FromEmployeeId))
+                var existing = order.AssignedEmployees
+                    .FirstOrDefault(oe => oe.EmployeeId == command.FromEmployeeId);
+                if (existing is null)
                 {
                     return BusinessResult.Failure<Response>(new Error(
                         nameof(command.FromEmployeeId),
                         BusinessErrorMessage.EmployeeNotAssignedToOrder));
                 }
+
+                // Captured BEFORE UnassignEmployee hard-deletes the row: the revocation message is about
+                // this assignment, and its id is the only thing that distinguishes it from the cleaner's
+                // previous or next assignment on the same order.
+                removedAssignmentId = existing.Id;
 
                 // Read by id rather than off the assignment's navigation: this handler's query does not
                 // include Employee, and a null navigation would silently drop the notice.
@@ -102,18 +110,21 @@ public class AdminReassignOrder
                     BusinessErrorMessage.NoAvailableSpots));
             }
 
-            order.AddAssignedEmployee(OrderEmployee.Create(order, target));
+            var assignment = OrderEmployee.Create(order, target);
+            order.AddAssignedEmployee(assignment);
 
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
-                order, notificationProducer, cancellationToken);
+                order, assignment, notificationProducer, cancellationToken);
 
             await OrderAssignmentChangeNotifier.NotifyCleanerOfAssignmentAsync(
-                order, target, notificationProducer, cancellationToken);
+                order, target, assignment.Id, notificationProducer, cancellationToken);
 
             if (removed is not null)
             {
+                // The REMOVED assignment's own id, captured before UnassignEmployee deleted the row —
+                // the revocation is about that assignment, not about the one replacing it.
                 await OrderAssignmentChangeNotifier.NotifyCleanerOfRevocationAsync(
-                    order, removed, notificationProducer, cancellationToken);
+                    order, removed, removedAssignmentId!, notificationProducer, cancellationToken);
             }
 
             return BusinessResult.Success(new Response(

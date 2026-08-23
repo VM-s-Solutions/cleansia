@@ -149,7 +149,8 @@ public class SendCleanerJobReminders
                             if (soonDue && assignment.ReminderSoonSentAt == null)
                             {
                                 await NotifyAsync(
-                                    userId, NotificationEventCatalog.ReminderSoon, order, cancellationToken);
+                                    userId, NotificationEventCatalog.ReminderSoon, order, assignment,
+                                    cancellationToken);
                                 assignment.MarkReminderSoonSent(now);
                                 soonSent++;
                             }
@@ -158,7 +159,8 @@ public class SendCleanerJobReminders
                                 && !alreadyOnAJob.Contains(assignment.EmployeeId))
                             {
                                 await NotifyAsync(
-                                    userId, NotificationEventCatalog.ReminderNotStarted, order, cancellationToken);
+                                    userId, NotificationEventCatalog.ReminderNotStarted, order, assignment,
+                                    cancellationToken);
                                 assignment.MarkReminderNotStartedSent(now);
                                 nudgesSent++;
                             }
@@ -189,7 +191,12 @@ public class SendCleanerJobReminders
             return BusinessResult.Success(new Response(soonSent, nudgesSent, considered));
         }
 
-        private Task NotifyAsync(string userId, string eventKey, Domain.Orders.Order order, CancellationToken ct) =>
+        private Task NotifyAsync(
+            string userId,
+            string eventKey,
+            Domain.Orders.Order order,
+            Domain.Orders.OrderEmployee assignment,
+            CancellationToken ct) =>
             notificationProducer.NotifyAsync(
                 userId,
                 eventKey,
@@ -199,9 +206,13 @@ public class SendCleanerJobReminders
                     ["orderNumber"] = order.DisplayOrderNumber,
                 },
                 order.TenantId,
-                // The order id, so a re-tick dedups onto one key per (cleaner, event, order) rather
-                // than minting a fresh message every sweep.
-                order.Id,
+                // The ASSIGNMENT, so a re-tick dedups onto one key per (cleaner, event, assignment)
+                // rather than minting a fresh message every sweep — while a genuinely NEW assignment on
+                // the same order still gets its own reminder. The order id alone would be the same key
+                // for every assignment this order ever had, and the stamps that suppress a re-send live
+                // on the assignment row, which an admin reassign hard-deletes and recreates: the stamp
+                // resets, the sweep decides to send, and the key it mints is still taken.
+                AssignmentNotificationSubject.For(order.Id, assignment.Id),
                 ct);
     }
 }

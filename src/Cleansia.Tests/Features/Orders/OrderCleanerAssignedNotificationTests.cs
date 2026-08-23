@@ -71,7 +71,13 @@ public class OrderCleanerAssignedNotificationTests
         Assert.Equal(CustomerUserId, sent.UserId);
         Assert.Equal(OrderId, sent.Args["orderId"]);
         Assert.Equal(order.DisplayOrderNumber, sent.Args["orderNumber"]);
-        Assert.Equal(OrderId, sent.Subject);
+
+        // The dedup subject names the ASSIGNMENT, not the order. A bare order id was the same key for
+        // every cleaner who ever took this booking, so the second one to take a two-seat job hit the
+        // unique outbox index and lost their seat to the rollback. The args still carry the plain
+        // orderId — the deep link is unaffected. → AssignmentNotificationSubject
+        Assert.StartsWith(OrderId + ":", sent.Subject);
+        Assert.True(sent.Subject!.Length > OrderId.Length + 1, "the assignment id segment is missing");
     }
 
     [Fact]

@@ -214,6 +214,24 @@ need backfilling.
   They are now set in `main.bicep`, so **the first deploy after this change starts running work that has
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
+### Fixed
+
+- **Cleaner — the second cleaner on a two-person job can now take it.** Jobs long enough to need two
+  cleaners were impossible to fully crew: the first cleaner's take went through, and the second got an
+  error and no seat, every time. The platform was telling the customer *"a cleaner is assigned"* under
+  an identifier that named only the booking, so the second cleaner's message looked to the database like
+  a duplicate of the first — and the rejection took their seat down with it. The message now names which
+  assignment it is about. The same fault made an admin reassignment fail on any booking a cleaner had
+  taken in the previous fortnight, and made the new job reminders fail after a reassignment; both are
+  fixed by the same change.
+
+- **⚠️ Operators — data retention had never run, on any database.** The sweep that deletes expired
+  codes and stale devices, clears old GDPR requests and withdrawn consents, prunes superseded documents
+  and notifications, and **anonymises customer personal data on old orders**, is gated on a feature flag
+  — and that flag was never seeded. An absent flag counts as off, so the job logged *"disabled by feature
+  flag"*, reported success, and did nothing. It is now seeded **on**, so retention starts working on the
+  next fresh database. Nothing in the seed data is old enough to be affected on day one.
+
 ### Deprecated
 
 - **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to

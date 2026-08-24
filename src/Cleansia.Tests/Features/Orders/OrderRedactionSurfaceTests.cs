@@ -100,6 +100,11 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.EstimatedCleanerPay),
         nameof(OrderItem.IsAssignedToCurrentUser),
         nameof(OrderItem.HasAfterPhotos),
+        // Kept, and safe to keep BECAUSE the mapper gates it. The column behind this field also
+        // carries an admin's free-text cancellation note, which is written by staff for staff and
+        // would be a leak here — so OrderMappers only surfaces it when CancelledBy is System, where
+        // the value is one of a closed set of localisable keys naming no person and no note.
+        nameof(OrderItem.SystemCancellationReason),
     ];
 
     private static readonly string[] ListBlanked =

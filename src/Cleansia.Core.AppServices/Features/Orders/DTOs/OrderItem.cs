@@ -135,5 +135,19 @@ public record OrderItem(
     /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field omits
     /// it and behaves exactly as before.</para>
     /// </summary>
-    bool? HasAccessInstructions = null
+    bool? HasAccessInstructions = null,
+
+    /// <summary>
+    /// Why the PLATFORM cancelled this order, as a key the client localises — null for every order
+    /// the platform did not cancel itself.
+    ///
+    /// <para><b>System cancellations only, and that is a privacy boundary rather than a filter.</b>
+    /// <c>Order.CancellationReason</c> also holds free text when an admin cancels, written by staff
+    /// for staff. The mapper exposes this field only when <c>CancelledBy</c> is <c>System</c>, so an
+    /// internal note cannot reach a customer through it.</para>
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field
+    /// omits it and behaves exactly as before.</para>
+    /// </summary>
+    string? SystemCancellationReason = null
 );

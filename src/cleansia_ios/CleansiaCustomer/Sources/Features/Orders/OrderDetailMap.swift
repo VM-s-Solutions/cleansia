@@ -24,7 +24,23 @@ struct OrderDetailMapBackdrop: View {
             mapProvider.fullBleedMap(coordinate: coordinate)
                 .accessibilityHidden(true)
         } else {
-            BrandGradient.blue.linearGradient
+            // Withholding the map is deliberate (see above), but a bare full-bleed gradient is
+            // indistinguishable from a map that failed to load — it was reported as exactly that. The
+            // status says what the empty space MEANS, so the absence reads as a decision.
+            //
+            // No new copy: OrderStatusPresentation.label is the same localised string the sheet
+            // already shows below, in all five languages.
+            ZStack {
+                BrandGradient.blue.linearGradient
+                VStack(spacing: Spacing.xs) {
+                    Image(systemName: "mappin.slash")
+                        .font(.system(size: 28, weight: .light))
+                    Text(OrderStatusPresentation.label(order.status))
+                        .font(CleansiaTypography.labelLarge)
+                }
+                .foregroundColor(CleansiaColors.onPrimary.opacity(0.75))
+            }
+            .accessibilityElement(children: .combine)
         }
     }
 }

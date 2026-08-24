@@ -94,6 +94,17 @@ public class CleanupStalePendingOrders
                     order.UpdatePaymentStatus(PaymentStatus.Failed);
                     order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
+                    // Record WHY, not just that. The push tells the customer to tap for the reason and
+                    // the order detail had none to show, so a cancelled booking read as arbitrary —
+                    // the customer had to infer a failed payment from the absence of a charge.
+                    // Fee-free and refund-free by construction: nothing was ever captured.
+                    order.Cancel(
+                        DateTime.UtcNow,
+                        CancelledBy.System,
+                        feeRate: 0m,
+                        refundAmount: 0m,
+                        reason: OrderCancellationReasons.PaymentNotCompleted);
+
                     if (!string.IsNullOrEmpty(order.UserId))
                     {
                         await notificationProducer.NotifyAsync(

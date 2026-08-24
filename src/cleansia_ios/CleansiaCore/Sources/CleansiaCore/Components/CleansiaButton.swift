@@ -178,6 +178,9 @@ public struct CleansiaDangerButton: View {
         self.action = action
     }
 
+    /// Actionable right now — neither disabled by the caller nor mid-request.
+    private var isActive: Bool { enabled && !loading }
+
     public var body: some View {
         Button(role: .destructive, action: action) {
             ZStack {
@@ -196,16 +199,31 @@ public struct CleansiaDangerButton: View {
             }
             .frame(maxWidth: .infinity, minHeight: size.minHeight)
             .padding(.horizontal, size.horizontalPadding)
-            .foregroundColor(CleansiaColors.error)
+            // Disabled changes the COLOURS, it does not fade the stack.
+            //
+            // A blanket `.opacity(0.55)` faded the red label and its red-tinted background by the same
+            // amount, so the two moved together and the contrast between them collapsed — the button
+            // read as an unlabelled mauve slab. On the cancellation sheet, where the destructive button
+            // is disabled until the customer picks a reason, that is the first thing they see.
+            //
+            // Muting to a neutral instead keeps the text legible while removing the red's urgency,
+            // which is what "not available yet" should look like.
+            .foregroundColor(isActive ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
             .background(
-                CleansiaColors.error.opacity(0.12),
+                isActive
+                    ? CleansiaColors.error.opacity(0.12)
+                    : CleansiaColors.onSurfaceVariant.opacity(0.10),
                 in: RoundedRectangle(cornerRadius: CornerRadius.large)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(CleansiaColors.error.opacity(0.4), lineWidth: 1)
+                    .stroke(
+                        isActive
+                            ? CleansiaColors.error.opacity(0.4)
+                            : CleansiaColors.outlineVariant,
+                        lineWidth: 1
+                    )
             )
-            .opacity(enabled && !loading ? 1 : 0.55)
         }
         .buttonStyle(.plain)
         .disabled(!enabled || loading)

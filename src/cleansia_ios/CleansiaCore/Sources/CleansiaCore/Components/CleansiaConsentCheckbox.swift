@@ -28,7 +28,12 @@ public struct CleansiaConsentCheckbox: View {
     }
 
     public var body: some View {
-        HStack(alignment: .top, spacing: Spacing.xxs) {
+        // BASELINE, not top. The glyph carries a 28pt layout box so the tap target can reach the 44pt
+        // HIG minimum, and the sentence's first line is nearer 21pt — top-aligning those two puts the
+        // tick, which is drawn at the box's centre, several points BELOW the centre of the text beside
+        // it. Aligning on the first baseline makes the glyph track the line however the line grows,
+        // including at larger Dynamic Type sizes where a fixed nudge would drift.
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
             Button {
                 checked.toggle()
             } label: {
@@ -46,6 +51,12 @@ public struct CleansiaConsentCheckbox: View {
             .buttonStyle(.plain)
             // Cancel the hit-area padding so the row's layout is unchanged.
             .padding(-8)
+            // An SF Symbol has no text baseline, so give it one at its own optical centre. Expressed
+            // against the glyph's measured dimensions rather than a literal, so it stays correct when
+            // the box changes size.
+            .alignmentGuide(.firstTextBaseline) { dimension in
+                dimension[VerticalAlignment.center] + dimension.height * 0.18
+            }
             // A short label, NOT the sentence: the sentence is already its own accessibility element
             // below (and carries the actionable links), so repeating it here makes VoiceOver read the
             // whole legal text twice.

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
@@ -73,17 +73,32 @@ public class SendCleanerJobReminders
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            // One query spanning both windows. The narrower per-reminder decision happens in memory
-            // over the handful of rows this returns, which is cheaper than two round trips and keeps
-            // both reminders reading off one snapshot of the order's status.
-            var scanStart = now.AddMinutes(command.NudgeLeadMinutesLow);
-            var scanEnd = now.AddMinutes(command.SoonLeadMinutesHigh);
+
+            // TWO ranges OR-ed, each pruned by ITS OWN stamp. ADR-0054 required change 6.
+            //
+            // One continuous span from the nudge low to the soon high is 105 minutes wide, and 70 of
+            // those minutes are in NEITHER window — an order sat in the scan for 21 ticks and did
+            // useful work on at most 2. The stamp terms have to be correlated with their own range
+            // rather than OR-ed loosely across both: the nudge stamp is written last, so an
+            // uncorrelated "either stamp is null" stays true through the whole soon window and the
+            // whole dead gap, which is close to a no-op.
+            //
+            // Still ONE round trip, so both reminders keep reading off a single snapshot of the
+            // order's status — the property the single-span form was defending.
+            var soonStart = now.AddMinutes(command.SoonLeadMinutesLow);
+            var soonEnd = now.AddMinutes(command.SoonLeadMinutesHigh);
+            var nudgeStart = now.AddMinutes(command.NudgeLeadMinutesLow);
+            var nudgeEnd = now.AddMinutes(command.NudgeLeadMinutesHigh);
 
             var due = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.CurrentStatus == OrderStatus.Confirmed
-                    && o.CleaningDateTime >= scanStart
-                    && o.CleaningDateTime <= scanEnd
-                    && o.AssignedEmployees.Any())
+                    && o.AssignedEmployees.Any()
+                    && ((o.CleaningDateTime >= soonStart
+                            && o.CleaningDateTime <= soonEnd
+                            && o.AssignedEmployees.Any(ae => ae.ReminderSoonSentAt == null))
+                        || (o.CleaningDateTime >= nudgeStart
+                            && o.CleaningDateTime <= nudgeEnd
+                            && o.AssignedEmployees.Any(ae => ae.ReminderNotStartedSentAt == null))))
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(ae => ae.Employee)
                         .ThenInclude(e => e!.User)

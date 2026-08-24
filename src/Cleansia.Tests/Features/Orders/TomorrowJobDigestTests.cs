@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Orders;
+﻿using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
@@ -354,5 +354,98 @@ public class TomorrowJobDigestTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(1, result.Value!.DigestsSent);
+    }
+
+    // -- ADR-0054 required change 6: the count is batched, not per cleaner --------------------
+
+    /// <summary>
+    /// The sweep walks EVERY approved cleaner on the platform every evening. Before this, each one
+    /// cost a <c>CountAsync</c> round trip whether or not they were even in a timezone the hour gate
+    /// admits — so the tick's query count grew with headcount while the messages sent did not.
+    ///
+    /// <para>Counting queries rather than timing them is the point: a duration assertion passes on a
+    /// fast machine with the N+1 still in place, and this defect is about the SHAPE.</para>
+    /// </summary>
+    [Fact]
+    public async Task Twenty_Cleaners_In_One_Zone_Cost_One_Order_Query_Not_Twenty()
+    {
+        var cleaners = ArrangeManyCleaners(20);
+        ArrangeOrdersFor(cleaners.Select(c => c.Id).ToList());
+
+        var nowUtc = DateTime.UtcNow;
+        var result = await Run(nowUtc);
+
+        Assert.True(result.IsSuccess);
+        _orderRepository.Verify(r => r.GetQueryableIgnoringTenant(), Times.Once);
+    }
+
+    /// <summary>
+    /// A cleaner the hour gate or the watermark turns away must cost NO query at all — eligibility is
+    /// decided from the clock and the stamp, both already in memory.
+    /// </summary>
+    [Fact]
+    public async Task Cleaners_Already_Digested_Today_Cost_No_Order_Query()
+    {
+        var cleaners = ArrangeManyCleaners(5, alreadyDigested: true);
+        ArrangeOrdersFor(cleaners.Select(c => c.Id).ToList());
+
+        var result = await Run(DateTime.UtcNow);
+
+        Assert.True(result.IsSuccess);
+        _orderRepository.Verify(r => r.GetQueryableIgnoringTenant(), Times.Never);
+    }
+
+    private List<Employee> ArrangeManyCleaners(int count, bool alreadyDigested = false)
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Prague");
+        var cleaners = new List<Employee>();
+        for (var i = 0; i < count; i++)
+        {
+            var user = User.CreateWithPassword($"cleaner{i}@example.test", "x", "Cle", "Aner");
+            user.Id = $"user-{i}";
+            var employee = Employee.CreateWithUser(user);
+            employee.Id = $"emp-{i}";
+            employee.UpdateContractStatus(ContractStatus.Approved);
+            employee.AssignWorkCountry(CountryId);
+            if (alreadyDigested)
+            {
+                // Stamped for the cleaner's LOCAL today, which is what the watermark compares.
+                employee.MarkTomorrowDigestSent(new DateTimeOffset(DateTime.UtcNow, TimeSpan.Zero));
+            }
+
+            cleaners.Add(employee);
+        }
+
+        _employeeRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(cleaners.AsQueryable().BuildMock());
+        _countryConfiguration
+            .Setup(r => r.GetByCountryIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CountryConfiguration.Create(
+                countryId: CountryId, defaultCurrencyCode: "CZK", defaultLanguageCode: "cs",
+                standardVatRate: 0.21m, timeZoneId: "Europe/Prague"));
+        _ = zone;
+        return cleaners;
+    }
+
+    private void ArrangeOrdersFor(IReadOnlyList<string> employeeIds)
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Prague");
+        var localTomorrowMidday = TimeZoneInfo
+            .ConvertTimeFromUtc(DateTime.UtcNow, zone).Date.AddDays(1).AddHours(12);
+        var cleaningUtc = TimeZoneInfo.ConvertTimeToUtc(localTomorrowMidday, zone);
+
+        var orders = new List<Order>();
+        for (var i = 0; i < employeeIds.Count; i++)
+        {
+            var order = ValidatorTestHelpers.BuildEmptyOrder(
+                $"order-{i}", OrderStatus.Confirmed, maxEmployees: 1,
+                cleaningDateTime: cleaningUtc);
+            var employee = ValidatorTestHelpers.BuildEmployee(employeeIds[i], ContractStatus.Approved);
+            order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
+            orders.Add(order);
+        }
+
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(orders.AsQueryable().BuildMock());
     }
 }

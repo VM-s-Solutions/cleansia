@@ -1242,6 +1242,8 @@
     <string name="notification_order_assigned_body">Вам назначен заказ №%1$s. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_order_assignment_revoked_title">Заказ переназначен</string>
     <string name="notification_order_assignment_revoked_body">Заказ №%1$s переназначен, его больше нет в вашем графике. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_employee_weekly_limit_set_title">Недельный лимит заказов обновлён</string>
+    <string name="notification_employee_weekly_limit_set_body">Теперь вы можете брать не более %1$d заказов в неделю.</string>
     <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
     <string name="notification_preferred_offer_title">Клиент попросил именно вас</string>

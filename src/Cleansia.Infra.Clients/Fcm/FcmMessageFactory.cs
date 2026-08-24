@@ -1,4 +1,4 @@
-using Cleansia.Core.Domain.Notifications;
+﻿using Cleansia.Core.Domain.Notifications;
 using FirebaseAdmin.Messaging;
 
 namespace Cleansia.Infra.Clients.Fcm;
@@ -47,6 +47,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.PreferredOffer] = OrderNumberArg,
             [NotificationEventCatalog.PreferredOfferClosed] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssignmentCancelled] = OrderNumberArg,
+            [NotificationEventCatalog.EmployeeWeeklyLimitSet] = CountArg,
             [NotificationEventCatalog.InvoicePaid] = NoArgs,
             [NotificationEventCatalog.DisputeReply] = NoArgs,
             [NotificationEventCatalog.LoyaltyTierUpgrade] = NoArgs,

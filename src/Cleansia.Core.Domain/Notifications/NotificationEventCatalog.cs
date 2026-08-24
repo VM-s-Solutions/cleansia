@@ -1,4 +1,4 @@
-namespace Cleansia.Core.Domain.Notifications;
+﻿namespace Cleansia.Core.Domain.Notifications;
 
 /// <summary>
 /// Single source of truth mapping event keys — the strings on the queue and in the FCM payload — to the
@@ -151,6 +151,28 @@ public static class NotificationEventCatalog
     /// returns null) — a payment confirmation must not be silenceable.
     /// </summary>
     public const string InvoicePaid = "payroll.invoice_paid";
+
+    /// <summary>
+    /// Partner-targeted: an admin has capped, or lowered, how many orders this cleaner may hold in a
+    /// Monday-to-Sunday week. Args: <c>count</c> — the new cap, as a decimal string.
+    ///
+    /// <para><b><c>count</c> rather than a <c>limit</c> of its own</b>, because <c>ApnsDisplayMap</c>
+    /// holds a CLOSED <c>{orderNumber, count}</c> allowlist for anything that renders on a lock screen
+    /// (ADR-0025 D3, so internal ids and raw enum values cannot leak there). A weekly cap is literally a
+    /// count of jobs, so it needs no new slot — and widening a deliberately closed allowlist to avoid
+    /// reusing an accurate name would be the expensive way round.</para>
+    ///
+    /// <para><b>Sent on SET and on LOWER only</b> — never on raise or clear. The owner's ruling on
+    /// Q-CAP-01: a cut to how much someone may earn is news they are owed; a rise or a removal only
+    /// ever gives, and announcing it would train the cleaner to ignore the one that takes.</para>
+    ///
+    /// <para>Non-mutable (<c>GetCategoryFor</c> returns null), for the same reason as
+    /// <see cref="OrderAssignmentRevoked"/>: before this the cleaner's only feedback was a refusal at
+    /// the moment they tried to take work — <c>order.weekly_limit_reached</c> is argless
+    /// (<c>BusinessErrorMessage.cs:98</c>), so the copy could not even say what the cap was. A
+    /// restriction discovered at the till must not also be silenceable.</para>
+    /// </summary>
+    public const string EmployeeWeeklyLimitSet = "employee.weekly_limit_set";
 
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {

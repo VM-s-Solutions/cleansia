@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Shared.DTOs.Files;
+﻿using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Employees.DTOs;
@@ -64,7 +64,15 @@ public record AdminEmployeeDetail(
     string? RejectedByUserId,
     DateTimeOffset? RejectedAt,
     List<string> MissingFields,
-    string UserId
+    string UserId,
+    /// <summary>
+    /// The cleaner's per-week order cap, or null for unlimited (the default).
+    ///
+    /// <para><b>The read surface ADR-0053 left open.</b> The cap was settable by one admin against one
+    /// cleaner and readable by nobody — so a second admin could not see it existed, and the cleaner's
+    /// only feedback was a refusal at the moment they tried to take work.</para>
+    /// </summary>
+    int? WeeklyOrderLimit
 );
 
 public record TimeRange(string Start, string End);

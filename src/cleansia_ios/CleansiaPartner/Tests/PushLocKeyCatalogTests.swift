@@ -38,8 +38,14 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "payroll.invoice_paid",
         "order.reminder_tomorrow",
         "order.reminder_soon",
-        "order.reminder_not_started"
+        "order.reminder_not_started",
+        "employee.weekly_limit_set"
     ]
+
+    /// One-slot events, despite the name — `order.reminder_tomorrow` and
+    /// `employee.weekly_limit_set` carry a COUNT through the same single `%1$@`.
+    /// APNs loc-args are always strings, so every slot is `%1$@` whatever the
+    /// backend put in it.
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
         "order.cleaner_assigned",
@@ -58,7 +64,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.assignment_revoked",
         "order.reminder_tomorrow",
         "order.reminder_soon",
-        "order.reminder_not_started"
+        "order.reminder_not_started",
+        "employee.weekly_limit_set"
     ]
 
     /// The word each locale uses for "cancelled" — i.e. the claim `order.assignment_revoked`

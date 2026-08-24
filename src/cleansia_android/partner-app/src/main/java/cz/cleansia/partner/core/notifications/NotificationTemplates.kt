@@ -100,6 +100,11 @@ object NotificationTemplates {
             R.string.notification_payroll_invoice_paid_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        "employee.weekly_limit_set" -> Template(
+            R.string.notification_employee_weekly_limit_set_title,
+            R.string.notification_employee_weekly_limit_set_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         else -> null
     }
 
@@ -123,6 +128,10 @@ object NotificationTemplates {
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
             "order.new_available",
             "order.reminder_tomorrow",
+            // The weekly cap is a count too, and it rides the same slot deliberately: ApnsDisplayMap
+            // holds a closed {orderNumber, count} allowlist for anything that renders on a lock screen,
+            // so an arg named for this one event would have had to widen it.
+            "employee.weekly_limit_set",
             -> {
                 val count = args["count"]?.toIntOrNull() ?: 1
                 context.getString(bodyRes, count)

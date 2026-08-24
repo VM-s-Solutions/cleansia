@@ -1,4 +1,4 @@
-using Cleansia.Infra.Clients.Fcm;
+﻿using Cleansia.Infra.Clients.Fcm;
 using FirebaseAdmin.Messaging;
 
 namespace Cleansia.Tests.Dispatch;
@@ -313,6 +313,7 @@ public class FcmMessageFactoryTests
         string[] expected =
         [
             "dispute.reply",
+            "employee.weekly_limit_set",
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",
             "membership.expiring_soon",

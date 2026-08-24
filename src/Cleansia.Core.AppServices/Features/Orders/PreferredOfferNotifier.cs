@@ -39,7 +39,12 @@ public static class PreferredOfferNotifier
                 ["orderNumber"] = order.DisplayOrderNumber,
             },
             recipient.TenantId,
-            order.Id,
+            // The ROUND, matching PreferredOfferClosedNotifier. Across rounds the recipient usually
+            // differs, so the user segment already separates most keys — but a customer may name the
+            // same cleaner again, and then offer and closure would both collapse onto round one's keys.
+            // Symmetry with the closure is also the point: the two halves of one reservation should be
+            // identified the same way.
+            $"{order.Id}:{order.PreferredOfferRound}",
             cancellationToken);
     }
 

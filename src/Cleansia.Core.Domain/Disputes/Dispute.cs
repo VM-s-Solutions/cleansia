@@ -109,10 +109,17 @@ public class Dispute : Auditable, ITenantEntity
         return true;
     }
 
-    public void AddMessage(string message, string authorId, bool isStaff)
+    /// <summary>
+    /// Returns the message it created, because the caller needs its identity — the push that announces
+    /// a staff reply dedupes on the MESSAGE, and keying it on the dispute made the second reply in any
+    /// conversation collide on the outbox's unique index. The id exists before any commit
+    /// (<see cref="Common.BaseEntity"/> assigns a ULID at construction), so no round trip is involved.
+    /// </summary>
+    public DisputeMessage AddMessage(string message, string authorId, bool isStaff)
     {
         var disputeMessage = new DisputeMessage(Id, message, authorId, isStaff);
         _messages.Add(disputeMessage);
+        return disputeMessage;
     }
 
     public void AddEvidence(string fileName, string filePath, string uploadedBy)

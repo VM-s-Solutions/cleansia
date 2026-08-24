@@ -36,6 +36,41 @@
         }
       }
     },
+    "address_manager_city_not_serviced": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We don't currently serve this city. Try a different address or check back later."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V tomto městě zatím nepůsobíme. Zkuste jinou adresu nebo to zkuste později."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V tomto meste zatiaľ nepôsobíme. Skúste inú adresu alebo to skúste neskôr."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми наразі не обслуговуємо це місто. Спробуйте іншу адресу або зайдіть пізніше."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы пока не обслуживаем этот город. Попробуйте другой адрес или зайдите позже."
+          }
+        }
+      }
+    },
     "address_manager_confirm": {
       "extractionState": "stale",
       "localizations": {

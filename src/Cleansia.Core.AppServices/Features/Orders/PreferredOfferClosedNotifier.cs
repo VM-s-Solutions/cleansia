@@ -39,7 +39,15 @@ public static class PreferredOfferClosedNotifier
                 ["orderNumber"] = order.DisplayOrderNumber,
             },
             order.TenantId,
-            order.Id,
+            // The dedup subject carries the ROUND, because an order can carry more than one preferred
+            // reservation: the aggregate increments PreferredOfferRound on each and refuses only past
+            // maxRounds, so "declined, customer names someone else, that one lapses too" is a supported
+            // path rather than an exotic one. Keyed on the order alone, the second closure minted a key
+            // the first had written — and with three producers (a decline, the lapse sweep, and another
+            // cleaner taking it) the loser of that collision fails at the pipeline's commit and rolls
+            // its own work back. Within one round the key still collapses, which is correct: a customer
+            // is told once per reservation that it ended.
+            $"{order.Id}:{order.PreferredOfferRound}",
             cancellationToken);
     }
 }

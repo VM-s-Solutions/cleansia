@@ -8,13 +8,16 @@ import Foundation
 /// fetch is NOT cached, so the next access retries — caching the failure would
 /// pin "serves nothing" for the process lifetime after one startup blip.
 ///
-/// Cities are not exposed yet: the serviced-cities endpoint is absent from the
-/// mobile specs, so the city-level half of the Android seam lands with the
-/// spec regen (T-0334's gated remainder).
+/// Cities are exposed too, and answer the question the customer used to discover at PAYMENT: the
+/// booking gate refuses an address outside a serviced city, and until this existed on iOS nothing
+/// asked earlier. The match is `CityNameMatch`, the same rule `CreateOrder` applies — a client that
+/// were stricter would turn away addresses the server would book.
 public actor ServiceAreaProvider {
     private let dataSource: ServiceAreaDataSource
     private var cached: [ServicedCountry]?
     private var inflight: Task<ApiResult<[ServicedCountry]>, Never>?
+    private var cachedCities: [ServicedCity]?
+    private var inflightCities: Task<ApiResult<[ServicedCity]>, Never>?
 
     public init(dataSource: ServiceAreaDataSource) {
         self.dataSource = dataSource
@@ -48,8 +51,35 @@ public actor ServiceAreaProvider {
             .filter { !$0.isEmpty }
     }
 
+    /// Every serviced city, unnarrowed and cached — the caller filters. Fetching per country would
+    /// re-request on every address the customer looks at in a different country, and the whole list is
+    /// tens of rows.
+    public func loadCities() async -> [ServicedCity]? {
+        if let cachedCities { return cachedCities }
+        if let inflightCities { return try? await inflightCities.value.get() }
+        let task = Task { [dataSource] in await dataSource.fetchServicedCities(countryId: nil) }
+        inflightCities = task
+        let result = await task.value
+        inflightCities = nil
+        if case let .success(cities) = result {
+            cachedCities = cities
+        }
+        return try? result.get()
+    }
+
+    /// `nil` means UNKNOWN — the list could not be fetched. **A caller must not render that as "we do
+    /// not serve here"**: warning on a failed lookup is how a startup blip turns into every address
+    /// looking unserviceable.
+    public func isCityServiced(countryId: String, cityName: String) async -> Bool? {
+        guard let cities = await loadCities() else { return nil }
+        let inCountry = cities.filter { $0.countryId == countryId }.map(\.name)
+        return CityNameMatch.isServiced(inCountry, cityName)
+    }
+
     public func refresh() {
         cached = nil
         inflight = nil
+        cachedCities = nil
+        inflightCities = nil
     }
 }

@@ -134,8 +134,16 @@ public class AdminCancelOrder
                             ["orderId"] = order.Id,
                             ["orderNumber"] = order.DisplayOrderNumber,
                         },
+                        // The dedup subject is the REFUND, not the order. Three handlers raise this one
+                        // event — an admin refund, an admin cancellation that refunds, and a dispute
+                        // resolved with a refund — and all three keyed it on the order, so the second
+                        // refund an order ever saw minted a key the first had written. The outbox's unique
+                        // index raises that at the pipeline's commit, AFTER the Stripe refund has already
+                        // settled: the money left, the transaction rolled back, and the customer was never
+                        // told. RefundResult.RefundId is stable per refund and the service already resolves
+                        // a repeat to the existing one, so a genuinely duplicate notice still collapses.
                         order.TenantId,
-                        order.Id,
+                        refund.Value!.RefundId,
                         cancellationToken);
                 }
             }

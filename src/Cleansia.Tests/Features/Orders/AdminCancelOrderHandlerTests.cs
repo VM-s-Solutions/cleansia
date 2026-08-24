@@ -250,7 +250,8 @@ public class AdminCancelOrderHandlerTests
             NotificationEventCatalog.OrderRefunded,
             It.IsAny<Dictionary<string, string>>(),
             It.IsAny<string?>(),
-            OrderId,
+                It.Is<string>(subject => !string.IsNullOrWhiteSpace(subject)
+                    && subject != OrderId),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

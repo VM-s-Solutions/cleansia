@@ -86,7 +86,12 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
             MessageKeys.Push(
                 "user-customer",
                 NotificationEventCatalog.PreferredOfferClosed,
-                "01HZL0000000000000000002"),
+                // The ROUND is in the subject. This fixture reserves once, so the round is 1 — and the
+                // literal is spelled out rather than read off the order, because the point of this
+                // assertion is the exact bytes on the wire. An order can carry several reservations
+                // (BookingPolicy.MaxPreferredOfferRounds), and keyed on the order alone the second
+                // closure collided with the first on the outbox's unique index.
+                "01HZL0000000000000000002:1"),
             Assert.Single(await ReadOutboxKeysAsync()));
 
         // No inbox row, deliberately: the key is held out of NotificationFeedEventKeys.Customer until

@@ -170,7 +170,8 @@ public class AddDisputeMessageHandlerTests
             NotificationEventCatalog.DisputeReply,
             It.Is<Dictionary<string, string>>(a => a["disputeId"] == DisputeId),
             It.IsAny<string?>(),
-            DisputeId,
+                It.Is<string>(subject => !string.IsNullOrWhiteSpace(subject)
+                    && subject != DisputeId),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

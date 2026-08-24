@@ -61,6 +61,7 @@ struct AddressManagerView: View {
             if let picked = vm.pickedAddress {
                 AddressReviewPane(
                     picked: picked,
+                    serviceArea: vm.serviceArea,
                     onBack: vm.backToMap,
                     onConfirm: { label, setAsDefault in
                         Task { await vm.saveReviewed(label: label, setAsDefault: setAsDefault) }
@@ -292,12 +293,16 @@ private struct SavedAddressRow: View {
 
 private struct AddressReviewPane: View {
     let picked: GeocodedAddress
+    let serviceArea: ServiceAreaProvider?
     let onBack: () -> Void
     let onConfirm: (String, Bool) -> Void
 
     @State private var label: String
     @State private var save = true
     @State private var setAsDefault = false
+    /// nil = not looked up yet, or the lookup failed. Only `false` shows the notice — see
+    /// `resolveServiceability`.
+    @State private var cityServiced: Bool?
 
     init(picked: GeocodedAddress, onBack: @escaping () -> Void, onConfirm: @escaping (String, Bool) -> Void) {
         self.picked = picked
@@ -312,6 +317,7 @@ private struct AddressReviewPane: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     addressCard
+                    if cityServiced == false { notServicedNotice }
                     labelField
                     toggles
                 }
@@ -326,6 +332,42 @@ private struct AddressReviewPane: View {
             .padding(.bottom, Spacing.m)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task(id: picked.city) { await resolveServiceability() }
+    }
+
+    /// Advisory only — Confirm stays enabled. An address is worth keeping where the platform does not
+    /// operate yet (people move, coverage grows), and the booking gate re-checks server-side anyway.
+    /// What was missing is being TOLD: the customer used to find out at payment, after choosing a slot
+    /// and a price.
+    private var notServicedNotice: some View {
+        HStack(alignment: .top, spacing: Spacing.s) {
+            Image(systemName: "info.circle")
+                .foregroundColor(CleansiaColors.onErrorContainer)
+            Text(L10n.AddressManager.cityNotServiced)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onErrorContainer)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, Spacing.s)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(CleansiaColors.errorContainer)
+        )
+    }
+
+    /// `nil` stays nil on a failed lookup, so nothing is claimed. Rendering "we do not serve here"
+    /// because a request failed is how one startup blip makes every address look unserviceable.
+    private func resolveServiceability() async {
+        guard let serviceArea, !picked.city.isBlank else { return }
+        guard let countries = await serviceArea.loadCountries() else { return }
+        let iso = picked.countryIsoCode.lowercased()
+        guard let country = countries.first(where: { $0.isoCode.lowercased() == iso }) else {
+            cityServiced = false
+            return
+        }
+        cityServiced = await serviceArea.isCityServiced(countryId: country.id, cityName: picked.city)
     }
 
     private var addressCard: some View {

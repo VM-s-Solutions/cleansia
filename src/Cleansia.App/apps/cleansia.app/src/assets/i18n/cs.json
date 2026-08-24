@@ -940,6 +940,10 @@
         "submit": "Odeslat hodnocení",
         "success": "Děkujeme za vaše hodnocení!",
         "error": "Nepodařilo se odeslat hodnocení"
+      },
+      "cancellation_reason": {
+        "payment_not_completed": "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
+        "recurring_not_confirmed": "Tato opakovaná rezervace nebyla včas potvrzena, a proto byla zdarma zrušena."
       }
     },
     "checkout": {

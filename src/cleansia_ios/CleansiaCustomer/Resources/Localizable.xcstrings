@@ -19088,6 +19088,76 @@
         }
       }
     },
+    "order_cancelled_reason_payment_not_completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba nebyla dokončena, a proto byla tato rezervace uvolněna."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The payment wasn't completed, so this booking was released."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата не была завершена, поэтому это бронирование было отменено."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплату не було завершено, тому це бронювання було скасовано."
+          }
+        }
+      }
+    },
+    "order_cancelled_reason_recurring_not_confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato opakovaná rezervace nebyla včas potvrzena, a proto byla zdarma zrušena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This repeat booking wasn't confirmed in time, so it was cancelled free of charge."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це повторне бронювання не було підтверджено вчасно, тому його скасовано безкоштовно."
+          }
+        }
+      }
+    },
     "order_detail_access_instructions": {
       "extractionState": "stale",
       "localizations": {

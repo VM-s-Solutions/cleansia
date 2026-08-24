@@ -117,6 +117,15 @@ data class OrderDetailDto(
     val specialInstructions: String? = null,
     val accessInstructions: String? = null,
     /**
+     * Why the PLATFORM cancelled this order, as a key the UI localises — null for every order the
+     * platform did not cancel itself.
+     *
+     * The backend populates it only when `CancelledBy` is `System`, because the same column also
+     * carries an admin's free-text note written for other staff. That gating is server-side, so
+     * nothing here has to decide whether the value is safe to show.
+     */
+    val systemCancellationReason: String? = null,
+    /**
      * FK back to the recurring booking template that spawned this order.
      * Non-null + Pending payment status means the OrderDetail screen shows
      * the "Confirm and pay" CTA so the customer can take it through Wave 3.3's

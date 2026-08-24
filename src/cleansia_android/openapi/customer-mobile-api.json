@@ -689,6 +689,19 @@
         }
       }
     },
+    "/": {
+      "get": {
+        "tags": [
+          "Cleansia.Web.Mobile.Customer"
+        ],
+        "operationId": "Cleansia.Web.Mobile.Customer_",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Country/GetOverview": {
       "get": {
         "tags": [
@@ -9427,6 +9440,10 @@
           "hasAccessInstructions": {
             "type": "boolean",
             "nullable": true
+          },
+          "systemCancellationReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11111,6 +11128,9 @@
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "Cleansia.Web.Mobile.Customer"
     },
     {
       "name": "Country"

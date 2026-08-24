@@ -940,6 +940,10 @@
         "submit": "Submit Review",
         "success": "Thank you for your review!",
         "error": "Failed to submit review"
+      },
+      "cancellation_reason": {
+        "payment_not_completed": "The payment wasn't completed, so this booking was released.",
+        "recurring_not_confirmed": "This repeat booking wasn't confirmed in time, so it was cancelled free of charge."
       }
     },
     "checkout": {

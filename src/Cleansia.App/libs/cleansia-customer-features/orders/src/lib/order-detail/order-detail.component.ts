@@ -209,4 +209,32 @@ export class OrderDetailComponent implements OnInit {
       minimumFractionDigits: 0,
     }).format(price);
   }
+
+  /**
+   * The translation key for a PLATFORM cancellation, or null when there is nothing to say.
+   *
+   * Only the platform's own reasons arrive on the wire: the backend populates
+   * `systemCancellationReason` solely when `CancelledBy` is `System`, because the same column also
+   * carries an admin's free-text note written for other staff. That gating is server-side, so this
+   * never has to judge whether a value is safe to render.
+   *
+   * An unrecognised key returns null rather than printing itself. The API ships independently of
+   * this app, so a newer server can name a reason this build has never heard of — the customer
+   * already sees the Cancelled status either way, and a raw `order.cancelled.something` on screen
+   * costs more trust than a missing sentence.
+   *
+   * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons`, iOS `CancellationReasonCopy` and
+   * Android `cancellationReasonText`.
+   */
+  protected cancellationReasonKey(): string | null {
+    const reason = this.order()?.systemCancellationReason;
+    switch (reason) {
+      case 'order.cancelled.payment_not_completed':
+        return 'pages.order_detail.cancellation_reason.payment_not_completed';
+      case 'order.cancelled.recurring_not_confirmed':
+        return 'pages.order_detail.cancellation_reason.recurring_not_confirmed';
+      default:
+        return null;
+    }
+  }
 }

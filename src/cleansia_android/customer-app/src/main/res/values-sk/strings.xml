@@ -1343,4 +1343,6 @@
     </plurals>
     <string name="order_detail_headline_completed">Upratovanie dokončené</string>
     <string name="tracker_step_counter">Krok %1$d / %2$d</string>
+    <string name="order_cancelled_reason_payment_not_completed">Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.</string>
+    <string name="order_cancelled_reason_recurring_not_confirmed">Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.</string>
 </resources>

@@ -252,7 +252,17 @@ public static class Extensions
     /// </summary>
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        app.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"));
+        app.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"))
+            // OUT of the OpenAPI document, or NSwag generates a client for it. It did: the first
+            // regeneration after this endpoint landed emitted an `IClient`/`Client` pair with an
+            // `index()` method into all three web clients and an `index` operation into both mobile
+            // specs — 250 lines of generated code for a warm-up ping no caller will ever make.
+            //
+            // Metadata rather than `.ExcludeFromDescription()`: that extension lives in
+            // Microsoft.AspNetCore.Http and needs the Microsoft.AspNetCore.OpenApi package, which this
+            // project does not reference. The attribute is in the shared framework and means the same
+            // thing to the document generator.
+            .WithMetadata(new ExcludeFromDescriptionAttribute());
 
         app.MapHealthChecks("/health");
 
@@ -269,7 +279,10 @@ public static class Extensions
     /// </summary>
     public static IEndpointRouteBuilder MapDefaultEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"));
+        endpoints.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"))
+            // Excluded from the document for the same reason as the overload above — and this is the
+            // one that matters, because the Startup-class hosts are what NSwag reads.
+            .WithMetadata(new ExcludeFromDescriptionAttribute());
 
         endpoints.MapHealthChecks("/health");
 

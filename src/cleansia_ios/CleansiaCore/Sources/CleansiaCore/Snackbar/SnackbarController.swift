@@ -3,7 +3,10 @@ import Foundation
 
 @MainActor
 public final class SnackbarController: ObservableObject {
-    public static let defaultBottomInset: CGFloat = 16
+    /// `nonisolated` because it is a compile-time constant, not state. Inheriting the class's
+    /// `@MainActor` made every nonisolated reader — `ShellSnackbarInset.inset(pathDepth:)` is one —
+    /// a warning today and an error under the Swift 6 language mode.
+    public nonisolated static let defaultBottomInset: CGFloat = 16
 
     @Published public private(set) var current: SnackbarMessage?
 

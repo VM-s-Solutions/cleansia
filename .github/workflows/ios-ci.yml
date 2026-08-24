@@ -166,15 +166,29 @@ jobs:
           echo "Using simulator: $NAME"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
+      # WHY THE RAW LOG IS KEPT. xcbeautify swallows compiler diagnostics: a failing
+      # build printed `** BUILD FAILED **` and a filename with no `error:` line anywhere
+      # in the job log, so the actual cause had to be found by reading source. On a
+      # ~20-minute macOS job that is an expensive way to learn one line. tee keeps the
+      # unbeautified output, and the trap prints the diagnostics on failure only, so a
+      # green run stays as readable as before.
+      #
+      # `set -o pipefail` is what makes xcodebuild's exit code survive the pipe at all.
       # CleansiaCore is iOS-only: a bare `swift build` host-builds for macOS and
       # fails the SwiftUI availability checks, so build/test on the simulator.
       - name: Build & test CleansiaCore
         working-directory: ./src/cleansia_ios/CleansiaCore
         run: |
           set -o pipefail
+          LOG="$RUNNER_TEMP/core.log"
           xcodebuild -scheme CleansiaCore \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
-            build test | xcbeautify
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
 
       # CleansiaPartner has a hosted test target — run it so the partner VM +
       # security test suite (TC-IOS-*-OWNERSHIP etc.) actually gates in CI, not
@@ -182,15 +196,27 @@ jobs:
       - name: Build & test CleansiaPartner
         run: |
           set -o pipefail
+          LOG="$RUNNER_TEMP/partner.log"
           xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaPartner \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
-            build test | xcbeautify
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
 
       # CleansiaCustomer now has a hosted test target (T-0312) — run it so the
       # customer VM + router suite gates in CI from the first customer slice.
       - name: Build & test CleansiaCustomer
         run: |
           set -o pipefail
+          LOG="$RUNNER_TEMP/customer.log"
           xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaCustomer \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
-            build test | xcbeautify
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }

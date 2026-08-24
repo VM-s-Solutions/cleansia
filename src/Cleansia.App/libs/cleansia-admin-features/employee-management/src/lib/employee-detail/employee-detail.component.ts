@@ -91,6 +91,40 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   protected readonly Policy = Policy;
 
+  /**
+   * Empty means UNLIMITED, which is a value the endpoint accepts rather than a missing one — so the
+   * control is deliberately not `Validators.required`. The floor of 1 mirrors the server's: a zero
+   * cap is a cleaner who may take nothing, and expressing a suspension as a quiet number would hide
+   * it from every screen that reads the contract instead.
+   */
+  protected readonly weeklyLimitControl = new FormControl<number | null>(null, [
+    Validators.min(1),
+  ]);
+
+  protected startEditingWeeklyLimit(): void {
+    this.weeklyLimitControl.setValue(
+      this.facade.employee()?.weeklyOrderLimit ?? null
+    );
+    this.facade.startEditingWeeklyLimit();
+  }
+
+  /**
+   * An empty box is UNLIMITED, not "unchanged". The control holds `number | null`, but a cleared
+   * numeric input arrives as the empty string at runtime, so anything non-numeric is normalised to
+   * null rather than sent on to become a 400.
+   */
+  protected saveWeeklyLimit(): void {
+    const raw = this.weeklyLimitControl.value;
+    const limit =
+      raw === null || raw === undefined || (raw as unknown) === ''
+        ? null
+        : Number(raw);
+
+    this.facade.setWeeklyOrderLimit(
+      limit === null || Number.isNaN(limit) ? null : limit
+    );
+  }
+
   readonly editingConfigId = signal<string | null>(null);
 
   readonly daysOfWeek = signal<Code[]>([]);

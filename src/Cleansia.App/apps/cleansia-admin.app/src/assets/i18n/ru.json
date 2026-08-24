@@ -379,7 +379,8 @@
         "approve_document": "Одобрить",
         "reject_document": "Отклонить",
         "download_document": "Скачать",
-        "preview_document": "Предпросмотр"
+        "preview_document": "Предпросмотр",
+        "set_weekly_limit": "Установить недельный лимит"
       },
       "approve_employee_dialog": {
         "title": "Утвердить сотрудника",
@@ -433,7 +434,8 @@
         "pay_config_save_error": "Не удалось сохранить конфигурацию оплаты",
         "pay_config_delete_success": "Конфигурация оплаты успешно удалена",
         "pay_config_delete_error": "Не удалось удалить конфигурацию оплаты",
-        "pay_config_bulk_success": "Конфигурации оплаты применены: {{created}} создано, {{skipped}} пропущено"
+        "pay_config_bulk_success": "Конфигурации оплаты применены: {{created}} создано, {{skipped}} пропущено",
+        "weekly_limit_save_success": "Недельный лимит заказов обновлён"
       },
       "document_status": {
         "pending": "Ожидает",
@@ -521,7 +523,10 @@
           "needs_reconfirmation": "Требует подтверждения",
           "unknown": "Неизвестно"
         }
-      }
+      },
+      "weekly_order_limit": "Недельный лимит заказов",
+      "weekly_order_limit_unlimited": "Без ограничений",
+      "weekly_order_limit_hint": "Оставьте пустым — без ограничений"
     },
     "order_management": {
       "title": "Управление заказами",

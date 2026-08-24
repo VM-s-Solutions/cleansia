@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   AdminEmployeeDetail,
+  AdminSetEmployeeWeeklyOrderLimitRequest,
   AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
   ApproveEmployeeRequest,
@@ -44,6 +45,11 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   readonly savingAvailability = signal<boolean>(false);
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
+
+  // The weekly order cap. Unset is the default and is expected to stay that way — a cap is a
+  // deliberate act against one person, not a rule the platform applies to everyone.
+  readonly editingWeeklyLimit = signal<boolean>(false);
+  readonly savingWeeklyLimit = signal<boolean>(false);
   readonly countries = signal<ICleansiaSelectOption[]>([]);
 
   // Pay config
@@ -211,6 +217,52 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
         this.rejectEmployee(result.reason);
       }
     });
+  }
+
+  startEditingWeeklyLimit(): void {
+    this.editingWeeklyLimit.set(true);
+  }
+
+  cancelEditingWeeklyLimit(): void {
+    this.editingWeeklyLimit.set(false);
+  }
+
+  /**
+   * Caps — or un-caps — how many orders this cleaner may hold in a Monday-to-Sunday week.
+   *
+   * `null` clears the cap back to unlimited, and that is a real value rather than "not supplied":
+   * clearing is half of what the endpoint is for, which is why it is a narrow command of its own
+   * instead of a field on the employee update that merges with `?? existing`.
+   *
+   * The backend tells the cleaner only when the cap APPEARS or MOVES DOWN. Raising and clearing are
+   * deliberately silent, so nothing here needs to warn the admin that they are about to notify.
+   */
+  setWeeklyOrderLimit(weeklyOrderLimit: number | null): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    const request = new AdminSetEmployeeWeeklyOrderLimitRequest();
+    request.weeklyOrderLimit = weeklyOrderLimit ?? undefined;
+
+    this.savingWeeklyLimit.set(true);
+    this.adminClient.adminEmployeeClient
+      .weeklyOrderLimit(employeeId, request)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.savingWeeklyLimit.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.editingWeeklyLimit.set(false);
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.employee_detail.messages.weekly_limit_save_success'
+            )
+          );
+          this.loadEmployeeDetail(employeeId);
+        }
+      });
   }
 
   startEditingAvailability(): void {

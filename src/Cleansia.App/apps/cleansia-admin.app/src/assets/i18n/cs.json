@@ -379,7 +379,8 @@
         "approve_document": "Schválit",
         "reject_document": "Zamítnout",
         "download_document": "Stáhnout",
-        "preview_document": "Náhled"
+        "preview_document": "Náhled",
+        "set_weekly_limit": "Nastavit týdenní limit"
       },
       "approve_employee_dialog": {
         "title": "Schválit zaměstnance",
@@ -433,7 +434,8 @@
         "pay_config_save_error": "Nepodařilo se uložit konfiguraci platby",
         "pay_config_delete_success": "Konfigurace platby úspěšně smazána",
         "pay_config_delete_error": "Nepodařilo se smazat konfiguraci platby",
-        "pay_config_bulk_success": "Konfigurace platby použity: {{created}} vytvořeno, {{skipped}} přeskočeno"
+        "pay_config_bulk_success": "Konfigurace platby použity: {{created}} vytvořeno, {{skipped}} přeskočeno",
+        "weekly_limit_save_success": "Týdenní limit zakázek byl aktualizován"
       },
       "document_status": {
         "pending": "Čekající",
@@ -521,7 +523,10 @@
           "needs_reconfirmation": "Vyžaduje potvrzení",
           "unknown": "Neznámý"
         }
-      }
+      },
+      "weekly_order_limit": "Týdenní limit zakázek",
+      "weekly_order_limit_unlimited": "Neomezený",
+      "weekly_order_limit_hint": "Ponechte prázdné pro neomezený počet"
     },
     "order_management": {
       "title": "Správa objednávek",

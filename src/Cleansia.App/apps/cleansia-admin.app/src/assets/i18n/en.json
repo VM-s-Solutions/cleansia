@@ -379,7 +379,8 @@
         "approve_document": "Approve",
         "reject_document": "Reject",
         "download_document": "Download",
-        "preview_document": "Preview"
+        "preview_document": "Preview",
+        "set_weekly_limit": "Set weekly limit"
       },
       "approve_employee_dialog": {
         "title": "Approve Employee",
@@ -433,7 +434,8 @@
         "pay_config_save_error": "Failed to save pay configuration",
         "pay_config_delete_success": "Pay configuration deleted successfully",
         "pay_config_delete_error": "Failed to delete pay configuration",
-        "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped"
+        "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped",
+        "weekly_limit_save_success": "Weekly order limit updated"
       },
       "document_status": {
         "pending": "Pending",
@@ -521,7 +523,10 @@
           "needs_reconfirmation": "Needs reconfirmation",
           "unknown": "Unknown"
         }
-      }
+      },
+      "weekly_order_limit": "Weekly order limit",
+      "weekly_order_limit_unlimited": "Unlimited",
+      "weekly_order_limit_hint": "Leave empty for no limit"
     },
     "order_management": {
       "title": "Order Management",

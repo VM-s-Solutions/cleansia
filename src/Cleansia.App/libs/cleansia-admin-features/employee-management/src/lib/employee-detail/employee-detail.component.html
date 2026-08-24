@@ -98,7 +98,62 @@
                 employee.complaintsCount || 0
               }}</span>
             </div>
+            <!--
+              The weekly cap, readable at last. It was settable by one admin and visible to nobody,
+              so a second admin could not tell one existed — and the cleaner met it only as a refusal
+              at the moment they tried to take work.
+            -->
+            <div class="weekly-limit-info">
+              <span class="label"
+                >{{
+                  'pages.employee_detail.weekly_order_limit' | translate
+                }}:</span
+              >
+              <span class="value">{{
+                employee.weeklyOrderLimit ??
+                  ('pages.employee_detail.weekly_order_limit_unlimited'
+                    | translate)
+              }}</span>
+            </div>
           </div>
+
+          @if (facade.editingWeeklyLimit()) {
+          <div class="weekly-limit-edit-row">
+            <cleansia-text-input
+              [label]="'pages.employee_detail.weekly_order_limit' | translate"
+              [floatVariant]="'on'"
+              [formControl]="weeklyLimitControl"
+              dataType="number"
+            />
+            <span class="hint">{{
+              'pages.employee_detail.weekly_order_limit_hint' | translate
+            }}</span>
+            <cleansia-button
+              [label]="'common.save' | translate"
+              icon="pi pi-check"
+              [loading]="facade.savingWeeklyLimit()"
+              [disabled]="weeklyLimitControl.invalid"
+              (onClick)="saveWeeklyLimit()"
+            />
+            <cleansia-button
+              [label]="'common.cancel' | translate"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="facade.cancelEditingWeeklyLimit()"
+            />
+          </div>
+          } @else {
+          <div class="weekly-limit-actions-row">
+            <cleansia-button
+              *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+              [label]="'pages.employee_detail.actions.set_weekly_limit' | translate"
+              icon="pi pi-sliders-h"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="startEditingWeeklyLimit()"
+            />
+          </div>
+          }
           @if (facade.canApproveOrReject()) {
           <div class="contract-actions-row">
             <cleansia-button

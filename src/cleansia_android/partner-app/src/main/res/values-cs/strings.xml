@@ -1257,6 +1257,8 @@
     <string name="notification_order_assigned_body">Byla vám přiřazena zakázka č. %1$s. Klepnutím zobrazíte podrobnosti.</string>
     <string name="notification_order_assignment_revoked_title">Zakázka přeřazena</string>
     <string name="notification_order_assignment_revoked_body">Zakázka č. %1$s byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti.</string>
+    <string name="notification_employee_weekly_limit_set_title">Týdenní limit zakázek změněn</string>
+    <string name="notification_employee_weekly_limit_set_body">Nyní si můžete vzít nejvýše %1$d zakázek týdně.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
     <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>

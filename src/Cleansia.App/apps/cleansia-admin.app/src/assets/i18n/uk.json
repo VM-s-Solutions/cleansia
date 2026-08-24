@@ -379,7 +379,8 @@
         "approve_document": "Схвалити",
         "reject_document": "Відхилити",
         "download_document": "Завантажити",
-        "preview_document": "Попередній перегляд"
+        "preview_document": "Попередній перегляд",
+        "set_weekly_limit": "Встановити тижневий ліміт"
       },
       "approve_employee_dialog": {
         "title": "Затвердити працівника",
@@ -433,7 +434,8 @@
         "pay_config_save_error": "Не вдалося зберегти конфігурацію оплати",
         "pay_config_delete_success": "Конфігурацію оплати успішно видалено",
         "pay_config_delete_error": "Не вдалося видалити конфігурацію оплати",
-        "pay_config_bulk_success": "Конфігурації оплати застосовано: {{created}} створено, {{skipped}} пропущено"
+        "pay_config_bulk_success": "Конфігурації оплати застосовано: {{created}} створено, {{skipped}} пропущено",
+        "weekly_limit_save_success": "Тижневий ліміт замовлень оновлено"
       },
       "document_status": {
         "pending": "Очікує",
@@ -521,7 +523,10 @@
           "needs_reconfirmation": "Потребує підтвердження",
           "unknown": "Невідомо"
         }
-      }
+      },
+      "weekly_order_limit": "Тижневий ліміт замовлень",
+      "weekly_order_limit_unlimited": "Без обмежень",
+      "weekly_order_limit_hint": "Залиште порожнім — без обмежень"
     },
     "order_management": {
       "title": "Управління замовленнями",

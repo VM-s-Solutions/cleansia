@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Blobs.Abstractions;
@@ -83,9 +83,14 @@ public class DownloadMyDocument
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             var document = await documentRepository.GetByIdAsync(query.DocumentId, cancellationToken);
+            if (document is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(query.DocumentId), BusinessErrorMessage.DocumentNotFound));
+            }
 
             var blobClient = blobContainerClientFactory.GetBlobContainerClient(Constants.BlobContainers.EmployeeDocuments);
-            var blobFile = await blobClient.DownloadAsync(document!.FilePath, cancellationToken);
+            var blobFile = await blobClient.DownloadAsync(document.FilePath, cancellationToken);
 
             using var memoryStream = new MemoryStream();
             await blobFile.Content.CopyToAsync(memoryStream, cancellationToken);

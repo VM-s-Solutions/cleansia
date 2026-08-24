@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Enums;
@@ -55,8 +55,13 @@ public class OpenPayPeriod
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var payPeriod = await payPeriodRepository.GetByIdAsync(command.PayPeriodId, cancellationToken);
+            if (payPeriod is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
+            }
 
-            payPeriod!.Reopen(command.Notes);
+            payPeriod.Reopen(command.Notes);
 
             return BusinessResult.Success(new Response(payPeriod.Id));
         }

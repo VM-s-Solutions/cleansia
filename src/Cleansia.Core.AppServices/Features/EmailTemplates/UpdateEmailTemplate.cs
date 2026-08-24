@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -40,8 +40,13 @@ public class UpdateEmailTemplate
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var template = await emailTemplateRepository.GetByIdAsync(command.EmailTemplateId, cancellationToken);
+            if (template is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.EmailTemplateId), BusinessErrorMessage.EmailTemplateNotFound));
+            }
 
-            template!.UpdateValue(command.Value);
+            template.UpdateValue(command.Value);
 
             return BusinessResult.Success(new Response(template.Id));
         }

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -31,8 +31,13 @@ public class GetPackageById
         public async Task<BusinessResult<AdminPackageDetailDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var package = await packageRepository.GetByIdAsync(query.PackageId, cancellationToken);
+            if (package is null)
+            {
+                return BusinessResult.Failure<AdminPackageDetailDto>(new Error(
+                    nameof(query.PackageId), BusinessErrorMessage.PackageNotFound));
+            }
 
-            return BusinessResult.Success(package!.MapToAdminDetail());
+            return BusinessResult.Success(package.MapToAdminDetail());
         }
     }
 }

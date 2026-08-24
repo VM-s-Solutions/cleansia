@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -91,10 +91,15 @@ public class UpdatePayConfig
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var payConfig = await payConfigRepository.GetByIdAsync(command.PayConfigId, cancellationToken);
+            if (payConfig is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PayConfigId), BusinessErrorMessage.PayConfigNotFound));
+            }
 
             var before = Snapshot(payConfig!);
 
-            payConfig!.UpdatePayRates(
+            payConfig.UpdatePayRates(
                 command.BasePay,
                 command.ExtraPerRoom,
                 command.ExtraPerBathroom,

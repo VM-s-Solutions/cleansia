@@ -1457,6 +1457,7 @@
       "email_confirmed": "Tato e-mailová adresa je již potvrzena.",
       "existing_email": "Účet s tímto e-mailem už existuje.",
       "not_existing_email": "Účet s tímto e-mailem jsme nenašli.",
+      "not_existing_id": "Tento účet se nepodařilo načíst.",
       "existing_phone_number": "Toto telefonní číslo se již používá.",
       "not_found": "Tento účet jsme nenašli.",
       "not_allowed_to_update": "Nemáte oprávnění měnit tento účet."

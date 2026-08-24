@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -34,7 +34,13 @@ public class RetryFiscalRegistration
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var receipt = await receiptRepository.GetByIdAsync(command.ReceiptId, cancellationToken);
-            receipt!.ScheduleImmediateFiscalRetry();
+            if (receipt is null)
+            {
+                return BusinessResult.Failure(new Error(
+                    nameof(command.ReceiptId), BusinessErrorMessage.ReceiptNotFound));
+            }
+
+            receipt.ScheduleImmediateFiscalRetry();
             return BusinessResult.Success();
         }
     }

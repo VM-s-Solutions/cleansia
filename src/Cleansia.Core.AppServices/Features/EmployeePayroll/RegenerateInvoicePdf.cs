@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -61,14 +61,25 @@ public class RegenerateInvoicePdf
 
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var invoice = (await employeeInvoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken))!;
+            var invoice = await employeeInvoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            if (invoice is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
+            }
 
             try
             {
                 var employee = await employeeRepository.GetByIdAsync(invoice.EmployeeId, cancellationToken);
                 var currency = await currencyRepository.GetByIdAsync(invoice.CurrencyId, cancellationToken);
 
-                var countryId = employee!.Address?.CountryId;
+                if (employee is null)
+                {
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.InvoiceId), BusinessErrorMessage.EmployeeNotFound));
+                }
+
+                var countryId = employee.Address?.CountryId;
 
                 // Try to get company info by employee's country, fallback to any active
                 var companyInfo = countryId != null

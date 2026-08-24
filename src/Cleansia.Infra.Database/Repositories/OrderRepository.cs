@@ -32,6 +32,18 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Order>> GetFutureConfirmedOrdersForEmployeeAsync(
+        string employeeId, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(o => o.AssignedEmployees)
+                .ThenInclude(ae => ae.Employee)
+            .Where(o => o.CurrentStatus == OrderStatus.Confirmed
+                && o.CleaningDateTime > nowUtc
+                && o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Order>> GetCompletedOrdersByDateRangeAsync(
         string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
     {

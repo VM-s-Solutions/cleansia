@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
@@ -50,9 +50,20 @@ public class ApproveDocument
         {
             var adminEmail = userSessionProvider.GetUserEmail();
             var adminUser = await userRepository.GetByEmailAsync(adminEmail!, cancellationToken);
-            var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
+            if (adminUser is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    "Authentication", BusinessErrorMessage.UserNotFound));
+            }
 
-            document!.Approve(adminUser!.Id, request.Notes);
+            var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
+            if (document is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(request.DocumentId), BusinessErrorMessage.NotFound));
+            }
+
+            document.Approve(adminUser.Id, request.Notes);
 
             return BusinessResult.Success(new Response
             {

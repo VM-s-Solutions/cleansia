@@ -1,7 +1,9 @@
-using Cleansia.Core.AppServices.Auditing;
+﻿using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Tests.Features.Orders;
 using Moq;
@@ -21,11 +23,12 @@ public class AdminSetEmployeeWeeklyOrderLimitTests
 
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IAuditContext> _auditContext = new();
+    private readonly Mock<INotificationProducer> _notificationProducer = new();
 
     private AdminSetEmployeeWeeklyOrderLimit.Validator Validator() => new(_employeeRepository.Object);
 
     private AdminSetEmployeeWeeklyOrderLimit.Handler Handler() =>
-        new(_employeeRepository.Object, _auditContext.Object);
+        new(_employeeRepository.Object, _notificationProducer.Object, _auditContext.Object);
 
     private Core.Domain.Users.Employee ArrangeEmployee(int? existingLimit)
     {
@@ -134,5 +137,112 @@ public class AdminSetEmployeeWeeklyOrderLimitTests
 
         Assert.True(cleared.IsValid);
         Assert.False(zero.IsValid);
+    }
+
+    // ── Q-CAP-01: who is told, and who deliberately is not ────────────────────
+    //
+    // The owner's ruling (2026-08-24): a cleaner hears about a cap that APPEARS or that MOVES DOWN,
+    // and hears nothing about one that rises or is cleared. A cut to how much somebody may earn is
+    // news they are owed; a rise only ever gives, and announcing both would train them to swipe past
+    // the one that takes.
+
+    private void AssertNotified(Times times) =>
+        _notificationProducer.Verify(p => p.NotifyAsync(
+                It.IsAny<string>(),
+                NotificationEventCatalog.EmployeeWeeklyLimitSet,
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            times);
+
+    private async Task SetLimitAsync(int? from, int? to)
+    {
+        ArrangeEmployee(from);
+        var result = await Handler().Handle(
+            new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, to), CancellationToken.None);
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task A_Cap_Appearing_Where_There_Was_None_Tells_The_Cleaner()
+    {
+        await SetLimitAsync(from: null, to: 5);
+        AssertNotified(Times.Once());
+    }
+
+    [Fact]
+    public async Task Lowering_An_Existing_Cap_Tells_The_Cleaner()
+    {
+        await SetLimitAsync(from: 10, to: 5);
+        AssertNotified(Times.Once());
+    }
+
+    [Fact]
+    public async Task Raising_A_Cap_Is_Silent()
+    {
+        await SetLimitAsync(from: 5, to: 10);
+        AssertNotified(Times.Never());
+    }
+
+    [Fact]
+    public async Task Clearing_A_Cap_Is_Silent()
+    {
+        await SetLimitAsync(from: 5, to: null);
+        AssertNotified(Times.Never());
+    }
+
+    /// <summary>An admin re-saving the same number is not news.</summary>
+    [Fact]
+    public async Task Re_Saving_The_Same_Cap_Is_Silent()
+    {
+        await SetLimitAsync(from: 5, to: 5);
+        AssertNotified(Times.Never());
+    }
+
+    /// <summary>
+    /// The cleaner cannot act on a cap they cannot see, so the new value rides in the payload — the
+    /// refusal they used to meet instead, <c>order.weekly_limit_reached</c>, is argless.
+    /// </summary>
+    [Fact]
+    public async Task The_Notice_Carries_The_New_Cap()
+    {
+        Dictionary<string, string>? args = null;
+        _notificationProducer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, a, _, _, _) => args = a)
+            .Returns(Task.CompletedTask);
+
+        await SetLimitAsync(from: null, to: 3);
+
+        Assert.NotNull(args);
+        Assert.Equal("3", args!["count"]);
+    }
+
+    /// <summary>
+    /// 5 -> 10 -> 5 is TWO tightenings and must mint two distinct outbox keys. Keyed on the employee,
+    /// or on the new value, the second one collides — and a collision here does not drop a push, it
+    /// raises 23505 inside the pipeline's commit and rolls the admin's change back.
+    /// </summary>
+    [Fact]
+    public async Task Tightening_To_The_Same_Value_Twice_Uses_Two_Different_Subjects()
+    {
+        var subjects = new List<string?>();
+        _notificationProducer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, _, _, subject, _) => subjects.Add(subject))
+            .Returns(Task.CompletedTask);
+
+        await SetLimitAsync(from: 10, to: 5);
+        await SetLimitAsync(from: 10, to: 5);
+
+        Assert.Equal(2, subjects.Count);
+        Assert.Equal(2, subjects.Distinct(StringComparer.Ordinal).Count());
     }
 }

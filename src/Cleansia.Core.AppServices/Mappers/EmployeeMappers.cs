@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Employees.DTOs;
+﻿using Cleansia.Core.AppServices.Features.Employees.DTOs;
 using Cleansia.Core.Domain.Users;
 using DtoTimeRange = Cleansia.Core.AppServices.Features.Employees.DTOs.TimeRange;
 
@@ -133,7 +133,8 @@ public static class EmployeeMappers
             RejectedByUserId: employee.RejectedByUserId,
             RejectedAt: employee.RejectedAt,
             MissingFields: employee.GetMissingProfileFields(),
-            UserId: employee.UserId
+            UserId: employee.UserId,
+            WeeklyOrderLimit: employee.WeeklyOrderLimit
         );
     }
 

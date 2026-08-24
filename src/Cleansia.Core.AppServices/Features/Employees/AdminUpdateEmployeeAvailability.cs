@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
@@ -86,9 +86,14 @@ public class AdminUpdateEmployeeAvailability
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+            if (employee is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.EmployeeId), BusinessErrorMessage.NotFound));
+            }
 
             var availability = ConvertAvailability(command.Availability);
-            employee!.UpdateAvailability(availability);
+            employee.UpdateAvailability(availability);
 
             var snapshot = new AvailabilitySnapshot(employee.UserId, employee.Id);
             auditContext.RecordChange("User", employee.UserId, snapshot, snapshot);

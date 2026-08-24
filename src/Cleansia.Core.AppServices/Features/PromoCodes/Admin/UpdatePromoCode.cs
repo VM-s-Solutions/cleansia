@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -65,11 +65,16 @@ public class UpdatePromoCode
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var entity = await promoCodeRepository.GetByIdAsync(command.PromoCodeId, cancellationToken);
+            if (entity is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PromoCodeId), BusinessErrorMessage.PromoNotFound));
+            }
 
             // ActorId is overridden in CommitAsync from the JWT — we pass an
             // empty string here because the SaveChanges interceptor stamps
             // UpdatedBy/UpdatedOn from the user session anyway.
-            entity!.Update(
+            entity.Update(
                 isActive: command.IsActive,
                 validFrom: command.ValidFrom,
                 validUntil: command.ValidUntil,

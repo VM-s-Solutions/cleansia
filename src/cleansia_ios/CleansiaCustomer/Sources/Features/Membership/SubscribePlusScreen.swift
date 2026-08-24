@@ -115,7 +115,7 @@ struct SubscribePlusScreen: View {
         let outcome = await paymentSheet.present(presentation)
         switch outcome {
         case .completed:
-            if case let .subscribed = await vm.confirmSubscribe(planCode: selectedPlanCode), !navigatedAway {
+            if case .subscribed = await vm.confirmSubscribe(planCode: selectedPlanCode), !navigatedAway {
                 navigatedAway = true
                 onSubscribed()
             }

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -112,6 +112,20 @@ public class SendTomorrowJobDigest
                 zones[countryId] = TimeZoneResolution.Resolve(configuration?.TimeZoneId);
             }
 
+            // ADR-0054 required change 6, discharged. The per-cleaner CountAsync below used to run once
+            // for EVERY approved cleaner on the platform, every evening, to send at most a handful of
+            // messages. Eligibility is decided first — in memory, from the clock and the watermark, no
+            // query — and only the cleaners who survive it are counted, in ONE query per distinct local
+            // day rather than one per person.
+            //
+            // Safe to run before the tenant loop and outside it: this reads through
+            // GetQueryableIgnoringTenant and writes nothing. Every write — the outbox row and the
+            // watermark — stays inside the loop with its own commit, because rows are stamped from the
+            // ambient tenant AT COMMIT TIME and one deferred commit would stamp every group with the
+            // last tenant seen.
+            var eligible = EligibleThisTick(cleaners, zones, nowUtc, command);
+            var counts = await CountTomorrowsJobsAsync(eligible, cancellationToken);
+
             var sent = 0;
             foreach (var tenantGroup in cleaners.GroupBy(c => c.TenantId ?? string.Empty))
             {
@@ -125,7 +139,7 @@ public class SendTomorrowJobDigest
                 {
                     try
                     {
-                        if (await TrySendAsync(cleaner, zones, nowUtc, command, cancellationToken))
+                        if (await TrySendAsync(cleaner, eligible, counts, nowUtc, cancellationToken))
                         {
                             sent++;
                         }
@@ -151,54 +165,123 @@ public class SendTomorrowJobDigest
             return BusinessResult.Success(new Response(sent, cleaners.Count));
         }
 
-        private async Task<bool> TrySendAsync(
-            Employee cleaner,
+        /// <summary>
+        /// Who this tick may send to at all, decided from the clock and the watermark alone.
+        ///
+        /// <para>Split out so the decision costs NO query. It used to be interleaved with the count, so
+        /// every approved cleaner on the platform paid a <c>CountAsync</c> before the hour gate could
+        /// turn them away — and the hour gate turns away all but one timezone's worth of them.</para>
+        /// </summary>
+        private static List<EligibleCleaner> EligibleThisTick(
+            IReadOnlyList<Employee> cleaners,
             IReadOnlyDictionary<string, TimeZoneInfo> zones,
             DateTime nowUtc,
-            Command command,
+            Command command)
+        {
+            var eligible = new List<EligibleCleaner>();
+            foreach (var cleaner in cleaners)
+            {
+                var zone = zones[cleaner.WorkCountryId!];
+                var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone);
+
+                // The send WINDOW, not the send hour. See Command.CatchUpHours for why an equality
+                // here gives a whole timezone one attempt a day. The window does not wrap past
+                // midnight: a LocalSendHour late enough for LocalSendHour + CatchUpHours to exceed 23
+                // simply ends at 23:00, which is the correct place to stop pushing anyway.
+                if (localNow.Hour < command.LocalSendHour
+                    || localNow.Hour >= command.LocalSendHour + command.CatchUpHours)
+                {
+                    continue;
+                }
+
+                // Already told them about this local day. Compared in the cleaner's own zone, not UTC:
+                // around midnight the two disagree about which day it is, and a UTC comparison would
+                // send a second digest for the same evening to anyone east of Greenwich.
+                var localToday = DateOnly.FromDateTime(localNow);
+                if (cleaner.LastTomorrowDigestAt is { } last
+                    && DateOnly.FromDateTime(
+                        TimeZoneInfo.ConvertTimeFromUtc(last.UtcDateTime, zone)) == localToday)
+                {
+                    continue;
+                }
+
+                // Tomorrow, bounded in the cleaner's local day and converted back to UTC for the
+                // query — the column is UTC and a local-time comparison against it would be off by
+                // the offset.
+                var localTomorrowStart = localNow.Date.AddDays(1);
+                eligible.Add(new EligibleCleaner(
+                    cleaner,
+                    localToday,
+                    TimeZoneInfo.ConvertTimeToUtc(localTomorrowStart, zone),
+                    TimeZoneInfo.ConvertTimeToUtc(localTomorrowStart.AddDays(1), zone)));
+            }
+
+            return eligible;
+        }
+
+        /// <summary>
+        /// How many jobs each eligible cleaner has tomorrow — ONE query per distinct local day rather
+        /// than one per cleaner. ADR-0054 required change 6.
+        ///
+        /// <para>Grouped by the WINDOW rather than by the country, because the window is the only
+        /// thing the query cares about: two countries on the same offset share a local tomorrow and
+        /// therefore share a query. A cleaner absent from the result has no jobs, which is the
+        /// ordinary case and deliberately costs nothing to represent.</para>
+        /// </summary>
+        private async Task<Dictionary<string, int>> CountTomorrowsJobsAsync(
+            IReadOnlyList<EligibleCleaner> eligible,
             CancellationToken cancellationToken)
         {
-            var zone = zones[cleaner.WorkCountryId!];
-            var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone);
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (eligible.Count == 0)
+            {
+                return counts;
+            }
 
-            // The send WINDOW, not the send hour. See Command.CatchUpHours for why an equality here
-            // gives a whole timezone one attempt a day. The window does not wrap past midnight: a
-            // LocalSendHour late enough for LocalSendHour + CatchUpHours to exceed 23 simply ends at
-            // 23:00, which is the correct place to stop pushing anyway.
-            if (localNow.Hour < command.LocalSendHour
-                || localNow.Hour >= command.LocalSendHour + command.CatchUpHours)
+            foreach (var window in eligible.GroupBy(e => (e.WindowStartUtc, e.WindowEndUtc)))
+            {
+                var ids = window.Select(e => e.Cleaner.Id).Distinct(StringComparer.Ordinal).ToList();
+                var start = window.Key.WindowStartUtc;
+                var end = window.Key.WindowEndUtc;
+
+                var rows = await orderRepository.GetQueryableIgnoringTenant()
+                    .Where(o => o.CurrentStatus == OrderStatus.Confirmed
+                        && o.CleaningDateTime >= start
+                        && o.CleaningDateTime < end)
+                    .SelectMany(o => o.AssignedEmployees)
+                    .Where(ae => ids.Contains(ae.EmployeeId))
+                    .GroupBy(ae => ae.EmployeeId)
+                    .Select(g => new { EmployeeId = g.Key, Count = g.Count() })
+                    .ToListAsync(cancellationToken);
+
+                foreach (var row in rows)
+                {
+                    counts[row.EmployeeId] = row.Count;
+                }
+            }
+
+            return counts;
+        }
+
+        private async Task<bool> TrySendAsync(
+            Employee cleaner,
+            IReadOnlyList<EligibleCleaner> eligible,
+            IReadOnlyDictionary<string, int> counts,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            var entry = eligible.FirstOrDefault(e => ReferenceEquals(e.Cleaner, cleaner));
+            if (entry is null)
             {
                 return false;
             }
-
-            // Already told them about this local day. Compared in the cleaner's own zone, not UTC:
-            // around midnight the two disagree about which day it is, and a UTC comparison would send
-            // a second digest for the same evening to anyone east of Greenwich.
-            var localToday = DateOnly.FromDateTime(localNow);
-            if (cleaner.LastTomorrowDigestAt is { } last
-                && DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(last.UtcDateTime, zone)) == localToday)
-            {
-                return false;
-            }
-
-            // Tomorrow, bounded in the cleaner's local day and converted back to UTC for the query —
-            // the column is UTC and a local-time comparison against it would be off by the offset.
-            var localTomorrowStart = localNow.Date.AddDays(1);
-            var windowStart = TimeZoneInfo.ConvertTimeToUtc(localTomorrowStart, zone);
-            var windowEnd = TimeZoneInfo.ConvertTimeToUtc(localTomorrowStart.AddDays(1), zone);
-
-            var count = await orderRepository.GetQueryableIgnoringTenant()
-                .CountAsync(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == cleaner.Id)
-                    && o.CurrentStatus == OrderStatus.Confirmed
-                    && o.CleaningDateTime >= windowStart
-                    && o.CleaningDateTime < windowEnd, cancellationToken);
 
             // No jobs tomorrow is not news, and a digest saying "0" would train cleaners to ignore the
             // one that says 2. The watermark is deliberately NOT stamped either, so a job taken later
             // this evening still produces a digest on a later tick — which is only true because the
-            // hour test above is a window. Under the equality this line replaced, there was no later
-            // tick and the recovery it advertises could never happen.
-            if (count == 0)
+            // hour test is a window. Under the equality it replaced, there was no later tick and the
+            // recovery it advertises could never happen.
+            if (!counts.TryGetValue(cleaner.Id, out var count) || count == 0)
             {
                 return false;
             }
@@ -213,7 +296,7 @@ public class SendTomorrowJobDigest
                 cleaner.TenantId,
                 // The local date being summarised — deterministic, so a re-run of the same evening
                 // dedups onto one key rather than minting a fresh message per tick.
-                localToday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                entry.LocalToday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 cancellationToken);
 
             // The tracked instance the candidate query returned — no re-read, and no null to swallow.
@@ -221,5 +304,12 @@ public class SendTomorrowJobDigest
 
             return true;
         }
+
+        /// <summary>A cleaner the clock and the watermark admit, with the local day they are owed.</summary>
+        private sealed record EligibleCleaner(
+            Employee Cleaner,
+            DateOnly LocalToday,
+            DateTime WindowStartUtc,
+            DateTime WindowEndUtc);
     }
 }

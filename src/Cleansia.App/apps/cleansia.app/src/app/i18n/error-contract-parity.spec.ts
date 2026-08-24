@@ -343,6 +343,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'user.not_existing_email',
   'user.existing_phone_number',
   'user.not_found',
+  // GetUser and UpdateCurrentUser both resolve the caller's own row and used to null-forgive it.
+  // Guarding that null made this key reachable from the customer host for the first time.
+  'user.not_existing_id',
   // Profile save carries the display-language preference, so the
   // UpdateCurrentUser language rule is reachable from the customer app.
   'language.not_supported',

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -41,6 +41,11 @@ public class DeleteService
             }
 
             var service = await serviceRepository.GetByIdAsync(command.ServiceId, cancellationToken);
+            if (service is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.ServiceId), BusinessErrorMessage.ServiceNotFound));
+            }
 
             serviceRepository.Remove(service!);
 
@@ -60,7 +65,7 @@ public class DeleteService
                 return BusinessResult.Failure<Response>(new Error(nameof(command.ServiceId), BusinessErrorMessage.ServiceInUse));
             }
 
-            return BusinessResult.Success(new Response(service!.Id));
+            return BusinessResult.Success(new Response(service.Id));
         }
     }
 }

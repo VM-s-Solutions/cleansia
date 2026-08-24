@@ -1,7 +1,9 @@
-#nullable enable
+﻿#nullable enable
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -60,6 +62,7 @@ public class AdminSetEmployeeWeeklyOrderLimit
 
     public class Handler(
         IEmployeeRepository employeeRepository,
+        INotificationProducer notificationProducer,
         IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -81,7 +84,59 @@ public class AdminSetEmployeeWeeklyOrderLimit
             var after = new WeeklyLimitSnapshot(employee.UserId, employee.Id, employee.WeeklyOrderLimit);
             auditContext.RecordChange("User", employee.UserId, before, after);
 
+            await NotifyIfTightenedAsync(
+                employee.UserId, employee.TenantId, before.WeeklyOrderLimit, after.WeeklyOrderLimit,
+                DateTime.UtcNow, cancellationToken);
+
             return BusinessResult.Success(new Response(employee.Id, employee.WeeklyOrderLimit));
+        }
+
+        /// <summary>
+        /// Tell the cleaner only when the cap TIGHTENS — it appeared where there was none, or it moved
+        /// down. Q-CAP-01, ruled by the owner 2026-08-24.
+        ///
+        /// <para>A rise and a clear are deliberately silent. Both only ever give, and a notice on every
+        /// movement would train the cleaner to swipe past the one that takes. Silence on a no-op change
+        /// is the same argument: an admin re-saving the same number is not news.</para>
+        ///
+        /// <para><b>The subject is the MOMENT of the change, and it has to be.</b> A cap change mints no
+        /// row, so there is no entity id to name the event with — and every cheaper candidate collides.
+        /// Keyed on the employee, a second tightening reuses the first key; keyed on the new value,
+        /// 5 → 10 → 5 reuses it too. A collision here is not a dropped push: the outbox's
+        /// <c>(QueueName, MessageKey)</c> unique index raises inside the pipeline's <c>CommitAsync</c>,
+        /// after this handler returned, so it would roll the admin's change back. That is the defect
+        /// this repository has now paid for five times. The timestamp is captured ONCE by the caller,
+        /// so a retry inside one request still dedups to a single row.</para>
+        /// </summary>
+        private async Task NotifyIfTightenedAsync(
+            string userId,
+            string? tenantId,
+            int? before,
+            int? after,
+            DateTime changedAtUtc,
+            CancellationToken cancellationToken)
+        {
+            if (after is not { } limit)
+            {
+                return;
+            }
+
+            var tightened = before is not { } previous || limit < previous;
+            if (!tightened)
+            {
+                return;
+            }
+
+            await notificationProducer.NotifyAsync(
+                userId,
+                NotificationEventCatalog.EmployeeWeeklyLimitSet,
+                new Dictionary<string, string>
+                {
+                    ["count"] = limit.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                },
+                tenantId,
+                $"{limit}:{changedAtUtc.ToString("O", System.Globalization.CultureInfo.InvariantCulture)}",
+                cancellationToken);
         }
     }
 }

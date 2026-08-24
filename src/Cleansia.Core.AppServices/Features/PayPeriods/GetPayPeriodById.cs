@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayPeriods.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -32,8 +32,13 @@ public class GetPayPeriodById
         public async Task<BusinessResult<PayPeriodDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var payPeriod = await payPeriodRepository.GetByIdAsync(query.PayPeriodId, cancellationToken);
+            if (payPeriod is null)
+            {
+                return BusinessResult.Failure<PayPeriodDto>(new Error(
+                    nameof(query.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
+            }
 
-            return BusinessResult.Success(payPeriod!.MapToDto());
+            return BusinessResult.Success(payPeriod.MapToDto());
         }
     }
 }

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -25,7 +25,13 @@ public static class ToggleFeatureFlag
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
             var flag = await featureFlagRepository.GetByIdAsync(request.Id, cancellationToken);
-            flag!.Toggle();
+            if (flag is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(request.Id), BusinessErrorMessage.FeatureFlagNotFound));
+            }
+
+            flag.Toggle();
             return BusinessResult.Success(new Response(flag.Id, flag.IsEnabled));
         }
     }

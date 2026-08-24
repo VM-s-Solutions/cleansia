@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -36,8 +36,13 @@ public class SetDefaultCurrency
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var currency = await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
+            if (currency is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
+            }
 
-            if (currency!.IsDefault)
+            if (currency.IsDefault)
             {
                 return BusinessResult.Success(new Response(currency.Id));
             }

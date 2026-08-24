@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -39,8 +39,13 @@ public class DeactivatePackage
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var package = await packageRepository.GetByIdAsync(command.PackageId, cancellationToken);
+            if (package is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PackageId), BusinessErrorMessage.PackageNotFound));
+            }
 
-            if (!package!.IsActive)
+            if (!package.IsActive)
             {
                 return BusinessResult.Success(new Response(package.Id));
             }

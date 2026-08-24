@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Services;
@@ -91,8 +91,13 @@ public class UpdatePackage
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var package = await packageRepository.GetByIdAsync(command.PackageId, cancellationToken);
+            if (package is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PackageId), BusinessErrorMessage.PackageNotFound));
+            }
 
-            package!.Update(
+            package.Update(
                 command.Name,
                 command.Description,
                 command.Price);

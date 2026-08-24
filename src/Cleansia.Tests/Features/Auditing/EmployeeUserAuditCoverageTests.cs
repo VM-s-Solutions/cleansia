@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Employees;
@@ -124,8 +124,17 @@ public sealed class EmployeeUserAuditCoverageTests
         employeeRepository.Setup(r => r.GetByIdAsync(SubjectEmployeeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employee);
 
+        // No future Confirmed work, so the seat-release loop is a no-op here — this test is about the
+        // audit snapshot. RejectEmployeeReleasesSeatsTests covers the release itself.
+        var orderRepository = new Mock<IOrderRepository>();
+        orderRepository
+            .Setup(r => r.GetFutureConfirmedOrdersForEmployeeAsync(
+                It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
         var handler = new RejectEmployee.Handler(
-            employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext);
+            employeeRepository.Object, AdminUserRepository().Object, orderRepository.Object,
+            new Mock<INotificationProducer>().Object, AdminSession(), auditContext);
         var result = await handler.Handle(
             new RejectEmployee.Command(SubjectEmployeeId, "documents look forged"), CancellationToken.None);
 

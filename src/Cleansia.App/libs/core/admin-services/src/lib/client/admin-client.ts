@@ -14593,6 +14593,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     rejectedAt!: Date | undefined;
     missingFields!: string[] | undefined;
     userId!: string | undefined;
+    weeklyOrderLimit!: number | undefined;
 
     constructor(data?: IAdminEmployeeDetail) {
         if (data) {
@@ -14650,6 +14651,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
                     this.missingFields!.push(item);
             }
             this.userId = Data["userId"];
+            this.weeklyOrderLimit = Data["weeklyOrderLimit"];
         }
     }
 
@@ -14707,6 +14709,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
                 data["missingFields"].push(item);
         }
         data["userId"] = this.userId;
+        data["weeklyOrderLimit"] = this.weeklyOrderLimit;
         return data;
     }
 }
@@ -14747,6 +14750,7 @@ export interface IAdminEmployeeDetail {
     rejectedAt: Date | undefined;
     missingFields: string[] | undefined;
     userId: string | undefined;
+    weeklyOrderLimit: number | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {

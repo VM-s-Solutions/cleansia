@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -36,8 +36,13 @@ public class DeactivateMembershipPlan
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var plan = await membershipPlanRepository.GetByIdAsync(command.MembershipPlanId, cancellationToken);
+            if (plan is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.MembershipPlanId), BusinessErrorMessage.MembershipPlanNotFound));
+            }
 
-            if (!plan!.IsActive)
+            if (!plan.IsActive)
             {
                 return BusinessResult.Success(new Response(plan.Id));
             }

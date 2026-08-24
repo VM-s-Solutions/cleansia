@@ -50,8 +50,13 @@ public class GetUser
             }
 
             var user = await userRepository.GetByIdNoTrackingAsync(query.UserId, cancellationToken);
+            if (user is null)
+            {
+                return BusinessResult.Failure<UserItem>(new Error(
+                    nameof(Query.UserId), BusinessErrorMessage.NotExistingUserWithId));
+            }
 
-            return BusinessResult.Success(user!.MapToDetailDto())!;
+            return BusinessResult.Success(user.MapToDetailDto())!;
         }
     }
 }

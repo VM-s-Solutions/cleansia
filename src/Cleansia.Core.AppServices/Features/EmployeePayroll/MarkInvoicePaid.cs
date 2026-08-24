@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
@@ -98,11 +98,16 @@ public class MarkInvoicePaid
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            if (invoice is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
+            }
 
             // The validator's status read and this write are separate steps: a second admin marking the
             // same invoice in between reaches MarkAsPaid's throw, which would surface as a 500 rather
             // than a refusal and hide a possible double transfer.
-            var refusal = RefusalFor(invoice!.Status);
+            var refusal = RefusalFor(invoice.Status);
             if (refusal is not null)
             {
                 return BusinessResult.Failure<Response>(new Error(

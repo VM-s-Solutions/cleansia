@@ -37,6 +37,15 @@ class NotificationTemplatesTest {
         "notification_reminder_not_started_body",
     )
 
+    /**
+     * The weekly-cap notice. Its own roster for the same reason as [reminderKeys]: the body takes the
+     * CAP as a count (`%1${'$'}d`) where every reassign body takes an order number (`%1${'$'}s`).
+     */
+    private val weeklyLimitKeys = listOf(
+        "notification_employee_weekly_limit_set_title",
+        "notification_employee_weekly_limit_set_body",
+    )
+
     private val reassignKeys = listOf(
         "notification_order_assigned_title",
         "notification_order_assigned_body",
@@ -439,4 +448,53 @@ class NotificationTemplatesTest {
     /** Positional and bare alike — a bare `%s` beside a positional one crashes `getString` at runtime. */
     private fun formatSlots(value: String): List<String> =
         Regex("%(\\d+\\\$)?[a-zA-Z]").findAll(value).map { it.value }.toList()
+
+    // -- the weekly-cap notice (Q-CAP-01) ------------------------------------------------------
+    //
+    // Only a cap that APPEARS or MOVES DOWN reaches a cleaner; the backend decides that. What these
+    // pin is the half the backend cannot see: that all five locales carry the copy, that none of them
+    // is the English string left in place, and that the body takes the CAP as an integer. A %s where
+    // the code passes an Int is a format exception on the cleaner's lock screen and shows up nowhere
+    // until it ships.
+
+    @Test
+    fun `every locale carries the weekly-cap copy`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            weeklyLimitKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun `the four translations of the weekly-cap copy are not the English string copied over`() {
+        val english = weeklyLimitKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            weeklyLimitKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the weekly-cap body takes the cap as an integer and its title takes nothing`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            weeklyLimitKeys.forEach { key ->
+                val expected = if (key.endsWith("_body")) listOf("%1${'$'}d") else emptyList()
+                assertEquals(
+                    "$locale/strings.xml passes the wrong format arguments to $key",
+                    expected,
+                    formatSlots(valueOf(xml, key)!!),
+                )
+            }
+        }
+    }
 }

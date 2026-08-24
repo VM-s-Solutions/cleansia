@@ -15836,6 +15836,76 @@
         }
       }
     },
+    "push.employee.weekly_limit_set.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyní si můžete vzít nejvýše %1$@ zakázek týdně. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can now take up to %1$@ jobs per week. Tap for details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Теперь вы можете брать не более %1$@ заказов в неделю. Нажмите, чтобы посмотреть."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz si môžete vziať najviac %1$@ zakáziek týždenne. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тепер ви можете брати щонайбільше %1$@ замовлень на тиждень. Торкніться, щоб переглянути."
+          }
+        }
+      }
+    },
+    "push.employee.weekly_limit_set.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týdenní limit zakázek změněn"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly job limit updated"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недельный лимит заказов обновлён"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týždenný limit zakáziek zmenený"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тижневий ліміт замовлень оновлено"
+          }
+        }
+      }
+    },
     "push.loyalty.tier_upgrade.body": {
       "extractionState": "stale",
       "localizations": {

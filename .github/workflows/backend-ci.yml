@@ -14,9 +14,14 @@ name: Backend CI
 # only the seed — a new pay config, a country legal notice, a catalogue service —
 # runs no backend test at all.
 on:
+  # '**' not '*'. In Actions filter syntax `*` matches any character EXCEPT `/`, so a
+  # base branch of `fix/...` or `feature/...` matched NOTHING and the workflow simply
+  # never ran. A stacked PR then reported "no checks reported" rather than failing,
+  # which reads as "no checks needed" — the most expensive lie CI can tell. Path
+  # filters, not the branch filter, are what keep the cost down.
   pull_request:
     branches:
-      - '*'
+      - '**'
     paths:
       - 'src/**'
       - '!src/Cleansia.App/**'

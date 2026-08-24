@@ -612,6 +612,20 @@ private fun OrderDetailSheetContent(
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 OrderStatusHero(order = order, status = status)
                 OrderTrackerBar(status = status)
+
+                // Why, not just that. The cancellation push tells the customer to tap for the reason
+                // and the screen they land on had none, so a failed payment had to be inferred from
+                // the absence of a charge. Present only for platform-initiated cancellations — the
+                // backend leaves the field null when a human cancelled, so a customer who cancelled
+                // their own booking is not told that they did.
+                cancellationReasonText(order.systemCancellationReason)?.let { reason ->
+                    Text(
+                        text = reason,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = Spacing.XS),
+                    )
+                }
             }
 
             // Confirmation code and price. Everything that identifies the order is in the pinned
@@ -1096,3 +1110,29 @@ private fun SheetPeekUkPreview() = PreviewSheet()
 @Preview(name = "Expanded · uk", locale = "uk", widthDp = 411, heightDp = 846)
 @Composable
 private fun SheetExpandedUkPreview() = PreviewSheet()
+
+/**
+ * Turns the server's cancellation-reason KEY into a sentence the customer can read.
+ *
+ * Only the platform's own reasons arrive here: the backend populates
+ * `systemCancellationReason` only when `CancelledBy` is `System`, because the same column also holds
+ * an admin's free-text note written for other staff. That gating lives server-side, so this never has
+ * to decide whether a value is safe to render.
+ *
+ * An unknown key renders NOTHING, and that is the important half. These strings come from a backend
+ * that ships independently of the app, so a newer server can name a reason this build has never heard
+ * of. Showing the raw key would put `order.cancelled.something` on screen; the customer already sees
+ * the Cancelled status either way, so silence costs them a sentence and a wrong guess costs them
+ * their confidence in the screen.
+ *
+ * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons` and the iOS twin
+ * `CancellationReasonCopy`.
+ */
+@Composable
+private fun cancellationReasonText(reason: String?): String? = when (reason) {
+    "order.cancelled.payment_not_completed" ->
+        stringResource(R.string.order_cancelled_reason_payment_not_completed)
+    "order.cancelled.recurring_not_confirmed" ->
+        stringResource(R.string.order_cancelled_reason_recurring_not_confirmed)
+    else -> null
+}

@@ -9,7 +9,14 @@ struct CustomerServiceAreaDataSource: ServiceAreaDataSource {
         }
         return result.map { countries in
             countries.map {
-                ServicedCountry(id: $0.id ?? "", isoCode: $0.isoCode ?? "", name: $0.name ?? "")
+                // Alpha-2 at the BOUNDARY, matching Android. The backend stores alpha-3 ("CZE");
+                // everything geocoder-facing is alpha-2 ("cz"), so an un-normalised code can never
+                // match and every caller silently concludes "country not serviced".
+                ServicedCountry(
+                    id: $0.id ?? "",
+                    isoCode: IsoCountryCodes.toAlpha2($0.isoCode),
+                    name: $0.name ?? ""
+                )
             }
         }
     }

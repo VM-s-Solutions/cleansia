@@ -1116,8 +1116,10 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
 private fun EmptyState(tab: OrdersTab) {
     val (mascot, text) = when (tab) {
         OrdersTab.Available -> R.drawable.mascot_resting to stringResource(R.string.no_orders_available)
-        OrdersTab.MyActive -> R.drawable.mascot_thumbs_up to stringResource(R.string.no_active_orders)
-        OrdersTab.MyCompleted -> R.drawable.mascot_thumbs_up to stringResource(R.string.no_completed_orders)
+        // All three sit. A thumbs-up on "you have no active orders" congratulates the cleaner for
+        // having no work, which is the opposite of what the screen is telling them.
+        OrdersTab.MyActive -> R.drawable.mascot_resting to stringResource(R.string.no_active_orders)
+        OrdersTab.MyCompleted -> R.drawable.mascot_resting to stringResource(R.string.no_completed_orders)
     }
     MascotEmptyState(
         painter = painterResource(mascot),

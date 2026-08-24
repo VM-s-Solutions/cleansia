@@ -101,6 +101,14 @@ public class AutoCancelStaleRecurringOrders
                     {
                         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
+                        // Fee-free by this sweep's own rule, and now it says so on the order.
+                        order.Cancel(
+                            DateTime.UtcNow,
+                            CancelledBy.System,
+                            feeRate: 0m,
+                            refundAmount: 0m,
+                            reason: OrderCancellationReasons.RecurringNotConfirmed);
+
                         await notificationProducer.NotifyAsync(
                             order.UserId!,
                             NotificationEventCatalog.OrderCancelled,

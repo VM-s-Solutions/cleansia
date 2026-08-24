@@ -236,8 +236,34 @@ public static class Extensions
         return builder;
     }
 
+    /// <summary>
+    /// The site ROOT, answering 200 so the platform's own ping stops being counted as a failure.
+    ///
+    /// <para><b>This is not a health check and must never become one.</b> App Service pings <c>/</c>
+    /// to keep an Always On instance warm, and it does so regardless of <c>healthCheckPath</c> — which
+    /// is already <c>/alive</c> and working. These hosts are APIs with no root route, so every one of
+    /// those pings returned 404: 1.25k of them in a single day on the partner mobile host, which made
+    /// "failed requests" the loudest signal in Application Insights and buried the real ones.</para>
+    ///
+    /// <para>It reports nothing about dependencies on purpose. <c>/alive</c> is liveness and
+    /// <c>/health</c> is readiness; this is neither, it is an acknowledgement that the process is
+    /// listening. Giving it a dependency check would make a warm-up ping able to report a database
+    /// outage, which is exactly the confusion the two existing endpoints were split to avoid.</para>
+    /// </summary>
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
+        app.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"))
+            // OUT of the OpenAPI document, or NSwag generates a client for it. It did: the first
+            // regeneration after this endpoint landed emitted an `IClient`/`Client` pair with an
+            // `index()` method into all three web clients and an `index` operation into both mobile
+            // specs — 250 lines of generated code for a warm-up ping no caller will ever make.
+            //
+            // Metadata rather than `.ExcludeFromDescription()`: that extension lives in
+            // Microsoft.AspNetCore.Http and needs the Microsoft.AspNetCore.OpenApi package, which this
+            // project does not reference. The attribute is in the shared framework and means the same
+            // thing to the document generator.
+            .WithMetadata(new ExcludeFromDescriptionAttribute());
+
         app.MapHealthChecks("/health");
 
         app.MapHealthChecks("/alive", new HealthCheckOptions
@@ -253,6 +279,11 @@ public static class Extensions
     /// </summary>
     public static IEndpointRouteBuilder MapDefaultEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapGet("/", () => Microsoft.AspNetCore.Http.Results.Ok("Cleansia API"))
+            // Excluded from the document for the same reason as the overload above — and this is the
+            // one that matters, because the Startup-class hosts are what NSwag reads.
+            .WithMetadata(new ExcludeFromDescriptionAttribute());
+
         endpoints.MapHealthChecks("/health");
 
         endpoints.MapHealthChecks("/alive", new HealthCheckOptions

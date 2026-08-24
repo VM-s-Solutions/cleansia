@@ -105,15 +105,45 @@ private extension GetMembershipPlansResponse {
     }
 }
 
-/// **Refuse.** Every member is an input to the Stripe sheet; a blank one does not degrade the
+/// **One endpoint, two payloads — and the refusal has to know which one it is looking at.**
+///
+/// `POST /api/Membership/Subscribe` answers in two shapes, because it is called twice per
+/// subscription:
+///
+/// - **Setup** (`paymentMethodConfirmed: false`) mints a Stripe SetupIntent and returns the three
+///   inputs the payment sheet needs. No membership exists yet, so `membershipId` is `""`.
+/// - **Confirm** (`paymentMethodConfirmed: true`) creates the membership and returns its id. The
+///   Stripe inputs are spent, so the server returns them as `""`.
+///
+/// The guard used to demand all four in both, which meant it fired on the FIRST call of every
+/// subscription: `membershipId` is legitimately blank there, `requireNonBlank` read that as absence,
+/// and the customer got "The server sent incomplete data" before Stripe was ever reached. The trial
+/// could not be started at all. `MembershipViewModel` already branched on `membershipId.isEmpty` at
+/// both call sites — the guard contradicted the caller it was protecting.
+///
+/// The refusal is kept exactly where it earns its keep: a blank Stripe input does not degrade the
 /// payment, it hands Stripe an empty string and fails inside a third-party UI where the reason never
-/// reaches us.
+/// reaches us. So the setup shape still demands all three, and the confirm shape demands the id.
+/// `stripeCustomerId` is required by both because both return it.
 private extension CreateMembershipSubscriptionResponse {
     func toDomain() throws -> SubscriptionSetup {
-        try SubscriptionSetup(
-            membershipId: membershipId.requireNonBlank("membershipId"),
+        let customerId = try stripeCustomerId.requireNonBlank("stripeCustomerId")
+
+        // Confirm: the membership exists, and the Stripe inputs are deliberately spent.
+        if let id = membershipId, !id.isBlank {
+            return SubscriptionSetup(
+                membershipId: id,
+                setupIntentClientSecret: "",
+                stripeCustomerId: customerId,
+                ephemeralKey: ""
+            )
+        }
+
+        // Setup: no membership yet, and every input the sheet needs must actually be there.
+        return try SubscriptionSetup(
+            membershipId: "",
             setupIntentClientSecret: setupIntentClientSecret.requireNonBlank("setupIntentClientSecret"),
-            stripeCustomerId: stripeCustomerId.requireNonBlank("stripeCustomerId"),
+            stripeCustomerId: customerId,
             ephemeralKey: ephemeralKey.requireNonBlank("ephemeralKey")
         )
     }

@@ -165,7 +165,8 @@ enum OrderFixtures {
         assignedEmployees: [AssignedEmployeeDto] = [],
         statusHistory: [OrderStatusTrackDto] = [],
         review: CustomerOrderReview? = nil,
-        preferredOffer: PreferredOfferDetails? = nil
+        preferredOffer: PreferredOfferDetails? = nil,
+        systemCancellationReason: String? = nil
     ) -> CustomerOrderDetail {
         CustomerOrderDetail(
             id: id,
@@ -186,6 +187,7 @@ enum OrderFixtures {
             notes: notes,
             specialInstructions: specialInstructions,
             accessInstructions: accessInstructions,
+            systemCancellationReason: systemCancellationReason,
             total: total,
             originalSubtotal: originalSubtotal,
             tierDiscountAmount: tierDiscountAmount,

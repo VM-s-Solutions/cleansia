@@ -256,6 +256,12 @@ public static class OrderMappers
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
             HasAccessInstructions: !string.IsNullOrWhiteSpace(order.AccessInstructions),
+            // System cancellations only. The same column holds an admin's free-text note when a human
+            // cancels, and that is written by staff for staff — gating on CancelledBy is what keeps an
+            // internal note from reaching the customer through a field meant for a localisable key.
+            SystemCancellationReason: order.CancelledBy == CancelledBy.System
+                ? order.CancellationReason
+                : null,
             RecurringTemplateId: order.RecurringTemplateId,
             SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
             Currency: order.Currency.MapToDetailDto(),

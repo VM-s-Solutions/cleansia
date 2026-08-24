@@ -23,6 +23,9 @@ export default withMermaid(
     themeConfig: {
       logo: '/logo.svg',
       nav: [
+        // First, and on purpose: someone handed the platform for the first time needs orientation
+        // before any of the reference sections mean anything.
+        { text: 'Start here', link: '/getting-started' },
         { text: 'Product', link: '/product/' },
         { text: 'Domain', link: '/domain/' },
         { text: 'Flows', link: '/flows/' },

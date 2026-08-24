@@ -1343,4 +1343,6 @@
     </plurals>
     <string name="order_detail_headline_completed">Уборка завершена</string>
     <string name="tracker_step_counter">Шаг %1$d / %2$d</string>
+    <string name="order_cancelled_reason_payment_not_completed">Оплата не была завершена, поэтому это бронирование было отменено.</string>
+    <string name="order_cancelled_reason_recurring_not_confirmed">Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно.</string>
 </resources>

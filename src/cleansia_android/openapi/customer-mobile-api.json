@@ -9427,6 +9427,10 @@
           "hasAccessInstructions": {
             "type": "boolean",
             "nullable": true
+          },
+          "systemCancellationReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

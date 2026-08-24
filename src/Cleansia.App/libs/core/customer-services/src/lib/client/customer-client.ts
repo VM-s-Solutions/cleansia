@@ -10880,6 +10880,7 @@ export class OrderItem implements IOrderItem {
     expressWaiverForfeitedOnCancel!: boolean | undefined;
     preferredOffer!: PreferredOfferDetails;
     hasAccessInstructions!: boolean | undefined;
+    systemCancellationReason!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10973,6 +10974,7 @@ export class OrderItem implements IOrderItem {
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
             this.hasAccessInstructions = Data["hasAccessInstructions"];
+            this.systemCancellationReason = Data["systemCancellationReason"];
         }
     }
 
@@ -11066,6 +11068,7 @@ export class OrderItem implements IOrderItem {
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         data["hasAccessInstructions"] = this.hasAccessInstructions;
+        data["systemCancellationReason"] = this.systemCancellationReason;
         return data;
     }
 }
@@ -11122,6 +11125,7 @@ export interface IOrderItem {
     expressWaiverForfeitedOnCancel: boolean | undefined;
     preferredOffer: PreferredOfferDetails;
     hasAccessInstructions: boolean | undefined;
+    systemCancellationReason: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

@@ -210,6 +210,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         notes = order.notes,
         specialInstructions = order.specialInstructions,
         accessInstructions = order.accessInstructions,
+        systemCancellationReason = order.systemCancellationReason,
         recurringTemplateId = order.recurringTemplateId,
         selectedPackages = order.selectedPackages?.map { it.toAppDto() },
         currency = order.currency?.toAppDto(),

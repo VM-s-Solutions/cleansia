@@ -46,6 +46,28 @@ struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
                 && nav.transitionCoordinator == nil
                 && nav.topViewController?.navigationItem.hidesBackButton != true
         }
+
+        /// **Being ALLOWED to begin is not the same as getting the touch**, and that distinction is why
+        /// two earlier rounds of this fix changed nothing on the screen that reported it.
+        ///
+        /// Order detail is a map with a `SnapSheet` over it, and the sheet carries a plain
+        /// `DragGesture()`. A DragGesture is unconstrained: it claims every direction the moment it
+        /// recognises, including the horizontal drag that starts at the left edge. The map underneath
+        /// has its own pan. So both regions of that screen had a SwiftUI recogniser competing with the
+        /// edge pan, and by default two recognisers that both want a touch do not share it — the pop
+        /// simply never started, no matter how willing this delegate was.
+        ///
+        /// Returning true here lets the edge pan run ALONGSIDE whatever SwiftUI installed. It is safe
+        /// to be unconditional because the recogniser being spoken for is a
+        /// `UIScreenEdgePanGestureRecognizer` bound to the left edge: it cannot start from the middle
+        /// of the sheet, so the only touches this affects are ones that began in the ~20pt strip where
+        /// going back is the overwhelmingly likely intent.
+        func gestureRecognizer(
+            _: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
     }
 
     func makeUIViewController(context _: Context) -> GestureController {

@@ -44,6 +44,21 @@ struct CustomerShellView: View {
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationDestination(for: ShellRoute.self) { route in
                         destination(route)
+                            // EVERY pushed screen, not just the ones that remembered to ask.
+                            //
+                            // The enabler above is mounted on the stack ROOT, and installing there is
+                            // not enough: the root controller stops appearing once something is pushed
+                            // over it, so nothing re-asserts the delegate on the screen the customer is
+                            // actually looking at. SubscribePlusScreen carried its own copy for that
+                            // reason and every other route silently did not — order detail among them,
+                            // which is where it was reported: no swipe-back at all.
+                            //
+                            // Safe to mount everywhere because the delegate is STATIC and install() is
+                            // idempotent, which the enabler documents as the point of holding it that
+                            // way. Screens that genuinely refuse to be left still are:
+                            // MembershipSuccessScreen sets navigationBarBackButtonHidden, and the
+                            // delegate reads hidesBackButton rather than guessing.
+                            .background(InteractivePopGestureEnabler())
                     }
             }
             // Tab roots only — a pushed child covers the shell, so the FAB (like

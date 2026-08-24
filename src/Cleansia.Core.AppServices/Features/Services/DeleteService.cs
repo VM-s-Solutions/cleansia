@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;

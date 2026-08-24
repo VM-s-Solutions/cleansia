@@ -25,6 +25,19 @@ struct OrderDetailContent: View {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         OrderStatusHero(order: order)
                         CustomerOrderTrackerHero(status: status)
+
+                        // Why, not just that. The cancellation push tells the customer to tap for the
+                        // reason, and until now the screen they landed on had none — a failed payment
+                        // had to be inferred from the absence of a charge. Present only for
+                        // platform-initiated cancellations; a customer who cancelled their own booking
+                        // does not need to be told they did.
+                        if let reason = CancellationReasonCopy.text(for: order.systemCancellationReason) {
+                            Text(reason)
+                                .font(CleansiaTypography.bodyMedium)
+                                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, Spacing.xxs)
+                        }
                     }
                     OrderHeroFactsStrip(order: order)
                         // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row

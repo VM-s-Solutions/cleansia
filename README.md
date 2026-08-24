@@ -4,6 +4,23 @@ Cleaning-services platform. Customers book, cleaners take and complete the work,
 
 Three web apps, two Android apps, two iOS apps and five API hosts, over one PostgreSQL database.
 
+**New here?** Read **[`docs/getting-started.md`](docs/getting-started.md)** first — what each app is,
+who it serves, how a customer and a cleaner get onboarded, and the handful of things that reliably
+confuse people on day one (the biggest: a cleaner cannot take any work until an admin approves them).
+
+## What is in the box
+
+| App | Audience | Project |
+|---|---|---|
+| Customer web (SSR) | Customers | `src/Cleansia.App` → `cleansia.app` |
+| Partner web (SPA) | Cleaners | `src/Cleansia.App` → `cleansia-partner.app` |
+| Admin web (SPA) | Staff | `src/Cleansia.App` → `cleansia-admin.app` |
+| Customer mobile | Customers | `:customer-app` (Android) · `CleansiaCustomer` (iOS) |
+| Partner mobile | Cleaners | `:partner-app` (Android) · `CleansiaPartner` (iOS) |
+
+Five API hosts back them, one per audience — separate hosts rather than one API with role checks,
+which is a deliberate isolation boundary (`docs/architecture/security-rules`).
+
 **The documentation lives in [`docs/`](docs/) and that site is the source of truth.** It is a
 VitePress project — the product rules, the domain model, the end-to-end flows and all 52 ADRs are
 there, not in this file and not in source comments. Read it there:
@@ -19,6 +36,19 @@ cd docs && npm ci && npm run dev     # → http://localhost:5173
 | The ten flows, end to end | `docs/flows/` |
 | Why something is the way it is | `docs/decisions/` |
 | Local orchestration, security rules, expandability | `docs/architecture/` |
+
+## Prerequisites
+
+| For | You need |
+|---|---|
+| Backend | .NET 10 SDK, Docker (Postgres, Azurite and the test containers all run in it) |
+| Frontend | Node 20+ |
+| Android | JDK 17, Android Studio (or the SDK + Gradle) |
+| iOS | macOS, Xcode, and `xcodegen` — `brew install xcodegen` |
+| Migrations | `dotnet tool install --global dotnet-ef`, then ensure `~/.dotnet/tools` is on `PATH` |
+
+Docker must be running for anything beyond the unit tests: the AppHost, the integration suite and the
+host suite all start real containers.
 
 ## Run it
 
@@ -49,6 +79,23 @@ The Postgres password comes from user-secrets or the environment as `Parameters:
 The container is persistent, so the password is baked in when it is first created and never updated
 after — a per-run generated one would drift from it and fail with `28P01`.
 
+### First run
+
+The migrator creates the schema; it does **not** create the catalogue. Seed it once, or the apps come
+up with no services, no countries and no serviced cities — which looks like a broken build and is an
+empty database:
+
+```bash
+psql "$CONNECTION_STRING" -f sql-scripts/insert_seed_data.sql
+```
+
+That seeds the service catalogue, the five languages, currencies, membership plans, loyalty tiers, and
+the Prague service area (including the district spellings in both Czech and English). `sql-scripts/`
+has its own `README.md`, plus `reset-database.sql` for starting over and `set-admin-role.sql` for
+promoting a registered user to admin.
+
+Register your admin through the app, then promote it — that way the password is one you chose.
+
 ### Frontend
 
 ```bash
@@ -78,8 +125,18 @@ dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # real P
 dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz and isolation
 ```
 
-Integration and host tests need Docker running. Five CI workflows gate a PR: Backend, Frontend,
-Android, iOS and Docs.
+```bash
+cd src/Cleansia.App
+npx nx run-many -t test --all          # Jest, all three web apps and their libraries
+```
+
+Integration and host tests need Docker running. Six CI workflows gate a PR: Backend, Frontend,
+Android, iOS, iOS Symbols and Docs.
+
+Two of those suites are easy to forget locally and are derived from the backend rather than from what
+you edited, so a backend change can redden them: **`Cleansia.HostTests`** (authz and tenant isolation)
+and the frontend **`error-contract-parity`** specs, which walk the API surface and fail when a
+reachable error key has no translation in an app that can reach it.
 
 ## Database
 
@@ -89,6 +146,15 @@ database needs dropping when it moves.
 
 **Migrations and NSwag client regeneration are owner-run, not agent-run.** Work that needs either is
 flagged as a manual step rather than performed.
+
+## Documentation site
+
+`docs/` is a VitePress project and the source of truth for what the platform does. It deploys to a
+**DEV-only** Azure Static Web App — `main.bicep` declares it under `if (env == 'dev')`, so no
+production copy exists to deploy to. The site requires the `docs-reader` role on every route, granted
+per person through the Static Web App's Role management blade.
+
+Deploys are manual: run the **Deploy Docs** workflow from the Actions tab.
 
 ## Working on this repo
 

@@ -93,6 +93,15 @@
             <span>{{ order()!.paymentType.name }}</span>
           </div>
         </div>
+        <!-- Why, not just that. The cancellation notice tells the customer to look here for the
+             reason, and until now there was none — a failed payment had to be inferred from the
+             absence of a charge. Present only for platform-initiated cancellations: the backend
+             leaves the field null when a human cancelled, so a customer who cancelled their own
+             booking is not told that they did. An unrecognised key renders nothing rather than
+             printing itself, because the server ships independently of this app. -->
+        @if (cancellationReasonKey(); as reasonKey) {
+          <p class="order-detail__cancellation-reason">{{ reasonKey | translate }}</p>
+        }
       </div>
 
       <cleansia-customer-order-preferred-offer

@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;

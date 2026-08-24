@@ -144,11 +144,17 @@ fun OnboardingScreen(
                 .fillMaxWidth(),
         ) { page ->
             when (page) {
+                // Two slides, two mascots. Both pages drew mascot_waving, so the pager looked
+                // stuck — the only thing that changed on swipe was the text, and the largest
+                // element on screen did not move. The greeting keeps the wave; the second slide
+                // is about being ready to work, so it gets the mascot that reads that way.
                 0 -> OnboardingPage(
+                    mascotRes = R.drawable.mascot_waving,
                     titleRes = R.string.onboarding_welcome_title,
                     bodyRes = R.string.onboarding_welcome_body,
                 )
                 1 -> OnboardingPage(
+                    mascotRes = R.drawable.mascot_ready,
                     titleRes = R.string.onboarding_ready_title,
                     bodyRes = R.string.onboarding_ready_body,
                 )
@@ -175,7 +181,7 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun OnboardingPage(titleRes: Int, bodyRes: Int) {
+private fun OnboardingPage(mascotRes: Int, titleRes: Int, bodyRes: Int) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -184,7 +190,7 @@ private fun OnboardingPage(titleRes: Int, bodyRes: Int) {
         verticalArrangement = Arrangement.Center,
     ) {
         Image(
-            painter = painterResource(R.drawable.mascot_waving),
+            painter = painterResource(mascotRes),
             contentDescription = null,
             modifier = Modifier.size(180.dp),
         )

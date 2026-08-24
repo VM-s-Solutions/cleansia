@@ -622,7 +622,10 @@ private fun EmptyHero(onClick: () -> Unit) {
             // uses, so the cleaner builds a relationship with one
             // mascot across the app.
             Image(
-                painter = painterResource(R.drawable.mascot_leaning),
+                // Sitting, not leaning: this hero shows when there is no work at all, and the
+                // resting pose is the partner app's shared vocabulary for that. NextJobHero and
+                // AvailableWorkHero keep their own art — they are showing something, not nothing.
+                painter = painterResource(R.drawable.mascot_resting),
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
             )

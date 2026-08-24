@@ -446,7 +446,9 @@ private fun Divider() {
 @Composable
 private fun EmptyState() {
     MascotEmptyState(
-        painter = painterResource(R.drawable.mascot_invoice),
+        // Sitting, like every other empty state. mascot_invoice belongs on a screen that HAS
+        // invoices, not on the one saying there are none.
+        painter = painterResource(R.drawable.mascot_resting),
         text = stringResource(R.string.no_invoices),
         modifier = Modifier.padding(bottom = MainBottomNavInset),
         verticallyCentered = true,

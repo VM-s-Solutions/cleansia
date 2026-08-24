@@ -25,6 +25,14 @@ jobs:
       - name: Build VitePress site
         run: cd docs && npm run build
 
+      # DEV ONLY, and there is no prod counterpart by construction: main.bicep declares the docs
+      # Static Web App under `if (env == 'dev')`, so no prod resource exists to deploy to and no
+      # prod token exists to hold. The site is also gated — docs/public/staticwebapp.config.json
+      # requires the `docs-reader` role on every route, so a fresh deploy is reachable only by
+      # people invited through the SWA's Role management blade.
+      #
+      # If the token below ever starts failing with 401, the SWA was most likely re-created by an
+      # infrastructure deploy: the deployment token is per-resource, so it has to be re-copied.
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:

@@ -6,6 +6,9 @@ hero:
   tagline: Architecture, APIs, and deployment guides for the Cleansia platform
   actions:
     - theme: brand
+      text: Start here
+      link: /getting-started
+    - theme: alt
       text: Architecture Overview
       link: /architecture/overview
     - theme: alt
@@ -13,6 +16,10 @@ hero:
       link: /api/authentication
 
 features:
+  - icon: 🧭
+    title: Start here
+    details: What the apps are, who each one serves, how a customer and a cleaner get onboarded, and the things that confuse a first-time tester.
+    link: /getting-started
   - icon: 🏗️
     title: Architecture
     details: System design, backend (.NET 10), frontend (Angular 19), database schema, and Azure infrastructure.

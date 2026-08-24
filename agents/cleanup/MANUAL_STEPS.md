@@ -22,6 +22,29 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **owner**
+
+`main.bicep` now declares the documentation Static Web App (`swa-cleansia-docs-weu-dev`) under
+`if (env == 'dev')`. It was previously created by hand, so the **next DEV infrastructure deploy creates
+a NEW resource** — and a Static Web App deployment token belongs to the resource, not to the name.
+
+**Action, after the next DEV deploy:**
+
+1. Portal → `swa-cleansia-docs-weu-dev` → *Manage deployment token* → copy.
+2. Replace the repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`.
+3. Portal → same SWA → *Role management* → **Invite** yourself with the role `docs-reader`.
+
+Step 3 is what makes the site reachable at all. `docs/public/staticwebapp.config.json` requires
+`docs-reader` on every route and redirects 401/403 to `/.auth/login/aad`, so an uninvited visitor —
+including one with a valid Microsoft account — logs in and still gets nothing. That is deliberate: the
+built-in `aad` provider admits any Microsoft identity, so the ROLE is the access control, not the login.
+
+**Why not restrict to the tenant instead:** that needs a custom Entra app registration plus a client
+secret held as a SWA application setting. Per-person invitation costs one click and no secret, and the
+audience is a handful of people. Revisit if the reader list grows.
+
+Until step 3 happens the docs deploy will succeed and the site will refuse everyone, which is the safe
+direction to fail in.
 ### MS-3 — Rotate the exposed Mapbox token — **owner**
 
 Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed

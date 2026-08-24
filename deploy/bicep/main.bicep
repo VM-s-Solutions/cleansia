@@ -780,6 +780,33 @@ module staticWebApps 'modules/staticWebApp.bicep' = [
 ]
 
 // ---------------------------------------------------------------------------------------------------
+// The documentation site — DEV ONLY, and structurally so.
+//
+// `if (env == 'dev')` is the whole guard: on any other stage the resource is not declared, so there is
+// nothing to deploy, nothing to drift and nothing to accidentally point a custom domain at. A parameter
+// defaulting to false would have been one overridden value away from a public production copy of
+// /product/business-rules and /architecture/security-rules.
+//
+// Free tier deliberately. The docs are read by a handful of people and the Standard tier buys
+// throughput and Entra GROUP assignment, neither of which applies here — access is granted per person
+// through SWA role invitations instead (see docs/public/staticwebapp.config.json).
+//
+// No custom domain: the *.azurestaticapps.net origin is the whole address. A docs host is not a
+// same-site cookie surface, so the reason the SPAs carry custom domains does not apply.
+// ---------------------------------------------------------------------------------------------------
+
+module docsStaticWebApp 'modules/staticWebApp.bicep' = if (env == 'dev') {
+  name: 'swa-docs'
+  params: {
+    name: 'swa-cleansia-docs-${region}-${env}'
+    location: staticWebAppLocation
+    skuName: 'Free'
+    customDomain: ''
+    tags: commonTags
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Functions — container pulled from ACR (QuestPDF native deps; ADR-0015 D2). The module owns only the
 // runtime/storage/db wiring; ALL application config (SendGrid, Sentry, fiscal) is passed in via
 // extraAppSettings from the SAME shared objects the API hosts use. The Functions container ships an

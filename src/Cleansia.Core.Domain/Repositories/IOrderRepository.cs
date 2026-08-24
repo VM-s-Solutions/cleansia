@@ -132,6 +132,30 @@ public interface IOrderRepository : IRepository<Order, string>
         IReadOnlyCollection<string> employeeIds,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Orders a cleaner still holds that have not happened yet — <c>Confirmed</c> with a cleaning time
+    /// strictly after <paramref name="nowUtc"/>.
+    ///
+    /// <para><b>Why the seat has to be taken back, not just the contract.</b> Nothing filters
+    /// <c>AssignedEmployees</c> by contract status: offerability counts the row
+    /// (<c>OrderSpecification.cs:141</c>, <c>OrderVisibility.cs:55</c>), while <c>TakeOrder</c>,
+    /// <c>StartOrder</c>, <c>CompleteOrder</c> and <c>MarkCashCollected</c> all require
+    /// <c>ContractStatus.Approved</c>. So a rejected cleaner's row keeps the job off the board AND
+    /// cannot be worked by the person holding it — the order simply strands.</para>
+    ///
+    /// <para><b>Strictly future, and <c>Confirmed</c> only.</b> An order already <c>OnTheWay</c> or
+    /// <c>InProgress</c> is a cleaner physically at a customer's home; pulling their seat mid-clean
+    /// is a worse outcome than the rejection waiting for an admin. Those are left for the admin and
+    /// reported by the handler.</para>
+    ///
+    /// <para>Includes each assignment's <c>Employee</c> because the caller notifies the cleaner whose
+    /// seat is being taken, and a null navigation would silently drop that notice.</para>
+    /// </summary>
+    Task<IReadOnlyList<Order>> GetFutureConfirmedOrdersForEmployeeAsync(
+        string employeeId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,

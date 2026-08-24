@@ -54,7 +54,7 @@ final class DeleteAccountViewModelTests: XCTestCase {
         XCTAssertTrue(vm.requested)
         // Reflection over the stored properties: an `AuthClient` appearing here would mean someone
         // wired a sign-out into a screen whose entire purpose is that the session survives.
-        let children = Mirror(reflecting: vm).children.compactMap { $0.value }
+        let children = Mirror(reflecting: vm).children.compactMap(\.value)
         XCTAssertFalse(
             children.contains { $0 is AuthClient },
             "DeleteAccountViewModel must not hold an AuthClient — filing a request does not end the session"

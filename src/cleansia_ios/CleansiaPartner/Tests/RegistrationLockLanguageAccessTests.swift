@@ -17,10 +17,26 @@ final class RegistrationLockLanguageAccessTests: XCTestCase {
         )
     }
 
+    /// **Anchored on the `EmptyView()` fallback, not on the list of routes that reach it.** The switch
+    /// has no `default` by design, so every new `ProfileRoute` is classified into one arm or the other —
+    /// which means a verbatim `case .emergency, .jobRadius, …:` anchor goes stale on each addition and
+    /// fails as a bare unwrap that names nothing. It did: `.deleteAccount` joined the arm in #215 and
+    /// this test had been red ever since, unseen because the iOS suite was not running. What the test
+    /// actually means is "`.language` is not in whichever arm renders nothing", so it now reads that arm.
     func testTheLanguageRouteIsNotAmongTheUnbuiltOnes() throws {
         let source = try read(Self.lockView)
-        let unbuilt = try XCTUnwrap(source.range(of: "case .emergency, .jobRadius, .theme, .devices:"))
-        XCTAssertFalse(source[unbuilt].contains(".language"), "the language route fell back to EmptyView")
+        let fallback = try XCTUnwrap(
+            source.range(of: "EmptyView()"),
+            "no EmptyView arm left in the lock's route switch — this guard would assert nothing"
+        )
+        let arm = try XCTUnwrap(
+            source.range(of: "case ", options: .backwards, range: source.startIndex ..< fallback.lowerBound),
+            "found EmptyView() outside a case arm; the route switch has been restructured"
+        )
+        XCTAssertFalse(
+            source[arm.lowerBound ..< fallback.lowerBound].contains(".language"),
+            "the language route fell back to EmptyView"
+        )
     }
 
     func testTheLockOffersSomethingToReachThePickerFrom() throws {

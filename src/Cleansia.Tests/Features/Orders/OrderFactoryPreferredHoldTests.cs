@@ -118,7 +118,9 @@ public class OrderFactoryPreferredHoldTests
         Assert.Equal(NotificationEventCatalog.PreferredOffer, push.EventKey);
         Assert.Equal(order.Id, push.Args["orderId"]);
         Assert.Equal(order.DisplayOrderNumber, push.Args["orderNumber"]);
-        Assert.Equal(order.Id, push.Subject);
+        // The subject carries the reservation ROUND now, not just the order — an order may hold more
+        // than one preferred reservation and the two closures would otherwise share a key.
+        Assert.Equal($"{order.Id}:{order.PreferredOfferRound}", push.Subject);
     }
 
     /// <summary>

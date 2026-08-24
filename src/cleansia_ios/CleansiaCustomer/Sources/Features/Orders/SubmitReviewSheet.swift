@@ -21,10 +21,10 @@ struct SubmitReviewSheet: View {
     /// decision needs both sides to know whether the polarity actually flipped.
     @State private var previousRating: Int
 
-    // 1000, matching SubmitOrderReview.Validator and OrderReview.Comment's [MaxLength]. This said
-    // 2000, so a 1500-character review was accepted by the field and refused after submit.
-    /// UTF-16, matching the server's `MaximumLength(1000)` — see `String.cappedToUtf16`. A `count`
-    /// cap would let 600 emoji through the field and be refused at submit.
+    /// 1000, matching `SubmitOrderReview.Validator` and `OrderReview.Comment`'s `[MaxLength]`.
+    ///
+    /// Counted in UTF-16, as the server counts it — see `String.cappedToUtf16`. A `count` cap would let
+    /// 600 emoji through the field and have them refused at submit.
     private let maxCommentUtf16Length = 1000
 
     init(

@@ -945,10 +945,14 @@ private fun ReviewPane(
             CleansiaPrimaryButton(
                 text = stringResource(R.string.address_manager_confirm),
                 onClick = { onConfirm(label.trim().ifBlank { "Saved" }, save, setDefault) },
-                // Block confirm while resolving or on a definitive server "no".
-                // A FAILED lookup fails open — the check is advisory and order
-                // creation re-validates the city server-side.
-                enabled = cityServiced == true || lookupFailed,
+                // NOT gated on serviceability (owner ruling). An address is worth keeping even where
+                // the platform does not operate yet: people move, and coverage grows. The banner above
+                // says we are not there, which is the part that was missing — the customer used to
+                // learn it at PAYMENT, after choosing a slot and a price.
+                //
+                // Only the in-flight lookup still disables it, so a tap cannot race the answer and
+                // save before the banner has had a chance to appear.
+                enabled = cityServiced != null || lookupFailed,
             )
 
             Spacer(Modifier.height(20.dp))

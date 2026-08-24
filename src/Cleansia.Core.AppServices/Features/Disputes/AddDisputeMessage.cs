@@ -63,7 +63,7 @@ public class AddDisputeMessage
                     nameof(request.DisputeId), BusinessErrorMessage.DisputeNotOwnedByUser));
             }
 
-            dispute.AddMessage(
+            var added = dispute.AddMessage(
                 message: request.Message,
                 authorId: userId,
                 isStaff: isStaffMessage
@@ -74,7 +74,12 @@ public class AddDisputeMessage
             // their own dashboard alerts (out of scope here).
             if (isStaffMessage && !string.IsNullOrEmpty(dispute.UserId))
             {
-                // Subject for the push dedup key is the dispute (no order on this path).
+                // The dedup subject is the MESSAGE, not the dispute. A dispute is a conversation, so
+                // keying it on the dispute meant the second staff reply minted a key the first had
+                // already written — and the outbox's unique index raises that at the pipeline's
+                // commit, which rolls the whole transaction back. The customer did not merely miss a
+                // push: the reply was never saved, and support saw a 500. Every dispute with two
+                // replies hit it.
                 await notificationProducer.NotifyAsync(
                     dispute.UserId,
                     NotificationEventCatalog.DisputeReply,
@@ -83,7 +88,7 @@ public class AddDisputeMessage
                         ["disputeId"] = dispute.Id,
                     },
                     dispute.TenantId,
-                    dispute.Id,
+                    added.Id,
                     cancellationToken);
             }
 

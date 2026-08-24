@@ -6,6 +6,11 @@ extension L10n {
             localized("address_manager_title")
         }
 
+        /// Advisory, never a refusal — the address still saves. See `AddressReviewPane`.
+        static var cityNotServiced: String {
+            localized("address_manager_city_not_serviced")
+        }
+
         static var empty: String {
             localized("address_manager_empty")
         }

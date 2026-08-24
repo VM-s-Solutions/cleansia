@@ -63,7 +63,9 @@ public class TakeOrderImplicitDeclineTests
                 NotificationEventCatalog.PreferredOfferClosed,
                 It.IsAny<Dictionary<string, string>>(),
                 It.IsAny<string?>(),
-                StrandedOrderId,
+                It.Is<string>(subject => subject != null
+                    && subject.StartsWith(StrandedOrderId + ":", StringComparison.Ordinal)
+                    && subject.Length > StrandedOrderId.Length + 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         Assert.NotNull(stranded.PreferredOfferLapseNotifiedAt);

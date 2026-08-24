@@ -78,7 +78,9 @@ public class PreferredOfferDeferredAnnouncementTests
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);
         Assert.Equal(OrderId, offer.Args["orderId"]);
         Assert.Equal(order.DisplayOrderNumber, offer.Args["orderNumber"]);
-        Assert.Equal(OrderId, offer.Subject);
+        // The subject carries the reservation ROUND now, not just the order — an order may hold more
+        // than one preferred reservation and the two closures would otherwise share a key.
+        Assert.StartsWith(OrderId + ":", offer.Subject);
     }
 
     /// <summary>
@@ -166,7 +168,9 @@ public class PreferredOfferDeferredAnnouncementTests
 
         var offer = Assert.Single(_pushes, p => p.EventKey == NotificationEventCatalog.PreferredOffer);
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);
-        Assert.Equal(OrderId, offer.Subject);
+        // The subject carries the reservation ROUND now, not just the order — an order may hold more
+        // than one preferred reservation and the two closures would otherwise share a key.
+        Assert.StartsWith(OrderId + ":", offer.Subject);
     }
 
     /// <summary>

@@ -170,11 +170,17 @@ final class HomeTabViewModel: ViewModel {
     // the same shape the staleness-gated siblings below already use. The result is discarded on
     // purpose: a pull that fails leaves the cached snapshot on screen, and the spinner ending is the
     // feedback.
-    private func forceRefreshLoyalty() async { _ = await loyaltyRepository.refresh() }
+    private func forceRefreshLoyalty() async {
+        _ = await loyaltyRepository.refresh()
+    }
 
-    private func forceRefreshOrders() async { _ = await orderRepository.refresh() }
+    private func forceRefreshOrders() async {
+        _ = await orderRepository.refresh()
+    }
 
-    private func forceRefreshMembership() async { _ = await membershipRepository.refresh() }
+    private func forceRefreshMembership() async {
+        _ = await membershipRepository.refresh()
+    }
 
     private func refreshLoyaltyIfStale() async {
         guard loyaltyRepository.staleness.isStale else { return }

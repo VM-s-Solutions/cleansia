@@ -65,7 +65,9 @@ public class DeclinePreferredOfferHandlerTests
                 NotificationEventCatalog.PreferredOfferClosed,
                 It.Is<Dictionary<string, string>>(a => a["orderId"] == OrderId),
                 It.IsAny<string?>(),
-                OrderId,
+                It.Is<string>(subject => subject != null
+                    && subject.StartsWith(OrderId + ":", StringComparison.Ordinal)
+                    && subject.Length > OrderId.Length + 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         Assert.NotNull(order.PreferredOfferLapseNotifiedAt);

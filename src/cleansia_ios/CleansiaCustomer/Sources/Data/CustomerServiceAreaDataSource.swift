@@ -13,4 +13,20 @@ struct CustomerServiceAreaDataSource: ServiceAreaDataSource {
             }
         }
     }
+
+    func fetchServicedCities(countryId: String?) async -> ApiResult<[ServicedCity]> {
+        let result = await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerServiceCityAPI.serviceCityGetServiceCities(countryId: countryId)
+        }
+        // A row with no id or no name cannot be matched against and cannot be rendered, so it is
+        // dropped rather than carried as an empty string that would silently match a blank city.
+        return result.map { cities in
+            cities.compactMap { city in
+                guard let id = city.id, let name = city.name, !name.isBlank,
+                      let country = city.countryId
+                else { return nil }
+                return ServicedCity(id: id, countryId: country, name: name)
+            }
+        }
+    }
 }

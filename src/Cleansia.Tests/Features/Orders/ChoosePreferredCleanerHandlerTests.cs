@@ -79,7 +79,9 @@ public class ChoosePreferredCleanerHandlerTests
                 NotificationEventCatalog.PreferredOffer,
                 It.IsAny<Dictionary<string, string>>(),
                 It.IsAny<string?>(),
-                OrderId,
+                It.Is<string>(subject => subject != null
+                    && subject.StartsWith(OrderId + ":", StringComparison.Ordinal)
+                    && subject.Length > OrderId.Length + 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

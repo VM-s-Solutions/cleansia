@@ -365,14 +365,21 @@ private struct AddressReviewPane: View {
 
     /// `nil` stays nil on a failed lookup, so nothing is claimed. Rendering "we do not serve here"
     /// because a request failed is how one startup blip makes every address look unserviceable.
+    ///
+    /// **A country we cannot place is UNKNOWN, not unserved.** This arm used to set `false`, and
+    /// combined with the un-normalised ISO code below it painted the banner on every address on
+    /// earth — the client refusing cities the server was happily accepting, which is the one
+    /// direction `CityNameMatch` documents as unacceptable. Absence of an answer is not a negative
+    /// answer, and the booking gate re-checks server-side regardless.
     private func resolveServiceability() async {
         guard let serviceArea, !picked.city.isBlank else { return }
         guard let countries = await serviceArea.loadCountries() else { return }
-        let iso = picked.countryIsoCode.lowercased()
-        guard let country = countries.first(where: { $0.isoCode.lowercased() == iso }) else {
-            cityServiced = false
-            return
-        }
+
+        // Both sides are alpha-2: the data source normalises the backend's alpha-3 through
+        // IsoCountryCodes, and GeocodedAddress.countryIsoCode is already alpha-2 from CLPlacemark.
+        let iso = IsoCountryCodes.toAlpha2(picked.countryIsoCode)
+        guard let country = countries.first(where: { $0.isoCode == iso }) else { return }
+
         cityServiced = await serviceArea.isCityServiced(countryId: country.id, cityName: picked.city)
     }
 

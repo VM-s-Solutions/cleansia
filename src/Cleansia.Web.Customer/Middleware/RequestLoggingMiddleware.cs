@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -283,7 +283,12 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     {
         var pathValue = path.Value?.ToLower() ?? string.Empty;
 
-        return pathValue.Contains("/health") ||
+        // The two platform probes. /health was already skipped; /alive and the ROOT were not, so a
+        // 60-second liveness ping and an Always On warm-up ping wrote two log lines each, forever,
+        // on every host. Root is matched EXACTLY — Contains("/") would skip the entire application.
+        return pathValue == "/" ||
+               pathValue.Contains("/alive") ||
+               pathValue.Contains("/health") ||
                pathValue.Contains("/swagger") ||
                pathValue.Contains(".js") ||
                pathValue.Contains(".css") ||

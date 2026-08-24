@@ -167,12 +167,15 @@ extension L10n {
             localized("order_review_prompt_not_now")
         }
 
+        // The complexity rule counts each `case`, so fifteen tags score 16 against a limit of 15. The
+        // exhaustiveness IS the point here — a dictionary would compile with a tag missing and return a
+        // blank chip — so the switch stays and the rule is waived for this one function.
+        //
+        // disable/enable rather than disable:next, because a directive placed between a doc comment and
+        // its declaration orphans the doc comment and trips a different rule.
+        // swiftlint:disable cyclomatic_complexity
+
         /// Chip copy. Exhaustive on purpose — a new tag is a compile error until it has a label.
-        ///
-        /// The complexity rule counts each `case`, so fifteen tags score 16 against a limit of 15. The
-        /// exhaustiveness IS the point here — a dictionary would compile with a tag missing and return
-        /// a blank chip — so the switch stays and the rule is waived for this one function.
-        // swiftlint:disable:next cyclomatic_complexity
         static func tag(_ tag: CustomerReviewTag) -> String {
             switch tag {
             case .onTime: localized("order_review_tag_on_time")
@@ -192,6 +195,8 @@ extension L10n {
             case .crewSmallerThanBooked: localized("order_review_tag_small_crew")
             }
         }
+
+        // swiftlint:enable cyclomatic_complexity
     }
 
     enum OrderPhotos {

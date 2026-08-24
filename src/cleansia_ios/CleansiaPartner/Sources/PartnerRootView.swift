@@ -69,10 +69,11 @@ struct PartnerRootView: View {
                 hasValidSession: container.hasValidSession,
                 settings: container.appSettings,
                 client: container.registrationClient,
-                onSignOut: { route = .login }
-            ) { outcome in
-                route = Route.afterSplash(outcome)
-            }
+                onSignOut: { route = .login },
+                // Passed as an argument rather than trailing: with two closures, trailing syntax hides
+                // which one is which at the call site, and SwiftLint refuses it.
+                onResolved: { outcome in route = Route.afterSplash(outcome) }
+            )
         case .registrationLock:
             RegistrationLockView(
                 client: container.registrationClient,

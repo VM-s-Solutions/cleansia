@@ -304,8 +304,14 @@ private struct AddressReviewPane: View {
     /// `resolveServiceability`.
     @State private var cityServiced: Bool?
 
-    init(picked: GeocodedAddress, onBack: @escaping () -> Void, onConfirm: @escaping (String, Bool) -> Void) {
+    init(
+        picked: GeocodedAddress,
+        serviceArea: ServiceAreaProvider?,
+        onBack: @escaping () -> Void,
+        onConfirm: @escaping (String, Bool) -> Void
+    ) {
         self.picked = picked
+        self.serviceArea = serviceArea
         self.onBack = onBack
         self.onConfirm = onConfirm
         _label = State(initialValue: picked.city.isEmpty ? L10n.AddressManager.fallbackLabel : picked.city)

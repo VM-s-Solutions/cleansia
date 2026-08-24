@@ -38,7 +38,9 @@ enum CustomerReviewTag: Int, CaseIterable, Equatable {
 
     private static let negativeBandStart = 11
 
-    var isPositive: Bool { rawValue < Self.negativeBandStart }
+    var isPositive: Bool {
+        rawValue < Self.negativeBandStart
+    }
 
     /// The set to offer for `rating`; empty outside 1...5.
     static func forRating(_ rating: Int) -> [CustomerReviewTag] {
@@ -50,5 +52,7 @@ enum CustomerReviewTag: Int, CaseIterable, Equatable {
 
 extension CustomerReviewTag {
     /// The localized chip label. Lives beside the type so a view never reaches for a raw key.
-    var label: String { L10n.OrderReview.tag(self) }
+    var label: String {
+        L10n.OrderReview.tag(self)
+    }
 }

@@ -20,7 +20,7 @@ public extension ServiceAreaDataSource {
     /// side shows country status and nothing finer. The default is deliberately a failure rather than
     /// an empty list — empty would mean "serves nowhere", which every caller is required to render as a
     /// refusal, and that is the one answer this must never invent.
-    func fetchServicedCities(countryId: String?) async -> ApiResult<[ServicedCity]> {
+    func fetchServicedCities(countryId _: String?) async -> ApiResult<[ServicedCity]> {
         .failure(ApiError(code: "servicearea.cities_not_queried"))
     }
 }

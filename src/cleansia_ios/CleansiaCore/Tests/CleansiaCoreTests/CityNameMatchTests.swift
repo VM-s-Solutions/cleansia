@@ -1,5 +1,5 @@
-@testable import CleansiaCore
 import XCTest
+@testable import CleansiaCore
 
 /// The same table the server's `CityNameMatchTests.cs` and Android's `CityNameMatchTest.kt` pin, case
 /// for case.
@@ -10,7 +10,6 @@ import XCTest
 ///
 /// Change a case here and change it in both twins.
 final class CityNameMatchTests: XCTestCase {
-
     func testASpellingWithoutDiacriticsIsTheSameCity() {
         XCTAssertTrue(CityNameMatch.matches("Plzeň", "Plzen"))
         XCTAssertTrue(CityNameMatch.matches("Plzen", "Plzeň"))

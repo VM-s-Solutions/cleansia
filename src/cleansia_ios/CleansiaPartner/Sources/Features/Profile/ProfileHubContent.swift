@@ -11,9 +11,9 @@ struct ProfileHubContent: View {
     let onOpen: (ProfileRoute) -> Void
     let onLogout: () -> Void
 
-    // Opens the legal pages in Safari, which is the same destination the register screen's consent
-    // sentence reaches via its AttributedString link — no SFSafariViewController exists anywhere in
-    // this tree, and introducing one from the profile hub is not the place to start.
+    /// Opens the legal pages in Safari, which is the same destination the register screen's consent
+    /// sentence reaches via its AttributedString link — no SFSafariViewController exists anywhere in
+    /// this tree, and introducing one from the profile hub is not the place to start.
     @Environment(\.openURL) private var openURL
 
     private var employee: EmployeeItem {

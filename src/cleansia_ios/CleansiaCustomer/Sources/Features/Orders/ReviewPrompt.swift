@@ -8,7 +8,9 @@ import Foundation
 enum ReviewPrompt {
     /// The `AppSettingsStore` prompt id. Keyed per ORDER below, not per user, so a second completed
     /// clean still asks.
-    static func settingsKey(orderId: String) -> String { "order_review_\(orderId)" }
+    static func settingsKey(orderId: String) -> String {
+        "order_review_\(orderId)"
+    }
 
     /// The newest completed, unreviewed booking the customer has not already been asked about.
     ///

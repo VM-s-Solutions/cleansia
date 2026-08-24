@@ -13,7 +13,6 @@ import Foundation
 /// a divergence reddens one of the three. Being looser is survivable — the customer proceeds and the
 /// server refuses, which is exactly the behaviour that shipped before this existed.
 public enum CityNameMatch {
-
     public static func matches(_ servicedCityName: String?, _ customerCity: String?) -> Bool {
         let row = fold(servicedCityName)
         let city = fold(customerCity)

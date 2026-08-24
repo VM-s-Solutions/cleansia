@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -55,10 +55,15 @@ public class ForceQualifyReferral
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var referral = await referralRepository.GetByIdAsync(command.ReferralId, cancellationToken);
+            if (referral is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.ReferralId), BusinessErrorMessage.ReferralNotFound));
+            }
 
             // Idempotency guard (ADR-0002): only an Accepted referral can be force-qualified. A retry on
             // an already-Qualified row lands here and returns a guarded error — no second grant.
-            if (referral!.Status != ReferralStatus.Accepted)
+            if (referral.Status != ReferralStatus.Accepted)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotAccepted));

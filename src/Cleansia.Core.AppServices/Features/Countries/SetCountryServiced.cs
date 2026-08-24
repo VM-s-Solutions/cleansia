@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -34,7 +34,13 @@ public class SetCountryServiced
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var country = await countryRepository.GetByIdAsync(command.CountryId, cancellationToken);
-            country!.SetServiced(command.IsServiced);
+            if (country is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CountryId), BusinessErrorMessage.CountryNotFound));
+            }
+
+            country.SetServiced(command.IsServiced);
             return BusinessResult.Success(new Response(country.Id, country.IsServiced));
         }
     }

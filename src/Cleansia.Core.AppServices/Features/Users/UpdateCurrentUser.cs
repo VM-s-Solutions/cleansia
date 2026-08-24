@@ -136,8 +136,14 @@ public class UpdateCurrentUser
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByIdAsync(userSessionProvider.GetUserId()!, cancellationToken);
+            if (user is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    "Authentication", BusinessErrorMessage.NotExistingUserWithId));
+            }
+
             var userOrders = await orderRepository.GetOrdersByPhoneNumberAsync(
-                user!.PhoneNumber ?? string.Empty, cancellationToken);
+                user.PhoneNumber ?? string.Empty, cancellationToken);
 
             await UpdateProfilePhoto(user, command, cancellationToken);
             UpdateUserAndOrders(user, userOrders, command);

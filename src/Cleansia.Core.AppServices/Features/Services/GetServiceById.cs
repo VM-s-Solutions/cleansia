@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -31,8 +31,13 @@ public class GetServiceById
         public async Task<BusinessResult<AdminServiceDetailDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var service = await serviceRepository.GetByIdAsync(query.ServiceId, cancellationToken);
+            if (service is null)
+            {
+                return BusinessResult.Failure<AdminServiceDetailDto>(new Error(
+                    nameof(query.ServiceId), BusinessErrorMessage.ServiceNotFound));
+            }
 
-            return BusinessResult.Success(service!.MapToAdminDetail());
+            return BusinessResult.Success(service.MapToAdminDetail());
         }
     }
 }

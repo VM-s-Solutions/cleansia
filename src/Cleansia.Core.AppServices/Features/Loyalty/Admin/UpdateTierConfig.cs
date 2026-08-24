@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
@@ -85,8 +85,13 @@ public class UpdateTierConfig
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             var entity = await tierConfigRepository.GetByIdAsync(command.TierConfigId, cancellationToken);
+            if (entity is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.TierConfigId), BusinessErrorMessage.LoyaltyTierConfigNotFound));
+            }
 
-            entity!.Update(
+            entity.Update(
                 lifetimePointsThreshold: command.LifetimePointsThreshold,
                 discountPercent: command.DiscountPercent,
                 minimumOrderAmountForDiscount: command.MinimumOrderAmountForDiscount,

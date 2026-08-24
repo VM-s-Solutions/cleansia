@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -99,6 +99,11 @@ public class AssignInvoiceVariableSymbol
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            if (invoice is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
+            }
 
             var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
             if (variableSymbol.IsFailure)
@@ -106,7 +111,7 @@ public class AssignInvoiceVariableSymbol
                 return BusinessResult.Failure<Response>(variableSymbol.Error!);
             }
 
-            invoice!.AssignVariableSymbol(variableSymbol.Value!);
+            invoice.AssignVariableSymbol(variableSymbol.Value!);
 
             // Stamp and COMMIT before re-rendering. The order is load-bearing: if the render fails the
             // row keeps its number and the regenerate is re-runnable and idempotent (it re-renders the

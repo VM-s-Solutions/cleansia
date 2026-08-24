@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -36,8 +36,13 @@ public class DeactivatePromoCode
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var entity = await promoCodeRepository.GetByIdAsync(command.PromoCodeId, cancellationToken);
+            if (entity is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PromoCodeId), BusinessErrorMessage.PromoNotFound));
+            }
 
-            if (!entity!.IsActive)
+            if (!entity.IsActive)
             {
                 return BusinessResult.Success(new Response(entity.Id));
             }

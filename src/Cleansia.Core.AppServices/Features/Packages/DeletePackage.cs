@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -41,6 +41,11 @@ public class DeletePackage
             }
 
             var package = await packageRepository.GetByIdAsync(command.PackageId, cancellationToken);
+            if (package is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PackageId), BusinessErrorMessage.PackageNotFound));
+            }
 
             packageRepository.Remove(package!);
 
@@ -60,7 +65,7 @@ public class DeletePackage
                 return BusinessResult.Failure<Response>(new Error(nameof(command.PackageId), BusinessErrorMessage.PackageInUse));
             }
 
-            return BusinessResult.Success(new Response(package!.Id));
+            return BusinessResult.Success(new Response(package.Id));
         }
     }
 }

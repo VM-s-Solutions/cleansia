@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Enums;
@@ -88,8 +88,13 @@ public class UpdatePayPeriod
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var payPeriod = await payPeriodRepository.GetByIdAsync(command.PayPeriodId, cancellationToken);
+            if (payPeriod is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
+            }
 
-            payPeriod!.Update(command.StartDate, command.EndDate, command.Notes);
+            payPeriod.Update(command.StartDate, command.EndDate, command.Notes);
 
             return BusinessResult.Success(new Response(payPeriod.Id));
         }

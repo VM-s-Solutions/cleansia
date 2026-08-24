@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Enums;
@@ -55,8 +55,14 @@ public class ApproveInvoice
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            if (invoice is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
+            }
+
             var adminEmail = userSessionProvider.GetUserEmail();
-            invoice!.Approve(adminEmail!, command.AdminNotes);
+            invoice.Approve(adminEmail!, command.AdminNotes);
 
             return BusinessResult.Success(new Response(invoice.Id));
         }

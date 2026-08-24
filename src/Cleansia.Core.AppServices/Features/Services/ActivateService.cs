@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -34,8 +34,13 @@ public class ActivateService
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var service = await serviceRepository.GetByIdAsync(command.ServiceId, cancellationToken);
+            if (service is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.ServiceId), BusinessErrorMessage.ServiceNotFound));
+            }
 
-            service!.IsActive = true;
+            service.IsActive = true;
 
             return BusinessResult.Success(new Response(service.Id));
         }

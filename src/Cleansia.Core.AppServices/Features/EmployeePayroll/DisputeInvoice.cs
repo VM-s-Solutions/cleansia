@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -53,8 +53,13 @@ public class DisputeInvoice
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            if (invoice is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
+            }
 
-            if (invoice!.Status == EmployeeInvoiceStatus.Paid)
+            if (invoice.Status == EmployeeInvoiceStatus.Paid)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.InvoiceId), BusinessErrorMessage.InvoiceAlreadyPaid));

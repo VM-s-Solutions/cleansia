@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -54,7 +54,13 @@ public class UpdateServiceCity
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var city = await cityRepository.GetByIdAsync(command.Id, cancellationToken);
-            city!.Update(command.Name, command.ZipPrefix);
+            if (city is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.Id), BusinessErrorMessage.ServiceCityNotFound));
+            }
+
+            city.Update(command.Name, command.ZipPrefix);
             city.IsActive = command.IsActive;
             return BusinessResult.Success(new Response(city.Id));
         }

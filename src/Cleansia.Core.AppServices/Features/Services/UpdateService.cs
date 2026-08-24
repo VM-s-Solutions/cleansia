@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
@@ -88,8 +88,13 @@ public class UpdateService
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var service = await serviceRepository.GetByIdAsync(command.ServiceId, cancellationToken);
+            if (service is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.ServiceId), BusinessErrorMessage.ServiceNotFound));
+            }
 
-            service!.Update(
+            service.Update(
                 command.CategoryId,
                 command.Name,
                 command.Description,

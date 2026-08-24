@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Extensions;
@@ -116,10 +116,25 @@ public class CalculateOrderPay
                 .Include(o => o.SelectedServices)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            var payPeriod = await payPeriodRepository.GetActivePeriodAsync(cancellationToken);
+            // The validator proved the ORDER id exists with its own query; this one adds Includes and
+            // could resolve differently. Guard rather than null-forgive.
+            if (order is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
 
-            var serviceIds = order!.SelectedServices.Select(os => os.ServiceId).ToList();
-            var packageIds = order!.SelectedPackages.Select(os => os.PackageId).ToList();
+            // Not a divergence but a genuine absence: there simply may be no open pay period, and
+            // nothing upstream checks. Null-forgiving it made "payroll is between periods" a 500.
+            var payPeriod = await payPeriodRepository.GetActivePeriodAsync(cancellationToken);
+            if (payPeriod is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.NoActivePeriod));
+            }
+
+            var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
+            var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
 
             var payConfigs = new List<EmployeePayConfig>();
 

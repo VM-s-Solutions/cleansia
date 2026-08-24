@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
@@ -43,9 +43,20 @@ public class DeleteDocument
         {
             var userEmail = userSessionProvider.GetUserEmail();
             var user = await userRepository.GetByEmailAsync(userEmail!, cancellationToken);
-            var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
+            if (user is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    "Authentication", BusinessErrorMessage.UserNotFound));
+            }
 
-            document!.SoftDelete(user!.Id);
+            var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
+            if (document is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(request.DocumentId), BusinessErrorMessage.NotFound));
+            }
+
+            document.SoftDelete(user.Id);
 
             return BusinessResult.Success(new Response
             {

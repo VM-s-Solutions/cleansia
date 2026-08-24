@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
@@ -54,10 +54,15 @@ public class ReverseReferral
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var referral = await referralRepository.GetByIdAsync(command.ReferralId, cancellationToken);
+            if (referral is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.ReferralId), BusinessErrorMessage.ReferralNotFound));
+            }
 
             // Idempotency guard (ADR-0002): only a Qualified referral can be reversed. A retry on an
             // already-Reversed row lands here and returns a guarded error — no second clawback.
-            if (referral!.Status != ReferralStatus.Qualified)
+            if (referral.Status != ReferralStatus.Qualified)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotQualified));

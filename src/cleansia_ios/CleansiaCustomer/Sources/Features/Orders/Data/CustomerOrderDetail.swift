@@ -60,6 +60,14 @@ struct CustomerOrderDetail: Equatable {
     let specialInstructions: String?
     let accessInstructions: String?
 
+    /// Why the PLATFORM cancelled this order, as a key the UI localises — null for every order the
+    /// platform did not cancel itself.
+    ///
+    /// The backend populates it only when `CancelledBy` is `System`, because the same column also
+    /// carries an admin's free-text note written for other staff. That gating is server-side, so
+    /// nothing on this side has to decide whether the value is safe to render.
+    let systemCancellationReason: String?
+
     let total: Double
     let originalSubtotal: Double
     let tierDiscountAmount: Double?
@@ -109,6 +117,7 @@ extension CustomerOrderDetail {
         notes = item.notes
         specialInstructions = item.specialInstructions
         accessInstructions = item.accessInstructions
+        systemCancellationReason = item.systemCancellationReason
 
         total = try item.totalPrice.require("totalPrice")
         originalSubtotal = try item.originalSubtotal.require("originalSubtotal")

@@ -689,19 +689,6 @@
         }
       }
     },
-    "/": {
-      "get": {
-        "tags": [
-          "Cleansia.Web.Mobile.Customer"
-        ],
-        "operationId": "Cleansia.Web.Mobile.Customer_",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Country/GetOverview": {
       "get": {
         "tags": [
@@ -11128,9 +11115,6 @@
   "tags": [
     {
       "name": "Auth"
-    },
-    {
-      "name": "Cleansia.Web.Mobile.Customer"
     },
     {
       "name": "Country"

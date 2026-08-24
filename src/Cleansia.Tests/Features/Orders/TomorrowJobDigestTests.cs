@@ -151,16 +151,19 @@ public class TomorrowJobDigestTests
     [Fact]
     public async Task A_Cleaner_Whose_Local_Clock_Has_Not_Struck_The_Send_Hour_Is_Skipped()
     {
-        ArrangeCleaner();
-        ArrangeOrders(tomorrowCount: 2);
+        // MOVE THE CLEANER, not the clock — this class's own rule, and this case was the one that
+        // did not follow it. Pinned to Prague, it needed an hour strictly above the local one to mean
+        // "not yet", and between 23:00 and 23:59 Prague there is none: the case then asserted its own
+        // precondition and went red. It did, on master, and blocked a deploy.
+        //
+        // A zone is chosen instead, so the case is constructible at every instant. Still no wrapping
+        // past midnight: the predicate is a WINDOW, so `(hour + 5) % 24` would silently land inside it
+        // for five hours of every day and pass by accident the rest of the time.
+        var (zoneId, localNow) = ZoneWithAnHourAboveIt();
+        ArrangeCleaner(timeZoneId: zoneId);
+        ArrangeOrders(tomorrowCount: 2, zoneId: zoneId);
 
-        // A send hour LATER than the cleaner's current local hour, chosen without wrapping past
-        // midnight: the predicate is a window now, so `(hour + 5) % 24` would silently land INSIDE it
-        // for five hours of every day and the case would pass by accident the rest of the time.
-        var pragueNow = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Europe/Prague"));
-        var notYetHour = Math.Min(pragueNow.Hour + 1, 23);
-        Assert.True(notYetHour > pragueNow.Hour, "The clock is at 23:00 local; this case needs an hour above it.");
+        var notYetHour = localNow.Hour + 1;
 
         var result = await Handler().Handle(
             new SendTomorrowJobDigest.Command(LocalSendHour: notYetHour), CancellationToken.None);
@@ -447,5 +450,57 @@ public class TomorrowJobDigestTests
 
         _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(orders.AsQueryable().BuildMock());
+    }
+
+    /// <summary>
+    /// A timezone whose local hour right now is 22 or lower, with the local time in it.
+    ///
+    /// <para>Only one hour of the day is unusable — 23:xx, where no larger hour exists — and the
+    /// candidates below sit far enough apart in offset that they can never all be in it at once:
+    /// Tokyo and New York are 13 to 14 hours apart, so when one is at 23 the other is nowhere near.
+    /// The zone is a real IANA id because the handler resolves it through
+    /// <c>TimeZoneResolution.Resolve</c>, which needs one the platform knows.</para>
+    /// </summary>
+    private static (string ZoneId, DateTime LocalNow) ZoneWithAnHourAboveIt(DateTime? at = null)
+    {
+        string[] candidates = ["Europe/Prague", "UTC", "Asia/Tokyo", "America/New_York"];
+        var nowUtc = at ?? DateTime.UtcNow;
+
+        foreach (var id in candidates)
+        {
+            var localNow = TimeZoneInfo.ConvertTimeFromUtc(
+                nowUtc, TimeZoneInfo.FindSystemTimeZoneById(id));
+            if (localNow.Hour <= 22)
+            {
+                return (id, localNow);
+            }
+        }
+
+        throw new InvalidOperationException(
+            "No candidate zone is below 23:00, which their offsets make impossible — the list drifted.");
+    }
+
+    /// <summary>
+    /// The helper can never fail to find a zone — swept across every hour of a full day.
+    ///
+    /// <para>This is the assertion the case it serves cannot make about itself: a test that only ever
+    /// runs at the current hour proves nothing about the other twenty-three, which is exactly how the
+    /// original went green for a year and then blocked a deploy at 23:22.</para>
+    /// </summary>
+    [Fact]
+    public void A_Zone_With_Room_Above_Exists_At_Every_Hour_Of_The_Day()
+    {
+        var midnight = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day,
+            0, 0, 0, DateTimeKind.Utc);
+
+        for (var minutes = 0; minutes < 24 * 60; minutes += 15)
+        {
+            var instant = midnight.AddMinutes(minutes);
+            var (zoneId, localNow) = ZoneWithAnHourAboveIt(instant);
+
+            Assert.True(
+                localNow.Hour <= 22,
+                $"At {instant:HH:mm}Z the chosen zone {zoneId} is at {localNow:HH:mm}, which has no hour above it.");
+        }
     }
 }

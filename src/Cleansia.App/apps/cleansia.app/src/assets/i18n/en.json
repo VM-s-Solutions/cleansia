@@ -1457,6 +1457,7 @@
       "email_confirmed": "This email address is already confirmed.",
       "existing_email": "An account with this email already exists.",
       "not_existing_email": "We couldn't find an account with this email.",
+      "not_existing_id": "We couldn't load that account.",
       "existing_phone_number": "This phone number is already in use.",
       "not_found": "We couldn't find that account.",
       "not_allowed_to_update": "You're not allowed to change this account."

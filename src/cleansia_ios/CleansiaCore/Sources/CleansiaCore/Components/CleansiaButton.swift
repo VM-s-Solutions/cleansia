@@ -179,7 +179,9 @@ public struct CleansiaDangerButton: View {
     }
 
     /// Actionable right now — neither disabled by the caller nor mid-request.
-    private var isActive: Bool { enabled && !loading }
+    private var isActive: Bool {
+        enabled && !loading
+    }
 
     public var body: some View {
         Button(role: .destructive, action: action) {

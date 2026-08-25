@@ -5,6 +5,31 @@ step, cleared when done.
 
 ## Open
 
+### MS-7 — Regenerate the partner web client — **owner, blocking a live 404**
+
+The partner document lifecycle removed `DeleteMyDocument` from the backend and replaced it with
+`RequestMyDocumentDeletion` + `ReplaceMyDocument`. Both mobile apps are already on the new endpoints —
+their client is generated at build time from the committed spec, which this branch refreshed.
+
+**The partner WEB client is not**, because NSwag regeneration is owner-only (`CLAUDE.md` § *Manual
+steps*). `libs/core/partner-services/.../partner-client.ts` still declares `deleteMyDocument`, and
+`libs/cleansia-partner-features/profile/.../profile-documents.facade.ts:259` still calls it — against a
+route that no longer exists. **That button 404s today.**
+
+**Action:**
+
+```bash
+cd src/Cleansia.App
+npm run generate-partner-client      # partner :5000 must be running
+npm run generate-admin-client        # the requirement CRUD + deletion queue are new admin endpoints
+```
+
+Then the facade swaps `deleteMyDocument(id)` for `requestMyDocumentDeletion(id, { reason })` behind a
+confirmation, matching what both mobile apps now do. It is a small change and it is written up in
+`/partner-app/onboarding#document-replace-and-remove`; it is held only by the regeneration.
+
+The customer client is untouched by this work and does not need regenerating.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

@@ -3,12 +3,20 @@ import CleansiaPartnerApi
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A file the cleaner has picked but not yet uploaded: it is held here while
-/// the metadata dialog collects a document type (required) and a description.
+/// A file the cleaner has picked but not yet sent: it is held here while a dialog collects the rest.
+///
+/// For a fresh upload that dialog asks for a document type (required) and a description. For a
+/// REPLACEMENT it asks only for a description — the server carries the type over from the version
+/// being replaced, so offering a picker would promise a choice the request cannot express.
 private struct PendingUpload: Equatable {
     let fileName: String
     let contentType: String
     let base64: String
+
+    /// Set when this file supersedes an existing document rather than adding one. The two flows share
+    /// the importer and the read and differ only in which endpoint the dialog calls, so the target
+    /// rides along with the file instead of in a second piece of state that could disagree with it.
+    var replacesDocumentId: String?
 }
 
 struct DocumentsSectionView: View {
@@ -17,6 +25,13 @@ struct DocumentsSectionView: View {
     @State private var pending: PendingUpload?
     @State private var pendingType: String?
     @State private var pendingDescription = ""
+
+    /// Which document the next pick replaces, and which one a removal is being asked about. Both are
+    /// decisions in flight, and both are behind a confirmation — the button this replaced removed the
+    /// document on the first tap, with no dialog on either platform.
+    @State private var replacingDocumentId: String?
+    @State private var deletionTarget: String?
+    @State private var deletionReason = ""
 
     init(client: PartnerProfileClient, snackbar: SnackbarController) {
         _vm = StateObject(wrappedValue: DocumentsSectionViewModel(client: client, snackbar: snackbar))
@@ -33,6 +48,11 @@ struct DocumentsSectionView: View {
                 case .error:
                     DocumentsErrorState(onRetry: { Task { await vm.load() } })
                 case let .loaded(documents):
+                    // The checklist leads, uploaded or not. It is the answer to "what do you want
+                    // from me" that this screen used to leave to support.
+                    if !vm.requirements.isEmpty {
+                        RequirementsCard(requirements: vm.requirements)
+                    }
                     if documents.isEmpty {
                         Text(L10n.Profile.documentsEmpty)
                             .font(CleansiaTypography.bodyMedium)
@@ -43,10 +63,16 @@ struct DocumentsSectionView: View {
                         ForEach(documents, id: \.documentId) { document in
                             DocumentRow(
                                 document: document,
-                                isDeleting: vm.deletingId == document.documentId,
-                                onDelete: {
+                                isBusy: vm.busyDocumentId == document.documentId,
+                                onReplace: {
                                     guard let id = document.documentId else { return }
-                                    Task { await vm.delete(documentId: id) }
+                                    replacingDocumentId = id
+                                    importerOpen = true
+                                },
+                                onRequestDeletion: {
+                                    guard let id = document.documentId else { return }
+                                    deletionReason = ""
+                                    deletionTarget = id
                                 }
                             )
                         }
@@ -71,6 +97,7 @@ struct DocumentsSectionView: View {
             handleImport(result)
         }
         .overlay { uploadDialog }
+        .overlay { deletionDialog }
     }
 
     /// Deliberately an in-tree overlay, not a `.sheet`. `.fileImporter` is
@@ -80,31 +107,85 @@ struct DocumentsSectionView: View {
     @ViewBuilder
     private var uploadDialog: some View {
         if let pending {
-            CleansiaDialog(
-                title: L10n.Profile.uploadDocument,
-                confirmLabel: L10n.Profile.save,
-                onConfirm: { confirmUpload(pending) },
-                onDismiss: clearPending,
-                message: pending.fileName,
-                dismissLabel: L10n.cancel,
-                confirmEnabled: pendingType != nil && !vm.action.isSubmitting,
-                content: {
-                    VStack(spacing: Spacing.s) {
-                        CleansiaDropdown(
-                            selectedId: $pendingType,
-                            options: DocumentPresentation.types.map {
-                                CleansiaDropdownOption(id: DocumentPresentation.optionId($0.type), label: $0.label())
-                            },
-                            label: L10n.Profile.documentType,
-                            placeholder: L10n.Profile.documentType,
-                            enabled: !vm.action.isSubmitting
-                        )
+            if let replaces = pending.replacesDocumentId {
+                CleansiaDialog(
+                    title: L10n.Profile.documentReplaceTitle,
+                    confirmLabel: L10n.Profile.documentReplace,
+                    onConfirm: { confirmReplace(pending, documentId: replaces) },
+                    onDismiss: clearPending,
+                    message: L10n.Profile.documentReplaceMessage(pending.fileName),
+                    dismissLabel: L10n.cancel,
+                    icon: "arrow.triangle.2.circlepath",
+                    confirmEnabled: !vm.action.isSubmitting,
+                    content: {
                         CleansiaTextField(
                             value: $pendingDescription,
                             label: L10n.Profile.descriptionOptional,
                             enabled: !vm.action.isSubmitting
                         )
                     }
+                )
+            } else {
+                CleansiaDialog(
+                    title: L10n.Profile.uploadDocument,
+                    confirmLabel: L10n.Profile.save,
+                    onConfirm: { confirmUpload(pending) },
+                    onDismiss: clearPending,
+                    message: pending.fileName,
+                    dismissLabel: L10n.cancel,
+                    confirmEnabled: pendingType != nil && !vm.action.isSubmitting,
+                    content: {
+                        VStack(spacing: Spacing.s) {
+                            CleansiaDropdown(
+                                selectedId: $pendingType,
+                                options: DocumentPresentation.types.map {
+                                    CleansiaDropdownOption(
+                                        id: DocumentPresentation.optionId($0.type),
+                                        label: $0.label()
+                                    )
+                                },
+                                label: L10n.Profile.documentType,
+                                placeholder: L10n.Profile.documentType,
+                                enabled: !vm.action.isSubmitting
+                            )
+                            CleansiaTextField(
+                                value: $pendingDescription,
+                                label: L10n.Profile.descriptionOptional,
+                                enabled: !vm.action.isSubmitting
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    /// The reason is required by the server and required here — without one an admin is being asked
+    /// to rule on nothing, which is the whole point of routing this past a person.
+    @ViewBuilder
+    private var deletionDialog: some View {
+        if let documentId = deletionTarget {
+            CleansiaDialog(
+                title: L10n.Profile.documentRequestDeletionTitle,
+                confirmLabel: L10n.Profile.documentRequestDeletion,
+                onConfirm: {
+                    let reason = deletionReason.trimmingCharacters(in: .whitespacesAndNewlines)
+                    deletionTarget = nil
+                    Task { await vm.requestDeletion(documentId: documentId, reason: reason) }
+                },
+                onDismiss: { deletionTarget = nil },
+                message: L10n.Profile.documentRequestDeletionMessage,
+                dismissLabel: L10n.cancel,
+                icon: "trash",
+                destructive: true,
+                confirmEnabled: !deletionReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    && vm.busyDocumentId == nil,
+                content: {
+                    CleansiaTextField(
+                        value: $deletionReason,
+                        label: L10n.Profile.documentDeletionReason,
+                        enabled: vm.busyDocumentId == nil
+                    )
                 }
             )
         }
@@ -127,8 +208,24 @@ struct DocumentsSectionView: View {
         pending = PendingUpload(
             fileName: url.lastPathComponent,
             contentType: contentType,
-            base64: data.base64EncodedString()
+            base64: data.base64EncodedString(),
+            replacesDocumentId: replacingDocumentId
         )
+        replacingDocumentId = nil
+    }
+
+    private func confirmReplace(_ upload: PendingUpload, documentId: String) {
+        let description = pendingDescription.trimmedOrNil
+        clearPending()
+        Task {
+            await vm.replace(
+                documentId: documentId,
+                fileName: upload.fileName,
+                contentType: upload.contentType,
+                base64Content: upload.base64,
+                description: description
+            )
+        }
     }
 
     private func confirmUpload(_ upload: PendingUpload) {
@@ -150,6 +247,9 @@ struct DocumentsSectionView: View {
         pending = nil
         pendingType = nil
         pendingDescription = ""
+        // A cancelled importer leaves this set otherwise, and the NEXT plain upload would silently
+        // land as a replacement of whatever was last tapped.
+        replacingDocumentId = nil
     }
 }
 
@@ -172,8 +272,9 @@ private struct DocumentsErrorState: View {
 
 private struct DocumentRow: View {
     let document: GetMyDocumentsMyDocumentDto
-    let isDeleting: Bool
-    let onDelete: () -> Void
+    let isBusy: Bool
+    let onReplace: () -> Void
+    let onRequestDeletion: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.s) {
@@ -200,19 +301,81 @@ private struct DocumentRow: View {
                 .lineLimit(1)
             }
             Spacer()
-            if isDeleting {
+            if isBusy {
                 ProgressView()
             } else {
-                Button(action: onDelete) {
+                // Replacing is not tinted as destructive on purpose: it needs no admin and costs the
+                // cleaner nothing, where asking for removal hands the decision away.
+                Button(action: onReplace) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundColor(CleansiaColors.primary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Profile.documentReplace)
+                Button(action: onRequestDeletion) {
                     Image(systemName: "trash")
                         .foregroundColor(CleansiaColors.error)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Profile.documentsDelete)
+                .accessibilityLabel(L10n.Profile.documentRequestDeletion)
             }
         }
         .padding(Spacing.m)
         .frame(maxWidth: .infinity)
+        .background(CleansiaColors.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(CleansiaColors.outline, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+}
+
+/// What the cleaner's country asks for, resolved against what they have uploaded.
+///
+/// Optional rows are listed too — that is the difference between "we would like this" and "you cannot
+/// start without this", and both are worth telling somebody.
+private struct RequirementsCard: View {
+    let requirements: [MyDocumentRequirementDto]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(L10n.Profile.documentRequirementsTitle)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Profile.documentRequirementsSubtitle)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            ForEach(requirements, id: \.documentType) { requirement in
+                HStack(alignment: .top, spacing: Spacing.s) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(DocumentPresentation.typeLabel(requirement.documentType))
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurface)
+                        Text(
+                            requirement.isRequired == true
+                                ? L10n.Profile.documentRequirementRequired
+                                : L10n.Profile.documentRequirementOptional
+                        )
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                    Spacer()
+                    if let status = requirement.status {
+                        Text(DocumentPresentation.statusLabel(status))
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(DocumentPresentation.statusTint(status))
+                    } else {
+                        Text(L10n.Profile.documentRequirementMissing)
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                }
+                .padding(.top, Spacing.xs)
+            }
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(CleansiaColors.surface)
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.medium)

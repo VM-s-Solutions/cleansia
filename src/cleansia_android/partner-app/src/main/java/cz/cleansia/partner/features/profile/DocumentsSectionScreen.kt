@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,12 +58,19 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.DocumentStatus
 import cz.cleansia.partner.api.model.DocumentType
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
+import cz.cleansia.partner.api.model.MyDocumentRequirementDto
 
 /**
- * My-documents screen — list of uploaded documents (filename, type, status
- * pill, delete button) + FAB to add. Tapping FAB opens a system file picker;
- * once a file is selected the user picks the document type and an optional
- * description in a dialog before upload.
+ * My-documents screen — what the cleaner's country asks for, what they have uploaded, and the two
+ * things they can do to a document they already own.
+ *
+ * **Replacing and requesting deletion are deliberately different doors.** Replacing needs no admin
+ * because the slot never empties — the new version is created before the old one is retired, so the
+ * registration lock never re-engages. Removal is for the case where nothing should be there at all,
+ * and that one an employer has to agree with: the request changes nothing until an admin answers it.
+ *
+ * Both are behind a confirmation. The delete button this replaced removed the document on the first
+ * tap with no dialog on either platform, and the soft-delete re-engaged the registration lock.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +89,12 @@ fun DocumentsSectionScreen(
     // after the upload is fired or the dialog is cancelled.
     val pendingFile by viewModel.pendingFile.collectAsStateWithLifecycle()
     val preparing by viewModel.isPreparing.collectAsStateWithLifecycle()
+    val requirements by viewModel.requirements.collectAsStateWithLifecycle()
+
+    // Which document the next pick replaces, and which one is being asked about. rememberSaveable:
+    // a rotation mid-decision must not silently drop the flow the cleaner was in.
+    var replacingDocumentId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deletionTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Hands the Uri straight to the VM. This callback runs on the MAIN thread,
     // so the openInputStream + readBytes + base64 that used to live here froze
@@ -88,8 +103,10 @@ fun DocumentsSectionScreen(
     val pickFile = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
+        val target = replacingDocumentId
+        replacingDocumentId = null
         uri ?: return@rememberLauncherForActivityResult
-        viewModel.stageFile(uri)
+        viewModel.stageFile(uri, replacesDocumentId = target)
     }
 
     Scaffold(
@@ -148,28 +165,6 @@ fun DocumentsSectionScreen(
                         CircularProgressIndicator()
                     }
                 }
-                documents.isEmpty() -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(Spacing.M),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Description,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(Spacing.S))
-                        Text(
-                            text = stringResource(R.string.no_documents),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
                 else -> {
                     LazyColumn(
                         modifier = Modifier
@@ -177,11 +172,30 @@ fun DocumentsSectionScreen(
                             .padding(horizontal = Spacing.M),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Spacing.S),
                     ) {
+                        // The checklist leads, uploaded or not. It is the answer to "what do you want
+                        // from me" that this screen used to leave to support.
+                        if (requirements.isNotEmpty()) {
+                            item(key = "requirements") {
+                                RequirementsCard(requirements = requirements)
+                                Spacer(Modifier.height(Spacing.M))
+                            }
+                        }
+
+                        if (documents.isEmpty()) {
+                            item(key = "empty") { NoDocumentsYet() }
+                        }
+
                         items(documents, key = { it.documentId.orEmpty() }) { doc ->
                             DocumentRow(
                                 doc = doc,
-                                isDeleting = deletingId == doc.documentId,
-                                onDelete = { doc.documentId?.let { viewModel.delete(it) } },
+                                isBusy = deletingId == doc.documentId,
+                                onReplace = {
+                                    doc.documentId?.let {
+                                        replacingDocumentId = it
+                                        pickFile.launch("*/*")
+                                    }
+                                },
+                                onRequestDeletion = { doc.documentId?.let { deletionTarget = it } },
                             )
                         }
                     }
@@ -191,20 +205,204 @@ fun DocumentsSectionScreen(
     }
 
     pendingFile?.let { pending ->
-        UploadDialog(
-            pending = pending,
-            isUploading = uploading,
-            onDismiss = { viewModel.clearPendingFile() },
-            onConfirm = { type, description ->
-                viewModel.upload(
-                    documentType = type,
-                    fileName = pending.fileName,
-                    contentType = pending.contentType,
-                    base64Content = pending.base64,
-                    description = description,
-                )
-                viewModel.clearPendingFile()
+        val replaces = pending.replacesDocumentId
+        if (replaces == null) {
+            UploadDialog(
+                pending = pending,
+                isUploading = uploading,
+                onDismiss = { viewModel.clearPendingFile() },
+                onConfirm = { type, description ->
+                    viewModel.upload(
+                        documentType = type,
+                        fileName = pending.fileName,
+                        contentType = pending.contentType,
+                        base64Content = pending.base64,
+                        description = description,
+                    )
+                    viewModel.clearPendingFile()
+                },
+            )
+        } else {
+            // No type picker: the server carries the type over from the version being replaced, so
+            // offering one here would promise a choice the request cannot express.
+            ReplaceDialog(
+                pending = pending,
+                isUploading = uploading,
+                onDismiss = { viewModel.clearPendingFile() },
+                onConfirm = { description ->
+                    viewModel.replace(
+                        documentId = replaces,
+                        fileName = pending.fileName,
+                        contentType = pending.contentType,
+                        base64Content = pending.base64,
+                        description = description,
+                    )
+                    viewModel.clearPendingFile()
+                },
+            )
+        }
+    }
+
+    deletionTarget?.let { documentId ->
+        RequestDeletionDialog(
+            isSubmitting = deletingId == documentId,
+            onDismiss = { deletionTarget = null },
+            onConfirm = { reason ->
+                deletionTarget = null
+                viewModel.requestDeletion(documentId, reason)
             },
+        )
+    }
+}
+
+/** The state this screen exists for: a country that wants papers, and a cleaner who has none yet. */
+@Composable
+private fun NoDocumentsYet() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.XL),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Description,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(Spacing.S))
+        Text(
+            text = stringResource(R.string.no_documents),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * What the cleaner's WORK country asks for, resolved against what they have uploaded.
+ *
+ * Optional rows are listed too — that is the difference between "we would like this" and "you cannot
+ * start without this", and both are worth telling somebody.
+ */
+@Composable
+private fun RequirementsCard(requirements: List<MyDocumentRequirementDto>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(modifier = Modifier.padding(Spacing.M)) {
+            Text(
+                text = stringResource(R.string.document_requirements_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.height(Spacing.XXS))
+            Text(
+                text = stringResource(R.string.document_requirements_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            requirements.sortedBy { it.sortOrder ?: 0 }.forEach { requirement ->
+                Spacer(Modifier.height(Spacing.S))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = documentTypeLabel(requirement.documentType),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(
+                                if (requirement.isRequired == true) {
+                                    R.string.document_requirement_required
+                                } else {
+                                    R.string.document_requirement_optional
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (requirement.status == null) {
+                        Text(
+                            text = stringResource(R.string.document_requirement_missing),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    } else {
+                        StatusBadge(requirement.status)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Confirms a replacement. The message names the file, matching the upload dialog — the thing most
+ * worth checking before confirming is that the right file was picked.
+ */
+@Composable
+private fun ReplaceDialog(
+    pending: PendingUpload,
+    isUploading: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String?) -> Unit,
+) {
+    var description by remember { mutableStateOf("") }
+
+    CleansiaDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.document_replace_title),
+        message = stringResource(R.string.document_replace_message, pending.fileName),
+        icon = Icons.Outlined.SwapHoriz,
+        confirmLabel = stringResource(R.string.document_replace),
+        onConfirm = { onConfirm(description) },
+        confirmEnabled = !isUploading,
+        dismissLabel = stringResource(R.string.cancel),
+    ) {
+        CleansiaTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = stringResource(R.string.description_optional),
+            enabled = !isUploading,
+        )
+    }
+}
+
+/**
+ * Confirms a deletion REQUEST. The reason is required by the server and required here — without one
+ * an admin is being asked to rule on nothing, which is the whole point of routing this past a person.
+ */
+@Composable
+private fun RequestDeletionDialog(
+    isSubmitting: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var reason by remember { mutableStateOf("") }
+
+    CleansiaDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.document_request_deletion_title),
+        message = stringResource(R.string.document_request_deletion_message),
+        icon = Icons.Outlined.Delete,
+        destructive = true,
+        confirmLabel = stringResource(R.string.document_request_deletion),
+        onConfirm = { onConfirm(reason.trim()) },
+        confirmEnabled = reason.isNotBlank() && !isSubmitting,
+        dismissLabel = stringResource(R.string.cancel),
+    ) {
+        CleansiaTextField(
+            value = reason,
+            onValueChange = { reason = it },
+            label = stringResource(R.string.document_deletion_reason),
+            enabled = !isSubmitting,
         )
     }
 }
@@ -212,8 +410,9 @@ fun DocumentsSectionScreen(
 @Composable
 private fun DocumentRow(
     doc: GetMyDocumentsMyDocumentDto,
-    isDeleting: Boolean,
-    onDelete: () -> Unit,
+    isBusy: Boolean,
+    onReplace: () -> Unit,
+    onRequestDeletion: () -> Unit,
 ) {
     // Flat row: matches the dashboard / profile card family. Border
     // does the visual lifting; no shadow or tonal elevation.
@@ -258,13 +457,22 @@ private fun DocumentRow(
                     StatusBadge(doc.status)
                 }
             }
-            IconButton(onClick = onDelete, enabled = !isDeleting) {
-                if (isDeleting) {
+            // Replacing is not tinted as destructive on purpose: it needs no admin and costs the
+            // cleaner nothing, where asking for removal is the one that hands the decision away.
+            IconButton(onClick = onReplace, enabled = !isBusy) {
+                Icon(
+                    imageVector = Icons.Outlined.SwapHoriz,
+                    contentDescription = stringResource(R.string.document_replace),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            IconButton(onClick = onRequestDeletion, enabled = !isBusy) {
+                if (isBusy) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
-                        contentDescription = stringResource(R.string.delete),
+                        contentDescription = stringResource(R.string.document_request_deletion),
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }

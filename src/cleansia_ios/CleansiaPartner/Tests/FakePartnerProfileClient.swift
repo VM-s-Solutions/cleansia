@@ -10,6 +10,8 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     var servicedCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var allCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var documentsResult: ApiResult<[GetMyDocumentsMyDocumentDto]> = .success([])
+    var requirementsResult: ApiResult<[MyDocumentRequirementDto]> = .success([])
+    var fieldLabelsResult: ApiResult<GetCountryFieldLabelsCountryFieldLabelsDto?> = .success(nil)
     var payoutResult: ApiResult<MyPayoutDetails?> = .success(nil)
 
     var personalUpdateResult: ApiResult<Void> = .success(())
@@ -18,7 +20,8 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     var bankUpdateResult: ApiResult<Void> = .success(())
     var emergencyUpdateResult: ApiResult<Void> = .success(())
     var saveDocumentsResult: ApiResult<Void> = .success(())
-    var deleteDocumentResult: ApiResult<Void> = .success(())
+    var replaceDocumentResult: ApiResult<Void> = .success(())
+    var requestDeletionResult: ApiResult<Void> = .success(())
 
     private(set) var personalCommand: UpdatePersonalInfoCommand?
     private(set) var addressCommand: UpdateAddressInfoCommand?
@@ -26,7 +29,11 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     private(set) var bankCommand: UpdateBankDetailsCommand?
     private(set) var emergencyCommand: UpdateEmergencyContactCommand?
     private(set) var saveDocumentsCommand: SaveMyDocumentsCommand?
-    private(set) var deletedDocumentId: String?
+    private(set) var replacedDocumentId: String?
+    private(set) var replacedFile: BlobFileDto?
+    private(set) var deletionRequestedFor: String?
+    private(set) var deletionReason: String?
+    private(set) var fieldLabelsRequestedFor: [String] = []
     private(set) var checkCount = 0
     private(set) var servicedCountriesCallCount = 0
     private(set) var jobRadiusCommand: UpdateJobRadiusCommand?
@@ -83,9 +90,24 @@ final class FakePartnerProfileClient: PartnerProfileClient {
         return saveDocumentsResult
     }
 
-    func deleteMyDocument(documentId: String) async -> ApiResult<Void> {
-        deletedDocumentId = documentId
-        return deleteDocumentResult
+    func getDocumentRequirements() async -> ApiResult<[MyDocumentRequirementDto]> {
+        requirementsResult
+    }
+
+    func replaceDocument(
+        documentId: String,
+        file: BlobFileDto,
+        description: String?
+    ) async -> ApiResult<Void> {
+        replacedDocumentId = documentId
+        replacedFile = file
+        return replaceDocumentResult
+    }
+
+    func requestDocumentDeletion(documentId: String, reason: String) async -> ApiResult<Void> {
+        deletionRequestedFor = documentId
+        deletionReason = reason
+        return requestDeletionResult
     }
 
     func getServicedCountries() async -> ApiResult<[CountryListItem]> {
@@ -95,5 +117,12 @@ final class FakePartnerProfileClient: PartnerProfileClient {
 
     func getAllCountries() async -> ApiResult<[CountryListItem]> {
         allCountriesResult
+    }
+
+    func getCountryFieldLabels(
+        countryId: String
+    ) async -> ApiResult<GetCountryFieldLabelsCountryFieldLabelsDto?> {
+        fieldLabelsRequestedFor.append(countryId)
+        return fieldLabelsResult
     }
 }

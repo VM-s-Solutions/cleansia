@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Description
@@ -47,7 +48,10 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +67,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import cz.cleansia.core.settings.AppLocale
+import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.LocalAppSettings
@@ -118,6 +123,11 @@ fun RegistrationLockScreen(
     // background refresh runs invisibly behind them.
     val isInitialLoading = !uiState.hasLoadedOnce && uiState.status == null
     val pullState = rememberPullToRefreshState()
+
+    // Signing out here is the one destructive thing this screen offers, and the link sat one tap
+    // away from it. rememberSaveable, not remember: a rotation mid-decision must not dismiss the
+    // dialog and leave the cleaner wondering whether they signed out.
+    var confirmingSignOut by rememberSaveable { mutableStateOf(false) }
 
     PullToRefreshBox(
         // Invariant #1: this binds ONLY to isUserRefreshing. Background
@@ -222,8 +232,24 @@ fun RegistrationLockScreen(
 
             Spacer(Modifier.height(Spacing.L))
 
-            SignOutLink(onSignOutClick = { viewModel.signOut(onSignedOut) })
+            SignOutLink(onSignOutClick = { confirmingSignOut = true })
         }
+    }
+
+    if (confirmingSignOut) {
+        CleansiaDialog(
+            onDismiss = { confirmingSignOut = false },
+            title = stringResource(R.string.registration_lock_sign_out_confirm_title),
+            message = stringResource(R.string.registration_lock_sign_out_confirm_message),
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            destructive = true,
+            confirmLabel = stringResource(R.string.registration_lock_sign_out),
+            onConfirm = {
+                confirmingSignOut = false
+                viewModel.signOut(onSignedOut)
+            },
+            dismissLabel = stringResource(R.string.cancel),
+        )
     }
 }
 

@@ -6,6 +6,7 @@ struct RegistrationLockView: View {
     @StateObject private var chainVM: OnboardingChainViewModel
     @ObservedObject private var preferences: PreferencesModel
     @State private var path = NavigationPath()
+    @State private var isConfirmingSignOut = false
 
     let onCompleted: () -> Void
     let onSignedOut: () -> Void
@@ -42,9 +43,29 @@ struct RegistrationLockView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            content
-                .background(CleansiaColors.background.ignoresSafeArea())
-                .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
+            ZStack {
+                content
+                if isConfirmingSignOut {
+                    // Signing out is the one destructive thing this screen offers, and the button
+                    // sat one tap away from it on both platforms.
+                    CleansiaDialog(
+                        title: L10n.RegistrationLock.signOutConfirmTitle,
+                        confirmLabel: L10n.RegistrationLock.signOut,
+                        onConfirm: {
+                            isConfirmingSignOut = false
+                            Task { await vm.signOut() }
+                        },
+                        onDismiss: { isConfirmingSignOut = false },
+                        message: L10n.RegistrationLock.signOutConfirmMessage,
+                        dismissLabel: L10n.cancel,
+                        icon: "rectangle.portrait.and.arrow.right",
+                        destructive: true,
+                        confirmEnabled: !vm.action.isSubmitting
+                    )
+                }
+            }
+            .background(CleansiaColors.background.ignoresSafeArea())
+            .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
         }
         .task {
             // Prime the chain completion snapshot so the "Step X of 4" header
@@ -91,7 +112,7 @@ struct RegistrationLockView: View {
                 onRetry: { Task { await vm.load() } },
                 onFix: handleFix,
                 onLanguage: { path.append(ProfileRoute.language) },
-                onSignOut: { Task { await vm.signOut() } }
+                onSignOut: { isConfirmingSignOut = true }
             )
             // Re-resolve the gate whenever the lock surfaces again (e.g. after a
             // section save pops back) — only isComplete flips the root.

@@ -204,6 +204,16 @@ enum L10n {
             localized("registration_lock_sign_out")
         }
 
+        /// Signing out is the one destructive thing this screen offers, and the button sat one tap
+        /// away from it on both platforms.
+        static var signOutConfirmTitle: String {
+            localized("registration_lock_sign_out_confirm_title")
+        }
+
+        static var signOutConfirmMessage: String {
+            localized("registration_lock_sign_out_confirm_message")
+        }
+
         static var categoryProfile: String {
             localized("registration_lock_category_profile")
         }

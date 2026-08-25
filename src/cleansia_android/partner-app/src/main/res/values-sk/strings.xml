@@ -445,6 +445,19 @@
     <string name="document_type">Typ dokumentu</string>
     <string name="description_optional">Popis (voliteľné)</string>
     <string name="no_documents">Zatiaľ nie sú nahrané žiadne dokumenty</string>
+    <string name="document_requirements_title">Čo od vás potrebujeme</string>
+    <string name="document_requirements_subtitle">Podľa krajiny, v ktorej pracujete. Nahrajte ich a my ich skontrolujeme.</string>
+    <string name="document_requirement_required">Povinné</string>
+    <string name="document_requirement_optional">Voliteľné</string>
+    <string name="document_requirement_missing">Nenahraté</string>
+    <string name="document_replace">Nahradiť</string>
+    <string name="document_replace_title">Nahradiť tento dokument?</string>
+    <string name="document_replace_message">Súbor %1$s sa stane aktuálnou verziou a pôjde znova na kontrolu. Nič sa nevymaže a počas kontroly môžete ďalej pracovať.</string>
+    <string name="document_request_deletion">Požiadať o odstránenie</string>
+    <string name="document_request_deletion_title">Požiadať o odstránenie?</string>
+    <string name="document_request_deletion_message">Zatiaľ sa nič neodstráni. Niektoré dokumenty musíme uchovávať, preto vašu žiadosť posúdi administrátor — do jeho odpovede zostáva dokument bez zmeny.</string>
+    <string name="document_deletion_reason">Prečo má byť odstránený?</string>
+    <string name="document_deletion_requested">Žiadosť odoslaná. Čoskoro ju vybavíme.</string>
     <string name="document_status_pending">Čaká na schválenie</string>
     <string name="document_status_approved">Schválené</string>
     <string name="document_status_rejected">Zamietnuté</string>
@@ -471,8 +484,8 @@
     <string name="entity_type_natural_person">Živnostník</string>
     <string name="entity_type_legal_entity">Právnická osoba</string>
     <string name="business_country">Krajina registrácie</string>
-    <string name="registration_number_label">IČO</string>
-    <string name="registration_number_helper">8 číslic pre SR/ČR; formát závisí od zvolenej krajiny.</string>
+    <string name="registration_number_label">Registračné číslo</string>
+    <string name="registration_number_helper">Formát závisí od zvolenej krajiny.</string>
     <string name="vat_number_label">IČ DPH</string>
     <string name="vat_number_helper">Voliteľné — len ak ste platiteľ DPH.</string>
     <string name="legal_entity_name_label">Názov právnickej osoby</string>
@@ -1019,6 +1032,8 @@
     <string name="registration_lock_progress">%1$d z %2$d krokov hotových</string>
     <string name="registration_lock_step_complete">Hotovo</string>
     <string name="registration_lock_sign_out">Odhlásiť sa</string>
+    <string name="registration_lock_sign_out_confirm_title">Odhlásiť sa?</string>
+    <string name="registration_lock_sign_out_confirm_message">Váš postup je uložený. Na dokončenie registrácie sa budete musieť znova prihlásiť.</string>
     <string name="registration_lock_support_subject">Cleansia partner — žiadosť zamietnutá</string>
     <string name="registration_lock_category_profile">Profil</string>
     <string name="registration_lock_category_availability">Dostupnosť</string>
@@ -1047,7 +1062,7 @@
     <string name="profile_fields_city">Mesto</string>
     <string name="profile_fields_zipCode">PSČ</string>
     <string name="profile_fields_country">Krajina</string>
-    <string name="profile_fields_registrationNumber">IČO</string>
+    <string name="profile_fields_registrationNumber">Registračné číslo</string>
     <string name="profile_fields_legalEntityName">Názov právnickej osoby</string>
     <string name="profile_fields_iban">Bankové údaje</string>
     <string name="profile_fields_passportId">Občiansky preukaz / pas</string>
@@ -1094,6 +1109,7 @@
     <string name="error_employee_document_not_found">Dokument sa nenašiel.</string>
     <string name="error_employee_document_unauthorized">K tomuto dokumentu nemáte prístup.</string>
     <string name="error_employee_document_not_owned">Tento dokument vám nepatrí.</string>
+    <string name="error_employee_document_deletion_already_requested">O odstránenie tohto dokumentu ste už požiadali. Čoskoro vašu žiadosť vybavíme.</string>
 
     <string name="error_order_not_found">Zákazka sa nenašla.</string>
     <string name="error_order_take_already_cancelled">Táto zákazka je už zrušená.</string>

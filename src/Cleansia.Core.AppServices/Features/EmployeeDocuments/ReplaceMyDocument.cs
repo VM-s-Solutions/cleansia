@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
@@ -21,10 +21,10 @@ namespace Cleansia.Core.AppServices.Features.EmployeeDocuments;
 /// <see cref="RequestMyDocumentDeletion"/> is for the other case — nothing should be there at all —
 /// and that one an employer has to agree with.</para>
 ///
-/// <para><b>Approved documents may be replaced.</b> <c>DeleteMyDocument</c> refuses them, correctly,
-/// because deleting one removes proof we are required to hold. Replacing supplies newer proof, so the
-/// same objection does not apply — and refusing here would mean the only way to update an expiring
-/// approved document was to ask an admin to delete it first, leaving a gap on purpose.</para>
+/// <para><b>Approved documents may be replaced.</b> Removing one takes proof we are required to hold,
+/// which is why removal now goes past an admin at all. Replacing SUPPLIES newer proof, so the same
+/// objection does not apply — and refusing here would mean the only way to update an expiring approved
+/// document was to ask an admin to remove it first, leaving a gap on purpose.</para>
 ///
 /// <para><b>Targets a document ID, not a filename.</b> <c>SaveMyDocuments</c> already auto-versions,
 /// but it matches on file name — so a replacement photographed on a different phone lands as a second

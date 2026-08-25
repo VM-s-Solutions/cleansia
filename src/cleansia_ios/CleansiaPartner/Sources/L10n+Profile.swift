@@ -339,6 +339,65 @@ extension L10n {
             localized("documents_delete")
         }
 
+        /// What the cleaner's country asks for, whether or not any of it is uploaded. The screen
+        /// used to open on an empty box that named nothing, so the first step of onboarding was
+        /// contacting support to ask which papers we wanted.
+        static var documentRequirementsTitle: String {
+            localized("document_requirements_title")
+        }
+
+        static var documentRequirementsSubtitle: String {
+            localized("document_requirements_subtitle")
+        }
+
+        static var documentRequirementRequired: String {
+            localized("document_requirement_required")
+        }
+
+        static var documentRequirementOptional: String {
+            localized("document_requirement_optional")
+        }
+
+        static var documentRequirementMissing: String {
+            localized("document_requirement_missing")
+        }
+
+        /// The door that needs no admin: replacing never empties the slot, so the registration
+        /// lock never re-engages.
+        static var documentReplace: String {
+            localized("document_replace")
+        }
+
+        static var documentReplaceTitle: String {
+            localized("document_replace_title")
+        }
+
+        static func documentReplaceMessage(_ fileName: String) -> String {
+            format("document_replace_message", fileName)
+        }
+
+        /// The other door: nothing should be there at all, and that one an employer has to agree
+        /// with. The request changes nothing until an admin answers it.
+        static var documentRequestDeletion: String {
+            localized("document_request_deletion")
+        }
+
+        static var documentRequestDeletionTitle: String {
+            localized("document_request_deletion_title")
+        }
+
+        static var documentRequestDeletionMessage: String {
+            localized("document_request_deletion_message")
+        }
+
+        static var documentDeletionReason: String {
+            localized("document_deletion_reason")
+        }
+
+        static var documentDeletionRequested: String {
+            localized("document_deletion_requested")
+        }
+
         static var uploadDocument: String {
             localized("upload_document")
         }

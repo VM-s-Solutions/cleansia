@@ -1751,6 +1751,41 @@
         }
       }
     },
+    "error.employee_document.deletion_already_requested": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O odstranění tohoto dokumentu jste už požádali. Brzy vaši žádost vyřídíme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have already asked us to remove this document. We'll answer that request shortly."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже отправили запрос на удаление этого документа. Мы скоро на него ответим."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O odstránenie tohto dokumentu ste už požiadali. Čoskoro vašu žiadosť vybavíme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже подали запит на видалення цього документа. Ми скоро на нього відповімо."
+          }
+        }
+      }
+    },
     "error.employee_document.not_found": {
       "extractionState": "stale",
       "localizations": {

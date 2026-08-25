@@ -62,11 +62,15 @@ struct IdentificationSectionView: View {
                 )
                 CleansiaTextField(
                     value: $vm.form.registrationNumber,
-                    label: L10n.Profile.registrationNumber
+                    // The country's own word when it has one, our neutral wording when it does not.
+                    // "Registration number" is correct everywhere and precise nowhere, which is
+                    // exactly what a fallback should be — flattening every country to it would have
+                    // cost CZ and SK the term their own registries use.
+                    label: vm.fieldLabels?.registrationNumberLabel ?? L10n.Profile.registrationNumber
                 )
                 CleansiaTextField(
                     value: $vm.form.vatNumber,
-                    label: L10n.Profile.vatNumber
+                    label: vm.fieldLabels?.vatNumberLabel ?? L10n.Profile.vatNumber
                 )
                 if vm.isLegalEntity {
                     CleansiaTextField(
@@ -82,6 +86,11 @@ struct IdentificationSectionView: View {
             }
         )
         .task { await vm.load() }
+        // The labels belong to the BUSINESS country, so they follow the picker rather than the
+        // load. Android does the same off onBusinessCountrySelected.
+        .onChange(of: vm.form.businessCountryId) { countryId in
+            Task { await vm.loadFieldLabels(for: countryId) }
+        }
         .onReceive(vm.saved) { onSaved() }
     }
 }

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Cleansia.Tests.Common;
@@ -138,11 +138,11 @@ public class BusinessErrorSlotContractTests
 
         var literals = arguments.Where(a => IsStringLiteral(a.Expression)).ToList();
         Assert.Contains(literals, a =>
-            a.RelativePath == Normalize("Features/EmployeeDocuments/DeleteMyDocument.cs"));
+            a.RelativePath == Normalize("Features/FeatureFlags/CreateFeatureFlag.cs"));
 
         Assert.True(IsBareDotKeyLiteral("\"order.payment.already_paid\""));
         Assert.False(IsBareDotKeyLiteral("BusinessErrorMessage.OrderPaymentAlreadyPaid"));
-        Assert.False(IsBareDotKeyLiteral("\"Cannot delete an approved document.\""));
+        Assert.False(IsBareDotKeyLiteral("\"Scope must be 'global', 'country', or 'tenant'.\""));
     }
 
     [Fact]

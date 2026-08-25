@@ -7,6 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.client.CountryApi
+import cz.cleansia.partner.api.model.GetCountryFieldLabelsCountryFieldLabelsDto
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -74,6 +75,20 @@ class IdentificationSectionViewModel @Inject constructor(
     private val _saved = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val saved: SharedFlow<Unit> = _saved.asSharedFlow()
 
+    /**
+     * What the chosen business country calls its registration number and VAT id.
+     *
+     * These have been in `CountryConfiguration` since it was seeded and nothing returned them, so the
+     * label was hardcoded to the Czech "IČO" in all five translation files — which a Polish or
+     * Ukrainian partner then read, and Poland has no IČO. Null here means the country configures no
+     * label and the screen falls back to its own neutral wording.
+     */
+    private val _fieldLabels = MutableStateFlow<GetCountryFieldLabelsCountryFieldLabelsDto?>(null)
+    val fieldLabels: StateFlow<GetCountryFieldLabelsCountryFieldLabelsDto?> = _fieldLabels.asStateFlow()
+
+    /** Guards against a stale answer overwriting a newer one when the picker is tapped twice. */
+    private var fieldLabelsFor: String? = null
+
     init { load() }
 
     fun retry() = load()
@@ -101,6 +116,7 @@ class IdentificationSectionViewModel @Inject constructor(
                             legalEntityName = e.legalEntityName.orEmpty(),
                         ),
                     )
+                    e.countryId?.let { loadFieldLabels(it) }
                 }
                 is ApiResult.Error -> {
                     snackbar.showError(errorTranslator.translate(empResult.error))
@@ -124,7 +140,27 @@ class IdentificationSectionViewModel @Inject constructor(
         )
     }
 
-    fun onBusinessCountrySelected(id: String) = updateForm { it.copy(businessCountryId = id) }
+    fun onBusinessCountrySelected(id: String) {
+        updateForm { it.copy(businessCountryId = id) }
+        loadFieldLabels(id)
+    }
+
+    /**
+     * Silent on failure, and silent on 404. A country we hold no configuration for is one whose word
+     * for this we do not know — the screen's neutral fallback is the honest answer, and an error
+     * banner would be reporting a missing translation as a broken form.
+     */
+    private fun loadFieldLabels(countryId: String) {
+        if (fieldLabelsFor == countryId) return
+        fieldLabelsFor = countryId
+        viewModelScope.launch {
+            val result = safeApiCall(json) { countryApi.countryGetFieldLabels(countryId) }
+            // Only publish if the picker has not moved on since this call was made.
+            if (fieldLabelsFor == countryId) {
+                _fieldLabels.value = (result as? ApiResult.Success)?.data
+            }
+        }
+    }
 
     fun onRegistrationNumberChange(v: String) = updateForm { it.copy(registrationNumber = v) }
 

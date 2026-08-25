@@ -385,6 +385,19 @@
     <string name="document_type">Typ dokumentu</string>
     <string name="description_optional">Popis (volitelné)</string>
     <string name="no_documents">Zatím nejsou nahrané žádné dokumenty</string>
+    <string name="document_requirements_title">Co od vás potřebujeme</string>
+    <string name="document_requirements_subtitle">Podle země, ve které pracujete. Nahrajte je a my je zkontrolujeme.</string>
+    <string name="document_requirement_required">Povinné</string>
+    <string name="document_requirement_optional">Volitelné</string>
+    <string name="document_requirement_missing">Nenahráno</string>
+    <string name="document_replace">Nahradit</string>
+    <string name="document_replace_title">Nahradit tento dokument?</string>
+    <string name="document_replace_message">Soubor %1$s se stane aktuální verzí a půjde znovu ke kontrole. Nic se nesmaže a po celou dobu kontroly můžete dál pracovat.</string>
+    <string name="document_request_deletion">Požádat o odstranění</string>
+    <string name="document_request_deletion_title">Požádat o odstranění?</string>
+    <string name="document_request_deletion_message">Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — do jeho odpovědi zůstává dokument beze změny.</string>
+    <string name="document_deletion_reason">Proč má být odstraněn?</string>
+    <string name="document_deletion_requested">Žádost odeslána. Brzy ji vyřídíme.</string>
     <string name="document_status_pending">Čeká na schválení</string>
     <string name="document_status_approved">Schváleno</string>
     <string name="document_status_rejected">Zamítnuto</string>
@@ -411,8 +424,8 @@
     <string name="entity_type_natural_person">OSVČ</string>
     <string name="entity_type_legal_entity">Právnická osoba</string>
     <string name="business_country">Země registrace</string>
-    <string name="registration_number_label">IČO</string>
-    <string name="registration_number_helper">8 číslic pro ČR/SK; formát závisí na vybrané zemi.</string>
+    <string name="registration_number_label">Registrační číslo</string>
+    <string name="registration_number_helper">Formát závisí na zvolené zemi.</string>
     <string name="vat_number_label">DIČ</string>
     <string name="vat_number_helper">Nepovinné — pouze pokud jste plátce DPH.</string>
     <string name="legal_entity_name_label">Název právnické osoby</string>
@@ -1039,6 +1052,8 @@
     <string name="registration_lock_progress">%1$d z %2$d kroků hotovo</string>
     <string name="registration_lock_step_complete">Hotovo</string>
     <string name="registration_lock_sign_out">Odhlásit se</string>
+    <string name="registration_lock_sign_out_confirm_title">Odhlásit se?</string>
+    <string name="registration_lock_sign_out_confirm_message">Váš postup je uložený. Pro dokončení registrace se budete muset znovu přihlásit.</string>
     <string name="registration_lock_support_subject">Cleansia partner — žádost zamítnuta</string>
     <string name="registration_lock_category_profile">Profil</string>
     <string name="registration_lock_category_availability">Dostupnost</string>
@@ -1067,7 +1082,7 @@
     <string name="profile_fields_city">Město</string>
     <string name="profile_fields_zipCode">PSČ</string>
     <string name="profile_fields_country">Země</string>
-    <string name="profile_fields_registrationNumber">IČO</string>
+    <string name="profile_fields_registrationNumber">Registrační číslo</string>
     <string name="profile_fields_legalEntityName">Název právnické osoby</string>
     <string name="profile_fields_iban">Bankovní údaje</string>
     <string name="profile_fields_passportId">Občanský průkaz / pas</string>
@@ -1114,6 +1129,7 @@
     <string name="error_employee_document_not_found">Dokument nenalezen.</string>
     <string name="error_employee_document_unauthorized">K tomuto dokumentu nemáte přístup.</string>
     <string name="error_employee_document_not_owned">Tento dokument vám nepatří.</string>
+    <string name="error_employee_document_deletion_already_requested">O odstranění tohoto dokumentu jste už požádali. Brzy vaši žádost vyřídíme.</string>
 
     <string name="error_order_not_found">Zakázka nenalezena.</string>
     <string name="error_order_take_already_cancelled">Tato zakázka je již zrušena.</string>

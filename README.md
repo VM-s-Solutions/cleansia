@@ -188,7 +188,7 @@ The Aspire container's password is the one in its connection string.
 
 `docs/` is a VitePress project and the source of truth for what the platform does. It deploys to a
 **DEV-only** Azure Static Web App — `main.bicep` declares it under `if (env == 'dev')`, so no
-production copy exists to deploy to. The site requires the `docs-reader` role on every route, granted
+production copy exists to deploy to. The site requires the `docs_reader` role on every route, granted
 per person through the Static Web App's Role management blade.
 
 Deploys are manual: run the **Deploy Docs** workflow from the Actions tab.

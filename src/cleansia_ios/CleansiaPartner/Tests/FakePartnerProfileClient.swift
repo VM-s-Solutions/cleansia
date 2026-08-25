@@ -31,6 +31,7 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     private(set) var saveDocumentsCommand: SaveMyDocumentsCommand?
     private(set) var replacedDocumentId: String?
     private(set) var replacedFile: BlobFileDto?
+    private(set) var replacedDescription: String?
     private(set) var deletionRequestedFor: String?
     private(set) var deletionReason: String?
     private(set) var fieldLabelsRequestedFor: [String] = []
@@ -101,6 +102,7 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     ) async -> ApiResult<Void> {
         replacedDocumentId = documentId
         replacedFile = file
+        replacedDescription = description
         return replaceDocumentResult
     }
 

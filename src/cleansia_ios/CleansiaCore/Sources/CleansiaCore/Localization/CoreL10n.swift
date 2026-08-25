@@ -21,7 +21,7 @@ public enum CoreL10n {
     ///
     /// Defaults to `en` to match `bundle`'s own default; both are replaced by `apply` at launch,
     /// before any screen renders.
-    nonisolated(unsafe) public private(set) static var languageTag: String = "en"
+    public private(set) nonisolated(unsafe) static var languageTag: String = "en"
 
     public static func apply(languageTag: String) {
         bundle = localizedBundle(for: languageTag)

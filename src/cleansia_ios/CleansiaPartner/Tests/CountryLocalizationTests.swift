@@ -60,11 +60,11 @@ final class CountryLocalizationTests: XCTestCase {
         let item = country(translations: translated(["cs": "Česko"]))
 
         XCTAssertEqual(item.localizedName(languageTag: "ru"), "Czech Republic")
-        XCTAssertEqual(
-            country(name: nil, translations: nil).localizedName(languageTag: "ru"), "CZE")
+        XCTAssertEqual(country(name: nil, translations: nil).localizedName(languageTag: "ru"), "CZE")
         XCTAssertEqual(
             country(name: nil, isoCode: nil, translations: nil).localizedName(languageTag: "ru"),
-            "country-cz")
+            "country-cz"
+        )
     }
 
     /// A blank translation is an absent one — otherwise a half-seeded row renders an empty dropdown

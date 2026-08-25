@@ -11,8 +11,13 @@ step, cleared when done.
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
 
 
-`MS-1` regenerated the single `Initial` migration and `MS-6` regenerated it again, so its id has moved
-from `20260811192214` to `20260813085249` to **`20260815094107`**. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+`MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
+document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
+`20260811192214` to `20260813085249` to `20260815094107` to **`20260825114012`**.
+
+Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
+is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
+regeneration renews it rather than adding a new obligation. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 

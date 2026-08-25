@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees;
@@ -123,8 +123,20 @@ public class ApproveEmployeePayCoverageTests
     private static EmployeePayConfig PackageConfig(string? employeeId = null) =>
         EmployeePayConfig.CreateForPackage(PackageId, 400m, CurrencyId, employeeId: employeeId);
 
-    private ApproveEmployee.Validator CreateValidator() => new(
-        _employees.Object, _countries.Object, _services.Object, _packages.Object, _payConfigs.Object);
+    // No document requirements configured for the country, so the documents gate passes and these
+    // cases stay about PAY coverage. ApproveEmployeeDocumentGateTests owns the gate itself.
+    private readonly Mock<IEmployeeDocumentRequirementRepository> _documentRequirements = new();
+
+    private ApproveEmployee.Validator CreateValidator()
+    {
+        _documentRequirements
+            .Setup(r => r.GetForCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        return new(
+            _employees.Object, _countries.Object, _services.Object, _packages.Object,
+            _payConfigs.Object, _documentRequirements.Object);
+    }
 
     private ApproveEmployee.Handler CreateHandler() => new(
         _employees.Object,

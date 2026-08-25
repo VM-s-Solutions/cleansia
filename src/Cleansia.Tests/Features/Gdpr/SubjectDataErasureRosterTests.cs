@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -201,6 +201,15 @@ public class SubjectDataErasureRosterTests
                 + "session cut — the refresh path already refuses a deactivated user — and ADR-0027's poll "
                 + "predicate is untouched, since it reads the password_reset reason alone.",
             InErasure("refreshTokenService.RevokeAllForUserAsync")),
+
+        [typeof(Core.Domain.Documents.DocumentDeletionRequest)] = new(
+            Verdict.Deleted,
+            "The subject's own words, in the reason they wrote for wanting a document removed, plus the "
+                + "admin's answer to it. Neither survives a person who no longer exists. The rows are also "
+                + "structurally unable to be kept: the FK to EmployeeDocument is Restrict and the erasure "
+                + "deletes those documents, so a surviving request would not leave residue — it would make "
+                + "the whole erasure throw. Removed BEFORE the documents for exactly that reason.",
+            InErasure("documentDeletionRequestRepository.RemoveForEmployeeAsync")),
 
         [typeof(Core.Domain.Documents.EmployeeDocument)] = new(
             Verdict.Deleted,

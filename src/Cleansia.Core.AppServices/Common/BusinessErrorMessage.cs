@@ -1,4 +1,4 @@
-namespace Cleansia.Core.AppServices.Common;
+﻿namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -194,6 +194,14 @@ public static class BusinessErrorMessage
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
+
+    /// <summary>
+    /// Approval refused because the work country demands documents this cleaner has not had
+    /// approved. Distinct from <see cref="EmployeeProfileIncomplete"/> on purpose: the admin needs to
+    /// know whether to chase the cleaner for a form or to go and review an upload that is already
+    /// sitting in the queue.
+    /// </summary>
+    public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
     // RETAINED deliberately. No production code emits this any more (order actions now
     // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
     // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —

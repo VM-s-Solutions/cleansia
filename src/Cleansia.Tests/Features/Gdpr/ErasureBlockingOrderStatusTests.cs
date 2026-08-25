@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -142,6 +142,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new UserRepository(ctx),
             new OrderRepository(ctx),
             new EmployeeDocumentRepository(ctx),
+            new DocumentDeletionRequestRepository(ctx),
             new EmployeeInvoiceRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayConfig;
@@ -21,7 +21,8 @@ public class ApproveEmployee
             ICountryRepository countryRepository,
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
-            IEmployeePayConfigRepository payConfigRepository)
+            IEmployeePayConfigRepository payConfigRepository,
+            IEmployeeDocumentRequirementRepository documentRequirementRepository)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -51,6 +52,62 @@ public class ApproveEmployee
                     return employee?.IsProfileComplete() ?? false;
                 })
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
+                .When(x => !string.IsNullOrEmpty(x.EmployeeId));
+
+            // Every document the WORK COUNTRY requires must exist AND be Approved.
+            //
+            // Before this, approval consulted IsProfileComplete(), which deliberately excludes
+            // documents — its own comment says they are "handled separately by the registration
+            // lock". Nothing else checked them either, so an admin could approve a cleaner with no
+            // documents at all, or with every one of them Rejected, and "Approved" meant only that
+            // somebody had clicked approve.
+            //
+            // Keyed on the country being approved FOR, not the cleaner's home address: the paperwork
+            // is a function of the jurisdiction they will work in. That is also why this rule runs
+            // after the WorkCountryId rules below have had a chance to reject a missing or unknown
+            // country — a null country here simply finds no requirements and passes, leaving the
+            // refusal to the rule that owns it rather than inventing a second answer for it.
+            //
+            // Optional requirements (IsRequired == false) are prompts on the upload screen, not
+            // gates, so they are filtered out here rather than at the repository, which serves both
+            // callers.
+            RuleFor(x => x.EmployeeId)
+                .MustAsync(async (command, _, cancellationToken) =>
+                {
+                    if (string.IsNullOrEmpty(command.WorkCountryId))
+                    {
+                        return true;
+                    }
+
+                    var required = (await documentRequirementRepository
+                            .GetForCountryAsync(command.WorkCountryId, cancellationToken))
+                        .Where(r => r.IsRequired)
+                        .Select(r => r.DocumentType)
+                        .ToHashSet();
+
+                    if (required.Count == 0)
+                    {
+                        return true;
+                    }
+
+                    var employee = await employeeRepository
+                        .GetQueryable()
+                        .Include(e => e.Documents)
+                        .FirstOrDefaultAsync(e => e.Id == command.EmployeeId, cancellationToken);
+
+                    if (employee is null)
+                    {
+                        return false;
+                    }
+
+                    var approved = employee.Documents
+                        .Where(d => d.IsActive && d.Status == DocumentStatus.Approved)
+                        .Select(d => d.DocumentType)
+                        .ToHashSet();
+
+                    return required.IsSubsetOf(approved);
+                })
+                .WithMessage(BusinessErrorMessage.EmployeeDocumentsNotApproved)
                 .When(x => !string.IsNullOrEmpty(x.EmployeeId));
 
             // WorkCountryId is the jurisdiction the cleaner is approved

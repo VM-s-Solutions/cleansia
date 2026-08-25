@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -15,6 +15,7 @@ public class GdprDeletionService(
     IUserRepository userRepository,
     IOrderRepository orderRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
+    IDocumentDeletionRequestRepository documentDeletionRequestRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
@@ -227,6 +228,12 @@ public class GdprDeletionService(
 
             // Ordered, not adjacent by accident, for the same reason the dispute-evidence pair below is:
             // FilePath is the only place the blob's name is stored, so the rows go after the blobs.
+            //
+            // Deletion REQUESTS go first, and the order is load-bearing rather than tidy: the request's
+            // FK to the document is Restrict, so a surviving request does not leave a stray row — it
+            // makes this whole erasure throw. They carry the subject's own words besides, in the reason
+            // they wrote, so they could not be kept even if the FK allowed it.
+            await documentDeletionRequestRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
             await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
         }
 

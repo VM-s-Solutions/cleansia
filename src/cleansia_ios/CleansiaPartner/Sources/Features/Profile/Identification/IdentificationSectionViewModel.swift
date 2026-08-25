@@ -93,7 +93,10 @@ final class IdentificationSectionViewModel: ViewModel {
         let result = await client.getCountryFieldLabels(countryId: countryId)
         // Only publish if the picker has not moved on since this call was made.
         guard fieldLabelsFor == countryId else { return }
-        fieldLabels = result.valueOrNil ?? nil
+        // .flatMap, not `?? nil`: ApiResult<T?>.valueOrNil is a double optional and SwiftLint's
+        // redundant_nil_coalescing is syntactic — it fires on the literal `?? nil` regardless.
+        // ProfileViewModel does the same flatten on getMyPayoutDetails.
+        fieldLabels = result.valueOrNil.flatMap { $0 }
     }
 
     func setEntityType(_ type: EmployeeEntityType) {

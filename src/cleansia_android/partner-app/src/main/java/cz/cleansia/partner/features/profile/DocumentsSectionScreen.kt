@@ -280,7 +280,12 @@ private fun NoDocumentsYet() {
 }
 
 /**
- * What the cleaner's WORK country asks for, resolved against what they have uploaded.
+ * What the cleaner's country asks for, resolved against what they have uploaded.
+ *
+ * The server keys this on the WORK country falling back to the address country
+ * (GetMyDocumentRequirements), because work country is only set at approval and this screen
+ * exists for people who are not approved yet. Saying "work country" here would name a key that
+ * is usually not the one in play.
  *
  * Optional rows are listed too — that is the difference between "we would like this" and "you cannot
  * start without this", and both are worth telling somebody.

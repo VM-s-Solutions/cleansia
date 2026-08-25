@@ -6666,41 +6666,6 @@
         }
       }
     },
-    "documents_delete": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Smazat dokument"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete document"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалить документ"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odstrániť dokument"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалити документ"
-          }
-        }
-      }
-    },
     "documents_empty": {
       "extractionState": "stale",
       "localizations": {

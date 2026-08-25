@@ -82,7 +82,15 @@ struct DocumentsSectionView: View {
                         leadingIcon: "arrow.up.doc",
                         loading: vm.action.isSubmitting,
                         enabled: !vm.action.isSubmitting,
-                        action: { importerOpen = true }
+                        // Cleared HERE, where a fresh upload starts, and not only in handleImport:
+                        // .fileImporter has no onCancellation before iOS 17 and does not reliably
+                        // call back when the browser is dismissed, so a target set by Replace can
+                        // outlive the pick that was meant to consume it. Android needs no equivalent
+                        // — GetContent() always fires with a null Uri.
+                        action: {
+                            replacingDocumentId = nil
+                            importerOpen = true
+                        }
                     )
                     .padding(.top, Spacing.s)
                 }
@@ -195,6 +203,13 @@ struct DocumentsSectionView: View {
     /// Uploading straight from here is what made every document land as
     /// IdentityCard with no description.
     private func handleImport(_ result: Result<[URL], Error>) {
+        // Taken and cleared BEFORE the first early return. Cancelling the importer, an unreadable
+        // file and an oversize one all leave this function without publishing anything, and a target
+        // left standing would make the NEXT plain upload silently supersede whatever was last
+        // tapped. Android clears it at the top of its picker callback for the same reason.
+        let replaces = replacingDocumentId
+        replacingDocumentId = nil
+
         guard case let .success(urls) = result, let url = urls.first else { return }
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
@@ -209,9 +224,8 @@ struct DocumentsSectionView: View {
             fileName: url.lastPathComponent,
             contentType: contentType,
             base64: data.base64EncodedString(),
-            replacesDocumentId: replacingDocumentId
+            replacesDocumentId: replaces
         )
-        replacingDocumentId = nil
     }
 
     private func confirmReplace(_ upload: PendingUpload, documentId: String) {
@@ -247,9 +261,6 @@ struct DocumentsSectionView: View {
         pending = nil
         pendingType = nil
         pendingDescription = ""
-        // A cancelled importer leaves this set otherwise, and the NEXT plain upload would silently
-        // land as a replacement of whatever was last tapped.
-        replacingDocumentId = nil
     }
 }
 

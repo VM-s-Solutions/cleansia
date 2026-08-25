@@ -2338,6 +2338,7 @@
       "already_approved": "Zamestnanec už bol schválený",
       "already_rejected": "Zamestnanec už bol zamietnutý",
       "documents_missing": "Chýbajú požadované dokumenty",
+      "documents_not_approved": "Tohto upratovača nemožno schváliť, kým nie sú nahraté a schválené všetky dokumenty, ktoré vyžaduje krajina výkonu jeho práce.",
       "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
       "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
       "not_found": "Zamestnanec nebol nájdený",
@@ -2346,6 +2347,7 @@
       "weekly_limit_invalid": "Týždenný limit zakázok musí byť aspoň 1, alebo prázdny pre neobmedzený počet"
     },
     "employee_document": {
+      "deletion_already_resolved": "Táto žiadosť o vymazanie už bola vybavená.",
       "not_found": "Dokument nebol nájdený",
       "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
       "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu"

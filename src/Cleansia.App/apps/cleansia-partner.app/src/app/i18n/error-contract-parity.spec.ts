@@ -348,6 +348,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee.not_approved',
   'employee.not_found',
   'employee.profile_incomplete',
+  'employee_document.deletion_already_requested',
   'employee_document.not_found',
   'employee_document.not_owned',
   'employee_document.unauthorized',

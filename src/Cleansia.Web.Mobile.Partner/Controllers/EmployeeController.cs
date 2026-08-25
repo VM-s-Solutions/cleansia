@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments;
+using Cleansia.Core.AppServices.Features.EmployeeDocuments.DTOs;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -225,5 +226,21 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
         }
 
         return File(result.Value.FileBytes, result.Value.ContentType, result.Value.FileName);
+    }
+
+    /// <summary>
+    /// What this cleaner still owes, resolved against what they have already uploaded.
+    ///
+    /// <para>The documents screen used to open on an empty box that named nothing, so the first step of
+    /// onboarding was contacting support to ask which papers we wanted. This answers that in the app.</para>
+    /// </summary>
+    [HttpGet("GetMyDocumentRequirements")]
+    [Permission(Policy.CanViewEmployeeDocuments)]
+    [ProducesResponseType(typeof(IEnumerable<MyDocumentRequirementDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IEnumerable<MyDocumentRequirementDto>> GetMyDocumentRequirements(
+        CancellationToken cancellationToken)
+    {
+        return await Mediator.Send(new GetMyDocumentRequirements.Request(), cancellationToken);
     }
 }

@@ -2338,6 +2338,7 @@
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
       "documents_missing": "Required documents are missing",
+      "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
       "not_allowed_to_update": "You are not allowed to update this employee",
       "not_existing_email": "No employee found with this email",
       "not_found": "Employee not found",
@@ -2346,6 +2347,7 @@
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit"
     },
     "employee_document": {
+      "deletion_already_resolved": "This deletion request has already been answered.",
       "not_found": "Document not found",
       "not_owned": "You can only access your own documents",
       "unauthorized": "You are not authorized to access this document"

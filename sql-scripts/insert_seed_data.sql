@@ -1046,6 +1046,42 @@ VALUES
    'Stripe', NULL);
 
 -- ============================================================
+-- EMPLOYEE DOCUMENT REQUIREMENTS
+-- ============================================================
+-- Which document types a cleaner must supply before an admin may approve them, per country.
+-- ApproveEmployee reads these rows: a required type that is missing, or present but not Approved,
+-- blocks approval. A country with NO rows gates nothing, which is how every unseeded market behaves.
+--
+-- Deliberately short, and deliberately NOT a statement about Czech or Slovak employment law. The
+-- rows below are the two this platform can justify on its own account: it must know who it is
+-- engaging, and it must be able to see a work permit from someone who needs one. Everything else a
+-- jurisdiction may demand is left for the admin screen to add, which is the entire reason these are
+-- rows rather than a constant.
+--
+-- WorkPermit is seeded NOT required on purpose. It applies to non-EU nationals and to nobody else,
+-- and a per-country flag cannot say "required for some of these people" — so it appears on the
+-- cleaner's checklist as expected-but-optional and an admin judges the individual case.
+--
+-- Idempotent: (CountryId, DocumentType) is unique, so re-running this leaves existing rows alone
+-- rather than duplicating them.
+INSERT INTO public."EmployeeDocumentRequirements" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "CountryId", "DocumentType", "IsRequired", "SortOrder"
+)
+SELECT
+  generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  c."Id", r.document_type, r.is_required, r.sort_order
+FROM public."Countries" c
+CROSS JOIN (VALUES
+  -- 1 = IdentityCard, 4 = WorkPermit (Cleansia.Core.Domain.Enums.DocumentType)
+  (1, true, 1),
+  (4, false, 2)
+) AS r(document_type, is_required, sort_order)
+WHERE c."IsoCode" IN ('CZE', 'SVK')
+ON CONFLICT ("CountryId", "DocumentType") DO NOTHING;
+
+-- ============================================================
 -- FEATURE FLAGS
 -- ============================================================
 INSERT INTO public."FeatureFlags" (

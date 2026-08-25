@@ -1181,7 +1181,8 @@
     "employee_document": {
       "not_found": "Document not found",
       "unauthorized": "You are not authorized to access this document",
-      "not_owned": "You can only access your own documents"
+      "not_owned": "You can only access your own documents",
+      "deletion_already_requested": "You have already asked for this document to be removed. An administrator will answer your request."
     },
     "payroll": {
       "pay_period": {

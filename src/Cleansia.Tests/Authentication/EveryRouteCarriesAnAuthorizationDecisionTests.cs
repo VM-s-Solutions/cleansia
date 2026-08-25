@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Authentication;
 /// roster, so a new entry is a deliberate line in a diff rather than an omission; the Admin subset of
 /// it is asserted separately because that is where the bucket is dangerous. The roster is a list and
 /// not a count on purpose: a count stays green when one route leaves the bucket and another enters
-/// it. All twenty-four current entries were read and justified, not grandfathered — they are the
+/// it. All twenty-six current entries were read and justified, not grandfathered — they are the
 /// three shapes for which "signed in" genuinely is the whole question: signing yourself out,
 /// platform reference data that belongs to nobody, and customer money paths that resolve the subject
 /// from the caller's own token and refuse a non-owner inside the request.</para>
@@ -43,7 +43,7 @@ public class EveryRouteCarriesAnAuthorizationDecisionTests
 
     /// <summary>
     /// Routes that gate on nothing but "you are signed in", written out so that adding a
-    /// twenty-fifth is an edit to this list rather than an omission. Each entry is
+    /// twenty-seventh is an edit to this list rather than an omission. Each entry is
     /// <c>Host/Controller.Action</c>, and each group carries the reason bare authentication is the
     /// right answer for it. Nothing here is grandfathered silently — a route that could not be
     /// justified would have been fixed instead of listed.
@@ -62,15 +62,20 @@ public class EveryRouteCarriesAnAuthorizationDecisionTests
         //     service/package catalogue, and the enum catalogue the admin UI binds its dropdowns to
         //     (GetCodeOverview returns domain enum names off the assembly, no rows at all:
         //     GetCodeOverview.cs:13). No row is anyone's, so there is nothing to scope to a caller.
+        //     GetFieldLabels joins them: a country's own word for its registration number is a
+        //     property of the jurisdiction, not of the caller — and the partner registration form
+        //     that renders it already sits behind the same sign-in.
         "Admin/AdminCodeController.GetOverview",
         "Mobile.Customer/CountryController.GetOverview",
         "Mobile.Customer/CountryController.GetServiced",
         "Mobile.Customer/LanguageController.GetOverview",
         "Mobile.Customer/ServiceCityController.GetServiceCities",
+        "Mobile.Partner/CountryController.GetFieldLabels",
         "Mobile.Partner/CountryController.GetOverview",
         "Mobile.Partner/CountryController.GetServiced",
         "Mobile.Partner/LanguageController.GetOverview",
         "Mobile.Partner/ServiceCityController.GetServiceCities",
+        "Partner/CountryController.GetFieldLabels",
         "Partner/CountryController.GetOverview",
         "Partner/CountryController.GetServiced",
         "Partner/CurrencyController.GetOverview",

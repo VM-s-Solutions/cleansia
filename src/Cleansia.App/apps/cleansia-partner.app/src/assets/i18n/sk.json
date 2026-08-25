@@ -1181,7 +1181,8 @@
     "employee_document": {
       "not_found": "Dokument nenájdený",
       "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu",
-      "not_owned": "Môžete pristupovať iba k vlastným dokumentom"
+      "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
+      "deletion_already_requested": "O odstránenie tohto dokumentu ste už požiadali. Administrátor vašu žiadosť vybaví."
     },
     "payroll": {
       "pay_period": {

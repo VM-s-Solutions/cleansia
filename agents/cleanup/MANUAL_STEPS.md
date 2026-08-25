@@ -37,10 +37,10 @@ a NEW resource** — and a Static Web App deployment token belongs to the resour
 
 1. Portal → `swa-cleansia-docs-weu-dev` → *Manage deployment token* → copy.
 2. Replace the repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`.
-3. Portal → same SWA → *Role management* → **Invite** yourself with the role `docs-reader`.
+3. Portal → same SWA → *Role management* → **Invite** yourself with the role `docs_reader`.
 
 Step 3 is what makes the site reachable at all. `docs/public/staticwebapp.config.json` requires
-`docs-reader` on every route and redirects 401/403 to `/.auth/login/aad`, so an uninvited visitor —
+`docs_reader` on every route and redirects 401/403 to `/.auth/login/aad`, so an uninvited visitor —
 including one with a valid Microsoft account — logs in and still gets nothing. That is deliberate: the
 built-in `aad` provider admits any Microsoft identity, so the ROLE is the access control, not the login.
 

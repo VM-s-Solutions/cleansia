@@ -49,7 +49,11 @@ struct AddressSectionView: View {
             onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
-                    OnboardingChainHeader(currentSection: .address, state: chainVM.state)
+                    OnboardingChainHeader(
+                        currentSection: .address,
+                        state: chainVM.state,
+                        onSelect: { chainVM.requestJump(to: $0) }
+                    )
                 }
             },
             form: {

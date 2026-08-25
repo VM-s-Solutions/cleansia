@@ -34,7 +34,11 @@ struct IdentificationSectionView: View {
             onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
-                    OnboardingChainHeader(currentSection: .identification, state: chainVM.state)
+                    OnboardingChainHeader(
+                        currentSection: .identification,
+                        state: chainVM.state,
+                        onSelect: { chainVM.requestJump(to: $0) }
+                    )
                 }
             },
             form: {

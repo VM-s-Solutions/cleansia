@@ -83,6 +83,19 @@ class OnboardingChainViewModel @Inject constructor(
      * back — the lock will re-fetch via its own ON_RESUME effect and
      * surface any error there.
      */
+    /**
+     * Jump straight to a section the cleaner has already finished or already walked past.
+     *
+     * Navigates exactly the way [advanceOrFinish] does — replace, never push. The chain is a flat
+     * sequence, so a jump must not grow the back stack any more than moving forward does, or system
+     * back stops meaning "leave onboarding".
+     */
+    fun jumpTo(section: ProfileSection, navController: NavHostController) {
+        navController.navigate(section.toRoute(forOnboarding = true)) {
+            popUpTo(NavRoute.RegistrationLock) { inclusive = false }
+        }
+    }
+
     fun advanceOrFinish(navController: NavHostController) {
         viewModelScope.launch {
             val result = profileRepository.getRegistrationStatus()

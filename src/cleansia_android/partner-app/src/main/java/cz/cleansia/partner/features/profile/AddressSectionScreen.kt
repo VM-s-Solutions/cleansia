@@ -68,6 +68,11 @@ fun AddressSectionScreen(
     pickerResult: GeocodedAddress?,
     onPickerResultConsumed: () -> Unit,
     onboarding: Boolean = false,
+    /**
+     * Tapping a completed step dot in the onboarding header. Defaulted to a no-op because the same
+     * screen is reachable from the profile menu, where there is no chain to jump around in.
+     */
+    onJumpToSection: (cz.cleansia.partner.features.orders.ProfileSection) -> Unit = {},
     viewModel: AddressSectionViewModel = hiltViewModel(),
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
@@ -101,6 +106,7 @@ fun AddressSectionScreen(
                 OnboardingChainHeader(
                     currentSection = ProfileSection.Address,
                     state = chainState,
+                    onSelect = onJumpToSection,
                 )
             }
         } else null,

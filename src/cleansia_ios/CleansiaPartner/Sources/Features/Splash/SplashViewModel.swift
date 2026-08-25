@@ -11,6 +11,13 @@ final class SplashViewModel: ViewModel {
     private let hold: () async -> Void
     private var hasResolvedOnce = false
 
+    /// The cold-start reveal. Named rather than inlined because two call sites now choose
+    /// between it and nothing, and a duration that only exists as a literal in a default
+    /// argument cannot be referred to by the one that opts out.
+    static let brandHold: () async -> Void = {
+        try? await Task.sleep(nanoseconds: 1_800_000_000)
+    }
+
     /// The default hold gives the branded splash time to play its letter-by-letter reveal (~1.2s)
     /// before the gate resolves and `PartnerRootView` swaps in the next screen — otherwise the
     /// no-session path resolves synchronously and the reveal is torn down to a flash. Mirrors
@@ -19,7 +26,7 @@ final class SplashViewModel: ViewModel {
         hasValidSession: Bool,
         settings: AppSettingsStore,
         client: PartnerRegistrationClient,
-        hold: @escaping () async -> Void = { try? await Task.sleep(nanoseconds: 1_800_000_000) }
+        hold: @escaping () async -> Void = SplashViewModel.brandHold
     ) {
         self.hasValidSession = hasValidSession
         self.settings = settings

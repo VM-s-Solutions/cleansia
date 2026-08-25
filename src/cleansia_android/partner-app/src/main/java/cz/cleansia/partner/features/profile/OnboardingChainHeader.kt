@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -48,6 +49,7 @@ import cz.cleansia.partner.features.orders.ProfileSection
 fun OnboardingChainHeader(
     currentSection: ProfileSection,
     state: OnboardingChainState,
+    onSelect: (ProfileSection) -> Unit,
 ) {
     val sections = ProfileSection.values().toList()
     val currentIndex = sections.indexOf(currentSection)
@@ -55,7 +57,8 @@ fun OnboardingChainHeader(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        // 24, matching iOS's CornerRadius.large token. The two drew this card at different radii.
+        shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
     ) {
         Column(modifier = Modifier.padding(Spacing.M)) {
@@ -70,7 +73,9 @@ fun OnboardingChainHeader(
                         stepNumber,
                         state.totalSteps,
                     ),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    // The token is already Bold (Type.kt) — overriding it to SemiBold here made this
+                    // line lighter than the same slot everywhere else, and lighter than iOS.
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
@@ -112,6 +117,11 @@ fun OnboardingChainHeader(
                         labelRes = labelResFor(section),
                         isDone = isDone,
                         isCurrent = isCurrent,
+                        // Reachable = already finished, or already walked past. Not "any step":
+                        // jumping forward into a section the chain has not filled yet leaves a gap
+                        // the chain then has to re-find.
+                        isReachable = isDone || index < currentIndex,
+                        onTap = { onSelect(section) },
                     )
                 }
             }
@@ -125,6 +135,8 @@ private fun SectionDot(
     labelRes: Int,
     isDone: Boolean,
     isCurrent: Boolean,
+    isReachable: Boolean,
+    onTap: () -> Unit,
 ) {
     val dotColor = when {
         isCurrent -> MaterialTheme.colorScheme.primary
@@ -136,7 +148,14 @@ private fun SectionDot(
         isDone -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        // The click goes on the whole dot+label column, not the 32dp circle: 32dp is under the 48dp
+        // minimum touch target, and the label is the part people aim at.
+        modifier = Modifier
+            .clickable(enabled = isReachable, role = Role.Button, onClick = onTap)
+            .padding(horizontal = Spacing.XXS),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(
             modifier = Modifier
                 .size(32.dp)
@@ -154,9 +173,7 @@ private fun SectionDot(
             } else {
                 Text(
                     text = index.toString(),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
+                    style = MaterialTheme.typography.labelLarge,
                     color = if (isCurrent) MaterialTheme.colorScheme.onPrimary
                     else MaterialTheme.colorScheme.onSurface,
                 )
@@ -167,7 +184,6 @@ private fun SectionDot(
             text = stringResource(labelRes),
             style = MaterialTheme.typography.labelSmall,
             color = labelColor,
-            fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }

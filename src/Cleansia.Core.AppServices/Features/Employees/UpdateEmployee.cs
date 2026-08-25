@@ -253,7 +253,7 @@ public class UpdateEmployee
             await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
             await UploadDocuments(employee, command, cancellationToken);
-            var availability = ConvertAvailability(command.Availability);
+            var availability = ResolveAvailability(employee, command.Availability);
 
             UpdateEmployeeDetails(employee, command, address, availability);
 
@@ -311,6 +311,31 @@ public class UpdateEmployee
 
                 employeeDocumentRepository.Add(employeeDocument);
             }
+        }
+
+        /// <summary>
+        /// A NULL availability means the caller did not send one, and that has to leave the cleaner's
+        /// schedule alone.
+        ///
+        /// <para><c>ConvertAvailability(null)</c> returns an EMPTY dictionary, which
+        /// <c>UpdateEmployeeDetails</c> then writes — so before this guard, any caller that omitted the
+        /// field silently cleared a schedule it never showed anyone. Nothing exposed that while the
+        /// partner web profile form still carried an availability editor and posted the current value
+        /// back on every save; removing that editor (dead UI — the real one is the dedicated
+        /// <c>UpdateAvailability</c> endpoint) made the web form exactly such a caller.</para>
+        ///
+        /// <para><b>Null and empty are deliberately different.</b> Null is "I am not talking about
+        /// availability"; an empty dictionary is a caller saying "clear it". Collapsing the two is the
+        /// bug. Public rather than private so the invariant can be asserted against the real code
+        /// instead of a copy of it in a test.</para>
+        /// </summary>
+        public static Dictionary<string, List<TimeRange>> ResolveAvailability(
+            Employee employee,
+            Dictionary<string, List<TimeRangeDto>>? sent)
+        {
+            return sent is null
+                ? employee.Availability.ToDictionary(pair => pair.Key, pair => pair.Value)
+                : ConvertAvailability(sent);
         }
 
         private static Dictionary<string, List<TimeRange>> ConvertAvailability(Dictionary<string, List<TimeRangeDto>>? availabilityDto)

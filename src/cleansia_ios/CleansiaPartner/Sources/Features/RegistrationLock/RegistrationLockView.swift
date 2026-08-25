@@ -78,6 +78,18 @@ struct RegistrationLockView: View {
         }
         .onReceive(vm.completed) { onCompleted() }
         .onReceive(vm.signedOut) { onSignedOut() }
+        .onReceive(chainVM.jumpRequested) { section in
+            // Replace, don't push — exactly what an advance does. The chain is a flat sequence, so a
+            // jump must not grow the stack any more than moving forward does, or system-back stops
+            // meaning "leave onboarding".
+            let route = section.route(onboarding: true)
+            if path.isEmpty {
+                path.append(route)
+            } else {
+                path.removeLast()
+                path.append(route)
+            }
+        }
         .onReceive(chainVM.advanced) { step in
             switch step {
             case let .next(route):

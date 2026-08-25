@@ -51,7 +51,11 @@ struct BankSectionView: View {
             onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
-                    OnboardingChainHeader(currentSection: .bank, state: chainVM.state)
+                    OnboardingChainHeader(
+                        currentSection: .bank,
+                        state: chainVM.state,
+                        onSelect: { chainVM.requestJump(to: $0) }
+                    )
                 }
             },
             form: {

@@ -23,6 +23,11 @@ fun BankSectionScreen(
     onNavigateBack: () -> Unit,
     onSaved: () -> Unit,
     onboarding: Boolean = false,
+    /**
+     * Tapping a completed step dot in the onboarding header. Defaulted to a no-op because the same
+     * screen is reachable from the profile menu, where there is no chain to jump around in.
+     */
+    onJumpToSection: (cz.cleansia.partner.features.orders.ProfileSection) -> Unit = {},
     viewModel: BankSectionViewModel = hiltViewModel(),
     chainViewModel: OnboardingChainViewModel = hiltViewModel(),
 ) {
@@ -43,6 +48,7 @@ fun BankSectionScreen(
             OnboardingChainHeader(
                 currentSection = ProfileSection.Bank,
                 state = chainState,
+                onSelect = onJumpToSection,
             )
         }),
     ) {

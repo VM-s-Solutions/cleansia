@@ -45,6 +45,11 @@ fun IdentificationSectionScreen(
     onNavigateBack: () -> Unit,
     onSaved: () -> Unit,
     onboarding: Boolean = false,
+    /**
+     * Tapping a completed step dot in the onboarding header. Defaulted to a no-op because the same
+     * screen is reachable from the profile menu, where there is no chain to jump around in.
+     */
+    onJumpToSection: (cz.cleansia.partner.features.orders.ProfileSection) -> Unit = {},
     viewModel: IdentificationSectionViewModel = hiltViewModel(),
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
@@ -71,6 +76,7 @@ fun IdentificationSectionScreen(
             cz.cleansia.partner.features.profile.OnboardingChainHeader(
                 currentSection = cz.cleansia.partner.features.orders.ProfileSection.Identification,
                 state = chainState,
+                onSelect = onJumpToSection,
             )
         }),
     ) {

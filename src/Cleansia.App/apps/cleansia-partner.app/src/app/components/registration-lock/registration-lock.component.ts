@@ -88,16 +88,6 @@ export class CleansiaRegistrationLockComponent implements OnInit {
     });
 
     categories.push({
-      key: 'availability',
-      translationKey: 'registration_lock.categories.availability',
-      icon: 'pi pi-calendar',
-      status: result.hasSetAvailability ? 'done' : 'missing',
-      details: result.hasSetAvailability
-        ? []
-        : ['registration_lock.categories.availability_required'],
-    });
-
-    categories.push({
       key: 'documents',
       translationKey: 'registration_lock.categories.documents',
       icon: 'pi pi-file',

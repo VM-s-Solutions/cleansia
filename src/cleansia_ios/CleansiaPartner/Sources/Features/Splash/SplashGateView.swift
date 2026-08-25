@@ -10,13 +10,17 @@ struct SplashGateView: View {
         hasValidSession: Bool,
         settings: AppSettingsStore,
         client: PartnerRegistrationClient,
+        showsBrandHold: Bool = true,
         onSignOut: @escaping () -> Void,
         onResolved: @escaping (SplashOutcome) -> Void
     ) {
         _vm = StateObject(wrappedValue: SplashViewModel(
             hasValidSession: hasValidSession,
             settings: settings,
-            client: client
+            client: client,
+            // Not a shorter hold — none at all. A hold that is merely shorter still reads as a
+            // second launch; the gate should be invisible when it is fast.
+            hold: showsBrandHold ? SplashViewModel.brandHold : {}
         ))
         self.onResolved = onResolved
         self.onSignOut = onSignOut

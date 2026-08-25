@@ -4,6 +4,7 @@ import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   BlobFileDto,
+  GetCountryFieldLabelsCountryFieldLabelsDto,
   PartnerClient,
 } from '@cleansia/partner-services';
 import {
@@ -51,11 +52,48 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   profileLoading = signal(false);
   profileSubmitLoading = signal(false);
   countries = signal<ICleansiaSelectOption[]>([]);
+
+  /// What the cleaner's country calls its business identifiers.
+  ///
+  /// `CountryConfiguration` has carried these since it was seeded and nothing read them, so this app
+  /// hardcoded the Czech "IČO" in its own translation files — which a Polish or Ukrainian partner then
+  /// read, and Poland has no IČO. Null means the platform holds no configuration for the country and
+  /// the field falls back to its own neutral wording. Both mobile apps already do this.
+  fieldLabels = signal<GetCountryFieldLabelsCountryFieldLabelsDto | null>(null);
+
+  /// The country the labels on screen belong to. Guards against a slow answer for an earlier pick
+  /// overwriting a newer one when the picker is changed twice.
+  private fieldLabelsFor: string | null = null;
   // Display only — the signed-in partner's login address. It is deliberately not a form control:
   // the onboarding command carries no email, so anything typed here could never be saved.
   email = signal('');
 
   private profileData$: Observable<any> | null = null;
+
+  /**
+   * Silent on failure and silent on 404. A country we hold no configuration for is one whose word for
+   * this we do not know — the neutral fallback is the honest answer, and an error banner would report
+   * a missing translation as a broken form.
+   */
+  loadFieldLabels(countryId: string | null): void {
+    if (!countryId || this.fieldLabelsFor === countryId) {
+      return;
+    }
+
+    this.fieldLabelsFor = countryId;
+    this.partnerClient.countryClient
+      .getFieldLabels(countryId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((labels) => {
+        // Only publish if the picker has not moved on since this call was made.
+        if (this.fieldLabelsFor === countryId) {
+          this.fieldLabels.set(labels);
+        }
+      });
+  }
 
   loadProfile(): void {
     if (this.profileData$) {
@@ -91,6 +129,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         );
 
         this.countries.set(countryOptions);
+        this.loadFieldLabels(employee.countryId ?? null);
         this.profileLoading.set(false);
       }),
       catchError(() => {

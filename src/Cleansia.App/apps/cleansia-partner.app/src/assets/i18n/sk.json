@@ -2,23 +2,23 @@
   "name": "Cleansia",
   "profile": {
     "fields": {
-      "first_name": "Meno",
-      "last_name": "Priezvisko",
-      "email": "E-mail",
-      "phone_number": "Telefónne číslo",
-      "birth_date": "Dátum narodenia",
-      "street": "Ulica",
+      "birthDate": "Dátum narodenia",
       "city": "Mesto",
-      "zip_code": "PSČ",
       "country": "Krajina",
-      "tax_id": "DIČ",
-      "registration_number": "IČO",
-      "vat_number": "IČ DPH",
-      "legal_entity_name": "Názov firmy",
+      "documents": "Dokumenty",
+      "email": "E-mail",
+      "firstName": "Meno",
       "iban": "Bankové údaje",
-      "passport_id": "Číslo pasu",
+      "lastName": "Priezvisko",
+      "legalEntityName": "Názov firmy",
       "nationality": "Národnosť",
-      "documents": "Dokumenty"
+      "passportId": "Číslo pasu",
+      "phoneNumber": "Telefónne číslo",
+      "registrationNumber": "IČO",
+      "street": "Ulica",
+      "tax_id": "DIČ",
+      "vat_number": "IČ DPH",
+      "zipCode": "PSČ"
     }
   },
   "page_titles": {
@@ -123,7 +123,7 @@
       "entity_type": "Typ podnikania",
       "entity_type_natural_person": "Samostatne zárobkovo činná osoba (OSVČ)",
       "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
-      "registration_number": "IČO",
+      "registration_number": "Registračné číslo",
       "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
       "bank_details": "Bankové údaje pre výplatu",
@@ -186,7 +186,8 @@
       "request_deletion": "Požiadať o odstránenie",
       "request_deletion_title": "Požiadať o odstránenie?",
       "request_deletion_message": "Zatiaľ sa nič neodstráni. Niektoré dokumenty musíme uchovávať, preto vašu žiadosť posúdi administrátor — súbor {{fileName}} zostáva až do jeho odpovede bez zmeny.",
-      "deletion_reason": "Prečo má byť odstránený?"
+      "deletion_reason": "Prečo má byť odstránený?",
+      "replace_document": "Nahradiť"
     },
     "dashboard": {
       "title": "Prehľad",
@@ -858,7 +859,8 @@
         "upload_error": "Nepodarilo sa nahrať dokumenty. Skúste to prosím znova.",
         "download_error": "Nepodarilo sa stiahnuť dokument. Skúste to prosím znova.",
         "delete_error": "Nepodarilo sa vymazať dokument. Skúste to prosím znova.",
-        "deletion_requested": "Žiadosť odoslaná. Čoskoro ju vybavíme."
+        "deletion_requested": "Žiadosť odoslaná. Čoskoro ju vybavíme.",
+        "replace_success": "Nahradené. Novú verziu máme na kontrolu."
       },
       "orders": {
         "failed_to_load_details": "Nepodarilo sa načítať podrobnosti objednávky. Skúste to prosím znova.",

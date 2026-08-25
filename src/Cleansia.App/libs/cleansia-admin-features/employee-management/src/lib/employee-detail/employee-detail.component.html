@@ -56,7 +56,14 @@
           <strong
             >{{ 'pages.employee_detail.missing_fields' | translate }}:</strong
           >
-          {{ employee.missingFields?.join(', ') }}
+          <!--
+            Translated one at a time rather than joined raw. The server sends translation KEYS
+            (profile.fields.firstName), so `join` printed them verbatim — an admin read
+            "profile.fields.registrationNumber" and had to know the codebase to parse it.
+          -->
+          @for (field of employee.missingFields ?? []; track field; let last = $last) {<span
+            >{{ field | translate }}{{ last ? '' : ', ' }}</span
+          >}
         </div>
         }
       </div>

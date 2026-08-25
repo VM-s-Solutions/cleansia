@@ -2,23 +2,23 @@
   "name": "Cleansia",
   "profile": {
     "fields": {
-      "first_name": "First Name",
-      "last_name": "Last Name",
-      "email": "Email",
-      "phone_number": "Phone Number",
-      "birth_date": "Birth Date",
-      "street": "Street",
+      "birthDate": "Birth Date",
       "city": "City",
-      "zip_code": "Zip Code",
       "country": "Country",
-      "tax_id": "Tax ID",
-      "registration_number": "Registration Number (IČO)",
-      "vat_number": "VAT Number (DIČ)",
-      "legal_entity_name": "Legal Entity Name",
+      "documents": "Documents",
+      "email": "Email",
+      "firstName": "First Name",
       "iban": "Bank details",
-      "passport_id": "Passport ID",
+      "lastName": "Last Name",
+      "legalEntityName": "Legal Entity Name",
       "nationality": "Nationality",
-      "documents": "Documents"
+      "passportId": "Passport ID",
+      "phoneNumber": "Phone Number",
+      "registrationNumber": "Registration Number (IČO)",
+      "street": "Street",
+      "tax_id": "Tax ID",
+      "vat_number": "VAT Number (DIČ)",
+      "zipCode": "Zip Code"
     }
   },
   "page_titles": {
@@ -123,8 +123,8 @@
       "entity_type": "Business Type",
       "entity_type_natural_person": "Self-employed individual (OSVČ)",
       "entity_type_legal_entity": "Legal entity (s.r.o., a.s., ...)",
-      "registration_number": "Registration Number (IČO)",
-      "vat_number": "VAT Number (DIČ)",
+      "registration_number": "Registration Number",
+      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "bank_details": "Bank Details for Payroll",
       "iban": "IBAN",
@@ -186,7 +186,8 @@
       "request_deletion": "Request removal",
       "request_deletion_title": "Ask us to remove this?",
       "request_deletion_message": "Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — {{fileName}} stays exactly as it is until they answer.",
-      "deletion_reason": "Why should it be removed?"
+      "deletion_reason": "Why should it be removed?",
+      "replace_document": "Replace"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -858,7 +859,8 @@
         "upload_error": "Failed to upload documents. Please try again.",
         "download_error": "Failed to download document. Please try again.",
         "delete_error": "Failed to delete document. Please try again.",
-        "deletion_requested": "Request sent. We'll answer it shortly."
+        "deletion_requested": "Request sent. We'll answer it shortly.",
+        "replace_success": "Replaced. The new version is with us for review."
       },
       "orders": {
         "failed_to_load_details": "Failed to load order details. Please try again.",

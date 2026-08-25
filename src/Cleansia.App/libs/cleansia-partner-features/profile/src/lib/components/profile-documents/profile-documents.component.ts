@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, Signal, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Input,
+  OnInit,
+  Signal,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
@@ -80,10 +89,43 @@ export class ProfileDocumentsComponent implements OnInit {
   // Asking an admin to remove a document. Held here rather than in the facade because it is dialog
   // state, not document state — the facade owns what the server knows, and the server knows nothing
   // about a request until it is sent.
+  @ViewChild('replaceInput') replaceInput?: ElementRef<HTMLInputElement>;
+
+  /** Which document the next file pick replaces. Null whenever no pick is in flight. */
+  private replaceTargetId: string | null = null;
+
   deletionDialogVisible = false;
   deletionReason = '';
   deletionFileName = '';
   private deletionDocumentId: string | null = null;
+
+  startReplace(documentId: string): void {
+    this.replaceTargetId = documentId;
+    const input = this.replaceInput?.nativeElement;
+    if (!input) {
+      return;
+    }
+    // Cleared first: without this, picking the SAME file twice fires no change event and the second
+    // replace silently does nothing.
+    input.value = '';
+    input.click();
+  }
+
+  async onReplaceFileChosen(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const documentId = this.replaceTargetId;
+
+    // Cleared before the await, on every path. A cancelled picker fires no event at all, so a target
+    // left standing would make the NEXT replace aim at the wrong document.
+    this.replaceTargetId = null;
+
+    if (!file || !documentId) {
+      return;
+    }
+
+    await this.facade.replaceDocument(documentId, file);
+  }
 
   openDeletionRequest(documentId: string, fileName: string): void {
     this.deletionDocumentId = documentId;

@@ -18,6 +18,7 @@ describe('ProfileDocumentsFacade', () => {
     saveMyDocuments: jest.Mock;
     getMyDocuments: jest.Mock;
     requestMyDocumentDeletion: jest.Mock;
+    replaceMyDocument: jest.Mock;
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let facade: ProfileDocumentsFacade;
@@ -28,6 +29,7 @@ describe('ProfileDocumentsFacade', () => {
       saveMyDocuments: jest.fn().mockReturnValue(of({})),
       getMyDocuments: jest.fn().mockReturnValue(of({ documents: [] })),
       requestMyDocumentDeletion: jest.fn().mockReturnValue(of({})),
+      replaceMyDocument: jest.fn().mockReturnValue(of({})),
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
@@ -139,5 +141,51 @@ describe('ProfileDocumentsFacade', () => {
       facade.requestDocumentDeletion('doc-1', 'Wrong file')
     ).rejects.toBeTruthy();
     expect(facade.deletionRequestInFlight()).toBe(false);
+  });
+  // Replacing is the door that needs no admin: the server creates the new version before retiring the
+  // old one, so the count never dips and the registration lock never re-engages. Unlike a deletion
+  // REQUEST, the list really does change, so it has to be reloaded.
+  it('reloads the list after a replacement, because the list really did change', async () => {
+    await facade.replaceDocument(
+      'doc-1',
+      new File(['scan-bytes'], 'passport.png', { type: 'image/png' })
+    );
+
+    expect(employeeClient.replaceMyDocument).toHaveBeenCalledWith(
+      'doc-1',
+      expect.anything()
+    );
+    expect(employeeClient.getMyDocuments).toHaveBeenCalled();
+    expect(facade.replacingDocumentId()).toBeNull();
+  });
+
+  // The document TYPE is deliberately absent. The server carries it over from the version being
+  // replaced — sending one would let a replacement relabel a document an admin already approved.
+  it('sends the file and no document type', async () => {
+    await facade.replaceDocument(
+      'doc-1',
+      new File(['scan-bytes'], 'passport.png', { type: 'image/png' })
+    );
+
+    const body = employeeClient.replaceMyDocument.mock.calls[0][1];
+    expect(body.toJSON()).toEqual({
+      file: {
+        fileName: 'passport.png',
+        base64Content: expect.stringContaining('data:image/png;base64,'),
+        contentType: 'image/png',
+      },
+    });
+  });
+
+  // A refusal must clear the in-flight id, or that row's replace button stays disabled forever.
+  it('clears the in-flight id when the replacement is refused', async () => {
+    employeeClient.replaceMyDocument.mockReturnValue(
+      throwError(() => new Error('too large'))
+    );
+
+    await expect(
+      facade.replaceDocument('doc-1', new File(['x'], 'a.png', { type: 'image/png' }))
+    ).rejects.toBeTruthy();
+    expect(facade.replacingDocumentId()).toBeNull();
   });
 });

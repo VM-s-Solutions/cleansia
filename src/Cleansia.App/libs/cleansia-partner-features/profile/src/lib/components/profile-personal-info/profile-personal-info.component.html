@@ -110,7 +110,10 @@
     </div>
     <div class="cleansia-profile__field">
       <cleansia-text-input
-        [label]="'pages.profile.registration_number' | translate"
+        [label]="
+          facade.fieldLabels()?.registrationNumberLabel ??
+          ('pages.profile.registration_number' | translate)
+        "
         [floatVariant]="'on'"
         formControlName="registrationNumber"
         dataType="text"
@@ -118,7 +121,10 @@
     </div>
     <div class="cleansia-profile__field">
       <cleansia-text-input
-        [label]="'pages.profile.vat_number' | translate"
+        [label]="
+          facade.fieldLabels()?.vatNumberLabel ??
+          ('pages.profile.vat_number' | translate)
+        "
         [floatVariant]="'on'"
         formControlName="vatNumber"
         dataType="text"

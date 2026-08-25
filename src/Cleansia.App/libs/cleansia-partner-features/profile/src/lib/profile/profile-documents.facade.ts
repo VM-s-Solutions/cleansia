@@ -3,6 +3,7 @@ import {
   BlobFileDto,
   DocumentType,
   PartnerClient,
+  ReplaceMyDocumentRequest,
   RequestMyDocumentDeletionRequest,
   SaveMyDocumentsCommand,
   SaveMyDocumentsDocumentToSave,
@@ -45,6 +46,7 @@ export interface DocumentsState {
   loading: boolean;
   saving: boolean;
   requestingDeletion: boolean;
+  replacingDocumentId: string | null;
 }
 
 @Injectable()
@@ -64,6 +66,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     loading: false,
     saving: false,
     requestingDeletion: false,
+    replacingDocumentId: null,
   });
 
   // Documents selectors
@@ -75,6 +78,10 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   readonly documentsSaving = computed(() => this.documentsState().saving);
   readonly deletionRequestInFlight = computed(
     () => this.documentsState().requestingDeletion
+  );
+
+  readonly replacingDocumentId = computed(
+    () => this.documentsState().replacingDocumentId
   );
   readonly hasStagedDocuments = computed(
     () => this.documentsState().stagedDocuments.length > 0
@@ -138,25 +145,60 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     }
   }
 
+  /** Two callers now: staging a fresh upload, and replacing an existing document. */
+  private static readFileAsBlobDto(file: File): Promise<BlobFileDto> {
+    return new Promise<BlobFileDto>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const blobFileDto = new BlobFileDto();
+        blobFileDto.fileName = file.name;
+        blobFileDto.base64Content = reader.result as string;
+        blobFileDto.contentType = file.type;
+        resolve(blobFileDto);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Supersede a document with a newer file. Needs no admin, because the slot never empties: the
+   * server creates the new version before retiring the old one, so `AreDocumentsUploaded` never dips
+   * and the registration lock never re-engages.
+   *
+   * The document TYPE is deliberately not sent — the server carries it over from the version being
+   * replaced, so a replacement cannot relabel a document an admin already approved as something else.
+   *
+   * Unlike a deletion REQUEST, the list really does change here, so it is reloaded.
+   */
+  async replaceDocument(documentId: string, file: File): Promise<void> {
+    this.documentsState.update((s) => ({ ...s, replacingDocumentId: documentId }));
+
+    try {
+      const body = new ReplaceMyDocumentRequest();
+      body.file = await ProfileDocumentsFacade.readFileAsBlobDto(file);
+
+      await this.partnerClient.employeeClient
+        .replaceMyDocument(documentId, body)
+        .toPromise();
+
+      this.snackbarService.showSuccess(
+        this.translate.instant('global.messages.documents.replace_success')
+      );
+
+      await this.loadEmployeeDocuments();
+    } finally {
+      this.documentsState.update((s) => ({ ...s, replacingDocumentId: null }));
+    }
+  }
+
   private async stageEmployeeDocument(
     file: File,
     documentType: DocumentType
   ): Promise<void> {
     try {
-      const reader = new FileReader();
-
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const base64Content = await base64Promise;
-
-      const blobFileDto = new BlobFileDto();
-      blobFileDto.fileName = file.name;
-      blobFileDto.base64Content = base64Content;
-      blobFileDto.contentType = file.type;
+      const blobFileDto = await ProfileDocumentsFacade.readFileAsBlobDto(file);
+      const base64Content = blobFileDto.base64Content as string;
 
       const stagedDoc: StagedDocument = {
         file: blobFileDto,

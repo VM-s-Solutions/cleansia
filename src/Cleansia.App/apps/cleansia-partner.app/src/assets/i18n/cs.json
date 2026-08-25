@@ -2,23 +2,23 @@
   "name": "Cleansia",
   "profile": {
     "fields": {
-      "first_name": "Jméno",
-      "last_name": "Příjmení",
-      "email": "E-mail",
-      "phone_number": "Telefonní číslo",
-      "birth_date": "Datum narození",
-      "street": "Ulice",
+      "birthDate": "Datum narození",
       "city": "Město",
-      "zip_code": "PSČ",
       "country": "Země",
-      "tax_id": "DIČ",
-      "registration_number": "IČO",
-      "vat_number": "DIČ",
-      "legal_entity_name": "Název firmy",
+      "documents": "Dokumenty",
+      "email": "E-mail",
+      "firstName": "Jméno",
       "iban": "Bankovní údaje",
-      "passport_id": "Číslo pasu",
+      "lastName": "Příjmení",
+      "legalEntityName": "Název firmy",
       "nationality": "Národnost",
-      "documents": "Dokumenty"
+      "passportId": "Číslo pasu",
+      "phoneNumber": "Telefonní číslo",
+      "registrationNumber": "IČO",
+      "street": "Ulice",
+      "tax_id": "DIČ",
+      "vat_number": "DIČ",
+      "zipCode": "PSČ"
     }
   },
   "page_titles": {
@@ -124,7 +124,7 @@
       "entity_type": "Typ podnikání",
       "entity_type_natural_person": "Osoba samostatně výdělečně činná (OSVČ)",
       "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
-      "registration_number": "IČO",
+      "registration_number": "Registrační číslo",
       "vat_number": "DIČ",
       "legal_entity_name": "Název firmy",
       "bank_details": "Bankovní údaje pro výplatu",
@@ -186,7 +186,8 @@
       "request_deletion": "Požádat o odstranění",
       "request_deletion_title": "Požádat o odstranění?",
       "request_deletion_message": "Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — soubor {{fileName}} zůstává až do jeho odpovědi beze změny.",
-      "deletion_reason": "Proč má být odstraněn?"
+      "deletion_reason": "Proč má být odstraněn?",
+      "replace_document": "Nahradit"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -858,7 +859,8 @@
         "upload_error": "Nepodařilo se nahrát dokumenty. Zkuste to prosím znovu.",
         "download_error": "Nepodařilo se stáhnout dokument. Zkuste to prosím znovu.",
         "delete_error": "Nepodařilo se smazat dokument. Zkuste to prosím znovu.",
-        "deletion_requested": "Žádost odeslána. Brzy ji vyřídíme."
+        "deletion_requested": "Žádost odeslána. Brzy ji vyřídíme.",
+        "replace_success": "Nahrazeno. Novou verzi máme ke kontrole."
       },
       "orders": {
         "failed_to_load_details": "Nepodařilo se načíst podrobnosti objednávky. Zkuste to prosím znovu.",

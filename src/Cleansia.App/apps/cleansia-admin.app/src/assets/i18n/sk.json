@@ -1,23 +1,23 @@
 {
   "profile": {
     "fields": {
-      "first_name": "Meno",
-      "last_name": "Priezvisko",
-      "email": "E-mail",
-      "phone_number": "Telefónne číslo",
-      "birth_date": "Dátum narodenia",
-      "street": "Ulica",
+      "birthDate": "Dátum narodenia",
       "city": "Mesto",
-      "zip_code": "PSČ",
       "country": "Krajina",
-      "tax_id": "DIČ",
-      "registration_number": "IČO",
-      "vat_number": "IČ DPH",
-      "legal_entity_name": "Názov firmy",
+      "documents": "Dokumenty",
+      "email": "E-mail",
+      "firstName": "Meno",
       "iban": "IBAN",
-      "passport_id": "Číslo pasu",
+      "lastName": "Priezvisko",
+      "legalEntityName": "Názov firmy",
       "nationality": "Národnosť",
-      "documents": "Dokumenty"
+      "passportId": "Číslo pasu",
+      "phoneNumber": "Telefónne číslo",
+      "registrationNumber": "IČO",
+      "street": "Ulica",
+      "tax_id": "DIČ",
+      "vat_number": "IČ DPH",
+      "zipCode": "PSČ"
     }
   },
   "common": {

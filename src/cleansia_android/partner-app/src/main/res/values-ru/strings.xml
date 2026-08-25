@@ -445,6 +445,8 @@
     <string name="document_type">Тип документа</string>
     <string name="description_optional">Описание (опционально)</string>
     <string name="no_documents">Документы пока не загружены</string>
+    <string name="documents_load_failed_title">Не удалось загрузить ваши документы</string>
+    <string name="documents_load_failed_message">Проверьте соединение и попробуйте ещё раз. Ничего из загруженного не потеряно.</string>
     <string name="document_requirements_title">Что нам нужно от вас</string>
     <string name="document_requirements_subtitle">Зависит от страны, где вы работаете. Загрузите их, и мы проверим.</string>
     <string name="document_requirement_required">Обязательно</string>

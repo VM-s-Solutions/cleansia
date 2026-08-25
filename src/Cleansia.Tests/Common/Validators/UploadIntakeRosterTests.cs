@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Tests.Logging;
 using Microsoft.AspNetCore.Http;
@@ -42,11 +42,13 @@ public class UploadIntakeRosterTests
         "Cleansia.Web.Customer.UserController.UpdateCurrentUser — ImageFileValidator",
         "Cleansia.Web.Mobile.Customer.DisputeController.UploadEvidence — SniffedContentType(DisputeEvidence)",
         "Cleansia.Web.Mobile.Customer.UserController.UpdateCurrentUser — ImageFileValidator",
+        "Cleansia.Web.Mobile.Partner.EmployeeController.ReplaceMyDocument — DocumentFileValidator",
         "Cleansia.Web.Mobile.Partner.EmployeeController.SaveMyDocuments — DocumentFileValidator",
         "Cleansia.Web.Mobile.Partner.EmployeeController.UpdateEmployee — DocumentFileValidator",
         "Cleansia.Web.Mobile.Partner.OrderController.SavePhotos — BlobFileSize only",
         "Cleansia.Web.Mobile.Partner.OrderController.UploadPhoto — SniffedContentType(OrderPhoto)",
         "Cleansia.Web.Mobile.Partner.UserController.UpdateCurrentUser — ImageFileValidator",
+        "Cleansia.Web.Partner.EmployeeController.ReplaceMyDocument — DocumentFileValidator",
         "Cleansia.Web.Partner.EmployeeController.SaveMyDocuments — DocumentFileValidator",
         "Cleansia.Web.Partner.EmployeeController.UpdateEmployee — DocumentFileValidator",
         "Cleansia.Web.Partner.OrderController.SavePhotos — BlobFileSize only",

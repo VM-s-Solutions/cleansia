@@ -807,6 +807,66 @@
         }
       }
     },
+    "/api/Country/GetFieldLabels/{countryId}": {
+      "get": {
+        "tags": [
+          "Country"
+        ],
+        "operationId": "Country_GetFieldLabels",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCountryFieldLabels_CountryFieldLabelsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCountryFieldLabels_CountryFieldLabelsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCountryFieldLabels_CountryFieldLabelsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Dashboard/GetStats": {
       "get": {
         "tags": [
@@ -2941,38 +3001,157 @@
         }
       }
     },
-    "/api/Employee/DeleteMyDocument": {
-      "delete": {
+    "/api/Employee/RequestMyDocumentDeletion/{documentId}": {
+      "post": {
         "tags": [
           "Employee"
         ],
-        "operationId": "Employee_DeleteMyDocument",
+        "operationId": "Employee_RequestMyDocumentDeletion",
         "parameters": [
           {
-            "name": "DocumentId",
-            "in": "query",
+            "name": "documentId",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMyDocumentDeletion_Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMyDocumentDeletion_Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMyDocumentDeletion_Request"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteMyDocument_Response"
+                  "$ref": "#/components/schemas/RequestMyDocumentDeletion_Response"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteMyDocument_Response"
+                  "$ref": "#/components/schemas/RequestMyDocumentDeletion_Response"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteMyDocument_Response"
+                  "$ref": "#/components/schemas/RequestMyDocumentDeletion_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Employee/ReplaceMyDocument/{documentId}": {
+      "put": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_ReplaceMyDocument",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceMyDocument_Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceMyDocument_Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceMyDocument_Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaceMyDocument_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaceMyDocument_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaceMyDocument_Response"
                 }
               }
             }
@@ -3101,6 +3280,65 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Employee/GetMyDocumentRequirements": {
+      "get": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_GetMyDocumentRequirements",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyDocumentRequirementDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyDocumentRequirementDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyDocumentRequirementDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "text/plain": {
                 "schema": {
@@ -7084,15 +7322,6 @@
         },
         "additionalProperties": false
       },
-      "DeleteMyDocument_Response": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
       "DeleteOrderIssue_Response": {
         "type": "object",
         "properties": {
@@ -7964,6 +8193,46 @@
         },
         "additionalProperties": false
       },
+      "GetCountryFieldLabels_CountryFieldLabelsDto": {
+        "type": "object",
+        "properties": {
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "registrationNumberLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "registrationNumberFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "registrationNumberRequired": {
+            "type": "boolean"
+          },
+          "taxIdLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxIdFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "vatNumberLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "vatNumberFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "vatNumberRequired": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "GetCurrentEmployeeDetail_Query": {
         "type": "object",
         "additionalProperties": false
@@ -8339,6 +8608,29 @@
             "format": "double"
           },
           "monthName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyDocumentRequirementDto": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus"
+          },
+          "documentId": {
             "type": "string",
             "nullable": true
           }
@@ -9777,6 +10069,33 @@
         },
         "additionalProperties": false
       },
+      "ReplaceMyDocument_Request": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/BlobFileDto"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReplaceMyDocument_Response": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "ReportOrderIssue_Command": {
         "type": "object",
         "properties": {
@@ -9805,6 +10124,26 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequestMyDocumentDeletion_Request": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequestMyDocumentDeletion_Response": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

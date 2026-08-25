@@ -182,7 +182,11 @@
       "job_radius_distance": "Vzdálenost od domova (km)",
       "job_radius_distance_hint": "Mezi {{min}} a {{max}} km.",
       "bank_account": "Bankovní účet",
-      "bank_account_hint": "Předčíslí, číslo účtu a kód banky — vložte celý účet a rozdělí se sám."
+      "bank_account_hint": "Předčíslí, číslo účtu a kód banky — vložte celý účet a rozdělí se sám.",
+      "request_deletion": "Požádat o odstranění",
+      "request_deletion_title": "Požádat o odstranění?",
+      "request_deletion_message": "Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — soubor {{fileName}} zůstává až do jeho odpovědi beze změny.",
+      "deletion_reason": "Proč má být odstraněn?"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -852,10 +856,9 @@
         "no_documents_to_save": "Žádné dokumenty k uložení. Prosím vyberte nejprve soubory.",
         "upload_success": "Dokumenty byly úspěšně nahrány!",
         "upload_error": "Nepodařilo se nahrát dokumenty. Zkuste to prosím znovu.",
-        "delete_confirm": "Opravdu chcete smazat {{fileName}}?",
-        "delete_success": "Dokument byl úspěšně smazán!",
         "download_error": "Nepodařilo se stáhnout dokument. Zkuste to prosím znovu.",
-        "delete_error": "Nepodařilo se smazat dokument. Zkuste to prosím znovu."
+        "delete_error": "Nepodařilo se smazat dokument. Zkuste to prosím znovu.",
+        "deletion_requested": "Žádost odeslána. Brzy ji vyřídíme."
       },
       "orders": {
         "failed_to_load_details": "Nepodařilo se načíst podrobnosti objednávky. Zkuste to prosím znovu.",
@@ -1181,7 +1184,8 @@
     "employee_document": {
       "not_found": "Dokument nenalezen",
       "unauthorized": "Nemáte oprávnění k přístupu k tomuto dokumentu",
-      "not_owned": "Můžete přistupovat pouze ke svým vlastním dokumentům"
+      "not_owned": "Můžete přistupovat pouze ke svým vlastním dokumentům",
+      "deletion_already_requested": "O odstranění tohoto dokumentu jste již požádali. Administrátor vaši žádost vyřídí."
     },
     "payroll": {
       "pay_period": {

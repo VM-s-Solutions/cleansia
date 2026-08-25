@@ -193,6 +193,54 @@ The `canApproveOrReject()` method returns `true` when:
 - `isProfileComplete === true`
 - `contractStatus === 'Pending'`
 
+The **server** adds one more, and it is the one that bites: every document type the employee's work
+country marks required must be present **and** `Approved`. Approval used to consult
+`IsProfileComplete()` alone, which excludes documents deliberately — so an admin could approve a cleaner
+who had uploaded nothing, or whose every document had been rejected, and `Approved` meant only that
+somebody had pressed the button. The refusal comes back as `employee.documents_not_approved`.
+
+A country with **no** requirement rows configured gates nothing, which keeps the rule additive: a market
+whose requirements have not been entered behaves exactly as it did before. Editing the rows never
+reaches back and re-judges anyone already approved — approval is decided at the moment it happens, and
+the requirements are an input to that decision rather than a standing property of the cleaner.
+
+### Document requirements — per country, admin-managed
+
+One row per (country, document type), carrying a required flag and a sort order. Admin-managed rather
+than a constant on the owner's ruling: requirements change with the law, and a change that needs a
+release is a change that waits for one.
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/AdminEmployeeDocument/requirements/{countryId}` | The country's rows, optional ones included |
+| `PUT /api/AdminEmployeeDocument/requirements` | **Upsert** on (country, type) — saving the same pair twice edits the flag |
+| `DELETE /api/AdminEmployeeDocument/requirements/{requirementId}` | Hard delete; this is configuration, not a record of anything that happened |
+
+Seeded today: CZ and SK carry `IdentityCard` (required) and `WorkPermit` (optional).
+
+### Deletion requests — the only thing that removes a document
+
+Partners cannot delete their own documents. The button that let them soft-deleted on the spot, which
+flipped `AreDocumentsUploaded` and re-engaged the registration lock: one tap cost a cleaner their access
+to work, on documents the employer is required to hold. They now **ask**, and the request changes
+nothing until it is answered.
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/AdminEmployeeDocument/deletion-requests?status=` | The queue. Defaults to `Pending`, oldest first |
+| `POST /api/AdminEmployeeDocument/deletion-requests/{requestId}/resolve` | Approve or reject; approving is what performs the deletion |
+
+Rejecting **requires** notes. Approval speaks for itself — the document is gone — but a refusal without a
+reason tells the cleaner only that somebody said no, and the cleaner cannot see the queue. Approving a
+request whose document has already gone is not an error: the outcome asked for is the outcome they have,
+and answering it anyway is what clears the row out of the queue.
+
+::: info Erasure ordering
+`DocumentDeletionRequest` holds a `Restrict` foreign key to the document, so GDPR erasure removes the
+requests **before** the documents — otherwise a surviving request makes the erasure throw rather than
+skip. → [/flows/gdpr-and-audit](/flows/gdpr-and-audit)
+:::
+
 ### Approve Employee
 
 ```typescript

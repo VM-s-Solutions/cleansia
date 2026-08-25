@@ -5686,6 +5686,461 @@
         }
       }
     },
+    "document_deletion_reason": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proč má být odstraněn?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why should it be removed?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Почему его нужно удалить?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prečo má byť odstránený?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чому його треба видалити?"
+          }
+        }
+      }
+    },
+    "document_deletion_requested": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost odeslána. Brzy ji vyřídíme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request sent. We'll answer it shortly."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос отправлен. Мы скоро ответим."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť odoslaná. Čoskoro ju vybavíme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запит надіслано. Ми скоро відповімо."
+          }
+        }
+      }
+    },
+    "document_replace": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahradit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заменить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahradiť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замінити"
+          }
+        }
+      }
+    },
+    "document_replace_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soubor %@ se stane aktuální verzí a půjde znovu ke kontrole. Nic se nesmaže a po celou dobu kontroly můžete dál pracovat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ becomes the current version and goes back for review. Nothing is deleted, and you keep access to work while we look at it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл %@ станет текущей версией и уйдёт на повторную проверку. Ничего не удаляется, и вы можете продолжать работать, пока мы проверяем."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Súbor %@ sa stane aktuálnou verziou a pôjde znova na kontrolu. Nič sa nevymaže a počas kontroly môžete ďalej pracovať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл %@ стане поточною версією та піде на повторну перевірку. Нічого не видаляється, і ви можете працювати далі, поки ми перевіряємо."
+          }
+        }
+      }
+    },
+    "document_replace_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahradit tento dokument?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace this document?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заменить этот документ?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahradiť tento dokument?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замінити цей документ?"
+          }
+        }
+      }
+    },
+    "document_request_deletion": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o odstranění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request removal"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попросить удалить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o odstránenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попросити видалити"
+          }
+        }
+      }
+    },
+    "document_request_deletion_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — do jeho odpovědi zůstává dokument beze změny."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — the document stays exactly as it is until they answer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока ничего не удаляется. Некоторые документы мы обязаны хранить, поэтому ваш запрос рассмотрит администратор — до ответа документ остаётся без изменений."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatiaľ sa nič neodstráni. Niektoré dokumenty musíme uchovávať, preto vašu žiadosť posúdi administrátor — do jeho odpovede zostáva dokument bez zmeny."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки що нічого не видаляється. Деякі документи ми зобов'язані зберігати, тому ваш запит розгляне адміністратор — до відповіді документ залишається без змін."
+          }
+        }
+      }
+    },
+    "document_request_deletion_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požádat o odstranění?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask us to remove this?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попросить удалить?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Požiadať o odstránenie?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попросити видалити?"
+          }
+        }
+      }
+    },
+    "document_requirement_missing": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenahráno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not uploaded"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не загружено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenahraté"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не завантажено"
+          }
+        }
+      }
+    },
+    "document_requirement_optional": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volitelné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По желанию"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voliteľné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За бажанням"
+          }
+        }
+      }
+    },
+    "document_requirement_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Povinné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обязательно"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Povinné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обов'язково"
+          }
+        }
+      }
+    },
+    "document_requirements_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podle země, ve které pracujete. Nahrajte je a my je zkontrolujeme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set by the country you work in. Upload each one and we'll review it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зависит от страны, где вы работаете. Загрузите их, и мы проверим."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podľa krajiny, v ktorej pracujete. Nahrajte ich a my ich skontrolujeme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залежить від країни, де ви працюєте. Завантажте їх, і ми перевіримо."
+          }
+        }
+      }
+    },
+    "document_requirements_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co od vás potřebujeme"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What we need from you"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что нам нужно от вас"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo od vás potrebujeme"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що нам потрібно від вас"
+          }
+        }
+      }
+    },
     "document_status_approved": {
       "extractionState": "stale",
       "localizations": {
@@ -6207,41 +6662,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дозвіл на роботу"
-          }
-        }
-      }
-    },
-    "documents_delete": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Smazat dokument"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete document"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалить документ"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odstrániť dokument"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалити документ"
           }
         }
       }
@@ -15562,31 +15982,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "IČO"
+            "value": "Registrační číslo"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registration number (IČO)"
+            "value": "Registration number"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Регистрационный номер (IČO)"
+            "value": "Регистрационный номер"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "IČO"
+            "value": "Registračné číslo"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Реєстраційний номер (IČO)"
+            "value": "Реєстраційний номер"
           }
         }
       }
@@ -18387,6 +18807,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вийти"
+          }
+        }
+      }
+    },
+    "registration_lock_sign_out_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš postup je uložený. Pro dokončení registrace se budete muset znovu přihlásit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your progress is saved. You'll need to sign in again to finish setting up."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш прогресс сохранён. Чтобы завершить регистрацию, потребуется войти снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš postup je uložený. Na dokončenie registrácie sa budete musieť znova prihlásiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш прогрес збережено. Щоб завершити реєстрацію, потрібно буде увійти знову."
+          }
+        }
+      }
+    },
+    "registration_lock_sign_out_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhlásit se?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выйти из аккаунта?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhlásiť sa?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вийти з облікового запису?"
           }
         }
       }

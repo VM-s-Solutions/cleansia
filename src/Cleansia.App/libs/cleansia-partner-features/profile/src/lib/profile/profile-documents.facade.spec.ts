@@ -5,20 +5,19 @@ import {
   SaveMyDocumentsCommand,
 } from '@cleansia/partner-services';
 import {
-  DialogService,
   FileValidationErrorService,
   SnackbarService,
 } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 describe('ProfileDocumentsFacade', () => {
   let employeeClient: {
     saveMyDocuments: jest.Mock;
     getMyDocuments: jest.Mock;
-    deleteMyDocument: jest.Mock;
+    requestMyDocumentDeletion: jest.Mock;
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let facade: ProfileDocumentsFacade;
@@ -28,7 +27,7 @@ describe('ProfileDocumentsFacade', () => {
     employeeClient = {
       saveMyDocuments: jest.fn().mockReturnValue(of({})),
       getMyDocuments: jest.fn().mockReturnValue(of({ documents: [] })),
-      deleteMyDocument: jest.fn().mockReturnValue(of({})),
+      requestMyDocumentDeletion: jest.fn().mockReturnValue(of({})),
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
@@ -37,7 +36,6 @@ describe('ProfileDocumentsFacade', () => {
         ProfileDocumentsFacade,
         { provide: PartnerClient, useValue: { employeeClient } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn() } },
         {
           provide: FileValidationErrorService,
           useValue: { handleFileValidationErrors: jest.fn() },
@@ -100,5 +98,46 @@ describe('ProfileDocumentsFacade', () => {
         },
       ],
     });
+  });
+  // The whole reason the delete endpoint was replaced: asking removes NOTHING, so the list the
+  // cleaner is looking at must not change. The button it replaced soft-deleted on the spot, which
+  // flipped AreDocumentsUploaded and re-engaged the registration lock — one click, no way back.
+  it('leaves the document list alone when a removal is requested', async () => {
+    employeeClient.getMyDocuments.mockReturnValue(
+      of({ documents: [{ documentId: 'doc-1', fileName: 'passport.png' }] })
+    );
+    await facade.loadEmployeeDocuments();
+
+    await facade.requestDocumentDeletion('doc-1', 'Wrong file');
+
+    expect(employeeClient.requestMyDocumentDeletion).toHaveBeenCalledWith(
+      'doc-1',
+      expect.objectContaining({ reason: 'Wrong file' })
+    );
+    expect(facade.documents()).toHaveLength(1);
+    expect(facade.deletionRequestInFlight()).toBe(false);
+    expect(snackbar.showSuccess).toHaveBeenCalled();
+  });
+
+  // Every member of a generated body is optional, so a dropped assignment type-checks. Pin the
+  // serialized shape instead (ADR-0031).
+  it('sends the reason the server requires', async () => {
+    await facade.requestDocumentDeletion('doc-1', 'It expired last week');
+
+    const body = employeeClient.requestMyDocumentDeletion.mock.calls[0][1];
+    expect(body.toJSON()).toEqual({ reason: 'It expired last week' });
+  });
+
+  // A refusal has to leave the flag down, or the dialog's confirm button stays disabled forever and
+  // the cleaner cannot retry with a better reason.
+  it('clears the in-flight flag when the request is refused', async () => {
+    employeeClient.requestMyDocumentDeletion.mockReturnValue(
+      throwError(() => new Error('already requested'))
+    );
+
+    await expect(
+      facade.requestDocumentDeletion('doc-1', 'Wrong file')
+    ).rejects.toBeTruthy();
+    expect(facade.deletionRequestInFlight()).toBe(false);
   });
 });

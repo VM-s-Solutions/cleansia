@@ -1,4 +1,4 @@
-namespace Cleansia.Core.AppServices.Common;
+﻿namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -194,6 +194,14 @@ public static class BusinessErrorMessage
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
+
+    /// <summary>
+    /// Approval refused because the work country demands documents this cleaner has not had
+    /// approved. Distinct from <see cref="EmployeeProfileIncomplete"/> on purpose: the admin needs to
+    /// know whether to chase the cleaner for a form or to go and review an upload that is already
+    /// sitting in the queue.
+    /// </summary>
+    public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
     // RETAINED deliberately. No production code emits this any more (order actions now
     // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
     // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —
@@ -217,6 +225,18 @@ public static class BusinessErrorMessage
     public const string DocumentNotFound = "employee_document.not_found";
     public const string Unauthorized = "employee_document.unauthorized";
     public const string EmployeeDocumentNotOwned = "employee_document.not_owned";
+
+    /// <summary>
+    /// A deletion request is already open for this document. A second is not more urgent, it is the
+    /// same ask twice — and it would leave an admin two rows to answer for one decision.
+    /// </summary>
+    public const string DocumentDeletionAlreadyRequested = "employee_document.deletion_already_requested";
+
+    /// <summary>
+    /// The request has already been answered, so there is nothing left to rule on. Distinct from
+    /// "not found": the admin needs to know somebody got there first, not that they mistyped an id.
+    /// </summary>
+    public const string DocumentDeletionAlreadyResolved = "employee_document.deletion_already_resolved";
 
     // Payroll
     public const string PayPeriodNotFound = "payroll.pay_period.not_found";

@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
@@ -271,6 +271,12 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<SavedAddress> SavedAddresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }
     public virtual DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
+
+    /// <summary>Which document types each country demands before a cleaner can be approved.</summary>
+    public virtual DbSet<EmployeeDocumentRequirement> EmployeeDocumentRequirements { get; set; }
+
+    /// <summary>A cleaner's request to remove a document, and the admin's answer to it.</summary>
+    public virtual DbSet<DocumentDeletionRequest> DocumentDeletionRequests { get; set; }
     public virtual DbSet<EmployeePayoutDetails> EmployeePayoutDetails { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }

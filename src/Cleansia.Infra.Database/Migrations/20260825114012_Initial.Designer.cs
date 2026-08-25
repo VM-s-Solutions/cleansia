@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260822150939_Initial")]
+    [Migration("20260825114012_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -907,6 +907,80 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("DisputeMessages", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.DocumentDeletionRequest", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("DocumentDeletionRequests");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocument", b =>
                 {
                     b.Property<string>("Id")
@@ -1007,6 +1081,66 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("EmployeeId", "DocumentType");
 
                     b.ToTable("EmployeeDocuments");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocumentRequirement", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CountryId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("CountryId", "DocumentType")
+                        .IsUnique();
+
+                    b.ToTable("EmployeeDocumentRequirements");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Emails.EmailTemplateTranslation", b =>
@@ -5483,6 +5617,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Dispute");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.DocumentDeletionRequest", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Documents.EmployeeDocument", "Document")
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocument", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
@@ -5499,6 +5644,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("PreviousVersion");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocumentRequirement", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Emails.EmailTemplateTranslation", b =>

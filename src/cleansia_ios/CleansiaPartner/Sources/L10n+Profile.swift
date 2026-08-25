@@ -335,10 +335,6 @@ extension L10n {
             localized("documents_empty")
         }
 
-        static var documentsDelete: String {
-            localized("documents_delete")
-        }
-
         static var uploadDocument: String {
             localized("upload_document")
         }

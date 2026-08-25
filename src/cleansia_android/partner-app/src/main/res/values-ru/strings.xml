@@ -445,6 +445,19 @@
     <string name="document_type">Тип документа</string>
     <string name="description_optional">Описание (опционально)</string>
     <string name="no_documents">Документы пока не загружены</string>
+    <string name="document_requirements_title">Что нам нужно от вас</string>
+    <string name="document_requirements_subtitle">Зависит от страны, где вы работаете. Загрузите их, и мы проверим.</string>
+    <string name="document_requirement_required">Обязательно</string>
+    <string name="document_requirement_optional">По желанию</string>
+    <string name="document_requirement_missing">Не загружено</string>
+    <string name="document_replace">Заменить</string>
+    <string name="document_replace_title">Заменить этот документ?</string>
+    <string name="document_replace_message">Файл %1$s станет текущей версией и уйдёт на повторную проверку. Ничего не удаляется, и вы можете продолжать работать, пока мы проверяем.</string>
+    <string name="document_request_deletion">Попросить удалить</string>
+    <string name="document_request_deletion_title">Попросить удалить?</string>
+    <string name="document_request_deletion_message">Пока ничего не удаляется. Некоторые документы мы обязаны хранить, поэтому ваш запрос рассмотрит администратор — до ответа документ остаётся без изменений.</string>
+    <string name="document_deletion_reason">Почему его нужно удалить?</string>
+    <string name="document_deletion_requested">Запрос отправлен. Мы скоро ответим.</string>
     <string name="document_status_pending">Ожидает проверки</string>
     <string name="document_status_approved">Подтверждено</string>
     <string name="document_status_rejected">Отклонено</string>
@@ -472,7 +485,7 @@
     <string name="entity_type_legal_entity">Юридическое лицо</string>
     <string name="business_country">Страна регистрации</string>
     <string name="registration_number_label">Регистрационный номер</string>
-    <string name="registration_number_helper">8 цифр для ЧР/СК; формат зависит от выбранной страны.</string>
+    <string name="registration_number_helper">Формат зависит от выбранной страны.</string>
     <string name="vat_number_label">Номер плательщика НДС</string>
     <string name="vat_number_helper">Необязательно — только если вы плательщик НДС.</string>
     <string name="legal_entity_name_label">Название юридического лица</string>
@@ -1024,6 +1037,8 @@
     <string name="registration_lock_progress">%1$d из %2$d шагов выполнено</string>
     <string name="registration_lock_step_complete">Готово</string>
     <string name="registration_lock_sign_out">Выйти</string>
+    <string name="registration_lock_sign_out_confirm_title">Выйти из аккаунта?</string>
+    <string name="registration_lock_sign_out_confirm_message">Ваш прогресс сохранён. Чтобы завершить регистрацию, потребуется войти снова.</string>
     <string name="registration_lock_support_subject">Cleansia partner — заявка отклонена</string>
     <string name="registration_lock_category_profile">Профиль</string>
     <string name="registration_lock_category_availability">Доступность</string>
@@ -1099,6 +1114,7 @@
     <string name="error_employee_document_not_found">Документ не найден.</string>
     <string name="error_employee_document_unauthorized">У вас нет доступа к этому документу.</string>
     <string name="error_employee_document_not_owned">Этот документ вам не принадлежит.</string>
+    <string name="error_employee_document_deletion_already_requested">Вы уже отправили запрос на удаление этого документа. Мы скоро на него ответим.</string>
 
     <string name="error_order_not_found">Заказ не найден.</string>
     <string name="error_order_take_already_cancelled">Этот заказ уже отменён.</string>

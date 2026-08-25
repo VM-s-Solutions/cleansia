@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Services;
+﻿using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -134,6 +134,7 @@ public sealed class LiveActivityTokenErasureTests : IDisposable
             new UserRepository(ctx),
             new OrderRepository(ctx),
             new EmployeeDocumentRepository(ctx),
+            new DocumentDeletionRequestRepository(ctx),
             new EmployeeInvoiceRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),

@@ -37,8 +37,14 @@ account erasure.
 
 ## Cleaner (partner)
 
-**Onboarding** — register, upload documents, add payout details, wait for approval. An incomplete
-profile or an unapproved contract blocks work, deliberately.
+**Onboarding** — register, upload the documents your country asks for, add payout details, wait for
+approval. An incomplete profile or an unapproved contract blocks work, deliberately, and approval now
+requires the required documents to exist and be accepted rather than just a button press.
+
+**Their own documents** — a checklist of what the country expects, replace a file with a newer one
+without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
+person: some of these the employer has to hold, and self-delete used to cost a cleaner their access to
+work in a single tap.
 
 **Finding work** — a board of offerable jobs, new-job push notifications and a digest. What a browsing
 cleaner sees is the job, not the household — the customer's identity, address and free text are
@@ -63,8 +69,8 @@ set one on a single cleaner, and does not for anyone today.
 
 **Orders** — search, inspect, reassign a cleaner, override a status, cancel, refund in full or in part.
 
-**People** — approve or reject cleaners, manage documents, manage admin users, inspect a customer's
-loyalty position.
+**People** — approve or reject cleaners, review and remove documents, set which document types each
+country requires, answer removal requests, manage admin users, inspect a customer's loyalty position.
 
 **Money** — pay periods (open, close, reopen, mark paid), employee invoices, payout details behind an
 audited reveal, refunds, disputes, chargebacks, fiscal failures.

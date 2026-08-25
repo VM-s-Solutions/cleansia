@@ -11,8 +11,13 @@ step, cleared when done.
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
 
 
-`MS-1` regenerated the single `Initial` migration and `MS-6` regenerated it again, so its id has moved
-from `20260811192214` to `20260813085249` to **`20260815094107`**. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+`MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
+document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
+`20260811192214` to `20260813085249` to `20260815094107` to **`20260825114012`**.
+
+Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
+is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
+regeneration renews it rather than adding a new obligation. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 
@@ -55,6 +60,25 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-7 — Regenerate the partner web client — **DONE 2026-08-25**
+
+Owner regenerated the partner and admin NSwag clients. `deleteMyDocument` is gone from
+`partner-client.ts` and `requestMyDocumentDeletion` / `replaceMyDocument` /
+`getMyDocumentRequirements` / `getFieldLabels` are in; the admin client gained the requirement
+CRUD and the deletion queue.
+
+The partner web app was moved onto the new endpoint in the same pass: the delete button is now
+a removal REQUEST behind a dialog that collects the reason the server requires, and the list is
+deliberately not mutated because nothing was removed. The approved-only guard on the button is
+gone with it — it mirrored `DeleteMyDocument`'s validator, and an expired approved ID is exactly
+the case worth asking about.
+
+**Still open, and NOT this step:** the admin app has no UI for the requirement CRUD or the
+deletion queue. The client methods exist (`requirementsGet` / `requirementsPut` /
+`requirementsDelete` / `deletionRequests` / `resolve`), so it is ordinary frontend work rather
+than a manual step — an admin answers requests through the API until it is built.
+
 
 ### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **DONE 2026-08-15**
 

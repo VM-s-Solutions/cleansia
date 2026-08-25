@@ -3,8 +3,12 @@ package cz.cleansia.partner.data.profile
 import cz.cleansia.partner.api.client.EmployeeApi
 import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.api.model.EmployeeItem
+import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
+import cz.cleansia.partner.api.model.MyDocumentRequirementDto
 import cz.cleansia.partner.api.model.MyPayoutDetails
+import cz.cleansia.partner.api.model.ReplaceMyDocumentRequest
+import cz.cleansia.partner.api.model.RequestMyDocumentDeletionRequest
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.api.model.SaveMyDocumentsCommand
 import cz.cleansia.partner.api.model.SaveMyDocumentsDocumentToSave
@@ -165,7 +169,34 @@ interface ProfileRepository {
         documents: List<SaveMyDocumentsDocumentToSave>,
     ): ApiResult<Unit>
 
-    suspend fun deleteDocument(documentId: String): ApiResult<Unit>
+    /**
+     * What this cleaner still owes, resolved against what they have already uploaded. The screen
+     * used to open on an empty box that named nothing, so the first step of onboarding was
+     * contacting support to ask which papers we wanted.
+     */
+    suspend fun getDocumentRequirements(): ApiResult<List<MyDocumentRequirementDto>>
+
+    /**
+     * Supersede a document with a newer file. Needs no admin, because the slot never empties: the
+     * new version is created before the old one is retired, so `AreDocumentsUploaded` never dips
+     * and the registration lock never re-engages.
+     *
+     * The document TYPE is not a parameter — the server carries it over from the version being
+     * replaced, so a replacement cannot relabel an approved document as something else.
+     */
+    suspend fun replaceDocument(
+        documentId: String,
+        file: BlobFileDto,
+        description: String?,
+    ): ApiResult<Unit>
+
+    /**
+     * Ask an admin to remove a document. It removes NOTHING — the document stays active until the
+     * request is answered, which is why this replaced the delete button: that one soft-deleted on
+     * the spot, which flipped `AreDocumentsUploaded` and re-engaged the registration lock. One tap,
+     * no dialog, and a cleaner had lost their access to work.
+     */
+    suspend fun requestDocumentDeletion(documentId: String, reason: String): ApiResult<Unit>
 }
 
 @Singleton
@@ -349,9 +380,29 @@ class ProfileRepositoryImpl @Inject constructor(
         employeeApi.employeeSaveMyDocuments(SaveMyDocumentsCommand(documents = documents))
     }.map { }
 
-    override suspend fun deleteDocument(documentId: String): ApiResult<Unit> =
-        safeApiCall(json) { employeeApi.employeeDeleteMyDocument(documentId = documentId) }
-            .map { }
+    override suspend fun getDocumentRequirements(): ApiResult<List<MyDocumentRequirementDto>> =
+        safeApiCall(json) { employeeApi.employeeGetMyDocumentRequirements() }
+
+    override suspend fun replaceDocument(
+        documentId: String,
+        file: BlobFileDto,
+        description: String?,
+    ): ApiResult<Unit> = safeApiCall(json) {
+        employeeApi.employeeReplaceMyDocument(
+            documentId = documentId,
+            replaceMyDocumentRequest = ReplaceMyDocumentRequest(file = file, description = description),
+        )
+    }.map { }
+
+    override suspend fun requestDocumentDeletion(
+        documentId: String,
+        reason: String,
+    ): ApiResult<Unit> = safeApiCall(json) {
+        employeeApi.employeeRequestMyDocumentDeletion(
+            documentId = documentId,
+            requestMyDocumentDeletionRequest = RequestMyDocumentDeletionRequest(reason = reason),
+        )
+    }.map { }
 }
 
 private const val PAYOUT_NOT_FOUND_KEY = "payout.not_found"

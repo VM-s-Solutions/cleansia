@@ -144,8 +144,45 @@ There is **one** committed EF migration, `Initial`. Pre-production, schema chang
 into it by regenerating rather than stacked as new migrations — which changes its id, so a DEV
 database needs dropping when it moves.
 
-**Migrations and NSwag client regeneration are owner-run, not agent-run.** Work that needs either is
-flagged as a manual step rather than performed.
+### Regenerating it
+
+`dotnet-ef` is a global tool and is not on `PATH` by default:
+
+```bash
+dotnet tool install --global dotnet-ef        # once
+export PATH="$HOME/.dotnet/tools:$PATH"
+
+cd src
+dotnet ef migrations remove --force --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner
+dotnet ef migrations add   Initial --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner
+```
+
+From the Visual Studio Package Manager Console instead:
+
+```powershell
+Add-Migration Initial -Context CleansiaDbContext -Project Cleansia.Infra.Database -StartupProject Cleansia.Web.Partner
+Update-Database        -Context CleansiaDbContext -Project Cleansia.Infra.Database -StartupProject Cleansia.Web.Partner
+```
+
+The startup project must be a **web host**. `Cleansia.MigrationService` does not reference
+`Microsoft.EntityFrameworkCore.Design`, and the tool refuses it.
+
+Regenerating changes the migration id, so **DEV needs its database dropped** before the next deploy —
+otherwise `MigrateAsync()` replays the create script against tables that already exist. Verify a
+regeneration with the integration suite: it builds a real Postgres from the migration and is the only
+thing that proves the model and the schema agree.
+
+**NSwag client regeneration is owner-run.** Work that needs it is flagged `manual_step: nswag-regen`
+rather than performed. Migrations are not — see `CLAUDE.md`.
+
+### Connecting to the database
+
+```bash
+psql -h localhost -p 5432 -U postgres -d Cleansia          # docker
+psql -U postgres -d Cleansia                               # inside the Aspire container
+```
+
+The Aspire container's password is the one in its connection string.
 
 ## Documentation site
 

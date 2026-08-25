@@ -182,7 +182,11 @@
       "job_radius_distance": "Vzdialenosť od domova (km)",
       "job_radius_distance_hint": "Medzi {{min}} a {{max}} km.",
       "bank_account": "Bankový účet",
-      "bank_account_hint": "Predčíslie, číslo účtu a kód banky — vložte celý účet a rozdelí sa sám."
+      "bank_account_hint": "Predčíslie, číslo účtu a kód banky — vložte celý účet a rozdelí sa sám.",
+      "request_deletion": "Požiadať o odstránenie",
+      "request_deletion_title": "Požiadať o odstránenie?",
+      "request_deletion_message": "Zatiaľ sa nič neodstráni. Niektoré dokumenty musíme uchovávať, preto vašu žiadosť posúdi administrátor — súbor {{fileName}} zostáva až do jeho odpovede bez zmeny.",
+      "deletion_reason": "Prečo má byť odstránený?"
     },
     "dashboard": {
       "title": "Prehľad",
@@ -852,10 +856,9 @@
         "no_documents_to_save": "Žiadne dokumenty na uloženie. Najprv prosím vyberte súbory.",
         "upload_success": "Dokumenty boli úspešne nahraté!",
         "upload_error": "Nepodarilo sa nahrať dokumenty. Skúste to prosím znova.",
-        "delete_confirm": "Naozaj chcete vymazať {{fileName}}?",
-        "delete_success": "Dokument bol úspešne vymazaný!",
         "download_error": "Nepodarilo sa stiahnuť dokument. Skúste to prosím znova.",
-        "delete_error": "Nepodarilo sa vymazať dokument. Skúste to prosím znova."
+        "delete_error": "Nepodarilo sa vymazať dokument. Skúste to prosím znova.",
+        "deletion_requested": "Žiadosť odoslaná. Čoskoro ju vybavíme."
       },
       "orders": {
         "failed_to_load_details": "Nepodarilo sa načítať podrobnosti objednávky. Skúste to prosím znova.",
@@ -1181,7 +1184,8 @@
     "employee_document": {
       "not_found": "Dokument nenájdený",
       "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu",
-      "not_owned": "Môžete pristupovať iba k vlastným dokumentom"
+      "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
+      "deletion_already_requested": "O odstránenie tohto dokumentu ste už požiadali. Administrátor vašu žiadosť vybaví."
     },
     "payroll": {
       "pay_period": {

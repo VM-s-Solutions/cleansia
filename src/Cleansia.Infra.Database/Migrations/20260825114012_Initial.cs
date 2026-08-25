@@ -588,6 +588,35 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeeDocumentRequirements",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    DocumentType = table.Column<int>(type: "integer", nullable: false),
+                    IsRequired = table.Column<bool>(type: "boolean", nullable: false),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeDocumentRequirements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeDocumentRequirements_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ServiceCities",
                 columns: table => new
                 {
@@ -2204,6 +2233,38 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DocumentDeletionRequests",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    DocumentId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    EmployeeId = table.Column<string>(type: "text", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ReviewNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ReviewedByUserId = table.Column<string>(type: "text", nullable: true),
+                    ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentDeletionRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentDeletionRequests_EmployeeDocuments_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "EmployeeDocuments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderEmployeePays",
                 columns: table => new
                 {
@@ -2569,6 +2630,26 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DocumentDeletionRequests_DocumentId",
+                table: "DocumentDeletionRequests",
+                column: "DocumentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentDeletionRequests_EmployeeId",
+                table: "DocumentDeletionRequests",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentDeletionRequests_Status",
+                table: "DocumentDeletionRequests",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentDeletionRequests_TenantId",
+                table: "DocumentDeletionRequests",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmailTemplateTranslations_LanguageId",
                 table: "EmailTemplateTranslations",
                 column: "LanguageId");
@@ -2592,6 +2673,22 @@ namespace Cleansia.Infra.Database.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_EmailTranslations_TenantId",
                 table: "EmailTranslations",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeDocumentRequirements_CountryId",
+                table: "EmployeeDocumentRequirements",
+                column: "CountryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeDocumentRequirements_CountryId_DocumentType",
+                table: "EmployeeDocumentRequirements",
+                columns: new[] { "CountryId", "DocumentType" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeDocumentRequirements_TenantId",
+                table: "EmployeeDocumentRequirements",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
@@ -3646,13 +3743,16 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "DisputeMessages");
 
             migrationBuilder.DropTable(
+                name: "DocumentDeletionRequests");
+
+            migrationBuilder.DropTable(
                 name: "EmailTemplateTranslations");
 
             migrationBuilder.DropTable(
                 name: "EmailTranslations");
 
             migrationBuilder.DropTable(
-                name: "EmployeeDocuments");
+                name: "EmployeeDocumentRequirements");
 
             migrationBuilder.DropTable(
                 name: "EmployeePayConfigs");
@@ -3761,6 +3861,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Carts");
+
+            migrationBuilder.DropTable(
+                name: "EmployeeDocuments");
 
             migrationBuilder.DropTable(
                 name: "LoyaltyAccounts");

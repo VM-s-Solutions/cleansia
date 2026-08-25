@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Gdpr;
+﻿using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -166,6 +166,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new UserRepository(ctx),
             new OrderRepository(ctx),
             new EmployeeDocumentRepository(ctx),
+            new DocumentDeletionRequestRepository(ctx),
             new EmployeeInvoiceRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),

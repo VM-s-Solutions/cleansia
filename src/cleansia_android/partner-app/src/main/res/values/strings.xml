@@ -445,6 +445,19 @@
     <string name="document_type">Document type</string>
     <string name="description_optional">Description (optional)</string>
     <string name="no_documents">No documents uploaded yet</string>
+    <string name="document_requirements_title">What we need from you</string>
+    <string name="document_requirements_subtitle">Set by the country you work in. Upload each one and we\'ll review it.</string>
+    <string name="document_requirement_required">Required</string>
+    <string name="document_requirement_optional">Optional</string>
+    <string name="document_requirement_missing">Not uploaded</string>
+    <string name="document_replace">Replace</string>
+    <string name="document_replace_title">Replace this document?</string>
+    <string name="document_replace_message">%1$s becomes the current version and goes back for review. Nothing is deleted, and you keep access to work while we look at it.</string>
+    <string name="document_request_deletion">Request removal</string>
+    <string name="document_request_deletion_title">Ask us to remove this?</string>
+    <string name="document_request_deletion_message">Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — the document stays exactly as it is until they answer.</string>
+    <string name="document_deletion_reason">Why should it be removed?</string>
+    <string name="document_deletion_requested">Request sent. We\'ll answer it shortly.</string>
     <string name="document_status_pending">Pending</string>
     <string name="document_status_approved">Approved</string>
     <string name="document_status_rejected">Rejected</string>
@@ -471,8 +484,8 @@
     <string name="entity_type_natural_person">Self-employed</string>
     <string name="entity_type_legal_entity">Legal entity</string>
     <string name="business_country">Business country</string>
-    <string name="registration_number_label">Registration number (IČO)</string>
-    <string name="registration_number_helper">8 digits for CZ/SK; format depends on the chosen country.</string>
+    <string name="registration_number_label">Registration number</string>
+    <string name="registration_number_helper">The format depends on the country you selected.</string>
     <string name="vat_number_label">VAT number</string>
     <string name="vat_number_helper">Optional — only if you\'re VAT-registered.</string>
     <string name="legal_entity_name_label">Legal entity name</string>
@@ -1024,6 +1037,8 @@
     <string name="registration_lock_progress">%1$d of %2$d steps complete</string>
     <string name="registration_lock_step_complete">Done</string>
     <string name="registration_lock_sign_out">Sign out</string>
+    <string name="registration_lock_sign_out_confirm_title">Sign out?</string>
+    <string name="registration_lock_sign_out_confirm_message">Your progress is saved. You\'ll need to sign in again to finish setting up.</string>
     <string name="registration_lock_support_subject">Cleansia partner — application rejected</string>
     <string name="registration_lock_category_profile">Profile</string>
     <string name="registration_lock_category_availability">Availability</string>
@@ -1052,7 +1067,7 @@
     <string name="profile_fields_city">City</string>
     <string name="profile_fields_zipCode">ZIP code</string>
     <string name="profile_fields_country">Country</string>
-    <string name="profile_fields_registrationNumber">Registration number (IČO)</string>
+    <string name="profile_fields_registrationNumber">Registration number</string>
     <string name="profile_fields_legalEntityName">Legal entity name</string>
     <string name="profile_fields_iban">Bank details</string>
     <string name="profile_fields_passportId">Passport / ID</string>
@@ -1118,6 +1133,7 @@
     <string name="error_employee_document_not_found">Document not found.</string>
     <string name="error_employee_document_unauthorized">You can\'t access this document.</string>
     <string name="error_employee_document_not_owned">You don\'t own this document.</string>
+    <string name="error_employee_document_deletion_already_requested">You have already asked us to remove this document. We\'ll answer that request shortly.</string>
 
     <!-- Order — lifecycle + assignment -->
     <string name="error_order_not_found">Order not found.</string>

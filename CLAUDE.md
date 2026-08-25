@@ -118,10 +118,11 @@ Mobile :5004. `README.md` has the full run/test/build commands.
   DTO or endpoint changes, flag `manual_step: nswag-regen` so the owner regenerates before frontend
   work starts.
 
-### EF Core migrations — Claude may regenerate `Initial` (owner ruling, 2026-08-15)
+## Database migrations — routine, not a manual step
 
 There is **one** committed migration, `Initial`. Pre-prod, schema changes are folded back into it by
-**regenerating** rather than stacking:
+**regenerating** rather than stacking, and that regeneration is ordinary work — it is not owner-only
+and does not get flagged as a manual step (owner rulings 2026-08-15 and 2026-08-25).
 
 ```bash
 export PATH="$HOME/.dotnet/tools:$PATH"        # dotnet-ef is a global tool, not on PATH by default
@@ -133,10 +134,11 @@ dotnet ef migrations add   Initial --project Cleansia.Infra.Database --startup-p
 > The startup project must be a **web host** — `Cleansia.MigrationService` does not reference
 > `Microsoft.EntityFrameworkCore.Design` and the tool refuses it.
 
-**Regenerating changes the migration id, so DEV needs a database drop.** That drop is still the
-owner's. Never fold a schema change into the migration by hand: regenerate, then verify with the
-integration suite, which builds a real Postgres from the migration and is the only thing that proves
-the model and the schema agree.
+**What is still the owner's: the DEV database drop.** Regenerating changes the migration id, and a
+database whose `__EFMigrationsHistory` records the old one replays the whole create script against
+tables that already exist. Never fold a schema change into the migration by hand: regenerate, then
+verify with the integration suite, which builds a real Postgres from the migration and is the only
+thing that proves the model and the schema agree.
 
 ## How to write code here
 

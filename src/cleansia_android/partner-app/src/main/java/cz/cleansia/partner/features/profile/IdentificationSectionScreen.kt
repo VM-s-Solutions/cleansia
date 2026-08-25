@@ -51,6 +51,7 @@ fun IdentificationSectionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
+    val fieldLabels by viewModel.fieldLabels.collectAsStateWithLifecycle()
     val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
     val form = (uiState as? IdentificationSectionUiState.Loaded)?.form ?: IdentificationForm()
 
@@ -111,10 +112,15 @@ fun IdentificationSectionScreen(
                 searchable = true,
             )
             Spacer(Modifier.height(Spacing.XS))
+            // The country's own word for these when it has one, our neutral wording when it does
+            // not. "Registration number" is correct everywhere and precise nowhere, which is exactly
+            // what a fallback should be — flattening every country to it would have cost CZ and SK
+            // the term their own registries use.
             CleansiaTextField(
                 value = form.registrationNumber,
                 onValueChange = viewModel::onRegistrationNumberChange,
-                label = stringResource(R.string.registration_number_label),
+                label = fieldLabels?.registrationNumberLabel
+                    ?: stringResource(R.string.registration_number_label),
                 helper = stringResource(R.string.registration_number_helper),
                 enabled = !saving,
                 transparentContainer = true,
@@ -123,7 +129,7 @@ fun IdentificationSectionScreen(
             CleansiaTextField(
                 value = form.vatNumber,
                 onValueChange = viewModel::onVatNumberChange,
-                label = stringResource(R.string.vat_number_label),
+                label = fieldLabels?.vatNumberLabel ?: stringResource(R.string.vat_number_label),
                 helper = stringResource(R.string.vat_number_helper),
                 enabled = !saving,
                 transparentContainer = true,

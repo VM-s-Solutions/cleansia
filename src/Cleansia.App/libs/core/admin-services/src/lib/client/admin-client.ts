@@ -4437,6 +4437,24 @@ export interface IAdminEmployeeDocumentClient {
      * @return OK
      */
     download(documentId: string): Observable<FileResponse>;
+    /**
+     * @return OK
+     */
+    requirementsGet(countryId: string): Observable<DocumentRequirementDto[]>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    requirementsPut(body?: SaveDocumentRequirementRequest | undefined): Observable<SaveDocumentRequirementResponse>;
+    /**
+     * @return OK
+     */
+    requirementsDelete(requirementId: string): Observable<DeleteDocumentRequirementResponse>;
+    /**
+     * @param status (optional) 
+     * @return OK
+     */
+    deletionRequests(status?: DocumentDeletionRequestStatus | undefined): Observable<DocumentDeletionRequestDto[]>;
 }
 
 @Injectable({
@@ -4841,6 +4859,412 @@ export class AdminEmployeeDocumentClient implements IAdminEmployeeDocumentClient
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    requirementsGet(countryId: string): Observable<DocumentRequirementDto[]> {
+        let url = this.baseUrl + "/api/AdminEmployeeDocument/requirements/{countryId}";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequirementsGet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRequirementsGet(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DocumentRequirementDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DocumentRequirementDto[]>;
+        }));
+    }
+
+    protected processRequirementsGet(response: HttpResponseBase): Observable<DocumentRequirementDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(DocumentRequirementDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    requirementsPut(body?: SaveDocumentRequirementRequest | undefined): Observable<SaveDocumentRequirementResponse> {
+        let url = this.baseUrl + "/api/AdminEmployeeDocument/requirements";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequirementsPut(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRequirementsPut(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SaveDocumentRequirementResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SaveDocumentRequirementResponse>;
+        }));
+    }
+
+    protected processRequirementsPut(response: HttpResponseBase): Observable<SaveDocumentRequirementResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SaveDocumentRequirementResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    requirementsDelete(requirementId: string): Observable<DeleteDocumentRequirementResponse> {
+        let url = this.baseUrl + "/api/AdminEmployeeDocument/requirements/{requirementId}";
+        if (requirementId === undefined || requirementId === null)
+            throw new globalThis.Error("The parameter 'requirementId' must be defined.");
+        url = url.replace("{requirementId}", encodeURIComponent("" + requirementId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequirementsDelete(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRequirementsDelete(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeleteDocumentRequirementResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeleteDocumentRequirementResponse>;
+        }));
+    }
+
+    protected processRequirementsDelete(response: HttpResponseBase): Observable<DeleteDocumentRequirementResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeleteDocumentRequirementResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param status (optional) 
+     * @return OK
+     */
+    deletionRequests(status?: DocumentDeletionRequestStatus | undefined): Observable<DocumentDeletionRequestDto[]> {
+        let url = this.baseUrl + "/api/AdminEmployeeDocument/deletion-requests?";
+        if (status === null)
+            throw new globalThis.Error("The parameter 'status' cannot be null.");
+        else if (status !== undefined)
+            url += "status=" + encodeURIComponent("" + status) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeletionRequests(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDeletionRequests(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DocumentDeletionRequestDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DocumentDeletionRequestDto[]>;
+        }));
+    }
+
+    protected processDeletionRequests(response: HttpResponseBase): Observable<DocumentDeletionRequestDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(DocumentDeletionRequestDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IDeletionRequestsClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resolve(requestId: string, body?: ResolveDocumentDeletionRequestRequest | undefined): Observable<ResolveDocumentDeletionRequestResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DeletionRequestsClient implements IDeletionRequestsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resolve(requestId: string, body?: ResolveDocumentDeletionRequestRequest | undefined): Observable<ResolveDocumentDeletionRequestResponse> {
+        let url = this.baseUrl + "/api/AdminEmployeeDocument/deletion-requests/{requestId}/resolve";
+        if (requestId === undefined || requestId === null)
+            throw new globalThis.Error("The parameter 'requestId' must be defined.");
+        url = url.replace("{requestId}", encodeURIComponent("" + requestId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processResolve(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processResolve(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ResolveDocumentDeletionRequestResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ResolveDocumentDeletionRequestResponse>;
+        }));
+    }
+
+    protected processResolve(response: HttpResponseBase): Observable<ResolveDocumentDeletionRequestResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ResolveDocumentDeletionRequestResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -18821,6 +19245,42 @@ export interface IDeleteCurrencyResponse {
     success: boolean;
 }
 
+export class DeleteDocumentRequirementResponse implements IDeleteDocumentRequirementResponse {
+    success!: boolean;
+
+    constructor(data?: IDeleteDocumentRequirementResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.success = Data["success"];
+        }
+    }
+
+    static fromJS(data: any): DeleteDocumentRequirementResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeleteDocumentRequirementResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["success"] = this.success;
+        return data;
+    }
+}
+
+export interface IDeleteDocumentRequirementResponse {
+    success: boolean;
+}
+
 export class DeleteEmailTemplateTranslationResponse implements IDeleteEmailTemplateTranslationResponse {
     emailTemplateId!: string | undefined;
 
@@ -19448,6 +19908,140 @@ export enum DisputeStatus {
     Resolved = 4,
     Closed = 5,
     Escalated = 6,
+}
+
+export class DocumentDeletionRequestDto implements IDocumentDeletionRequestDto {
+    id!: string | undefined;
+    documentId!: string | undefined;
+    employeeId!: string | undefined;
+    employeeName!: string | undefined;
+    documentFileName!: string | undefined;
+    documentType!: DocumentType;
+    reason!: string | undefined;
+    status!: DocumentDeletionRequestStatus;
+    reviewNotes!: string | undefined;
+    createdOn!: Date;
+    reviewedAt!: Date | undefined;
+
+    constructor(data?: IDocumentDeletionRequestDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.documentId = Data["documentId"];
+            this.employeeId = Data["employeeId"];
+            this.employeeName = Data["employeeName"];
+            this.documentFileName = Data["documentFileName"];
+            this.documentType = Data["documentType"];
+            this.reason = Data["reason"];
+            this.status = Data["status"];
+            this.reviewNotes = Data["reviewNotes"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.reviewedAt = Data["reviewedAt"] ? new Date(Data["reviewedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): DocumentDeletionRequestDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DocumentDeletionRequestDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["documentId"] = this.documentId;
+        data["employeeId"] = this.employeeId;
+        data["employeeName"] = this.employeeName;
+        data["documentFileName"] = this.documentFileName;
+        data["documentType"] = this.documentType;
+        data["reason"] = this.reason;
+        data["status"] = this.status;
+        data["reviewNotes"] = this.reviewNotes;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["reviewedAt"] = this.reviewedAt ? this.reviewedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IDocumentDeletionRequestDto {
+    id: string | undefined;
+    documentId: string | undefined;
+    employeeId: string | undefined;
+    employeeName: string | undefined;
+    documentFileName: string | undefined;
+    documentType: DocumentType;
+    reason: string | undefined;
+    status: DocumentDeletionRequestStatus;
+    reviewNotes: string | undefined;
+    createdOn: Date;
+    reviewedAt: Date | undefined;
+}
+
+export enum DocumentDeletionRequestStatus {
+    Pending = 1,
+    Approved = 2,
+    Rejected = 3,
+}
+
+export class DocumentRequirementDto implements IDocumentRequirementDto {
+    id!: string | undefined;
+    countryId!: string | undefined;
+    documentType!: DocumentType;
+    isRequired!: boolean;
+    sortOrder!: number;
+
+    constructor(data?: IDocumentRequirementDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.countryId = Data["countryId"];
+            this.documentType = Data["documentType"];
+            this.isRequired = Data["isRequired"];
+            this.sortOrder = Data["sortOrder"];
+        }
+    }
+
+    static fromJS(data: any): DocumentRequirementDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DocumentRequirementDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["countryId"] = this.countryId;
+        data["documentType"] = this.documentType;
+        data["isRequired"] = this.isRequired;
+        data["sortOrder"] = this.sortOrder;
+        return data;
+    }
+}
+
+export interface IDocumentRequirementDto {
+    id: string | undefined;
+    countryId: string | undefined;
+    documentType: DocumentType;
+    isRequired: boolean;
+    sortOrder: number;
 }
 
 export enum DocumentStatus {
@@ -26660,6 +27254,86 @@ export interface IResolveDisputeCommand {
     resolutionNotes: string | undefined;
 }
 
+export class ResolveDocumentDeletionRequestRequest implements IResolveDocumentDeletionRequestRequest {
+    approve!: boolean;
+    notes!: string | undefined;
+
+    constructor(data?: IResolveDocumentDeletionRequestRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.approve = Data["approve"];
+            this.notes = Data["notes"];
+        }
+    }
+
+    static fromJS(data: any): ResolveDocumentDeletionRequestRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolveDocumentDeletionRequestRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["approve"] = this.approve;
+        data["notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IResolveDocumentDeletionRequestRequest {
+    approve: boolean;
+    notes: string | undefined;
+}
+
+export class ResolveDocumentDeletionRequestResponse implements IResolveDocumentDeletionRequestResponse {
+    requestId!: string | undefined;
+    status!: DocumentDeletionRequestStatus;
+
+    constructor(data?: IResolveDocumentDeletionRequestResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.requestId = Data["requestId"];
+            this.status = Data["status"];
+        }
+    }
+
+    static fromJS(data: any): ResolveDocumentDeletionRequestResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolveDocumentDeletionRequestResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["requestId"] = this.requestId;
+        data["status"] = this.status;
+        return data;
+    }
+}
+
+export interface IResolveDocumentDeletionRequestResponse {
+    requestId: string | undefined;
+    status: DocumentDeletionRequestStatus;
+}
+
 export class RevealOrderAccessInstructionsRevealedAccessInstructions implements IRevealOrderAccessInstructionsRevealedAccessInstructions {
     orderId!: string | undefined;
     accessInstructions!: string | undefined;
@@ -27264,6 +27938,90 @@ export class RevokePointsManuallyResponse implements IRevokePointsManuallyRespon
 export interface IRevokePointsManuallyResponse {
     userId: string | undefined;
     points: number;
+}
+
+export class SaveDocumentRequirementRequest implements ISaveDocumentRequirementRequest {
+    countryId!: string | undefined;
+    documentType!: DocumentType;
+    isRequired!: boolean;
+    sortOrder!: number;
+
+    constructor(data?: ISaveDocumentRequirementRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.documentType = Data["documentType"];
+            this.isRequired = Data["isRequired"];
+            this.sortOrder = Data["sortOrder"];
+        }
+    }
+
+    static fromJS(data: any): SaveDocumentRequirementRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new SaveDocumentRequirementRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["documentType"] = this.documentType;
+        data["isRequired"] = this.isRequired;
+        data["sortOrder"] = this.sortOrder;
+        return data;
+    }
+}
+
+export interface ISaveDocumentRequirementRequest {
+    countryId: string | undefined;
+    documentType: DocumentType;
+    isRequired: boolean;
+    sortOrder: number;
+}
+
+export class SaveDocumentRequirementResponse implements ISaveDocumentRequirementResponse {
+    id!: string | undefined;
+
+    constructor(data?: ISaveDocumentRequirementResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): SaveDocumentRequirementResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SaveDocumentRequirementResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface ISaveDocumentRequirementResponse {
+    id: string | undefined;
 }
 
 export class SendSitewidePromoCommand implements ISendSitewidePromoCommand {

@@ -16,6 +16,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.DocumentType
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
+import cz.cleansia.partner.api.model.MyDocumentRequirementDto
 import cz.cleansia.partner.api.model.SaveMyDocumentsDocumentToSave
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -48,6 +49,13 @@ internal data class PendingUpload(
     val fileName: String,
     val contentType: String,
     val base64: String,
+    /**
+     * Set when this file is REPLACING an existing document rather than adding one. The two flows
+     * share the picker and the read, and differ only in which endpoint the confirm dialog calls —
+     * so the target rides along with the file instead of in a second piece of state that could
+     * disagree with it.
+     */
+    val replacesDocumentId: String? = null,
 )
 
 @HiltViewModel
@@ -66,6 +74,16 @@ class DocumentsSectionViewModel @Inject constructor(
 
     private val _deletingId = MutableStateFlow<String?>(null)
     val deletingId: StateFlow<String?> = _deletingId.asStateFlow()
+
+    /**
+     * What the cleaner's country asks for, whether or not they have uploaded any of it. This is the
+     * placeholder the screen shows before anything exists — it used to open on an empty box that
+     * named nothing, so the first step of onboarding was contacting support to ask.
+     *
+     * A country with nothing configured yields an empty list and the section simply does not render.
+     */
+    private val _requirements = MutableStateFlow<List<MyDocumentRequirementDto>>(emptyList())
+    val requirements: StateFlow<List<MyDocumentRequirementDto>> = _requirements.asStateFlow()
 
     private val _pendingFile = MutableStateFlow<PendingUpload?>(null)
     internal val pendingFile: StateFlow<PendingUpload?> = _pendingFile.asStateFlow()
@@ -86,6 +104,12 @@ class DocumentsSectionViewModel @Inject constructor(
                     _uiState.value = DocumentsSectionUiState.Error
                 }
             }
+
+            // The checklist is advisory, so a failure here is silent: a cleaner who can see their
+            // documents should not be shown an error because the list of what we WANT did not load.
+            // It reverts to the empty state the screen had before this section existed.
+            val requirements = profileRepository.getDocumentRequirements()
+            _requirements.value = (requirements as? ApiResult.Success)?.data.orEmpty()
         }
     }
 
@@ -95,7 +119,7 @@ class DocumentsSectionViewModel @Inject constructor(
      * **The picker callback runs on the MAIN thread**, and this picker has no MIME filter — so reading
      * and encoding inline froze the UI on a 10 MB PDF. -> /mobile-app/patterns#image-upload
      */
-    fun stageFile(uri: Uri) {
+    fun stageFile(uri: Uri, replacesDocumentId: String? = null) {
         // Guard and flag both flip before the launch: two picker callbacks are
         // delivered on the main thread before either coroutine body starts, so
         // a guard inside the launch would let both past.
@@ -111,7 +135,7 @@ class DocumentsSectionViewModel @Inject constructor(
                 snackbar.showError(appContext.getString(R.string.document_read_failed))
                 return@launch
             }
-            _pendingFile.value = prepared
+            _pendingFile.value = prepared.copy(replacesDocumentId = replacesDocumentId)
         }
     }
 
@@ -186,19 +210,59 @@ class DocumentsSectionViewModel @Inject constructor(
         }
     }
 
-    fun delete(documentId: String) {
+    /**
+     * Ask an admin to remove a document. It removes NOTHING — which is the whole point. The button
+     * this replaced soft-deleted on the spot, and that flipped `AreDocumentsUploaded` and re-engaged
+     * the registration lock: one tap, no dialog, and a cleaner had lost their access to work.
+     *
+     * The confirmation is a SUCCESS message, not a refresh of the row: the document is unchanged,
+     * so a list that looked different afterwards would be lying about what just happened.
+     */
+    fun requestDeletion(documentId: String, reason: String) {
         if (_deletingId.value != null) return
         viewModelScope.launch {
             _deletingId.value = documentId
-            when (val result = profileRepository.deleteDocument(documentId)) {
+            when (val result = profileRepository.requestDocumentDeletion(documentId, reason)) {
                 is ApiResult.Success -> {
                     _deletingId.value = null
-                    refresh()
+                    snackbar.showSuccess(appContext.getString(R.string.document_deletion_requested))
                 }
                 is ApiResult.Error -> {
                     _deletingId.value = null
                     snackbar.showError(errorTranslator.translate(result.error))
                 }
+            }
+        }
+    }
+
+    /**
+     * Supersede a document with a newer file. No admin needed: the server creates the new version
+     * before retiring the old one, so the count never dips and the registration lock never
+     * re-engages. The document TYPE is not sent — the server carries it over.
+     */
+    fun replace(
+        documentId: String,
+        fileName: String,
+        contentType: String,
+        base64Content: String,
+        description: String?,
+    ) {
+        if (_uploadState.value is ActionState.Submitting) return
+        viewModelScope.launch {
+            _uploadState.value = ActionState.Submitting
+            val result = profileRepository.replaceDocument(
+                documentId = documentId,
+                file = BlobFileDto(
+                    fileName = fileName,
+                    base64Content = base64Content,
+                    contentType = contentType,
+                ),
+                description = description?.takeIf { it.isNotBlank() },
+            )
+            _uploadState.value = ActionState.Idle
+            when (result) {
+                is ApiResult.Success -> refresh()
+                is ApiResult.Error -> snackbar.showError(errorTranslator.translate(result.error))
             }
         }
     }

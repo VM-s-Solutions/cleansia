@@ -90,26 +90,75 @@ final class DocumentsSectionViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    func testDeleteSuccessClearsDeletingId() async {
+    /// The whole design in one assertion. Asking removes NOTHING, so the list is deliberately NOT
+    /// reloaded — a screen that looked different afterwards would be lying about what just happened.
+    /// The button this replaced soft-deleted on the spot, and that flipped `AreDocumentsUploaded` and
+    /// re-engaged the registration lock: one tap, no dialog, no access to work.
+    func testRequestingDeletionSendsTheReasonAndLeavesTheListAlone() async {
         client.documentsResult = .success([
             GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")
         ])
         let vm = makeVM()
         await vm.load()
-        await vm.delete(documentId: "doc-1")
-        XCTAssertNil(vm.deletingId)
-        XCTAssertEqual(client.deletedDocumentId, "doc-1")
+        await vm.requestDeletion(documentId: "doc-1", reason: "Wrong file")
+        XCTAssertNil(vm.busyDocumentId)
+        XCTAssertEqual(client.deletionRequestedFor, "doc-1")
+        XCTAssertEqual(client.deletionReason, "Wrong file")
+        XCTAssertEqual(vm.state.loadedValue?.count, 1)
     }
 
-    func testDeleteFailureSnackbarsAndClearsDeletingId() async {
+    func testRequestDeletionFailureSnackbarsAndClearsBusyId() async {
         client.documentsResult = .success([
             GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")
         ])
-        client.deleteDocumentResult = .failure(ApiError(httpStatus: 400))
+        client.requestDeletionResult = .failure(ApiError(httpStatus: 400))
         let vm = makeVM()
         await vm.load()
-        await vm.delete(documentId: "doc-1")
-        XCTAssertNil(vm.deletingId)
+        await vm.requestDeletion(documentId: "doc-1", reason: "Wrong file")
+        XCTAssertNil(vm.busyDocumentId)
         XCTAssertNotNil(snackbar.current)
+    }
+
+    /// Replacing carries the file and NOT a document type: the server takes the type from the version
+    /// being replaced, so a replacement cannot relabel a document an admin already approved.
+    func testReplaceSendsTheFileAgainstTheTargetDocument() async {
+        client.documentsResult = .success([
+            GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")
+        ])
+        let vm = makeVM()
+        await vm.load()
+        await vm.replace(
+            documentId: "doc-1",
+            fileName: "passport-new.jpg",
+            contentType: "image/jpeg",
+            base64Content: "AAAA",
+            description: nil
+        )
+        XCTAssertEqual(client.replacedDocumentId, "doc-1")
+        XCTAssertEqual(client.replacedFile?.fileName, "passport-new.jpg")
+    }
+
+    /// The checklist is advisory, so a failure loading it must not cost the cleaner the documents they
+    /// CAN see. It falls back to the empty state the screen had before the section existed.
+    func testRequirementsFailureLeavesTheDocumentListLoaded() async {
+        client.documentsResult = .success([
+            GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")
+        ])
+        client.requirementsResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue?.count, 1)
+        XCTAssertTrue(vm.requirements.isEmpty)
+    }
+
+    /// A checklist in arbitrary order reads as arbitrary — the server orders these and so does this.
+    func testRequirementsAreOrderedBySortOrder() async {
+        client.requirementsResult = .success([
+            MyDocumentRequirementDto(documentType: ._4, isRequired: false, sortOrder: 2),
+            MyDocumentRequirementDto(documentType: ._1, isRequired: true, sortOrder: 1)
+        ])
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.requirements.map(\.documentType), [._1, ._4])
     }
 }

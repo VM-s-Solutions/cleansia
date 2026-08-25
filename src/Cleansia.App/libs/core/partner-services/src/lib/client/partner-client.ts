@@ -709,6 +709,10 @@ export interface ICountryClient {
      * @return OK
      */
     getServiced(): Observable<CountryListItem[]>;
+    /**
+     * @return OK
+     */
+    getFieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
 }
 
 @Injectable({
@@ -845,6 +849,67 @@ export class CountryClient implements ICountryClient {
             let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getFieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto> {
+        let url = this.baseUrl + "/api/Country/GetFieldLabels/{countryId}";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetFieldLabels(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetFieldLabels(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
+        }));
+    }
+
+    protected processGetFieldLabels(response: HttpResponseBase): Observable<GetCountryFieldLabelsCountryFieldLabelsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetCountryFieldLabelsCountryFieldLabelsDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -1639,15 +1704,24 @@ export interface IEmployeeClient {
      */
     getMyDocuments(query?: GetMyDocumentsQuery | undefined): Observable<GetMyDocumentsResponse>;
     /**
-     * @param documentId (optional) 
+     * @param body (optional) 
      * @return OK
      */
-    deleteMyDocument(documentId?: string | undefined): Observable<DeleteMyDocumentResponse>;
+    requestMyDocumentDeletion(documentId: string, body?: RequestMyDocumentDeletionRequest | undefined): Observable<RequestMyDocumentDeletionResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    replaceMyDocument(documentId: string, body?: ReplaceMyDocumentRequest | undefined): Observable<ReplaceMyDocumentResponse>;
     /**
      * @param documentId (optional) 
      * @return OK
      */
     downloadMyDocument(documentId?: string | undefined): Observable<FileResponse>;
+    /**
+     * @return OK
+     */
+    getMyDocumentRequirements(): Observable<MyDocumentRequirementDto[]>;
 }
 
 @Injectable({
@@ -2189,40 +2263,43 @@ export class EmployeeClient implements IEmployeeClient {
     }
 
     /**
-     * @param documentId (optional) 
+     * @param body (optional) 
      * @return OK
      */
-    deleteMyDocument(documentId?: string | undefined): Observable<DeleteMyDocumentResponse> {
-        let url = this.baseUrl + "/api/Employee/DeleteMyDocument?";
-        if (documentId === null)
-            throw new globalThis.Error("The parameter 'documentId' cannot be null.");
-        else if (documentId !== undefined)
-            url += "DocumentId=" + encodeURIComponent("" + documentId) + "&";
+    requestMyDocumentDeletion(documentId: string, body?: RequestMyDocumentDeletionRequest | undefined): Observable<RequestMyDocumentDeletionResponse> {
+        let url = this.baseUrl + "/api/Employee/RequestMyDocumentDeletion/{documentId}";
+        if (documentId === undefined || documentId === null)
+            throw new globalThis.Error("The parameter 'documentId' must be defined.");
+        url = url.replace("{documentId}", encodeURIComponent("" + documentId));
         url = url.replace(/[?&]$/, "");
 
+        const content = JSON.stringify(body);
+
         let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             })
         };
 
-        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDeleteMyDocument(response);
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequestMyDocumentDeletion(response);
         })).pipe(ObservableCatch((response: any) => {
             if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processDeleteMyDocument(response as any);
+                    return this.processRequestMyDocumentDeletion(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeleteMyDocumentResponse>;
+                    return ObservableThrow(e) as any as Observable<RequestMyDocumentDeletionResponse>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<DeleteMyDocumentResponse>;
+                return ObservableThrow(response) as any as Observable<RequestMyDocumentDeletionResponse>;
         }));
     }
 
-    protected processDeleteMyDocument(response: HttpResponseBase): Observable<DeleteMyDocumentResponse> {
+    protected processRequestMyDocumentDeletion(response: HttpResponseBase): Observable<RequestMyDocumentDeletionResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -2233,7 +2310,80 @@ export class EmployeeClient implements IEmployeeClient {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeleteMyDocumentResponse.fromJS(resultData200);
+            result200 = RequestMyDocumentDeletionResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    replaceMyDocument(documentId: string, body?: ReplaceMyDocumentRequest | undefined): Observable<ReplaceMyDocumentResponse> {
+        let url = this.baseUrl + "/api/Employee/ReplaceMyDocument/{documentId}";
+        if (documentId === undefined || documentId === null)
+            throw new globalThis.Error("The parameter 'documentId' must be defined.");
+        url = url.replace("{documentId}", encodeURIComponent("" + documentId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReplaceMyDocument(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReplaceMyDocument(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ReplaceMyDocumentResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ReplaceMyDocumentResponse>;
+        }));
+    }
+
+    protected processReplaceMyDocument(response: HttpResponseBase): Observable<ReplaceMyDocumentResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReplaceMyDocumentResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -2330,6 +2480,71 @@ export class EmployeeClient implements IEmployeeClient {
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMyDocumentRequirements(): Observable<MyDocumentRequirementDto[]> {
+        let url = this.baseUrl + "/api/Employee/GetMyDocumentRequirements";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMyDocumentRequirements(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMyDocumentRequirements(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MyDocumentRequirementDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MyDocumentRequirementDto[]>;
+        }));
+    }
+
+    protected processGetMyDocumentRequirements(response: HttpResponseBase): Observable<MyDocumentRequirementDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MyDocumentRequirementDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -7550,42 +7765,6 @@ export interface IDeclinePreferredOfferResponse {
     orderId: string | undefined;
 }
 
-export class DeleteMyDocumentResponse implements IDeleteMyDocumentResponse {
-    success!: boolean;
-
-    constructor(data?: IDeleteMyDocumentResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): DeleteMyDocumentResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeleteMyDocumentResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IDeleteMyDocumentResponse {
-    success: boolean;
-}
-
 export class DeleteOrderPhotoResponse implements IDeleteOrderPhotoResponse {
     success!: boolean;
 
@@ -9019,6 +9198,74 @@ export interface IGdprExportProfileDto {
     createdOn: Date;
 }
 
+export class GetCountryFieldLabelsCountryFieldLabelsDto implements IGetCountryFieldLabelsCountryFieldLabelsDto {
+    countryId!: string | undefined;
+    registrationNumberLabel!: string | undefined;
+    registrationNumberFormat!: string | undefined;
+    registrationNumberRequired!: boolean;
+    taxIdLabel!: string | undefined;
+    taxIdFormat!: string | undefined;
+    vatNumberLabel!: string | undefined;
+    vatNumberFormat!: string | undefined;
+    vatNumberRequired!: boolean;
+
+    constructor(data?: IGetCountryFieldLabelsCountryFieldLabelsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.registrationNumberLabel = Data["registrationNumberLabel"];
+            this.registrationNumberFormat = Data["registrationNumberFormat"];
+            this.registrationNumberRequired = Data["registrationNumberRequired"];
+            this.taxIdLabel = Data["taxIdLabel"];
+            this.taxIdFormat = Data["taxIdFormat"];
+            this.vatNumberLabel = Data["vatNumberLabel"];
+            this.vatNumberFormat = Data["vatNumberFormat"];
+            this.vatNumberRequired = Data["vatNumberRequired"];
+        }
+    }
+
+    static fromJS(data: any): GetCountryFieldLabelsCountryFieldLabelsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetCountryFieldLabelsCountryFieldLabelsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["registrationNumberLabel"] = this.registrationNumberLabel;
+        data["registrationNumberFormat"] = this.registrationNumberFormat;
+        data["registrationNumberRequired"] = this.registrationNumberRequired;
+        data["taxIdLabel"] = this.taxIdLabel;
+        data["taxIdFormat"] = this.taxIdFormat;
+        data["vatNumberLabel"] = this.vatNumberLabel;
+        data["vatNumberFormat"] = this.vatNumberFormat;
+        data["vatNumberRequired"] = this.vatNumberRequired;
+        return data;
+    }
+}
+
+export interface IGetCountryFieldLabelsCountryFieldLabelsDto {
+    countryId: string | undefined;
+    registrationNumberLabel: string | undefined;
+    registrationNumberFormat: string | undefined;
+    registrationNumberRequired: boolean;
+    taxIdLabel: string | undefined;
+    taxIdFormat: string | undefined;
+    vatNumberLabel: string | undefined;
+    vatNumberFormat: string | undefined;
+    vatNumberRequired: boolean;
+}
+
 export class GetCurrentEmployeeDetailQuery implements IGetCurrentEmployeeDetailQuery {
 
     constructor(data?: IGetCurrentEmployeeDetailQuery) {
@@ -9857,6 +10104,58 @@ export interface IMonthlyEarning {
     month: number;
     amount: number;
     monthName: string | undefined;
+}
+
+export class MyDocumentRequirementDto implements IMyDocumentRequirementDto {
+    documentType!: DocumentType;
+    isRequired!: boolean;
+    sortOrder!: number;
+    status!: DocumentStatus;
+    documentId!: string | undefined;
+
+    constructor(data?: IMyDocumentRequirementDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.documentType = Data["documentType"];
+            this.isRequired = Data["isRequired"];
+            this.sortOrder = Data["sortOrder"];
+            this.status = Data["status"];
+            this.documentId = Data["documentId"];
+        }
+    }
+
+    static fromJS(data: any): MyDocumentRequirementDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MyDocumentRequirementDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["documentType"] = this.documentType;
+        data["isRequired"] = this.isRequired;
+        data["sortOrder"] = this.sortOrder;
+        data["status"] = this.status;
+        data["documentId"] = this.documentId;
+        return data;
+    }
+}
+
+export interface IMyDocumentRequirementDto {
+    documentType: DocumentType;
+    isRequired: boolean;
+    sortOrder: number;
+    status: DocumentStatus;
+    documentId: string | undefined;
 }
 
 export class MyPayoutDetails implements IMyPayoutDetails {
@@ -12460,6 +12759,86 @@ export interface IRegistrationCompletionStatus {
     rejectionReason: string | undefined;
 }
 
+export class ReplaceMyDocumentRequest implements IReplaceMyDocumentRequest {
+    file!: BlobFileDto;
+    description!: string | undefined;
+
+    constructor(data?: IReplaceMyDocumentRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.file = Data["file"] ? BlobFileDto.fromJS(Data["file"]) : undefined as any;
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): ReplaceMyDocumentRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReplaceMyDocumentRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["file"] = this.file ? this.file.toJSON() : undefined as any;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IReplaceMyDocumentRequest {
+    file: BlobFileDto;
+    description: string | undefined;
+}
+
+export class ReplaceMyDocumentResponse implements IReplaceMyDocumentResponse {
+    documentId!: string | undefined;
+    version!: number;
+
+    constructor(data?: IReplaceMyDocumentResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.documentId = Data["documentId"];
+            this.version = Data["version"];
+        }
+    }
+
+    static fromJS(data: any): ReplaceMyDocumentResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReplaceMyDocumentResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["documentId"] = this.documentId;
+        data["version"] = this.version;
+        return data;
+    }
+}
+
+export interface IReplaceMyDocumentResponse {
+    documentId: string | undefined;
+    version: number;
+}
+
 export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
     orderId!: string | undefined;
     description!: string | undefined;
@@ -12542,6 +12921,78 @@ export interface IReportOrderIssueResponse {
     issueId: string | undefined;
     description: string | undefined;
     createdAt: Date;
+}
+
+export class RequestMyDocumentDeletionRequest implements IRequestMyDocumentDeletionRequest {
+    reason!: string | undefined;
+
+    constructor(data?: IRequestMyDocumentDeletionRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.reason = Data["reason"];
+        }
+    }
+
+    static fromJS(data: any): RequestMyDocumentDeletionRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestMyDocumentDeletionRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["reason"] = this.reason;
+        return data;
+    }
+}
+
+export interface IRequestMyDocumentDeletionRequest {
+    reason: string | undefined;
+}
+
+export class RequestMyDocumentDeletionResponse implements IRequestMyDocumentDeletionResponse {
+    requestId!: string | undefined;
+
+    constructor(data?: IRequestMyDocumentDeletionResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.requestId = Data["requestId"];
+        }
+    }
+
+    static fromJS(data: any): RequestMyDocumentDeletionResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestMyDocumentDeletionResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["requestId"] = this.requestId;
+        return data;
+    }
+}
+
+export interface IRequestMyDocumentDeletionResponse {
+    requestId: string | undefined;
 }
 
 export class RequestPasswordChangeCommand implements IRequestPasswordChangeCommand {

@@ -445,6 +445,19 @@
     <string name="document_type">Тип документа</string>
     <string name="description_optional">Опис (опціонально)</string>
     <string name="no_documents">Ще не завантажено жодних документів</string>
+    <string name="document_requirements_title">Що нам потрібно від вас</string>
+    <string name="document_requirements_subtitle">Залежить від країни, де ви працюєте. Завантажте їх, і ми перевіримо.</string>
+    <string name="document_requirement_required">Обов\'язково</string>
+    <string name="document_requirement_optional">За бажанням</string>
+    <string name="document_requirement_missing">Не завантажено</string>
+    <string name="document_replace">Замінити</string>
+    <string name="document_replace_title">Замінити цей документ?</string>
+    <string name="document_replace_message">Файл %1$s стане поточною версією та піде на повторну перевірку. Нічого не видаляється, і ви можете працювати далі, поки ми перевіряємо.</string>
+    <string name="document_request_deletion">Попросити видалити</string>
+    <string name="document_request_deletion_title">Попросити видалити?</string>
+    <string name="document_request_deletion_message">Поки що нічого не видаляється. Деякі документи ми зобов\'язані зберігати, тому ваш запит розгляне адміністратор — до відповіді документ залишається без змін.</string>
+    <string name="document_deletion_reason">Чому його треба видалити?</string>
+    <string name="document_deletion_requested">Запит надіслано. Ми скоро відповімо.</string>
     <string name="document_status_pending">Очікує перевірки</string>
     <string name="document_status_approved">Підтверджено</string>
     <string name="document_status_rejected">Відхилено</string>
@@ -472,7 +485,7 @@
     <string name="entity_type_legal_entity">Юридична особа</string>
     <string name="business_country">Країна реєстрації</string>
     <string name="registration_number_label">Реєстраційний номер</string>
-    <string name="registration_number_helper">8 цифр для ЧР/СК; формат залежить від обраної країни.</string>
+    <string name="registration_number_helper">Формат залежить від обраної країни.</string>
     <string name="vat_number_label">Номер платника ПДВ</string>
     <string name="vat_number_helper">Необов\'язково — лише якщо ви платник ПДВ.</string>
     <string name="legal_entity_name_label">Назва юридичної особи</string>
@@ -1024,6 +1037,8 @@
     <string name="registration_lock_progress">%1$d з %2$d кроків виконано</string>
     <string name="registration_lock_step_complete">Готово</string>
     <string name="registration_lock_sign_out">Вийти</string>
+    <string name="registration_lock_sign_out_confirm_title">Вийти з облікового запису?</string>
+    <string name="registration_lock_sign_out_confirm_message">Ваш прогрес збережено. Щоб завершити реєстрацію, потрібно буде увійти знову.</string>
     <string name="registration_lock_support_subject">Cleansia partner — заявку відхилено</string>
     <string name="registration_lock_category_profile">Профіль</string>
     <string name="registration_lock_category_availability">Доступність</string>
@@ -1099,6 +1114,7 @@
     <string name="error_employee_document_not_found">Документ не знайдено.</string>
     <string name="error_employee_document_unauthorized">У вас немає доступу до цього документа.</string>
     <string name="error_employee_document_not_owned">Цей документ вам не належить.</string>
+    <string name="error_employee_document_deletion_already_requested">Ви вже подали запит на видалення цього документа. Ми скоро на нього відповімо.</string>
 
     <string name="error_order_not_found">Замовлення не знайдено.</string>
     <string name="error_order_take_already_cancelled">Це замовлення вже скасовано.</string>

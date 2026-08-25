@@ -3,11 +3,11 @@ import {
   BlobFileDto,
   DocumentType,
   PartnerClient,
+  RequestMyDocumentDeletionRequest,
   SaveMyDocumentsCommand,
   SaveMyDocumentsDocumentToSave,
 } from '@cleansia/partner-services';
 import {
-  DialogService,
   FileValidationErrorService,
   SnackbarService,
 } from '@cleansia/services';
@@ -44,7 +44,7 @@ export interface DocumentsState {
   stagedDocuments: StagedDocument[];
   loading: boolean;
   saving: boolean;
-  deleting: boolean;
+  requestingDeletion: boolean;
 }
 
 @Injectable()
@@ -52,7 +52,6 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly dialogService = inject(DialogService);
   private readonly fileValidationErrorService = inject(
     FileValidationErrorService
   );
@@ -64,7 +63,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     stagedDocuments: [],
     loading: false,
     saving: false,
-    deleting: false,
+    requestingDeletion: false,
   });
 
   // Documents selectors
@@ -74,7 +73,9 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   );
   readonly documentsLoading = computed(() => this.documentsState().loading);
   readonly documentsSaving = computed(() => this.documentsState().saving);
-  readonly documentsDeleting = computed(() => this.documentsState().deleting);
+  readonly deletionRequestInFlight = computed(
+    () => this.documentsState().requestingDeletion
+  );
   readonly hasStagedDocuments = computed(
     () => this.documentsState().stagedDocuments.length > 0
   );
@@ -236,42 +237,41 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  async deleteEmployeeDocument(
+  /**
+   * Ask an admin to remove a document. It removes NOTHING.
+   *
+   * This replaced a partner-facing delete. That one soft-deleted on the spot, which flipped
+   * `AreDocumentsUploaded` and re-engaged the registration lock — one click cost a cleaner their
+   * access to work, on documents the employer is required to hold.
+   *
+   * The list is deliberately NOT mutated and `checkEmployeeCurrent` is deliberately NOT dispatched:
+   * nothing about the cleaner changed, and a screen that looked different afterwards would be lying
+   * about what just happened.
+   *
+   * The reason is collected by the caller and required by the server — without one an admin is being
+   * asked to rule on nothing, which is the whole point of routing this past a person. The error path
+   * is left to the interceptor, which renders `employee_document.deletion_already_requested` when a
+   * request is already open.
+   */
+  async requestDocumentDeletion(
     documentId: string,
-    fileName: string
+    reason: string
   ): Promise<void> {
-    const confirmed = await this.dialogService
-      .confirm(
-        this.translate.instant('global.messages.documents.delete_confirm', {
-          fileName,
-        })
-      )
-      .toPromise();
+    this.documentsState.update((s) => ({ ...s, requestingDeletion: true }));
 
-    if (!confirmed) {
-      return;
-    }
-
-    this.documentsState.update((s) => ({ ...s, deleting: true }));
+    const body = new RequestMyDocumentDeletionRequest();
+    body.reason = reason;
 
     try {
       await this.partnerClient.employeeClient
-        .deleteMyDocument(documentId)
+        .requestMyDocumentDeletion(documentId, body)
         .toPromise();
 
       this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.delete_success')
+        this.translate.instant('global.messages.documents.deletion_requested')
       );
-
-      // Remove from state
-      this.documentsState.update((s) => ({
-        ...s,
-        documents: s.documents.filter((d) => d.documentId !== documentId),
-        deleting: false,
-      }));
-      this.store.dispatch(checkEmployeeCurrent());
-    } catch {
-      this.documentsState.update((s) => ({ ...s, deleting: false }));
+    } finally {
+      this.documentsState.update((s) => ({ ...s, requestingDeletion: false }));
     }
   }
 

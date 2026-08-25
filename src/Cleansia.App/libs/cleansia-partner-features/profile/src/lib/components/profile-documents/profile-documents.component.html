@@ -120,11 +120,13 @@
               <button class="doc-card__action-btn" (click)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)" title="Download">
                 <i class="pi pi-download"></i>
               </button>
-              @if (group.key !== 'approved') {
-              <button class="doc-card__action-btn doc-card__action-btn--danger" (click)="facade.deleteEmployeeDocument(doc.documentId!, doc.fileName!)" title="Delete">
+              <button
+                class="doc-card__action-btn doc-card__action-btn--danger"
+                (click)="openDeletionRequest(doc.documentId!, doc.fileName!)"
+                [title]="'pages.profile.request_deletion' | translate"
+              >
                 <i class="pi pi-trash"></i>
               </button>
-              }
             </div>
           </div>
           }
@@ -134,3 +136,45 @@
     }
   }
 </cleansia-section>
+
+<!--
+  Asking removes nothing, so the copy has to say so — a dialog that reads like a delete confirmation
+  would leave the cleaner believing the document is gone. The reason is required by the server and
+  required here: without one an admin is being asked to rule on nothing.
+-->
+<p-dialog
+  [header]="'pages.profile.request_deletion_title' | translate"
+  [(visible)]="deletionDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '460px' }"
+  [breakpoints]="{ '500px': '92vw' }"
+  styleClass="cleansia-dialog"
+  (onHide)="closeDeletionRequest()"
+>
+  <p class="doc-deletion__message">
+    {{ 'pages.profile.request_deletion_message' | translate: { fileName: deletionFileName } }}
+  </p>
+
+  <cleansia-textarea
+    [(ngModel)]="deletionReason"
+    [label]="'pages.profile.deletion_reason' | translate"
+    [rows]="3"
+  ></cleansia-textarea>
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      (onClick)="closeDeletionRequest()"
+    ></cleansia-button>
+    <cleansia-button
+      [label]="'pages.profile.request_deletion' | translate"
+      severity="danger"
+      [disabled]="!deletionReason.trim() || facade.deletionRequestInFlight()"
+      [loading]="facade.deletionRequestInFlight()"
+      (onClick)="confirmDeletionRequest()"
+    ></cleansia-button>
+  </ng-template>
+</p-dialog>

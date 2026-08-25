@@ -182,7 +182,11 @@
       "job_radius_distance": "Distance from home (km)",
       "job_radius_distance_hint": "Between {{min}} and {{max}} km.",
       "bank_account": "Bank account",
-      "bank_account_hint": "Prefix, account number and bank code — paste a whole account and it splits itself."
+      "bank_account_hint": "Prefix, account number and bank code — paste a whole account and it splits itself.",
+      "request_deletion": "Request removal",
+      "request_deletion_title": "Ask us to remove this?",
+      "request_deletion_message": "Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — {{fileName}} stays exactly as it is until they answer.",
+      "deletion_reason": "Why should it be removed?"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -852,10 +856,9 @@
         "no_documents_to_save": "No documents to save. Please select files first.",
         "upload_success": "Documents uploaded successfully!",
         "upload_error": "Failed to upload documents. Please try again.",
-        "delete_confirm": "Are you sure you want to delete {{fileName}}?",
-        "delete_success": "Document deleted successfully!",
         "download_error": "Failed to download document. Please try again.",
-        "delete_error": "Failed to delete document. Please try again."
+        "delete_error": "Failed to delete document. Please try again.",
+        "deletion_requested": "Request sent. We'll answer it shortly."
       },
       "orders": {
         "failed_to_load_details": "Failed to load order details. Please try again.",

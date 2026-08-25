@@ -5,31 +5,6 @@ step, cleared when done.
 
 ## Open
 
-### MS-7 — Regenerate the partner web client — **owner, blocking a live 404**
-
-The partner document lifecycle removed `DeleteMyDocument` from the backend and replaced it with
-`RequestMyDocumentDeletion` + `ReplaceMyDocument`. Both mobile apps are already on the new endpoints —
-their client is generated at build time from the committed spec, which this branch refreshed.
-
-**The partner WEB client is not**, because NSwag regeneration is owner-only (`CLAUDE.md` § *Manual
-steps*). `libs/core/partner-services/.../partner-client.ts` still declares `deleteMyDocument`, and
-`libs/cleansia-partner-features/profile/.../profile-documents.facade.ts:259` still calls it — against a
-route that no longer exists. **That button 404s today.**
-
-**Action:**
-
-```bash
-cd src/Cleansia.App
-npm run generate-partner-client      # partner :5000 must be running
-npm run generate-admin-client        # the requirement CRUD + deletion queue are new admin endpoints
-```
-
-Then the facade swaps `deleteMyDocument(id)` for `requestMyDocumentDeletion(id, { reason })` behind a
-confirmation, matching what both mobile apps now do. It is a small change and it is written up in
-`/partner-app/onboarding#document-replace-and-remove`; it is held only by the regeneration.
-
-The customer client is untouched by this work and does not need regenerating.
-
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
@@ -85,6 +60,25 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-7 — Regenerate the partner web client — **DONE 2026-08-25**
+
+Owner regenerated the partner and admin NSwag clients. `deleteMyDocument` is gone from
+`partner-client.ts` and `requestMyDocumentDeletion` / `replaceMyDocument` /
+`getMyDocumentRequirements` / `getFieldLabels` are in; the admin client gained the requirement
+CRUD and the deletion queue.
+
+The partner web app was moved onto the new endpoint in the same pass: the delete button is now
+a removal REQUEST behind a dialog that collects the reason the server requires, and the list is
+deliberately not mutated because nothing was removed. The approved-only guard on the button is
+gone with it — it mirrored `DeleteMyDocument`'s validator, and an expired approved ID is exactly
+the case worth asking about.
+
+**Still open, and NOT this step:** the admin app has no UI for the requirement CRUD or the
+deletion queue. The client methods exist (`requirementsGet` / `requirementsPut` /
+`requirementsDelete` / `deletionRequests` / `resolve`), so it is ordinary frontend work rather
+than a manual step — an admin answers requests through the API until it is built.
+
 
 ### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **DONE 2026-08-15**
 

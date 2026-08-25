@@ -5,10 +5,12 @@ import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaTextareaComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
 import { DocumentType } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DialogModule } from 'primeng/dialog';
 import { Skeleton } from 'primeng/skeleton';
 import { ProfileDocumentsFacade } from '../../profile/profile-documents.facade';
 
@@ -58,6 +60,8 @@ interface DocumentGroup {
     CleansiaSectionComponent,
     CleansiaButtonComponent,
     CleansiaSelectComponent,
+    CleansiaTextareaComponent,
+    DialogModule,
     Skeleton,
   ],
   templateUrl: './profile-documents.component.html',
@@ -72,6 +76,46 @@ export class ProfileDocumentsComponent implements OnInit {
   documentGroups: DocumentGroup[] = [];
   isDragOver = false;
   showValidation = false;
+
+  // Asking an admin to remove a document. Held here rather than in the facade because it is dialog
+  // state, not document state — the facade owns what the server knows, and the server knows nothing
+  // about a request until it is sent.
+  deletionDialogVisible = false;
+  deletionReason = '';
+  deletionFileName = '';
+  private deletionDocumentId: string | null = null;
+
+  openDeletionRequest(documentId: string, fileName: string): void {
+    this.deletionDocumentId = documentId;
+    this.deletionFileName = fileName;
+    this.deletionReason = '';
+    this.deletionDialogVisible = true;
+  }
+
+  closeDeletionRequest(): void {
+    this.deletionDialogVisible = false;
+    this.deletionDocumentId = null;
+    this.deletionReason = '';
+  }
+
+  async confirmDeletionRequest(): Promise<void> {
+    const documentId = this.deletionDocumentId;
+    const reason = this.deletionReason.trim();
+    if (!documentId || !reason) {
+      return;
+    }
+
+    // Closed only on success. A refusal — an open request already exists, most likely — leaves the
+    // dialog up with what was typed still in it, so the cleaner reads the interceptor's error
+    // against their own words instead of an empty screen.
+    try {
+      await this.facade.requestDocumentDeletion(documentId, reason);
+    } catch {
+      return;
+    }
+
+    this.closeDeletionRequest();
+  }
 
   ngOnInit(): void {
     this.buildDocumentTypeOptions();

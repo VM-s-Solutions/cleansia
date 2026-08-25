@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -244,6 +244,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // and a cleaner's note about a customer's household. No field-name denylist can reach
                // free text, so the whole body is suppressed.
                pathValue.Contains("/savemydocuments") ||
+               // Replacing carries the same pair as saving: a base64 document beside the
+               // cleaner's own description of it. Redacting the payload frees the window that
+               // pulls the description into the log, so the whole body goes.
+               pathValue.Contains("/replacemydocument") ||
                pathValue.Contains("/savephotos") ||
                pathValue.Contains("/uploadphoto") ||
                // Reading photos back leaks the same way: redacting the SAS frees ~170 bytes of window

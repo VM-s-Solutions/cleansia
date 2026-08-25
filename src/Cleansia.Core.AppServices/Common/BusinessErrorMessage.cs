@@ -226,6 +226,18 @@ public static class BusinessErrorMessage
     public const string Unauthorized = "employee_document.unauthorized";
     public const string EmployeeDocumentNotOwned = "employee_document.not_owned";
 
+    /// <summary>
+    /// A deletion request is already open for this document. A second is not more urgent, it is the
+    /// same ask twice — and it would leave an admin two rows to answer for one decision.
+    /// </summary>
+    public const string DocumentDeletionAlreadyRequested = "employee_document.deletion_already_requested";
+
+    /// <summary>
+    /// The request has already been answered, so there is nothing left to rule on. Distinct from
+    /// "not found": the admin needs to know somebody got there first, not that they mistyped an id.
+    /// </summary>
+    public const string DocumentDeletionAlreadyResolved = "employee_document.deletion_already_resolved";
+
     // Payroll
     public const string PayPeriodNotFound = "payroll.pay_period.not_found";
     public const string InvoiceNotFound = "payroll.invoice.not_found";

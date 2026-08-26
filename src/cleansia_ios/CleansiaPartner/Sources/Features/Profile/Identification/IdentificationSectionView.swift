@@ -90,9 +90,9 @@ struct IdentificationSectionView: View {
                     )
                 }
                 SaveSectionButton(
-                    onBack: onboardingBack,
                     onboarding: onboarding,
                     isSubmitting: vm.action.isSubmitting,
+                    onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
             }

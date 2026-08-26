@@ -81,10 +81,10 @@ struct BankSectionView: View {
                 // Bank is the last step of the onboarding chain, so "Save and continue"
                 // would promise a step that does not exist.
                 SaveSectionButton(
-                    onBack: onboardingBack,
                     onboarding: false,
                     isSubmitting: vm.action.isSubmitting,
                     enabled: form.canSubmit,
+                    onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
             }

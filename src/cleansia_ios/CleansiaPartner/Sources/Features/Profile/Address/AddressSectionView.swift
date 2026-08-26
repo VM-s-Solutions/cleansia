@@ -75,10 +75,10 @@ struct AddressSectionView: View {
                 }
                 WhyWeNeedThisCard(expanded: $whyExpanded)
                 SaveSectionButton(
-                    onBack: onboardingBack,
                     onboarding: onboarding,
                     isSubmitting: vm.action.isSubmitting,
                     enabled: vm.canSave,
+                    onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
             }

@@ -16,6 +16,9 @@
     <string name="onboarding_step_address">Адреса</string>
     <string name="onboarding_step_identification">Особа</string>
     <string name="onboarding_step_bank">Банк</string>
+    <string name="onboarding_step_state_current">поточний крок</string>
+    <string name="onboarding_step_state_done">завершено</string>
+    <string name="onboarding_step_state_upcoming">не розпочато</string>
     <string name="saving">Збереження…</string>
     <string name="no_data">Не вказано</string>
     <string name="delete">Видалити</string>

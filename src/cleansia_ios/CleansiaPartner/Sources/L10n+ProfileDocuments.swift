@@ -16,6 +16,20 @@ import Foundation
 /// form resolves there only because `enum Profile` is lexically nested inside `extension L10n { }`,
 /// which this file is not.
 extension L10n.Profile {
+    /// Spoken by VoiceOver after the section name. Four medallions otherwise announce as four
+    /// identical controls with nothing saying which is finished or which you are on.
+    static var onboardingStepStateCurrent: String {
+        L10n.localized("onboarding_step_state_current")
+    }
+
+    static var onboardingStepStateDone: String {
+        L10n.localized("onboarding_step_state_done")
+    }
+
+    static var onboardingStepStateUpcoming: String {
+        L10n.localized("onboarding_step_state_upcoming")
+    }
+
     /// The onboarding chain's forward CTA. Deliberately not `saveAndContinue`: once a Back button
     /// sits beside it the row is half-width, and "Сохранить и продолжить" is 22 characters against
     /// "Далее"'s 5. The key already existed in all five locales — the pre-auth carousel uses it.

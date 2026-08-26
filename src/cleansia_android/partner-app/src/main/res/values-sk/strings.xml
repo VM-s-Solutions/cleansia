@@ -16,6 +16,9 @@
     <string name="onboarding_step_address">Adresa</string>
     <string name="onboarding_step_identification">Identita</string>
     <string name="onboarding_step_bank">Banka</string>
+    <string name="onboarding_step_state_current">aktuálny krok</string>
+    <string name="onboarding_step_state_done">hotovo</string>
+    <string name="onboarding_step_state_upcoming">nezačaté</string>
     <string name="saving">Ukladanie…</string>
     <string name="no_data">Nezadané</string>
     <string name="delete">Odstrániť</string>

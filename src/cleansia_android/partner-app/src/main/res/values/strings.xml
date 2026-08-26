@@ -16,6 +16,9 @@
     <string name="onboarding_step_address">Address</string>
     <string name="onboarding_step_identification">Identity</string>
     <string name="onboarding_step_bank">Bank</string>
+    <string name="onboarding_step_state_current">current step</string>
+    <string name="onboarding_step_state_done">completed</string>
+    <string name="onboarding_step_state_upcoming">not started</string>
     <string name="saving">Saving…</string>
     <string name="no_data">Not provided</string>
     <string name="delete">Delete</string>

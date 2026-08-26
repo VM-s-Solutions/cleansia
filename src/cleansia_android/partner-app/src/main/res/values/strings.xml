@@ -9,7 +9,6 @@
     <string name="retry">Retry</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
-    <string name="save_and_continue">Save and continue</string>
     <!-- Onboarding chain (registration-lock multi-section flow) -->
     <string name="onboarding_step_progress">Step %1$d of %2$d</string>
     <string name="onboarding_header_subtitle">Complete profile</string>

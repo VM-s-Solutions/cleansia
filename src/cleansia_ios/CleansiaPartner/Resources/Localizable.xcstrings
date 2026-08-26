@@ -12231,6 +12231,41 @@
         }
       }
     },
+    "onboarding_step_jump_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přejít na tento krok"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to this step"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти к этому шагу"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prejsť na tento krok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти до цього кроку"
+          }
+        }
+      }
+    },
     "onboarding_step_personal": {
       "extractionState": "stale",
       "localizations": {
@@ -19192,41 +19227,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зберегти"
-          }
-        }
-      }
-    },
-    "save_and_continue": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložit a pokračovat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save & continue"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сохранить и продолжить"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložiť a pokračovať"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Зберегти та продовжити"
           }
         }
       }

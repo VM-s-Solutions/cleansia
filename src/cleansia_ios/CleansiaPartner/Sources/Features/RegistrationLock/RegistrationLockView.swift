@@ -110,7 +110,15 @@ struct RegistrationLockView: View {
     @ViewBuilder
     private var content: some View {
         switch vm.state {
-        case .loading, .error:
+        case .loading:
+            // The same skeleton the gate draws, so the post-login sequence settles once —
+            // skeleton to content — instead of skeleton, spinner, content. They share the block
+            // colour and the 0.9s pulse rather than a type; each mirrors its own screen.
+            RegistrationLockSkeleton()
+        case .error:
+            // Left on the spinner deliberately: .error is unreachable here today (the view model
+            // never publishes it), and a skeleton that pulses forever is the one way this could
+            // become a screen nobody escapes.
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case let .loaded(data):

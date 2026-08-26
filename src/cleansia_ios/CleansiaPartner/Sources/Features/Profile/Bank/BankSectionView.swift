@@ -43,6 +43,13 @@ struct BankSectionView: View {
         )
     }
 
+    /// Back is offered only inside the chain, and only when a previous step exists. Reuses the same
+    /// jump the step dots added — replace, never push — so the two ways back behave identically.
+    private var onboardingBack: (() -> Void)? {
+        guard onboarding, let previous = ProfileSection.bank.previous else { return nil }
+        return { chainVM.requestJump(to: previous) }
+    }
+
     var body: some View {
         SectionScaffold(
             title: L10n.Profile.bankDetails,
@@ -74,6 +81,7 @@ struct BankSectionView: View {
                 // Bank is the last step of the onboarding chain, so "Save and continue"
                 // would promise a step that does not exist.
                 SaveSectionButton(
+                    onBack: onboardingBack,
                     onboarding: false,
                     isSubmitting: vm.action.isSubmitting,
                     enabled: form.canSubmit,

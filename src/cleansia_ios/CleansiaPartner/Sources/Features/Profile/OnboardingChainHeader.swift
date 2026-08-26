@@ -93,14 +93,25 @@ private struct SectionDot: View {
     let isReachable: Bool
     let onTap: () -> Void
 
+    @State private var isPressed = false
+
     var body: some View {
         content
             // The gesture goes on the whole dot+label column, not the 32pt circle: a 32pt target is
             // under the 44pt minimum, and the label is the part people aim at.
             .contentShape(Rectangle())
-            .onTapGesture { if isReachable { onTap() } }
+            .opacity(isPressed ? 0.6 : 1)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
+            // Android gets pressed feedback free from Modifier.clickable's ripple; iOS had none, and
+            // a control that does not react to touch does not read as one.
+            .onLongPressGesture(
+                minimumDuration: 0,
+                pressing: { pressing in if isReachable { isPressed = pressing } },
+                perform: { if isReachable { onTap() } }
+            )
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(isReachable ? .isButton : [])
+            .accessibilityHint(isReachable ? L10n.Profile.onboardingStepJumpHint : "")
     }
 
     private var content: some View {
@@ -118,6 +129,15 @@ private struct SectionDot: View {
                     Text(verbatim: "\(index)")
                         .font(CleansiaTypography.labelLarge)
                         .foregroundColor(isCurrent ? CleansiaColors.onPrimary : CleansiaColors.onSurface)
+                }
+            }
+            // A ring says "you can go here". Only on reachable dots, and never on the current one —
+            // it is already filled, and ringing it would claim you can navigate to where you are.
+            // Tapping shipped without any of this, so it was discoverable only by accident.
+            .frame(width: 40, height: 40)
+            .overlay {
+                if isReachable, !isCurrent {
+                    Circle().strokeBorder(CleansiaColors.primary, lineWidth: 1.5)
                 }
             }
             Text(label)

@@ -26,6 +26,13 @@ struct IdentificationSectionView: View {
         return false
     }
 
+    /// Back is offered only inside the chain, and only when a previous step exists. Reuses the same
+    /// jump the step dots added — replace, never push — so the two ways back behave identically.
+    private var onboardingBack: (() -> Void)? {
+        guard onboarding, let previous = ProfileSection.identification.previous else { return nil }
+        return { chainVM.requestJump(to: previous) }
+    }
+
     var body: some View {
         SectionScaffold(
             title: L10n.Profile.identification,
@@ -83,6 +90,7 @@ struct IdentificationSectionView: View {
                     )
                 }
                 SaveSectionButton(
+                    onBack: onboardingBack,
                     onboarding: onboarding,
                     isSubmitting: vm.action.isSubmitting,
                     action: { Task { await vm.save() } }

@@ -2,13 +2,13 @@ import XCTest
 @testable import CleansiaPartner
 
 final class PartnerRootRouteTests: XCTestCase {
-    /// The gate still runs — ADR-0020 D3 — but WITHOUT the brand hold. Replaying the ~1.8s reveal
+    /// The gate still runs — ADR-0020 D3 — but WITHOUT the brand reveal. Replaying the ~1.8s reveal
     /// on someone who has just typed their password is what reads as the app restarting itself.
-    func testVerifiedLoginRoutesToSplashWithoutTheBrandHold() {
+    func testVerifiedLoginRoutesToSplashWithoutTheBrandReveal() {
         let route = PartnerRootView.Route.afterLogin(
             LoginSuccess(requiresEmailConfirmation: false, email: nil)
         )
-        XCTAssertEqual(route, .splash(showsBrandHold: false))
+        XCTAssertEqual(route, .splash(showsBrandReveal: false))
     }
 
     /// The distinction is the whole change: a cold start and a post-login bounce are both `.splash`,
@@ -34,8 +34,8 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertEqual(route, .verifyEmail(email: nil))
     }
 
-    func testSeedIsAlwaysSplashWithTheBrandHold() {
-        XCTAssertEqual(PartnerRootView.Route.seed(), .splash(showsBrandHold: true))
+    func testSeedIsAlwaysSplashWithTheBrandReveal() {
+        XCTAssertEqual(PartnerRootView.Route.seed(), .splash(showsBrandReveal: true))
     }
 
     func testSplashOutcomeRouting() {
@@ -46,12 +46,12 @@ final class PartnerRootRouteTests: XCTestCase {
         // Stays on the splash. SplashGateView does not call afterSplash for this outcome at all;
         // the mapping exists so the function is total, and this pins that it never acquires a
         // destination by accident.
-        XCTAssertEqual(PartnerRootView.Route.afterSplash(.unreachable), .splash(showsBrandHold: false))
+        XCTAssertEqual(PartnerRootView.Route.afterSplash(.unreachable), .splash(showsBrandReveal: false))
     }
 
     func testRegisterIsADistinctTopLevelAudience() {
         XCTAssertNotEqual(PartnerRootView.Route.register, .login)
-        XCTAssertNotEqual(PartnerRootView.Route.register, .splash(showsBrandHold: true))
+        XCTAssertNotEqual(PartnerRootView.Route.register, .splash(showsBrandReveal: true))
         XCTAssertEqual(PartnerRootView.Route.register, .register)
     }
 

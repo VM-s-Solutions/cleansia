@@ -15,11 +15,17 @@ enum ProfileRoute: Hashable {
     case deleteAccount
 }
 
-enum ProfileSection: CaseIterable {
-    case personal
-    case address
-    case identification
-    case bank
+enum ProfileSection: Int, CaseIterable {
+    case personal = 0
+    case address = 1
+    case identification = 2
+    case bank = 3
+
+    /// The step before this one, or nil for the first. Int-backed rather than an index-of lookup so
+    /// this needs no force unwrap — `force_unwrapping` is a SwiftLint ERROR in this repo.
+    var previous: ProfileSection? {
+        ProfileSection(rawValue: rawValue - 1)
+    }
 
     func route(onboarding: Bool) -> ProfileRoute {
         switch self {

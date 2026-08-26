@@ -9,7 +9,6 @@
     <string name="retry">Skúsiť znova</string>
     <string name="cancel">Zrušiť</string>
     <string name="save">Uložiť</string>
-    <string name="save_and_continue">Uložiť a pokračovať</string>
     <!-- Onboarding chain -->
     <string name="onboarding_step_progress">Krok %1$d z %2$d</string>
     <string name="onboarding_header_subtitle">Dokončiť profil</string>

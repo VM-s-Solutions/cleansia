@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -157,8 +158,19 @@ private fun SectionDot(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
+            // A ring says "you can go here". Only on reachable dots, and never on the current one —
+            // it is already filled. 40dp box with 4dp padding keeps the fill at exactly 32dp, so the
+            // two platforms are built to the same numbers.
             modifier = Modifier
-                .size(32.dp)
+                .size(40.dp)
+                .then(
+                    if (isReachable && !isCurrent) {
+                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    } else {
+                        Modifier
+                    },
+                )
+                .padding(4.dp)
                 .clip(CircleShape)
                 .background(dotColor),
             contentAlignment = Alignment.Center,

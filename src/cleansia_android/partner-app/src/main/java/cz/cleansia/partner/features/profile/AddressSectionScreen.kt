@@ -129,12 +129,13 @@ fun AddressSectionScreen(
 
         Spacer(Modifier.height(Spacing.L))
 
-        CleansiaPrimaryButton(
-            text = stringResource(
-                if (onboarding) R.string.save_and_continue else R.string.save,
+        SectionSaveRow(
+            primaryText = stringResource(
+                if (onboarding) R.string.onboarding_next else R.string.save,
             ),
-            onClick = { viewModel.save() },
-            loading = saving,
+            onBack = onboardingBackFor(cz.cleansia.partner.features.orders.ProfileSection.Address, onboarding, onJumpToSection),
+            onSave = { viewModel.save() },
+            saving = saving,
             enabled = !saving && form.pickedAddress != null,
         )
     }

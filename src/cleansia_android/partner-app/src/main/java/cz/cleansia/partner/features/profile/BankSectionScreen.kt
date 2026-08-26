@@ -122,11 +122,16 @@ fun BankSectionScreen(
         // Bank is the last step in the chain — Save returns to the lock,
         // so "Save and continue" would lie about there being more. Use
         // the plain "Save" label even in onboarding mode.
-        CleansiaPrimaryButton(
-            text = stringResource(R.string.save),
-            onClick = { viewModel.save() },
-            loading = saving,
+        SectionSaveRow(
+            primaryText = stringResource(R.string.save),
+            onSave = { viewModel.save() },
+            saving = saving,
             enabled = form.canSubmit && !saving,
+            onBack = onboardingBackFor(
+                cz.cleansia.partner.features.orders.ProfileSection.Bank,
+                onboarding,
+                onJumpToSection,
+            ),
         )
     }
 }

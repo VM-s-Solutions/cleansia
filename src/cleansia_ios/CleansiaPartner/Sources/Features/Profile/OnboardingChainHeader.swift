@@ -30,7 +30,9 @@ struct OnboardingChainHeader: View {
     /// Tapping a medallion jumps to that step. Only ever called for a reachable one.
     let onSelect: (ProfileSection) -> Void
 
-    private var sections: [ProfileSection] { ProfileSection.allCases }
+    private var sections: [ProfileSection] {
+        ProfileSection.allCases
+    }
 
     private var currentIndex: Int {
         sections.firstIndex(of: currentSection) ?? 0

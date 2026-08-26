@@ -3,21 +3,26 @@ import SwiftUI
 
 /// The onboarding stepper.
 ///
-/// **Rebuilt from the plain numbered dots it used to be.** Three things carry state now, one bit each,
-/// so no single failure of colour perception loses the whole picture:
+/// **The current step is a capsule, not a dot.** It grows out of the rail carrying its own icon and
+/// its own name, and every other step shrinks to a compact disc. That is the whole idea: the name
+/// belongs to the step it describes instead of floating on a line of its own underneath the rail,
+/// where it named nothing in particular. The separate title line this used to end with is gone —
+/// the pill holds it now, and the card is about 50pt shorter for it.
 ///
-/// - the **disc fill** says where you are — solid `primary` for the current step, a washed
-///   `primaryContainer` for one that is finished, nothing at all for one you have not reached;
-/// - the **glyph** says whether it is finished — a checkmark once it is, otherwise an icon that names
-///   the step, because a bare ordinal tells a cleaner nothing about what is being asked of them;
-/// - the **ring** says whether you may go there — `primary` on a step you can jump to, `outline` on
-///   one you cannot.
+/// Three channels carry state, one bit each, so no single failure of colour perception loses the
+/// whole picture:
 ///
-/// **Only the current step is named.** Four Cyrillic labels do not fit across four medallions on a
-/// 320dp screen: the cell budget is 64dp and "Идентификация" needs roughly twice that, so the row
-/// would either truncate every label to noise or wrap into a ragged third band. The connector rail
-/// carries the *shape* of the journey and one prominent title says where you are in it, which is the
-/// question a label under every dot was answering badly.
+/// - **shape** says where you are — a capsule is the current step, a disc is any other;
+/// - **fill** says whether a step is finished — `primaryContainer` behind a checkmark once it is,
+///   nothing behind an icon while it is not;
+/// - **ring** says whether you may go there — `primary` on a step you can jump to, `outline` on one
+///   you cannot.
+///
+/// **The row fits because the pill is content-sized and the connectors absorb the slack.** At the
+/// narrowest supported width the card gives 256pt of content: three 36pt dots and a pill of at most
+/// 120pt leave about 9pt for each connector. 120 is the real ceiling and not an estimate — the
+/// longest step name in any of the five shipped locales is eight characters (`Особисте`, `Identity`,
+/// `Identita`, `Личность`), which is 62pt of `labelLarge` plus 58pt of disc, gaps and insets.
 ///
 /// **No green, and no shadow.** Reference designs for this pattern are drawn on white: `successText`
 /// measures 2.92:1 on this app's dark surface, and elevation is invisible against it. Progress is
@@ -27,7 +32,7 @@ struct OnboardingChainHeader: View {
     let currentSection: ProfileSection
     let state: OnboardingChainState
 
-    /// Tapping a medallion jumps to that step. Only ever called for a reachable one.
+    /// Tapping a dot jumps to that step. Only ever called for a reachable one.
     let onSelect: (ProfileSection) -> Void
 
     private var sections: [ProfileSection] {
@@ -52,11 +57,6 @@ struct OnboardingChainHeader: View {
         VStack(spacing: Spacing.m) {
             header
             rail
-            Text(Self.label(for: currentSection))
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onSurface)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .padding(Spacing.m)
         .background(CleansiaColors.surface)
@@ -84,19 +84,12 @@ struct OnboardingChainHeader: View {
         }
     }
 
-    /// Fixed-width medallions with flexible connectors between them, so the rail spans the card at any
-    /// width without the segments drawing at unequal lengths.
+    /// One content-sized pill, three fixed dots, and connectors that take whatever is left, so the
+    /// rail spans the card at any width without the segments drawing at unequal lengths.
     private var rail: some View {
         HStack(spacing: 0) {
             ForEach(sections.indices, id: \.self) { index in
-                StepMedallion(
-                    icon: Self.icon(for: sections[index]),
-                    isDone: isDone(index),
-                    isCurrent: sections[index] == currentSection,
-                    isReachable: isReachable(index),
-                    label: Self.label(for: sections[index]),
-                    onTap: { onSelect(sections[index]) }
-                )
+                step(at: index)
                 if index < sections.count - 1 {
                     // The segment behind a finished step is the progress indicator. Two tones of
                     // primary, never outlineVariant — slate700 on this card measures 1.51:1.
@@ -106,6 +99,22 @@ struct OnboardingChainHeader: View {
                         .frame(maxWidth: .infinity)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func step(at index: Int) -> some View {
+        let section = sections[index]
+        if section == currentSection {
+            StepPill(icon: Self.icon(for: section), label: Self.label(for: section))
+        } else {
+            StepDot(
+                icon: Self.icon(for: section),
+                isDone: isDone(index),
+                isReachable: isReachable(index),
+                label: Self.label(for: section),
+                onTap: { onSelect(section) }
+            )
         }
     }
 
@@ -130,39 +139,71 @@ struct OnboardingChainHeader: View {
     }
 }
 
-private struct StepMedallion: View {
+/// The current step. Content-sized on purpose: it is the one element allowed to claim whatever width
+/// its label needs, because the connectors either side give that width up.
+private struct StepPill: View {
+    let icon: String
+    let label: String
+
+    private static let height: CGFloat = 40
+    private static let disc: CGFloat = 26
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            ZStack {
+                // A wash of the pill's own ink, not a second palette colour — it has to read as an
+                // inset in the capsule rather than a separate badge sitting on top of it.
+                Circle()
+                    .fill(CleansiaColors.onPrimary.opacity(0.22))
+                    .frame(width: Self.disc, height: Self.disc)
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(CleansiaColors.onPrimary)
+            }
+            // No lineLimit and no minimumScaleFactor anywhere in this view: the pill is sized by its
+            // text, so there is nothing for the text to be squeezed into.
+            Text(label)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.onPrimary)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(.leading, Spacing.xs)
+        .padding(.trailing, Spacing.m)
+        .frame(height: Self.height)
+        .background(CleansiaColors.primary)
+        .clipShape(Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(L10n.Profile.onboardingStepStateCurrent)
+    }
+}
+
+/// Any step that is not the current one. 30pt of disc inside a 36pt target — smaller than the 48 this
+/// used to draw, because the pill has to fit on the same row at 320pt and something had to give.
+private struct StepDot: View {
     let icon: String
     let isDone: Bool
-    let isCurrent: Bool
     let isReachable: Bool
     let label: String
     let onTap: () -> Void
 
     @State private var isPressed = false
 
-    private static let disc: CGFloat = 40
-    private static let target: CGFloat = 48
+    private static let disc: CGFloat = 30
+    private static let target: CGFloat = 36
 
     var body: some View {
         ZStack {
-            // The halo is the only thing that makes the current step read as "lifted" — this theme has
-            // no usable elevation, so depth has to come from tint.
-            if isCurrent {
-                Circle()
-                    .fill(CleansiaColors.primary.opacity(0.22))
-                    .frame(width: Self.target, height: Self.target)
-            }
-
             Circle()
                 .fill(fill)
                 .frame(width: Self.disc, height: Self.disc)
 
             Circle()
-                .strokeBorder(ring, lineWidth: isCurrent ? 0 : 1.5)
+                .strokeBorder(ring, lineWidth: isDone ? 0 : 1.5)
                 .frame(width: Self.disc, height: Self.disc)
 
             Image(systemName: isDone ? "checkmark" : icon)
-                .font(.system(size: 20, weight: .medium))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(glyph)
         }
         .frame(width: Self.target, height: Self.target)
@@ -172,17 +213,16 @@ private struct StepMedallion: View {
         .onLongPressGesture(
             minimumDuration: 0,
             pressing: { pressing in if isReachable { isPressed = pressing } },
-            perform: { if isReachable, !isCurrent { onTap() } }
+            perform: { if isReachable { onTap() } }
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(accessibilityState)
-        .accessibilityAddTraits(isReachable && !isCurrent ? .isButton : [])
-        .accessibilityHint(isReachable && !isCurrent ? L10n.Profile.onboardingStepJumpHint : "")
+        .accessibilityAddTraits(isReachable ? .isButton : [])
+        .accessibilityHint(isReachable ? L10n.Profile.onboardingStepJumpHint : "")
     }
 
     private var fill: Color {
-        if isCurrent { return CleansiaColors.primary }
         if isDone { return CleansiaColors.primaryContainer }
         return .clear
     }
@@ -193,15 +233,13 @@ private struct StepMedallion: View {
     }
 
     private var glyph: Color {
-        if isCurrent { return CleansiaColors.onPrimary }
         if isDone { return CleansiaColors.onPrimaryContainer }
         return CleansiaColors.onSurfaceVariant
     }
 
-    /// Spoken after the section name. Without it VoiceOver announced four identical-sounding controls
-    /// and said nothing about which was finished or which you were on.
+    /// Spoken after the section name. Without it VoiceOver announced three identical-sounding controls
+    /// and said nothing about which was finished.
     private var accessibilityState: String {
-        if isCurrent { return L10n.Profile.onboardingStepStateCurrent }
         if isDone { return L10n.Profile.onboardingStepStateDone }
         return L10n.Profile.onboardingStepStateUpcoming
     }
@@ -224,6 +262,14 @@ private struct StepMedallion: View {
                     state: OnboardingChainState(
                         isLoading: false,
                         completionBySection: [0: false, 1: false, 2: false, 3: false]
+                    ),
+                    onSelect: { _ in }
+                )
+                OnboardingChainHeader(
+                    currentSection: .bank,
+                    state: OnboardingChainState(
+                        isLoading: false,
+                        completionBySection: [0: true, 1: true, 2: true, 3: false]
                     ),
                     onSelect: { _ in }
                 )

@@ -40,33 +40,41 @@
 | T-0614 | Documents checklist: iOS shows retry on load failure, Android renders the list | S | `done` | — | #228 |
 | T-0615 | Admin web: registration-number label — the admin host has **no field-labels route at all**, so a regen alone yields nothing; needs a backend action first, then `manual_step: nswag-regen` | M | `todo` | — | — |
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |
-| T-0617 | Customer iOS: swipe-to-return on order detail — third fix shipped, unconfirmed — **Q-DEVICE-01** | M | `blocked` | — | — |
-| T-0618 | Customer apps: cancelled-order location — fix shipped, report was ambiguous — **Q-DEVICE-01** | S | `blocked` | — | — |
+| T-0617 | Customer iOS: swipe-to-return on order detail | M | `done` | — | 7ad5bdfc |
+| T-0618 | Cancelled orders must show the **actual location**, not a placeholder — the 2026-08-24 suppression was the wrong call and is reverted | M | `todo` | — | — |
 | T-0619 | Customer apps: cancel-order button unreadable when disabled | S | `todo` | — | — |
 | T-0620 | Android core: terms-and-agreement checkbox line is not aligned | S | `todo` | — | — |
-| T-0621 | Partner iOS: new-order address placeholder — centring already shipped, may be a stale re-file — **Q-DEVICE-01** | S | `blocked` | — | — |
-| T-0622 | Android apps: photo upload disabled — which surface is meant is unrecorded — **Q-AND-02** | S | `blocked` | — | — |
-| T-0623 | Partner Android top whitespace — the only matching defect was fixed 2026-08-23, two days before this was filed; needs a yes/no — **Q-AND-01** | S | `blocked` | — | — |
-| T-0624 | Logout label not centred — exactly one offender, customer Android profile; what is left is a design call — **Q-UI-01** | S | `blocked` | — | — |
+| T-0621 | Partner iOS: new-order address placeholder centring | S | `done` | — | c4acb926 |
+| T-0622 | Partner iOS onboarding: no avatar / photo-upload control at all — Android has one | S | `todo` | — | — |
+| T-0623 | Partner Android: unwanted whitespace at the top | S | `done` | — | 5c70922f |
+| T-0624 | Customer apps: match the partner app's Logout / Delete-account design, order and centring | S | `todo` | — | — |
 | T-0625 | Partner onboarding mascots: use different ones (iOS) | S | `todo` | — | — |
 | T-0626 | Sign out: confirm before logging out — 3 places left (admin unauthorized page, partner splash-unreachable on iOS + Android) | S | `todo` | — | — |
 | T-0627 | Customer web: serviceability banner fires on a serviced city | M | `todo` | — | — |
 | T-0628 | Customer mobile: serviceability at address selection — iOS booking review pane + saved-address path on both | M | `todo` | — | — |
-| T-0629 | All apps: a translation longer than its control must not be truncated — **Q-I18N-01** | L | `blocked` | — | — |
-| T-0630 | Frontends behind App Registration — the hyphen bug is fixed and docs is gated; the **scope** is the open call — **Q-SEC-01** | L | `blocked` | — | — |
-| T-0631 | iOS/Android parity: audit is **done**; needs a ruling on Android partner having no camera-capture path — **Q-PARITY-01** | S | `blocked` | — | — |
-| T-0632 | SendNewJobsDigestTimerFunction never fires — fix merged and deployed 2026-08-23, needs one portal confirmation — **Q-AZURE-01** | M | `blocked` | — | — |
-| T-0633 | Bicep audit — blocked on **scope**, not on Q-INFRA-02 (which is one-sub-vs-two and already defaulted) — **Q-AUDIT-01** | M | `blocked` | — | — |
-| T-0634 | Log Analytics is **required** by workspace-based App Insights — deleting it by hand is a cost regression — **Q-AZURE-01** | S | `blocked` | — | — |
-| T-0635 | Azure cost: the dev cut is already committed (sampling 10%, 500 MB cap) — needs a portal reading, not a decision — **Q-AZURE-01** | S | `blocked` | — | — |
+| T-0629 | i18n policy: **ellipsis is allowed** on a single-line control — ratify Android's shipped position and port it to iOS and web | M | `todo` | — | — |
+| T-0630 | Gate the **admin console** behind the same invitation block the docs site uses (docs + admin, not all four) | M | `todo` | — | — |
+| T-0631 | Android partner: **add a camera-capture path** for job photos and avatar (restore CAMERA + uses-feature required=false) | M | `todo` | — | — |
+| T-0632 | SendNewJobsDigest fires, but **irregularly — 8 invocations in 30 days, not hourly**; the host looks to be sleeping | M | `todo` | — | — |
+| T-0633 | Bicep audit: one-day three-axis read — secrets/identity, drift, cost — needs one non-mutating `what-if` dispatch | M | `todo` | — | — |
+| T-0634 | Log Analytics is required by workspace-based App Insights — closed, not a defect | S | `done` | — | d5b020bf |
+| T-0635 | Azure cost: the dev cut was designed, measured and committed on 2026-08-11 — owner closed it without resolving further | S | `done` | — | d5b020bf |
 | T-0636 | Partner DEV API returned 500 from /health for 4 minutes after deploy | S | `todo` | — | — |
 | T-0637 | Warm-up gate cannot tell 5xx from cold start and discards the body | S | `todo` | — | — |
-| T-0638 | RequestLoggingMiddleware ordering — "nothing logged" is false, and today's order is what makes an oversize upload answer 413 — **Q-BE-01** | S | `blocked` | — | — |
+| T-0638 | RequestLoggingMiddleware: use `context.TraceIdentifier` as the request id in all 5 hosts so the log lines join — keeps the 413 | S | `todo` | — | — |
 | T-0639 | refresh-mobile-spec.sh throws on the owner's machine | S | `todo` | — | — |
 | T-0640 | Many .cs files show as modified with no content change | S | `todo` | — | — |
-| T-0641 | Move the repo to private without losing Actions minutes — **Q-REPO-01** | M | `blocked` | — | — |
+| T-0641 | Repo stays **public for now** — revisit when the owner's Actions limit resets | M | `todo` | — | — |
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts, not a rewrite (~180 of 203 lines verified accurate) | S | `todo` | — | — |
 | T-0644 | iOS: enum L10n.Profile is at 393 against a 400 type_body_length cap | S | `todo` | — | — |
 
-*Next id: **T-0645**.*
+| T-0645 | Partner iOS: the Confirm-address step shows no serviceability warning — Android does | M | `todo` | — | — |
+| T-0646 | Customer iOS: remove the coloured left stripe from the order-overview card | S | `todo` | — | — |
+| T-0647 | Android apps: no pull-to-refresh anywhere — iOS has `.refreshable` | M | `todo` | — | — |
+| T-0648 | Partner iOS: the email field looks editable, and focus surviving a background/foreground cycle appears to let it be edited | S | `todo` | — | — |
+| T-0649 | Partner apps: make Self-employed / Legal entity a swipeable segmented control, like the Cleansia Plus page | M | `todo` | — | — |
+| T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
+| T-0651 | Android partner profile: the owner's remark about recurring cleaning was cut off mid-sentence — **Q-AND-03** | S | `blocked` | — | — |
+
+*Next id: **T-0652**.*

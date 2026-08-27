@@ -1,14 +1,23 @@
 package cz.cleansia.partner.features.profile
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,7 +27,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -173,69 +186,93 @@ fun IdentificationSectionScreen(
     }
 }
 
+/**
+ * Self-employed / Legal entity, as one track with a selection thumb that slides between halves.
+ *
+ * The shape is the Cleansia Plus plan switcher the owner pointed at. The selection used to be a
+ * per-chip colour swap on recomposition, so it JUMPED; it is now a single thumb that animates its
+ * offset, on the same spring as the iOS twin.
+ *
+ * A drag flips the selection past a threshold rather than tracking the finger — the thumb is bound
+ * to the selection, so following the finger could park it between the two halves. Both scaffolds
+ * put this form inside a vertical scroll, which is also why this is not a HorizontalPager: a
+ * paging container inside a vertical scroll fights the scroll on every diagonal drag, and with
+ * only legalEntityName differing between the two types the panes would be near-identical anyway.
+ */
 @Composable
 private fun EntityTypeSelector(
     selected: EmployeeEntityType,
     onSelect: (EmployeeEntityType) -> Unit,
     enabled: Boolean,
 ) {
-    // Two-button segmented control. Wider than chips so the cleaner can
-    // see both labels in full without truncation across locales.
-    Surface(
+    val isLegal = selected == EmployeeEntityType._2
+    val labels = listOf(
+        stringResource(R.string.entity_type_natural_person) to EmployeeEntityType._1,
+        stringResource(R.string.entity_type_legal_entity) to EmployeeEntityType._2,
+    )
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp),
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            .height(48.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .pointerInput(enabled, isLegal) {
+                if (!enabled) return@pointerInput
+                detectHorizontalDragGestures { _, dragAmount ->
+                    if (dragAmount < -DRAG_FLIP_THRESHOLD && !isLegal) {
+                        onSelect(EmployeeEntityType._2)
+                    } else if (dragAmount > DRAG_FLIP_THRESHOLD && isLegal) {
+                        onSelect(EmployeeEntityType._1)
+                    }
+                }
+            }
+            .padding(4.dp),
     ) {
-        Row(
+        val segment = (maxWidth - 8.dp) / 2
+        val offset by animateDpAsState(
+            targetValue = if (isLegal) segment else 0.dp,
+            animationSpec = spring(dampingRatio = 0.86f, stiffness = 900f),
+            label = "entityTypeThumb",
+        )
+
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            EntityTypeChip(
-                label = stringResource(R.string.entity_type_natural_person),
-                selected = selected == EmployeeEntityType._1,
-                onClick = { onSelect(EmployeeEntityType._1) },
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-            )
-            EntityTypeChip(
-                label = stringResource(R.string.entity_type_legal_entity),
-                selected = selected == EmployeeEntityType._2,
-                onClick = { onSelect(EmployeeEntityType._2) },
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-            )
+                .offset(x = offset)
+                .width(segment)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.primary),
+        )
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            labels.forEachIndexed { index, (label, type) ->
+                val isSelected = (index == 1) == isLegal
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = enabled) { onSelect(type) }
+                        .semantics { this.selected = isSelected },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                    )
+                }
+            }
         }
     }
 }
 
-@Composable
-private fun EntityTypeChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.fillMaxSize(),
-        shape = RoundedCornerShape(50),
-        color = if (selected) MaterialTheme.colorScheme.surface else androidx.compose.ui.graphics.Color.Transparent,
-        shadowElevation = if (selected) 2.dp else 0.dp,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            )
-        }
-    }
-}
+/** Enough travel that a vertical scroll that wanders sideways does not change the answer. */
+private const val DRAG_FLIP_THRESHOLD = 12f

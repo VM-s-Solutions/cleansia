@@ -45,7 +45,11 @@ struct PersonalSectionView: View {
             onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
-                    OnboardingChainHeader(currentSection: .personal, state: chainVM.state)
+                    OnboardingChainHeader(
+                        currentSection: .personal,
+                        state: chainVM.state,
+                        onSelect: { chainVM.requestJump(to: $0) }
+                    )
                 }
             },
             form: {

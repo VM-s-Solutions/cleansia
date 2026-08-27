@@ -78,6 +78,18 @@ struct RegistrationLockView: View {
         }
         .onReceive(vm.completed) { onCompleted() }
         .onReceive(vm.signedOut) { onSignedOut() }
+        .onReceive(chainVM.jumpRequested) { section in
+            // Replace, don't push — exactly what an advance does. The chain is a flat sequence, so a
+            // jump must not grow the stack any more than moving forward does, or system-back stops
+            // meaning "leave onboarding".
+            let route = section.route(onboarding: true)
+            if path.isEmpty {
+                path.append(route)
+            } else {
+                path.removeLast()
+                path.append(route)
+            }
+        }
         .onReceive(chainVM.advanced) { step in
             switch step {
             case let .next(route):
@@ -98,7 +110,15 @@ struct RegistrationLockView: View {
     @ViewBuilder
     private var content: some View {
         switch vm.state {
-        case .loading, .error:
+        case .loading:
+            // The same skeleton the gate draws, so the post-login sequence settles once —
+            // skeleton to content — instead of skeleton, spinner, content. They share the block
+            // colour and the 0.9s pulse rather than a type; each mirrors its own screen.
+            RegistrationLockSkeleton()
+        case .error:
+            // Left on the spinner deliberately: .error is unreachable here today (the view model
+            // never publishes it), and a skeleton that pulses forever is the one way this could
+            // become a screen nobody escapes.
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case let .loaded(data):

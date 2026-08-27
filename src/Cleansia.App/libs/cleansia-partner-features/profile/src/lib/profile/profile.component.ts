@@ -13,7 +13,6 @@ import { ToastModule } from 'primeng/toast';
 import {
   ProfilePersonalInfoComponent,
   ProfileEmergencyContactComponent,
-  ProfileAvailabilityComponent,
   ProfileBankComponent,
   ProfileDocumentsComponent,
   ProfileJobRadiusComponent,
@@ -36,7 +35,6 @@ import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
     CleansiaCheckboxComponent,
     ProfilePersonalInfoComponent,
     ProfileEmergencyContactComponent,
-    ProfileAvailabilityComponent,
     ProfileBankComponent,
     ProfileDocumentsComponent,
     ProfileJobRadiusComponent,

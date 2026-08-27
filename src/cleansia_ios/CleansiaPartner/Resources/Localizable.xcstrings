@@ -12202,31 +12202,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doklady"
+            "value": "Identita"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ID"
+            "value": "Identity"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Документы"
+            "value": "Личность"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doklady"
+            "value": "Identita"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Документи"
+            "value": "Особа"
+          }
+        }
+      }
+    },
+    "onboarding_step_jump_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přejít na tento krok"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to this step"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти к этому шагу"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prejsť na tento krok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти до цього кроку"
           }
         }
       }
@@ -12297,6 +12332,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "Крок %1$d з %2$d"
+          }
+        }
+      }
+    },
+    "onboarding_step_state_current": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktuální krok"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "current step"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "текущий шаг"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktuálny krok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "поточний крок"
+          }
+        }
+      }
+    },
+    "onboarding_step_state_done": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hotovo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "completed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "завершено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hotovo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "завершено"
+          }
+        }
+      }
+    },
+    "onboarding_step_state_upcoming": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nezačato"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not started"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не начато"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nezačaté"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не розпочато"
           }
         }
       }
@@ -19192,41 +19332,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зберегти"
-          }
-        }
-      }
-    },
-    "save_and_continue": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložit a pokračovat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save & continue"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сохранить и продолжить"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložiť a pokračovať"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Зберегти та продовжити"
           }
         }
       }

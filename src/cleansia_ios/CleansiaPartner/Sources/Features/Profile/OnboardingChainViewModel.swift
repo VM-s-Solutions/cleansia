@@ -34,6 +34,11 @@ final class OnboardingChainViewModel: ViewModel {
 
     let advanced = PassthroughSubject<OnboardingChainStep, Never>()
 
+    /// A tapped step dot. Published rather than navigated here for the same reason `advanced` is: the
+    /// chain view model does not own the NavigationPath, `RegistrationLockView` does — and routing it
+    /// through the one subscriber keeps the four section views from each needing a path binding.
+    let jumpRequested = PassthroughSubject<ProfileSection, Never>()
+
     private let client: PartnerProfileClient
 
     init(client: PartnerProfileClient) {
@@ -47,6 +52,10 @@ final class OnboardingChainViewModel: ViewModel {
             isLoading: false,
             completionBySection: Self.perSectionCompletion(status)
         )
+    }
+
+    func requestJump(to section: ProfileSection) {
+        jumpRequested.send(section)
     }
 
     func advanceOrFinish() async {

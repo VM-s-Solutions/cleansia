@@ -299,10 +299,6 @@ extension L10n {
             localized("save")
         }
 
-        static var saveAndContinue: String {
-            localized("save_and_continue")
-        }
-
         static var addressPickOnMap: String {
             localized("address_pick_on_map")
         }

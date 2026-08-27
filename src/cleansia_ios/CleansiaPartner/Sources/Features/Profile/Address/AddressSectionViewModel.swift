@@ -106,6 +106,11 @@ final class AddressSectionViewModel: ViewModel {
             }
         }
         guard let countryId = resolveCountryId(for: picked.countryIsoCode) else {
+            // The row and the refusal must agree. The city lookup applyPick starts is a
+            // detached task, so it may still be in flight — leaving the row on "Checking…"
+            // while the save refuses for an unserviced country tells the cleaner two
+            // different things about the same address.
+            serviceAreaStatus = .countryNotServiced
             snackbar.showError(L10n.Profile.errorCountryNotServiced)
             return
         }

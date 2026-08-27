@@ -185,7 +185,9 @@ private struct EntityTypePicker: View {
         index: Int,
         type: EmployeeEntityType
     ) -> some View {
-        Button(action: { onSelect(type) }) {
+        Button {
+            onSelect(type)
+        } label: {
             Text(label)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(

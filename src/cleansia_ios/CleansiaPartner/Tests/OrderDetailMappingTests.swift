@@ -150,14 +150,15 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertFalse(detail.payment.hasBreakdown)
     }
 
-    func testMapCoordinateResolvesWithCoordsAndNotCancelled() throws {
+    func testMapCoordinateResolvesWheneverThereAreCoordinates() throws {
         XCTAssertEqual(try OrderDetail(makeItem()).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
     }
 
-    func testMapCoordinateIsNilWhenCancelled() throws {
+    /// Owner ruling 2026-08-27: a cancelled job still had a place. Status is not an input here.
+    func testMapCoordinateSurvivesCancellation() throws {
         var item = makeItem()
         item.orderStatus = Code(value: 6)
-        XCTAssertNil(try OrderDetail(item).mapCoordinate)
+        XCTAssertEqual(try OrderDetail(item).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
     }
 
     func testMapCoordinateIsNilWhenNoCoordinate() throws {

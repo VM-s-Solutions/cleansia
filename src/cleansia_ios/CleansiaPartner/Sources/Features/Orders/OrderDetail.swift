@@ -110,10 +110,10 @@ struct OrderDetailPayment: Equatable {
 
 extension OrderDetail {
     /// Where the full-bleed map centres, or nil when there is nothing precise to point at — a
-    /// browsing cleaner who only got the coarse zone, an order that predates the geocoding
-    /// backfill, or a cancelled visit that never happened.
+    /// browsing cleaner who only got the coarse zone, or an order that predates the geocoding
+    /// backfill. Cancellation is no longer one of those reasons: the job still had a place.
     var mapCoordinate: Coordinate? {
-        location.mapPoint(status: status)
+        location.mapPoint()
     }
 
     /// The cleaner is on this job and the job is live (Confirmed / OnTheWay / InProgress): the work

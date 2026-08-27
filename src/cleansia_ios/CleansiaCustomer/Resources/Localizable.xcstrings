@@ -20138,6 +20138,41 @@
         }
       }
     },
+    "order_detail_map_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapa není pro tuto objednávku dostupná"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Map isn't available for this order"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта недоступна для этого заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapa nie je pre túto objednávku dostupná"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта недоступна для цього замовлення"
+          }
+        }
+      }
+    },
     "order_detail_notes": {
       "extractionState": "stale",
       "localizations": {

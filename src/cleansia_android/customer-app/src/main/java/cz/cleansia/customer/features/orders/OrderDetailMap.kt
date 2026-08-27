@@ -45,18 +45,18 @@ import cz.cleansia.customer.R
 /**
  * Whether the order detail backs its sheet with a real map.
  *
- * A Cancelled order never happened, so its location is not context worth
- * showing — the partner screen makes the same call. Everything else needs a
- * usable geocode: orders placed before the address geocoder existed carry no
- * coordinates, and a failed geocode is stored as null island (0, 0), which
- * would otherwise drop a pin in the Gulf of Guinea.
+ * Purely a question of the geocode, in every status. Cancelled used to be excluded on the
+ * reasoning that the visit never happened; the job still had a place, and the placeholder read
+ * as a map that had failed to load. Owner ruling, 2026-08-27.
+ *
+ * The remaining guards are unrelated and stay: orders placed before the address geocoder existed
+ * carry no coordinates, and a failed geocode is stored as null island (0, 0), which would
+ * otherwise drop a pin in the Gulf of Guinea.
  */
 internal fun canShowOrderMap(
     latitude: Double?,
     longitude: Double?,
-    status: OrderStatus?,
 ): Boolean {
-    if (status == OrderStatus.Cancelled) return false
     if (latitude == null || longitude == null) return false
     if (latitude == 0.0 && longitude == 0.0) return false
     return latitude in -90.0..90.0 && longitude in -180.0..180.0

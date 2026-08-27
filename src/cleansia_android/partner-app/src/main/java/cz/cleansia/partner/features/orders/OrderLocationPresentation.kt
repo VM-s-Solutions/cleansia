@@ -43,12 +43,16 @@ fun OrderItem.orderLocation(): OrderLocation {
 fun OrderLocation.navigationTarget(): OrderLocation.Precise? = this as? OrderLocation.Precise
 
 /**
- * Where the map backdrop centres, or null when there is nothing precise to
- * point at. Completed keeps it — the location is still context worth having —
- * and only Cancelled drops it, since the visit never happened.
+ * Where the map backdrop centres, or null when there is nothing precise to point at.
+ *
+ * Status does not enter into it. A cancelled order used to be forced to null here on the
+ * reasoning that the visit never happened — but the job still had a place, and suppressing the
+ * map read as a map that had failed to load rather than as a decision. Owner ruling, 2026-08-27.
+ * Entitlement is still enforced server-side by OrderPiiRedaction, which withholds the address
+ * itself from a cleaner who has not taken the job, in every status.
  */
-fun OrderLocation.mapPoint(status: OrderStatus?): Pair<Double, Double>? {
-    val target = navigationTarget()?.takeIf { status != OrderStatus._6 } ?: return null
+fun OrderLocation.mapPoint(): Pair<Double, Double>? {
+    val target = navigationTarget() ?: return null
     val latitude = target.latitude ?: return null
     val longitude = target.longitude ?: return null
     return latitude to longitude

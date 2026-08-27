@@ -86,16 +86,18 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    func testMapHidesOnlyOnCancelled() async {
-        client.byIdResult = .success(loadedItem(status: 5)) // Completed → still shows
+    /// The map is a function of the coordinates alone. Completed and Cancelled both keep it —
+    /// only a missing coordinate takes it away, which the next test covers.
+    func testMapSurvivesEveryTerminalStatus() async {
+        client.byIdResult = .success(loadedItem(status: 5)) // Completed
         let completedVM = makeVM()
         await completedVM.load()
         XCTAssertEqual(completedVM.state.loadedValue?.mapCoordinate, Coordinate(latitude: 50.0, longitude: 14.0))
 
-        client.byIdResult = .success(loadedItem(status: 6)) // Cancelled → hides
+        client.byIdResult = .success(loadedItem(status: 6)) // Cancelled
         let cancelledVM = makeVM()
         await cancelledVM.load()
-        XCTAssertNil(cancelledVM.state.loadedValue?.mapCoordinate)
+        XCTAssertEqual(cancelledVM.state.loadedValue?.mapCoordinate, Coordinate(latitude: 50.0, longitude: 14.0))
     }
 
     func testMapHidesWhenNoCoordinate() async {

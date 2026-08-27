@@ -97,7 +97,7 @@ final class AddressSectionViewModel: ViewModel {
             switch await serviceArea.loadCountriesResult() {
             case let .success(fetched):
                 countries = fetched
-                refreshServiceAreaStatus()
+                await refreshServiceAreaStatus()
             case let .failure(error):
                 // The list never loaded, so the answer is UNKNOWN — surface
                 // the fetch failure, never "country not serviced".

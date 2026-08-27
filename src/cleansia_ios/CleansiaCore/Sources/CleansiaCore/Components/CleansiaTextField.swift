@@ -49,6 +49,7 @@ public struct CleansiaTextField: View {
     }
 
     private var borderColor: Color {
+        if !enabled { return CleansiaColors.disabledOutline }
         if isError { return CleansiaColors.error }
         return focused ? CleansiaColors.primary : CleansiaColors.outline
     }
@@ -58,7 +59,7 @@ public struct CleansiaTextField: View {
             ZStack(alignment: .leading) {
                 Text(label)
                     .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
-                    .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
+                    .foregroundColor(floating ? floatingLabelColor : restingLabelColor)
                     .offset(y: floating ? -13 : 0)
 
                 HStack {
@@ -102,14 +103,20 @@ public struct CleansiaTextField: View {
                     .padding(.horizontal, Spacing.m)
             }
         }
+        .disabled(!enabled)
         .onAppear {
             if autoFocus, enabled { focused = true }
         }
     }
 
     private var floatingLabelColor: Color {
+        if !enabled { return CleansiaColors.disabledInk }
         if isError { return CleansiaColors.error }
         return focused ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant
+    }
+
+    private var restingLabelColor: Color {
+        enabled ? CleansiaColors.onSurfaceVariant : CleansiaColors.disabledInk
     }
 
     private var containerColor: Color {
@@ -129,7 +136,7 @@ public struct CleansiaTextField: View {
             textContentType: textContentType,
             isEnabled: enabled,
             font: inputFont,
-            textColor: CleansiaColors.onSurface,
+            textColor: enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk,
             tintColor: CleansiaColors.primary
         )
         .frame(maxWidth: .infinity)
@@ -168,6 +175,9 @@ private struct ManagedTextField: UIViewRepresentable {
         field.onProgrammaticTextChange = { [weak coordinator = context.coordinator] newText in
             coordinator?.propagate(newText)
         }
+        // Born disabled when it should be. Without this the field is enabled until the first
+        // updateUIView, and every rebuild of the form subtree reopens that window.
+        field.isEnabled = isEnabled
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.clearButtonMode = .never
@@ -215,9 +225,19 @@ private struct ManagedTextField: UIViewRepresentable {
 
     private func syncFirstResponder(_ field: TrackingTextField) {
         guard field.window != nil else { return }
+        // A disabled field never takes focus, and gives it up if it somehow holds it — the
+        // binding can be stale-true from an earlier enabled render.
+        guard isEnabled else {
+            if field.isFirstResponder {
+                DispatchQueue.main.async { field.resignFirstResponder() }
+            }
+            return
+        }
         if focused, !field.isFirstResponder {
             DispatchQueue.main.async {
-                if !field.isFirstResponder { field.becomeFirstResponder() }
+                // Re-checked here as well: this runs a runloop turn later, and the field can have
+                // been disabled in between.
+                if field.isEnabled, !field.isFirstResponder { field.becomeFirstResponder() }
             }
         } else if !focused, field.isFirstResponder {
             DispatchQueue.main.async {
@@ -237,11 +257,19 @@ private struct ManagedTextField: UIViewRepresentable {
             propagate(field.text ?? "")
         }
 
+        /// Every write to the binding goes through here, including the programmatic ones
+        /// `TrackingTextField.text.didSet` forwards — AutoFill, QuickType, and UIKit's own state
+        /// restoration when the app returns to the foreground. A disabled field writes nothing.
         func propagate(_ newText: String) {
+            guard parent.isEnabled else { return }
             if parent.text != newText { parent.text = newText }
         }
 
-        func textFieldDidBeginEditing(_: UITextField) {
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            guard parent.isEnabled else {
+                field.resignFirstResponder()
+                return
+            }
             if !parent.focused { parent.focused = true }
         }
 

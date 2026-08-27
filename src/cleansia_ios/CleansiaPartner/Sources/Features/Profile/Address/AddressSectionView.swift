@@ -70,8 +70,9 @@ struct AddressSectionView: View {
                     enabled: !vm.action.isSubmitting,
                     onTap: { pickerOpen = true }
                 )
-                if vm.serviceAreaStatus == .countryNotServiced {
-                    CountryNotServicedRow()
+                // Drawn whenever an address is picked, in every state — see ServiceAreaRow.
+                if vm.picked != nil {
+                    ServiceAreaRow(status: vm.serviceAreaStatus)
                 }
                 WhyWeNeedThisCard(expanded: $whyExpanded)
                 SaveSectionButton(
@@ -157,19 +158,58 @@ private struct AddressSummaryCard: View {
     }
 }
 
-private struct CountryNotServicedRow: View {
+/// The service-area verdict for the picked address, in all four of its states.
+///
+/// It used to render for exactly one of three, so a cleaner who picked an address in a serviced
+/// country but an unserviced city — or one the app could not check at all — saw nothing and had
+/// no way to tell a pass from a failed lookup. Android has always drawn all four.
+///
+/// UNKNOWN is deliberately shown, and deliberately neutral: "we could not check" is not a refusal,
+/// and silence would let it read as one.
+private struct ServiceAreaRow: View {
+    let status: ServiceAreaStatus
+
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.xs) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(CleansiaColors.error)
-            Text(L10n.Profile.errorCountryNotServiced)
+            Image(systemName: glyph)
+                .foregroundColor(tint)
+            Text(message)
                 .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.error)
+                .foregroundColor(tint)
         }
         .padding(Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.error.opacity(0.08))
+        .background(tint.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+
+    private var glyph: String {
+        switch status {
+        case .unknown: "info.circle"
+        case .inServicedCity: "checkmark.circle"
+        case .outsideServicedCity: "info.circle"
+        case .countryNotServiced: "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var tint: Color {
+        switch status {
+        case .unknown: CleansiaColors.onSurfaceVariant
+        case .inServicedCity: CleansiaColors.primary
+        // iOS has no `tertiary`; warningStar is the app's amber, and this state is advisory
+        // rather than a refusal — the cleaner can still work, just not at this address.
+        case .outsideServicedCity: CleansiaColors.warningStar
+        case .countryNotServiced: CleansiaColors.error
+        }
+    }
+
+    private var message: String {
+        switch status {
+        case .unknown: L10n.Profile.serviceAreaChecking
+        case let .inServicedCity(city): L10n.Profile.serviceAreaInServicedCity(city)
+        case .outsideServicedCity: L10n.Profile.serviceAreaOutsideServicedCity
+        case .countryNotServiced: L10n.Profile.errorCountryNotServiced
+        }
     }
 }
 

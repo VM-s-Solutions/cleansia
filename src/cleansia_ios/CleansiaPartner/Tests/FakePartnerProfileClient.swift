@@ -117,6 +117,12 @@ final class FakePartnerProfileClient: PartnerProfileClient {
         return servicedCountriesResult
     }
 
+    var serviceCitiesResult: ApiResult<[ServiceCityDto]> = .success([])
+
+    func getServiceCities(countryId _: String?) async -> ApiResult<[ServiceCityDto]> {
+        serviceCitiesResult
+    }
+
     func getAllCountries() async -> ApiResult<[CountryListItem]> {
         allCountriesResult
     }

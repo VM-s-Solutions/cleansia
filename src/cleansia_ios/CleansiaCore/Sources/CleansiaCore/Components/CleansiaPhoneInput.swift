@@ -42,6 +42,7 @@ public struct CleansiaPhoneInput: View {
     }
 
     private var borderColor: Color {
+        if !enabled { return CleansiaColors.disabledOutline }
         if isError { return CleansiaColors.error }
         return focused ? CleansiaColors.primary : CleansiaColors.outline
     }
@@ -78,6 +79,7 @@ public struct CleansiaPhoneInput: View {
                     .padding(.horizontal, Spacing.m)
             }
         }
+        .disabled(!enabled)
     }
 
     // Deliberately NOT normalising the bound value on load. A number stored by another client can
@@ -90,6 +92,7 @@ public struct CleansiaPhoneInput: View {
     // which already yields the sanitised form via MaskedPhoneTextField's edit path.
 
     private var floatingLabelColor: Color {
+        if !enabled { return CleansiaColors.disabledInk }
         if isError { return CleansiaColors.error }
         return focused ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant
     }
@@ -105,7 +108,7 @@ public struct CleansiaPhoneInput: View {
             engine: engine,
             isEnabled: enabled,
             font: inputFont,
-            textColor: CleansiaColors.onSurface,
+            textColor: enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk,
             tintColor: CleansiaColors.primary
         )
         .frame(maxWidth: .infinity)
@@ -134,6 +137,9 @@ struct MaskedPhoneTextField: UIViewRepresentable {
             action: #selector(Coordinator.editingChanged(_:)),
             for: .editingChanged
         )
+        // Born disabled when it should be — without this the field is enabled until the first
+        // updateUIView, and every rebuild of the form subtree reopens that window.
+        field.isEnabled = isEnabled
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.clearButtonMode = .never
@@ -165,9 +171,17 @@ struct MaskedPhoneTextField: UIViewRepresentable {
 
     private func syncFirstResponder(_ field: UITextField) {
         guard field.window != nil else { return }
+        // A disabled field never takes focus, and gives it up if it somehow holds it.
+        guard isEnabled else {
+            if field.isFirstResponder {
+                DispatchQueue.main.async { field.resignFirstResponder() }
+            }
+            return
+        }
         if focused, !field.isFirstResponder {
             DispatchQueue.main.async {
-                if !field.isFirstResponder { field.becomeFirstResponder() }
+                // Re-checked: this runs a runloop turn later than the guard above.
+                if field.isEnabled, !field.isFirstResponder { field.becomeFirstResponder() }
             }
         } else if !focused, field.isFirstResponder {
             DispatchQueue.main.async {
@@ -208,6 +222,7 @@ struct MaskedPhoneTextField: UIViewRepresentable {
         }
 
         private func apply(_ edit: PhoneMaskEdit, to field: UITextField) {
+            guard parent.isEnabled else { return }
             if field.text != edit.text {
                 field.text = edit.text
                 field.moveCaret(to: edit.caret)
@@ -215,7 +230,11 @@ struct MaskedPhoneTextField: UIViewRepresentable {
             if parent.value != edit.wireValue { parent.value = edit.wireValue }
         }
 
-        func textFieldDidBeginEditing(_: UITextField) {
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            guard parent.isEnabled else {
+                field.resignFirstResponder()
+                return
+            }
             if !parent.focused { parent.focused = true }
         }
 

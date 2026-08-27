@@ -3,23 +3,32 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-      CAMERA, READ_EXTERNAL_STORAGE and READ_MEDIA_IMAGES were declared here and used by nothing.
-      Both file pickers (PhotosSection.kt:153, DocumentsSectionScreen.kt:89) use
-      ActivityResultContracts.GetContent(), which goes through the system picker and returns a URI
-      already carrying a read grant — it needs no permission at any API level. The customer app is
-      the proof: it picks images with GetMultipleContents() and PickVisualMedia() while declaring
-      none of these. CAMERA had no call site at all, and with no
-      <uses-feature android:name="android.hardware.camera" android:required="false" /> beside it
-      Play inferred the hardware as REQUIRED and filtered the store listing accordingly.
+      READ_EXTERNAL_STORAGE and READ_MEDIA_IMAGES are deliberately absent. Both gallery pickers
+      (PhotosSection.kt, DocumentsSectionScreen.kt) go through the system picker, which returns a
+      URI already carrying a read grant — no permission at any API level. Declaring them would
+      also oblige the Play "Photo and video permissions" declaration for an app that never touches
+      the media store. Do not add them back.
 
-      Keeping them also obliged the Play "Photo and video permissions" declaration for an app that
-      never touches the media store.
+      CAMERA was removed with them on 2026-08-18 for a different and now-expired reason: it had no
+      call site. It has one as of 2026-08-27 — a cleaner can photograph a job or their avatar
+      without going through the gallery, which both iOS apps have always been able to do.
+
+      The uses-feature below is NOT optional decoration. Without it, Play infers a declared CAMERA
+      permission as REQUIRED hardware and filters the store listing to devices that have it; with
+      required="false" the app still installs on a device with no camera, which is why the capture
+      path checks PackageManager.FEATURE_CAMERA_ANY before it offers the choice. Removing one of
+      these two lines without the other reintroduces the exact bug the 2026-08-18 removal fixed.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
         android:name=".CleansiaPartnerApp"

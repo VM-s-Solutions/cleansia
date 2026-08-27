@@ -4,6 +4,8 @@ import SwiftUI
 struct RegistrationLockView: View {
     @StateObject private var vm: RegistrationLockViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
+    @StateObject private var avatarVM: ProfileAvatarViewModel
+    @StateObject private var avatarCache = RemoteImageCache()
     @ObservedObject private var preferences: PreferencesModel
     @State private var path = NavigationPath()
     @State private var isConfirmingSignOut = false
@@ -26,11 +28,19 @@ struct RegistrationLockView: View {
         geocoding: GeocodingService,
         mapProvider: MapProvider,
         serviceArea: ServiceAreaProvider,
+        // Defaulted rather than threaded through the shell: the live client holds nothing —
+        // the generated layer carries the session — so this parameter exists for the tests,
+        // not the app. Same reasoning as ProfileView's, and it sits ahead of the trailing
+        // closures so no call site changes.
+        userClient: PartnerUserClient = LivePartnerUserClient(),
         onCompleted: @escaping () -> Void,
         onSignedOut: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: RegistrationLockViewModel(client: client, authClient: authClient))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: profileClient))
+        _avatarVM = StateObject(
+            wrappedValue: ProfileAvatarViewModel(client: userClient, snackbar: snackbar)
+        )
         self.preferences = preferences
         self.profileClient = profileClient
         self.snackbar = snackbar
@@ -72,9 +82,14 @@ struct RegistrationLockView: View {
             // + per-section dots are accurate the moment the first onboarding
             // section mounts — Android refreshes this eagerly in init
             // (OnboardingChainViewModel.kt:52-57).
+            //
+            // The avatar load is load-bearing, not cosmetic: ProfileAvatarViewModel.save()
+            // opens with a guard on the loaded user, so without it a cleaner picks a photo,
+            // taps Next, and the upload returns silently — no error, no snackbar, no photo.
             async let lock: Void = vm.load()
             async let chain: Void = chainVM.load()
-            _ = await (lock, chain)
+            async let avatar: Void = avatarVM.load()
+            _ = await (lock, chain, avatar)
         }
         .onReceive(vm.completed) { onCompleted() }
         .onReceive(vm.signedOut) { onSignedOut() }
@@ -165,6 +180,8 @@ struct RegistrationLockView: View {
                 snackbar: snackbar,
                 chainVM: chainVM,
                 onboarding: onboarding,
+                avatar: avatarVM,
+                avatarCache: avatarCache,
                 onSaved: { Task { await chainVM.advanceOrFinish() } }
             )
         case let .address(onboarding):

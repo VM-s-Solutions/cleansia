@@ -31,6 +31,14 @@ public enum CleansiaColors {
     public static let onInverseSurface = Color.dynamic(light: Palette.slate50, dark: Palette.slate900)
 
     public static let outline = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
+
+    /// Ink and hairline for a control the user may read but not change.
+    ///
+    /// 0.38 is Material 3's disabled opacity, which Android already applies for free through the
+    /// M3 defaults — matching it here is what makes a disabled field look the same on both
+    /// platforms rather than looking editable on one of them.
+    public static let disabledInk = onSurface.opacity(0.38)
+    public static let disabledOutline = outline.opacity(0.38)
     public static let outlineVariant = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
 
     public static let error = Color.dynamic(light: Palette.errorText, dark: Palette.darkError)

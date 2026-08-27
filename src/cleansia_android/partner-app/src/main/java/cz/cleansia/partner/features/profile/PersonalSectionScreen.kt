@@ -56,6 +56,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
+import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -206,20 +207,15 @@ private fun AvatarPreview(
     onRemove: () -> Unit,
 ) {
     var pickerUnavailable by remember { mutableStateOf(false) }
-    // The system photo picker grants per-item access to exactly what was chosen, so it needs no
-    // storage permission on any API level this app supports and there is no denial branch to write.
-    val pickImage = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let(onPick) },
+    // Camera or gallery. The gallery half is the system photo picker, which grants per-item
+    // access to exactly what was chosen and so needs no storage permission on any API level this
+    // app supports; the camera half is the only one with a permission and a denial branch, and
+    // both live in the shared component.
+    val photoPicker = rememberPhotoSourcePicker(
+        onPickerUnavailable = { pickerUnavailable = true },
+        onPicked = onPick,
     )
-    val launchPicker = {
-        // A device with neither picker nor document provider throws rather than returning empty, and
-        // an uncaught throw here takes the screen down. Same guard the customer app carries.
-        runCatching {
-            pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        }.onFailure { pickerUnavailable = true }
-        Unit
-    }
+    val launchPicker = { photoPicker.open() }
 
     if (pickerUnavailable) {
         CleansiaDialog(

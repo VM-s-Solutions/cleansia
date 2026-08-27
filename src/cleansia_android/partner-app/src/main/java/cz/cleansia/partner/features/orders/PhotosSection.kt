@@ -53,6 +53,7 @@ import coil3.request.crossfade
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
+import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
 import cz.cleansia.partner.api.model.GetOrderPhotosOrderPhotoDto
 import cz.cleansia.partner.api.model.PhotoType
 
@@ -149,13 +150,13 @@ private fun PhotoRail(
     // multi-MB read. (The comment that used to sit here claimed the opposite.)
     // Reading, downscaling, the EXIF/GPS strip and the base64 now all happen
     // inside ImageCompressor, off the main thread and in one hop.
-    val pickImage = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-    ) { uri: Uri? ->
+    //
+    // A capture URI and a gallery URI are interchangeable here: both are content:// with a read
+    // grant, so ImageCompressor opens either one without knowing the difference.
+    val pickPhoto = rememberPhotoSourcePicker { uri ->
         val target = pickingForType
         pickingForType = null
-        if (uri == null || target == null) return@rememberLauncherForActivityResult
-        onUpload(target, uri)
+        if (target != null) onUpload(target, uri)
     }
 
     // Group label — same labelSmall + onSurfaceVariant treatment used
@@ -195,7 +196,7 @@ private fun PhotoRail(
                     isUploading = isUploading,
                     onClick = {
                         pickingForType = type
-                        pickImage.launch("image/*")
+                        pickPhoto.open()
                     },
                 )
             }

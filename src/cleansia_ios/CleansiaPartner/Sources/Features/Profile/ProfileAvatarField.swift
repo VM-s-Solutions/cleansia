@@ -14,6 +14,12 @@ struct ProfileAvatarField: View {
     @ObservedObject var avatar: ProfileAvatarViewModel
     let cache: RemoteImageCache
 
+    /// False on the onboarding chain, where the section's own button says "Next" and
+    /// pushes the photo with it - a Save/Cancel pair sitting directly above Next reads as
+    /// two competing commits. Android folds the two the same way. True on the hub, where
+    /// the section's button says "Save" and the two writes are genuinely independent.
+    var showsPendingBar: Bool = true
+
     @State private var showSourceDialog = false
     @State private var pickerSource: UIImagePickerController.SourceType?
     @State private var showCameraPermissionAlert = false
@@ -21,7 +27,7 @@ struct ProfileAvatarField: View {
     var body: some View {
         VStack(spacing: Spacing.s) {
             card
-            if avatar.hasPendingEdit {
+            if showsPendingBar, avatar.hasPendingEdit {
                 PendingAvatarBar(
                     isSubmitting: avatar.action.isSubmitting,
                     onSave: { Task { await avatar.save() } },

@@ -16,6 +16,19 @@ import Foundation
 /// form resolves there only because `enum Profile` is lexically nested inside `extension L10n { }`,
 /// which this file is not.
 extension L10n.Profile {
+    /// The service-area verdict on the address step. Wording shared with the Android twin.
+    static var serviceAreaChecking: String {
+        L10n.localized("address_service_area_checking")
+    }
+
+    static func serviceAreaInServicedCity(_ city: String) -> String {
+        String(format: L10n.localized("address_service_area_in_serviced_city"), city)
+    }
+
+    static var serviceAreaOutsideServicedCity: String {
+        L10n.localized("address_service_area_outside_serviced_city")
+    }
+
     /// Spoken by VoiceOver after the section name. Four medallions otherwise announce as four
     /// identical controls with nothing saying which is finished or which you are on.
     static var onboardingStepStateCurrent: String {

@@ -75,6 +75,6 @@
 | T-0648 | Partner iOS: the email field looks editable, and focus surviving a background/foreground cycle appears to let it be edited | S | `todo` | — | — |
 | T-0649 | Partner apps: make Self-employed / Legal entity a swipeable segmented control, like the Cleansia Plus page | M | `todo` | — | — |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
-| T-0651 | Android partner profile: the owner's remark about recurring cleaning was cut off mid-sentence — **Q-AND-03** | S | `blocked` | — | — |
+| T-0651 | Customer iOS: add the always-visible **Recurring bookings** row to the profile tab — the destination already renders the Plus upsell, only the entry point is missing | S | `todo` | — | — |
 
 *Next id: **T-0652**.*

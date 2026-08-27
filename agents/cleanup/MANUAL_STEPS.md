@@ -27,6 +27,29 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+### MS-9 — Invite yourself to the admin console — **owner, BEFORE the next admin deploy**
+
+`apps/cleansia-admin.app/src/staticwebapp.config.json` now requires the role `admin_console` on
+every route and redirects 401/403 to `/.auth/login/aad`, the same shape the docs site has used
+since it was gated. Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
+
+**Action, before the next admin deploy:** Portal → `swa-cleansia-admin-*` → *Role management* →
+**Invite** yourself with the role `admin_console`.
+
+**This is the step that makes the console reachable.** The built-in `aad` provider admits any
+Microsoft identity, so the ROLE is the access control, not the login — an uninvited visitor with a
+perfectly valid Microsoft account signs in and still gets nothing. Skip it and the console refuses
+everyone, including the owner, until the invite exists.
+
+`admin_console` is underscore-only on purpose. The SWA invitation form rejects hyphens — that is
+what blocked `docs-reader` and is why the docs role is `docs_reader`. If the string here and the
+string in the portal ever differ, the console is unreachable and correcting it costs a full DEV
+deploy.
+
+**Prod inherits this automatically** on the first prod deploy, because one config file ships to
+both environments. Environment-specific gating is not expressible in this file and would need an
+asset swap in `project.json`'s configurations block — not built, because nothing asks for it yet.
+
 ### MS-8 — Regenerate the admin client for the country field labels — **owner**
 
 `AdminCountryController.GetFieldLabels` now exposes `GET api/AdminCountry/field-labels/{countryId}`,

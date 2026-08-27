@@ -22,7 +22,7 @@ Five API hosts back them, one per audience — separate hosts rather than one AP
 which is a deliberate isolation boundary (`docs/architecture/security-rules`).
 
 **The documentation lives in [`docs/`](docs/) and that site is the source of truth.** It is a
-VitePress project — the product rules, the domain model, the end-to-end flows and all 52 ADRs are
+VitePress project — the product rules, the domain model, the end-to-end flows and all 55 ADRs are
 there, not in this file and not in source comments. Read it there:
 
 ```bash
@@ -42,8 +42,8 @@ cd docs && npm ci && npm run dev     # → http://localhost:5173
 | For | You need |
 |---|---|
 | Backend | .NET 10 SDK, Docker (Postgres, Azurite and the test containers all run in it) |
-| Frontend | Node 20+ |
-| Android | JDK 17, Android Studio (or the SDK + Gradle) |
+| Frontend | Node 22 |
+| Android | JDK 21, Android Studio (or the SDK + Gradle) |
 | iOS | macOS, Xcode, and `xcodegen` — `brew install xcodegen` |
 | Migrations | `dotnet tool install --global dotnet-ef`, then ensure `~/.dotnet/tools` is on `PATH` |
 
@@ -127,7 +127,7 @@ dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz 
 
 ```bash
 cd src/Cleansia.App
-npx nx run-many -t test --all          # Jest, all three web apps and their libraries
+npx nx run-many -t test                # Jest, all three web apps and their libraries
 ```
 
 Integration and host tests need Docker running. Six CI workflows gate a PR: Backend, Frontend,
@@ -187,17 +187,17 @@ The Aspire container's password is the one in its connection string.
 ## Documentation site
 
 `docs/` is a VitePress project and the source of truth for what the platform does. It deploys to a
-**DEV-only** Azure Static Web App — `main.bicep` declares it under `if (env == 'dev')`, so no
-production copy exists to deploy to. The site requires the `docs_reader` role on every route, granted
-per person through the Static Web App's Role management blade.
+**DEV-only** Azure Static Web App — `deploy/bicep/main.bicep` declares it under
+`if (env == 'dev')`, so no production copy exists to deploy to. The site requires the `docs_reader`
+role on every route, granted per person through the Static Web App's Role management blade.
 
 Deploys are manual: run the **Deploy Docs** workflow from the Actions tab.
 
 ## Working on this repo
 
 `CLAUDE.md` holds the working agreement and the pointers an agent needs. The agent roster, the
-process docs and the pattern catalogues are under [`agents/`](agents/); the cleanup track's own
-manifest is `agents/cleanup/INDEX.md`.
+process docs and the pattern catalogues are under [`agents/`](agents/). New work is filed in
+`agents/backlog/INDEX.md`; `agents/cleanup/INDEX.md` is the closed record of the 2026-08 cleanup.
 
 Feature branches are `feature/*` or `fix/*` off `master`, commits are conventional (`feat:`, `fix:`,
 `refactor:`, `docs:`), and PRs target `master`.

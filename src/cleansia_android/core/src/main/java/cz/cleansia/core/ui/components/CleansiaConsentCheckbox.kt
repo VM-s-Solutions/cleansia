@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +19,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import cz.cleansia.core.R
 import cz.cleansia.core.ui.theme.Spacing
 
@@ -55,34 +58,42 @@ fun CleansiaConsentCheckbox(
         )
     }
 
-    Row(
-        modifier = modifier.padding(vertical = Spacing.XXS),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.XXS),
-    ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            // A short label, NOT the sentence: the sentence is its own
-            // accessibility element below (and carries the actionable links),
-            // so repeating it here makes TalkBack read the legal text twice.
-            modifier = Modifier.semantics { contentDescription = toggleContentDescription },
-            colors = CheckboxDefaults.colors(
-                checkedColor = MaterialTheme.colorScheme.primary,
-                uncheckedColor = MaterialTheme.colorScheme.outline,
-            ),
-        )
-        Text(
-            text = sentence,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            // Material3's Checkbox pads its 20dp box out to the 48dp minimum
-            // touch target, putting the glyph's centre 24dp down. Nudging the
-            // first text line to match keeps a wrapping two-line sentence
-            // aligned with the glyph instead of with the touch target's top.
-            modifier = Modifier
-                .weight(1f)
-                .padding(top = Spacing.S),
-        )
+    // Cancels the 48dp layout box Material 3 reserves around the 20dp glyph, so the glyph
+    // starts at the row's leading edge like every field above it. This affects LAYOUT ONLY:
+    // Compose inflates a pointer-input node's hit bounds to the 48dp minimum regardless of
+    // measured size, so the touch target is unchanged. The 12dp it now overflows each side
+    // stays inside the callers' own 24dp horizontal padding.
+    //
+    // The iOS twin does the same thing with `.padding(-8)` on its glyph.
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+        Row(
+            modifier = modifier.padding(vertical = Spacing.XXS),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.XXS),
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                // A short label, NOT the sentence: the sentence is its own
+                // accessibility element below (and carries the actionable links),
+                // so repeating it here makes TalkBack read the legal text twice.
+                modifier = Modifier.semantics {
+                    contentDescription = toggleContentDescription
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.outline,
+                ),
+            )
+            // No top padding any more. That 12dp existed to push the sentence down to a glyph
+            // sitting inside a 48dp box; with the box gone, a 24dp checkbox and a 20dp
+            // bodyMedium first line top-align within about 2dp on their own.
+            Text(
+                text = sentence,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }

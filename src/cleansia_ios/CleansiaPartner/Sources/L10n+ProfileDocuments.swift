@@ -16,6 +16,72 @@ import Foundation
 /// form resolves there only because `enum Profile` is lexically nested inside `extension L10n { }`,
 /// which this file is not.
 extension L10n.Profile {
+    // The remaining document keys, moved out of `enum Profile` on 2026-08-27 to restore
+    // headroom under the 400-line cap. They belong here anyway: this file is named for them.
+
+    static var documentsEmpty: String {
+        L10n.localized("documents_empty")
+    }
+
+    static var uploadDocument: String {
+        L10n.localized("upload_document")
+    }
+
+    static var documentType: String {
+        L10n.localized("document_type")
+    }
+
+    static var descriptionOptional: String {
+        L10n.localized("description_optional")
+    }
+
+    static var documentTooLarge: String {
+        L10n.localized("document_too_large")
+    }
+
+    static var documentStatusPending: String {
+        L10n.localized("document_status_pending")
+    }
+
+    static var documentStatusApproved: String {
+        L10n.localized("document_status_approved")
+    }
+
+    static var documentStatusRejected: String {
+        L10n.localized("document_status_rejected")
+    }
+
+    static var documentTypeIdentity: String {
+        L10n.localized("document_type_identity")
+    }
+
+    static var documentTypePassport: String {
+        L10n.localized("document_type_passport")
+    }
+
+    static var documentTypeDriversLicense: String {
+        L10n.localized("document_type_drivers_license")
+    }
+
+    static var documentTypeWorkPermit: String {
+        L10n.localized("document_type_work_permit")
+    }
+
+    static var documentTypeContract: String {
+        L10n.localized("document_type_contract")
+    }
+
+    static var documentTypeCertificate: String {
+        L10n.localized("document_type_certificate")
+    }
+
+    static var documentTypeBankStatement: String {
+        L10n.localized("document_type_bank_statement")
+    }
+
+    static var documentTypeOther: String {
+        L10n.localized("document_type_other")
+    }
     /// The service-area verdict on the address step. Wording shared with the Android twin.
     static var serviceAreaChecking: String {
         L10n.localized("address_service_area_checking")

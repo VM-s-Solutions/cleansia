@@ -116,17 +116,41 @@ struct CancelOrderSheet: View {
                 Button(action: submit) {
                     ZStack {
                         if isSubmitting {
-                            ProgressView().tint(CleansiaColors.onError)
+                            // `error`, not `onError`: submitting sets canConfirm false, so this
+                            // spinner draws inside the DISABLED branch, and an onError tint
+                            // would be white on the near-white neutral fill in light mode.
+                            ProgressView().tint(CleansiaColors.error)
                         } else {
                             Text(L10n.OrderCancel.confirm)
                                 .font(CleansiaTypography.titleMedium)
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: 48)
-                    .foregroundColor(CleansiaColors.onError)
-                    .background(CleansiaColors.error.opacity(canSubmit ? 1 : 0.4))
+                    // Disabled changes the colours; it does not fade the fill. The label was
+                    // already full-strength onError, so fading only the red behind it left
+                    // 2.1:1 in light mode and 1.1:1 in dark, where onError is itself a dark
+                    // red. Same neutral mute as CleansiaDangerButton.
+                    .foregroundColor(
+                        canSubmit ? CleansiaColors.onError : CleansiaColors.onSurfaceVariant
+                    )
+                    .background(
+                        canSubmit
+                            ? CleansiaColors.error
+                            : CleansiaColors.onSurfaceVariant.opacity(0.10)
+                    )
                     .clipShape(Capsule())
+                    // A 10% neutral over `surface` is nearly the sheet's own colour, so
+                    // without a hairline the capsule loses its shape entirely.
+                    .overlay(
+                        Capsule().stroke(
+                            canSubmit ? Color.clear : CleansiaColors.outlineVariant,
+                            lineWidth: 1
+                        )
+                    )
                 }
+                // Without .plain the default style dims on top of the explicit colours and
+                // re-fades the neutral this just chose.
+                .buttonStyle(.plain)
                 .disabled(!canSubmit)
             }
             .padding(Spacing.l)

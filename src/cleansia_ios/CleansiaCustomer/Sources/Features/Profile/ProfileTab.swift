@@ -57,15 +57,20 @@ struct ProfileTab: View {
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
                         sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
 
-                        CleansiaDangerButton(
-                            L10n.Profile.deleteAccount,
-                            leadingIcon: "trash",
-                            action: { onOpen(.deleteAccount) }
-                        )
-                        .padding(.horizontal, Spacing.m)
-
-                        CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
-                            showSignOutDialog = true
+                        // One inset for the pair, not one each — the gap between them is a
+                        // design decision, and two separate paddings let it drift.
+                        VStack(spacing: Spacing.m) {
+                            DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                            // CleansiaDangerButton already IS the partner app's logout treatment:
+                            // centred, error at 0.12 behind an error 0.4 hairline. Reusing it
+                            // rather than hand-rolling a second copy of the same shape.
+                            CleansiaDangerButton(
+                                L10n.Profile.signOut,
+                                size: .medium,
+                                leadingIcon: "rectangle.portrait.and.arrow.right"
+                            ) {
+                                showSignOutDialog = true
+                            }
                         }
                         .padding(.horizontal, Spacing.m)
                         .padding(.bottom, Spacing.xxl)
@@ -405,3 +410,44 @@ struct EditProfileChip: View {
         }
     }
 #endif
+
+/// Delete account, as a navigation row rather than a button.
+///
+/// It used to be a `CleansiaDangerButton` — a centred, error-tinted block — while Sign out was a
+/// neutral grey capsule, which is the inverse of the partner app and made the destructive-looking
+/// control the wrong one of the two. Partner's rule, which this now follows: a row that leads
+/// somewhere reads from the left edge, and an action is centred because the row IS the button.
+///
+/// Deliberately without partner's summary sub-line and trailing chevron — the owner scoped this
+/// to alignment, order and centring, and a summary would be a new string in five locales.
+private struct DeleteAccountRow: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: Spacing.m) {
+                ZStack {
+                    Circle()
+                        .fill(CleansiaColors.error.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(CleansiaColors.error)
+                }
+                Text(L10n.Profile.deleteAccount)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.error)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s + 2)
+            .frame(maxWidth: .infinity)
+            .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}

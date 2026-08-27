@@ -202,11 +202,11 @@ fun ProfileTab(
 
         Spacer(Modifier.height(28.dp))
 
-        LogoutRow(onLogout = { showLogoutDialog = true })
-
-        Spacer(Modifier.height(10.dp))
-
         DeleteAccountRow(onClick = { onRowClick("delete_account") })
+
+        Spacer(Modifier.height(16.dp))
+
+        LogoutRow(onLogout = { showLogoutDialog = true })
 
         Spacer(Modifier.height(20.dp))
 
@@ -555,7 +555,16 @@ private fun SettingsRow(row: ProfileRow, onClick: () -> Unit) {
     }
 }
 
-/* ── Logout — slightly different treatment to signal destructive action ── */
+/* ── Logout ──
+ *
+ * Centred, unlike every navigation row above it, and that is the point: those rows read from the
+ * left edge because they lead somewhere, whereas this row IS the button. It used to be a
+ * left-aligned card identical to Delete account sitting 10dp away, which read as two list rows
+ * rather than a row and an action. Same treatment as the partner app's.
+ *
+ * The label carried weight(1f), which is what actually pushed it left — a centred arrangement
+ * cannot do anything with a child that has already claimed the whole row.
+ */
 
 @Composable
 private fun LogoutRow(onLogout: () -> Unit) {
@@ -564,35 +573,31 @@ private fun LogoutRow(onLogout: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
             .clickable(onClick = onLogout)
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Outlined.Logout,
-                null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.width(14.dp))
+        Icon(
+            Icons.AutoMirrored.Outlined.Logout,
+            null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(12.dp))
         Text(
             stringResource(R.string.profile_logout),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/* ── Delete account — subtle outlined treatment below Logout. GDPR-required. ── */
+/* ── Delete account — a navigation row, left-aligned like the settings rows it follows.
+ * GDPR-required. It leads to a flow, so it reads from the left edge; Logout below it does not. ── */
 
 @Composable
 private fun DeleteAccountRow(onClick: () -> Unit) {

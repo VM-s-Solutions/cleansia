@@ -1391,4 +1391,11 @@
     <string name="profile_avatar_encode_failed">Tento obrázok sa nepodarilo použiť. Skúste inú fotku.</string>
     <string name="profile_avatar_picker_unavailable_title">Žiadny výber fotiek</string>
     <string name="profile_avatar_picker_unavailable_message">V tomto zariadení nie je žiadna aplikácia na výber fotky.</string>
+
+    <!-- Camera capture. Copy shared verbatim with the iOS partner app. -->
+    <string name="camera_permission_title">Potrebný je prístup k fotoaparátu</string>
+    <string name="camera_permission_message">Povoľte prístup k fotoaparátu v Nastaveniach, aby ste mohli fotiť.</string>
+    <string name="open_settings">Otvoriť nastavenia</string>
+    <string name="photo_source_title">Pridať fotku</string>
+    <string name="camera_unavailable">Toto zariadenie nemá fotoaparát.</string>
 </resources>

@@ -4,4 +4,11 @@
          system viewer via FileProvider. Cache dir is auto-cleaned by Android
          under storage pressure so we never need to manually purge old PDFs. -->
     <cache-path name="invoices" path="invoices/" />
+
+    <!-- Camera captures land in cacheDir/camera/ and are handed to the system camera app through
+         FileProvider, which is the only way to receive a full-resolution image — the Bitmap in
+         the legacy intent extra is a thumbnail. The file must survive until the upload reads it,
+         and on the avatar screen until Save, because the preview renders from this same URI.
+         Cache dir is auto-cleaned by Android under storage pressure, so nothing purges it here. -->
+    <cache-path name="camera" path="camera/" />
 </paths>

@@ -166,22 +166,37 @@ Play Data safety declaration is filled in from.
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.CAMERA" />
+
+<uses-feature android:name="android.hardware.camera" android:required="false" />
 ```
 
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
 `ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE`; that is the only difference.
 
-**Neither app declares a camera or storage permission, and neither needs one.** Every picker in
-both apps goes through the system picker — `GetContent()` on partner (job photos, identity
-documents), `PickVisualMedia()` and `GetMultipleContents()` on customer (avatar, dispute
-evidence) — which returns a URI that already carries a read grant. Every consumer reads it with
-`contentResolver.openInputStream`, never a file path, so no permission applies at any API level.
+**Neither app declares a storage permission, and neither needs one.** Every gallery picker in
+both apps goes through the system picker — `PickVisualMedia()` on partner (job photos, avatar),
+`GetContent()` for identity documents, `PickVisualMedia()` and `GetMultipleContents()` on customer
+(avatar, dispute evidence) — which returns a URI that already carries a read grant. Every consumer
+reads it with `contentResolver.openInputStream`, never a file path, so no permission applies at any
+API level.
 
-This matters beyond tidiness. `CAMERA` without a matching
-`<uses-feature android:name="android.hardware.camera" android:required="false" />` makes Play
-infer the hardware as required and filter the store listing to camera devices, and
-`READ_MEDIA_IMAGES` obliges the console's *Photo and video permissions* declaration. Both were
-declared and unused until they were removed; do not reinstate either without a real call site.
+**`:partner-app` declares `CAMERA`; `:customer-app` does not.** That is not an oversight in either
+direction: a cleaner photographs a job and their own avatar, which both iOS apps have always been
+able to do, while a customer only ever attaches an existing image. Capture writes to
+`cacheDir/camera/` and is handed to the system camera app through the FileProvider — the `Bitmap`
+in the legacy intent extra is a thumbnail and is not used.
+
+The `uses-feature` beside it is load-bearing. `CAMERA` without
+`<uses-feature android:name="android.hardware.camera" android:required="false" />` makes Play infer
+the hardware as **required** and filter the store listing to camera devices — which is why both
+were removed together on 2026-08-18, when the permission had no call site at all. Adding one line
+without the other reintroduces that bug. Because `required="false"` keeps the app installable on a
+device with no camera, the capture path checks `PackageManager.FEATURE_CAMERA_ANY` and skips
+straight to the gallery when there is none.
+
+`READ_MEDIA_IMAGES` obliges the console's *Photo and video permissions* declaration for an app that
+never touches the media store. It stays out.
 
 Library manifests merge in four more that neither app declares: `WAKE_LOCK` and
 `com.google.android.c2dm.permission.RECEIVE` from Firebase Messaging, `ACCESS_WIFI_STATE` from

@@ -1396,4 +1396,11 @@
     <string name="profile_avatar_encode_failed">Не удалось использовать это изображение. Попробуйте другое фото.</string>
     <string name="profile_avatar_picker_unavailable_title">Нет средства выбора фото</string>
     <string name="profile_avatar_picker_unavailable_message">На этом устройстве нет приложения для выбора фото.</string>
+
+    <!-- Camera capture. Copy shared verbatim with the iOS partner app. -->
+    <string name="camera_permission_title">Требуется доступ к камере</string>
+    <string name="camera_permission_message">Включите доступ к камере в Настройках, чтобы делать фото.</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="photo_source_title">Добавить фото</string>
+    <string name="camera_unavailable">На этом устройстве нет камеры.</string>
 </resources>

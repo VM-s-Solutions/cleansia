@@ -47,6 +47,12 @@ struct ProfileTab: View {
                         MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
                             .padding(.horizontal, Spacing.m)
 
+                        // Sits below the membership card and above the settings groups, matching
+                        // Android. Never gated on membership: for a subscriber it is the way to a
+                        // live schedule, and for everyone else the destination sells Plus.
+                        RecurringEntryRow(onTap: { onOpen(.recurringList) })
+                            .padding(.horizontal, Spacing.m)
+
                         sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
                         sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)

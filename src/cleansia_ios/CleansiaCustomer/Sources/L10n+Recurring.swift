@@ -2,6 +2,18 @@ import Foundation
 
 extension L10n {
     enum Recurring {
+        /// The profile-tab entry row. Deliberately NOT gated on membership — a lapsed
+        /// subscription does not stop a live schedule, so this is the route to the stop button,
+        /// and for a customer who never subscribed the destination sells Plus instead. Android
+        /// has always worked this way; iOS hid the row entirely, so the upsell never happened.
+        static var profileRowTitle: String {
+            localized("profile_recurring_bookings_title")
+        }
+
+        static var profileRowSubtitle: String {
+            localized("profile_recurring_bookings_subtitle")
+        }
+
         static var bookingsTitle: String {
             localized("recurring_bookings_title")
         }

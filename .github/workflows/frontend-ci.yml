@@ -29,6 +29,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
+    # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.
+    timeout-minutes: 60
+
     steps:
       - name: Checkout code
         # Nx 'affected' needs the merge-base with the target branch, so fetch history.
@@ -120,6 +124,10 @@ jobs:
   e2e-smoke:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+
+    # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
+    # catches a hang. A wedged browser is the likeliest way that happens here.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code

@@ -28,9 +28,21 @@ on:
       - 'src/cleansia_android/openapi/**'
       - '.github/workflows/ios-ci.yml'
 
+# The other five CI workflows have carried this since they were written; this one did not,
+# and it is the expensive one. A macOS runner bills at 10x Linux, so every superseded push to
+# a PR branch was paying for a full 20-to-80-minute build of a SHA nobody would ever look at.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-latest
+
+    # Generous on purpose. This job legitimately runs 20-30 minutes, and has been observed at
+    # 1h22m on a degraded macOS runner while still passing — so the ceiling is here to stop a
+    # HUNG run billing to GitHub's 6-hour default, not to police a slow one.
+    timeout-minutes: 120
 
     defaults:
       run:

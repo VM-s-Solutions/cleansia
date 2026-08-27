@@ -67,7 +67,7 @@
 | T-0637 | Warm-up probe: classifies the status and surfaces the body; prod fails fast, dev keeps its budget | S | `done` | — | #232 |
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
 | T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
-| T-0640 | Many .cs files show as modified with no content change | S | `todo` | — | — |
+| T-0640 | Line endings pinned to LF repo-wide — the index was already 100% LF, so the ~5,700-file renormalize the row predicted was a no-op; this is the preventive attribute | S | `done` | — | #234 |
 | T-0641 | Repo stays **public for now** — revisit when the owner's Actions limit resets | M | `todo` | — | — |
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |

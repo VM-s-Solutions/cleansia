@@ -70,7 +70,18 @@ struct PartnerRootView: View {
                 settings: container.appSettings,
                 client: container.registrationClient,
                 showsBrandReveal: showsBrandReveal,
-                onSignOut: { route = .login },
+                // Clears the session BEFORE navigating. It used to only navigate, so the
+                // tokens survived and relaunching landed the cleaner right back here — and
+                // the .onChange below, which reads the token store, kept push registered as
+                // if signed in. logout() is offline-safe: its server side is inside a bounded
+                // 5s wait and the local wipe runs outside that cap, which is what makes it
+                // callable from the one screen that exists because the server is unreachable.
+                onSignOut: {
+                    Task {
+                        await container.authClient.logout()
+                        route = .login
+                    }
+                },
                 // Passed as an argument rather than trailing: with two closures, trailing syntax hides
                 // which one is which at the call site, and SwiftLint refuses it.
                 onResolved: { outcome in route = Route.afterSplash(outcome) }

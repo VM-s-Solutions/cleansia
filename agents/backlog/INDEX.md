@@ -42,7 +42,7 @@
 | T-0612 | Partner web: replace-document UI (mobile has it, web does not) | S | `done` | — | #228 |
 | T-0613 | Admin web: UI for document requirements CRUD and the deletion queue — new feature lib, 2 screens, 5 locales | M | `todo` | — | — |
 | T-0614 | Documents checklist: iOS shows retry on load failure, Android renders the list | S | `done` | — | #228 |
-| T-0615 | Admin web: registration-number label — the admin host has **no field-labels route at all**, so a regen alone yields nothing; needs a backend action first, then `manual_step: nswag-regen` | M | `todo` | — | — |
+| T-0615 | Admin: the registration-number label comes from the country config, not a hardcoded IČO — backend route, regenerated client, and neutral fallbacks in five locales | M | `done` | — | #233 |
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |
 | T-0617 | Customer iOS: swipe-to-return on order detail | M | `done` | — | 7ad5bdfc |
 | T-0618 | Cancelled orders show the real map again — the status guard is out of all four mobile apps | M | `done` | — | #230 |
@@ -53,13 +53,13 @@
 | T-0623 | Partner Android: unwanted whitespace at the top | S | `done` | — | 5c70922f |
 | T-0624 | Customer apps: the Logout / Delete-account rows follow the partner app | M | `done` | — | #231 |
 | T-0625 | Partner iOS onboarding: the two slides use different mascots, matching Android | S | `done` | — | #232 |
-| T-0626 | Sign out: the admin unauthorized page confirms; the two partner splash escapes **never sign out at all** and need a decision before a confirm can honestly be added | S | `todo` | — | — |
-| T-0627 | Customer web: serviceability banner fires on a serviced city | M | `todo` | — | — |
-| T-0628 | Customer mobile: serviceability at address selection — iOS booking review pane + saved-address path on both | M | `todo` | — | — |
+| T-0626 | Sign out confirms everywhere it should — admin unauthorized page, and both partner splash escapes | S | `done` | — | #233 |
+| T-0627 | Customer web: the serviceability banner uses the server's CityNameMatch rule, not a string compare | S | `done` | — | #233 |
+| T-0628 | Customer mobile: booking review pane now warns; the **saved-address** paths still do not — needs a ruling, see T-0653 | M | `todo` | — | #233 |
 | T-0629 | i18n: a label outgrowing a single-line control truncates — ported to iOS and web, written into conventions.md | M | `done` | — | #232 |
-| T-0630 | Gate the **admin console** behind the same invitation block the docs site uses (docs + admin, not all four) | M | `todo` | — | — |
+| T-0630 | Admin console gated behind an Azure invitation (`admin_console`) — **MS-9 before the next admin deploy** | M | `done` | — | #233 |
 | T-0631 | Partner Android: camera capture for job photos and the avatar, CAMERA restored with its uses-feature | M | `done` | — | #231 |
-| T-0632 | SendNewJobsDigest fires, but **irregularly — 8 invocations in 30 days, not hourly**; the host looks to be sleeping | M | `todo` | — | — |
+| T-0632 | SendNewJobsDigest is very likely fine — DEV App Insights samples at 10%, and ~96 firings since deploy would record ~9; the owner saw 8. Confirm with `summarize sum(itemCount)` | S | `todo` | — | — |
 | T-0633 | Bicep audit: one-day three-axis read — secrets/identity, drift, cost — needs one non-mutating `what-if` dispatch | M | `todo` | — | — |
 | T-0634 | Log Analytics is required by workspace-based App Insights — closed, not a defect | S | `done` | — | d5b020bf |
 | T-0635 | Azure cost: the dev cut was designed, measured and committed on 2026-08-11 — owner closed it without resolving further | S | `done` | — | d5b020bf |
@@ -81,6 +81,8 @@
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: the profile tab reaches recurring bookings, so the Plus upsell is reachable | S | `done` | — | #230 |
 
-| T-0652 | Partner mobile: the splash-unreachable **Logout** only navigates — it never clears the session, on either platform | S | `todo` | — | — |
+| T-0652 | Partner mobile: the splash Logout signs out for real, on both platforms, and confirms first | M | `done` | — | #233 |
 
-*Next id: **T-0653**.*
+| T-0653 | Customer mobile: a saved address that is not serviced says nothing when picked — 5 surfaces, needs a ruling on glyph vs inline text vs post-selection notice | M | `todo` | — | — |
+
+*Next id: **T-0654**.*

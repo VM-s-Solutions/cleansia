@@ -1,12 +1,49 @@
 {
+  "routes": [
+    {
+      "route": "/.auth/login/aad",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/.auth/logout",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": [
+        "admin_console"
+      ]
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.ico", "/*.js", "/*.css", "/*.svg", "/*.png", "/*.jpg", "/*.woff2"]
+    "exclude": [
+      "/assets/*",
+      "/*.ico",
+      "/*.js",
+      "/*.css",
+      "/*.svg",
+      "/*.png",
+      "/*.jpg",
+      "/*.woff2"
+    ]
   },
   "responseOverrides": {
     "404": {
       "rewrite": "/index.html",
       "statusCode": 200
+    },
+    "401": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/aad"
+    },
+    "403": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/aad"
     }
   },
   "globalHeaders": {
@@ -14,4 +51,4 @@
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin"
   }
-}
+}

@@ -118,6 +118,8 @@ private struct SplashUnreachableView: View {
     let onRetry: () -> Void
     let onSignOut: () -> Void
 
+    @State private var confirmingSignOut = false
+
     var body: some View {
         VStack(spacing: Spacing.m) {
             Image(systemName: "wifi.exclamationmark")
@@ -133,13 +135,36 @@ private struct SplashUnreachableView: View {
                 .multilineTextAlignment(.center)
             CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
                 .fixedSize()
-            Button(L10n.Profile.logout, action: onSignOut)
+            Button(L10n.Profile.logout) { confirmingSignOut = true }
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background)
+        .overlay { confirmOverlay }
+    }
+
+    /// The same dialog the profile hub raises. It now describes something the button really
+    /// does — until this change it only navigated, which is why T-0626 deliberately left the
+    /// confirmation off rather than ship copy that overstated the action.
+    @ViewBuilder
+    private var confirmOverlay: some View {
+        if confirmingSignOut {
+            CleansiaDialog(
+                title: L10n.Profile.logoutDialogTitle,
+                confirmLabel: L10n.Profile.logoutDialogConfirm,
+                onConfirm: {
+                    confirmingSignOut = false
+                    onSignOut()
+                },
+                onDismiss: { confirmingSignOut = false },
+                message: L10n.Profile.logoutDialogMessage,
+                dismissLabel: L10n.Profile.logoutDialogCancel,
+                icon: "rectangle.portrait.and.arrow.right",
+                destructive: true
+            )
+        }
     }
 }
 

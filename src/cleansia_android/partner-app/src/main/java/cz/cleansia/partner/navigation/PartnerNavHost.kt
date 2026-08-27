@@ -5,28 +5,35 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import cz.cleansia.core.auth.SessionEvent
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.WordmarkSplash
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
-import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.features.auth.ConfirmEmailScreen
 import cz.cleansia.partner.features.auth.ForgotPasswordScreen
@@ -37,21 +44,21 @@ import cz.cleansia.partner.features.devices.DevicesScreen
 import cz.cleansia.partner.features.earnings.EarningsSummaryScreen
 import cz.cleansia.partner.features.invoices.InvoiceDetailScreen
 import cz.cleansia.partner.features.invoices.InvoicesListScreen
-import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.main.MainScaffold
 import cz.cleansia.partner.features.notifications.NotificationsScreen
+import cz.cleansia.partner.features.onboarding.OnboardingScreen
+import cz.cleansia.partner.features.orders.OnboardingChainViewModel
 import cz.cleansia.partner.features.orders.OrderDetailScreen
 import cz.cleansia.partner.features.orders.PendingOffersScreen
 import cz.cleansia.partner.features.orders.RegistrationLockScreen
-import cz.cleansia.partner.features.orders.OnboardingChainViewModel
 import cz.cleansia.partner.features.orders.isRegistrationComplete
+import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.profile.AddressSectionScreen
 import cz.cleansia.partner.features.profile.BankSectionScreen
 import cz.cleansia.partner.features.profile.DocumentsSectionScreen
 import cz.cleansia.partner.features.profile.EmergencySectionScreen
 import cz.cleansia.partner.features.profile.IdentificationSectionScreen
 import cz.cleansia.partner.features.profile.JobRadiusScreen
-import cz.cleansia.partner.features.onboarding.OnboardingScreen
 import cz.cleansia.partner.features.profile.PersonalSectionScreen
 import cz.cleansia.partner.features.profile.ProfileScreen
 import cz.cleansia.partner.features.settings.LanguagePickerScreen
@@ -59,12 +66,11 @@ import cz.cleansia.partner.features.settings.ThemePickerScreen
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import androidx.lifecycle.viewModelScope
-import cz.cleansia.core.network.ApiError
-import cz.cleansia.core.ui.components.CleansiaErrorState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 @Composable
 fun PartnerNavHost(navController: NavHostController) {
@@ -526,6 +532,8 @@ private fun SplashGate(
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
     val outcome by viewModel.outcome.collectAsState()
+    val isSigningOut by viewModel.isSigningOut.collectAsState()
+    var confirmingSignOut by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.resolve() }
 
@@ -549,14 +557,30 @@ private fun SplashGate(
             onRetry = { viewModel.resolve() },
             // CleansiaErrorState requires a back affordance and the splash has no back stack, so
             // it signs out — the one thing a stuck cleaner can always do, and the same escape the
-            // registration lock offers.
+            // registration lock offers. It really does sign out now; it used to only navigate.
             backLabel = stringResource(R.string.logout),
-            onBack = onSignOut,
+            onBack = { confirmingSignOut = true },
         )
     } else {
         WordmarkSplash(
             tagline = stringResource(R.string.splash_tagline),
             showsPartnerLabel = true,
+        )
+    }
+
+    if (confirmingSignOut) {
+        // Dismiss is blocked while the wipe runs: the dialog is the only thing on screen that
+        // knows a sign-out is in flight, and closing it would hide that.
+        CleansiaDialog(
+            onDismiss = { if (!isSigningOut) confirmingSignOut = false },
+            title = stringResource(R.string.profile_logout_dialog_title),
+            message = stringResource(R.string.profile_logout_dialog_message),
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            destructive = true,
+            confirmEnabled = !isSigningOut,
+            confirmLabel = stringResource(R.string.profile_logout_dialog_confirm),
+            onConfirm = { viewModel.signOut(onSignOut) },
+            dismissLabel = stringResource(R.string.profile_logout_dialog_cancel),
         )
     }
 }
@@ -588,12 +612,37 @@ class SplashViewModel @Inject constructor(
     private val tokenStore: TokenStore,
     private val appSettingsRepository: cz.cleansia.partner.core.settings.AppSettingsRepository,
     private val profileRepository: ProfileRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
     // A StateFlow rather than the cold `flow {}` this used to be: a retry has to re-run the check
     // in place. The old shape could only be re-run by rebuilding the whole NavBackStackEntry, which
     // is fine for the post-login bounce and useless for a button.
     private val _outcome = MutableStateFlow<SplashOutcome?>(null)
     val outcome: StateFlow<SplashOutcome?> = _outcome.asStateFlow()
+
+    private val _isSigningOut = MutableStateFlow(false)
+    val isSigningOut: StateFlow<Boolean> = _isSigningOut.asStateFlow()
+
+    /**
+     * The navigation callback fires only AFTER the repository has cleared the session.
+     *
+     * That order is load-bearing: this ViewModel is scoped to the Splash back-stack entry and
+     * [onSignedOut] pops that entry inclusive, so navigating first would cancel viewModelScope
+     * mid-wipe and leave the tokens on disk — which is the bug being fixed.
+     *
+     * `logout()` always reaches its local wipe (its two network calls are each wrapped in
+     * runCatching), so an unreachable server — the only reason this screen exists — cannot
+     * leave the session half-cleared. It is not time-bounded the way the iOS twin is, which is
+     * why the dialog's confirm disables while it runs rather than pretending it is instant.
+     */
+    fun signOut(onSignedOut: () -> Unit) {
+        if (_isSigningOut.value) return
+        viewModelScope.launch {
+            _isSigningOut.value = true
+            authRepository.logout()
+            onSignedOut()
+        }
+    }
 
     fun resolve() {
         viewModelScope.launch {

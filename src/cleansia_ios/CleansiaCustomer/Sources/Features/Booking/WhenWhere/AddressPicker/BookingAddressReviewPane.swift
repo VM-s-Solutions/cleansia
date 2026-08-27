@@ -40,6 +40,7 @@ extension EnvironmentValues {
 struct BookingAddressReviewPane: View {
     let picked: GeocodedAddress
     let saving: Bool
+    let serviceArea: ServiceAreaProvider?
     let onBack: () -> Void
     let onConfirm: (String, Bool, Bool) -> Void
 
@@ -47,14 +48,19 @@ struct BookingAddressReviewPane: View {
     @State private var save = true
     @State private var setAsDefault = false
 
+    /// Three states, not two: nil says nothing, which is what a failed lookup must do.
+    @State private var cityServiced: Bool?
+
     init(
         picked: GeocodedAddress,
         saving: Bool,
+        serviceArea: ServiceAreaProvider? = nil,
         onBack: @escaping () -> Void,
         onConfirm: @escaping (String, Bool, Bool) -> Void
     ) {
         self.picked = picked
         self.saving = saving
+        self.serviceArea = serviceArea
         self.onBack = onBack
         self.onConfirm = onConfirm
         _label = State(initialValue: picked.city.isBlank ? L10n.AddressManager.fallbackLabel : picked.city)
@@ -66,6 +72,9 @@ struct BookingAddressReviewPane: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     addressCard
+                    if cityServiced == false {
+                        notServicedNotice
+                    }
                     labelField
                     toggles
                 }
@@ -80,6 +89,37 @@ struct BookingAddressReviewPane: View {
             .padding(.bottom, Spacing.m)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task(id: picked.city) {
+            cityServiced = await AddressServiceability.cityServiced(
+                provider: serviceArea,
+                countryIsoCode: picked.countryIsoCode,
+                city: picked.city
+            )
+        }
+    }
+
+    /// Advisory only — Confirm stays enabled. An address is worth keeping where the platform
+    /// does not operate yet (people move, coverage grows), and the booking gate re-checks
+    /// server-side anyway. What was missing here is being TOLD: this pane is reached DURING
+    /// booking, so without it the customer found out at payment, after a slot and a price.
+    ///
+    /// Same shape and same string as the address manager's notice, deliberately.
+    private var notServicedNotice: some View {
+        HStack(alignment: .top, spacing: Spacing.s) {
+            Image(systemName: "info.circle")
+                .foregroundColor(CleansiaColors.onErrorContainer)
+            Text(L10n.AddressManager.cityNotServiced)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onErrorContainer)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, Spacing.s)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(CleansiaColors.errorContainer)
+        )
     }
 
     private var header: some View {

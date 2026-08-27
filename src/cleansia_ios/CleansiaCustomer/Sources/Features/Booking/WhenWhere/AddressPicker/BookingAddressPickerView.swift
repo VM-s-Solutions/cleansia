@@ -18,6 +18,7 @@ struct BookingAddressPickerView: View {
     @Environment(\.locationProvider) private var location
 
     private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider?
     private let onConfirmed: (GeocodedAddress) -> Void
     private let onBack: () -> Void
 
@@ -32,6 +33,9 @@ struct BookingAddressPickerView: View {
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
+        // Kept, not just converted. The closure below is a geocoder search bias; the review
+        // pane needs the provider itself to ask whether we actually operate in the city.
+        self.serviceArea = serviceArea
         let codesProvider: (() async -> [String]?)? = serviceArea.map { provider in
             { await provider.servicedCountryIsoCodes() }
         }
@@ -50,6 +54,7 @@ struct BookingAddressPickerView: View {
                 BookingAddressReviewPane(
                     picked: reviewing,
                     saving: saving,
+                    serviceArea: serviceArea,
                     onBack: { self.reviewing = nil },
                     onConfirm: { label, save, setAsDefault in
                         persist(reviewing, label: label, save: save, setAsDefault: setAsDefault)

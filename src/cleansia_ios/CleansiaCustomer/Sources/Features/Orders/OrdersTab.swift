@@ -156,47 +156,41 @@ struct OrderListCard: View {
     let order: CustomerOrderSummary
 
     var body: some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(OrderStatusPresentation.color(order.statusCode))
-                .frame(width: 4)
-
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack {
-                    Text(verbatim: order.displayOrderNumber.map { "#\($0)" } ?? "—")
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Spacer()
-                    OrderStatusPill(code: order.statusCode)
-                }
-                Text(OrdersFormat.dateRange(
-                    order.cleaningDateTime,
-                    estimatedMinutes: order.estimatedMinutes,
-                    locale: locale
-                ))
-                .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.onBackground)
-
-                if let address = order.address, !address.isBlank {
-                    Label(address, systemImage: "mappin.and.ellipse")
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .lineLimit(1)
-                }
-
-                HStack(alignment: .firstTextBaseline) {
-                    Text(OrdersFormat.servicesSummary(order, locale: locale))
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                        .lineLimit(2)
-                    Spacer()
-                    Text(OrdersFormat.price(order.total, currencyCode: order.currencyCode))
-                        .font(CleansiaTypography.titleLarge)
-                        .foregroundColor(CleansiaColors.onBackground)
-                }
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack {
+                Text(verbatim: order.displayOrderNumber.map { "#\($0)" } ?? "—")
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                Spacer()
+                OrderStatusPill(code: order.statusCode)
             }
-            .padding(Spacing.m)
+            Text(OrdersFormat.dateRange(
+                order.cleaningDateTime,
+                estimatedMinutes: order.estimatedMinutes,
+                locale: locale
+            ))
+            .font(CleansiaTypography.titleLarge)
+            .foregroundColor(CleansiaColors.onBackground)
+
+            if let address = order.address, !address.isBlank {
+                Label(address, systemImage: "mappin.and.ellipse")
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .lineLimit(1)
+            }
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(OrdersFormat.servicesSummary(order, locale: locale))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .lineLimit(2)
+                Spacer()
+                Text(OrdersFormat.price(order.total, currencyCode: order.currencyCode))
+                    .font(CleansiaTypography.titleLarge)
+                    .foregroundColor(CleansiaColors.onBackground)
+            }
         }
+        .padding(Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))

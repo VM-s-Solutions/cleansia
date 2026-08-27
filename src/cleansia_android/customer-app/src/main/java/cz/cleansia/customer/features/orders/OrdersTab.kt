@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -395,10 +393,9 @@ private fun OrderCard(
     onClick: () -> Unit,
 ) {
     val statusColor = orderStatusColor(order.orderStatus?.value)
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(
@@ -406,95 +403,81 @@ private fun OrderCard(
                 MaterialTheme.colorScheme.outlineVariant,
                 RoundedCornerShape(16.dp),
             )
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(16.dp),
     ) {
-        // Status bar — vertical accent strip, same color family as the pill.
-        // The outer Row uses IntrinsicSize.Min so fillMaxHeight() below stretches
-        // the strip to the height of the content Column next to it.
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(statusColor),
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+        // Order number + status pill
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Order number + status pill
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = order.displayOrderNumber?.let { "#$it" } ?: "—",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val statusLabelRes = orderStatusLabelRes(order.orderStatus?.value)
-                val statusLabel = statusLabelRes?.let { stringResource(it) }
-                    ?: order.orderStatus?.name ?: "—"
-                StatusPill(
-                    label = statusLabel,
-                    color = statusColor,
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-
-            // Date + time range
             Text(
-                text = formatOrderDateRange(
-                    iso = order.cleaningDateTime,
-                    estimatedMinutes = order.estimatedTime,
-                ),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
+                text = order.displayOrderNumber?.let { "#$it" } ?: "—",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(2.dp))
-
-            // Address
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.LocationOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = order.customerAddress ?: "—",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-
-            // Services summary + price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = servicesSummary(order),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = formatOrderPrice(order.totalPrice, order.currency?.code),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
+            val statusLabelRes = orderStatusLabelRes(order.orderStatus?.value)
+            val statusLabel = statusLabelRes?.let { stringResource(it) }
+                ?: order.orderStatus?.name ?: "—"
+            StatusPill(
+                label = statusLabel,
+                color = statusColor,
+            )
         }
+        Spacer(Modifier.height(6.dp))
+
+        // Date + time range
+        Text(
+            text = formatOrderDateRange(
+                iso = order.cleaningDateTime,
+                estimatedMinutes = order.estimatedTime,
+            ),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(2.dp))
+
+        // Address
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Outlined.LocationOn,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = order.customerAddress ?: "—",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+
+        // Services summary + price
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = servicesSummary(order),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = formatOrderPrice(order.totalPrice, order.currency?.code),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
     }
 }
 

@@ -423,7 +423,10 @@
           </div>
           <div class="info-item">
             <cleansia-text-input
-              [label]="'pages.employee_detail.registration_number' | translate"
+              [label]="
+                fieldLabels()?.registrationNumberLabel ??
+                  ('pages.employee_detail.registration_number' | translate)
+              "
               [floatVariant]="'on'"
               formControlName="registrationNumber"
               dataType="text"
@@ -431,7 +434,10 @@
           </div>
           <div class="info-item">
             <cleansia-text-input
-              [label]="'pages.employee_detail.vat_number' | translate"
+              [label]="
+                fieldLabels()?.vatNumberLabel ??
+                  ('pages.employee_detail.vat_number' | translate)
+              "
               [floatVariant]="'on'"
               formControlName="vatNumber"
               dataType="text"
@@ -497,13 +503,19 @@
           </div>
           <div class="info-item">
             <span class="label"
-              >{{ 'pages.employee_detail.registration_number' | translate }}:</span
+              >{{
+                fieldLabels()?.registrationNumberLabel ??
+                  ('pages.employee_detail.registration_number' | translate)
+              }}:</span
             >
             <span class="value">{{ employee.registrationNumber || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
-              >{{ 'pages.employee_detail.vat_number' | translate }}:</span
+              >{{
+                fieldLabels()?.vatNumberLabel ??
+                  ('pages.employee_detail.vat_number' | translate)
+              }}:</span
             >
             <span class="value">{{ employee.vatNumber || '-' }}</span>
           </div>

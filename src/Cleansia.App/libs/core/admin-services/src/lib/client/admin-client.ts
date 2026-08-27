@@ -1218,6 +1218,10 @@ export interface IAdminCountryClient {
      * @return OK
      */
     serviced(countryId: string, body?: AdminCountryControllerSetCountryServicedRequest | undefined): Observable<SetCountryServicedResponse>;
+    /**
+     * @return OK
+     */
+    fieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
 }
 
 @Injectable({
@@ -1697,6 +1701,81 @@ export class AdminCountryClient implements IAdminCountryClient {
             let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    fieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto> {
+        let url = this.baseUrl + "/api/AdminCountry/field-labels/{countryId}";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processFieldLabels(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processFieldLabels(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
+        }));
+    }
+
+    protected processFieldLabels(response: HttpResponseBase): Observable<GetCountryFieldLabelsCountryFieldLabelsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetCountryFieldLabelsCountryFieldLabelsDto.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -22279,6 +22358,74 @@ export class GetAllTierConfigsResponse implements IGetAllTierConfigsResponse {
 
 export interface IGetAllTierConfigsResponse {
     tiers: TierConfigAdminDto[] | undefined;
+}
+
+export class GetCountryFieldLabelsCountryFieldLabelsDto implements IGetCountryFieldLabelsCountryFieldLabelsDto {
+    countryId!: string | undefined;
+    registrationNumberLabel!: string | undefined;
+    registrationNumberFormat!: string | undefined;
+    registrationNumberRequired!: boolean;
+    taxIdLabel!: string | undefined;
+    taxIdFormat!: string | undefined;
+    vatNumberLabel!: string | undefined;
+    vatNumberFormat!: string | undefined;
+    vatNumberRequired!: boolean;
+
+    constructor(data?: IGetCountryFieldLabelsCountryFieldLabelsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.registrationNumberLabel = Data["registrationNumberLabel"];
+            this.registrationNumberFormat = Data["registrationNumberFormat"];
+            this.registrationNumberRequired = Data["registrationNumberRequired"];
+            this.taxIdLabel = Data["taxIdLabel"];
+            this.taxIdFormat = Data["taxIdFormat"];
+            this.vatNumberLabel = Data["vatNumberLabel"];
+            this.vatNumberFormat = Data["vatNumberFormat"];
+            this.vatNumberRequired = Data["vatNumberRequired"];
+        }
+    }
+
+    static fromJS(data: any): GetCountryFieldLabelsCountryFieldLabelsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetCountryFieldLabelsCountryFieldLabelsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["registrationNumberLabel"] = this.registrationNumberLabel;
+        data["registrationNumberFormat"] = this.registrationNumberFormat;
+        data["registrationNumberRequired"] = this.registrationNumberRequired;
+        data["taxIdLabel"] = this.taxIdLabel;
+        data["taxIdFormat"] = this.taxIdFormat;
+        data["vatNumberLabel"] = this.vatNumberLabel;
+        data["vatNumberFormat"] = this.vatNumberFormat;
+        data["vatNumberRequired"] = this.vatNumberRequired;
+        return data;
+    }
+}
+
+export interface IGetCountryFieldLabelsCountryFieldLabelsDto {
+    countryId: string | undefined;
+    registrationNumberLabel: string | undefined;
+    registrationNumberFormat: string | undefined;
+    registrationNumberRequired: boolean;
+    taxIdLabel: string | undefined;
+    taxIdFormat: string | undefined;
+    vatNumberLabel: string | undefined;
+    vatNumberFormat: string | undefined;
+    vatNumberRequired: boolean;
 }
 
 export class GetDocumentVersionHistoryResponse implements IGetDocumentVersionHistoryResponse {

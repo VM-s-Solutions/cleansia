@@ -57,7 +57,10 @@
         <div class="form-grid">
           <div class="form-field">
             <cleansia-text-input
-              [label]="'pages.company_info.registration_number' | translate"
+              [label]="
+                fieldLabels()?.registrationNumberLabel ??
+                  ('pages.company_info.registration_number' | translate)
+              "
               formControlName="registrationNumber"
               [required]="true"
             />

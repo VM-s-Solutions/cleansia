@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -9,6 +10,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -21,6 +23,7 @@ import {
   ICleansiaSelectOption,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { CountryFieldLabelsService } from '@cleansia/admin-services';
 import { CompanyInfoFormData, CompanyInfoFormFacade } from './company-info-form.facade';
 
 @Component({
@@ -47,6 +50,11 @@ export class CompanyInfoFormComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
   protected readonly facade = inject(CompanyInfoFormFacade);
+  private readonly countryFieldLabels = inject(CountryFieldLabelsService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** What the SELECTED country calls its registration number; null falls back to neutral wording. */
+  protected readonly fieldLabels = this.countryFieldLabels.labels;
 
   isEditMode = false;
   companyInfoId: string | null = null;
@@ -95,6 +103,13 @@ export class CompanyInfoFormComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.facade.loadCountries();
+
+    // The label follows the SELECT, not the loaded record: an admin creating a company picks the
+    // country first, and the field beneath it should stop saying the wrong thing immediately.
+    this.countryFieldLabels.load(this.form.controls.countryId.value || null);
+    this.form.controls.countryId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => this.countryFieldLabels.load(countryId || null));
 
     const routeData = this.route.snapshot.data;
     this.isEditMode = routeData['mode'] === 'edit';

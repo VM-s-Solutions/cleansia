@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,6 +11,7 @@ import {
   TimeRange,
 } from '@cleansia/admin-services';
 import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
+import { CountryFieldLabelsService } from '@cleansia/admin-services';
 import {
   CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
@@ -88,6 +89,23 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly countryFieldLabels = inject(CountryFieldLabelsService);
+
+  /**
+   * What THIS employee's country calls its business identifiers. Null falls back to the neutral
+   * translation — the admin console used to name the Czech IČO regardless of the country, which is
+   * the one thing the label is not about.
+   */
+  protected readonly fieldLabels = this.countryFieldLabels.labels;
+
+  /**
+   * Follows the loaded employee rather than the edit action: the read-only view shows these labels
+   * too, so loading them only when a section is opened for editing would leave the summary naming
+   * the wrong country's identifier.
+   */
+  private readonly syncFieldLabels = effect(() => {
+    this.countryFieldLabels.load(this.facade.employee()?.countryId);
+  });
 
   protected readonly Policy = Policy;
 

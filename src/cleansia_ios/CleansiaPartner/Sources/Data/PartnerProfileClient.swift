@@ -38,6 +38,7 @@ protocol PartnerProfileClient: AnyObject {
     func requestDocumentDeletion(documentId: String, reason: String) async -> ApiResult<Void>
 
     func getServicedCountries() async -> ApiResult<[CountryListItem]>
+    func getServiceCities(countryId: String?) async -> ApiResult<[ServiceCityDto]>
     func getAllCountries() async -> ApiResult<[CountryListItem]>
 
     /// What a country calls its registration number and VAT id. `nil` when we hold no configuration
@@ -149,6 +150,12 @@ final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
     func getServicedCountries() async -> ApiResult<[CountryListItem]> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerCountryAPI.countryGetServiced()
+        }
+    }
+
+    func getServiceCities(countryId: String?) async -> ApiResult<[ServiceCityDto]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerServiceCityAPI.serviceCityGetServiceCities(countryId: countryId)
         }
     }
 

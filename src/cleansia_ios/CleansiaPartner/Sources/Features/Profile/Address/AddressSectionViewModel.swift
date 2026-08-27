@@ -3,14 +3,16 @@ import CleansiaPartnerApi
 import Combine
 import Foundation
 
-/// Country-level slice of the Android `ServiceAreaStatus` tri-state law:
-/// UNKNOWN (couldn't check) is a distinct state from "not serviced" and must
-/// never be rendered — or acted on — as a block. The city-level states
-/// (in/outside serviced city) need a serviced-cities endpoint the partner
-/// client doesn't expose yet.
+/// The Android `ServiceAreaStatus` law, now in full.
+///
+/// UNKNOWN (could not check) is a distinct state from "not serviced" and must never be
+/// rendered — or acted on — as a refusal. The two city states used to be missing here
+/// because the partner client did not expose the serviced-cities endpoint; it does now,
+/// so the four cases match `AddressSectionViewModel.kt` one for one.
 enum ServiceAreaStatus: Equatable {
     case unknown
-    case countryServiced
+    case inServicedCity(String)
+    case outsideServicedCity
     case countryNotServiced
 }
 
@@ -64,8 +66,8 @@ final class AddressSectionViewModel: ViewModel {
         case let .success(employee):
             employeeId = employee.id ?? ""
             picked = reconstructAddress(from: employee)
-            refreshServiceAreaStatus()
             state = .loaded(())
+            await refreshServiceAreaStatus()
         case let .failure(error):
             state = .error(error)
             snackbar.showError(localizer.message(for: error))
@@ -74,7 +76,11 @@ final class AddressSectionViewModel: ViewModel {
 
     func applyPick(_ address: GeocodedAddress) {
         picked = address
-        refreshServiceAreaStatus()
+        // Reset first, then check: the city lookup is a round trip, and leaving the
+        // previous address's verdict on screen while it runs would show the wrong answer
+        // about the new one. Android resets to Unknown on the same line.
+        serviceAreaStatus = .unknown
+        Task { await refreshServiceAreaStatus() }
     }
 
     func save() async {
@@ -153,7 +159,10 @@ final class AddressSectionViewModel: ViewModel {
         return countries?.first { IsoCountryCodes.toAlpha2($0.isoCode) == code }?.id
     }
 
-    private func refreshServiceAreaStatus() {
+    /// Country first, then city — the same order, and the same three answers per step, as
+    /// `AddressSectionViewModel.kt`. A nil from `isCityServiced` means the lookup failed,
+    /// which is UNKNOWN and never a refusal.
+    private func refreshServiceAreaStatus() async {
         guard let picked, let countries else {
             serviceAreaStatus = .unknown
             return
@@ -163,8 +172,21 @@ final class AddressSectionViewModel: ViewModel {
             serviceAreaStatus = .unknown
             return
         }
-        serviceAreaStatus = countries.contains { IsoCountryCodes.toAlpha2($0.isoCode) == code }
-            ? .countryServiced
-            : .countryNotServiced
+        guard let country = countries.first(
+            where: { IsoCountryCodes.toAlpha2($0.isoCode) == code }
+        ) else {
+            serviceAreaStatus = .countryNotServiced
+            return
+        }
+        let city = picked.city
+        guard !city.isBlank else {
+            serviceAreaStatus = .unknown
+            return
+        }
+        switch await serviceArea.isCityServiced(countryId: country.id, cityName: city) {
+        case .some(true): serviceAreaStatus = .inServicedCity(city)
+        case .some(false): serviceAreaStatus = .outsideServicedCity
+        case .none: serviceAreaStatus = .unknown
+        }
     }
 }

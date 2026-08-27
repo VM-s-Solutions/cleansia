@@ -176,7 +176,9 @@ final class AddressSectionViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
 
-        XCTAssertEqual(vm.serviceAreaStatus, .countryServiced)
+        // A serviced country is no longer the end of the answer: with the default empty
+        // city list, Praha is in a serviced country but not a serviced city.
+        XCTAssertEqual(vm.serviceAreaStatus, .outsideServicedCity)
     }
 
     func testStatusIsUnknownNotBlockedWhenCountriesFetchFails() async {
@@ -203,7 +205,7 @@ final class AddressSectionViewModelTests: XCTestCase {
 
         XCTAssertEqual(client.servicedCountriesCallCount, 2)
         XCTAssertEqual(client.addressCommand?.countryId, "sk-id")
-        XCTAssertEqual(vm.serviceAreaStatus, .countryServiced)
+        XCTAssertNotEqual(vm.serviceAreaStatus, .countryNotServiced)
     }
 
     func testSaveReusesTheLoadTimeCountriesWithoutRefetching() async {

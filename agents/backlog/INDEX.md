@@ -45,7 +45,7 @@
 | T-0619 | Customer apps: cancel-order button unreadable when disabled | S | `todo` | — | — |
 | T-0620 | Android core: terms-and-agreement checkbox line is not aligned | S | `todo` | — | — |
 | T-0621 | Partner iOS: new-order address placeholder centring | S | `done` | — | c4acb926 |
-| T-0622 | Partner iOS: wire the **existing** avatar control into the onboarding Personal step — 4 lines — but `PersonalSectionView.swift:7` records a deliberate ruling that the photo is NOT part of onboarding | S | `todo` | — | — |
+| T-0622 | Partner iOS: wire the existing avatar control into the onboarding Personal step — **owner overturned the ruling 2026-08-27: match Android** | S | `todo` | — | — |
 | T-0623 | Partner Android: unwanted whitespace at the top | S | `done` | — | 5c70922f |
 | T-0624 | Customer apps: adopt partner's Logout / Delete-account rows — **iOS order is already correct**, Android has them inverted and left-aligned | M | `todo` | — | — |
 | T-0625 | Partner onboarding mascots: use different ones (iOS) | S | `todo` | — | — |
@@ -72,7 +72,7 @@
 | T-0645 | Partner iOS: the address section has **no city-level serviceability at all** and renders 1 of its states — Android has 4 — **needs a call on how many to port** | M | `todo` | — | — |
 | T-0646 | Customer orders-list card: remove the status-coloured left stripe — **iOS and Android both have it**, nothing tests it | S | `todo` | — | — |
 | T-0647 | Customer Android: pull-to-refresh on **HomeTab and RecurringBookings only** — the other 8 screens already have it — needs a call on what drives isRefreshing on Home | S | `todo` | — | — |
-| T-0648 | iOS: the read-only email field **is** disabled but renders identically to an editable one — fix lands in `CleansiaTextField`, used by nearly every form in both apps | M | `todo` | — | — |
+| T-0648 | iOS: render a disabled field as **greyed, matching Android** — fix lands in `CleansiaTextField`, used by nearly every form in both apps | M | `todo` | — | — |
 | T-0649 | Partner Identification: give Self-employed / Legal entity the Plus page's **animated sliding indicator** (neither page actually swipes) — only `legalEntityName` differs between the two | M | `todo` | — | — |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: add the always-visible **Recurring bookings** row to the profile tab — the destination already renders the Plus upsell, only the entry point is missing | S | `todo` | — | — |

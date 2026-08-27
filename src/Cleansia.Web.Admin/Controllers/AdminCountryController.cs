@@ -108,5 +108,25 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
         return HandleResult<SetCountryServiced.Response>(result);
     }
 
+    /// <summary>
+    /// What this country calls its business identifiers, and whether it demands them.
+    ///
+    /// <para>CountryConfiguration has carried these since it was seeded, and no endpoint on THIS host
+    /// returned them — so the admin app hardcoded the Czech "IČO" in its own translation files, which
+    /// an admin editing a Polish company then read. The label belongs to the country, not to the
+    /// app's language. The partner host has exposed the same handler since #228.</para>
+    /// </summary>
+    [HttpGet("field-labels/{countryId}")]
+    [Permission(Policy.CanViewCountries)]
+    [ProducesResponseType(typeof(GetCountryFieldLabels.CountryFieldLabelsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetFieldLabels(string countryId, CancellationToken cancellationToken)
+    {
+        var labels = await Mediator.Send(new GetCountryFieldLabels.Request(countryId), cancellationToken);
+        return labels is null ? NotFound() : Ok(labels);
+    }
+
     public record SetCountryServicedRequest(bool IsServiced);
 }

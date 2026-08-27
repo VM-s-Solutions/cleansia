@@ -27,6 +27,25 @@ seed repopulates it (`sql-scripts/insert_seed_data.sql`).
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+### MS-8 — Regenerate the admin client for the country field labels — **owner**
+
+`AdminCountryController.GetFieldLabels` now exposes `GET api/AdminCountry/field-labels/{countryId}`,
+returning the same `CountryFieldLabelsDto` the partner host has served since #228. The admin Angular
+app cannot call it until the generated client carries the method.
+
+**Action:** run `npm run generate-admin-client` from `src/Cleansia.App`, with the Admin API running.
+
+**Why the backend half shipped alone.** The audit that filed T-0615 recorded it as "needs an NSwag
+regen". It did not — the admin host had **no field-labels route at all**, so regenerating would have
+produced nothing. The route had to exist first, and now it does.
+
+**What stays hardcoded until then.** The Czech "IČO" is baked into the admin translation files in
+three key groups, which an admin editing a Polish or Ukrainian company reads today:
+`companyInfo.registrationNumber` (`en.json:16`), `pages.companyInfo.tax_id` and
+`.registration_number` (`:327`, `:331`), and the employee-detail group at `:1330`. Once the client
+method exists those read from the country's own configuration, the way the partner app already
+does, and the hardcoded strings become neutral wording rather than a Czech term.
+
 ### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **owner**
 
 `main.bicep` now declares the documentation Static Web App (`swa-cleansia-docs-weu-dev`) under

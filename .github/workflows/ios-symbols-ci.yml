@@ -54,6 +54,10 @@ concurrency:
 jobs:
   symbols:
     runs-on: ubuntu-latest
+
+    # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
+    # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.
+    timeout-minutes: 60
     name: Symbols resolve and switches stay exhaustive
 
     steps:

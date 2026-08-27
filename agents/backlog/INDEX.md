@@ -46,17 +46,17 @@
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |
 | T-0617 | Customer iOS: swipe-to-return on order detail | M | `done` | — | 7ad5bdfc |
 | T-0618 | Cancelled orders show the real map again — the status guard is out of all four mobile apps | M | `done` | — | #230 |
-| T-0619 | Customer apps: cancel-order button unreadable when disabled | S | `todo` | — | — |
-| T-0620 | Android core: terms-and-agreement checkbox line is not aligned | S | `todo` | — | — |
+| T-0619 | Customer apps: the disabled cancel button mutes to a neutral instead of fading a red fill under a white label | S | `done` | — | #232 |
+| T-0620 | Android core: the consent checkbox glyph sits at the form's leading edge | S | `done` | — | #232 |
 | T-0621 | Partner iOS: new-order address placeholder centring | S | `done` | — | c4acb926 |
 | T-0622 | Partner iOS: the profile photo reaches the onboarding Personal step | S | `done` | — | #231 |
 | T-0623 | Partner Android: unwanted whitespace at the top | S | `done` | — | 5c70922f |
 | T-0624 | Customer apps: the Logout / Delete-account rows follow the partner app | M | `done` | — | #231 |
-| T-0625 | Partner onboarding mascots: use different ones (iOS) | S | `todo` | — | — |
-| T-0626 | Sign out: confirm before logging out — 3 places left (admin unauthorized page, partner splash-unreachable on iOS + Android) | S | `todo` | — | — |
+| T-0625 | Partner iOS onboarding: the two slides use different mascots, matching Android | S | `done` | — | #232 |
+| T-0626 | Sign out: the admin unauthorized page confirms; the two partner splash escapes **never sign out at all** and need a decision before a confirm can honestly be added | S | `todo` | — | — |
 | T-0627 | Customer web: serviceability banner fires on a serviced city | M | `todo` | — | — |
 | T-0628 | Customer mobile: serviceability at address selection — iOS booking review pane + saved-address path on both | M | `todo` | — | — |
-| T-0629 | i18n policy: **ellipsis is allowed** on a single-line control — ratify Android's shipped position and port it to iOS and web | M | `todo` | — | — |
+| T-0629 | i18n: a label outgrowing a single-line control truncates — ported to iOS and web, written into conventions.md | M | `done` | — | #232 |
 | T-0630 | Gate the **admin console** behind the same invitation block the docs site uses (docs + admin, not all four) | M | `todo` | — | — |
 | T-0631 | Partner Android: camera capture for job photos and the avatar, CAMERA restored with its uses-feature | M | `done` | — | #231 |
 | T-0632 | SendNewJobsDigest fires, but **irregularly — 8 invocations in 30 days, not hourly**; the host looks to be sleeping | M | `todo` | — | — |
@@ -64,21 +64,23 @@
 | T-0634 | Log Analytics is required by workspace-based App Insights — closed, not a defect | S | `done` | — | d5b020bf |
 | T-0635 | Azure cost: the dev cut was designed, measured and committed on 2026-08-11 — owner closed it without resolving further | S | `done` | — | d5b020bf |
 | T-0636 | Partner DEV API returned 500 from /health for 4 minutes after deploy | S | `todo` | — | — |
-| T-0637 | Warm-up gate cannot tell 5xx from cold start and discards the body | S | `todo` | — | — |
+| T-0637 | Warm-up probe: classifies the status and surfaces the body; prod fails fast, dev keeps its budget | S | `done` | — | #232 |
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
-| T-0639 | refresh-mobile-spec.sh throws on the owner's machine | S | `todo` | — | — |
+| T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
 | T-0640 | Many .cs files show as modified with no content change | S | `todo` | — | — |
 | T-0641 | Repo stays **public for now** — revisit when the owner's Actions limit resets | M | `todo` | — | — |
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
-| T-0643 | Root README: six stale facts, not a rewrite (~180 of 203 lines verified accurate) | S | `todo` | — | — |
-| T-0644 | iOS: enum L10n.Profile is at 393 against a 400 type_body_length cap | S | `todo` | — | — |
+| T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |
+| T-0644 | iOS: enum L10n.Profile back to 342 against the 400 cap | S | `done` | — | #232 |
 
 | T-0645 | Partner iOS: the address step checks the city and shows all four service-area verdicts | M | `done` | — | #231 |
 | T-0646 | Customer apps: the status-coloured left stripe is off the orders-list card | S | `done` | — | #230 |
-| T-0647 | Customer Android: pull-to-refresh on **HomeTab and RecurringBookings only** — the other 8 screens already have it — needs a call on what drives isRefreshing on Home | S | `todo` | — | — |
+| T-0647 | Customer Android: pull-to-refresh on Home and Recurring bookings | S | `done` | — | #232 |
 | T-0648 | iOS: a disabled field looks disabled and stays disabled — four editability escapes closed | M | `done` | — | #231 |
 | T-0649 | Partner Identification: Self-employed / Legal entity slides on a spring, both platforms | M | `done` | — | #231 |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: the profile tab reaches recurring bookings, so the Plus upsell is reachable | S | `done` | — | #230 |
 
-*Next id: **T-0652**.*
+| T-0652 | Partner mobile: the splash-unreachable **Logout** only navigates — it never clears the session, on either platform | S | `todo` | — | — |
+
+*Next id: **T-0653**.*

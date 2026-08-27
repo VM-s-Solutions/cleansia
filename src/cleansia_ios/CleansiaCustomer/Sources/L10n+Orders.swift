@@ -3,6 +3,12 @@ import Foundation
 
 extension L10n {
     enum Orders {
+        /// Shown over the backdrop when an order carries no usable coordinate — an order older
+        /// than the geocoder, or one whose geocode failed. Worded the same as the Android twin.
+        static var mapUnavailable: String {
+            localized("order_detail_map_unavailable")
+        }
+
         static func statusLabel(_ status: OrderStatus) -> String {
             switch status {
             case ._0: localized("orders_status_new")

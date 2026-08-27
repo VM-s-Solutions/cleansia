@@ -28,7 +28,13 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         }
 
         var stopwatch = Stopwatch.StartNew();
-        var requestId = Guid.NewGuid().ToString();
+
+        // The framework's own id, not a fresh Guid. This middleware sits OUTSIDE
+        // UseExceptionHandler on purpose — that ordering is what makes an oversize body answer
+        // 413 rather than 500 — so its catch arm never sees the exception and the stack trace is
+        // logged separately by the handler. Both lines carry TraceIdentifier, so sharing it is
+        // what lets a reader join them; a self-minted Guid appeared on neither.
+        var requestId = context.TraceIdentifier;
 
         await LogRequestAsync(context, requestId);
 

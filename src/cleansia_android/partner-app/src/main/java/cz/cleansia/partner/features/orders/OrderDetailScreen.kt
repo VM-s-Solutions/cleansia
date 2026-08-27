@@ -273,7 +273,7 @@ private fun OrderDetailBottomSheetLayout(
     val darkTheme = isSystemInDarkTheme()
 
     val location = order.orderLocation()
-    val mapPoint = location.mapPoint(status)
+    val mapPoint = location.mapPoint()
 
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     // Sheet peek = 75% of screen so the map shrinks to ~25% — just

@@ -2,13 +2,14 @@ import CleansiaCore
 import CleansiaCustomerApi
 import SwiftUI
 
-/// The backdrop's one decision, matching the partner screen's `canShowMap`: a
-/// Completed order keeps its map (the cleaning happened there), a Cancelled one
-/// loses it because the visit never happened.
+/// The backdrop's one decision, matching the partner screen: is there a coordinate to point at?
+///
+/// Status used to enter into it — a Cancelled order was forced to nil because the visit never
+/// happened. The job still had a place, and the placeholder read as a map that had failed to
+/// load rather than as a decision. Owner ruling, 2026-08-27.
 enum OrderDetailMap {
     static func coordinate(for order: CustomerOrderDetail) -> Coordinate? {
-        guard order.status != ._6,
-              let latitude = order.address?.latitude,
+        guard let latitude = order.address?.latitude,
               let longitude = order.address?.longitude
         else { return nil }
         return Coordinate(latitude: latitude, longitude: longitude)
@@ -24,26 +25,22 @@ struct OrderDetailMapBackdrop: View {
             mapProvider.fullBleedMap(coordinate: coordinate)
                 .accessibilityHidden(true)
         } else {
-            // Withholding the map is deliberate (see above), but a bare full-bleed gradient is
-            // indistinguishable from a map that failed to load — it was reported as exactly that. The
-            // status says what the empty space MEANS, so the absence reads as a decision.
+            // A bare full-bleed gradient is indistinguishable from a map that failed to load —
+            // it was reported as exactly that — so the empty space has to say what it means.
             //
-            // No new copy: L10n.Orders.statusLabel is the same localised string the sheet already
-            // shows below, in all five languages.
-            //
-            // Called directly rather than through OrderStatusPresentation.label, which takes the
-            // generated `Code` wrapper — `CustomerOrderDetail.status` is already an `OrderStatus?`,
-            // so routing through it would mean wrapping a value that is one conditional away from
-            // being exactly what the localiser wants.
+            // It used to say the STATUS, because a cancelled order was the only way to get here
+            // and the status was the explanation. Cancelled orders keep their map now (owner
+            // ruling 2026-08-27), so the only remaining way here is an order with no usable
+            // coordinate, and the status would explain nothing. Same sentence as Android.
             ZStack {
                 BrandGradient.blue.linearGradient
                 VStack(spacing: Spacing.xs) {
                     Image(systemName: "mappin.slash")
                         .font(.system(size: 28, weight: .light))
-                    if let status = order.status {
-                        Text(L10n.Orders.statusLabel(status))
-                            .font(CleansiaTypography.labelLarge)
-                    }
+                    Text(L10n.Orders.mapUnavailable)
+                        .font(CleansiaTypography.labelLarge)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.l)
                 }
                 .foregroundColor(CleansiaColors.onPrimary.opacity(0.75))
             }

@@ -58,12 +58,12 @@ final class OrderDetailShellTests: XCTestCase {
     }
 
     func testMapSurvivesCompletion() {
-        // The cleaning happened there; only a visit that never happened loses it.
         XCTAssertNotNil(OrderDetailMap.coordinate(for: orderAt(latitude: 50, longitude: 14, status: ._5)))
     }
 
-    func testCancelledOrderHasNoMap() {
-        XCTAssertNil(OrderDetailMap.coordinate(for: orderAt(latitude: 50, longitude: 14, status: ._6)))
+    /// Owner ruling 2026-08-27, reversing 2026-08-24. Only a missing coordinate hides the map.
+    func testCancelledOrderKeepsItsMap() {
+        XCTAssertNotNil(OrderDetailMap.coordinate(for: orderAt(latitude: 50, longitude: 14, status: ._6)))
     }
 
     func testMissingEitherCoordinateHasNoMap() {

@@ -434,7 +434,6 @@ private fun OrderDetailMapLayout(
     val showMap = canShowOrderMap(
         latitude = order.address?.latitude,
         longitude = order.address?.longitude,
-        status = status,
     )
     // Camera padding is held at the resting anchor, not the live sheet
     // position — see OrderMapBackdrop.

@@ -46,7 +46,7 @@ final class OrderLocationPresentationTests: XCTestCase {
     func testBrowsingCleanerGetsNoMapAndNoNavigate() {
         let location = OrderLocation(browsing)
         XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint(status: ._2))
+        XCTAssertNil(location.mapPoint())
     }
 
     func testEntitledReaderKeepsTheStreetAddressTheMapAndNavigate() {
@@ -54,30 +54,30 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(location, .precise(.init(line: preciseLine, coordinate: preciseCoordinate)))
         XCTAssertEqual(location.navigationTarget?.line, preciseLine)
         XCTAssertEqual(location.navigationTarget?.coordinate, preciseCoordinate)
-        XCTAssertEqual(location.mapPoint(status: ._2), preciseCoordinate)
+        XCTAssertEqual(location.mapPoint(), preciseCoordinate)
     }
 
-    /// The mirror of the browsing case, and the reason this change cannot become "hide it for
-    /// everyone": the entitled reader's line, Navigate target and map point are what they were
-    /// in every status the wire can carry, Cancelled excepted.
+    /// The mirror of the browsing case: the entitled reader's line, Navigate target and map
+    /// point are what they were in EVERY status the wire can carry — no exceptions now that
+    /// Cancelled is no longer one. Status is not an input to any of the three.
     func testEntitledReaderSeesTheSameThreeFactsInEveryStatus() {
         for status in OrderStatus.allCases {
             let location = OrderLocation(entitled)
             XCTAssertEqual(location.line, preciseLine, "\(status) dropped the street address")
             XCTAssertEqual(location.navigationTarget?.line, preciseLine, "\(status) dropped Navigate")
             XCTAssertEqual(
-                location.mapPoint(status: status),
-                status == ._6 ? nil : preciseCoordinate,
+                location.mapPoint(),
+                preciseCoordinate,
                 "\(status) resolved the wrong map point"
             )
         }
     }
 
-    /// Predates this change and must survive it: the visit never happened, so a cancelled order
-    /// drops the map backdrop while keeping every other fact.
-    func testCancelledOrderShowsNoMapEvenForAnEntitledReader() {
+    /// Owner ruling 2026-08-27, reversing 2026-08-24: a cancelled job still had a place, and
+    /// withholding the map read as a map that had failed to load rather than as a decision.
+    func testCancelledOrderKeepsItsMapForAnEntitledReader() {
         let location = OrderLocation(entitled)
-        XCTAssertNil(location.mapPoint(status: ._6))
+        XCTAssertEqual(location.mapPoint(), preciseCoordinate)
         XCTAssertEqual(location.navigationTarget?.line, preciseLine)
     }
 
@@ -90,7 +90,7 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(location.line, preciseLine)
         XCTAssertEqual(location.navigationTarget?.line, preciseLine)
         XCTAssertNil(location.navigationTarget?.coordinate)
-        XCTAssertNil(location.mapPoint(status: ._2))
+        XCTAssertNil(location.mapPoint())
     }
 
     /// `BuildApproximateAddress` returns an empty string, not null, for an order with no city —
@@ -100,14 +100,14 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(location, .none)
         XCTAssertNil(location.line)
         XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint(status: ._2))
+        XCTAssertNil(location.mapPoint())
     }
 
     func testAddressRecordWithNoUsableTextFallsBackToTheZone() {
         let location = OrderLocation(item(address: OrderAddress(latitude: 50.0755, longitude: 14.4378)))
         XCTAssertEqual(location, .approximate("Praha · 120"))
         XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint(status: ._2))
+        XCTAssertNil(location.mapPoint())
     }
 
     func testNoAddressAndNoZoneRendersNothing() {

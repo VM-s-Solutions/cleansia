@@ -41,13 +41,13 @@
 | T-0615 | Admin web: registration-number label — the admin host has **no field-labels route at all**, so a regen alone yields nothing; needs a backend action first, then `manual_step: nswag-regen` | M | `todo` | — | — |
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |
 | T-0617 | Customer iOS: swipe-to-return on order detail | M | `done` | — | 7ad5bdfc |
-| T-0618 | Cancelled orders must show the **actual location**, not a placeholder — the 2026-08-24 suppression was the wrong call and is reverted | M | `todo` | — | — |
+| T-0618 | Cancelled orders: show the real map — the status guard is in **all four** mobile apps, plus 6 test blocks that assert the suppression by name | M | `todo` | — | — |
 | T-0619 | Customer apps: cancel-order button unreadable when disabled | S | `todo` | — | — |
 | T-0620 | Android core: terms-and-agreement checkbox line is not aligned | S | `todo` | — | — |
 | T-0621 | Partner iOS: new-order address placeholder centring | S | `done` | — | c4acb926 |
-| T-0622 | Partner iOS onboarding: no avatar / photo-upload control at all — Android has one | S | `todo` | — | — |
+| T-0622 | Partner iOS: wire the **existing** avatar control into the onboarding Personal step — 4 lines — but `PersonalSectionView.swift:7` records a deliberate ruling that the photo is NOT part of onboarding | S | `todo` | — | — |
 | T-0623 | Partner Android: unwanted whitespace at the top | S | `done` | — | 5c70922f |
-| T-0624 | Customer apps: match the partner app's Logout / Delete-account design, order and centring | S | `todo` | — | — |
+| T-0624 | Customer apps: adopt partner's Logout / Delete-account rows — **iOS order is already correct**, Android has them inverted and left-aligned | M | `todo` | — | — |
 | T-0625 | Partner onboarding mascots: use different ones (iOS) | S | `todo` | — | — |
 | T-0626 | Sign out: confirm before logging out — 3 places left (admin unauthorized page, partner splash-unreachable on iOS + Android) | S | `todo` | — | — |
 | T-0627 | Customer web: serviceability banner fires on a serviced city | M | `todo` | — | — |
@@ -69,11 +69,11 @@
 | T-0643 | Root README: six stale facts, not a rewrite (~180 of 203 lines verified accurate) | S | `todo` | — | — |
 | T-0644 | iOS: enum L10n.Profile is at 393 against a 400 type_body_length cap | S | `todo` | — | — |
 
-| T-0645 | Partner iOS: the Confirm-address step shows no serviceability warning — Android does | M | `todo` | — | — |
-| T-0646 | Customer iOS: remove the coloured left stripe from the order-overview card | S | `todo` | — | — |
-| T-0647 | Android apps: no pull-to-refresh anywhere — iOS has `.refreshable` | M | `todo` | — | — |
-| T-0648 | Partner iOS: the email field looks editable, and focus surviving a background/foreground cycle appears to let it be edited | S | `todo` | — | — |
-| T-0649 | Partner apps: make Self-employed / Legal entity a swipeable segmented control, like the Cleansia Plus page | M | `todo` | — | — |
+| T-0645 | Partner iOS: the address section has **no city-level serviceability at all** and renders 1 of its states — Android has 4 — **needs a call on how many to port** | M | `todo` | — | — |
+| T-0646 | Customer orders-list card: remove the status-coloured left stripe — **iOS and Android both have it**, nothing tests it | S | `todo` | — | — |
+| T-0647 | Customer Android: pull-to-refresh on **HomeTab and RecurringBookings only** — the other 8 screens already have it — needs a call on what drives isRefreshing on Home | S | `todo` | — | — |
+| T-0648 | iOS: the read-only email field **is** disabled but renders identically to an editable one — fix lands in `CleansiaTextField`, used by nearly every form in both apps | M | `todo` | — | — |
+| T-0649 | Partner Identification: give Self-employed / Legal entity the Plus page's **animated sliding indicator** (neither page actually swipes) — only `legalEntityName` differs between the two | M | `todo` | — | — |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: add the always-visible **Recurring bookings** row to the profile tab — the destination already renders the Plus upsell, only the entry point is missing | S | `todo` | — | — |
 

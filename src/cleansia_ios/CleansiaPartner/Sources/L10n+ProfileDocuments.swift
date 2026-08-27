@@ -1,5 +1,8 @@
 import Foundation
 
+/// The overflow extension for `L10n.Profile` — document keys first, and since then anything else
+/// that would push the enum over the cap.
+///
 /// Split out of `L10n+Profile.swift`. `enum L10n.Profile` had reached 435 body lines against
 /// SwiftLint's 400-line `type_body_length` cap, and `--strict` makes that warning fatal — an
 /// EXTENSION body is not measured by that rule, which is why `L10n+OrderActions.swift` and the
@@ -13,6 +16,37 @@ import Foundation
 /// form resolves there only because `enum Profile` is lexically nested inside `extension L10n { }`,
 /// which this file is not.
 extension L10n.Profile {
+    /// Spoken by VoiceOver after the section name. Four medallions otherwise announce as four
+    /// identical controls with nothing saying which is finished or which you are on.
+    static var onboardingStepStateCurrent: String {
+        L10n.localized("onboarding_step_state_current")
+    }
+
+    static var onboardingStepStateDone: String {
+        L10n.localized("onboarding_step_state_done")
+    }
+
+    static var onboardingStepStateUpcoming: String {
+        L10n.localized("onboarding_step_state_upcoming")
+    }
+
+    /// The onboarding chain's forward CTA. Deliberately not `saveAndContinue`: once a Back button
+    /// sits beside it the row is half-width, and "Сохранить и продолжить" is 22 characters against
+    /// "Далее"'s 5. The key already existed in all five locales — the pre-auth carousel uses it.
+    static var next: String {
+        L10n.localized("onboarding_next")
+    }
+
+    static var back: String {
+        L10n.localized("back")
+    }
+
+    /// Spoken by VoiceOver on a reachable step dot. The visible label names the SECTION; without a
+    /// hint nothing says the dot is a control or what tapping it does.
+    static var onboardingStepJumpHint: String {
+        L10n.localized("onboarding_step_jump_hint")
+    }
+
     /// What the cleaner's country asks for, whether or not any of it is uploaded. The screen
     /// used to open on an empty box that named nothing, so the first step of onboarding was
     /// contacting support to ask which papers we wanted.

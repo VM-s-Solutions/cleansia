@@ -9,7 +9,6 @@
     <string name="retry">Skúsiť znova</string>
     <string name="cancel">Zrušiť</string>
     <string name="save">Uložiť</string>
-    <string name="save_and_continue">Uložiť a pokračovať</string>
     <!-- Onboarding chain -->
     <string name="onboarding_step_progress">Krok %1$d z %2$d</string>
     <string name="onboarding_header_subtitle">Dokončiť profil</string>
@@ -17,6 +16,9 @@
     <string name="onboarding_step_address">Adresa</string>
     <string name="onboarding_step_identification">Identita</string>
     <string name="onboarding_step_bank">Banka</string>
+    <string name="onboarding_step_state_current">aktuálny krok</string>
+    <string name="onboarding_step_state_done">hotovo</string>
+    <string name="onboarding_step_state_upcoming">nezačaté</string>
     <string name="saving">Ukladanie…</string>
     <string name="no_data">Nezadané</string>
     <string name="delete">Odstrániť</string>

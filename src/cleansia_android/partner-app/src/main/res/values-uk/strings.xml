@@ -9,7 +9,6 @@
     <string name="retry">Повторити</string>
     <string name="cancel">Скасувати</string>
     <string name="save">Зберегти</string>
-    <string name="save_and_continue">Зберегти й продовжити</string>
     <!-- Onboarding chain -->
     <string name="onboarding_step_progress">Крок %1$d з %2$d</string>
     <string name="onboarding_header_subtitle">Заповнення профілю</string>
@@ -17,6 +16,9 @@
     <string name="onboarding_step_address">Адреса</string>
     <string name="onboarding_step_identification">Особа</string>
     <string name="onboarding_step_bank">Банк</string>
+    <string name="onboarding_step_state_current">поточний крок</string>
+    <string name="onboarding_step_state_done">завершено</string>
+    <string name="onboarding_step_state_upcoming">не розпочато</string>
     <string name="saving">Збереження…</string>
     <string name="no_data">Не вказано</string>
     <string name="delete">Видалити</string>

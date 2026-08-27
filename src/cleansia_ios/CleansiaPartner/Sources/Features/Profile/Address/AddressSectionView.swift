@@ -41,6 +41,13 @@ struct AddressSectionView: View {
         return false
     }
 
+    /// Back is offered only inside the chain, and only when a previous step exists. Reuses the same
+    /// jump the step dots added — replace, never push — so the two ways back behave identically.
+    private var onboardingBack: (() -> Void)? {
+        guard onboarding, let previous = ProfileSection.address.previous else { return nil }
+        return { chainVM.requestJump(to: previous) }
+    }
+
     var body: some View {
         SectionScaffold(
             title: L10n.Profile.address,
@@ -49,7 +56,11 @@ struct AddressSectionView: View {
             onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
-                    OnboardingChainHeader(currentSection: .address, state: chainVM.state)
+                    OnboardingChainHeader(
+                        currentSection: .address,
+                        state: chainVM.state,
+                        onSelect: { chainVM.requestJump(to: $0) }
+                    )
                 }
             },
             form: {
@@ -67,6 +78,7 @@ struct AddressSectionView: View {
                     onboarding: onboarding,
                     isSubmitting: vm.action.isSubmitting,
                     enabled: vm.canSave,
+                    onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
             }

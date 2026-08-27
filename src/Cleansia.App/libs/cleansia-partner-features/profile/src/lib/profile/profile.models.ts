@@ -119,7 +119,6 @@ export class ProfileFormFactory {
         CustomValidators.fileSize(10),
         CustomValidators.fileCount(1, 10),
       ]),
-      availability: new FormControl<Record<string, TimeRange[]>>({}),
       consent: new FormControl(false, [Validators.requiredTrue]),
     });
   }
@@ -150,7 +149,6 @@ export class ProfileFormFactory {
       legalEntityName: employee.legalEntityName || undefined,
       emergencyName: employee.emergencyContactName || undefined,
       emergencyPhone: employee.emergencyContactPhone || undefined,
-      availability: (employee as any).availability || {},
     };
   }
 
@@ -195,21 +193,6 @@ export class ProfileFormFactory {
           ? new Date(formData.dateOfBirth)
           : new Date();
 
-    const availability: { [key: string]: UpdateEmployeeTimeRangeDto[] } | undefined =
-      formData.availability
-        ? Object.fromEntries(
-            Object.entries(formData.availability).map(([day, ranges]) => [
-              day,
-              ranges.map((r) => {
-                const range = new UpdateEmployeeTimeRangeDto();
-                range.start = r.start;
-                range.end = r.end;
-                return range;
-              }),
-            ])
-          )
-        : undefined;
-
     const command = new UpdateEmployeeCommand();
     command.employeeId = formData.employeeId;
     command.firstName = formData.firstName;
@@ -233,7 +216,10 @@ export class ProfileFormFactory {
     command.emergencyName = formData.emergencyName;
     command.emergencyPhone = formData.emergencyPhone;
     command.documents = documents;
-    command.availability = availability;
+    // availability is deliberately NOT set. This form never edited it — the module that pretended to
+    // was dead UI — and the real editor is the dedicated UpdateAvailability endpoint. Leaving the
+    // member absent is what tells the server "unchanged"; sending an empty map would clear the
+    // cleaner's schedule on every profile save. UpdateEmployee.cs guards the null side of that.
     command.consent = formData.consent ?? false;
 
     return command;

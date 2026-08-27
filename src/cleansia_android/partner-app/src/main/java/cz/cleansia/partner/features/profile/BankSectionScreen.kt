@@ -23,6 +23,11 @@ fun BankSectionScreen(
     onNavigateBack: () -> Unit,
     onSaved: () -> Unit,
     onboarding: Boolean = false,
+    /**
+     * Tapping a completed step dot in the onboarding header. Defaulted to a no-op because the same
+     * screen is reachable from the profile menu, where there is no chain to jump around in.
+     */
+    onJumpToSection: (cz.cleansia.partner.features.orders.ProfileSection) -> Unit = {},
     viewModel: BankSectionViewModel = hiltViewModel(),
     chainViewModel: OnboardingChainViewModel = hiltViewModel(),
 ) {
@@ -43,6 +48,7 @@ fun BankSectionScreen(
             OnboardingChainHeader(
                 currentSection = ProfileSection.Bank,
                 state = chainState,
+                onSelect = onJumpToSection,
             )
         }),
     ) {
@@ -116,11 +122,16 @@ fun BankSectionScreen(
         // Bank is the last step in the chain — Save returns to the lock,
         // so "Save and continue" would lie about there being more. Use
         // the plain "Save" label even in onboarding mode.
-        CleansiaPrimaryButton(
-            text = stringResource(R.string.save),
-            onClick = { viewModel.save() },
-            loading = saving,
+        SectionSaveRow(
+            primaryText = stringResource(R.string.save),
+            onSave = { viewModel.save() },
+            saving = saving,
             enabled = form.canSubmit && !saving,
+            onBack = onboardingBackFor(
+                cz.cleansia.partner.features.orders.ProfileSection.Bank,
+                onboarding,
+                onJumpToSection,
+            ),
         )
     }
 }

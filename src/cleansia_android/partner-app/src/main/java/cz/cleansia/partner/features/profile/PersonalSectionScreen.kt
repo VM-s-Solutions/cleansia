@@ -84,6 +84,11 @@ fun PersonalSectionScreen(
     onNavigateBack: () -> Unit,
     onSaved: () -> Unit,
     onboarding: Boolean = false,
+    /**
+     * Tapping a completed step dot in the onboarding header. Defaulted to a no-op because the same
+     * screen is reachable from the profile menu, where there is no chain to jump around in.
+     */
+    onJumpToSection: (cz.cleansia.partner.features.orders.ProfileSection) -> Unit = {},
     viewModel: PersonalSectionViewModel = hiltViewModel(),
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
@@ -109,6 +114,7 @@ fun PersonalSectionScreen(
                 cz.cleansia.partner.features.profile.OnboardingChainHeader(
                     currentSection = cz.cleansia.partner.features.orders.ProfileSection.Personal,
                     state = chainState,
+                    onSelect = onJumpToSection,
                 )
             }
         } else null,
@@ -165,12 +171,13 @@ fun PersonalSectionScreen(
 
             Spacer(Modifier.height(Spacing.L))
 
-            CleansiaPrimaryButton(
-                text = stringResource(
-                    if (onboarding) R.string.save_and_continue else R.string.save,
+            SectionSaveRow(
+                primaryText = stringResource(
+                    if (onboarding) R.string.onboarding_next else R.string.save,
                 ),
-                onClick = { viewModel.save() },
-                loading = saving,
+                onBack = onboardingBackFor(cz.cleansia.partner.features.orders.ProfileSection.Personal, onboarding, onJumpToSection),
+                onSave = { viewModel.save() },
+                saving = saving,
                 enabled = form.firstName.isNotBlank() && form.lastName.isNotBlank() && !saving,
             )
         },

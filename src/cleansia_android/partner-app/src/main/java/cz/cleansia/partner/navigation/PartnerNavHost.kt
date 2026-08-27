@@ -373,6 +373,7 @@ fun PartnerNavHost(navController: NavHostController) {
                     else navController.popBackStack()
                 },
                 onboarding = route.onboarding,
+                onJumpToSection = { chainVm.jumpTo(it, navController) },
                 chainViewModel = chainVm,
             )
         }
@@ -419,6 +420,7 @@ fun PartnerNavHost(navController: NavHostController) {
                     ] = null
                 },
                 onboarding = route.onboarding,
+                onJumpToSection = { chainVm.jumpTo(it, navController) },
                 chainViewModel = chainVm,
             )
         }
@@ -432,6 +434,7 @@ fun PartnerNavHost(navController: NavHostController) {
                     else navController.popBackStack()
                 },
                 onboarding = route.onboarding,
+                onJumpToSection = { chainVm.jumpTo(it, navController) },
                 chainViewModel = chainVm,
             )
         }
@@ -445,6 +448,7 @@ fun PartnerNavHost(navController: NavHostController) {
                     else navController.popBackStack()
                 },
                 onboarding = route.onboarding,
+                onJumpToSection = { chainVm.jumpTo(it, navController) },
                 chainViewModel = chainVm,
             )
         }

@@ -110,28 +110,25 @@ describe('ProfileFormFactory', () => {
       });
     });
 
-    it('serializes each availability slot as a start/end pair under its day', () => {
+    /// This form does not edit availability and must not appear to. The module that pretended to was
+    /// dead UI and is gone; the real editor is the dedicated UpdateAvailability endpoint.
+    ///
+    /// The assertion is ABSENCE, not emptiness, and the difference is a cleaner's working week:
+    /// UpdateEmployee.cs treats a null availability as "unchanged" and an empty map as "clear it".
+    /// If this ever starts sending `{}`, every profile save silently wipes the schedule.
+    it('does not send availability at all, so the server leaves the schedule alone', () => {
       const command = ProfileFormFactory.createUpdateCommand(
         {
           ...completeFormValue,
           availability: {
             Monday: [{ start: '08:00', end: '12:00' }],
-            Friday: [
-              { start: '09:00', end: '11:00' },
-              { start: '13:00', end: '17:30' },
-            ],
           },
-        },
+        } as never,
         []
       );
 
-      expect(command.toJSON().availability).toEqual({
-        Monday: [{ start: '08:00', end: '12:00' }],
-        Friday: [
-          { start: '09:00', end: '11:00' },
-          { start: '13:00', end: '17:30' },
-        ],
-      });
+      expect(command.availability).toBeUndefined();
+      expect('availability' in command.toJSON()).toBe(false);
     });
   });
 });

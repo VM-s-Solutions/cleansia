@@ -64,11 +64,12 @@ struct PartnerRootView: View {
                 preferences: preferences,
                 onFinished: { route = .login }
             )
-        case .splash:
+        case let .splash(showsBrandReveal):
             SplashGateView(
                 hasValidSession: container.hasValidSession,
                 settings: container.appSettings,
                 client: container.registrationClient,
+                showsBrandReveal: showsBrandReveal,
                 onSignOut: { route = .login },
                 // Passed as an argument rather than trailing: with two closures, trailing syntax hides
                 // which one is which at the call site, and SwiftLint refuses it.
@@ -100,13 +101,21 @@ struct PartnerRootView: View {
                 settings: container.appSettings,
                 snackbar: container.snackbar,
                 onBack: { route = .login },
-                onConfirmed: { route = .splash }
+                // Same reasoning as afterLogin: they have been in the app for the whole
+                // confirmation flow, so the reveal has nothing left to introduce.
+                onConfirmed: { route = .splash(showsBrandReveal: false) }
             )
         }
     }
 
     enum Route: Equatable {
-        case splash
+        /// `showsBrandReveal` is false on every entry that is NOT a cold start. The gate itself
+        /// always runs — ADR-0020 D3 requires a verified login to bounce through it, and
+        /// adr-0020.md:288 makes bypassing that a blocking review finding — but it decides BOTH the
+        /// ~1.8s hold and whether the wordmark is drawn at all. Dropping only the hold left the
+        /// branded screen on display for the length of the round-trip, which still read as the app
+        /// relaunching itself; false now draws a skeleton of the screen the gate is about to reach.
+        case splash(showsBrandReveal: Bool)
         case login
         case register
         case forgotPassword
@@ -116,11 +125,14 @@ struct PartnerRootView: View {
         case dashboard
 
         static func seed() -> Route {
-            .splash
+            // The one true cold start, and the only place the reveal is what it was designed for.
+            .splash(showsBrandReveal: true)
         }
 
         static func afterLogin(_ success: LoginSuccess) -> Route {
-            success.requiresEmailConfirmation ? .verifyEmail(email: success.email) : .splash
+            success.requiresEmailConfirmation
+                ? .verifyEmail(email: success.email)
+                : .splash(showsBrandReveal: false)
         }
 
         static func afterSplash(_ outcome: SplashOutcome) -> Route {
@@ -132,7 +144,7 @@ struct PartnerRootView: View {
             // Unreachable stays put — SplashGateView never hands it over, and mapping it back to
             // .splash keeps this function total without inventing a destination. This switch has
             // no `default` on purpose: a new outcome has to be routed deliberately.
-            case .unreachable: .splash
+            case .unreachable: .splash(showsBrandReveal: false)
             }
         }
     }

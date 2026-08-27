@@ -447,6 +447,8 @@
     <string name="document_type">Typ dokumentu</string>
     <string name="description_optional">Popis (voliteľné)</string>
     <string name="no_documents">Zatiaľ nie sú nahrané žiadne dokumenty</string>
+    <string name="documents_load_failed_title">Nepodarilo sa načítať vaše dokumenty</string>
+    <string name="documents_load_failed_message">Skontrolujte pripojenie a skúste to znova. Nič z toho, čo ste nahrali, sa nestratilo.</string>
     <string name="document_requirements_title">Čo od vás potrebujeme</string>
     <string name="document_requirements_subtitle">Podľa krajiny, v ktorej pracujete. Nahrajte ich a my ich skontrolujeme.</string>
     <string name="document_requirement_required">Povinné</string>

@@ -1,23 +1,23 @@
 {
   "profile": {
     "fields": {
-      "first_name": "First Name",
-      "last_name": "Last Name",
-      "email": "Email",
-      "phone_number": "Phone Number",
-      "birth_date": "Birth Date",
-      "street": "Street",
+      "birthDate": "Birth Date",
       "city": "City",
-      "zip_code": "Zip Code",
       "country": "Country",
-      "tax_id": "Tax ID",
-      "registration_number": "Registration Number (IČO)",
-      "vat_number": "VAT Number (DIČ)",
-      "legal_entity_name": "Legal Entity Name",
+      "documents": "Documents",
+      "email": "Email",
+      "firstName": "First Name",
       "iban": "IBAN",
-      "passport_id": "Passport ID",
+      "lastName": "Last Name",
+      "legalEntityName": "Legal Entity Name",
       "nationality": "Nationality",
-      "documents": "Documents"
+      "passportId": "Passport ID",
+      "phoneNumber": "Phone Number",
+      "registrationNumber": "Registration Number (IČO)",
+      "street": "Street",
+      "tax_id": "Tax ID",
+      "vat_number": "VAT Number (DIČ)",
+      "zipCode": "Zip Code"
     }
   },
   "common": {

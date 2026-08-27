@@ -447,6 +447,8 @@
     <string name="document_type">Document type</string>
     <string name="description_optional">Description (optional)</string>
     <string name="no_documents">No documents uploaded yet</string>
+    <string name="documents_load_failed_title">We could not load your documents</string>
+    <string name="documents_load_failed_message">Check your connection and try again. Nothing you have uploaded is lost.</string>
     <string name="document_requirements_title">What we need from you</string>
     <string name="document_requirements_subtitle">Set by the country you work in. Upload each one and we\'ll review it.</string>
     <string name="document_requirement_required">Required</string>

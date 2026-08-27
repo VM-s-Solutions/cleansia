@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -164,6 +165,20 @@ fun DocumentsSectionScreen(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
+                }
+                // A failed load used to fall through to the list, which rendered NoDocumentsYet —
+                // the app telling a cleaner "you have no documents" when it does not know, while the
+                // FAB still offered an upload into a list nobody had read. iOS already showed a retry
+                // here; this is the side that was wrong.
+                uiState is DocumentsSectionUiState.Error -> {
+                    CleansiaErrorState(
+                        title = stringResource(R.string.documents_load_failed_title),
+                        message = stringResource(R.string.documents_load_failed_message),
+                        backLabel = stringResource(R.string.back),
+                        retryLabel = stringResource(R.string.retry),
+                        onRetry = viewModel::refresh,
+                        onBack = onNavigateBack,
+                    )
                 }
                 else -> {
                     LazyColumn(

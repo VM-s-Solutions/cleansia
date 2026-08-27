@@ -1,23 +1,23 @@
 {
   "profile": {
     "fields": {
-      "first_name": "Ім'я",
-      "last_name": "Прізвище",
-      "email": "Електронна пошта",
-      "phone_number": "Номер телефону",
-      "birth_date": "Дата народження",
-      "street": "Вулиця",
+      "birthDate": "Дата народження",
       "city": "Місто",
-      "zip_code": "Поштовий індекс",
       "country": "Країна",
-      "tax_id": "Податковий номер",
-      "registration_number": "Реєстраційний номер",
-      "vat_number": "Номер платника ПДВ",
-      "legal_entity_name": "Назва юридичної особи",
+      "documents": "Документи",
+      "email": "Електронна пошта",
+      "firstName": "Ім'я",
       "iban": "IBAN",
-      "passport_id": "Номер паспорта",
+      "lastName": "Прізвище",
+      "legalEntityName": "Назва юридичної особи",
       "nationality": "Громадянство",
-      "documents": "Документи"
+      "passportId": "Номер паспорта",
+      "phoneNumber": "Номер телефону",
+      "registrationNumber": "Реєстраційний номер",
+      "street": "Вулиця",
+      "tax_id": "Податковий номер",
+      "vat_number": "Номер платника ПДВ",
+      "zipCode": "Поштовий індекс"
     }
   },
   "common": {

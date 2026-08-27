@@ -120,6 +120,23 @@
               <button class="doc-card__action-btn" (click)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)" title="Download">
                 <i class="pi pi-download"></i>
               </button>
+              <!--
+                Replacing needs no admin and is not tinted as destructive: the slot never empties, so
+                the registration lock never re-engages. Asking for removal is the one that hands the
+                decision away. Both mobile apps draw the same pair.
+              -->
+              <button
+                class="doc-card__action-btn"
+                (click)="startReplace(doc.documentId!)"
+                [disabled]="facade.replacingDocumentId() === doc.documentId"
+                [title]="'pages.profile.replace_document' | translate"
+              >
+                @if (facade.replacingDocumentId() === doc.documentId) {
+                <i class="pi pi-spin pi-spinner"></i>
+                } @else {
+                <i class="pi pi-sync"></i>
+                }
+              </button>
               <button
                 class="doc-card__action-btn doc-card__action-btn--danger"
                 (click)="openDeletionRequest(doc.documentId!, doc.fileName!)"
@@ -178,3 +195,15 @@
     ></cleansia-button>
   </ng-template>
 </p-dialog>
+
+<!--
+  One input for every row: the target is held on the component, so the picker cannot be aimed at a
+  document the cleaner did not click. Cleared on every open so re-picking the same file still fires.
+-->
+<input
+  #replaceInput
+  type="file"
+  class="doc-replace-input"
+  hidden
+  (change)="onReplaceFileChosen($event)"
+/>

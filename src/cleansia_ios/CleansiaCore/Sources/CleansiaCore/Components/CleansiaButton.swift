@@ -61,7 +61,16 @@ public struct CleansiaPrimaryButton: View {
                         if let leadingIcon {
                             Image(systemName: leadingIcon).font(.system(size: 18))
                         }
-                        Text(text).font(CleansiaTypography.titleMedium)
+                        // A label that outgrows its button truncates; it does not wrap and
+                        // it is not scaled. Owner ruling 2026-08-27, ratifying what Android
+                        // has always shipped — without this the capsule grows a second line
+                        // in cs/sk/uk/ru and the row it sits in reflows around it.
+                        // The full string still reaches VoiceOver, which is what makes
+                        // truncating the VISUAL label acceptable; a caller-side substring
+                        // would not be.
+                        Text(text)
+                            .font(CleansiaTypography.titleMedium)
+                            .lineLimit(1)
                         if let trailingIcon {
                             Image(systemName: trailingIcon).font(.system(size: 18))
                         }
@@ -134,7 +143,9 @@ public struct CleansiaOutlinedButton: View {
                 if let leadingIcon {
                     Image(systemName: leadingIcon).font(.system(size: 20))
                 }
-                Text(text).font(CleansiaTypography.titleMedium)
+                Text(text)
+                    .font(CleansiaTypography.titleMedium)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, minHeight: size.minHeight)
             .padding(.horizontal, size.horizontalPadding)
@@ -195,7 +206,9 @@ public struct CleansiaDangerButton: View {
                         if let leadingIcon {
                             Image(systemName: leadingIcon).font(.system(size: 16, weight: .semibold))
                         }
-                        Text(text).font(CleansiaTypography.titleMedium)
+                        Text(text)
+                            .font(CleansiaTypography.titleMedium)
+                            .lineLimit(1)
                     }
                 }
             }
@@ -246,6 +259,7 @@ public struct CleansiaTextLink: View {
             Text(text)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.primary)
+                .lineLimit(1)
                 .padding(Spacing.xxs)
         }
         .buttonStyle(.plain)

@@ -9,6 +9,24 @@
     width: inherit;
     font-weight: 600;
     letter-spacing: 0.025em;
+
+    // A label that outgrows the button truncates with an ellipsis; it does not wrap, and it is
+    // never cut mid-glyph. Owner ruling 2026-08-27, matching Android and iOS.
+    //
+    // Nothing in the chain set this before: PrimeNG contributes only overflow:hidden (for the
+    // ripple), so a long cs/sk/uk/ru label wrapped to a second line and grew the button — and a
+    // single unbreakable token was sliced through the middle of a letter, which reads as a
+    // rendering fault rather than as truncation.
+    //
+    // min-width:0 on the label is the flex trap: a flex item defaults to min-width:auto, which
+    // refuses to shrink below its content, so text-overflow would never engage without it.
+    .p-button-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;

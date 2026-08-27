@@ -149,6 +149,8 @@ private struct DialogButton: View {
             Text(label)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(foreground)
+                // Truncate rather than wrap — same rule as the buttons, same as the Android twin.
+                .lineLimit(1)
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .background(background.opacity(enabled ? 1 : 0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 14))

@@ -526,6 +526,23 @@ Files: `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`. Adding a key means ad
 five. A wording decision (tone, formality) with business impact goes to the owner via
 `questions/open.md` — the developer adds a placeholder and flags it; it is not invented silently.
 
+**A label that outgrows a single-line control is truncated with a tail ellipsis. It is not
+wrapped, and it is never scaled down.** Owner ruling, 2026-08-27. Czech, Slovak, Ukrainian and
+Russian routinely run 30-60% longer than the English a control was sized against, and the
+alternatives are worse: wrapping grows the control and reflows the row around it, and scaling
+gives one control a type size that exists nowhere else in the ramp.
+
+This is safe only because **the full string still reaches the accessibility tree** on all three
+platforms — Compose semantics, the SwiftUI `Text` value, and the DOM text node all carry it
+whole. Truncation is therefore a VISUAL decision made by the control. Shortening the string at the
+call site — `take(n)`, `prefix(n)`, a substring — is never the fix, because that removes it from
+the accessibility tree too.
+
+Mechanically: `maxLines = 1, overflow = TextOverflow.Ellipsis` on Android, `.lineLimit(1)` on iOS,
+and `overflow: hidden; text-overflow: ellipsis; white-space: nowrap` plus `min-width: 0` on web —
+the last of those because a flex item defaults to `min-width: auto` and will not shrink below its
+content, so `text-overflow` never engages without it.
+
 ## The "production-ready, long-term" bar
 
 This is the bar for every change, because the platform is going live and will be costly to change:

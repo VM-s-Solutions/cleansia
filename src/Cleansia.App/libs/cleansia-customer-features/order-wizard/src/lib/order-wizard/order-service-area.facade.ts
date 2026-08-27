@@ -2,6 +2,7 @@ import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { AddressDto, CustomerClient } from '@cleansia/customer-services';
+import { isCityServiced } from '@cleansia/utils';
 import { catchError, of, takeUntil } from 'rxjs';
 
 /** Dependency the service-area check reads from the orchestrating wizard facade. */
@@ -73,9 +74,14 @@ export class OrderServiceAreaFacade extends UnsubscribeControlDirective {
           this.cityServiced.set('error');
           return;
         }
-        const normalized = city.toLowerCase();
-        const match = cities.some(
-          (c) => (c.name ?? '').trim().toLowerCase() === normalized,
+        // The server's rule, not an exact compare. A lowercase equality here refused the
+        // repo's own seeded 'Plzen' address against its 'Plzeň' row — telling a paying
+        // customer we do not serve them while OrderAddressResolver would have accepted the
+        // booking, and blocking Next on the way. Being stricter than the server is the one
+        // way this check can do harm.
+        const match = isCityServiced(
+          cities.map((c) => c.name),
+          city,
         );
         this.cityServiced.set(match ? 'ok' : 'rejected');
       });

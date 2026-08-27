@@ -14,12 +14,18 @@ import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 /**
  * Injection seam for the home screen's six singleton repositories.
  *
- * **No state lives here** — it exists so the screen avoids the EntryPointAccessors pattern.
+ * **Almost no state lives here** — it exists so the screen avoids the EntryPointAccessors
+ * pattern. The one exception is [isUserRefreshing], and it is an exception on purpose: see
+ * its own note.
  */
 @HiltViewModel
 class HomeTabViewModel @Inject constructor(
@@ -62,6 +68,44 @@ class HomeTabViewModel @Inject constructor(
         refreshIfStale(loyaltyRepository.staleness) { loyaltyRepository.refresh() }
         refreshIfStale(orderRepository.staleness) { orderRepository.refresh() }
         refreshIfStale(membershipRepository.staleness) { membershipRepository.refresh() }
+    }
+
+    /**
+     * Raised ONLY by the pull gesture.
+     *
+     * Every other pull-to-refresh screen in these apps binds its spinner to a single
+     * repository `loading` flag. Home cannot: it fans out to three independent
+     * repositories, and combining their loading flags would mean [onResume]'s ambient
+     * pass raises the pull spinner on tab entry — a spinner the user did not ask for,
+     * which is the exact invariant the partner dashboard's `isUserRefreshing` exists to
+     * protect. Hence one flag, owned by the gesture.
+     */
+    private val _isUserRefreshing = MutableStateFlow(false)
+    val isUserRefreshing: StateFlow<Boolean> = _isUserRefreshing.asStateFlow()
+
+    /**
+     * Ungated by staleness, unlike [onResume]: a pull IS the ask, so every source
+     * refreshes whether or not its watermark says it is fresh. The iOS twin says the same
+     * thing in its own doc comment.
+     *
+     * One child coroutine per source so a slow one cannot hold up the others, joined so
+     * the spinner drops when the last of them lands. Failures stay silent — the cached
+     * snapshot is still on screen and is still the best answer available.
+     */
+    fun pullToRefresh() {
+        if (_isUserRefreshing.value) return
+        viewModelScope.launch {
+            _isUserRefreshing.value = true
+            try {
+                listOf(
+                    launch { loyaltyRepository.refresh() },
+                    launch { orderRepository.refresh() },
+                    launch { membershipRepository.refresh() },
+                ).joinAll()
+            } finally {
+                _isUserRefreshing.value = false
+            }
+        }
     }
 
     /** Each source gets its own coroutine so a slow one cannot hold up the others. */

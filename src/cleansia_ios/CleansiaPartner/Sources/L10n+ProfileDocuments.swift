@@ -82,6 +82,7 @@ extension L10n.Profile {
     static var documentTypeOther: String {
         L10n.localized("document_type_other")
     }
+
     /// The service-area verdict on the address step. Wording shared with the Android twin.
     static var serviceAreaChecking: String {
         L10n.localized("address_service_area_checking")

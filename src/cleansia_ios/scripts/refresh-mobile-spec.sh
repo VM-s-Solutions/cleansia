@@ -36,10 +36,27 @@ default_url_for() {
   esac
 }
 
+# Compare NORMALISED content, not raw bytes. git's eol filter (core.autocrlf, and the root
+# .gitattributes pins *.sh but says nothing about *.json) hands a Windows checkout a CRLF
+# working tree while the host serves LF. Measured 2026-08-27: the committed partner spec is
+# 313,178 bytes on disk and the BYTE-IDENTICAL live fetch is 301,765 - so a raw-byte guard
+# refuses an unchanged spec, and by the same margin would wave through a real 11 KB downgrade.
+#
+# A bare CR here can only be a line terminator: inside a JSON string it must be escaped as
+# backslash-r, so stripping it never touches payload.
+normalised_size() {
+  tr -d '\r' < "$1" | wc -c | tr -d ' '
+}
+
 app="${1:-all}"
 override_url="${2:-}"
 
+# Three outcomes, three counters. These used to share one, so a refused downgrade was reported
+# as "host unreachable" - the wrong cause, and the one message that would have made this bug
+# obvious the first time it happened.
+refreshed=0
 skipped=0
+refused=0
 
 refresh_one() {
   local name="$1"
@@ -52,25 +69,27 @@ refresh_one() {
   # build silently downgrades the contract every client is generated from — and the symptom lands much
   # later as "the generator will not emit a type the spec clearly defines", with nothing pointing here.
   local before=0
-  [[ -f "$out" ]] && before="$(wc -c < "$out" | tr -d ' ')"
+  [[ -f "$out" ]] && before="$(normalised_size "$out")"
   local tmp="${out}.fetched"
 
   if curl -fsS "$url" -o "$tmp"; then
     local after
-    after="$(wc -c < "$tmp" | tr -d ' ')"
+    after="$(normalised_size "$tmp")"
 
     if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
       echo "  refusing: the fetched ${name} spec is SMALLER than the committed one" >&2
-      echo "            (${after} bytes vs ${before}). That means the host you fetched from is behind" >&2
+      echo "            (${after} vs ${before} bytes, CR-normalised). The host you fetched from is behind" >&2
       echo "            the contract in git, and overwriting would delete types the apps already use." >&2
       echo "            Rebuild and restart the ${name} mobile API, or keep the committed spec." >&2
       echo "            Kept: ${out#"${IOS_ROOT}/../"} (unchanged). Fetched copy left at ${tmp##*/}." >&2
-      skipped=$((skipped + 1))
+      refused=$((refused + 1))
       return 0
     fi
 
     mv "$tmp" "$out"
-    echo "Wrote ${after} bytes to ${out#"${IOS_ROOT}/../"}."
+    refreshed=$((refreshed + 1))
+    # Raw, not normalised: this is what was actually written to disk.
+    echo "Wrote $(wc -c < "$out" | tr -d ' ') bytes to ${out#"${IOS_ROOT}/../"}."
     return 0
   fi
   rm -f "$tmp"
@@ -107,7 +126,15 @@ case "$app" in
     ;;
 esac
 
-if [ "$skipped" -gt 0 ]; then
+if [ "$refused" -gt 0 ]; then
+  echo
+  echo "${refused} spec(s) refused as a downgrade — see the reason(s) above. The committed specs stand."
+  # Non-zero, unlike an unreachable host: a refusal means the running API and the contract in
+  # git genuinely disagree, and that is a result worth failing on rather than a no-op.
+  exit 1
+fi
+
+if [ "$refreshed" -eq 0 ]; then
   echo
   echo "Nothing was refreshed (${skipped} host(s) unreachable). The committed specs still stand."
   echo "If you only meant to rebuild the clients, that is ./scripts/generate-api-clients.sh — it reads"

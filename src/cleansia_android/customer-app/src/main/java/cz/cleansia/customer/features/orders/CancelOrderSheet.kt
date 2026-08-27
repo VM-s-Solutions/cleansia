@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,10 +48,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.CleansiaTextLink
+import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.WarningStar
 
 private const val MAX_REASON_LENGTH = 2000
@@ -252,17 +253,30 @@ fun CancelOrderSheet(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = CircleShape,
+                // A 10% neutral is nearly the sheet's own colour; without the hairline the
+                // button loses its shape when disabled.
+                border = if (canSubmit) {
+                    null
+                } else {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError,
-                    disabledContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
-                    disabledContentColor = MaterialTheme.colorScheme.onError.copy(alpha = 0.7f),
+                    // Disabled changes the colours, not the alpha. Fading a red fill and its
+                    // label together moves both and collapses the contrast between them —
+                    // 1.7:1 light, and 1.1:1 dark where onError is itself a dark red.
+                    disabledContainerColor =
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.10f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             ) {
                 if (isSubmitting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onError,
+                        // error, not onError: submitting also disables the button, so this
+                        // spinner draws on the neutral fill, where onError is invisible.
+                        color = MaterialTheme.colorScheme.error,
                         strokeWidth = 2.dp,
                     )
                 } else {

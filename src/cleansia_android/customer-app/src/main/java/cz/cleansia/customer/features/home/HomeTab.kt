@@ -42,11 +42,14 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -70,19 +73,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.customer.ui.format.orderStatusColor
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
-import cz.cleansia.customer.ui.theme.CleansiaTheme
-import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.features.orders.OrderStatus
 import cz.cleansia.customer.features.orders.orderStatusFromValue
 import cz.cleansia.customer.features.orders.orderStatusLabelRes
+import cz.cleansia.customer.ui.format.orderStatusColor
+import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
 
@@ -90,6 +94,7 @@ import cz.cleansia.customer.ui.theme.WarningStar
 
 private data class PastCleaner(val id: String, val name: String, val rating: Float, val jobs: Int)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTab(
     modifier: Modifier = Modifier,
@@ -240,107 +245,128 @@ fun HomeTab(
         return
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .verticalScroll(rememberScrollState()),
+    val isRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
+    val pullState = rememberPullToRefreshState()
+
+    // Wrapped here rather than around the whole composable: the firstPaintReady branch above
+    // returns early, and a gesture attached before it would be dead during first paint.
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = viewModel::pullToRefresh,
+        state = pullState,
+        modifier = modifier.fillMaxSize(),
+        indicator = {
+            SudsRefreshIndicator(
+                state = pullState,
+                isRefreshing = isRefreshing,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp),
+            )
+        },
     ) {
-        // 1. Address bar + bell
-        AddressTopBar(
-            displayedAddress = displayed?.oneLine,
-            unreadCount = unreadNotifications,
-            onAddressClick = onOpenAddressManager,
-            onNotificationClick = { showNotifications = true },
-        )
-        Spacer(Modifier.height(8.dp))
-
-        if (showNotifications) {
-            NotificationsInboxSheet(
-                onDismiss = { showNotifications = false },
-                onOpenRoute = { route ->
-                    showNotifications = false
-                    onOpenNotificationRoute(route)
-                },
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            // 1. Address bar + bell
+            AddressTopBar(
+                displayedAddress = displayed?.oneLine,
+                unreadCount = unreadNotifications,
+                onAddressClick = onOpenAddressManager,
+                onNotificationClick = { showNotifications = true },
             )
-        }
+            Spacer(Modifier.height(8.dp))
 
-        // 2. Smart upsell carousel — Plus / first-booking / referral / book /
-        // setup-recurring. Slides hide based on user state.
-        SmartUpsellCarousel(
-            isPlus = isPlus,
-            hasAnyOrders = hasAnyOrders,
-            showSetupRecurring = showSetupRecurringSlide,
-            onSubscribePlus = onSubscribePlus,
-            onBookCleaning = onBookCleaning,
-            onOpenReferral = onOpenReferral,
-            onSetupRecurring = onSetupRecurring,
-        )
-        Spacer(Modifier.height(20.dp))
-
-        // 3. Order again — replaces the static trust strip with a more useful
-        // single-tap rebook of the most recent Completed order. Falls back to
-        // the trust strip when the user has nothing to rebook (new accounts,
-        // or accounts whose history is all in-progress).
-        if (mostRecentCompleted != null) {
-            OrderAgainCard(
-                order = mostRecentCompleted,
-                onClick = { mostRecentCompleted.id?.let(onRebookOrder) },
-            )
-        } else {
-            TrustStrip()
-        }
-        Spacer(Modifier.height(24.dp))
-
-        // 4. Recurring schedules (Plus-only, when at least one is active) —
-        // mini list with a "Manage" link. Lets users see what's already
-        // booked-on-repeat without leaving home.
-        if (showRecurringSection) {
-            RecurringSchedulesSection(
-                templates = activeRecurring,
-                onManage = onManageRecurring,
-            )
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // 5. Popular packages — replaces the old static "Standard / Deep /
-        // Move-out" presets. Tapping a card opens the booking sheet with the
-        // package already selected (single tap → booking flow).
-        if (popularPackages.isNotEmpty()) {
-            PopularPackagesSection(
-                packages = popularPackages,
-                onPackageClick = onBookPackage,
-            )
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // 5. Recent bookings — real orders from OrderRepository.
-        if (showRecent) {
-            RecentBookingsSection(
-                orders = recentForDisplay,
-                onOrderClick = onOrderClick,
-                onSeeAll = onSeeAllOrders,
-            )
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // 6. Milestone progress — driven by loyalty lifetime points against the
-        // tier ladder. Hide entirely when the account hasn't loaded yet (guest
-        // or in-flight prefetch) or when the user already sits at the top tier
-        // (nextTier == null) — no "next" to progress toward.
-        loyaltyAccount?.let { account ->
-            if (account.nextTier != null && account.pointsToNextTier != null) {
-                MilestoneProgressCard(account)
-                Spacer(Modifier.height(16.dp))
+            if (showNotifications) {
+                NotificationsInboxSheet(
+                    onDismiss = { showNotifications = false },
+                    onOpenRoute = { route ->
+                        showNotifications = false
+                        onOpenNotificationRoute(route)
+                    },
+                )
             }
-        }
 
-        // 7. Seasonal suggestion
-        SeasonalCard(onBook = onBookCleaning)
-        // Trailing inset reserves room for the floating island bottom nav so
-        // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
-        Spacer(Modifier.height(108.dp))
+            // 2. Smart upsell carousel — Plus / first-booking / referral / book /
+            // setup-recurring. Slides hide based on user state.
+            SmartUpsellCarousel(
+                isPlus = isPlus,
+                hasAnyOrders = hasAnyOrders,
+                showSetupRecurring = showSetupRecurringSlide,
+                onSubscribePlus = onSubscribePlus,
+                onBookCleaning = onBookCleaning,
+                onOpenReferral = onOpenReferral,
+                onSetupRecurring = onSetupRecurring,
+            )
+            Spacer(Modifier.height(20.dp))
+
+            // 3. Order again — replaces the static trust strip with a more useful
+            // single-tap rebook of the most recent Completed order. Falls back to
+            // the trust strip when the user has nothing to rebook (new accounts,
+            // or accounts whose history is all in-progress).
+            if (mostRecentCompleted != null) {
+                OrderAgainCard(
+                    order = mostRecentCompleted,
+                    onClick = { mostRecentCompleted.id?.let(onRebookOrder) },
+                )
+            } else {
+                TrustStrip()
+            }
+            Spacer(Modifier.height(24.dp))
+
+            // 4. Recurring schedules (Plus-only, when at least one is active) —
+            // mini list with a "Manage" link. Lets users see what's already
+            // booked-on-repeat without leaving home.
+            if (showRecurringSection) {
+                RecurringSchedulesSection(
+                    templates = activeRecurring,
+                    onManage = onManageRecurring,
+                )
+                Spacer(Modifier.height(24.dp))
+            }
+
+            // 5. Popular packages — replaces the old static "Standard / Deep /
+            // Move-out" presets. Tapping a card opens the booking sheet with the
+            // package already selected (single tap → booking flow).
+            if (popularPackages.isNotEmpty()) {
+                PopularPackagesSection(
+                    packages = popularPackages,
+                    onPackageClick = onBookPackage,
+                )
+                Spacer(Modifier.height(24.dp))
+            }
+
+            // 5. Recent bookings — real orders from OrderRepository.
+            if (showRecent) {
+                RecentBookingsSection(
+                    orders = recentForDisplay,
+                    onOrderClick = onOrderClick,
+                    onSeeAll = onSeeAllOrders,
+                )
+                Spacer(Modifier.height(24.dp))
+            }
+
+            // 6. Milestone progress — driven by loyalty lifetime points against the
+            // tier ladder. Hide entirely when the account hasn't loaded yet (guest
+            // or in-flight prefetch) or when the user already sits at the top tier
+            // (nextTier == null) — no "next" to progress toward.
+            loyaltyAccount?.let { account ->
+                if (account.nextTier != null && account.pointsToNextTier != null) {
+                    MilestoneProgressCard(account)
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
+            // 7. Seasonal suggestion
+            SeasonalCard(onBook = onBookCleaning)
+            // Trailing inset reserves room for the floating island bottom nav so
+            // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
+            Spacer(Modifier.height(108.dp))
+        }
     }
 }
 

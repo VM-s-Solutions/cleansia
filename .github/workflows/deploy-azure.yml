@@ -704,13 +704,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -758,13 +784,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -812,13 +864,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -866,13 +944,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -920,13 +1024,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -1035,13 +1165,39 @@ jobs:
         if: inputs.env == 'prod'
         run: |
           SLOT_URL="https://web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/"
+          BODY="${RUNNER_TEMP:-/tmp}/warm-body.txt"
+          wrong=0
           for attempt in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            code="$(curl -sS -o "$BODY" -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
             if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
-            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            case "$code" in
+              000|408|429|502|503|504)
+                # No HTTP answer, or the platform answering for a worker that is not up yet. 503 is
+                # deliberately in this bucket: ASP.NET returns it for an Unhealthy report AND Azure
+                # serves its cold-container page with it, so it cannot be told apart here.
+                wrong=0
+                echo "  slot not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                ;;
+              *)
+                # 500, 3xx and every 4xx: the app is up and answering wrongly. Waiting does not fix
+                # a wrong answer, and this used to be indistinguishable from a cold start.
+                wrong=$(( wrong + 1 ))
+                echo "::warning::slot ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30, $wrong in a row)"
+                echo "  response body:"
+                if [ -s "$BODY" ]; then
+                  awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$BODY"
+                else
+                  echo "  | (empty)"
+                fi
+                if [ "$wrong" -ge 3 ]; then
+                  echo "::error::staging slot answered HTTP $code three times at $SLOT_URL — not a cold start; refusing to swap into production"
+                  exit 1
+                fi
+                ;;
+            esac
             sleep 10
           done
-          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          echo "::error::staging slot never went healthy at $SLOT_URL (last HTTP $code) — refusing to swap a cold/broken slot into production"
           exit 1
 
       - name: Swap staging into production
@@ -1160,13 +1316,33 @@ jobs:
 
           warm() {
             local name="$1" url="$2"
+            local body="${RUNNER_TEMP:-/tmp}/warm-${name}.txt"
             for attempt in $(seq 1 30); do
-              code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url" || true)"
+              code="$(curl -sS -o "$body" -w '%{http_code}' --max-time 15 "$url" || true)"
               if [ "$code" = "200" ]; then
                 echo "::notice::$name warm after ${attempt} attempt(s)"
                 return 0
               fi
-              echo "  $name not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+              case "$code" in
+                000|408|429|502|503|504)
+                  # No answer, or the platform answering for a worker that is not up. 503 covers
+                  # both an Unhealthy report and Azure's own cold-container page, so it retries.
+                  echo "  $name not up yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+                  ;;
+                *)
+                  # Up and answering wrongly. Dev does NOT fail fast on this: T-0636 records a
+                  # self-healing 500 that lasted four minutes, well inside this 5-minute budget,
+                  # and failing early would turn that run red while fixing nothing. Surfacing the
+                  # body is the point — it is what made T-0636 undiagnosable.
+                  echo "::warning::$name ANSWERED HTTP $code — up, but not healthy (attempt $attempt/30)"
+                  echo "  response body:"
+                  if [ -s "$body" ]; then
+                    awk 'NR<=20 { print "  | " substr($0, 1, 300) } NR==21 { print "  | (truncated)"; exit }' "$body"
+                  else
+                    echo "  | (empty)"
+                  fi
+                  ;;
+              esac
               sleep 10
             done
             echo "::error::$name never went healthy at $url"

@@ -39,6 +39,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,10 +56,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
-import cz.cleansia.core.ui.components.CleansiaDialog
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -86,6 +89,7 @@ fun RecurringBookingsScreen(
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val mutating by viewModel.mutating.collectAsStateWithLifecycle()
     val authoring by viewModel.authoring.collectAsStateWithLifecycle()
+    val pullState = rememberPullToRefreshState()
 
     val affordances = RecurringListAffordances.of(authoring, templates.isNotEmpty())
 
@@ -134,16 +138,36 @@ fun RecurringBookingsScreen(
                     modifier = Modifier.align(Alignment.Center),
                     onCreateNew = onCreateNew,
                 )
-                else -> TemplateList(
-                    templates = templates,
-                    mutating = mutating,
-                    showLapsedNotice = affordances.showLapsedNotice,
-                    showEdit = affordances.showEdit,
-                    onToggleActive = { viewModel.toggleActive(it.id, it.isActive) },
-                    onEdit = onEdit,
-                    onDelete = { pendingDeleteId = it },
-                    onSubscribe = onSubscribePlus,
-                )
+                // Only the populated branch. The upsell and empty branches are centred in a
+                // Box with no scrollable child, so a pull gesture would have nothing to
+                // attach to; iOS attaches .refreshable to this branch alone for the same
+                // reason.
+                else -> PullToRefreshBox(
+                    isRefreshing = loading,
+                    onRefresh = viewModel::refresh,
+                    state = pullState,
+                    modifier = Modifier.fillMaxSize(),
+                    indicator = {
+                        SudsRefreshIndicator(
+                            state = pullState,
+                            isRefreshing = loading,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 8.dp),
+                        )
+                    },
+                ) {
+                    TemplateList(
+                        templates = templates,
+                        mutating = mutating,
+                        showLapsedNotice = affordances.showLapsedNotice,
+                        showEdit = affordances.showEdit,
+                        onToggleActive = { viewModel.toggleActive(it.id, it.isActive) },
+                        onEdit = onEdit,
+                        onDelete = { pendingDeleteId = it },
+                        onSubscribe = onSubscribePlus,
+                    )
+                }
             }
         }
     }

@@ -2,6 +2,8 @@ import CleansiaCore
 import SwiftUI
 
 private struct OnboardingPage {
+    // First, mirroring Android OnboardingPage(mascotRes, titleRes, bodyRes).
+    let mascot: Mascot
     let title: String
     let body: String
 }
@@ -43,8 +45,8 @@ private struct OnboardingContent: View {
 
     private var pages: [OnboardingPage] {
         [
-            OnboardingPage(title: L10n.Onboarding.welcomeTitle, body: L10n.Onboarding.welcomeBody),
-            OnboardingPage(title: L10n.Onboarding.readyTitle, body: L10n.Onboarding.readyBody)
+            OnboardingPage(mascot: .waving, title: L10n.Onboarding.welcomeTitle, body: L10n.Onboarding.welcomeBody),
+            OnboardingPage(mascot: .ready, title: L10n.Onboarding.readyTitle, body: L10n.Onboarding.readyBody)
         ]
     }
 
@@ -162,7 +164,9 @@ private struct OnboardingPageView: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            Mascot.waving.image
+            // Per page. Both slides drew the waving mascot, so the pager looked static when you
+            // swiped; slide two is about being ready to work and now says so. Matches Android.
+            page.mascot.image
                 .resizable()
                 .scaledToFit()
                 .frame(width: 180, height: 180)

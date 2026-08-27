@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
+import { DialogService } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaDynamicBackgroundComponent,
@@ -23,12 +24,22 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class UnauthorizedComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AdminAuthService);
+  private readonly dialogService = inject(DialogService);
 
   goToLogin(): void {
     this.router.navigate(['/login']);
   }
 
+  /**
+   * Confirms first, matching the sidebar's own logout. This page is reached when a signed-in
+   * admin lacks the role for a route, so the button sits beside "Go to login" — one recovers,
+   * the other ends the session, and they were one misclick apart with no confirmation.
+   */
   logout(): void {
-    this.authService.logout().subscribe();
+    this.dialogService
+      .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm')
+      .subscribe((confirmed) => {
+        if (confirmed) this.authService.logout().subscribe();
+      });
   }
 }

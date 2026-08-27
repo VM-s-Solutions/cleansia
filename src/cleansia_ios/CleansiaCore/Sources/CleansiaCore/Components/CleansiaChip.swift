@@ -34,6 +34,8 @@ public struct CleansiaChip: View {
             Text(label)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(isSelected ? CleansiaColors.primary : CleansiaColors.onSurface)
+                // Truncate rather than wrap — same rule as the buttons, same as the Android twin.
+                .lineLimit(1)
                 .padding(.horizontal, Spacing.s)
                 .padding(.vertical, Spacing.xs)
                 .background(

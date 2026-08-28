@@ -9,3 +9,9 @@ gradlew         text eol=lf
 *.cmd           text eol=crlf
 *.bat           text eol=crlf
 *.ps1           text eol=crlf
+
+# Everything else: git decides text vs binary, and normalises text to LF in the repository.
+# Without this, behaviour depends on each developer's core.autocrlf — a machine with it unset or
+# false commits CRLF blobs, and those files then read as permanently modified for everyone whose
+# checkout converts them back. The index is 100% LF today; this is what keeps it that way.
+* text=auto

@@ -63,6 +63,8 @@
       "currencies": "Валюты",
       "currency_create": "Создать валюту",
       "currency_edit": "Редактировать валюту",
+      "document_requirements": "Необходимые документы",
+      "document_deletion_requests": "Запросы на удаление документов",
       "company_info": "Информация о компании",
       "company_info_create": "Создать информацию о компании",
       "company_info_edit": "Редактировать информацию о компании",
@@ -222,6 +224,9 @@
     "countries": "Страны",
     "service_area": "Зона обслуживания",
     "currencies": "Валюты",
+    "employee_documents": "Документы исполнителей",
+    "employee_document_requirements": "Требования",
+    "employee_document_deletion_requests": "Запросы на удаление",
     "company_info": "Информация о компании",
     "templates": "Шаблоны",
     "global_rates": "Глобальные ставки",
@@ -1392,6 +1397,59 @@
         "send_test_error": "Не удалось отправить тестовое письмо",
         "send_test_success": "Тестовое письмо успешно отправлено на {{email}}",
         "copied_to_clipboard": "Скопировано в буфер обмена"
+      }
+    },
+    "document_requirements": {
+      "title": "Необходимые документы",
+      "description": "Документы, которые каждая страна требует от уборщика перед одобрением.",
+      "country_section": "Страна",
+      "country": "Страна",
+      "list_section": "Требования",
+      "add": "Добавить требование",
+      "edit": "Изменить требование",
+      "empty": "У этой страны пока нет требований к документам.",
+      "required_yes": "Обязательный",
+      "required_no": "Необязательный",
+      "upsert_hint": "Повторное сохранение той же страны и типа документа обновит существующее правило.",
+      "delete_confirm_title": "Удалить это требование?",
+      "delete_confirm": "Тип документа перестанет быть обязательным. Уже одобренных это не затронет.",
+      "columns": {
+        "document_type": "Тип документа",
+        "required": "Обязательный",
+        "sort_order": "Порядок"
+      },
+      "messages": {
+        "save_success": "Требование сохранено",
+        "delete_success": "Требование удалено"
+      }
+    },
+    "document_deletion_requests": {
+      "title": "Запросы на удаление документов",
+      "description": "Уборщики просят удалить загруженный документ. Удаляет его именно одобрение.",
+      "list_section": "Запросы",
+      "review": "Рассмотреть",
+      "approve": "Одобрить и удалить",
+      "reject": "Отклонить",
+      "notes": "Примечание для уборщика",
+      "empty": "Ничего не ожидает.",
+      "approve_warning": "Одобрение безвозвратно удаляет документ. Отклонение оставляет его на месте.",
+      "columns": {
+        "employee": "Уборщик",
+        "document_type": "Тип документа",
+        "file": "Файл",
+        "reason": "Причина",
+        "requested_on": "Запрошено",
+        "status": "Статус"
+      },
+      "status": {
+        "pending": "В ожидании",
+        "approved": "Одобрено",
+        "rejected": "Отклонено",
+        "unknown": "Неизвестно"
+      },
+      "messages": {
+        "approve_success": "Документ удалён",
+        "reject_success": "Запрос отклонён"
       }
     },
     "company_management": {

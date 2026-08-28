@@ -40,7 +40,7 @@
 | T-0610 | Partner web: dead availability module removed, with a backend null-guard | S | `done` | — | #227 |
 | T-0611 | Partner web: registration-number label from country config, drop hardcoded IČO | S | `done` | — | #228 |
 | T-0612 | Partner web: replace-document UI (mobile has it, web does not) | S | `done` | — | #228 |
-| T-0613 | Admin web: UI for document requirements CRUD and the deletion queue — new feature lib, 2 screens, 5 locales | M | `todo` | — | — |
+| T-0613 | Admin web: document-requirements CRUD and the deletion-request queue — new feature lib, two screens, three permissions, five locales | M | `done` | — | #234 |
 | T-0614 | Documents checklist: iOS shows retry on load failure, Android renders the list | S | `done` | — | #228 |
 | T-0615 | Admin: the registration-number label comes from the country config, not a hardcoded IČO — backend route, regenerated client, and neutral fallbacks in five locales | M | `done` | — | #233 |
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |
@@ -67,7 +67,7 @@
 | T-0637 | Warm-up probe: classifies the status and surfaces the body; prod fails fast, dev keeps its budget | S | `done` | — | #232 |
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
 | T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
-| T-0640 | Many .cs files show as modified with no content change | S | `todo` | — | — |
+| T-0640 | Line endings pinned to LF repo-wide — the index was already 100% LF, so the ~5,700-file renormalize the row predicted was a no-op; this is the preventive attribute | S | `done` | — | #234 |
 | T-0641 | Repo stays **public for now** — revisit when the owner's Actions limit resets | M | `todo` | — | — |
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |

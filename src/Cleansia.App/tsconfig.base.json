@@ -60,6 +60,9 @@
       "@cleansia/admin-features/audit-log": [
         "libs/cleansia-admin-features/audit-log/src/index.ts"
       ],
+      "@cleansia/admin-features/employee-document-config": [
+        "libs/cleansia-admin-features/employee-document-config/src/index.ts"
+      ],
       "@cleansia/admin-features/company-management": [
         "libs/cleansia-admin-features/company-management/src/index.ts"
       ],

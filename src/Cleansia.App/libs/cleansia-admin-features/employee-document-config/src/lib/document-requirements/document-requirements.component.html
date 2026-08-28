@@ -1,0 +1,110 @@
+<div class="page-container">
+  <div class="page-header">
+    <cleansia-title [title]="'pages.document_requirements.title' | translate" />
+  </div>
+
+  <p class="page-description">
+    {{ 'pages.document_requirements.description' | translate }}
+  </p>
+
+  @if (facade.initialLoading()) {
+    <cleansia-loader />
+  } @else {
+    <cleansia-section [title]="'pages.document_requirements.country_section' | translate">
+      <div class="form-grid">
+        <div class="form-field">
+          <cleansia-select
+            [label]="'pages.document_requirements.country' | translate"
+            [options]="countryOptions()"
+            [filter]="true"
+            [showClear]="true"
+            [formControl]="countryControl"
+          />
+        </div>
+      </div>
+    </cleansia-section>
+
+    @if (facade.selectedCountryId()) {
+      <cleansia-section [title]="'pages.document_requirements.list_section' | translate">
+        <div class="section-actions">
+          <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+            [label]="'pages.document_requirements.add' | translate"
+            icon="pi pi-plus"
+            [disabled]="editing() !== null"
+            (onClick)="startCreate()"
+          />
+        </div>
+
+        <cleansia-table
+          [data]="facade.requirements()"
+          [columns]="columns"
+          [actions]="actions"
+          [config]="tableConfig"
+          [loading]="facade.loading()"
+        />
+      </cleansia-section>
+
+      @if (editing()) {
+        <cleansia-section
+          [title]="
+            (editing() === 'new'
+              ? 'pages.document_requirements.add'
+              : 'pages.document_requirements.edit'
+            ) | translate
+          "
+        >
+          <form [formGroup]="form" (ngSubmit)="save()">
+            <div class="form-grid">
+              <div class="form-field">
+                <cleansia-select
+                  [label]="'pages.document_requirements.columns.document_type' | translate"
+                  [options]="documentTypeOptions()"
+                  formControlName="documentType"
+                  [required]="true"
+                  [showClear]="false"
+                />
+              </div>
+
+              <div class="form-field">
+                <cleansia-text-input
+                  [label]="'pages.document_requirements.columns.sort_order' | translate"
+                  formControlName="sortOrder"
+                  dataType="number"
+                  [required]="true"
+                />
+              </div>
+
+              <div class="form-field">
+                <cleansia-checkbox
+                  [label]="'pages.document_requirements.columns.required' | translate"
+                  formControlName="isRequired"
+                />
+              </div>
+            </div>
+
+            <!-- Saving the same country and type again edits the rule: the server upserts on that
+                 pair, so there is no separate create and update. -->
+            <p class="form-hint">{{ 'pages.document_requirements.upsert_hint' | translate }}</p>
+
+            <div class="form-actions">
+              <cleansia-button
+                [label]="'common.cancel' | translate"
+                severity="secondary"
+                [disabled]="facade.saving()"
+                (onClick)="cancelEdit()"
+              />
+              <cleansia-button
+                [label]="'common.save' | translate"
+                buttonType="submit"
+                [loading]="facade.saving()"
+              />
+            </div>
+          </form>
+        </cleansia-section>
+      }
+    }
+  }
+
+  <p-confirmDialog />
+</div>

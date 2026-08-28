@@ -63,6 +63,8 @@
       "currencies": "Currencies",
       "currency_create": "Create Currency",
       "currency_edit": "Edit Currency",
+      "document_requirements": "Document requirements",
+      "document_deletion_requests": "Document deletion requests",
       "company_info": "Company Info",
       "company_info_create": "Create Company Info",
       "company_info_edit": "Edit Company Info",
@@ -222,6 +224,9 @@
     "countries": "Countries",
     "service_area": "Service Area",
     "currencies": "Currencies",
+    "employee_documents": "Employee documents",
+    "employee_document_requirements": "Requirements",
+    "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
     "templates": "Templates",
     "global_rates": "Global Rates",
@@ -1392,6 +1397,59 @@
         "send_test_error": "Failed to send test email",
         "send_test_success": "Test email sent successfully to {{email}}",
         "copied_to_clipboard": "Copied to clipboard"
+      }
+    },
+    "document_requirements": {
+      "title": "Document requirements",
+      "description": "The documents each country expects from a cleaner before they can be approved.",
+      "country_section": "Country",
+      "country": "Country",
+      "list_section": "Requirements",
+      "add": "Add requirement",
+      "edit": "Edit requirement",
+      "empty": "This country has no document requirements yet.",
+      "required_yes": "Required",
+      "required_no": "Optional",
+      "upsert_hint": "Saving the same country and document type again updates the existing rule.",
+      "delete_confirm_title": "Remove this requirement?",
+      "delete_confirm": "The document type stops being required. Nobody already approved is affected.",
+      "columns": {
+        "document_type": "Document type",
+        "required": "Required",
+        "sort_order": "Order"
+      },
+      "messages": {
+        "save_success": "Requirement saved",
+        "delete_success": "Requirement removed"
+      }
+    },
+    "document_deletion_requests": {
+      "title": "Document deletion requests",
+      "description": "Cleaners asking for an uploaded document to be removed. Approving is what deletes it.",
+      "list_section": "Requests",
+      "review": "Review",
+      "approve": "Approve and delete",
+      "reject": "Reject",
+      "notes": "Notes for the cleaner",
+      "empty": "Nothing waiting.",
+      "approve_warning": "Approving permanently removes the document. Rejecting leaves it in place.",
+      "columns": {
+        "employee": "Cleaner",
+        "document_type": "Document type",
+        "file": "File",
+        "reason": "Reason",
+        "requested_on": "Requested",
+        "status": "Status"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "unknown": "Unknown"
+      },
+      "messages": {
+        "approve_success": "Document deleted",
+        "reject_success": "Request rejected"
       }
     },
     "company_management": {

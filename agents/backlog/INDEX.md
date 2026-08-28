@@ -59,11 +59,11 @@
 | T-0629 | i18n: a label outgrowing a single-line control truncates — ported to iOS and web, written into conventions.md | M | `done` | — | #232 |
 | T-0630 | Admin console gated behind an Azure invitation (`admin_console`) — **MS-9 before the next admin deploy** | M | `done` | — | #233 |
 | T-0631 | Partner Android: camera capture for job photos and the avatar, CAMERA restored with its uses-feature | M | `done` | — | #231 |
-| T-0632 | SendNewJobsDigest is very likely fine — DEV App Insights samples at 10%, and ~96 firings since deploy would record ~9; the owner saw 8. Confirm with `summarize sum(itemCount)` | S | `todo` | — | — |
-| T-0633 | Bicep audit: one-day three-axis read — secrets/identity, drift, cost — needs one non-mutating `what-if` dispatch | M | `todo` | — | — |
+| T-0632 | `SendNewJobsDigest` fires hourly as scheduled — App Insights `sum(itemCount)` reads 30/20/20/30 across 2026-08-24..27, i.e. ~25 a day. The Invocations blade showed 8 because DEV samples telemetry at 10% and that blade reports raw sampled rows without correcting for it | S | `done` | — | — |
+| T-0633 | Bicep audit — three axes read 2026-08-28 against a non-mutating `what-if` (run 33198443746). **Drift**: 23 reported, 21 are what-if artefacts (ARM's site GET omits `siteConfig`, plus service-defaulted Postgres / SWA / blob-container properties) — 2 are real and are filed as T-0655 and T-0656. **Secrets/identity**: RBAC vault, no value in source, managed-identity reads, Secrets *User* for hosts and Officer only for CI — no finding. **Cost**: B2 plan, SWA Free ×3, Postgres B1ms Burstable, Standard_LRS, ACR Basic, private networking off, telemetry sampled to 10% under a 500 MB breaker — no finding. Method limit worth carrying: `what-if` returns NestedDeploymentShortCircuited on the roleAssignment nested deployment, so a clean drift report never covers RBAC | M | `done` | — | — |
 | T-0634 | Log Analytics is required by workspace-based App Insights — closed, not a defect | S | `done` | — | d5b020bf |
 | T-0635 | Azure cost: the dev cut was designed, measured and committed on 2026-08-11 — owner closed it without resolving further | S | `done` | — | d5b020bf |
-| T-0636 | Partner DEV API returned 500 from /health for 4 minutes after deploy | S | `todo` | — | — |
+| T-0636 | Partner DEV API returned 500 from /health for 4 minutes after deploy. Lead from the T-0633 audit: `/health` runs a real `AddDbContextCheck` (`/alive` is the liveness path Azure polls), and a failed DbContext check answers **503**, not 500 — so this is not the ordinary unhealthy path. Seven sites share one B2 and Postgres is a 1-vCore Burstable, which is the contention story for a simultaneous post-deploy restart; the App Insights trace decides whether anything threw at all | S | `todo` | — | — |
 | T-0637 | Warm-up probe: classifies the status and surfaces the body; prod fails fast, dev keeps its budget | S | `done` | — | #232 |
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
 | T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
@@ -72,7 +72,6 @@
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |
 | T-0644 | iOS: enum L10n.Profile back to 342 against the 400 cap | S | `done` | — | #232 |
-
 | T-0645 | Partner iOS: the address step checks the city and shows all four service-area verdicts | M | `done` | — | #231 |
 | T-0646 | Customer apps: the status-coloured left stripe is off the orders-list card | S | `done` | — | #230 |
 | T-0647 | Customer Android: pull-to-refresh on Home and Recurring bookings | S | `done` | — | #232 |
@@ -80,11 +79,11 @@
 | T-0649 | Partner Identification: Self-employed / Legal entity slides on a spring, both platforms | M | `done` | — | #231 |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: the profile tab reaches recurring bookings, so the Plus upsell is reachable | S | `done` | — | #230 |
-
 | T-0652 | Partner mobile: the splash Logout signs out for real, on both platforms, and confirms first | M | `done` | — | #233 |
-
 | T-0653 | Customer apps: a saved address in an unserved city carries a warning glyph before it is picked — 3 surfaces; the recurring wizard's list cannot, its model lacks the fields | M | `done` | — | #235 |
-
 | T-0654 | iOS: PushTokenForwarderTests.testRefreshedTokenReRegisters is flaky — its helper waits on a REGISTER COUNT while the assertion checks token ORDER, and the startup registration races the first forward. Wait for the token, not the count | S | `todo` | — | — |
 
-*Next id: **T-0655**.*
+| T-0655 | Bicep and the deploy pipeline disagree on the Functions image: `functionApp.bicep` declares `cleansia-functions:latest`, while the live site is pinned to the commit sha CI pushed. A provision run silently rolls the container to whatever `:latest` happens to be — surfaced by the T-0633 what-if | M | `todo` | — | — |
+| T-0656 | Portal drift on two dev sites: `api-cleansia-partner-weu-dev` and `func-cleansia-weu-dev` carry a `hidden-link:/app-insights-resource-id` tag no template declares, so a provision strips it. Cosmetic in itself — it counts as evidence that the partner API has been hand-edited in the portal, which is the host T-0636 is about | S | `todo` | — | — |
+
+*Next id: **T-0657**.*

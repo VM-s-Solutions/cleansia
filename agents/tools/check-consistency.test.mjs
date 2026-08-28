@@ -574,6 +574,75 @@ class SomeEventBus @Inject constructor() {
     assert.equal(r.e9.length, 0, `expected 0 E9 (SharedFlow, not a StateFlow cache), got: ${r.out}`);
 });
 
+// E1 — the UiState phase-bag rule, narrowed on 2026-08-28. It used to fire on every
+// `data class *UiState`: nine hits in the tree, one defensible. These four pin both halves — that it
+// still catches the shape it exists for, and that each exemption is the one the corpus forced.
+const linesFor = (r, rule) =>
+    r.out.split(/\r?\n/).filter((l) => new RegExp(`\\b${rule}\\b`).test(l));
+
+test("E1 flags a genuine phase bag (one in-flight flag + error + data)", () => {
+    const r = runKt(`package x
+data class FeedUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val items: List<String> = emptyList(),
+)`);
+    assert.equal(linesFor(r, "E1").length, 1, `expected 1 E1, got: ${r.out}`);
+});
+
+test("E1 does NOT flag a single-signal state (nothing to contradict)", () => {
+    const r = runKt(`package x
+data class SettingsUiState(
+    val isSignedOut: Boolean = false,
+)`);
+    assert.equal(linesFor(r, "E1").length, 0, `expected 0 E1, got: ${r.out}`);
+});
+
+test("E1 does NOT flag two concurrent in-flight signals (a union would erase them)", () => {
+    const r = runKt(`package x
+data class ListUiState(
+    val isUserRefreshing: Boolean = false,
+    val isBackgroundRefreshing: Boolean = false,
+    val error: String? = null,
+    val hasLoadedOnce: Boolean = false,
+)`);
+    assert.equal(linesFor(r, "E1").length, 0, `expected 0 E1, got: ${r.out}`);
+});
+
+test("E1 does NOT flag a form carrying per-field validation errors", () => {
+    const r = runKt(`package x
+data class SignUpUiState(
+    val email: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val emailError: String? = null,
+)`);
+    assert.equal(linesFor(r, "E1").length, 0, `expected 0 E1, got: ${r.out}`);
+});
+
+// conv `: any` — the rule checked only the CURRENT line for a disable directive, so it reported
+// error.codes.ts, where the exception is both explained in prose and sanctioned by ESLint itself.
+test("conv flags a bare ': any'", () => {
+    const r = runTs(`export interface Thing {
+  value: any;
+}`);
+    assert.equal(linesFor(r, "conv").length, 1, `expected 1 conv, got: ${r.out}`);
+});
+
+test("conv does NOT flag ': any' under an eslint-disable-next-line", () => {
+    const r = runTs(`// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Fn = (value?: any) => string;`);
+    assert.equal(linesFor(r, "conv").length, 0, `expected 0 conv, got: ${r.out}`);
+});
+
+test("conv does NOT flag ': any' under a file-level no-explicit-any disable", () => {
+    const r = runTs(`/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface Thing {
+  value: any;
+}`);
+    assert.equal(linesFor(r, "conv").length, 0, `expected 0 conv, got: ${r.out}`);
+});
+
 let failed = 0;
 for (const [name, fn] of cases) {
     try {
@@ -586,7 +655,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9): ${cases.length} passed`
-        : `\ncheck-consistency rules (B1 + B10 + C3 + E9): ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + conv): ${cases.length} passed`
+        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + conv): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

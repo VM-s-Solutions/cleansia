@@ -40,7 +40,7 @@
 | T-0610 | Partner web: dead availability module removed, with a backend null-guard | S | `done` | — | #227 |
 | T-0611 | Partner web: registration-number label from country config, drop hardcoded IČO | S | `done` | — | #228 |
 | T-0612 | Partner web: replace-document UI (mobile has it, web does not) | S | `done` | — | #228 |
-| T-0613 | Admin web: UI for document requirements CRUD and the deletion queue — new feature lib, 2 screens, 5 locales | M | `todo` | — | — |
+| T-0613 | Admin web: document-requirements CRUD and the deletion-request queue — new feature lib, two screens, three permissions, five locales | M | `done` | — | #234 |
 | T-0614 | Documents checklist: iOS shows retry on load failure, Android renders the list | S | `done` | — | #228 |
 | T-0615 | Admin: the registration-number label comes from the country config, not a hardcoded IČO — backend route, regenerated client, and neutral fallbacks in five locales | M | `done` | — | #233 |
 | T-0616 | Backend: missingFields emits camelCase keys, every locale defines snake_case | S | `done` | — | #228 |

@@ -85,4 +85,6 @@
 
 | T-0653 | Customer apps: a saved address in an unserved city carries a warning glyph before it is picked — 3 surfaces; the recurring wizard's list cannot, its model lacks the fields | M | `done` | — | #235 |
 
-*Next id: **T-0654**.*
+| T-0654 | iOS: PushTokenForwarderTests.testRefreshedTokenReRegisters is flaky — its helper waits on a REGISTER COUNT while the assertion checks token ORDER, and the startup registration races the first forward. Wait for the token, not the count | S | `todo` | — | — |
+
+*Next id: **T-0655**.*

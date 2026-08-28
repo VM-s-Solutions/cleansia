@@ -57,11 +57,19 @@ final class PushTokenForwarderTests: XCTestCase {
         let chain = makeChain(isFirebaseConfigured: true)
 
         chain.forwarder.forward(fcmToken: "fcm-1")
-        await chain.client.waitForRegisters(2)
+        await chain.client.waitForTokens(["", "fcm-1"])
         chain.forwarder.forward(fcmToken: "fcm-2")
-        await chain.client.waitForRegisters(3)
+        await chain.client.waitForTokens(["", "fcm-1", "fcm-2"])
 
-        XCTAssertEqual(chain.client.registeredTokens, ["", "fcm-1", "fcm-2"])
+        // Arrival order is deliberately NOT asserted, and that is the whole fix. The session-start
+        // token-less register races the first forwarded token — the same race the configured-token
+        // test above already documents — so ["", "fcm-1", "fcm-2"] was never guaranteed.
+        //
+        // What this test is actually about is that a REFRESHED token registers again instead of
+        // being swallowed as a duplicate. A set plus a count says exactly that, and says it without
+        // depending on which of two concurrent tasks reaches the spy first.
+        XCTAssertEqual(Set(chain.client.registeredTokens), ["", "fcm-1", "fcm-2"])
+        XCTAssertEqual(chain.client.registerCallCount, 3, "each distinct token registers exactly once")
     }
 
     private func makeChain(isFirebaseConfigured: Bool) -> Chain {
@@ -154,6 +162,19 @@ private final class SpyRegistrationClient: DeviceRegistrationClient, @unchecked 
     func waitForRegisters(_ count: Int) async {
         for _ in 0 ..< 200 {
             if registerCallCount >= count { return }
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+    }
+
+    /// Wait until every expected token has been recorded, whatever order they arrive in.
+    ///
+    /// Prefer this over `waitForRegisters` wherever the assertion that follows names specific
+    /// tokens. A count-based wait returns as soon as *some* n registers have landed, which is not
+    /// the same claim: the session-start token-less register and a forwarded token are dispatched
+    /// from two concurrent tasks, so "two have arrived" never meant "these two have arrived".
+    func waitForTokens(_ expected: Set<String>) async {
+        for _ in 0 ..< 200 {
+            if expected.isSubset(of: Set(registeredTokens)) { return }
             try? await Task.sleep(nanoseconds: 5_000_000)
         }
     }

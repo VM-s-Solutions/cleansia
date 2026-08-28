@@ -25,8 +25,13 @@
  * A row can still be wrong in a way no parser can see, which is why a lane's first move stays
  * "verify the defect exists" and not "read the row".
  *
- * ANTI-VACUITY. A run that parses no rows, or finds no ticket files, is RED — a checker reporting
- * zero divergences while blind is the failure it exists to close (`enforcement.md` §"reach failure").
+ * ANTI-VACUITY. A run that reads fewer rows than INDEX.md plainly contains is RED — a checker
+ * reporting zero divergences while blind is the failure it exists to close (`enforcement.md`
+ * §"reach failure"). Missing ticket FILES is not red and was wrongly treated as such until
+ * 2026-08-28: `tickets/` is optional detail and has been empty for the backlog's whole life, so a
+ * rule keyed on it could not tell "nothing filed" from "cannot read what is filed" — and in fact
+ * hid exactly that, when the row reader went blind to all fifty rows and the empty directory made
+ * the silence look legitimate.
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -67,8 +72,14 @@ const lines = readFileSync(INDEX, "utf8").split(/\r?\n/);
 /** id -> [{ line, status }] */
 const rows = new Map();
 lines.forEach((raw, i) => {
-    // Rows appear both at column 0 and inside blockquotes (`> | **T-0240** | …`).
-    const m = /^>?\s*\|\s*\*\*(T-\d+)\*\*\s*\|/.exec(raw);
+    // Rows appear at column 0 and inside blockquotes (`> | **T-0240** | …`), and the id may or may
+    // not be bold. The bold was NOT optional here until 2026-08-28, which made this reader blind to
+    // the entire current backlog — every row of it is written `| T-0654 | …`, plain. It parsed 0 of
+    // 50 and said so, and nothing caught it, because the anti-vacuity check below only fires when
+    // the OTHER corpus has content: `tickets/` is empty too, so "0 rows and 0 files" read as a
+    // legitimately empty backlog. Two blind spots covering for each other is exactly the vacuous
+    // green this tool exists to prevent, arriving in the tool itself.
+    const m = /^>?\s*\|\s*(?:\*\*)?(T-\d+)(?:\*\*)?\s*\|/.exec(raw);
     if (!m) return;
     const cells = raw.split("|");
     // The status column is not at a fixed index — the file carries several table shapes. Take the
@@ -80,6 +91,13 @@ lines.forEach((raw, i) => {
 });
 
 const rowCount = [...rows.values()].reduce((n, l) => n + l.length, 0);
+
+// Every line that LOOKS like a ticket row, matched as loosely as a human skimming would. The strict
+// reader above must account for all of them; anything it drops it is blind to, and a reader that
+// silently drops rows is the failure this file is about. Comparing the two is self-referential on
+// purpose — the previous reach check compared against `tickets/`, which can legitimately be empty,
+// so it could not tell "no tickets filed" from "cannot read the tickets that are".
+const looseRowCount = lines.filter((raw) => /\|\s*(?:\*\*)?T-\d+/.test(raw)).length;
 
 /** A row's verdict: done wins only when the DONE marker is in the status half, not the prose. */
 const verdictOf = (text) => {
@@ -130,8 +148,17 @@ if (existsSync(TICKETS)) {
 if (rowCount === 0 && ticketFiles > 0) {
     add("P0", `REACH: parsed 0 ticket row(s) from INDEX.md while ${ticketFiles} ticket file(s) exist under ${TICKETS} — the INDEX reader is broken, or every ticket is unfiled`);
 }
-if (ticketFiles === 0 && rowCount > 0) {
-    add("P0", `REACH: found 0 ticket file(s) under ${TICKETS} while INDEX.md carries ${rowCount} ticket row(s) — the files are missing, or the ticket reader is broken`);
+// A row with no ticket file is NOT a failure: `tickets/` is detail, and the backlog has run without
+// it for its whole life — fifty rows, no files. What is a failure is the INDEX reader seeing fewer
+// rows than are plainly there, which is precisely how the bold-id regex above went blind to all
+// fifty and reported zero without anything noticing.
+if (looseRowCount > rowCount) {
+    add(
+        "P0",
+        `REACH: ${looseRowCount} line(s) in INDEX.md look like ticket rows but the reader parsed ` +
+            `${rowCount} — it is dropping ${looseRowCount - rowCount} of them, so every count below ` +
+            `is measured over part of the file`,
+    );
 }
 
 let c2 = 0;
@@ -154,7 +181,13 @@ for (const f of findings) {
 console.log(
     `\nbacklog-consistency REACH: ${rows.size} ticket(s) over ${rowCount} row(s), ${ticketFiles} ticket file(s)`,
 );
-console.log(`backlog-consistency FAILED: C1 ${c1} · C2 ${c2} · reach ${p0.length}`);
+// The verdict is computed, not asserted. This line read "FAILED" unconditionally until 2026-08-28,
+// so a clean run announced its own failure and then exited 0 — which is how a reader stops believing
+// an instrument, and a checker nobody believes is worse than one nobody runs.
+const failing = p0.length + c1 + c2;
+console.log(
+    `backlog-consistency ${failing ? "FAILED" : "OK"}: C1 ${c1} · C2 ${c2} · reach ${p0.length}`,
+);
 
 // A reach failure is blocking even under --warn: advisory about the backlog's debt, never about
 // whether the instrument ran. Same split as check-catalog-claims.mjs.

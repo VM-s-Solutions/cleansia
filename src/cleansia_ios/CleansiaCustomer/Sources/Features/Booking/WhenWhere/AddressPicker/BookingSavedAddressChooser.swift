@@ -130,6 +130,7 @@ struct BookingSavedAddressChooserView: View {
                 addresses: model.addresses,
                 preselectedId: preselectedId,
                 loading: model.loading,
+                serviceArea: serviceArea,
                 onBack: onDismiss,
                 onSelect: onPickSaved,
                 onAddNew: { pane = .map }
@@ -151,6 +152,10 @@ private struct SavedAddressListPane: View {
     let addresses: [SavedAddress]
     let preselectedId: String?
     let loading: Bool
+    let serviceArea: ServiceAreaProvider?
+
+    /// Ids in a city we do not serve. Absent means unknown, never "not serviced".
+    @State private var unservicedIds: Set<String> = []
     let onBack: () -> Void
     let onSelect: (SavedAddress) -> Void
     let onAddNew: () -> Void
@@ -166,6 +171,7 @@ private struct SavedAddressListPane: View {
                         ForEach(addresses) { address in
                             ChooserAddressRow(
                                 address: address,
+                                isUnserviced: unservicedIds.contains(address.id),
                                 isSelected: address.id == preselectedId,
                                 onSelect: { onSelect(address) }
                             )
@@ -179,6 +185,9 @@ private struct SavedAddressListPane: View {
             }
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task(id: addresses.map(\.id)) {
+            await resolveServiceability()
+        }
     }
 
     private var header: some View {
@@ -229,10 +238,28 @@ private struct SavedAddressListPane: View {
             )
         }
     }
+
+    /// One lookup for the whole list — the provider caches the city list, so this is a single
+    /// fetch and then N comparisons. A nil answer marks nothing: an unreachable endpoint must not
+    /// paint every saved address as unserviced.
+    private func resolveServiceability() async {
+        var unserviced: Set<String> = []
+        for address in addresses {
+            let serviced = await AddressServiceability.cityServicedAnywhere(
+                provider: serviceArea,
+                city: address.city
+            )
+            if serviced == false {
+                unserviced.insert(address.id)
+            }
+        }
+        unservicedIds = unserviced
+    }
 }
 
 private struct ChooserAddressRow: View {
     let address: SavedAddress
+    let isUnserviced: Bool
     let isSelected: Bool
     let onSelect: () -> Void
 
@@ -268,6 +295,15 @@ private struct ChooserAddressRow: View {
                     .lineLimit(1)
             }
             Spacer()
+            if isUnserviced {
+                // Advisory, and before the tap. Picking a saved address here IS the
+                // booking, so a warning that waits for the next screen waits for payment.
+                // The full sentence goes to VoiceOver; the row has no space for it.
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 15))
+                    .foregroundColor(CleansiaColors.warningStar)
+                    .accessibilityLabel(L10n.AddressManager.cityNotServiced)
+            }
             if isSelected {
                 Image(systemName: "checkmark")
                     .font(.system(size: 16, weight: .semibold))

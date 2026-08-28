@@ -39,6 +39,7 @@ struct AddressManagerView: View {
             AddressListPane(
                 addresses: vm.addresses,
                 selectedId: vm.selectedId,
+                serviceArea: vm.serviceArea,
                 onBack: onBack,
                 onAdd: vm.startAdd,
                 onSelect: { address in
@@ -100,6 +101,7 @@ private struct AddressManagerHeader: View {
 private struct AddressListPane: View {
     let addresses: [SavedAddress]
     let selectedId: String?
+    let serviceArea: ServiceAreaProvider?
     let onBack: () -> Void
     let onAdd: () -> Void
     let onSelect: (SavedAddress) -> Void
@@ -109,6 +111,11 @@ private struct AddressListPane: View {
 
     @State private var renaming: SavedAddress?
     @State private var deleting: SavedAddress?
+
+    /// Ids of saved addresses in a city we do not serve. Absent means unknown — a failed
+    /// lookup marks nothing, because claiming "we do not serve here" on a network blip is
+    /// the one mistake this warning must not make.
+    @State private var unservicedIds: Set<String> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -121,6 +128,7 @@ private struct AddressListPane: View {
                         ForEach(addresses) { address in
                             SavedAddressRow(
                                 address: address,
+                                isUnserviced: unservicedIds.contains(address.id),
                                 isSelected: address.id == selectedId,
                                 onSelect: { onSelect(address) },
                                 onSetDefault: { onSetDefault(address.id) },
@@ -137,6 +145,9 @@ private struct AddressListPane: View {
             }
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task(id: addresses.map(\.id)) {
+            await resolveServiceability()
+        }
         .alert(L10n.AddressManager.renameTitle, isPresented: renameBinding, presenting: renaming) { address in
             RenameAlertButtons(initialLabel: address.label) { newLabel in
                 onRename(address.id, newLabel)
@@ -192,6 +203,25 @@ private struct AddressListPane: View {
             )
         }
     }
+
+    /// One lookup for the whole list. `ServiceAreaProvider` caches the city list, so this is a
+    /// single fetch and then N string comparisons — not a call per row.
+    ///
+    /// A nil answer clears the set rather than marking everything: an unreachable service-area
+    /// endpoint must not paint every saved address as unserviced.
+    private func resolveServiceability() async {
+        var unserviced: Set<String> = []
+        for address in addresses {
+            let serviced = await AddressServiceability.cityServicedAnywhere(
+                provider: serviceArea,
+                city: address.city
+            )
+            if serviced == false {
+                unserviced.insert(address.id)
+            }
+        }
+        unservicedIds = unserviced
+    }
 }
 
 private struct RenameAlertButtons: View {
@@ -217,6 +247,7 @@ private struct RenameAlertButtons: View {
 
 private struct SavedAddressRow: View {
     let address: SavedAddress
+    let isUnserviced: Bool
     let isSelected: Bool
     let onSelect: () -> Void
     let onSetDefault: () -> Void
@@ -255,6 +286,18 @@ private struct SavedAddressRow: View {
                     .lineLimit(1)
             }
             Spacer()
+            if isUnserviced {
+                // A glyph rather than a sentence: the row has one line of space and the full
+                // sentence would either truncate or push the address out. The sentence is
+                // still what VoiceOver reads, so nothing is lost to a screen reader.
+                //
+                // Advisory, not a block — the address stays selectable. People move, coverage
+                // grows, and the booking gate re-checks server-side anyway.
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 15))
+                    .foregroundColor(CleansiaColors.warningStar)
+                    .accessibilityLabel(L10n.AddressManager.cityNotServiced)
+            }
             Menu {
                 if !address.isDefault {
                     Button(action: onSetDefault) {

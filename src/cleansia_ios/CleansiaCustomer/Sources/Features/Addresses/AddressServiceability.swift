@@ -42,4 +42,24 @@ enum AddressServiceability {
 
         return await provider.isCityServiced(countryId: country.id, cityName: city)
     }
+
+    /// The same question for a SAVED address, which carries a country DISPLAY NAME rather than
+    /// an ISO code — so the country cannot be resolved to an id the way a geocoded address can.
+    ///
+    /// This therefore asks whether the city matches ANY serviced city, in any country. That is
+    /// deliberately LOOSER than the server rule, and loose is the safe direction: `CityNameMatch`
+    /// exists because a client that refuses a city the server accepts tells a paying customer we
+    /// do not serve them when we do.
+    ///
+    /// Missing a warning costs a customer one refusal at booking — which is what happened before
+    /// this existed. Matching a same-named city in another country costs nothing at all: the row
+    /// still books, and the server still decides.
+    static func cityServicedAnywhere(
+        provider: ServiceAreaProvider?,
+        city: String
+    ) async -> Bool? {
+        guard let provider, !city.isBlank else { return nil }
+        guard let cities = await provider.loadCities() else { return nil }
+        return CityNameMatch.isServiced(cities.map(\.name), city)
+    }
 }

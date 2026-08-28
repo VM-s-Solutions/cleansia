@@ -1,5 +1,4 @@
 package cz.cleansia.customer.features.addresses
-import cz.cleansia.core.snackbar.SnackbarController
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,7 +14,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import cz.cleansia.customer.ui.theme.isDark
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,13 +31,13 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
@@ -54,6 +52,7 @@ import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -91,16 +90,19 @@ import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.style.MapStyle
-import cz.cleansia.customer.R
-import cz.cleansia.customer.core.data.AddressRepository
-import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.location.LocationService
 import cz.cleansia.core.location.MapStyles
 import cz.cleansia.core.location.ReverseGeocodingService
+import cz.cleansia.core.serviceareas.CityNameMatch
+import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.R
+import cz.cleansia.customer.core.data.AddressRepository
+import cz.cleansia.customer.core.data.UserAddress
+import cz.cleansia.customer.ui.theme.isDark
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
@@ -154,6 +156,7 @@ fun AddressManagerScreen(
         ManagerPane.List -> ListPane(
             addresses = addresses,
             selectedId = selectedId,
+            serviceArea = serviceArea,
             onBack = onBack,
             onAdd = { pane = ManagerPane.AddOnMap },
             onSelect = { address ->
@@ -214,6 +217,7 @@ fun AddressManagerScreen(
 private fun ListPane(
     addresses: List<UserAddress>,
     selectedId: String?,
+    serviceArea: cz.cleansia.core.servicearea.ServiceAreaProvider,
     onBack: () -> Unit,
     onAdd: () -> Unit,
     onSelect: (UserAddress) -> Unit,
@@ -224,6 +228,26 @@ private fun ListPane(
 ) {
     var renaming by remember { mutableStateOf<UserAddress?>(null) }
     var deleting by remember { mutableStateOf<UserAddress?>(null) }
+
+    // Ids of saved addresses in a city we do not serve. An id is absent when the answer is
+    // NO or UNKNOWN — a failed lookup marks nothing, because painting every address as
+    // unserviced on a network blip is the one mistake this warning must not make.
+    //
+    // One lookup for the whole list: the provider caches the city list, so this is a single
+    // fetch and then N comparisons rather than a call per row.
+    var unservicedIds by remember { mutableStateOf(emptySet<String>()) }
+    LaunchedEffect(addresses.map { it.id }) {
+        val cities = serviceArea.loadCities()
+        unservicedIds = if (cities == null) {
+            emptySet()
+        } else {
+            val names = cities.map { it.name }
+            addresses
+                .filter { it.city.isNotBlank() && !CityNameMatch.isServiced(names, it.city) }
+                .map { it.id }
+                .toSet()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -282,6 +306,7 @@ private fun ListPane(
                 addresses.forEach { address ->
                     SavedAddressRow(
                         address = address,
+                        isUnserviced = unservicedIds.contains(address.id),
                         isSelected = address.id == selectedId,
                         onClick = { onSelect(address) },
                         onSetDefault = { onSetDefault(address.id) },
@@ -347,6 +372,7 @@ private fun ListPane(
 @Composable
 private fun SavedAddressRow(
     address: UserAddress,
+    isUnserviced: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
     onSetDefault: () -> Unit,
@@ -417,6 +443,21 @@ private fun SavedAddressRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )
+        }
+
+        if (isUnserviced) {
+            // A glyph, not the sentence: the row has one line and the full sentence would
+            // push the address out of it. TalkBack still reads the sentence.
+            //
+            // Advisory — the row stays selectable. People move, coverage grows, and order
+            // creation re-validates the city server-side either way.
+            Icon(
+                Icons.Outlined.WarningAmber,
+                contentDescription = stringResource(R.string.address_manager_city_not_serviced),
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(4.dp))
         }
 
         Box {

@@ -55,7 +55,7 @@
 | T-0625 | Partner iOS onboarding: the two slides use different mascots, matching Android | S | `done` | — | #232 |
 | T-0626 | Sign out confirms everywhere it should — admin unauthorized page, and both partner splash escapes | S | `done` | — | #233 |
 | T-0627 | Customer web: the serviceability banner uses the server's CityNameMatch rule, not a string compare | S | `done` | — | #233 |
-| T-0628 | Customer mobile: booking review pane now warns; the **saved-address** paths still do not — needs a ruling, see T-0653 | M | `todo` | — | #233 |
+| T-0628 | Customer mobile: serviceability warned at address selection — booking review pane (#233) and the saved-address lists (#235) | M | `done` | — | #235 |
 | T-0629 | i18n: a label outgrowing a single-line control truncates — ported to iOS and web, written into conventions.md | M | `done` | — | #232 |
 | T-0630 | Admin console gated behind an Azure invitation (`admin_console`) — **MS-9 before the next admin deploy** | M | `done` | — | #233 |
 | T-0631 | Partner Android: camera capture for job photos and the avatar, CAMERA restored with its uses-feature | M | `done` | — | #231 |
@@ -68,7 +68,7 @@
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
 | T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
 | T-0640 | Line endings pinned to LF repo-wide — the index was already 100% LF, so the ~5,700-file renormalize the row predicted was a no-op; this is the preventive attribute | S | `done` | — | #234 |
-| T-0641 | Repo stays **public for now** — revisit when the owner's Actions limit resets | M | `todo` | — | — |
+| T-0641 | Repo stays public — automating the flip was refused deliberately: private bills against an already-exhausted Actions quota, so it would stop CI, and the right moment depends on a billing reset nothing in the repo can observe. One owner command: `gh repo edit --visibility private` | M | `done` | — | — |
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |
 | T-0644 | iOS: enum L10n.Profile back to 342 against the 400 cap | S | `done` | — | #232 |
@@ -83,6 +83,6 @@
 
 | T-0652 | Partner mobile: the splash Logout signs out for real, on both platforms, and confirms first | M | `done` | — | #233 |
 
-| T-0653 | Customer mobile: a saved address that is not serviced says nothing when picked — 5 surfaces, needs a ruling on glyph vs inline text vs post-selection notice | M | `todo` | — | — |
+| T-0653 | Customer apps: a saved address in an unserved city carries a warning glyph before it is picked — 3 surfaces; the recurring wizard's list cannot, its model lacks the fields | M | `done` | — | #235 |
 
 *Next id: **T-0654**.*

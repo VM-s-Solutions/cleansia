@@ -63,6 +63,8 @@
       "currencies": "Meny",
       "currency_create": "Vytvoriť menu",
       "currency_edit": "Upraviť menu",
+      "document_requirements": "Požadované dokumenty",
+      "document_deletion_requests": "Žiadosti o vymazanie dokumentu",
       "company_info": "Informácie o spoločnosti",
       "company_info_create": "Vytvoriť informácie o spoločnosti",
       "company_info_edit": "Upraviť informácie o spoločnosti",
@@ -222,6 +224,9 @@
     "countries": "Krajiny",
     "service_area": "Servisná oblasť",
     "currencies": "Meny",
+    "employee_documents": "Dokumenty upratovačov",
+    "employee_document_requirements": "Požiadavky",
+    "employee_document_deletion_requests": "Žiadosti o vymazanie",
     "company_info": "Informácie o spoločnosti",
     "templates": "Šablóny",
     "global_rates": "Globálne sadzby",
@@ -1392,6 +1397,59 @@
         "send_test_error": "Nepodarilo sa odoslať testovací e-mail",
         "send_test_success": "Testovací e-mail bol úspešne odoslaný na {{email}}",
         "copied_to_clipboard": "Skopírované do schránky"
+      }
+    },
+    "document_requirements": {
+      "title": "Požadované dokumenty",
+      "description": "Dokumenty, ktoré jednotlivé krajiny vyžadujú od upratovača pred schválením.",
+      "country_section": "Krajina",
+      "country": "Krajina",
+      "list_section": "Požiadavky",
+      "add": "Pridať požiadavku",
+      "edit": "Upraviť požiadavku",
+      "empty": "Táto krajina zatiaľ nemá žiadne požadované dokumenty.",
+      "required_yes": "Povinné",
+      "required_no": "Voliteľné",
+      "upsert_hint": "Opätovné uloženie rovnakej krajiny a typu dokumentu upraví existujúce pravidlo.",
+      "delete_confirm_title": "Odstrániť túto požiadavku?",
+      "delete_confirm": "Typ dokumentu prestane byť povinný. Už schválených upratovačov sa to nedotkne.",
+      "columns": {
+        "document_type": "Typ dokumentu",
+        "required": "Povinné",
+        "sort_order": "Poradie"
+      },
+      "messages": {
+        "save_success": "Požiadavka uložená",
+        "delete_success": "Požiadavka odstránená"
+      }
+    },
+    "document_deletion_requests": {
+      "title": "Žiadosti o vymazanie dokumentu",
+      "description": "Upratovači žiadajúci o odstránenie nahraného dokumentu. Vymaže ho až schválenie.",
+      "list_section": "Žiadosti",
+      "review": "Posúdiť",
+      "approve": "Schváliť a vymazať",
+      "reject": "Zamietnuť",
+      "notes": "Poznámka pre upratovača",
+      "empty": "Nič nečaká.",
+      "approve_warning": "Schválenie dokument trvalo odstráni. Zamietnutie ho ponechá.",
+      "columns": {
+        "employee": "Upratovač",
+        "document_type": "Typ dokumentu",
+        "file": "Súbor",
+        "reason": "Dôvod",
+        "requested_on": "Požiadané",
+        "status": "Stav"
+      },
+      "status": {
+        "pending": "Čaká",
+        "approved": "Schválené",
+        "rejected": "Zamietnuté",
+        "unknown": "Neznáme"
+      },
+      "messages": {
+        "approve_success": "Dokument vymazaný",
+        "reject_success": "Žiadosť zamietnutá"
       }
     },
     "company_management": {

@@ -63,6 +63,8 @@
       "currencies": "Валюти",
       "currency_create": "Створити валюту",
       "currency_edit": "Редагувати валюту",
+      "document_requirements": "Необхідні документи",
+      "document_deletion_requests": "Запити на видалення документів",
       "company_info": "Інформація про компанію",
       "company_info_create": "Створити інформацію про компанію",
       "company_info_edit": "Редагувати інформацію про компанію",
@@ -222,6 +224,9 @@
     "countries": "Країни",
     "service_area": "Зона обслуговування",
     "currencies": "Валюти",
+    "employee_documents": "Документи виконавців",
+    "employee_document_requirements": "Вимоги",
+    "employee_document_deletion_requests": "Запити на видалення",
     "company_info": "Інформація про компанію",
     "templates": "Шаблони",
     "global_rates": "Глобальні ставки",
@@ -1392,6 +1397,59 @@
         "send_test_error": "Не вдалося надіслати тестовий лист",
         "send_test_success": "Тестовий лист успішно надіслано на {{email}}",
         "copied_to_clipboard": "Скопійовано до буфера обміну"
+      }
+    },
+    "document_requirements": {
+      "title": "Необхідні документи",
+      "description": "Документи, які кожна країна вимагає від прибиральника перед схваленням.",
+      "country_section": "Країна",
+      "country": "Країна",
+      "list_section": "Вимоги",
+      "add": "Додати вимогу",
+      "edit": "Редагувати вимогу",
+      "empty": "Ця країна поки не має вимог до документів.",
+      "required_yes": "Обов’язковий",
+      "required_no": "Необов’язковий",
+      "upsert_hint": "Повторне збереження тієї самої країни й типу документа оновить наявне правило.",
+      "delete_confirm_title": "Видалити цю вимогу?",
+      "delete_confirm": "Тип документа перестане бути обов’язковим. Уже схвалених це не торкнеться.",
+      "columns": {
+        "document_type": "Тип документа",
+        "required": "Обов’язковий",
+        "sort_order": "Порядок"
+      },
+      "messages": {
+        "save_success": "Вимогу збережено",
+        "delete_success": "Вимогу видалено"
+      }
+    },
+    "document_deletion_requests": {
+      "title": "Запити на видалення документів",
+      "description": "Прибиральники просять видалити завантажений документ. Видаляє його саме схвалення.",
+      "list_section": "Запити",
+      "review": "Розглянути",
+      "approve": "Схвалити та видалити",
+      "reject": "Відхилити",
+      "notes": "Примітка для прибиральника",
+      "empty": "Немає нічого в очікуванні.",
+      "approve_warning": "Схвалення остаточно видаляє документ. Відхилення залишає його на місці.",
+      "columns": {
+        "employee": "Прибиральник",
+        "document_type": "Тип документа",
+        "file": "Файл",
+        "reason": "Причина",
+        "requested_on": "Запитано",
+        "status": "Статус"
+      },
+      "status": {
+        "pending": "В очікуванні",
+        "approved": "Схвалено",
+        "rejected": "Відхилено",
+        "unknown": "Невідомо"
+      },
+      "messages": {
+        "approve_success": "Документ видалено",
+        "reject_success": "Запит відхилено"
       }
     },
     "company_management": {

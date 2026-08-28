@@ -1,0 +1,85 @@
+<div class="page-container">
+  <div class="page-header">
+    <cleansia-title [title]="'pages.document_deletion_requests.title' | translate" />
+  </div>
+
+  <p class="page-description">
+    {{ 'pages.document_deletion_requests.description' | translate }}
+  </p>
+
+  @if (facade.initialLoading()) {
+    <cleansia-loader />
+  } @else {
+    <cleansia-section [title]="'pages.document_deletion_requests.list_section' | translate">
+      <div class="form-grid">
+        <div class="form-field">
+          <cleansia-select
+            [label]="'pages.document_deletion_requests.columns.status' | translate"
+            [options]="statusOptions()"
+            [showClear]="true"
+            [formControl]="statusControl"
+          />
+        </div>
+      </div>
+
+      <cleansia-table
+        [data]="facade.requests()"
+        [columns]="columns"
+        [actions]="actions"
+        [config]="tableConfig"
+        [loading]="facade.loading()"
+      />
+    </cleansia-section>
+
+    @if (reviewing(); as request) {
+      <cleansia-section [title]="'pages.document_deletion_requests.review' | translate">
+        <dl class="review-summary">
+          <dt>{{ 'pages.document_deletion_requests.columns.employee' | translate }}</dt>
+          <dd>{{ request.employeeName }}</dd>
+          <dt>{{ 'pages.document_deletion_requests.columns.file' | translate }}</dt>
+          <dd>{{ request.documentFileName }}</dd>
+          <dt>{{ 'pages.document_deletion_requests.columns.reason' | translate }}</dt>
+          <dd>{{ request.reason }}</dd>
+        </dl>
+
+        <!-- Approving is the only thing that removes the document; the request never touched it. -->
+        <p class="form-hint">
+          {{ 'pages.document_deletion_requests.approve_warning' | translate }}
+        </p>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-textarea
+              [label]="'pages.document_deletion_requests.notes' | translate"
+              [formControl]="notesControl"
+              [rows]="3"
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.resolving()"
+            (onClick)="cancelReview()"
+          />
+          <cleansia-button
+            *cleansiaPermission="Policy.CanApproveEmployeeDocument"
+            [label]="'pages.document_deletion_requests.reject' | translate"
+            severity="secondary"
+            [disabled]="facade.resolving()"
+            (onClick)="resolve(false)"
+          />
+          <cleansia-button
+            *cleansiaPermission="Policy.CanApproveEmployeeDocument"
+            [label]="'pages.document_deletion_requests.approve' | translate"
+            severity="danger"
+            [loading]="facade.resolving()"
+            (onClick)="resolve(true)"
+          />
+        </div>
+      </cleansia-section>
+    }
+  }
+</div>

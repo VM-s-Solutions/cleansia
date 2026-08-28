@@ -1,0 +1,35 @@
+import nx from '@nx/eslint-plugin';
+import { generatedDtoLiteralRules } from '../../../eslint.generated-dto.config.mjs';
+import baseConfig from '../../../eslint.base.config.mjs';
+
+export default [
+  ...baseConfig,
+  ...generatedDtoLiteralRules(),
+  ...nx.configs['flat/angular'],
+  ...nx.configs['flat/angular-template'],
+  {
+    files: ['**/*.ts'],
+    rules: {
+      '@angular-eslint/directive-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: 'cleansia',
+          style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: 'element',
+          prefix: 'cleansia',
+          style: 'kebab-case',
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/*.html'],
+    rules: {},
+  },
+];

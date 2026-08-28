@@ -63,6 +63,8 @@
       "currencies": "Měny",
       "currency_create": "Vytvořit měnu",
       "currency_edit": "Upravit měnu",
+      "document_requirements": "Požadované dokumenty",
+      "document_deletion_requests": "Žádosti o smazání dokumentu",
       "company_info": "Informace o společnosti",
       "company_info_create": "Vytvořit informace o společnosti",
       "company_info_edit": "Upravit informace o společnosti",
@@ -222,6 +224,9 @@
     "countries": "Země",
     "service_area": "Servisní oblast",
     "currencies": "Měny",
+    "employee_documents": "Dokumenty uklízečů",
+    "employee_document_requirements": "Požadavky",
+    "employee_document_deletion_requests": "Žádosti o smazání",
     "company_info": "Údaje o společnosti",
     "templates": "Šablony",
     "global_rates": "Globální sazby",
@@ -1502,6 +1507,59 @@
         "send_test_error": "Nepodařilo se odeslat testovací e-mail",
         "send_test_success": "Testovací e-mail byl úspěšně odeslán na {{email}}",
         "copied_to_clipboard": "Zkopírováno do schránky"
+      }
+    },
+    "document_requirements": {
+      "title": "Požadované dokumenty",
+      "description": "Dokumenty, které jednotlivé země vyžadují od uklízeče před schválením.",
+      "country_section": "Země",
+      "country": "Země",
+      "list_section": "Požadavky",
+      "add": "Přidat požadavek",
+      "edit": "Upravit požadavek",
+      "empty": "Tato země zatím nemá žádné požadované dokumenty.",
+      "required_yes": "Povinné",
+      "required_no": "Volitelné",
+      "upsert_hint": "Opětovné uložení stejné země a typu dokumentu upraví stávající pravidlo.",
+      "delete_confirm_title": "Odebrat tento požadavek?",
+      "delete_confirm": "Typ dokumentu přestane být povinný. Již schválených uklízečů se to nedotkne.",
+      "columns": {
+        "document_type": "Typ dokumentu",
+        "required": "Povinné",
+        "sort_order": "Pořadí"
+      },
+      "messages": {
+        "save_success": "Požadavek uložen",
+        "delete_success": "Požadavek odebrán"
+      }
+    },
+    "document_deletion_requests": {
+      "title": "Žádosti o smazání dokumentu",
+      "description": "Uklízeči žádající o odstranění nahraného dokumentu. Smaže ho až schválení.",
+      "list_section": "Žádosti",
+      "review": "Posoudit",
+      "approve": "Schválit a smazat",
+      "reject": "Zamítnout",
+      "notes": "Poznámka pro uklízeče",
+      "empty": "Nic nečeká.",
+      "approve_warning": "Schválení dokument trvale odstraní. Zamítnutí ho ponechá.",
+      "columns": {
+        "employee": "Uklízeč",
+        "document_type": "Typ dokumentu",
+        "file": "Soubor",
+        "reason": "Důvod",
+        "requested_on": "Požádáno",
+        "status": "Stav"
+      },
+      "status": {
+        "pending": "Čeká",
+        "approved": "Schváleno",
+        "rejected": "Zamítnuto",
+        "unknown": "Neznámé"
+      },
+      "messages": {
+        "approve_success": "Dokument smazán",
+        "reject_success": "Žádost zamítnuta"
       }
     },
     "company_management": {

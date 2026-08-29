@@ -109,7 +109,7 @@ public class HandlePaymentNotification
         return null;
     }
 
-    public record Command(string JsonPayload, string SignatureHeader, string Language = Constants.Language.English) : ICommand<string>;
+    public record Command(string JsonPayload, string SignatureHeader, string Language = Constants.Language.English) : ICommand;
 
     public class Handler(
         IStripeConfig stripeConfig,
@@ -121,9 +121,9 @@ public class HandlePaymentNotification
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
-        ILogger<Handler> logger) : ICommandHandler<Command, string>
+        ILogger<Handler> logger) : ICommandHandler<Command>
     {
-        public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             Event stripeEvent;
             try
@@ -135,7 +135,7 @@ public class HandlePaymentNotification
             catch (StripeException ex)
             {
                 logger.LogError(ex, "Invalid webhook signature");
-                return BusinessResult.Failure<string>(new Error(
+                return BusinessResult.Failure(new Error(
                     "InvalidSignature",
                     "Invalid webhook signature"));
             }
@@ -153,7 +153,7 @@ public class HandlePaymentNotification
                 logger.LogInformation(
                     "Stripe event {EventId} ({EventType}) already processed; short-circuiting",
                     stripeEvent.Id, stripeEvent.Type);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             // Stamp this event as processed BEFORE any side effects. The row
@@ -171,7 +171,7 @@ public class HandlePaymentNotification
             if (Constants.StripeEventType.IsSubscriptionEvent(stripeEvent.Type))
             {
                 var subscriptionId = await subscriptionWebhookHandler.HandleAsync(stripeEvent, cancellationToken);
-                return BusinessResult.Success(subscriptionId);
+                return BusinessResult.Success();
             }
 
             // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
@@ -187,12 +187,12 @@ public class HandlePaymentNotification
             if (orderId is null)
             {
                 logger.LogInformation("Received webhook event type {EventType}, ignoring", stripeEvent.Type);
-                return BusinessResult.Success(string.Empty);
+                return BusinessResult.Success();
             }
             if (string.IsNullOrEmpty(orderId))
             {
                 logger.LogError("Order ID not found in webhook metadata for event type {EventType}", stripeEvent.Type);
-                return BusinessResult.Failure<string>(new Error(
+                return BusinessResult.Failure(new Error(
                     "OrderIdMissing",
                     "Order ID not found in webhook metadata"));
             }
@@ -201,7 +201,7 @@ public class HandlePaymentNotification
             if (order == null)
             {
                 logger.LogError("Order {OrderId} not found", orderId);
-                return BusinessResult.Failure<string>(new Error(
+                return BusinessResult.Failure(new Error(
                     nameof(orderId),
                     BusinessErrorMessage.OrderNotFound));
             }
@@ -225,7 +225,7 @@ public class HandlePaymentNotification
                     => HandlePaymentIntentFailed(order, orderId),
                 Constants.StripeEventType.PaymentIntentCanceled
                     => await HandleExpiredSession(order, orderId, cancellationToken),
-                _ => BusinessResult.Success(orderId),
+                _ => BusinessResult.Success(),
             };
         }
 
@@ -235,15 +235,15 @@ public class HandlePaymentNotification
         /// different payment method. Don't move to Cancelled — that path is
         /// reserved for explicit user cancellation or session expiry.
         /// </summary>
-        private BusinessResult<string> HandlePaymentIntentFailed(Order order, string orderId)
+        private BusinessResult HandlePaymentIntentFailed(Order order, string orderId)
         {
             logger.LogWarning(
                 "PaymentIntent failed for order {OrderId} (status remains {Status}); client may retry",
                 orderId, order.PaymentStatus);
-            return BusinessResult.Success(orderId);
+            return BusinessResult.Success();
         }
 
-        private async Task<BusinessResult<string>> HandleCompletedSession(Order order, string orderId, string language, CancellationToken cancellationToken)
+        private async Task<BusinessResult> HandleCompletedSession(Order order, string orderId, string language, CancellationToken cancellationToken)
         {
             // Checked BEFORE the terminal-state short-circuit below: a cash-collected order is already
             // Paid, so it would otherwise be waved through as a benign duplicate — hiding the fact that
@@ -256,7 +256,7 @@ public class HandlePaymentNotification
             if (order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.Refunded)
             {
                 logger.LogInformation("Order {OrderId} already in terminal state {Status}, skipping webhook processing", orderId, order.PaymentStatus);
-                return BusinessResult.Success(orderId);
+                return BusinessResult.Success();
             }
 
             order.UpdatePaymentStatus(PaymentStatus.Paid);
@@ -298,16 +298,16 @@ public class HandlePaymentNotification
                 order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
-            return BusinessResult.Success(orderId);
+            return BusinessResult.Success();
         }
 
-        private async Task<BusinessResult<string>> HandleExpiredSession(Order order, string orderId, CancellationToken cancellationToken)
+        private async Task<BusinessResult> HandleExpiredSession(Order order, string orderId, CancellationToken cancellationToken)
         {
             // Idempotency check - don't process if already cancelled or paid
             if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid or PaymentStatus.Refunded)
             {
                 logger.LogInformation("Order {OrderId} already has payment status {Status}, skipping expired session", orderId, order.PaymentStatus);
-                return BusinessResult.Success(orderId);
+                return BusinessResult.Success();
             }
 
             order.UpdatePaymentStatus(PaymentStatus.Failed);
@@ -329,7 +329,7 @@ public class HandlePaymentNotification
             }
 
             logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);
-            return BusinessResult.Success(orderId);
+            return BusinessResult.Success();
         }
 
         private const string WebhookActor = "stripe-webhook";
@@ -344,7 +344,7 @@ public class HandlePaymentNotification
         /// reached us) is a human call, so this raises an escalated dispute for an administrator and
         /// leaves the money exactly where it is.
         /// </summary>
-        private async Task<BusinessResult<string>> EscalateDoubleSettlement(
+        private async Task<BusinessResult> EscalateDoubleSettlement(
             Order order, string orderId, CancellationToken cancellationToken)
         {
             logger.LogError(
@@ -360,7 +360,7 @@ public class HandlePaymentNotification
                         "Double settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
                         orderId, existing.Status);
                 }
-                return BusinessResult.Success(orderId);
+                return BusinessResult.Success();
             }
 
             var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
@@ -375,11 +375,11 @@ public class HandlePaymentNotification
                 logger.LogWarning(
                     "Double settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
                     orderId, dispute.Status);
-                return BusinessResult.Success(orderId);
+                return BusinessResult.Success();
             }
             disputeRepository.Add(dispute);
 
-            return BusinessResult.Success(orderId);
+            return BusinessResult.Success();
         }
 
         /// <summary>
@@ -388,7 +388,7 @@ public class HandlePaymentNotification
         /// the Stripe dispute id and reflects Stripe's status. A charge that maps to
         /// no local Order is a no-op success (S6 — never a retry-inducing failure).
         /// </summary>
-        private async Task<BusinessResult<string>> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
+        private async Task<BusinessResult> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
         {
             var stripeDispute = stripeEvent.Data.Object as Stripe.Dispute;
             var paymentIntentId = stripeDispute?.PaymentIntentId;
@@ -397,7 +397,7 @@ public class HandlePaymentNotification
             if (string.IsNullOrWhiteSpace(paymentIntentId) || string.IsNullOrWhiteSpace(stripeDisputeId))
             {
                 logger.LogWarning("Chargeback event {EventType} missing payment_intent or dispute id; ignoring", stripeEvent.Type);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             if (stripeEvent.Type is Constants.StripeEventType.ChargeDisputeUpdated
@@ -410,7 +410,7 @@ public class HandlePaymentNotification
             if (order is null)
             {
                 logger.LogWarning("Chargeback {EventType} resolved to no local order; ignoring", stripeEvent.Type);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             if (!string.IsNullOrEmpty(order.TenantId))
@@ -423,7 +423,7 @@ public class HandlePaymentNotification
             {
                 existing.LinkStripeDispute(stripeDisputeId, WebhookActor);
                 logger.LogInformation("Linked chargeback to existing dispute for order {OrderId}", order.Id);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
@@ -444,17 +444,17 @@ public class HandlePaymentNotification
                     "Chargeback {EventType} could not escalate a new dispute for order {OrderId} " +
                     "(illegal {CurrentStatus} → Escalated); not persisting",
                     stripeEvent.Type, order.Id, dispute.Status);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
             disputeRepository.Add(dispute);
 
             logger.LogInformation("Created and linked chargeback dispute for order {OrderId}", order.Id);
-            return BusinessResult.Success(stripeEvent.Id);
+            return BusinessResult.Success();
         }
 
         private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
 
-        private async Task<BusinessResult<string>> ReflectChargebackStatus(
+        private async Task<BusinessResult> ReflectChargebackStatus(
             Stripe.Dispute stripeDispute, string stripeDisputeId, Event stripeEvent, CancellationToken cancellationToken)
         {
             // Tenant-ignoring read: the webhook is anonymous (no tenant claim), so a tenant-scoped read
@@ -463,7 +463,7 @@ public class HandlePaymentNotification
             if (dispute is null)
             {
                 logger.LogWarning("Chargeback {EventType} for unknown linked dispute; ignoring", stripeEvent.Type);
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             // Re-scope BEFORE the status write so the Updated(...) audit commit lands under the
@@ -482,7 +482,7 @@ public class HandlePaymentNotification
             // mapping to Escalated). Self-edges are absent from the table by design — benign no-op.
             if (target == dispute.Status)
             {
-                return BusinessResult.Success(stripeEvent.Id);
+                return BusinessResult.Success();
             }
 
             switch (target)
@@ -506,11 +506,11 @@ public class HandlePaymentNotification
                         "Chargeback {EventType} would force an illegal transition on dispute {DisputeId} " +
                         "({CurrentStatus} → {Target}); ignoring",
                         stripeEvent.Type, dispute.Id, dispute.Status, target);
-                    return BusinessResult.Success(stripeEvent.Id);
+                    return BusinessResult.Success();
             }
 
             logger.LogInformation("Reflected chargeback {EventType} status onto dispute for order {OrderId}", stripeEvent.Type, dispute.OrderId);
-            return BusinessResult.Success(stripeEvent.Id);
+            return BusinessResult.Success();
         }
 
         /// <summary>

@@ -44,7 +44,6 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
             assert: async (context, result) =>
             {
                 Assert.True(result.IsSuccess);
-                Assert.True(result.Value);
 
                 var user = await context.Users.FirstOrDefaultAsync(u => u.Email == Constants.TestUserSession.TestUserEmail);
                 Assert.NotNull(user);

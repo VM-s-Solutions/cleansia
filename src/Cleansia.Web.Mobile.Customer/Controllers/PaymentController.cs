@@ -46,7 +46,7 @@ public class PaymentController(IMediator mediator) : CustomerMobileApiController
     [AllowAnonymous]
     [EnableRateLimiting("webhook")]
     [HttpPost("webhook")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Webhook()
     {
@@ -58,6 +58,6 @@ public class PaymentController(IMediator mediator) : CustomerMobileApiController
             SignatureHeader: signatureHeader);
 
         var result = await Mediator.Send(command);
-        return HandleResult<string>(result);
+        return HandleResult<object>(result);
     }
 }

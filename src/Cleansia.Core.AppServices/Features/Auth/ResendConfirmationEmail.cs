@@ -43,13 +43,13 @@ public class ResendConfirmationEmail
         }
     }
 
-    public record Command(string Email, string Language) : ICommand<bool>;
+    public record Command(string Email, string Language) : ICommand;
 
     public class Handler(
         IUserRepository userRepository,
-        IPendingDispatch pending) : ICommandHandler<Command, bool>
+        IPendingDispatch pending) : ICommandHandler<Command>
     {
-        public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             var userName = $"{user!.FirstName} {user.LastName}";
@@ -58,7 +58,7 @@ public class ResendConfirmationEmail
 
             EmailDispatch.EnqueueConfirmation(pending, user, userName, rawConfirmationToken, command.Language);
 
-            return BusinessResult.Success(true);
+            return BusinessResult.Success();
         }
     }
 }

@@ -20,14 +20,14 @@ public class Logout
     // treats it as a no-op success — logout is idempotent.
     public class Validator : AbstractValidator<Command> { }
 
-    public record Command(string Token) : ICommand<bool>;
+    public record Command(string Token) : ICommand;
 
     internal class Handler(
         IRefreshTokenService refreshTokenService,
         IUserSessionProvider userSessionProvider)
-        : ICommandHandler<Command, bool>
+        : ICommandHandler<Command>
     {
-        public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(command.Token))
             {
@@ -36,7 +36,7 @@ public class Logout
                 await refreshTokenService.RevokeAsync(
                     command.Token, reason: "logout", cancellationToken, userSessionProvider.GetUserId());
             }
-            return BusinessResult.Success(true);
+            return BusinessResult.Success();
         }
     }
 }

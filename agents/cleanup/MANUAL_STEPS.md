@@ -189,3 +189,28 @@ standing consequence of regenerating `Initial` rather than stacking, and it is w
 
 `TakeOrderConcurrentSeatRaceTests` is no longer skipped and **passes against real Postgres**: two
 concurrent commits, exactly one winner, one `DbUpdateException`, one surviving assignment at ordinal 0.
+
+---
+
+### MS-11 — regenerate the API clients before DEV sees T-0665 (OUTSTANDING)
+
+**Two regens, and the order matters: regenerate BEFORE the next deploy, not after.**
+
+T-0665 removed a response body that carried no information. Four commands answered `true` on every
+success path — `Logout`, `Register`, `RegisterEmployee`, `ResendConfirmationEmail` — because failures
+travel the error channel, so the payload could never be anything else. `HandlePaymentNotification`
+answered a Stripe event id that nothing read. All five are now bare `ICommand`, and the endpoints
+answer 200 with no body.
+
+The generated clients still expect a `bool` and a `string`. Until they are regenerated they will try
+to deserialise a body that is no longer sent, on **logout, registration and resend-confirmation** —
+three paths every user meets.
+
+1. **`manual_step: nswag-regen`** — `npm run generate-*-client` for the three web apps. Owner-only
+   (`CLAUDE.md` § *Manual steps*).
+2. **`manual_step: mobile-spec-regen`** — `src/cleansia_ios/scripts/refresh-mobile-spec.sh` against
+   running mobile hosts (:5002, :5004), which rewrites the shared specs under
+   `src/cleansia_android/openapi/` that both Android and iOS generate from.
+
+Backend, controllers and tests are done and green — 4077 unit tests pass and the solution builds. What
+remains is only the client side of a contract that deliberately changed.

@@ -56,14 +56,14 @@ public class AdminAuthController(
 
     [Authorize]
     [HttpPost("Logout")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Logout([FromBody] Logout.Command command, CancellationToken cancellationToken)
     {
         var enriched = command with { Token = RefreshTokenFromCookieOrBody(command.Token) };
         var result = await Mediator.Send(enriched, cancellationToken);
         ClearAuthCookies();
-        return HandleResult<bool>(result);
+        return HandleResult<object>(result);
     }
 
     // Credential mutation: covered by the controller-level "auth" rate limit; the handler keys the

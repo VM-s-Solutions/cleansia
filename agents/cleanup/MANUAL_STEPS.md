@@ -192,7 +192,7 @@ concurrent commits, exactly one winner, one `DbUpdateException`, one surviving a
 
 ---
 
-### MS-11 — regenerate the API clients before DEV sees T-0665 (OUTSTANDING)
+### MS-11 — regenerate the API clients before DEV sees T-0665 (DISCHARGED 2026-08-29)
 
 **Two regens, and the order matters: regenerate BEFORE the next deploy, not after.**
 
@@ -214,3 +214,29 @@ three paths every user meets.
 
 Backend, controllers and tests are done and green — 4077 unit tests pass and the solution builds. What
 remains is only the client side of a contract that deliberately changed.
+
+**Discharged by Claude on the owner's explicit instruction** — *"Regenerate all of the clients on your
+own, the API is running"* — which overrides `CLAUDE.md` § *Manual steps* **for this step only**. The
+standing rule that NSwag regeneration is owner-run is unchanged unless the owner says otherwise, the
+same way MS-8 was handled for the EF migration.
+
+All five hosts were up and serving swagger, and the running build already carried T-0665: the partner
+and customer specs reported no 200 schema on Logout/Register, which is how the regeneration was known
+to be reading the new contract rather than the old one.
+
+**Web** — `npm run generate-clients` rewrote all three NSwag clients. Its closing typecheck failed, as
+that script's own message predicts, with three real call sites: `register` in both partner and customer
+auth services and `registerEmployee` in partner still declared `Observable<boolean>` where the client
+now returns `Observable<void>`. Each now ends `.pipe(map(() => true))` — the shape `logout()` and
+`resendConfirmationEmail()` in the same files already used, so no facade or spec had to move.
+
+**Mobile** — both shared specs refreshed. The downgrade guard refused them first, correctly: the specs
+came back ~1.5 KB smaller. Diffing the refused `.fetched` copies proved the shrink was exactly T-0665
+and nothing else — no path removed, no schema removed, nothing added, and the only changes were 200
+bodies disappearing from the four partner auth endpoints and the three customer ones plus
+`/api/Payment/webhook`. The guard gained `--allow-shrink` for that case rather than being worked
+around by moving files past it.
+
+Verified: typecheck clean across all three compilation units, all three apps build, and 74 tests pass
+across the two service libraries and both register facades. Android and iOS need nothing further — both
+generate from the committed specs at build time and no generated client is tracked.

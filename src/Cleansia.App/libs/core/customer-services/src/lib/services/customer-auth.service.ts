@@ -76,7 +76,9 @@ export class CustomerAuthService {
       ? referralCode.trim().toUpperCase()
       : undefined;
 
-    return this.customerClient.authClient.register(command);
+    // 200 with no body since T-0665 — the bool was always `true`, failures come through as
+    // errors. Success is "it did not throw", matching logout() in this same service.
+    return this.customerClient.authClient.register(command).pipe(map(() => true));
   }
 
   confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {

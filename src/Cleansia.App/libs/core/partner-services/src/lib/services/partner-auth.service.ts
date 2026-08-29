@@ -73,7 +73,10 @@ export class PartnerAuthService {
     command.language = this.currentLanguage();
     command.referralCode = referralCode;
 
-    return this.partnerClient.authClient.register(command);
+    // The endpoint answers 200 with no body (T-0665): the bool it used to return was `true` on
+    // every success path, because failures arrive as errors. Success is therefore "it did not
+    // throw", which is what this maps. Same shape as logout() and resendConfirmationEmail() below.
+    return this.partnerClient.authClient.register(command).pipe(map(() => true));
   }
 
   registerEmployee(
@@ -89,7 +92,7 @@ export class PartnerAuthService {
     command.lastName = lastName;
     command.language = this.currentLanguage();
 
-    return this.partnerClient.authClient.registerEmployee(command);
+    return this.partnerClient.authClient.registerEmployee(command).pipe(map(() => true));
   }
 
   confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {

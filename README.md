@@ -175,6 +175,33 @@ thing that proves the model and the schema agree.
 **NSwag client regeneration is owner-run.** Work that needs it is flagged `manual_step: nswag-regen`
 rather than performed. Migrations are not — see `CLAUDE.md`.
 
+## Regenerating the API clients
+
+A backend contract change needs **both** halves, and they are separate tools. Neither is hard to run;
+the reason they get flagged rather than run is the policy above, not the difficulty.
+
+```bash
+# Web — all three NSwag clients at once, then a typecheck. Needs the three API hosts up
+# (partner :5000, admin :5001, customer :5003).
+cd src/Cleansia.App && npm run generate-clients
+
+# Mobile — BOTH specs, shared by Android and iOS. Needs the mobile hosts up (:5002, :5004).
+# The script sits under cleansia_ios/ but writes to cleansia_android/openapi/, which is the
+# single source both platforms generate from.
+bash src/cleansia_ios/scripts/refresh-mobile-spec.sh
+```
+
+Two things worth knowing before running them:
+
+- **`generate-clients` ends in a typecheck, and that typecheck failing is normal.** The generator emits
+  a nullable DTO member as a required key, and an endpoint that stops returning a body turns
+  `Observable<T>` into `Observable<void>` — so the call sites it names are the work, not a bug. Never
+  hand-edit `libs/core/*/src/lib/client/*-client.ts`.
+- **The mobile script refuses a spec smaller than the committed one**, because a shrink usually means
+  the host you fetched from is stale and overwriting would delete types the apps still use. When the
+  reduction is deliberate — an endpoint that legitimately stopped returning a body — diff the refused
+  `*-mobile-api.json.fetched` it leaves beside the spec, then re-run with `--allow-shrink`.
+
 ### Connecting to the database
 
 ```bash

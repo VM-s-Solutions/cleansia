@@ -48,6 +48,27 @@ normalised_size() {
   tr -d '\r' < "$1" | wc -c | tr -d ' '
 }
 
+# --allow-shrink lets a DELIBERATE contract reduction through the downgrade guard.
+#
+# The guard assumes a smaller spec means a stale host, which is the common case and worth refusing by
+# default. But a spec legitimately shrinks when an endpoint stops returning a body: T-0665 removed the
+# always-true bool from four auth endpoints and the webhook string, and both specs came back ~1.5 KB
+# lighter with no path and no schema removed. Without this flag the only way past is to move files
+# around the script, which skips the temp-file fetch, the counters and the summary — every other
+# safeguard, to get past one.
+#
+# Prove the shrink is what you meant BEFORE passing this: the refused fetch is left beside the spec as
+# <name>-mobile-api.json.fetched, so diff that against the committed file first.
+allow_shrink=0
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    --allow-shrink) allow_shrink=1 ;;
+    *) args+=("$arg") ;;
+  esac
+done
+set -- "${args[@]+"${args[@]}"}"
+
 app="${1:-all}"
 override_url="${2:-}"
 
@@ -76,7 +97,7 @@ refresh_one() {
     local after
     after="$(normalised_size "$tmp")"
 
-    if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
+    if [[ "$before" -gt 0 && "$after" -lt "$before" && "$allow_shrink" != "1" ]]; then
       echo "  refusing: the fetched ${name} spec is SMALLER than the committed one" >&2
       echo "            (${after} vs ${before} bytes, CR-normalised). The host you fetched from is behind" >&2
       echo "            the contract in git, and overwriting would delete types the apps already use." >&2
@@ -84,6 +105,11 @@ refresh_one() {
       echo "            Kept: ${out#"${IOS_ROOT}/../"} (unchanged). Fetched copy left at ${tmp##*/}." >&2
       refused=$((refused + 1))
       return 0
+    fi
+
+    if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
+      echo "  shrink ACCEPTED for ${name} (${after} vs ${before} bytes) — --allow-shrink was passed." >&2
+      echo "           Confirm the diff is the contract reduction you intended before committing." >&2
     fi
 
     mv "$tmp" "$out"

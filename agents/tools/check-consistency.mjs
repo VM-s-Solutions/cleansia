@@ -460,10 +460,25 @@ function checkFrontend(roots) {
             /override\s+(writeValue|registerOnChange|registerOnTouched)\b/.test(
                 body,
             );
-        read(f).forEach((ln, i) => {
+        // A file-level `/* eslint-disable @typescript-eslint/no-explicit-any */` silences ESLint for
+        // the whole file. This rule has to honour it, or it contradicts the linter the repo already
+        // runs and asks for a change ESLint has been told not to want.
+        const fileDisablesAny =
+            /eslint-disable\b[^\n]*@typescript-eslint\/no-explicit-any/.test(body);
+        const src = read(f);
+        src.forEach((ln, i) => {
             if (implementsCva && CVA_ANY.test(ln)) return;
             if (FRAMEWORK_ANY.test(ln)) return;
-            if (/:\s*any(\b|\[)/.test(ln) && !/eslint-disable/.test(ln))
+            if (fileDisablesAny) return;
+            if (/eslint-disable/.test(ln)) return;
+            // The disable that matters is almost always on the PREVIOUS line, because
+            // `eslint-disable-next-line` is the idiom. Checking only the current line meant this rule
+            // reported error.codes.ts — a deliberate exception carrying both a paragraph explaining
+            // why `any` is required there (bivariant assignment into the handler map, which
+            // `unknown` blocks) and the disable directive itself. A convention checker that reports
+            // documented, linter-sanctioned exceptions teaches people to skim past it.
+            if (i > 0 && /eslint-disable-next-line/.test(src[i - 1])) return;
+            if (/:\s*any(\b|\[)/.test(ln))
                 add(
                     f,
                     i + 1,
@@ -474,6 +489,68 @@ function checkFrontend(roots) {
     }
     return all.length;
 }
+
+// E1 support — is this UiState a PHASE BAG, i.e. does it model mutually exclusive states as
+// independent flags that can contradict each other?
+//
+// The rule was `/data class \w*UiState\b/` with no qualification. Measured against the tree on
+// 2026-08-28 that was nine hits, of which ONE was defensible. In three of the eight the prescribed
+// cure — a Loading/Error/Loaded union — would have deleted a distinction the code documents at
+// length. A rule wrong eight times in nine does not get obeyed, it gets skimmed past, and then it
+// protects nothing. Each exemption below names the case that forced it, so the next person can tell
+// a considered narrowing from a convenient one.
+const isUiStatePhaseBag = (lines, at) => {
+    // The parameter list spans many lines in the real cases, so take it by matching parentheses.
+    const text = lines.slice(at, at + 80).join("\n");
+    const open = text.indexOf("(");
+    if (open < 0) return false;
+    let depth = 0;
+    let close = -1;
+    for (let k = open; k < text.length; k++) {
+        if (text[k] === "(") depth++;
+        else if (text[k] === ")" && --depth === 0) {
+            close = k;
+            break;
+        }
+    }
+    if (close < 0) return false;
+    const body = text
+        .slice(open + 1, close)
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/[^\n]*/g, "");
+    const fields = [
+        ...body.matchAll(/\bval\s+(\w+)\s*:\s*([\w<>?., ]+?)\s*(?:=|,|$)/g),
+    ].map((m) => ({ name: m[1], type: m[2].trim() }));
+    if (!fields.length) return false;
+
+    // (a) One phase signal has nothing to contradict. SettingsUiState is a lone
+    //     `isSignedOut: Boolean`; a union over it would be ceremony, not clarity.
+    const phase = fields.filter(
+        (x) => x.type === "Boolean" || /error|outcome|status/i.test(x.name),
+    );
+    if (phase.length < 2) return false;
+
+    // (b) Two or more CONCURRENT in-flight signals are deliberately distinct, and one `Loading` case
+    //     erases them. InvoicesListUiState and RegistrationLockUiState each carry a paragraph saying
+    //     the pull-to-refresh indicator must never subscribe to the background refresh — collapsing
+    //     the two is precisely the bug those comments were written to prevent. `has*` is excluded:
+    //     hasLoadedOnce records the past, it is not something in flight.
+    const inFlight = fields.filter(
+        (x) =>
+            x.type === "Boolean" &&
+            !/^has/i.test(x.name) &&
+            /load|refresh|saving|sending|submit|report|process/i.test(x.name),
+    );
+    if (inFlight.length >= 2) return false;
+
+    // (c) Per-field validation errors are FORM state and a phase union has nowhere to keep them —
+    //     the user goes on typing while a request is in flight. RegisterUiState carries six. The
+    //     diagnosis "too many flags" may still be fair there; the prescribed cure is not, and a rule
+    //     should not name a fix that does not fit.
+    if (fields.filter((x) => /error/i.test(x.name)).length >= 2) return false;
+
+    return true;
+};
 
 // ---------------------------------------------------------------------------- MOBILE (E)
 function checkMobile(roots) {
@@ -496,7 +573,10 @@ function checkMobile(roots) {
         }
         lines.forEach((ln, i) => {
             const n = i + 1;
-            if (/data class\s+\w*UiState\b/.test(ln))
+            if (
+                /data class\s+\w*UiState\b/.test(ln) &&
+                isUiStatePhaseBag(lines, i)
+            )
                 add(
                     f,
                     n,

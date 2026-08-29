@@ -59,11 +59,11 @@
 | T-0629 | i18n: a label outgrowing a single-line control truncates — ported to iOS and web, written into conventions.md | M | `done` | — | #232 |
 | T-0630 | Admin console gated behind an Azure invitation (`admin_console`) — **MS-9 before the next admin deploy** | M | `done` | — | #233 |
 | T-0631 | Partner Android: camera capture for job photos and the avatar, CAMERA restored with its uses-feature | M | `done` | — | #231 |
-| T-0632 | SendNewJobsDigest is very likely fine — DEV App Insights samples at 10%, and ~96 firings since deploy would record ~9; the owner saw 8. Confirm with `summarize sum(itemCount)` | S | `todo` | — | — |
-| T-0633 | Bicep audit: one-day three-axis read — secrets/identity, drift, cost — needs one non-mutating `what-if` dispatch | M | `todo` | — | — |
+| T-0632 | `SendNewJobsDigest` fires hourly as scheduled — App Insights `sum(itemCount)` reads 30/20/20/30 across 2026-08-24..27, i.e. ~25 a day. The Invocations blade showed 8 because DEV samples telemetry at 10% and that blade reports raw sampled rows without correcting for it | S | `done` | — | — |
+| T-0633 | Bicep audit — three axes read 2026-08-28 against a non-mutating `what-if` (run 33198443746). **Drift**: 23 reported, 21 are what-if artefacts (ARM's site GET omits `siteConfig`, plus service-defaulted Postgres / SWA / blob-container properties) — 2 are real and are filed as T-0655 and T-0656. **Secrets/identity**: RBAC vault, no value in source, managed-identity reads, Secrets *User* for hosts and Officer only for CI — no finding. **Cost**: B2 plan, SWA Free ×3, Postgres B1ms Burstable, Standard_LRS, ACR Basic, private networking off, telemetry sampled to 10% under a 500 MB breaker — no finding. Method limit worth carrying: `what-if` returns NestedDeploymentShortCircuited on the roleAssignment nested deployment, so a clean drift report never covers RBAC. One dismissed entry was spot-checked in the portal 2026-08-28 — health check is **Enabled** with `/alive` on the API sites, confirming the `+ healthCheckPath` line was a what-if artefact and not drift | M | `done` | — | — |
 | T-0634 | Log Analytics is required by workspace-based App Insights — closed, not a defect | S | `done` | — | d5b020bf |
 | T-0635 | Azure cost: the dev cut was designed, measured and committed on 2026-08-11 — owner closed it without resolving further | S | `done` | — | d5b020bf |
-| T-0636 | Partner DEV API returned 500 from /health for 4 minutes after deploy | S | `todo` | — | — |
+| T-0636 | Partner DEV API 500 from /health — **root cause found, closed 2026-08-28 with no code change**. `System.BadImageFormatException`: *"…The format of the file '/home/site/wwwroot/Cleansia.Infra.Database.dll' is invalid."*, from `Microsoft.Extensions.DependencyInjection` → `ResolveService`, 2026-08-25 18:43:57 UTC. A deploy race, not a defect: `azure/webapps-deploy@v3` extracts the zip file-by-file over the live `wwwroot` and dev has no staging slot (a B-series plan cannot host one), so the restart raced extraction and DI loaded a half-written assembly — clearing when extraction finished, which is the four minutes the report measured. **Deliberately not fixed.** Prod is immune by construction (slot → warm → prove → swap). Dev is already mitigated: `warm-dev-sites` retries 30×10s and only warns, and its comment already names this ticket. `WEBSITE_RUN_FROM_PACKAGE=1` does not apply — these are `kind: 'app,linux'` hosts and the value `1` is a Windows mechanism; the Linux form takes a blob URL, i.e. a SAS-rotating upload across five deploy jobs to remove a warning from a dev log | S | `done` | — | — |
 | T-0637 | Warm-up probe: classifies the status and surfaces the body; prod fails fast, dev keeps its budget | S | `done` | — | #232 |
 | T-0638 | Backend: `context.TraceIdentifier` joins the request log lines to the exception line, keeping the 413 | S | `done` | — | #230 |
 | T-0639 | refresh-mobile-spec.sh: compares CR-normalised content, counts refusals separately, exits non-zero on one | S | `done` | — | #232 |
@@ -72,7 +72,6 @@
 | T-0642 | docs: a getting-started page for running Cleansia locally | S | `done` | — | 7651ee69 |
 | T-0643 | Root README: six stale facts corrected | S | `done` | — | #232 |
 | T-0644 | iOS: enum L10n.Profile back to 342 against the 400 cap | S | `done` | — | #232 |
-
 | T-0645 | Partner iOS: the address step checks the city and shows all four service-area verdicts | M | `done` | — | #231 |
 | T-0646 | Customer apps: the status-coloured left stripe is off the orders-list card | S | `done` | — | #230 |
 | T-0647 | Customer Android: pull-to-refresh on Home and Recurring bookings | S | `done` | — | #232 |
@@ -80,11 +79,14 @@
 | T-0649 | Partner Identification: Self-employed / Legal entity slides on a spring, both platforms | M | `done` | — | #231 |
 | T-0650 | CI: cancel superseded iOS runs, ceiling every CI job | S | `done` | — | 00f4f729 |
 | T-0651 | Customer iOS: the profile tab reaches recurring bookings, so the Plus upsell is reachable | S | `done` | — | #230 |
-
 | T-0652 | Partner mobile: the splash Logout signs out for real, on both platforms, and confirms first | M | `done` | — | #233 |
-
 | T-0653 | Customer apps: a saved address in an unserved city carries a warning glyph before it is picked — 3 surfaces; the recurring wizard's list cannot, its model lacks the fields | M | `done` | — | #235 |
+| T-0654 | iOS: `testRefreshedTokenReRegisters` waits for the TOKENS it asserts on, not a register count — the session-start token-less register races the first forwarded token, so "two have arrived" never meant "these two have arrived". New `waitForTokens` helper; the assertion drops to a set plus a call count, which is what the test is about | S | `done` | — | #236 |
 
-| T-0654 | iOS: PushTokenForwarderTests.testRefreshedTokenReRegisters is flaky — its helper waits on a REGISTER COUNT while the assertion checks token ORDER, and the startup registration races the first forward. Wait for the token, not the count | S | `todo` | — | — |
+| T-0655 | `az acr build` pushes `:latest` alongside the commit sha, so the tag `functionApp.bicep` declares actually exists — a provision was pointing the Functions host at an image nothing had ever pushed. The param description is corrected in the same commit: it claimed "CI overrides per deploy with the commit sha", and no such override exists | M | `done` | — | #236 |
+| T-0656 | Portal drift, the `hidden-link:/app-insights-resource-id` tag on two dev sites — **closed 2026-08-28 without declaring it**. The tag does nothing: all six hosts report telemetry and only two carry it, so `APPLICATIONINSIGHTS_CONNECTION_STRING` is what wires it and the tag is an artefact of a manual portal enable. A provision stripping it is IaC correcting drift, which is the system working. Declaring a portal-managed hidden tag in Bicep to preserve an artefact with no function is machinery for nothing. The row's value was as evidence that the partner API gets hand-edited in the portal, and that is now recorded | S | `done` | — | — |
+| T-0657 | `check-backlog-consistency` could not read the backlog it guards — the row reader required a bold id and parsed 0 of 50 rows, the anti-vacuity rule keyed on an optional `tickets/` directory so the blindness looked like an empty backlog, and the summary line printed FAILED unconditionally. Reader accepts both forms; reach check is self-referential; verdict computed. Verified clean at exit 0 and exit 1 with one row made unparseable | S | `done` | — | #236 |
+| T-0658 | `check-consistency` E1 and conv narrowed to what they mean — 19 violations of which 10 were the rules being wrong. E1 fired on every `data class *UiState` (9 hits, 1 defensible) and now exempts single-signal states, two-or-more concurrent in-flight signals, and per-field form validation; conv checked only the current line for a disable directive and reported a documented, ESLint-sanctioned exception. E1 9→1, conv 2→1, both survivors genuine. Seven new self-tests, 40 passing | M | `done` | — | #236 |
+| T-0659 | Partner Android: the splash screen collects its two ViewModel flows with `collectAsStateWithLifecycle` — 30 files in the module already did, the dependency was already there, these two were stragglers (check-consistency E6) | S | `done` | — | #236 |
 
-*Next id: **T-0655**.*
+*Next id: **T-0660**.*

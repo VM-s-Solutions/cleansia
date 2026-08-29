@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -531,8 +532,8 @@ private fun SplashGate(
     onSignOut: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
-    val outcome by viewModel.outcome.collectAsState()
-    val isSigningOut by viewModel.isSigningOut.collectAsState()
+    val outcome by viewModel.outcome.collectAsStateWithLifecycle()
+    val isSigningOut by viewModel.isSigningOut.collectAsStateWithLifecycle()
     var confirmingSignOut by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.resolve() }

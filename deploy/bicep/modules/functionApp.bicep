@@ -20,7 +20,16 @@ param acrLoginServer string
 @description('Container image repository name in ACR (without the registry prefix).')
 param imageRepository string = 'cleansia-functions'
 
-@description('Container image tag. CI overrides per deploy with the commit sha; latest is the placeholder default.')
+@description('''
+Container image tag Bicep writes into linuxFxVersion. It stays `latest`, and CI pushes that tag on
+every build alongside the commit-sha tag, so this declaration describes an image that exists.
+
+It is NOT overridden per deploy, despite what this description claimed until 2026-08-28. main.bicep
+passes no imageTag, and CI pins the site to the exact sha AFTER provisioning, with
+`az functionapp config container set`. So a provision legitimately sets this tag and the Functions
+deploy job then moves the site to that build. While nothing pushed `latest`, a provision pointed the
+host at a tag that had never been created — T-0655, surfaced by the T-0633 what-if.
+''')
 param imageTag string = 'latest'
 
 @description('Key Vault URI used to build @Microsoft.KeyVault(SecretUri=...) references. e.g. https://kv-cleansia-weu-dev.vault.azure.net')

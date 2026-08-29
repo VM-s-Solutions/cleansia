@@ -1095,11 +1095,21 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # Two tags, one build. The sha tag is what the next step pins the site to. `latest` is pushed
+      # because modules/functionApp.bicep declares the image as cleansia-functions:latest, so a
+      # provision run SETS the site to that tag — and nothing used to push it, which meant Bicep
+      # pointed the Functions host at a tag that had never existed. The T-0633 what-if is what
+      # surfaced it: the live sha-pinned image showing as replaced by :latest (T-0655).
+      #
+      # Order makes this safe rather than merely consistent. This job needs provision, so on a full
+      # deploy Bicep sets :latest first — the PREVIOUS build, which runs — and then the step below
+      # moves the site to this build's sha. Either way the host is on a real image.
       - name: Build and push Docker image to ACR
         run: |
           az acr build \
             --registry ${{ secrets.ACR_NAME }} \
             --image cleansia-functions:${{ github.sha }} \
+            --image cleansia-functions:latest \
             --file src/Cleansia.Functions/Dockerfile \
             src/
 

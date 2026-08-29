@@ -79,7 +79,8 @@ export class TemplateManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  onTabChange(index: number | string): void {
+  onTabChange(index: number | string | undefined): void {
+    if (index === undefined) return;
     const numIndex = typeof index === 'string' ? parseInt(index, 10) : index;
     this.activeTabIndex.set(numIndex);
     const tab = this.tabs[numIndex];

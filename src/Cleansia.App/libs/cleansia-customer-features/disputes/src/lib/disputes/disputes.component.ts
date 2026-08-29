@@ -33,6 +33,7 @@ import {
   DisputeListItem,
   DisputeReason,
 } from '@cleansia/customer-services';
+import { TagSeverity } from '@cleansia/types';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog';
@@ -237,7 +238,7 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     return isDisputeOpen(this.disputeDetail()?.status?.value);
   }
 
-  getStatusSeverity(status: Code | undefined): string {
+  getStatusSeverity(status: Code | undefined): TagSeverity {
     return getDisputeStatusSeverity(status?.value);
   }
 

@@ -175,7 +175,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       modal: true,
     });
 
-    dialogRef.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {
+    dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {
       if (result?.reason) {
         this.cancelInvoice(result.reason);
       }

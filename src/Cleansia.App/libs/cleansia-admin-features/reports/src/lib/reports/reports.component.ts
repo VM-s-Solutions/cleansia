@@ -265,7 +265,8 @@ export class ReportsComponent implements OnInit {
 
   activeTab: ReportType = 'revenue';
 
-  onTabChange(value: string | number): void {
+  onTabChange(value: string | number | undefined): void {
+    if (value === undefined) return;
     const tab = value as ReportType;
     this.activeTab = tab;
     this.facade.setActiveTab(tab);

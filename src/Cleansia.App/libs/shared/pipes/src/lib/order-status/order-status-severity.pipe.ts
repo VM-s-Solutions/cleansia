@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { OrderStatus } from '@cleansia/models';
+import { TagSeverity } from '@cleansia/types';
 
 /**
  * Maps an order status to the PrimeNG severity token.
@@ -13,7 +14,7 @@ import { OrderStatus } from '@cleansia/models';
   standalone: true,
 })
 export class OrderStatusSeverityPipe implements PipeTransform {
-  transform(status: OrderStatus | { value?: number } | number | null | undefined): string {
+  transform(status: OrderStatus | { value?: number } | number | null | undefined): TagSeverity {
     const value = typeof status === 'number' ? status : status?.value;
     switch (value) {
       case OrderStatus.Pending:

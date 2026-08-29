@@ -4,8 +4,7 @@ import {
   mergeApplicationConfig,
   REQUEST,
 } from '@angular/core';
-import { provideServerRendering } from '@angular/platform-server';
-import { provideServerRoutesConfig } from '@angular/ssr';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
 import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
 import { TranslateLoader } from '@ngx-translate/core';
 import { existsSync, readFileSync } from 'node:fs';
@@ -45,8 +44,8 @@ class ServerJsonTranslationLoader implements TranslateLoader {
 
 const serverAppConfig: ApplicationConfig = {
   providers: [
-    provideServerRendering(),
-    provideServerRoutesConfig(serverRoutes),
+    // Angular 20: provideServerRoutesConfig(routes) became provideServerRendering(withRoutes(routes)).
+    provideServerRendering(withRoutes(serverRoutes)),
     { provide: TranslateLoader, useClass: ServerJsonTranslationLoader },
     // Server-side fetch cannot resolve a relative /api URL. In dev the base
     // URL is intentionally empty (same-origin proxy), so SSR resolves it

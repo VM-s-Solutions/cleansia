@@ -115,7 +115,8 @@ export class ServiceAreaManagementComponent implements OnInit {
     this.facade.loadCities();
   }
 
-  onTabChange(index: number | string): void {
+  onTabChange(index: number | string | undefined): void {
+    if (index === undefined) return;
     const numIndex = typeof index === 'string' ? parseInt(index, 10) : index;
     this.activeTabIndex.set(numIndex);
   }

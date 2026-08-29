@@ -69,6 +69,33 @@ for arg in "$@"; do
 done
 set -- "${args[@]+"${args[@]}"}"
 
+# WSL cannot see a Windows host's localhost, and the failure looks exactly like "the API is down".
+#
+# On Windows, `bash` from a PowerShell prompt resolves to C:\WINDOWS\system32ash.exe — the WSL
+# launcher — not Git Bash. WSL2 runs in its own network namespace, so localhost:5002 is WSL's own
+# loopback and the Kestrel host on Windows is not on it. curl refuses instantly ("after 0 ms"), which
+# is the tell: a host that is genuinely down on the same machine also refuses instantly, so the two
+# are indistinguishable from the error alone. The Windows host IP does not help either, because these
+# hosts bind to 127.0.0.1 rather than 0.0.0.0.
+#
+# Without this the script confidently tells you to start a host that is already running. Measured
+# 2026-08-29: all five hosts were serving swagger while this printed "no partner-mobile-api host".
+running_under_wsl() {
+  [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null
+}
+
+wsl_localhost_note() {
+  running_under_wsl || return 0
+  case "$1" in *localhost*|*127.0.0.1*) ;; *) return 0 ;; esac
+  echo "" >&2
+  echo "  NOTE: this is running under WSL (${WSL_DISTRO_NAME:-wsl}), which has its own network" >&2
+  echo "        namespace — a Windows host on localhost is NOT reachable from here, and these hosts" >&2
+  echo "        bind to 127.0.0.1 so the host IP does not work either. If the API IS running on" >&2
+  echo "        Windows, the problem is the shell, not the host. Use Git Bash instead:" >&2
+  echo "            \"C:\Program Files\Git\bin\bash.exe\" scripts/refresh-mobile-spec.sh" >&2
+  echo "        (\`bash\` from PowerShell is C:\WINDOWS\system32\bash.exe — the WSL launcher.)" >&2
+}
+
 app="${1:-all}"
 override_url="${2:-}"
 
@@ -124,6 +151,7 @@ refresh_one() {
   if [ -n "$override_url" ]; then
     echo "error: could not fetch the ${name} OpenAPI spec from ${url}." >&2
     echo "       That URL was passed explicitly, so nothing was assumed." >&2
+    wsl_localhost_note "$url"
     exit 1
   fi
 
@@ -135,6 +163,7 @@ refresh_one() {
   echo "           The committed spec is untouched, which is correct unless you changed the backend" >&2
   echo "           contract. Start the host (dotnet run in Cleansia.Web.Mobile.${name^}) only if you" >&2
   echo "           did. To regenerate the CLIENTS you do not need this script at all." >&2
+  wsl_localhost_note "$url"
   skipped=$((skipped + 1))
 }
 

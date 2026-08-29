@@ -191,6 +191,16 @@ cd src/Cleansia.App && npm run generate-clients
 bash src/cleansia_ios/scripts/refresh-mobile-spec.sh
 ```
 
+**On Windows, run that from Git Bash, not from a PowerShell prompt.** There, `bash` resolves to
+`C:\WINDOWS\system32ash.exe` — the WSL launcher — and WSL2 has its own network namespace, so a
+Kestrel host on Windows `localhost` is unreachable from it. curl refuses instantly, which is
+indistinguishable from the host being down, and the script used to tell you to start an API that was
+already running. It now detects WSL and says so, but the fix is the shell:
+
+```powershell
+& "C:\Program Files\Gitinash.exe" src/cleansia_ios/scripts/refresh-mobile-spec.sh
+```
+
 Two things worth knowing before running them:
 
 - **`generate-clients` ends in a typecheck, and that typecheck failing is normal.** The generator emits

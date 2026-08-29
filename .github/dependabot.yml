@@ -1,0 +1,54 @@
+# Dependabot config — written to make security fixes ARRIVE IN BATCHES, not to invite noise.
+#
+# WHY THIS EXISTS. Until 2026-08-29 there was no config here and
+# `repos/.../automated-security-fixes` read false, so Dependabot only ever REPORTED. It had never
+# been allowed to open a fix PR, which is how 165 alerts accumulated instead of being taken a few at
+# a time. Turning the toggle on without this file first would have opened a PR per alert — dozens of
+# them, each firing five CI workflows against an Actions quota that is already tight. This file is
+# what makes the toggle affordable.
+#
+# THE TWO KNOBS THAT DO THAT:
+#
+#   open-pull-requests-limit: 0  turns VERSION updates off entirely. Routine "a package moved" PRs
+#     are the bulk of Dependabot's volume and none of them are why this was enabled. Security updates
+#     are governed separately and keep flowing — this limit does not apply to them.
+#
+#   groups + applies-to: security-updates  collapses many alerts into few PRs. The 165 open alerts
+#     land in three shapes, so they become roughly three PRs per manifest rather than 165: the Angular
+#     framework moves as a peer-pinned set and must be updated together anyway; production and
+#     development dependencies differ in what they can actually reach, since 127 of the 165 are build
+#     tooling that never ships to a browser.
+#
+# Only the two npm manifests are listed, because every one of the 165 alerts is npm. Adding
+# ecosystems with no alerts would spend CI minutes to discover nothing.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/src/Cleansia.App"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      angular:
+        applies-to: security-updates
+        patterns:
+          - "@angular*"
+          - "@ngtools/*"
+          - "@schematics/*"
+      production:
+        applies-to: security-updates
+        dependency-type: "production"
+      development:
+        applies-to: security-updates
+        dependency-type: "development"
+
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      docs:
+        applies-to: security-updates
+        patterns:
+          - "*"

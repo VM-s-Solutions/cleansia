@@ -11,7 +11,7 @@ import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DatePicker } from 'primeng/datepicker';
 import { Dialog } from 'primeng/dialog';
-import { InputSwitch } from 'primeng/inputswitch';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 import { CleansiaButtonComponent } from '../cleansia-button/cleansia-button.component';
 
@@ -64,7 +64,7 @@ const DAY_INDEX_MAP: Record<number, string> = {
     CleansiaButtonComponent,
     Dialog,
     DatePicker,
-    InputSwitch,
+    ToggleSwitch,
     FormsModule,
     CommonModule,
     TranslatePipe,

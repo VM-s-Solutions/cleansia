@@ -302,7 +302,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    const ref: DynamicDialogRef = this.dialogService.open(
+    const ref: DynamicDialogRef | null = this.dialogService.open(
       ReportIssueDialogComponent,
       {
         header: undefined,
@@ -313,7 +313,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ReportIssueDialogResult) => {
+    ref?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ReportIssueDialogResult) => {
       if (result) {
         this.loading.set(true);
 
@@ -357,7 +357,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    const ref: DynamicDialogRef = this.dialogService.open(
+    const ref: DynamicDialogRef | null = this.dialogService.open(
       AddNoteDialogComponent,
       {
         header: undefined,
@@ -368,7 +368,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: AddNoteDialogResult) => {
+    ref?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: AddNoteDialogResult) => {
       if (result) {
         this.loading.set(true);
 
@@ -425,7 +425,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    const ref: DynamicDialogRef = this.dialogService.open(
+    const ref: DynamicDialogRef | null = this.dialogService.open(
       MarkCashCollectedDialogComponent,
       {
         header: undefined,
@@ -439,7 +439,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose
+    ref?.onClose
       .pipe(takeUntil(this.destroyed$))
       .subscribe((result: MarkCashCollectedDialogResult) => {
         if (result?.confirmed) {

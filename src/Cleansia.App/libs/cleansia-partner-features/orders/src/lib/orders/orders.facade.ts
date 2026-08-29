@@ -293,7 +293,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       estimatedTime: order.estimatedTime || 0,
     };
 
-    const ref: DynamicDialogRef = this.dialogService.open(
+    const ref: DynamicDialogRef | null = this.dialogService.open(
       CompleteOrderDialogComponent,
       {
         header: undefined,
@@ -304,7 +304,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose
+    ref?.onClose
       .pipe(takeUntil(this.destroyed$))
       .subscribe((result: CompleteOrderDialogResult) => {
         if (result) {

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
-import { InputTextarea } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/textarea';
 
 export interface ReportIssueDialogData {
   orderId: string;
@@ -16,7 +16,7 @@ export interface ReportIssueDialogResult {
 @Component({
   selector: 'cleansia-report-issue-dialog',
   standalone: true,
-  imports: [FormsModule, TranslateModule, ButtonModule, InputTextarea],
+  imports: [FormsModule, TranslateModule, ButtonModule, Textarea],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './report-issue-dialog.component.html',
   styleUrl: './report-issue-dialog.component.scss',

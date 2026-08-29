@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { PaymentStatus } from '@cleansia/models';
+import { TagSeverity } from '@cleansia/types';
 
 /**
  * Maps a `PaymentStatus` to the PrimeNG `<p-tag>` severity token. See
@@ -10,7 +11,7 @@ import { PaymentStatus } from '@cleansia/models';
   standalone: true,
 })
 export class PaymentStatusSeverityPipe implements PipeTransform {
-  transform(status: PaymentStatus | { value?: number } | number | null | undefined): string {
+  transform(status: PaymentStatus | { value?: number } | number | null | undefined): TagSeverity {
     const value = typeof status === 'number' ? status : status?.value;
     switch (value) {
       case PaymentStatus.Pending:

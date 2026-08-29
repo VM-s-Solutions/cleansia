@@ -13,7 +13,6 @@ import {
 import { EmployeeEntityType } from '@cleansia/partner-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
-import { CalendarModule } from 'primeng/calendar';
 import { ProfileFacade } from '../../profile/profile.facade';
 
 @Component({
@@ -24,7 +23,6 @@ import { ProfileFacade } from '../../profile/profile.facade';
     ReactiveFormsModule,
     FormsModule,
     TranslatePipe,
-    CalendarModule,
     CleansiaSectionComponent,
     CleansiaTextInputComponent,
     CleansiaCalendarComponent,

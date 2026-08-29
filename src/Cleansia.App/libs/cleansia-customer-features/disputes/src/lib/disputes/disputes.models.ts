@@ -5,6 +5,7 @@ import {
   DisputeReason,
 } from '@cleansia/customer-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { TagSeverity } from '@cleansia/types';
 import { TranslateService } from '@ngx-translate/core';
 
 // Mirrors the backend DisputeStatus enum — the generated customer client does
@@ -31,7 +32,7 @@ export const DISPUTE_STATUS_LABEL_KEYS: Record<CustomerDisputeStatus, string> =
 
 export function getDisputeStatusSeverity(
   statusValue: number | undefined
-): string {
+): TagSeverity {
   switch (statusValue) {
     case CustomerDisputeStatus.Pending:
       return 'warn';

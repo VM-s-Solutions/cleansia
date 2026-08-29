@@ -5,7 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextarea } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 
 export interface CompleteOrderDialogData {
@@ -28,7 +28,7 @@ export interface CompleteOrderDialogResult {
     TranslateModule,
     ButtonModule,
     InputTextModule,
-    InputTextarea,
+    Textarea,
     InputNumberModule,
   ],
   templateUrl: './complete-order-dialog.component.html',

@@ -2,9 +2,9 @@ import { definePreset } from '@primeng/themes';
 import Aura from '@primeng/themes/aura';
 
 export const CleansiaPreset = definePreset(Aura, {
-  primitive: {
-    fontFamily: "'Nunito', sans-serif",
-  },
+  // No `primitive` block: PrimeNG 20 dropped fontFamily from the Primitive token type, and it
+  // was never doing any work here — all three apps set `font-family: 'Nunito', sans-serif`
+  // in their own index.html, which is what the pages actually render with.
   semantic: {
     primary: {
       0: '#ffffff',

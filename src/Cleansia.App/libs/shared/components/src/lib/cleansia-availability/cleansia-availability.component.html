@@ -280,7 +280,7 @@
 
       <div class="switch-row">
         <span>{{ 'components.availability.set_custom_hours' | translate }}</span>
-        <p-inputSwitch
+        <p-toggleswitch
           [ngModel]="exceptionCustomHours()"
           (ngModelChange)="exceptionCustomHours.set($event)"
         />

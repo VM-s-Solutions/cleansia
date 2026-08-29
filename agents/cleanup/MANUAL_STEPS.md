@@ -50,7 +50,7 @@ deploy.
 both environments. Environment-specific gating is not expressible in this file and would need an
 asset swap in `project.json`'s configurations block — not built, because nothing asks for it yet.
 
-### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **owner**
+### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **DONE 2026-08-29**
 
 `main.bicep` now declares the documentation Static Web App (`swa-cleansia-docs-weu-dev`) under
 `if (env == 'dev')`. It was previously created by hand, so the **next DEV infrastructure deploy creates
@@ -73,6 +73,15 @@ audience is a handful of people. Revisit if the reader list grows.
 
 Until step 3 happens the docs deploy will succeed and the site will refuse everyone, which is the safe
 direction to fail in.
+
+**Discharged by the owner on 2026-08-29.** Token re-copied into
+`AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV` and the `docs_reader` invitation accepted, so the docs site
+is reachable again.
+
+> **Numbering note:** there are two MS-4 entries in this file — this one, and a payroll-currency item
+> further down that was closed on 2026-08-14. The collision is historical and is left alone rather than
+> renumbered, because both ids are referenced in commits and PR bodies that cannot be edited. Read the
+> title, not the number.
 ### MS-3 — Rotate the exposed Mapbox token — **owner**
 
 Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed

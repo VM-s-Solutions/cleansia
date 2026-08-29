@@ -64,7 +64,7 @@ class AuthRepositoryLogoutTest {
     @Test
     fun logout_callsTheAuthenticatedClientNotTheAnonymousOne() = runTest {
         every { tokenStore.current() } returns storedTokens()
-        coEvery { authenticatedAuthApi.authLogout(any()) } returns Response.success(true)
+        coEvery { authenticatedAuthApi.authLogout(any()) } returns Response.success(Unit)
 
         newRepository().logout()
 

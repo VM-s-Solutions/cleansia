@@ -69,7 +69,7 @@ class SignupConsentFlowTest {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     private lateinit var authApi: AuthApi
-    private lateinit var registerResult: ApiResult<Boolean>
+    private lateinit var registerResult: ApiResult<Unit>
     private lateinit var gdprApi: RecordingGdprApi
     private lateinit var appSettingsRepository: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
@@ -82,7 +82,7 @@ class SignupConsentFlowTest {
     @Before
     fun setUp() {
         authApi = mockk()
-        registerResult = ApiResult.Success(true)
+        registerResult = ApiResult.Success(Unit)
         gdprApi = RecordingGdprApi()
         appSettingsRepository = mockk()
         snackbar = mockk(relaxed = true)

@@ -156,9 +156,9 @@ class AuthRepositoryTrustedDeviceTest {
         val resend = slot<ResendConfirmationEmailCommand>()
         val forgot = slot<RequestPasswordChangeCommand>()
 
-        coEvery { anonymousAuthApi.authRegisterEmployee(capture(register)) } returns Response.success(true)
+        coEvery { anonymousAuthApi.authRegisterEmployee(capture(register)) } returns Response.success(Unit)
         coEvery { anonymousAuthApi.authConfirmUserEmail(capture(confirm)) } returns Response.success(issuedTokens())
-        coEvery { anonymousAuthApi.authResendConfirmationEmail(capture(resend)) } returns Response.success(true)
+        coEvery { anonymousAuthApi.authResendConfirmationEmail(capture(resend)) } returns Response.success(Unit)
         coEvery { anonymousAuthApi.authForgotPassword(capture(forgot)) } returns Response.success(Unit)
 
         val repo = newRepository()

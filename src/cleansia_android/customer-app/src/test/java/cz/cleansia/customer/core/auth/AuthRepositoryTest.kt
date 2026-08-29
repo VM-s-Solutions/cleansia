@@ -222,7 +222,7 @@ class AuthRepositoryTest {
 
     @Test
     fun register_givenSuccess_returnsUnitSuccess() = kotlinx.coroutines.test.runTest {
-        coEvery { api.register(any()) } returns Response.success(true)
+        coEvery { api.register(any()) } returns Response.success(Unit)
 
         val result = newRepository().register(
             email = "user@example.com",
@@ -417,15 +417,15 @@ class AuthRepositoryTest {
         val refresh = io.mockk.slot<RefreshTokenRequest>()
         val logout = io.mockk.slot<LogoutRequest>()
 
-        coEvery { api.register(capture(register)) } returns Response.success(true)
+        coEvery { api.register(capture(register)) } returns Response.success(Unit)
         coEvery { api.googleAuth(capture(google)) } returns Response.success(jwt)
         coEvery { api.confirmUserEmail(capture(confirm)) } returns Response.success(jwt)
-        coEvery { api.resendConfirmationEmail(capture(resend)) } returns Response.success(true)
+        coEvery { api.resendConfirmationEmail(capture(resend)) } returns Response.success(Unit)
         coEvery { api.requestPasswordChange(capture(requestChange)) } returns Response.success(Unit)
         coEvery { api.changePassword(capture(changePassword)) } returns
             Response.success(ChangePasswordResponseDto("user@example.com"))
         coEvery { api.refreshToken(capture(refresh)) } returns Response.success(jwt)
-        coEvery { authenticatedApi.logout(capture(logout)) } returns Response.success(true)
+        coEvery { authenticatedApi.logout(capture(logout)) } returns Response.success(Unit)
 
         val repo = newRepository()
         repo.register("user@example.com", "pw", "Ada", "Lovelace", "en")
@@ -478,7 +478,7 @@ class AuthRepositoryTest {
             refreshToken = "r",
             refreshTokenExpiresAt = 1L,
         )
-        coEvery { authenticatedApi.logout(any()) } returns Response.success(true)
+        coEvery { authenticatedApi.logout(any()) } returns Response.success(Unit)
 
         val repo = newRepository()
         repo.logout()

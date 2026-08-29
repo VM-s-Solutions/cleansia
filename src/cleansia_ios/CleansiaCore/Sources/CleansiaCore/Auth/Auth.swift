@@ -95,8 +95,23 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         }
     }
 
+    /// Succeeds when the call succeeds. There is nothing to decode: since T-0665 the endpoint
+    /// answers 200 with an EMPTY BODY, and `post` would hand that to JSONDecoder and fail —
+    /// reporting `network.decoding_failed` for a registration the server had accepted. Nothing
+    /// reads the `true`; the shape is kept so no caller, seam or test double has to move.
     public func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
-        await post(path: registerEndpoint.path, body: request, useNoAuthSession: true)
+        let result = await send(
+            path: registerEndpoint.path,
+            body: request,
+            useNoAuthSession: true,
+            method: .post
+        )
+        switch result {
+        case let .failure(error):
+            return .failure(error)
+        case .success:
+            return .success(true)
+        }
     }
 
     public func confirmEmail(email: String, code: String) async -> ApiResult<LoginOutcome> {
@@ -118,13 +133,21 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         }
     }
 
+    /// Empty 200 body since T-0665 — see `register` for why this cannot go through `post`.
     public func resendConfirmation(email: String, language: String) async -> ApiResult<Bool> {
         let body = ResendConfirmationEmailRequest(email: email, language: language)
-        return await post(
+        let result = await send(
             path: "api/Auth/ResendConfirmationEmail",
             body: body,
-            useNoAuthSession: true
+            useNoAuthSession: true,
+            method: .post
         )
+        switch result {
+        case let .failure(error):
+            return .failure(error)
+        case .success:
+            return .success(true)
+        }
     }
 
     public func forgotPassword(email: String, language: String) async -> ApiResult<Void> {

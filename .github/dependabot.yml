@@ -29,18 +29,41 @@ updates:
       interval: "monthly"
     open-pull-requests-limit: 0
     groups:
+      # Angular FIRST, and every pattern carries the slash on purpose. `@angular*` was written here
+      # without one and matched nothing — Dependabot's globs do not cross `/` — so @angular/core fell
+      # through into `production` while @angular/compiler-cli, ng-packagr and @angular-devkit/* sat
+      # in `development`. PR #241 was the result: the framework proposed at 22.1.4 with its own build
+      # tooling left at 19.2, which cannot install (ERESOLVE) and cannot be made to.
+      #
+      # Angular's framework and its build tooling are ONE release train and must move together, so
+      # they are one group — and the two below EXCLUDE them rather than competing for them, which is
+      # what makes the split safe rather than merely ordered.
       angular:
         applies-to: security-updates
         patterns:
-          - "@angular*"
+          - "@angular/*"
+          - "@angular-devkit/*"
           - "@ngtools/*"
           - "@schematics/*"
+          - "ng-packagr"
       production:
         applies-to: security-updates
         dependency-type: "production"
+        exclude-patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@ngtools/*"
+          - "@schematics/*"
+          - "ng-packagr"
       development:
         applies-to: security-updates
         dependency-type: "development"
+        exclude-patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@ngtools/*"
+          - "@schematics/*"
+          - "ng-packagr"
 
   - package-ecosystem: "npm"
     directory: "/docs"

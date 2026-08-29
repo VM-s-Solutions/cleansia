@@ -20,7 +20,11 @@ import {
   PLATFORM_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withNoHttpTransferCache,
+} from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
@@ -59,8 +63,24 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     // Reuse the server-rendered DOM instead of destroying and re-rendering it
     // on bootstrap — without this every SSR page repaints from scratch (huge
-    // layout shift). Also transfer-caches SSR HTTP responses into the page.
-    provideClientHydration(withEventReplay()),
+    // layout shift).
+    //
+    // The HTTP transfer cache is OFF, and that is a security decision, not a
+    // preference. Hydration turns it on by default: SSR HTTP responses are
+    // serialised into the page and replayed on the client. Two open advisories
+    // — GHSA-39pv-4j6c-2g6v (weak 32-bit cache-key hashing) and
+    // GHSA-jhpw-976m-542j (cache-key ambiguity) — make that cache serve ONE
+    // USER'S RESPONSE TO ANOTHER, and neither has a fix in any 19.x: both read
+    // "affected <= 19.2.25, patched none". Angular's own defence is to skip
+    // requests carrying an Authorization HEADER, which does nothing here — this
+    // app authenticates with an HttpOnly cookie, so every authenticated GET was
+    // eligible for the cache.
+    //
+    // The cost is a first-load re-fetch of data the server already had. That is
+    // a performance regression and it is the correct trade against leaking one
+    // customer's orders into another's page. REMOVE THIS on Angular 20.3.27+,
+    // where both advisories are fixed — see T-0667.
+    provideClientHydration(withEventReplay(), withNoHttpTransferCache()),
     provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideAnimationsAsync(),
     providePrimeNG({

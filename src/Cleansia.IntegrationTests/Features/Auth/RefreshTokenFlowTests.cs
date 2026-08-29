@@ -393,7 +393,7 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await Logout(mediator, "nonexistent-token-xyz");
             },
-            assert: (CleansiaDbContext _, BusinessResult<bool> result) =>
+            assert: (CleansiaDbContext _, BusinessResult result) =>
             {
                 // Idempotent: never leaks whether the token existed. Always succeeds.
                 Assert.True(result.IsSuccess);
@@ -448,7 +448,7 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
     private static async Task<BusinessResult<JwtTokenResponse>> Refresh(IMediator mediator, string token) =>
         await mediator.Send(new RefreshTokenCmd.Command(token));
 
-    private static async Task<BusinessResult<bool>> Logout(IMediator mediator, string token) =>
+    private static async Task<BusinessResult> Logout(IMediator mediator, string token) =>
         await mediator.Send(new LogoutCmd.Command(token));
 
     private static async Task SeedConfirmedUser(CleansiaDbContext context)

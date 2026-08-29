@@ -12,6 +12,11 @@ import retrofit2.http.PUT
  *
  * **Deliberately not the generated client**: the default operation ids produce noisy method names, and
  * the refresh endpoint needs its own no-auth OkHttp client, which is far easier to wire against a small
+ * Register, ResendConfirmationEmail and Logout answer 200 with NO BODY since T-0665 — the bool
+ * they used to return was `true` on every success path, because a failure arrives as an error
+ * status. They are typed Response<Unit> for that reason. Declaring Response<Boolean> against an
+ * empty body still COMPILES and fails at runtime, so keep these in step with the server.
+ *
  * hand-written interface. -> /flows/auth-and-identity
  */
 interface AuthApi {
@@ -19,7 +24,7 @@ interface AuthApi {
     suspend fun login(@Body body: LoginRequest): Response<JwtTokenResponseDto>
 
     @POST("api/Auth/Register")
-    suspend fun register(@Body body: RegisterRequest): Response<Boolean>
+    suspend fun register(@Body body: RegisterRequest): Response<Unit>
 
     @POST("api/Auth/GoogleAuth")
     suspend fun googleAuth(@Body body: GoogleAuthRequest): Response<JwtTokenResponseDto>
@@ -28,13 +33,13 @@ interface AuthApi {
     suspend fun confirmUserEmail(@Body body: ConfirmUserEmailRequest): Response<JwtTokenResponseDto>
 
     @POST("api/Auth/ResendConfirmationEmail")
-    suspend fun resendConfirmationEmail(@Body body: ResendConfirmationEmailRequest): Response<Boolean>
+    suspend fun resendConfirmationEmail(@Body body: ResendConfirmationEmailRequest): Response<Unit>
 
     @POST("api/Auth/RefreshToken")
     suspend fun refreshToken(@Body body: RefreshTokenRequest): Response<JwtTokenResponseDto>
 
     @POST("api/Auth/Logout")
-    suspend fun logout(@Body body: LogoutRequest): Response<Boolean>
+    suspend fun logout(@Body body: LogoutRequest): Response<Unit>
 
     // Password-reset endpoints live on UserController server-side, but
     // conceptually they're auth flows (run pre-session). Keeping them in

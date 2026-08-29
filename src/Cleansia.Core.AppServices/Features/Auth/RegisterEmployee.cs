@@ -56,16 +56,16 @@ public class RegisterEmployee
         string FirstName,
         string LastName,
         string Language)
-        : ICommand<bool>;
+        : ICommand;
 
     public class Handler(
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IEmployeeRepository employeeRepository,
         IPendingDispatch pending)
-        : ICommandHandler<Command, bool>
+        : ICommandHandler<Command>
     {
-        public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             // Email the RAW confirmation token; the entity persists only its hash.
@@ -91,7 +91,7 @@ public class RegisterEmployee
                 catch (DbUpdateException ex)
                     when (DbConstraintViolation.IsUniqueViolation(ex))
                 {
-                    return BusinessResult.Failure<bool>(
+                    return BusinessResult.Failure(
                         new Error(nameof(Command.Email), BusinessErrorMessage.ExistingUserWithEmail));
                 }
             }
@@ -110,7 +110,7 @@ public class RegisterEmployee
 
             EmailDispatch.EnqueueConfirmation(pending, userEntity, userName, rawConfirmationToken, command.Language);
 
-            return BusinessResult.Success(true);
+            return BusinessResult.Success();
         }
     }
 }

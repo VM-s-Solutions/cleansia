@@ -61,7 +61,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCompletedCommand("evt_order_first"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
 
@@ -91,7 +91,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCompletedCommand("evt_order_tenant_scoped"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
 
@@ -126,7 +126,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var second = await mediator.Send(SignedCompletedCommand("evt_order_redeliver"));
                 return (first, second);
             },
-            assert: async (CleansiaDbContext context, (BusinessResult<string> First, BusinessResult<string> Second) r) =>
+            assert: async (CleansiaDbContext context, (BusinessResult First, BusinessResult Second) r) =>
             {
                 // The second POST returns success via the already-processed short-circuit (ADR-0002 D1.2).
                 Assert.True(r.First.IsSuccess);
@@ -156,7 +156,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCompletedCommand("evt_order_tenant"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 var order = await LoadOrderAsync(context);
@@ -182,7 +182,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 // No Stripe-Signature header (empty) — mirrors a request that skipped signing entirely.
                 return await mediator.Send(new HandlePaymentNotification.Command(body, string.Empty));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsFailure);
                 await AssertNoEffectAsync(context, "evt_order_nosig");
@@ -204,7 +204,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var forged = StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.WrongWebhookSecret);
                 return await mediator.Send(new HandlePaymentNotification.Command(body, forged));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsFailure);
                 await AssertNoEffectAsync(context, "evt_order_forged");
@@ -223,7 +223,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCompletedCommand("evt_order_happy"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 Assert.Equal(PaymentStatus.Paid, (await LoadOrderAsync(context)).PaymentStatus);

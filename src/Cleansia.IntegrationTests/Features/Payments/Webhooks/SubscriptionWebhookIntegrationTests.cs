@@ -44,7 +44,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCreatedCommand("evt_sub_clean", "sub_clean"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 var memberships = await MembershipsForUserAsync(context);
@@ -69,7 +69,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 // (stale tab / Dashboard / re-checkout) — the active-check must reconcile to a no-op.
                 return await mediator.Send(SignedCreatedCommand("evt_sub_dup", "sub_brand_new"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 var active = await context.Set<UserMembership>()
@@ -92,7 +92,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCreatedCommand("evt_sub_happy", "sub_happy"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 Assert.Single(await MembershipsForUserAsync(context));
@@ -113,7 +113,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                     .SubscriptionCreatedBody("evt_sub_nosig", "sub_nosig", _userId, PlanCode);
                 return await mediator.Send(new HandlePaymentNotification.Command(body, string.Empty));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsFailure);
                 Assert.Empty(await MembershipsForUserAsync(context));
@@ -133,7 +133,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var forged = StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.WrongWebhookSecret);
                 return await mediator.Send(new HandlePaymentNotification.Command(body, forged));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsFailure);
                 Assert.Empty(await MembershipsForUserAsync(context));
@@ -154,7 +154,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 // check alone cannot close the TOCTOU window, so the filtered unique index is the backstop.
                 var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-                async Task<BusinessResult<string>> Deliver(string eventId, string subscriptionId)
+                async Task<BusinessResult> Deliver(string eventId, string subscriptionId)
                 {
                     using var scope = scopeFactory.CreateScope();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -165,7 +165,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var second = Deliver("evt_sub_race_b", "sub_race_b");
                 return await Task.WhenAll(first, second);
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string>[] results) =>
+            assert: async (CleansiaDbContext context, BusinessResult[] results) =>
             {
                 // Neither delivery 500s — the loser's 23505 is caught and resolved to the winner (S7b),
                 // so Stripe is not handed a retry-inducing failure.
@@ -206,7 +206,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(SignedCreatedCommand("evt_sub_resub", "sub_resub"));
             },
-            assert: async (CleansiaDbContext context, BusinessResult<string> result) =>
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess);
                 var rows = await MembershipsForUserAsync(context);

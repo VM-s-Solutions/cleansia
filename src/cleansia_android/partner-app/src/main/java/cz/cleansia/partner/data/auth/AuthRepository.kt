@@ -37,20 +37,25 @@ interface AuthRepository {
     /** Performs the login → store tokens → fetch employee profile flow. */
     suspend fun login(email: String, password: String, rememberMe: Boolean = true): ApiResult<LoginOutcome>
 
-    /** Partner employee registration. Returns true on success; the server emails a confirmation code. */
+    /**
+     * Partner employee registration. The server emails a confirmation code.
+     *
+     * Carries no payload: the endpoint answered a bool that was always `true` until T-0665, because
+     * a failure arrives as an error rather than as `false`. Success is "it did not fail".
+     */
     suspend fun register(
         email: String,
         password: String,
         firstName: String,
         lastName: String,
         language: String,
-    ): ApiResult<Boolean>
+    ): ApiResult<Unit>
 
     /** Confirms the given email via the 6-digit code emailed at registration. Returns the issued JWT. */
     suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome>
 
-    /** Resends the confirmation code to the given address. */
-    suspend fun resendConfirmation(email: String, language: String): ApiResult<Boolean>
+    /** Resends the confirmation code to the given address. Carries no payload — see [register]. */
+    suspend fun resendConfirmation(email: String, language: String): ApiResult<Unit>
 
     /** Triggers a "forgot my password" email containing a reset link. */
     suspend fun forgotPassword(email: String, language: String): ApiResult<Unit>
@@ -154,8 +159,8 @@ class AuthRepositoryImpl @Inject constructor(
         firstName: String,
         lastName: String,
         language: String,
-    ): ApiResult<Boolean> {
-        val response = safeApiCall(json) {
+    ): ApiResult<Unit> {
+        return safeApiCall(json) {
             authApi.authRegisterEmployee(
                 RegisterEmployeeCommand(
                     email = email,
@@ -166,7 +171,6 @@ class AuthRepositoryImpl @Inject constructor(
                 ),
             )
         }
-        return response.map { it ?: false }
     }
 
     override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> = wireResult {
@@ -203,13 +207,12 @@ class AuthRepositoryImpl @Inject constructor(
         return ApiResult.Success(LoginOutcome.Authenticated)
     }
 
-    override suspend fun resendConfirmation(email: String, language: String): ApiResult<Boolean> {
-        val response = safeApiCall(json) {
+    override suspend fun resendConfirmation(email: String, language: String): ApiResult<Unit> {
+        return safeApiCall(json) {
             authApi.authResendConfirmationEmail(
                 ResendConfirmationEmailCommand(email = email, language = language),
             )
         }
-        return response.map { it ?: false }
     }
 
     override suspend fun forgotPassword(email: String, language: String): ApiResult<Unit> {

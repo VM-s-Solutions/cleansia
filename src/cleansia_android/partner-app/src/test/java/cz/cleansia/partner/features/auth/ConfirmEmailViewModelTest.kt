@@ -198,7 +198,7 @@ class ConfirmEmailViewModelTest {
         every { appSettingsRepository.settings } returns flowOf(AppSettings())
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
         coEvery { authRepository.resendConfirmation(any(), any()) } returns
-            ApiResult.Success(true)
+            ApiResult.Success(Unit)
 
         val vm = viewModel()
         advanceUntilIdle()

@@ -48,6 +48,54 @@ normalised_size() {
   tr -d '\r' < "$1" | wc -c | tr -d ' '
 }
 
+# --allow-shrink lets a DELIBERATE contract reduction through the downgrade guard.
+#
+# The guard assumes a smaller spec means a stale host, which is the common case and worth refusing by
+# default. But a spec legitimately shrinks when an endpoint stops returning a body: T-0665 removed the
+# always-true bool from four auth endpoints and the webhook string, and both specs came back ~1.5 KB
+# lighter with no path and no schema removed. Without this flag the only way past is to move files
+# around the script, which skips the temp-file fetch, the counters and the summary — every other
+# safeguard, to get past one.
+#
+# Prove the shrink is what you meant BEFORE passing this: the refused fetch is left beside the spec as
+# <name>-mobile-api.json.fetched, so diff that against the committed file first.
+allow_shrink=0
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    --allow-shrink) allow_shrink=1 ;;
+    *) args+=("$arg") ;;
+  esac
+done
+set -- "${args[@]+"${args[@]}"}"
+
+# WSL cannot see a Windows host's localhost, and the failure looks exactly like "the API is down".
+#
+# On Windows, `bash` from a PowerShell prompt resolves to C:\WINDOWS\system32ash.exe — the WSL
+# launcher — not Git Bash. WSL2 runs in its own network namespace, so localhost:5002 is WSL's own
+# loopback and the Kestrel host on Windows is not on it. curl refuses instantly ("after 0 ms"), which
+# is the tell: a host that is genuinely down on the same machine also refuses instantly, so the two
+# are indistinguishable from the error alone. The Windows host IP does not help either, because these
+# hosts bind to 127.0.0.1 rather than 0.0.0.0.
+#
+# Without this the script confidently tells you to start a host that is already running. Measured
+# 2026-08-29: all five hosts were serving swagger while this printed "no partner-mobile-api host".
+running_under_wsl() {
+  [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null
+}
+
+wsl_localhost_note() {
+  running_under_wsl || return 0
+  case "$1" in *localhost*|*127.0.0.1*) ;; *) return 0 ;; esac
+  echo "" >&2
+  echo "  NOTE: this is running under WSL (${WSL_DISTRO_NAME:-wsl}), which has its own network" >&2
+  echo "        namespace — a Windows host on localhost is NOT reachable from here, and these hosts" >&2
+  echo "        bind to 127.0.0.1 so the host IP does not work either. If the API IS running on" >&2
+  echo "        Windows, the problem is the shell, not the host. Use Git Bash instead:" >&2
+  echo "            \"C:\Program Files\Git\bin\bash.exe\" scripts/refresh-mobile-spec.sh" >&2
+  echo "        (\`bash\` from PowerShell is C:\WINDOWS\system32\bash.exe — the WSL launcher.)" >&2
+}
+
 app="${1:-all}"
 override_url="${2:-}"
 
@@ -76,7 +124,7 @@ refresh_one() {
     local after
     after="$(normalised_size "$tmp")"
 
-    if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
+    if [[ "$before" -gt 0 && "$after" -lt "$before" && "$allow_shrink" != "1" ]]; then
       echo "  refusing: the fetched ${name} spec is SMALLER than the committed one" >&2
       echo "            (${after} vs ${before} bytes, CR-normalised). The host you fetched from is behind" >&2
       echo "            the contract in git, and overwriting would delete types the apps already use." >&2
@@ -84,6 +132,11 @@ refresh_one() {
       echo "            Kept: ${out#"${IOS_ROOT}/../"} (unchanged). Fetched copy left at ${tmp##*/}." >&2
       refused=$((refused + 1))
       return 0
+    fi
+
+    if [[ "$before" -gt 0 && "$after" -lt "$before" ]]; then
+      echo "  shrink ACCEPTED for ${name} (${after} vs ${before} bytes) — --allow-shrink was passed." >&2
+      echo "           Confirm the diff is the contract reduction you intended before committing." >&2
     fi
 
     mv "$tmp" "$out"
@@ -98,6 +151,7 @@ refresh_one() {
   if [ -n "$override_url" ]; then
     echo "error: could not fetch the ${name} OpenAPI spec from ${url}." >&2
     echo "       That URL was passed explicitly, so nothing was assumed." >&2
+    wsl_localhost_note "$url"
     exit 1
   fi
 
@@ -109,6 +163,7 @@ refresh_one() {
   echo "           The committed spec is untouched, which is correct unless you changed the backend" >&2
   echo "           contract. Start the host (dotnet run in Cleansia.Web.Mobile.${name^}) only if you" >&2
   echo "           did. To regenerate the CLIENTS you do not need this script at all." >&2
+  wsl_localhost_note "$url"
   skipped=$((skipped + 1))
 }
 

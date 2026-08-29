@@ -83,7 +83,7 @@ class RegisterViewModelTest {
     fun `register sends the resolved device language, not a hardcoded en`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
         coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
-            ApiResult.Success(true)
+            ApiResult.Success(Unit)
 
         val vm = viewModel()
         vm.fillValidForm()
@@ -109,7 +109,7 @@ class RegisterViewModelTest {
     fun `register forwards whatever the resolver returns`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "uk"
         coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
-            ApiResult.Success(true)
+            ApiResult.Success(Unit)
 
         val vm = viewModel()
         vm.fillValidForm()
@@ -130,7 +130,7 @@ class RegisterViewModelTest {
     fun `an unticked terms box does not register at all`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
         coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
-            ApiResult.Success(true)
+            ApiResult.Success(Unit)
 
         val vm = viewModel()
         vm.fillValidForm()
@@ -147,7 +147,7 @@ class RegisterViewModelTest {
     fun `a successful registration records the tick against the submitted address`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
         coEvery { authRepository.register(any(), any(), any(), any(), any()) } returns
-            ApiResult.Success(true)
+            ApiResult.Success(Unit)
 
         val vm = viewModel()
         vm.fillValidForm()

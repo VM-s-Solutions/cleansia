@@ -20,14 +20,14 @@ public class AuthController(
 {
     [AllowAnonymous]
     [HttpPost("Register")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Register([FromBody] Register.Command command)
     {
         var result = await Mediator.Send(command);
 
-        return HandleResult<bool>(result);
+        return HandleResult<object>(result);
     }
 
     [AllowAnonymous]
@@ -86,13 +86,13 @@ public class AuthController(
 
     [AllowAnonymous]
     [HttpPost("ResendConfirmationEmail")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendConfirmationEmail.Command command, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
 
-        return HandleResult<bool>(result);
+        return HandleResult<object>(result);
     }
 
     [AllowAnonymous]
@@ -114,13 +114,13 @@ public class AuthController(
 
     [Authorize]
     [HttpPost("Logout")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Logout([FromBody] Logout.Command command, CancellationToken cancellationToken)
     {
         var enriched = command with { Token = RefreshTokenFromCookieOrBody(command.Token) };
         var result = await Mediator.Send(enriched, cancellationToken);
         ClearAuthCookies();
-        return HandleResult<bool>(result);
+        return HandleResult<object>(result);
     }
 }

@@ -69,7 +69,7 @@ public class WebhookSignatureLockTests : BaseIntegrationTest
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var body = StripeWebhookTestPayloads.CheckoutSessionCompletedBody("evt_dev_unsigned", "order-does-not-matter");
-        BusinessResult<string> result = await mediator.Send(new HandlePaymentNotification.Command(body, string.Empty));
+        BusinessResult result = await mediator.Send(new HandlePaymentNotification.Command(body, string.Empty));
 
         // Development env makes no difference: an unsigned event is rejected exactly as in AC4.
         Assert.True(result.IsFailure);

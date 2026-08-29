@@ -62,7 +62,7 @@ public class Register
         // when the user signed up directly. Validated + accepted server-side
         // after the user is created — bad codes do NOT block registration.
         string? ReferralCode = null)
-        : ICommand<bool>;
+        : ICommand;
 
     public class Handler(
         ICartRepository cartRepository,
@@ -70,9 +70,9 @@ public class Register
         IReferralService referralService,
         IPendingDispatch pending,
         ILogger<Handler> logger)
-        : ICommandHandler<Command, bool>
+        : ICommandHandler<Command>
     {
-        public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             // Email the RAW token; the entity persists only its hash. The raw is
@@ -97,7 +97,7 @@ public class Register
                 catch (DbUpdateException ex)
                     when (DbConstraintViolation.IsUniqueViolation(ex))
                 {
-                    return BusinessResult.Failure<bool>(
+                    return BusinessResult.Failure(
                         new Error(nameof(Command.Email), BusinessErrorMessage.ExistingUserWithEmail));
                 }
             }
@@ -135,7 +135,7 @@ public class Register
                 }
             }
 
-            return BusinessResult.Success(true);
+            return BusinessResult.Success();
         }
     }
 }

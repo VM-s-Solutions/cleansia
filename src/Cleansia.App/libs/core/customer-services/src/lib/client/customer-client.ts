@@ -19,7 +19,7 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    register(body?: RegisterCommand | undefined): Observable<boolean>;
+    register(body?: RegisterCommand | undefined): Observable<void>;
     /**
      * @param body (optional) 
      * @return OK
@@ -44,7 +44,7 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<boolean>;
+    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<void>;
     /**
      * @param body (optional) 
      * @return OK
@@ -54,7 +54,7 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    logout(body?: LogoutCommand | undefined): Observable<boolean>;
+    logout(body?: LogoutCommand | undefined): Observable<void>;
 }
 
 @Injectable({
@@ -74,7 +74,7 @@ export class AuthClient implements IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    register(body?: RegisterCommand | undefined): Observable<boolean> {
+    register(body?: RegisterCommand | undefined): Observable<void> {
         let url = this.baseUrl + "/api/Auth/Register";
         url = url.replace(/[?&]$/, "");
 
@@ -86,7 +86,6 @@ export class AuthClient implements IAuthClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/json"
             })
         };
 
@@ -97,14 +96,14 @@ export class AuthClient implements IAuthClient {
                 try {
                     return this.processRegister(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<boolean>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<boolean>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
-    protected processRegister(response: HttpResponseBase): Observable<boolean> {
+    protected processRegister(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -113,11 +112,7 @@ export class AuthClient implements IAuthClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-                result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
-            return ObservableOf(result200);
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -418,7 +413,7 @@ export class AuthClient implements IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<boolean> {
+    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<void> {
         let url = this.baseUrl + "/api/Auth/ResendConfirmationEmail";
         url = url.replace(/[?&]$/, "");
 
@@ -430,7 +425,6 @@ export class AuthClient implements IAuthClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/json"
             })
         };
 
@@ -441,14 +435,14 @@ export class AuthClient implements IAuthClient {
                 try {
                     return this.processResendConfirmationEmail(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<boolean>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<boolean>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
-    protected processResendConfirmationEmail(response: HttpResponseBase): Observable<boolean> {
+    protected processResendConfirmationEmail(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -457,11 +451,7 @@ export class AuthClient implements IAuthClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-                result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
-            return ObservableOf(result200);
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -552,7 +542,7 @@ export class AuthClient implements IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    logout(body?: LogoutCommand | undefined): Observable<boolean> {
+    logout(body?: LogoutCommand | undefined): Observable<void> {
         let url = this.baseUrl + "/api/Auth/Logout";
         url = url.replace(/[?&]$/, "");
 
@@ -564,7 +554,6 @@ export class AuthClient implements IAuthClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/json"
             })
         };
 
@@ -575,14 +564,14 @@ export class AuthClient implements IAuthClient {
                 try {
                     return this.processLogout(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<boolean>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<boolean>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
-    protected processLogout(response: HttpResponseBase): Observable<boolean> {
+    protected processLogout(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -591,11 +580,7 @@ export class AuthClient implements IAuthClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-                result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
-            return ObservableOf(result200);
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -4688,7 +4673,7 @@ export interface IPaymentClient {
     /**
      * @return OK
      */
-    webhook(): Observable<string>;
+    webhook(): Observable<void>;
 }
 
 @Injectable({
@@ -4840,7 +4825,7 @@ export class PaymentClient implements IPaymentClient {
     /**
      * @return OK
      */
-    webhook(): Observable<string> {
+    webhook(): Observable<void> {
         let url = this.baseUrl + "/api/Payment/webhook";
         url = url.replace(/[?&]$/, "");
 
@@ -4848,7 +4833,6 @@ export class PaymentClient implements IPaymentClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Accept": "application/json"
             })
         };
 
@@ -4859,14 +4843,14 @@ export class PaymentClient implements IPaymentClient {
                 try {
                     return this.processWebhook(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<string>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<string>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
-    protected processWebhook(response: HttpResponseBase): Observable<string> {
+    protected processWebhook(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -4875,11 +4859,7 @@ export class PaymentClient implements IPaymentClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-                result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
-            return ObservableOf(result200);
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {

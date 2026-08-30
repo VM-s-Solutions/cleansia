@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
+import { ThemeService } from '@cleansia/services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
 import {
   CleansiaBrandNameComponent,
   CleansiaButtonComponent,
+  CleansiaLanguageSwitcherComponent,
 } from '@cleansia/components';
 import { PromoRequestFacade } from './promo-request.facade';
 
@@ -17,11 +18,15 @@ import { PromoRequestFacade } from './promo-request.facade';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [PromoRequestFacade],
-  imports: [FormsModule, RouterModule, TranslatePipe, ButtonModule, CleansiaBrandNameComponent, CleansiaButtonComponent],
+  imports: [FormsModule, RouterModule, TranslatePipe, CleansiaBrandNameComponent, CleansiaButtonComponent, CleansiaLanguageSwitcherComponent],
 })
 export class CleansiaCustomerFooterComponent {
   private readonly snackbarService = inject(SnackbarService);
   private readonly authService = inject(CustomerAuthService);
+  private readonly themeService = inject(ThemeService);
+
+  // Same source of truth as the header control, so the two never disagree.
+  readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
 
   showNewsletter = input(false);
   currentYear = new Date().getFullYear();
@@ -33,6 +38,10 @@ export class CleansiaCustomerFooterComponent {
 
   readonly promo = inject(PromoRequestFacade);
   readonly consented = signal(false);
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
+  }
 
   toggleConsent(): void {
     this.consented.update((v) => !v);

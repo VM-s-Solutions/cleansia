@@ -1,7 +1,7 @@
 ---
 id: T-0673
 title: Home: informative footer, theme and language switchers, email promo capture
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-30
@@ -24,10 +24,10 @@ sprint: 16
 Design language and the pre-submission review: [`../../knowledge/design-language.md`](../../knowledge/design-language.md).
 
 ## Acceptance criteria
-- [ ] **AC1** - The footer renders five columns with real links; every unknown fact is a visible placeholder, never invented.
-- [ ] **AC2** - Theme and language switchers are reachable from the customer header and the footer, and both persist.
-- [ ] **AC3** - The email capture renders with a consent checkbox and three states, wired to a facade.
-- [ ] **AC4** - The facade is stubbed behind an interface; no fake success is shown to a user until the backend endpoint exists.
+- [x] **AC1** - The footer renders five columns with real links; every unknown fact is a visible placeholder, never invented.
+- [x] **AC2** - Theme and language switchers are reachable from the customer header and the footer, and both persist.
+- [x] **AC3** - The email capture renders with a consent checkbox and three states, wired to a facade.
+- [x] **AC4** - The facade is stubbed behind an interface; no fake success is shown to a user until the backend endpoint exists.
 
 ## Out of scope
 - Building the backend mint-and-send endpoint - a separate backend ticket needing an owner-run NSwag regeneration.
@@ -53,6 +53,22 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
     existed; the backend exists (T-0676) and the facade calls it live, so the condition the AC was
     protecting against is gone. The 'no fake success' half holds - success renders only on
     `result.accepted`. Reword or drop it; do not build an interface to satisfy it.
+- 2026-08-31 - done.
 
+  **AC1 - the live layout bug.** `.cl-footer__columns` declared four grid tracks for five children
+  with no explicit placement, so the contacts column wrapped to an implicit second row on desktop
+  while the markup read as correct. Five tracks now (`1.8fr 1fr 1fr 1fr 1.4fr`), with a 1100px step
+  down to three - five tracks in a 900px viewport give each about 130px, narrower than the column
+  titles themselves. The single-column stack below 768px is unchanged.
+
+  **AC2 - the footer half was never built.** Theme and language now sit in the footer's bottom bar,
+  reading the same `ThemeService` signal and the same switcher component the header uses, so the two
+  can never disagree. Both already persisted to localStorage; nothing new was needed for that.
+
+  **AC4 is OBSOLETE, not satisfied.** It asked for the facade to be stubbed behind an interface so no
+  fake success could be shown before a backend existed. The backend exists (T-0676) and the facade
+  calls it live, so the condition it was protecting against is gone. The 'no fake success' half does
+  hold - success renders only on `result.accepted`. No interface was built to satisfy wording that
+  has outlived its reason.
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

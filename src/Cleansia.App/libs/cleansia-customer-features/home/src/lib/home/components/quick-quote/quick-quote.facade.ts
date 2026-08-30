@@ -27,15 +27,44 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
   private readonly _serviceId = signal<string | null>(null);
   private readonly _size = signal<PropertySizePreset>(this.sizes[2] ?? this.sizes[0]);
+  private readonly _cleaningDate = signal<string | null>(null);
   private readonly _state = signal<QuoteState>('idle');
   private readonly _quote = signal<QuoteOrderResponse | null>(null);
 
   readonly selectedServiceId = this._serviceId.asReadonly();
   readonly selectedSize = this._size.asReadonly();
+  readonly cleaningDate = this._cleaningDate.asReadonly();
   readonly state = this._state.asReadonly();
   readonly quote = this._quote.asReadonly();
 
   readonly totalPrice = computed(() => this._quote()?.totalPrice ?? null);
+
+  /**
+   * Everything the visitor chose here, in the shape the order wizard reads.
+   *
+   * Without this the Continue button was a bare `routerLink="/order"`: the
+   * visitor picked a service and a size, watched a price appear, clicked
+   * through — and re-entered both. A quote nobody can act on is a demo.
+   */
+  readonly continueQueryParams = computed(() => {
+    const size = this._size();
+    const params: Record<string, string> = {
+      rooms: String(size.rooms),
+      bathrooms: String(size.bathrooms),
+    };
+
+    const serviceId = this._serviceId();
+    if (serviceId) {
+      params['serviceId'] = serviceId;
+    }
+
+    const date = this._cleaningDate();
+    if (date) {
+      params['cleaningDate'] = date;
+    }
+
+    return params;
+  });
   readonly currencyCode = computed(() => this._quote()?.currencyCode ?? null);
 
   /** Crew size follows the same rule the backend uses: ceil(estimate / 120 min). */
@@ -47,6 +76,24 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
       return;
     }
     this._serviceId.set(serviceId);
+    this.refresh();
+  }
+
+  /**
+   * An optional cleaning date.
+   *
+   * It is not decoration: `QuoteOrder` charges an express surcharge for a
+   * cleaning booked soon, so a quote with no date is the base price and a quote
+   * with one can legitimately be higher. Leaving it out meant the number above
+   * the fold could disagree with the number at checkout, which is the one thing
+   * a price calculator must not do.
+   */
+  selectDate(value: string | null): void {
+    const next = value && value.length > 0 ? value : null;
+    if (this._cleaningDate() === next) {
+      return;
+    }
+    this._cleaningDate.set(next);
     this.refresh();
   }
 
@@ -78,6 +125,11 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     command.selectedExtraSlugs = [];
     command.rooms = size.rooms;
     command.bathrooms = size.bathrooms;
+
+    const date = this._cleaningDate();
+    if (date) {
+      command.cleaningDate = new Date(date);
+    }
 
     this._state.set('loading');
 

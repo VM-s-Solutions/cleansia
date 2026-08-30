@@ -195,8 +195,13 @@
 
   &__columns {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1.25fr;
-    gap: 3rem;
+    // FIVE tracks for five children. It was four, so the contacts column wrapped
+    // to an implicit second row on desktop while the markup looked correct — the
+    // fifth child was added without widening the grid. Contacts is the widest of
+    // the four link columns because it carries phone, e-mail, coverage, hours and
+    // the registration line.
+    grid-template-columns: 1.8fr 1fr 1fr 1fr 1.4fr;
+    gap: 2.5rem;
     max-width: $max-width;
     margin: 0 auto;
     padding: 0 2rem 3rem;
@@ -307,6 +312,39 @@
     }
   }
 
+  // Theme and language, mirroring the header's settings row. Sits in the bottom
+  // bar rather than a column: it is a site preference, not site content.
+  &__prefs {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 1px solid rgba(240, 249, 255, 0.28);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      background: rgba(240, 249, 255, 0.1);
+      border-color: rgba(240, 249, 255, 0.5);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--cleansia-primary-300);
+      outline-offset: 2px;
+    }
+  }
+
   &__bottom {
     border-top: 1px solid var(--surface-border);
     padding: 1.25rem 2rem;
@@ -332,6 +370,16 @@
         }
       }
     }
+  }
+}
+
+
+// Between the full five and the single stack: five tracks at 900px each get
+// about 130px, which is narrower than the column titles.
+@media (max-width: 1100px) {
+  .cl-footer__columns {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 2rem;
   }
 }
 
@@ -382,6 +430,7 @@
       gap: 2rem;
       padding: 0 1.5rem 2rem;
     }
+    // (the 1100px step above collapses five tracks to two before this)
     &__bottom {
       flex-direction: column;
       text-align: center;

@@ -119,6 +119,23 @@
         <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
         <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
       </div>
+      <!--
+        The same two controls the header carries behind its settings cog. Both
+        persist to localStorage, so switching here is switching everywhere — a
+        visitor who has scrolled to the bottom should not have to go back up.
+      -->
+      <div class="cl-footer__prefs">
+        <button
+          type="button"
+          class="cl-footer__theme-toggle"
+          (click)="toggleTheme()"
+          [attr.aria-label]="(isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate"
+        >
+          <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+          {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
+        </button>
+        <cleansia-language-switcher />
+      </div>
     </div>
   </div>
 </footer>

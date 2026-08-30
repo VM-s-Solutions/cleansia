@@ -180,6 +180,20 @@ export class OrderWizardComponent implements OnInit {
     }
   });
 
+  /**
+   * A query-param integer, or null when it is absent or not a sane count.
+   * Capped at 20 — a URL is user input, and an absurd room count would drive a
+   * pricing call and a form the page cannot render.
+   */
+  private readPositiveInt(key: string): number | null {
+    const raw = this.route.snapshot.queryParamMap.get(key);
+    if (raw === null) {
+      return null;
+    }
+    const value = Number.parseInt(raw, 10);
+    return Number.isInteger(value) && value >= 0 && value <= 20 ? value : null;
+  }
+
   ngOnInit(): void {
     this.facade.initialize();
 
@@ -191,6 +205,25 @@ export class OrderWizardComponent implements OnInit {
     }
     if (packageId) {
       this.pendingPackageId.set(packageId);
+    }
+
+    // The home-page calculator hands over everything the visitor chose there.
+    // Before this the wizard read only serviceId, so a visitor who had already
+    // picked a size and watched a price appear was asked for the size again.
+    // Values are clamped rather than trusted: they arrive from a URL.
+    const rooms = this.readPositiveInt('rooms');
+    const bathrooms = this.readPositiveInt('bathrooms');
+    const cleaningDate = this.route.snapshot.queryParamMap.get('cleaningDate');
+
+    if (rooms !== null || bathrooms !== null) {
+      this.facade.updateFormData({
+        ...(rooms !== null ? { rooms } : {}),
+        ...(bathrooms !== null ? { bathrooms } : {}),
+      });
+    }
+
+    if (cleaningDate && !Number.isNaN(Date.parse(cleaningDate))) {
+      this.facade.updateFormData({ cleaningDate: new Date(cleaningDate) });
     }
 
     const rebook = this.route.snapshot.queryParamMap.get('rebook');

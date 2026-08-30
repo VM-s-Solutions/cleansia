@@ -277,6 +277,36 @@ cleansia-hero {
     }
   }
 
+  &__date {
+    width: 100%;
+    font: inherit;
+    font-size: 0.9375rem;
+    color: $text-body;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: $primary-light;
+    }
+
+    // A ring, not a shadow — the accent belongs on focus. -> T-0669 AC2
+    &:focus-visible {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.15);
+    }
+  }
+
+  &__hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+
   &__result {
     display: flex;
     align-items: flex-end;

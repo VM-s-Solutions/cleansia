@@ -101,8 +101,8 @@
 | T-0669 | Home: one title system (headings `Sky700`), neutral shadows, hero bubbles + wave + uniform scroll-fade removed | M | `done` | — | focus RINGS keep the brand colour deliberately — see the status log |
 | T-0670 | Home: unprovable claims out (4.9 rating, 2 000+ customers, three invented testimonials), rules section in from `business-rules.md`, Plus corrected to 5 % / +4 h / 1x month / 14 d | M | `done` | — | ground-truthed 2026-08-31: all ACs hold |
 | T-0671 | Home: foam hero with grounded mascot, reusable foam-edge divider, promise cards replacing the icon grid, service mascots normalised to one baseline | L | `done` | — | ground-truthed 2026-08-31: all ACs hold |
-| T-0672 | Home: inline price calculator over the existing `QuoteOrder` endpoint — no NSwag regen, the generated client already exposes `orderClient.quote()` | M | `in_progress` | — | PARTIAL: AC1 has no slot; AC4 fails - selection is not carried into the wizard |
-| T-0673 | Home: five-column footer, theme + language switchers reachable from the customer header, e-mail promo capture behind a stubbed facade | M | `in_progress` | — | PARTIAL: AC1 fails - 5 footer children in a 4-track grid; AC2 footer half never built; AC4 obsolete |
+| T-0672 | Home: inline price calculator over the existing `QuoteOrder` endpoint — no NSwag regen, the generated client already exposes `orderClient.quote()` | M | `done` | — | the wizard now reads rooms/bathrooms/date, not just serviceId |
+| T-0673 | Home: five-column footer, theme + language switchers reachable from the customer header, e-mail promo capture behind a stubbed facade | M | `done` | — | AC4 was obsolete rather than met — see the status log |
 | T-0674 | Home: wire the oven before/after pair (`label_oven` in five locales) and add `srcset` — the eight new photos total 968 KB | S | `done` | — | ground-truthed 2026-08-31: all ACs hold |
 | T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `in_progress` | — | — |
 

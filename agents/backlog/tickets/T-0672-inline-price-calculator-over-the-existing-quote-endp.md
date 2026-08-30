@@ -1,7 +1,7 @@
 ---
 id: T-0672
 title: Home: inline price calculator over the existing quote endpoint
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-30
@@ -23,11 +23,11 @@ sprint: 16
 Design language and the pre-submission review: [`../../knowledge/design-language.md`](../../knowledge/design-language.md).
 
 ## Acceptance criteria
-- [ ] **AC1** - Selecting a service, a size and a slot returns a real quote from `QuoteOrder`; the price is never computed client-side.
-- [ ] **AC2** - The component delegates all logic to a facade holding state in signals; the component is presentational and `OnPush`.
-- [ ] **AC3** - Three explicit data states (loading, error, loaded) are rendered.
-- [ ] **AC4** - Continuing carries the selection into the order wizard without re-entry.
-- [ ] **AC5** - Size options come from a configurable source, not a hardcoded Czech list - see T-0675.
+- [x] **AC1** - Selecting a service, a size and a slot returns a real quote from `QuoteOrder`; the price is never computed client-side.
+- [x] **AC2** - The component delegates all logic to a facade holding state in signals; the component is presentational and `OnPush`.
+- [x] **AC3** - Three explicit data states (loading, error, loaded) are rendered.
+- [x] **AC4** - Continuing carries the selection into the order wizard without re-entry.
+- [x] **AC5** - Size options come from a configurable source, not a hardcoded Czech list - see T-0675.
 
 ## Out of scope
 - Any change to `QuoteOrder` or its DTO.
@@ -49,6 +49,22 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
     unused two files away (`services.component.html:12` passes `serviceId`), and the wizard reads
     `serviceId` at `order-wizard.component.ts:187` - but it has no reader for rooms/bathrooms at all,
     so carrying the size needs a wizard change too, not just a query param.
+- 2026-08-31 - done. Both failing ACs are closed.
 
+  **AC4 - the handoff was missing entirely.** Continue was a bare
+  `routerLink="/order"` with no query params and no shared store, so a visitor who picked a service
+  and a size and watched a price appear re-entered both. It now carries `serviceId`, `rooms`,
+  `bathrooms` and `cleaningDate`, and the wizard reads all four - it previously read `serviceId`
+  alone and had no reader for the size at all, so this needed both ends. The wizard clamps what it
+  reads (integers, 0-20) rather than trusting them: they arrive from a URL.
+
+  **AC1 - the missing slot was not cosmetic.** `QuoteOrder` charges an express surcharge for a
+  cleaning booked soon (`OrderPricingCalculator` takes `CleaningDate`), so a calculator with no date
+  could show a number that disagreed with the number at checkout - the one thing a price calculator
+  must not do. An optional date field now feeds `cleaningDate` into the same call. Optional, because
+  without one the base price is a truthful quote; the hint says what booking soon costs.
+
+  `date_label` and `date_hint` are seeded in all five locales; leaf parity re-verified at 1489 keys
+  each, identical sets.
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

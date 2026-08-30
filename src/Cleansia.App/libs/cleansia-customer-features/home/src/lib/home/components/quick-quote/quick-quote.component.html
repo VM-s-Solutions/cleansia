@@ -43,6 +43,19 @@
     </div>
   </div>
 
+  <div class="cl-quote__field">
+    <span class="cl-quote__label">{{ 'pages.home.quote.date_label' | translate }}</span>
+    <input
+      type="date"
+      class="cl-quote__date"
+      [min]="today"
+      [value]="facade.cleaningDate() ?? ''"
+      (change)="onDate($event)"
+      [attr.aria-label]="'pages.home.quote.date_label' | translate"
+    />
+    <small class="cl-quote__hint">{{ 'pages.home.quote.date_hint' | translate }}</small>
+  </div>
+
   <div class="cl-quote__result">
     @if (facade.isLoading()) {
     <p class="cl-quote__status">{{ 'pages.home.quote.loading' | translate }}</p>
@@ -59,6 +72,7 @@
 
     <cleansia-button
       routerLink="/order"
+      [queryParams]="facade.continueQueryParams()"
       appearance="brand"
       buttonSize="large"
       [label]="'pages.home.quote.continue' | translate"

@@ -615,6 +615,8 @@
         "no_registration": "Bez registrácie",
         "service_label": "Čo je potrebné upratať",
         "size_label": "Veľkosť bytu",
+        "date_label": "Kedy",
+        "date_hint": "Nepovinné. Objednávka do 48 hodín má expresný príplatok.",
         "size_1kk": "1+kk",
         "size_2kk": "2+kk",
         "size_3kk": "3+kk",

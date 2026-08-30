@@ -31,6 +31,24 @@ tolerates, but this is exactly the class of thing worth seeing once.
 **If one looks wrong:** the hosted templates were not deleted from the SendGrid account, so
 reverting the T-0677 commit restores the previous behaviour exactly. Nothing about this is one-way.
 
+### MS-14 — Regenerate the customer client for the property-size catalogue — **owner**
+
+`GET /api/Country/GetPropertySizes?isoCode=&languageCode=` is live and anonymous on
+`Cleansia.Web.Customer`, returning each preset with its label already resolved. CZ and SK are
+seeded. The home-page calculator still reads the hardcoded `CZ_PROPERTY_SIZE_PRESETS` list because
+the generated client has no method for the route.
+
+**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
+running. Then the `PROPERTY_SIZE_PRESETS` factory in
+`libs/cleansia-customer-features/home/.../quick-quote/property-size-presets.ts` swaps to the client
+call — the file says exactly what changes, and nothing else does.
+
+**Also run** `sql-scripts/seed/insert_property_size_presets.sql` against DEV (it joins on `IsoCode`,
+so it is safe to run before or after the drop in MS-2). Until it does, the endpoint answers with an
+empty list — which the calculator renders honestly as "no sizes", not as an error.
+
+This is the last acceptance criterion of T-0675 and the only thing between it and done.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

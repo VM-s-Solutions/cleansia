@@ -26,11 +26,22 @@ export interface PropertySizePreset {
 /**
  * Where the calculator gets its size options.
  *
- * Deliberately an injection token rather than a literal in the component: the
- * list is per-country data, and T-0675 replaces this default with a
- * `PropertySizePreset` catalogue hung off `CountryConfiguration` — the same
- * place `TaxIdLabel` and `RegistrationNumberFormat` already live. When that
- * lands, only this provider changes.
+ * Deliberately an injection token rather than a literal in the component, so the
+ * source can change without the component knowing.
+ *
+ * **The backend half of T-0675 has shipped.** `PropertySizePreset` is a real
+ * catalogue keyed on country, CZ and SK are seeded
+ * (`sql-scripts/seed/insert_property_size_presets.sql`), and the list is served
+ * anonymously from `GET /api/Country/GetPropertySizes?isoCode=&languageCode=`
+ * with the label already resolved for the requested language.
+ *
+ * **What is still hardcoded is this factory, and only because the generated
+ * client has no method for that route yet** — NSwag regeneration is owner-run
+ * (see MS-14). When it lands, this factory calls
+ * `customerClient.countryClient.getPropertySizes(...)` and maps `label` straight
+ * onto the chip; `labelKey` and `CZ_PROPERTY_SIZE_PRESETS` below both go, because
+ * the server sends text rather than a translation key. Nothing else changes: the
+ * component and facade already read the token.
  */
 export const PROPERTY_SIZE_PRESETS = new InjectionToken<readonly PropertySizePreset[]>(
   'PROPERTY_SIZE_PRESETS',

@@ -104,7 +104,7 @@
 | T-0672 | Home: inline price calculator over the existing `QuoteOrder` endpoint — no NSwag regen, the generated client already exposes `orderClient.quote()` | M | `done` | — | the wizard now reads rooms/bathrooms/date, not just serviceId |
 | T-0673 | Home: five-column footer, theme + language switchers reachable from the customer header, e-mail promo capture behind a stubbed facade | M | `done` | — | AC4 was obsolete rather than met — see the status log |
 | T-0674 | Home: wire the oven before/after pair (`label_oven` in five locales) and add `srcset` — the eight new photos total 968 KB | S | `done` | — | ground-truthed 2026-08-31: all ACs hold |
-| T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `in_progress` | — | — |
+| T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `blocked` | — | AC1/2/4/5 shipped; AC3's frontend half waits on MS-14 (NSwag regen) |
 
 | T-0676 | Promo e-mail rendered from `email-templates/` rather than a hosted SendGrid template — the folder becomes the runtime source, so repo and sent HTML cannot drift | M | `done` | — | — |
 | T-0677 | Migrate the six existing e-mails off hosted templates and delete the six `*TemplateId` settings | M | `done` | — | AC4 (a real send) is the owner's; see MS-13 |

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Cleansia.Core.AppServices.Services.Interfaces;
 
@@ -26,7 +27,7 @@ namespace Cleansia.Core.AppServices.Services;
 /// dependency that parses untrusted-looking syntax around customer data would be
 /// paying for expressiveness nothing uses.
 /// </remarks>
-public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
+public sealed partial class EmailTemplateRenderer : IEmailTemplateRenderer
 {
     private const string ResourcePrefix = "Cleansia.Core.AppServices.EmailTemplates.";
 
@@ -47,8 +48,14 @@ public sealed class EmailTemplateRenderer : IEmailTemplateRenderer
             builder.Replace("{{" + key + "}}", value ?? string.Empty);
         }
 
-        return builder.ToString();
+        // Anything still in braces had no value at all — a translation row that is
+        // missing for one locale, most likely. Drop it. The alternative is a
+        // customer reading "{{Greeting}}", and an empty line is the lesser failure.
+        return Placeholder().Replace(builder.ToString(), string.Empty);
     }
+
+    [GeneratedRegex(@"\{\{[A-Za-z0-9_]+\}\}")]
+    private static partial Regex Placeholder();
 
     private static string Load(string templateName)
     {

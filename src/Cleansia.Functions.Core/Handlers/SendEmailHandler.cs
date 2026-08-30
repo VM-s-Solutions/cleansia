@@ -26,6 +26,7 @@ public class SendEmailHandler(
     IEmailService emailService,
     IIdempotencyGuard idempotencyGuard,
     ITenantProvider tenantProvider,
+    IPromoCodeRepository promoCodeRepository,
     ILogger<SendEmailHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions =
@@ -121,8 +122,37 @@ public class SendEmailHandler(
             emailService.SendEmailConfirmationAsync(message.Email, message.UserName, message.Code, message.LanguageCode, ct),
         EmailType.ResetPassword =>
             emailService.SendResetPasswordEmailAsync(message.Email, message.UserName, message.Code, message.LanguageCode, ct),
+        // The promo body needs the discount and the expiry, which the message does
+        // not carry — they live on the row the command just wrote, keyed by the
+        // same code. Reading them here keeps the message shape unchanged.
+        EmailType.PromoCode => SendPromoAsync(message, ct),
         _ => throw new InvalidOperationException($"Unsupported email type for the send-email queue: {message.EmailType}"),
     };
+
+    private async Task SendPromoAsync(SendEmailMessage message, CancellationToken ct)
+    {
+        var promo = await promoCodeRepository.GetByCodeAsync(message.Code, ct);
+
+        if (promo is null)
+        {
+            // The row is written in the same transaction that queued this message,
+            // so its absence means it was deleted after the fact. Nothing to send.
+            throw new InvalidOperationException(
+                $"Promo code {message.Code} no longer exists; refusing to send an e-mail advertising it.");
+        }
+
+        var discountLabel = promo.DiscountPercent is { } percent
+            ? $"-{percent * 100m:0.#} %"
+            : $"-{promo.DiscountAmount:0.##}";
+
+        await emailService.SendPromoCodeEmailAsync(
+            message.Email,
+            promo.Code,
+            discountLabel,
+            promo.ValidUntil?.UtcDateTime,
+            message.LanguageCode,
+            ct);
+    }
 
     private static (SendEmailMessage? Message, string? EnvelopeTenantId) ReadPayload(string messageText)
     {

@@ -5,6 +5,19 @@ step, cleared when done.
 
 ## Open
 
+### MS-12 — Regenerate the customer web client for the promo-request endpoint — **owner**
+
+`POST /api/PromoCode/Request` is live on `Cleansia.Web.Customer` (anonymous, `auth` rate limiter).
+The home page's footer box calls `PromoRequestFacade`, which today reports the feature as
+unavailable because the generated client has no method for the route.
+
+**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
+running.
+
+Until it runs, the backend half is inert from the web: a visitor who types an address gets the
+honest "not available yet" state rather than a code. Nothing is broken by waiting — this is the
+last acceptance criterion of T-0676 and the only thing between it and done.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

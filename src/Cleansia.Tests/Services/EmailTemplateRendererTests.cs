@@ -59,6 +59,20 @@ public class EmailTemplateRendererTests
     }
 
     [Fact]
+    public void A_key_that_was_never_offered_at_all_renders_empty_too()
+    {
+        // The null case above is the caller saying "this one is empty". THIS is the
+        // caller never mentioning the key — a translation row missing for one
+        // locale. It used to leave "{{Greeting}}" in the customer's inbox.
+        var html = renderer.Render("promo-code.html", new Dictionary<string, string?>
+        {
+            ["PromoCode"] = "CLEAN-7Q2M",
+        });
+
+        Assert.DoesNotContain("{{", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void An_unknown_template_fails_loudly_and_names_what_is_available()
     {
         var ex = Assert.Throws<InvalidOperationException>(

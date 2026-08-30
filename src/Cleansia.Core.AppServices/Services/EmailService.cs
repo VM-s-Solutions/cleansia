@@ -367,23 +367,30 @@ public sealed class EmailService : IEmailService
                 translations.GetValueOrDefault("ExpiryNotice", "The code is valid until {0}."),
                 expiresOn.Value.ToString("d. M. yyyy"));
 
-        var values = new Dictionary<string, string?>(StringComparer.Ordinal)
-        {
-            ["lang"] = languageCode,
-            ["PromoCode"] = promoCode,
-            ["DiscountText"] = discountLabel,
-            ["ExpiryNotice"] = expiryNotice,
-            ["OrderLink"] = sendGridConfig.ClientDomainUrl,
-            ["SupportEmail"] = sendGridConfig.AddressFrom,
-        };
-
         // Copy still comes from EmailTemplateTranslation, exactly as the hosted
-        // templates get it — only the rendering moved into the repository.
+        // templates get it — only the rendering moved into the repository. It is
+        // the BASE layer: everything below is per-send data and overrides it.
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+
         foreach (var (key, value) in translations)
         {
             values[key] = value;
         }
 
+        // The seeded DiscountText is the phrase ("Discount on your first order")
+        // and carries no figure, because the figure is not translatable — it is
+        // the value on the row. The pill needs both, or the e-mail offers a
+        // discount without ever saying how much.
+        var discountPhrase = translations.GetValueOrDefault("DiscountText");
+
+        values["lang"] = languageCode;
+        values["PromoCode"] = promoCode;
+        values["DiscountText"] = string.IsNullOrWhiteSpace(discountPhrase)
+            ? discountLabel
+            : $"{discountLabel} · {discountPhrase}";
+        values["ExpiryNotice"] = expiryNotice;
+        values["OrderLink"] = sendGridConfig.ClientDomainUrl;
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
         values["Subject"] = subject;
 
         var html = templateRenderer.Render("promo-code.html", values);

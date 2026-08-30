@@ -36,12 +36,14 @@ public class SendEmailHandlerTests
 
     private readonly Mock<IEmailService> _emailService = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<IPromoCodeRepository> _promoCodes = new();
     private readonly InMemoryIdempotencyGuard _guard = new();
 
     private SendEmailHandler CreateHandler() => new(
         _emailService.Object,
         _guard,
         _tenantProvider.Object,
+        _promoCodes.Object,
         NullLogger<SendEmailHandler>.Instance);
 
     private static readonly JsonSerializerOptions JsonOptions =
@@ -254,7 +256,7 @@ public class SendEmailHandlerTests
             .ReturnsAsync("msg-id");
         _guard.MarkFails = true;
         var logger = new CapturingLogger();
-        var handler = new SendEmailHandler(_emailService.Object, _guard, _tenantProvider.Object, logger);
+        var handler = new SendEmailHandler(_emailService.Object, _guard, _tenantProvider.Object, _promoCodes.Object, logger);
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(SerializeEnvelope(Confirmation()), CancellationToken.None));
 

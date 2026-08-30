@@ -278,7 +278,6 @@ public class S6LoggingHygieneCharacterizationTests
         var config = new Mock<ISendGridConfig>();
         config.SetupGet(c => c.ApiKey).Returns("SG.test");
         config.SetupGet(c => c.AddressFrom).Returns("noreply@example.test");
-        config.SetupGet(c => c.EmailConfirmationTemplateId).Returns("d-template-1");
         config.SetupGet(c => c.ClientDomainUrl).Returns("https://app.test");
 
         var translations = new Mock<IEmailTemplateTranslationRepository>();

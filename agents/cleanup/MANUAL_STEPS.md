@@ -5,6 +5,32 @@ step, cleared when done.
 
 ## Open
 
+### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
+
+T-0677 moved all six live e-mails off hosted SendGrid templates onto
+`email-templates/` in this repository. Ten tests assert on the HTML the SDK actually serializes, so
+the bodies are proven; what is **not** proven is what a real mail client does with them, and that is
+the half a test cannot reach.
+
+**Action:** with a live SendGrid key, trigger one of each and open them — ideally in Gmail and
+Outlook, which are the two that rewrite CSS:
+
+1. registration → confirmation e-mail
+2. forgot password → reset e-mail
+3. an order → receipt (check the PDF is attached)
+4. an order status change → status update (check the status badge has its colour — it is driven by
+   `{{StatusClass}}` written into a class attribute)
+5. close a pay period → period-closed (check the invoice PDF)
+6. a period near its end → reminder (check the countdown reads "N days remaining")
+
+**Why it matters more than usual here.** These bodies were previously rendered by SendGrid, which
+inlines CSS on the way out. We now send the HTML as written, so anything relying on that inlining
+would look different. The templates use inline-friendly CSS in a `<style>` block, which Gmail
+tolerates, but this is exactly the class of thing worth seeing once.
+
+**If one looks wrong:** the hosted templates were not deleted from the SendGrid account, so
+reverting the T-0677 commit restores the previous behaviour exactly. Nothing about this is one-way.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

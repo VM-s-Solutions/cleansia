@@ -11,4 +11,7 @@ public enum EmailType
     PeriodClosed = 4,
     PeriodEndReminder = 5,
     OrderStatusUpdate = 6,
+
+    /// <summary>First-order discount code sent to an address with no account yet.</summary>
+    PromoCode = 7,
 }

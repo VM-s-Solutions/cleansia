@@ -188,6 +188,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         public Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, string languageCode, CancellationToken ct = default) => Sent();
         public Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, string languageCode = Constants.Language.English, byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default) => Sent();
         public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
+        public Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
     }
 

@@ -23,17 +23,20 @@ public sealed class EmailService : IEmailService
     private readonly ILogger<EmailService> logger;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly IEmailTemplateTranslationRepository emailTemplateTranslationRepository;
+    private readonly IEmailTemplateRenderer templateRenderer;
 
     public EmailService(
         ISendGridConfig cfg,
         ILogger<EmailService> log,
         IHttpClientFactory httpClientFactory,
-        IEmailTemplateTranslationRepository emailTemplateTranslationRepository)
+        IEmailTemplateTranslationRepository emailTemplateTranslationRepository,
+        IEmailTemplateRenderer templateRenderer)
     {
         sendGridConfig = cfg;
         logger = log;
         this.httpClientFactory = httpClientFactory;
         this.emailTemplateTranslationRepository = emailTemplateTranslationRepository;
+        this.templateRenderer = templateRenderer;
     }
 
     public async Task<string> SendResetPasswordEmailAsync(
@@ -340,6 +343,102 @@ public sealed class EmailService : IEmailService
             subject,
             $"Order status update ({newStatus}) to {email}",
             ct);
+    }
+
+
+    public async Task<string> SendPromoCodeEmailAsync(
+        string email,
+        string promoCode,
+        string discountLabel,
+        DateTime? expiresOn,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var translations = await emailTemplateTranslationRepository
+            .GetTranslationsByTypeAndLanguageAsync(EmailType.PromoCode, languageCode, ct);
+
+        var subject = translations.GetValueOrDefault("Subject", "Your Cleansia discount code");
+
+        // Expiry is optional: an issued code with no end date renders the sentence
+        // empty rather than the words "null" or a fabricated date.
+        var expiryNotice = expiresOn is null
+            ? string.Empty
+            : string.Format(
+                translations.GetValueOrDefault("ExpiryNotice", "The code is valid until {0}."),
+                expiresOn.Value.ToString("d. M. yyyy"));
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["lang"] = languageCode,
+            ["PromoCode"] = promoCode,
+            ["DiscountText"] = discountLabel,
+            ["ExpiryNotice"] = expiryNotice,
+            ["OrderLink"] = sendGridConfig.ClientDomainUrl,
+            ["SupportEmail"] = sendGridConfig.AddressFrom,
+        };
+
+        // Copy still comes from EmailTemplateTranslation, exactly as the hosted
+        // templates get it — only the rendering moved into the repository.
+        foreach (var (key, value) in translations)
+        {
+            values[key] = value;
+        }
+
+        values["Subject"] = subject;
+
+        var html = templateRenderer.Render("promo-code.html", values);
+
+        return await SendRenderedAsync(
+            email,
+            html,
+            subject,
+            $"Promo code email to {email}",
+            ct);
+    }
+
+    /// <summary>
+    /// Sends a body this repository rendered, rather than one SendGrid holds.
+    /// </summary>
+    /// <remarks>
+    /// Same transport, same resilience handler and the same failure
+    /// classification as <see cref="SendTemplatedAsync{T}"/> — the only
+    /// difference is that the HTML came from <c>email-templates/</c>, so there
+    /// is no template id to keep in step with a SendGrid account.
+    /// </remarks>
+    private async Task<string> SendRenderedAsync(
+        string email,
+        string htmlContent,
+        string subject,
+        string logContext,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(htmlContent);
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+        var client = new SendGridClient(httpClientFactory.CreateClient(SendGridHttpClientName), sendGridConfig.ApiKey);
+        var msg = MailHelper.CreateSingleEmail(
+            new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
+            new EmailAddress(email),
+            subject,
+            plainTextContent: null,
+            htmlContent: htmlContent);
+
+        logger.LogInformation("Sending {Context}", logContext);
+
+        var response = await client.SendEmailAsync(msg, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowClassifiedAsync(response, email, ct);
+        }
+
+        var messageId = response.Headers.TryGetValues("X-Message-Id", out var ids)
+            ? ids.FirstOrDefault()
+            : "n/a";
+
+        logger.LogInformation("Email sent successfully ({MessageId})", messageId);
+        return messageId ?? "n/a";
     }
 
     private async Task<string> SendTemplatedAsync<T>(

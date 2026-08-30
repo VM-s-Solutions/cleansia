@@ -1,6 +1,11 @@
 <section class="cl-cta" id="cta">
   <div class="cl-cta__inner">
-    <h2 class="cl-cta__title">{{ 'pages.home.cta.title' | translate }}</h2>
+    <cleansia-title
+      [title]="'pages.home.cta.title'"
+      size="big"
+      [level]="2"
+      className="cl-cta__title"
+    />
     <p class="cl-cta__desc">{{ 'pages.home.cta.desc' | translate }}</p>
     <cleansia-button
       routerLink="/order"

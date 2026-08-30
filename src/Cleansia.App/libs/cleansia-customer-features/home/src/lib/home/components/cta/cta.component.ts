@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
 import {
   CleansiaButtonComponent,
+  CleansiaTitleComponent,
 } from '@cleansia/components';
 
 @Component({
@@ -11,6 +10,6 @@ import {
   templateUrl: './cta.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, ButtonModule, CleansiaButtonComponent],
+  imports: [TranslatePipe, CleansiaButtonComponent, CleansiaTitleComponent],
 })
 export class CtaComponent {}

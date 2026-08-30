@@ -1,7 +1,7 @@
 ---
 id: T-0669
 title: Home: one title system, neutral shadows, decoration removed
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-30
@@ -24,11 +24,11 @@ sprint: 16
 Design language and the pre-submission review: [`../../knowledge/design-language.md`](../../knowledge/design-language.md).
 
 ## Acceptance criteria
-- [ ] **AC1** - Exactly one heading system exists. Headings render `Sky700 #0369A1`; `var(--cleansia-primary)` is used for the mark, links and primary actions only.
-- [ ] **AC2** - No `box-shadow` in `pages/cleansia-customer/` contains `rgba($primary, ...)`. A resting primary button is at most `0 2px 6px rgba(15,23,42,.12)`.
-- [ ] **AC3** - The four `cl-hero__bubble` elements and the `cl-wave` SVG are gone from `hero.component.html` and their SCSS is removed.
-- [ ] **AC4** - Entrance animation is limited to the first two viewports; no uniform `delay-N` stagger across every section.
-- [ ] **AC5** - `npx nx build cleansia.app` passes.
+- [x] **AC1** - Exactly one heading system exists. Headings render `Sky700 #0369A1`; `var(--cleansia-primary)` is used for the mark, links and primary actions only.
+- [x] **AC2** - No `box-shadow` in `pages/cleansia-customer/` contains `rgba($primary, ...)`. A resting primary button is at most `0 2px 6px rgba(15,23,42,.12)`.
+- [x] **AC3** - The four `cl-hero__bubble` elements and the `cl-wave` SVG are gone from `hero.component.html` and their SCSS is removed.
+- [x] **AC4** - Entrance animation is limited to the first two viewports; no uniform `delay-N` stagger across every section.
+- [x] **AC5** - `npx nx build cleansia.app` passes.
 
 ## Out of scope
 - Partner and admin apps - they share the title component and must keep rendering.
@@ -57,6 +57,34 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
     `.cl-hero__bubble` and its four modifiers with nothing rendering them. `@keyframes
     cl-float-bubble` is NOT dead - four other pages use it - so only the `&__bubble` block goes.
   AC4 and AC5 hold; the app builds.
+- 2026-08-31 - done. The three failing ACs are closed, and the ground-truth pass had under-counted
+  two of them.
+
+  **AC1 - THREE heading systems existed, not two.** `.cl-title` and `cleansia-title` were the known
+  pair (T-0678 merged them). Two more turned up only by grepping for rules that set their own colour:
+  `.cl-cta__title` at `#0f172a` near-black, and `.cl-quote__title` with its own fixed size and weight.
+  Both render on the home page. All four are one `<cleansia-title>` now; the page keeps only spacing.
+
+  **AC2 - the coloured shadows split into two kinds, and only one kind was wrong.**
+  - *Depth* - an offset and a blur, tinted with a brand hue. Six of these, all now neutral:
+    the footer's resting primary button (30 % alpha, the worst), the footer mascot's drop-shadow,
+    a membership card hover, two recurring-bookings hovers, and the quote card plus hero mascot,
+    which were `rgba(12, 74, 110, ...)` - Sky900, a hue neither the AC's grep nor the ground-truth
+    pass looked for.
+  - *Rings* - `0 0 0 Npx`, drawn with box-shadow but semantically an outline: six focus and
+    active-state rings in track-order, order-wizard and recurring-bookings. These KEEP their brand
+    colour. A focus ring is exactly where the accent belongs, and greying it out would trade a real
+    accessibility affordance for a passing grep. The AC's wording (`no box-shadow contains
+    rgba($primary, ...)`) does not distinguish the two; the intent - "no coloured depth" - does.
+    Recorded here rather than silently satisfied.
+
+  **AC3 - the markup was clean, the SCSS was not.** `.cl-hero__bubble` and its four modifiers still
+  compiled with nothing rendering them; removed. `@keyframes cl-float-bubble` was NOT removed with
+  them - legal-pages, order-wizard, services-catalog and track-order all still animate with it. The
+  orphaned `// Wave Divider` header with no rules under it is gone too.
+
+  Three CI build gates pass, 68 test projects pass, lint has exactly the six pre-existing problems a
+  clean tree has.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

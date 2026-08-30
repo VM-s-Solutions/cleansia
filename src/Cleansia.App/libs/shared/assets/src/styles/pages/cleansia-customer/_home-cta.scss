@@ -17,12 +17,12 @@
     z-index: 2;
   }
 
+  // LAYOUT ONLY. This block used to set font-size, weight AND `color: $text-dark`
+  // (#0f172a), which is why the home page rendered headings in two colours -
+  // every other heading was Sky700 and this one was near-black. It is a
+  // <cleansia-title> now and contributes spacing alone. -> T-0669 AC1
   &__title {
     font-family: $font-heading;
-    color: $text-dark;
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    font-weight: 600;
-    letter-spacing: -0.02em;
     margin-bottom: 0.75rem;
   }
 
@@ -50,8 +50,5 @@
   .cl-cta {
     background: linear-gradient(180deg, #0f172a 0%, #082f49 100%);
 
-    &__title {
-      color: #e2e8f0;
-    }
   }
 }

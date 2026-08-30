@@ -106,45 +106,6 @@ cleansia-hero {
     }
   }
 
-  // Soft floating bubbles — the only decoration in the hero, kept subtle
-  &__bubble {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba($primary, 0.08);
-    border: 1px solid rgba($primary, 0.12);
-    z-index: 0;
-    animation: cl-float-bubble 12s ease-in-out infinite;
-
-    &--1 {
-      width: 180px;
-      height: 180px;
-      top: -40px;
-      right: -30px;
-    }
-    &--2 {
-      width: 110px;
-      height: 110px;
-      top: 30%;
-      left: -40px;
-      animation-delay: -4s;
-    }
-    &--3 {
-      width: 70px;
-      height: 70px;
-      bottom: 22%;
-      right: 12%;
-      animation-delay: -8s;
-    }
-    &--4 {
-      width: 130px;
-      height: 130px;
-      bottom: 8%;
-      left: 16%;
-      animation-delay: -6s;
-      background: rgba($primary-accent, 0.04);
-    }
-  }
-
   &__image {
     flex: 0 0 auto;
     width: min(100%, 400px);
@@ -155,7 +116,7 @@ cleansia-hero {
       height: auto;
       aspect-ratio: 1 / 1;
       display: block;
-      filter: drop-shadow(0 12px 24px rgba(12, 74, 110, 0.12));
+      filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.12));
       position: relative;
       z-index: 2;
     }
@@ -237,7 +198,7 @@ cleansia-hero {
   background: $white;
   border-radius: 2rem;
   padding: 1.75rem 1.875rem;
-  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
   position: relative;
   z-index: 2;
 
@@ -248,12 +209,10 @@ cleansia-hero {
     gap: 1rem;
   }
 
+  // LAYOUT ONLY — a third heading system used to live here, with its own
+  // font-size, weight and colour. -> T-0669 AC1
   &__title {
     font-family: $font-heading;
-    font-size: 1.5rem;
-    font-weight: 600;
-    letter-spacing: -0.35px;
-    color: $primary-dark;
     margin: 0;
   }
 

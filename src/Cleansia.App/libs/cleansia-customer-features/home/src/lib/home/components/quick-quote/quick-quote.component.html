@@ -1,6 +1,11 @@
 <div class="cl-quote">
   <div class="cl-quote__head">
-    <h2 class="cl-quote__title">{{ 'pages.home.quote.title' | translate }}</h2>
+    <cleansia-title
+      [title]="'pages.home.quote.title'"
+      size="default"
+      [level]="2"
+      className="cl-quote__title"
+    />
     <span class="cl-quote__pill">{{ 'pages.home.quote.no_registration' | translate }}</span>
   </div>
 

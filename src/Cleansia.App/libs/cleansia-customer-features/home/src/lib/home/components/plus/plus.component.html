@@ -1,0 +1,36 @@
+<section class="cl-section cl-section--plus" id="plus">
+  <div class="cl-section__inner">
+    <div class="cl-plus">
+      <div class="cl-plus__body">
+        <span class="cl-plus__badge">{{ 'pages.home.plus.badge' | translate }}</span>
+        <h2 class="cl-plus__title">{{ 'pages.home.plus.title' | translate }}</h2>
+
+        <ul class="cl-plus__perks">
+          <li><i class="pi pi-check"></i>{{ 'pages.home.plus.perk1' | translate }}</li>
+          <li><i class="pi pi-check"></i>{{ 'pages.home.plus.perk2' | translate }}</li>
+          <li><i class="pi pi-check"></i>{{ 'pages.home.plus.perk3' | translate }}</li>
+          <li><i class="pi pi-check"></i>{{ 'pages.home.plus.perk4' | translate }}</li>
+        </ul>
+
+        <div class="cl-plus__actions">
+          <a routerLink="/membership/subscribe" class="text-decoration-none">
+            <button pButton type="button" class="p-button-lg cl-plus__cta">
+              {{ 'pages.home.plus.cta' | translate }}
+            </button>
+          </a>
+          <span class="cl-plus__yearly">{{ 'pages.home.plus.yearly' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="cl-plus__mascot">
+        <img
+          src="assets/images/mascot/mascot-ready.webp"
+          alt=""
+          width="300"
+          height="300"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </div>
+</section>

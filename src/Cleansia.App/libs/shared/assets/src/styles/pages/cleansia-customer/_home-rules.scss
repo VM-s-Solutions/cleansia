@@ -1,0 +1,97 @@
+@use './home-variables' as *;
+
+// =============================
+// Rules — the operating numbers, stated
+// =============================
+// One tonal family rather than a traffic-light palette: the cards carry no
+// semantic meaning (nothing here is a success or a warning), so green and
+// near-black would have been decoration pretending to be information.
+// -> agents/knowledge/design-language.md#21-colour
+
+.cl-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1.125rem;
+
+  &__card {
+    background: $primary-lighter;
+    border: 1px solid $primary-light;
+    border-radius: 2.25rem;
+    padding: 1.875rem 2rem;
+
+    &--tinted {
+      background: $primary-light;
+      border-color: #bae6fd;
+    }
+
+    &--solid {
+      background: $primary;
+      border-color: $primary;
+
+      .cl-rules__label {
+        color: #bae6fd;
+      }
+
+      .cl-rules__value,
+      .cl-rules__desc {
+        color: $white;
+      }
+    }
+  }
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__value {
+    font-family: $font-heading;
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.14;
+    letter-spacing: -0.7px;
+    color: $primary-dark;
+    margin: 0.5rem 0 0;
+  }
+
+  &__desc {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: $text-body;
+    margin: 0.625rem 0 0;
+  }
+
+  // the three flat facts under the cards
+  &__facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.75rem;
+      padding: 0 1.125rem;
+      border: 1px solid $border;
+      border-radius: 999px;
+      background: $white;
+      font-size: 0.9375rem;
+      color: $text-body;
+    }
+
+    strong {
+      font-weight: 700;
+      color: $text-dark;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}

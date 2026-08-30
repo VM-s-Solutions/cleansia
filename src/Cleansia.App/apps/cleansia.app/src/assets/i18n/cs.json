@@ -418,11 +418,9 @@
         "tagline": "Čisto. Rychle. Bezpečně.",
         "book_now": "Objednat úklid",
         "view_services": "Naše služby",
-        "badge_certified": "Certifikovaní odborníci",
-        "badge_rating": "Hodnocení 4.9",
-        "badge_customers": "2 000+ zákazníků",
-        "float_guarantee": "100% spokojenost",
-        "float_fast": "Hotovo za 2-4h"
+        "trust1": "Pevná cena předem",
+        "trust2": "Zrušení zdarma do 24 hodin",
+        "trust3": "Vlastní vybavení a eko prostředky"
       },
       "why_choose_us": {
         "title": "Proč si vybrat nás?",
@@ -453,10 +451,6 @@
         "step5_desc": "V domluvený čas, plně vybavení a připraveni pustit se do práce.",
         "step6": "Výsledek, který je vidět",
         "step6_desc": "Pečlivě, spolehlivě a bez kompromisů."
-      },
-      "counter": {
-        "title": "Celkově jsme provedli již",
-        "unit": "úklidů"
       },
       "benefits": {
         "title": "Co získáte s naší službou",
@@ -514,27 +508,6 @@
         "label_carpet": "Renovace koberce",
         "label_mattress": "Čištění matrací"
       },
-      "testimonials": {
-        "title": "Co říkají naši zákazníci",
-        "badge": "Reference",
-        "rating": "hodnocení",
-        "review": "recenze",
-        "t1": {
-          "text": "Úžasné čištění pohovek a koberců — jako nové! Skvělá komunikace a rychlé jednání. Všem doporučuji!",
-          "author": "Anna",
-          "role": "v domácnosti"
-        },
-        "t2": {
-          "text": "Čisté koberce a čalounění, výsledky předčily očekávání! Všechny skvrny pryč. Velmi profesionální přístup, skvělý tým.",
-          "author": "Igor",
-          "role": "kancelářský pracovník"
-        },
-        "t3": {
-          "text": "Vyzkoušeli jsme několik firem — Cleansia je nejlepší. Matrace i koberce jsou teď dokonale čisté a krásně voní.",
-          "author": "Radmila",
-          "role": "maminka v domácnosti"
-        }
-      },
       "faq": {
         "title": "Často kladené otázky",
         "badge": "FAQ",
@@ -591,6 +564,36 @@
         "terms_link": "Obchodní podmínky",
         "description": "Profesionální mobilní úklidové služby. Nábytek, koberce, matrace — přijedeme k vám.",
         "address": "Praha, Česká republika"
+      },
+      "rules": {
+        "badge": "Naše pravidla",
+        "title": "Pravidla, která platí",
+        "subtitle": "Podle těchhle čísel systém počítá každou objednávku. Nejsou schovaná v obchodních podmínkách.",
+        "cancel_label": "Zrušení",
+        "cancel_value": "Zdarma do 24 h",
+        "cancel_desc": "Mezi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.",
+        "rethink_label": "Rozmyšlená",
+        "rethink_value": "15 minut",
+        "rethink_desc": "Zrušíte-li do čtvrt hodiny od objednání, neplatíte nic. Poprvé máte hodinu.",
+        "we_cancel_label": "Když zrušíme my",
+        "we_cancel_value": "Vše zpět + 500 Kč",
+        "we_cancel_desc": "Když uklízeč nedorazí, vracíme celou částku a přidáme kredit na příští úklid.",
+        "lead_label": "Nejbližší termín",
+        "lead_value": "za 4 hodiny",
+        "express_label": "Expresní příplatek",
+        "express_value": "+20 %",
+        "window_label": "Denní okna",
+        "window_value": "08:00–20:00"
+      },
+      "plus": {
+        "badge": "Cleansia Plus",
+        "title": "199 Kč měsíčně, prvních 14 dní zdarma",
+        "perk1": "5% sleva na každou objednávku",
+        "perk2": "Zrušení zdarma o 4 hodiny déle",
+        "perk3": "Jeden expresní úklid měsíčně bez příplatku",
+        "perk4": "Opakované termíny s vaším uklízečem",
+        "yearly": "ročně 2 030 Kč — ušetříte 15 %",
+        "cta": "Vyzkoušet zdarma"
       }
     },
     "profile": {

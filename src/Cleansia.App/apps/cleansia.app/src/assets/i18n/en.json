@@ -418,11 +418,9 @@
         "tagline": "Clean. Fast. Safe.",
         "book_now": "Book a Cleaning",
         "view_services": "Our Services",
-        "badge_certified": "Certified Pros",
-        "badge_rating": "4.9 Rating",
-        "badge_customers": "2,000+ Customers",
-        "float_guarantee": "100% Satisfaction",
-        "float_fast": "Done in 2-4h"
+        "trust1": "Fixed price up front",
+        "trust2": "Free cancellation up to 24 h",
+        "trust3": "Our own equipment and eco products"
       },
       "why_choose_us": {
         "title": "Why Choose Us?",
@@ -453,10 +451,6 @@
         "step5_desc": "At the agreed time, fully equipped and ready to get to work.",
         "step6": "A result that is visible",
         "step6_desc": "Carefully, reliably and without compromise."
-      },
-      "counter": {
-        "title": "We have completed over",
-        "unit": "cleanings"
       },
       "benefits": {
         "title": "What you get with our service",
@@ -514,27 +508,6 @@
         "label_carpet": "Carpet Restoration",
         "label_mattress": "Mattress Cleaning"
       },
-      "testimonials": {
-        "title": "What Our Customers Say",
-        "badge": "Testimonials",
-        "rating": "rating",
-        "review": "review",
-        "t1": {
-          "text": "Incredible cleaning of sofas and carpets — like brand new! Great communication and fast service. Highly recommend to everyone!",
-          "author": "Anna",
-          "role": "homemaker"
-        },
-        "t2": {
-          "text": "Clean carpets and upholstery, results exceeded expectations! All stains gone. Very professional, concrete approach, great team.",
-          "author": "Igor",
-          "role": "office manager"
-        },
-        "t3": {
-          "text": "We tried several companies — Cleansia are the best. Our mattresses and carpets are now perfectly clean and smell wonderful.",
-          "author": "Radmila",
-          "role": "stay-at-home mum"
-        }
-      },
       "faq": {
         "title": "Frequently Asked Questions",
         "badge": "FAQ",
@@ -591,6 +564,36 @@
         "terms_link": "Terms of Service",
         "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
         "address": "Prague, Czech Republic"
+      },
+      "rules": {
+        "badge": "Our rules",
+        "title": "Rules that apply",
+        "subtitle": "These are the numbers the system uses on every order. They are not buried in the terms.",
+        "cancel_label": "Cancellation",
+        "cancel_value": "Free up to 24 h",
+        "cancel_desc": "Between 4 and 24 hours it is 25%, under 4 hours 50%.",
+        "rethink_label": "Change of mind",
+        "rethink_value": "15 minutes",
+        "rethink_desc": "Cancel within a quarter of an hour of booking and you pay nothing. On a first booking you have an hour.",
+        "we_cancel_label": "If we cancel",
+        "we_cancel_value": "Everything back + 500 CZK",
+        "we_cancel_desc": "If the cleaner does not arrive we refund the full amount and add credit towards your next clean.",
+        "lead_label": "Earliest slot",
+        "lead_value": "in 4 hours",
+        "express_label": "Express surcharge",
+        "express_value": "+20%",
+        "window_label": "Daily windows",
+        "window_value": "08:00-20:00"
+      },
+      "plus": {
+        "badge": "Cleansia Plus",
+        "title": "199 CZK a month, first 14 days free",
+        "perk1": "5% off every order",
+        "perk2": "Free cancellation window 4 hours longer",
+        "perk3": "One express clean a month at no surcharge",
+        "perk4": "Repeat slots with your own cleaner",
+        "yearly": "2 030 CZK a year - saves 15%",
+        "cta": "Try it free"
       }
     },
     "profile": {

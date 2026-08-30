@@ -23,7 +23,8 @@ import { ProcessComponent } from './components/process/process.component';
 import { BenefitsComponent } from './components/benefits/benefits.component';
 import { ServicesComponent } from './components/services/services.component';
 import { GalleryComponent } from './components/gallery/gallery.component';
-import { TestimonialsComponent } from './components/testimonials/testimonials.component';
+import { RulesComponent } from './components/rules/rules.component';
+import { PlusComponent } from './components/plus/plus.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { CtaComponent } from './components/cta/cta.component';
 
@@ -38,7 +39,8 @@ import { CtaComponent } from './components/cta/cta.component';
     BenefitsComponent,
     ServicesComponent,
     GalleryComponent,
-    TestimonialsComponent,
+    RulesComponent,
+    PlusComponent,
     FaqComponent,
     CtaComponent,
     CleansiaScrollTopComponent,

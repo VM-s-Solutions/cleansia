@@ -38,7 +38,8 @@ cleansia-process,
 cleansia-benefits,
 cleansia-services,
 cleansia-gallery,
-cleansia-testimonials,
+cleansia-rules,
+cleansia-plus,
 cleansia-faq,
 cleansia-cta {
   content-visibility: auto;
@@ -253,8 +254,11 @@ cleansia-cta {
   &--gallery {
     background: var(--surface-card);
   }
-  &--testimonials {
+  &--rules {
     background: var(--surface-ground);
+  }
+  &--plus {
+    background: var(--surface-card);
   }
   &--faq {
     background: var(--surface-card);

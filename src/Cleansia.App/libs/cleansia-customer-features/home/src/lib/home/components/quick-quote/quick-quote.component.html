@@ -1,0 +1,61 @@
+<div class="cl-quote">
+  <div class="cl-quote__head">
+    <h2 class="cl-quote__title">{{ 'pages.home.quote.title' | translate }}</h2>
+    <span class="cl-quote__pill">{{ 'pages.home.quote.no_registration' | translate }}</span>
+  </div>
+
+  @if (services().length > 0) {
+  <div class="cl-quote__field">
+    <span class="cl-quote__label">{{ 'pages.home.quote.service_label' | translate }}</span>
+    <div class="cl-quote__chips">
+      @for (service of services(); track service.id) {
+      <button
+        type="button"
+        class="cl-quote__chip"
+        [class.cl-quote__chip--on]="facade.selectedServiceId() === service.id"
+        (click)="facade.selectService(service.id)"
+      >
+        {{ service.name }}
+      </button>
+      }
+    </div>
+  </div>
+  }
+
+  <div class="cl-quote__field">
+    <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
+    <div class="cl-quote__chips">
+      @for (size of facade.sizes; track size.code) {
+      <button
+        type="button"
+        class="cl-quote__chip"
+        [class.cl-quote__chip--on]="facade.selectedSize().code === size.code"
+        (click)="onSize(size)"
+      >
+        {{ size.labelKey | translate }}
+      </button>
+      }
+    </div>
+  </div>
+
+  <div class="cl-quote__result">
+    @if (facade.isLoading()) {
+    <p class="cl-quote__status">{{ 'pages.home.quote.loading' | translate }}</p>
+    } @else if (facade.hasFailed()) {
+    <p class="cl-quote__status cl-quote__status--error">{{ 'pages.home.quote.error' | translate }}</p>
+    } @else if (facade.totalPrice() !== null) {
+    <div class="cl-quote__price">
+      <span class="cl-quote__label">{{ 'pages.home.quote.price_label' | translate }}</span>
+      <strong>{{ facade.totalPrice() }} {{ facade.currencyCode() }}</strong>
+    </div>
+    } @else {
+    <p class="cl-quote__status">{{ 'pages.home.quote.pick_service' | translate }}</p>
+    }
+
+    <a routerLink="/order" class="text-decoration-none">
+      <button pButton type="button" class="p-button-lg cl-btn-primary">
+        {{ 'pages.home.quote.continue' | translate }}
+      </button>
+    </a>
+  </div>
+</div>

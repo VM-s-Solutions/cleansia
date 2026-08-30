@@ -597,6 +597,22 @@
         "perk4": "Opakované termíny s vaším upratovačom",
         "yearly": "ročne 2 030 Kč — ušetríte 15 %",
         "cta": "Vyskúšať zdarma"
+      },
+      "quote": {
+        "title": "Vypočítať cenu",
+        "no_registration": "Bez registrácie",
+        "service_label": "Čo je potrebné upratať",
+        "size_label": "Veľkosť bytu",
+        "size_1kk": "1+kk",
+        "size_2kk": "2+kk",
+        "size_3kk": "3+kk",
+        "size_4kk": "4+kk",
+        "size_house": "Dom",
+        "price_label": "Pevná cena",
+        "continue": "Pokračovať",
+        "pick_service": "Vyberte službu a uvidíte cenu",
+        "loading": "Počítame…",
+        "error": "Cenu sa teraz nepodarilo vypočítať. Skúste to prosím znova."
       }
     },
     "profile": {

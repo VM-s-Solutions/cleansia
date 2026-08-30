@@ -597,6 +597,22 @@
         "perk4": "Opakované termíny s vaším uklízečem",
         "yearly": "ročně 2 030 Kč — ušetříte 15 %",
         "cta": "Vyzkoušet zdarma"
+      },
+      "quote": {
+        "title": "Spočítat cenu",
+        "no_registration": "Bez registrace",
+        "service_label": "Co je potřeba uklidit",
+        "size_label": "Velikost bytu",
+        "size_1kk": "1+kk",
+        "size_2kk": "2+kk",
+        "size_3kk": "3+kk",
+        "size_4kk": "4+kk",
+        "size_house": "Dům",
+        "price_label": "Pevná cena",
+        "continue": "Pokračovat",
+        "pick_service": "Vyberte službu a uvidíte cenu",
+        "loading": "Počítáme…",
+        "error": "Cenu se teď nepodařilo spočítat. Zkuste to prosím znovu."
       }
     },
     "profile": {

@@ -597,6 +597,22 @@
         "perk4": "Repeat slots with your own cleaner",
         "yearly": "2 030 CZK a year - saves 15%",
         "cta": "Try it free"
+      },
+      "quote": {
+        "title": "Get a price",
+        "no_registration": "No sign-up",
+        "service_label": "What needs cleaning",
+        "size_label": "Property size",
+        "size_1kk": "1 room",
+        "size_2kk": "2 rooms",
+        "size_3kk": "3 rooms",
+        "size_4kk": "4 rooms",
+        "size_house": "House",
+        "price_label": "Fixed price",
+        "continue": "Continue",
+        "pick_service": "Pick a service to see the price",
+        "loading": "Working it out...",
+        "error": "We could not price that just now. Please try again."
       }
     },
     "profile": {

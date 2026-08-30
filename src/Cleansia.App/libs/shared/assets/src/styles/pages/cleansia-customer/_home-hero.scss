@@ -227,3 +227,126 @@ cleansia-hero {
     }
   }
 }
+
+// =============================
+// Quick quote — the calculator in the hero
+// =============================
+// Above the fold on purpose: "fixed price" stops being a claim and becomes a
+// number the visitor watched the server produce. -> /flows/booking-and-pricing
+.cl-quote {
+  background: $white;
+  border-radius: 2rem;
+  padding: 1.75rem 1.875rem;
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  position: relative;
+  z-index: 2;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-family: $font-heading;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.35px;
+    color: $primary-dark;
+    margin: 0;
+  }
+
+  &__pill {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: $primary-dark;
+    background: $primary-light;
+    padding: 0.4375rem 0.875rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  &__field {
+    margin-top: 1.25rem;
+  }
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+  }
+
+  &__chip {
+    min-height: 2.75rem; // 44px — the mobile hit-target floor applies here too
+    padding: 0 1.125rem;
+    border-radius: 999px;
+    border: 1px solid $border;
+    background: $white;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: $text-body;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background-color 0.16s ease;
+
+    &:hover {
+      border-color: $primary-accent;
+      background: $primary-lighter;
+    }
+
+    &--on,
+    &--on:hover {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+  }
+
+  &__result {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.125rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid $border;
+  }
+
+  &__price strong {
+    display: block;
+    font-family: $font-heading;
+    font-size: 2.375rem;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -1.1px;
+    color: $primary;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.25rem;
+  }
+
+  &__status {
+    font-size: 0.9375rem;
+    color: $text-muted;
+    margin: 0;
+
+    &--error {
+      color: #b91c1c;
+    }
+  }
+}

@@ -40,19 +40,21 @@
           <span>{{ 'pages.home.hero.trust3' | translate }}</span>
         </div>
       </div>
+
+      <div class="cl-hero__image animate-on-scroll delay-1">
+        <img
+          src="assets/images/mascot/mascot-mopping.webp"
+          srcset="assets/images/mascot/mascot-mopping-480.webp 480w, assets/images/mascot/mascot-mopping.webp 800w"
+          sizes="(max-width: 768px) 260px, 400px"
+          alt="Cleaning mascot"
+          width="800"
+          height="800"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
     </div>
-    <div class="cl-hero__image animate-on-scroll delay-1">
-      <img
-        src="assets/images/mascot/mascot-mopping.webp"
-        srcset="assets/images/mascot/mascot-mopping-480.webp 480w, assets/images/mascot/mascot-mopping.webp 800w"
-        sizes="(max-width: 768px) 260px, 400px"
-        alt="Cleaning mascot"
-        width="800"
-        height="800"
-        loading="eager"
-        fetchpriority="high"
-      />
-    </div>
+    <cleansia-quick-quote [services]="quoteServices()" />
   </div>
   <cleansia-foam-edge />
 </section>

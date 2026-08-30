@@ -5,7 +5,7 @@ status: ready
 size: M
 owner: frontend
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 depends_on: ['T-0671']
 blocks: []
 stories: []
@@ -40,6 +40,19 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
 ## Status log
 - 2026-08-30 - ready (filed from the approved home-page concept)
+- 2026-08-31 - ground-truthed: PARTIAL, not shipped. AC3 holds.
+  - AC1 FAILS - and the first pass missed it; the adversarial re-check caught it. The five column
+    blocks exist in the markup (`customer-footer.component.html:52-89`), but
+    `_home-footer.scss:190` declares `grid-template-columns: 2fr 1fr 1fr 1.25fr` - FOUR tracks for
+    FIVE children, with no explicit placement on any child and no other rule for
+    `.cl-footer__columns` in the workspace. The contacts column wraps to an implicit second row on
+    desktop. This is a live visual defect, not a documentation gap.
+  - AC2 half-holds: the header switchers are real and both persist to localStorage. The FOOTER half
+    was never built - the footer imports no switcher at all.
+  - AC4 is OBSOLETE rather than failed. It asked for a stub behind an interface until the backend
+    existed; the backend exists (T-0676) and the facade calls it live, so the condition the AC was
+    protecting against is gone. The 'no fake success' half holds - success renders only on
+    `result.accepted`. Reword or drop it; do not build an interface to satisfy it.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

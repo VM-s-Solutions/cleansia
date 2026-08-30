@@ -1,11 +1,11 @@
 ---
 id: T-0674
 title: Home: wire the oven before/after pair and add responsive image sources
-status: ready
+status: done
 size: S
 owner: frontend
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 depends_on: []
 blocks: []
 stories: []
@@ -24,9 +24,9 @@ sprint: 16
 Design language and the pre-submission review: [`../../knowledge/design-language.md`](../../knowledge/design-language.md).
 
 ## Acceptance criteria
-- [ ] **AC1** - The oven pair renders as a fourth item with a `label_oven` key present in all five locales.
-- [ ] **AC2** - Gallery images are served with a `srcset` at 600/900/1200 so a phone does not download the 1200 px asset.
-- [ ] **AC3** - The caption states the before/after photo feature truthfully without implying the shown images are job records, until `OrderPhoto` supplies real ones.
+- [x] **AC1** - The oven pair renders as a fourth item with a `label_oven` key present in all five locales.
+- [x] **AC2** - Gallery images are served with a `srcset` at 600/900/1200 so a phone does not download the 1200 px asset.
+- [x] **AC3** - The caption states the before/after photo feature truthfully without implying the shown images are job records, until `OrderPhoto` supplies real ones.
 
 ## Out of scope
 - Feeding the gallery from `OrderPhoto` - worth doing once there are completed orders with consent, but a separate ticket.
@@ -38,6 +38,9 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
 ## Status log
 - 2026-08-30 - ready (filed from the approved home-page concept)
+- 2026-08-31 - done. Ground-truthed and challenged: every AC holds. The oven pair is wired in
+  `gallery.component.ts:26`, `srcsetFor()` emits the 600/900/1200 w set bound on both images, and the
+  gallery subtitle no longer claims the photos are from real cleanings.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

@@ -1,11 +1,11 @@
 ---
 id: T-0670
 title: Home: remove unprovable claims, add the rules section, correct Plus numbers
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 depends_on: ['T-0669']
 blocks: []
 stories: []
@@ -24,11 +24,11 @@ sprint: 16
 Design language and the pre-submission review: [`../../knowledge/design-language.md`](../../knowledge/design-language.md).
 
 ## Acceptance criteria
-- [ ] **AC1** - `badge_rating`, `badge_customers`, `badge_certified` and `testimonials.t1..t3` are removed from all five locales, and the `testimonials` component is deleted.
-- [ ] **AC2** - A rules section renders the cancellation ladder (free >=24 h / 25% 4-24 h / 50% <4 h), the 15-minute window (60 on a first booking) and the 500 Kc credit, each traceable to `business-rules.md`.
-- [ ] **AC3** - The Plus section states 5% discount, cancellation window extended by 4 hours, 1 express per month, 14-day trial, 199 Kc/mo or 2 030 Kc/yr.
-- [ ] **AC4** - `error-contract-parity.spec.ts` still passes and all five locales keep identical leaf-key counts.
-- [ ] **AC5** - No star row is rendered from a literal anywhere on the page.
+- [x] **AC1** - `badge_rating`, `badge_customers`, `badge_certified` and `testimonials.t1..t3` are removed from all five locales, and the `testimonials` component is deleted.
+- [x] **AC2** - A rules section renders the cancellation ladder (free >=24 h / 25% 4-24 h / 50% <4 h), the 15-minute window (60 on a first booking) and the 500 Kc credit, each traceable to `business-rules.md`.
+- [x] **AC3** - The Plus section states 5% discount, cancellation window extended by 4 hours, 1 express per month, 14-day trial, 199 Kc/mo or 2 030 Kc/yr.
+- [x] **AC4** - `error-contract-parity.spec.ts` still passes and all five locales keep identical leaf-key counts.
+- [x] **AC5** - No star row is rendered from a literal anywhere on the page.
 
 ## Out of scope
 - Re-introducing ratings - that waits until `OrderReview` has rows and an aggregate endpoint exists.
@@ -41,6 +41,11 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
 ## Status log
 - 2026-08-30 - ready (filed from the approved home-page concept)
+- 2026-08-31 - done. Ground-truthed against the tree and independently challenged: every AC holds.
+  No badge_rating / badge_customers / badge_certified key survives in any of the five locales, no
+  testimonial component or partial exists, the rules section states the real cancellation ladder from
+  `/product/business-rules`, and Plus reads 5 % / +4 h / 1x month / 14 d / 199 CZK. Five-locale leaf
+  parity re-computed independently: 1487 leaves each, no missing or extra keys.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

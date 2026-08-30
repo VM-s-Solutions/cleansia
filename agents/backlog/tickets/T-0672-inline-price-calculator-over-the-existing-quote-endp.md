@@ -5,7 +5,7 @@ status: ready
 size: M
 owner: frontend
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 depends_on: ['T-0671']
 blocks: []
 stories: []
@@ -40,6 +40,15 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
 ## Status log
 - 2026-08-30 - ready (filed from the approved home-page concept)
+- 2026-08-31 - ground-truthed: PARTIAL, not shipped. AC2, AC3 and AC5 hold.
+  - AC1 half-holds: the price is a genuine `QuoteOrder` pass-through with no client-side arithmetic,
+    but there is no SLOT - the calculator offers service and size only, and `cleaningDate` is never
+    set even though the DTO carries it.
+  - AC4 FAILS outright: `quick-quote.component.html:55` is a bare `routerLink="/order"` with no
+    queryParams and no shared store, so the visitor re-enters both selections. The pattern exists
+    unused two files away (`services.component.html:12` passes `serviceId`), and the wizard reads
+    `serviceId` at `order-wizard.component.ts:187` - but it has no reader for rooms/bathrooms at all,
+    so carrying the size needs a wizard change too, not just a query param.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

@@ -5,7 +5,7 @@ status: ready
 size: M
 owner: frontend
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 depends_on: []
 blocks: []
 stories: []
@@ -41,6 +41,22 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
 ## Status log
 - 2026-08-30 - ready (filed from the approved home-page concept)
+- 2026-08-31 - ground-truthed: PARTIAL, not shipped. Three ACs still fail, all in SCSS the delivering
+  commit did not reach:
+  - AC1 (one heading system): `.cl-title` is Sky700, but `_home-cta.scss:22` still colours
+    `.cl-cta__title` `$text-dark` #0f172a, and that h2 renders on the home page via
+    `home.component.html:11`. So the page shows headings in TWO colours - the exact defect the ticket
+    was filed for. Separately `components/cleansia-title.component.scss:4` is still
+    `var(--cleansia-primary)` = #0284c7 (Sky600, not Sky700); login and register override it, GDPR
+    does not. Overlaps T-0678.
+  - AC2 (no coloured shadows): `_home-footer.scss:141` has a RESTING primary button at
+    `0 4px 12px rgba(7, 89, 133, 0.3)` - 30 % alpha against the 12 % neutral cap - plus a
+    `drop-shadow(... 0.45)` at `:61`. More literal-hex coloured shadows survive in the same directory
+    (membership:465, order-wizard:2450/2481/2010, recurring-bookings:229/648, track-order:76).
+  - AC3 (bubbles removed): the markup is clean, but `_home-hero.scss:110-144` still compiles
+    `.cl-hero__bubble` and its four modifiers with nothing rendering them. `@keyframes
+    cl-float-bubble` is NOT dead - four other pages use it - so only the `&__bubble` block goes.
+  AC4 and AC5 hold; the app builds.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

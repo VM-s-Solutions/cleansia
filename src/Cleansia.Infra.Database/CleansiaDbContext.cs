@@ -315,6 +315,12 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
     public virtual DbSet<TenantConfiguration> TenantConfigurations { get; set; }
     public virtual DbSet<CountryConfiguration> CountryConfigurations { get; set; }
+
+    /// <summary>
+    /// Per-country property-size labels. Catalogue data — the order stores the
+    /// integers, never the preset. -> /decisions/adr-0056
+    /// </summary>
+    public virtual DbSet<PropertySizePreset> PropertySizePresets { get; set; }
     public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }

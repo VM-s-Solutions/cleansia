@@ -104,6 +104,6 @@
 | T-0672 | Home: inline price calculator over the existing `QuoteOrder` endpoint — no NSwag regen, the generated client already exposes `orderClient.quote()` | M | `in_progress` | — | — |
 | T-0673 | Home: five-column footer, theme + language switchers reachable from the customer header, e-mail promo capture behind a stubbed facade | M | `in_progress` | — | — |
 | T-0674 | Home: wire the oven before/after pair (`label_oven` in five locales) and add `srcset` — the eight new photos total 968 KB | S | `in_progress` | — | — |
-| T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `ready` | — | — |
+| T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `in_progress` | — | — |
 
 *Next id: **T-0676**.*

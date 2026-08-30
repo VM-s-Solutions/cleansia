@@ -1790,6 +1790,46 @@ SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
 
+-- ============================================================================
+-- PropertySizePresets — the per-country size ladder.
+--
+-- The label is the only country-specific part: an order stores Rooms and
+-- Bathrooms as integers and OrderPricingCalculator prices on those, so nothing
+-- persists "3+kk" and a new market is a new list over the same two numbers.
+-- Because the order never references a preset, retiring one cannot make a
+-- historic order unpriceable.  -> /decisions/adr-0056
+-- ============================================================================
+
+INSERT INTO public."PropertySizePresets" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "CountryId", "Code", "SortOrder", "Rooms", "Bathrooms", "Translations"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL,
+       (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = c.iso LIMIT 1),
+       p.code, p.sort_order, p.rooms, p.bathrooms, p.translations::jsonb
+FROM (VALUES ('CZE'), ('SVK')) AS c(iso)
+CROSS JOIN (VALUES
+  ('1KK',   1, 1, 1, '{"en":{"Name":"1 room","Description":""},"cs":{"Name":"1+kk","Description":""},"sk":{"Name":"1+kk","Description":""},"uk":{"Name":"1 кімната","Description":""},"ru":{"Name":"1 комната","Description":""}}'),
+  ('2KK',   2, 2, 1, '{"en":{"Name":"2 rooms","Description":""},"cs":{"Name":"2+kk","Description":""},"sk":{"Name":"2+kk","Description":""},"uk":{"Name":"2 кімнати","Description":""},"ru":{"Name":"2 комнаты","Description":""}}'),
+  ('3KK',   3, 3, 1, '{"en":{"Name":"3 rooms","Description":""},"cs":{"Name":"3+kk","Description":""},"sk":{"Name":"3+kk","Description":""},"uk":{"Name":"3 кімнати","Description":""},"ru":{"Name":"3 комнаты","Description":""}}'),
+  ('4KK',   4, 4, 2, '{"en":{"Name":"4 rooms","Description":""},"cs":{"Name":"4+kk","Description":""},"sk":{"Name":"4+kk","Description":""},"uk":{"Name":"4 кімнати","Description":""},"ru":{"Name":"4 комнаты","Description":""}}'),
+  ('HOUSE', 5, 5, 2, '{"en":{"Name":"House","Description":""},"cs":{"Name":"Dům","Description":""},"sk":{"Name":"Dom","Description":""},"uk":{"Name":"Будинок","Description":""},"ru":{"Name":"Дом","Description":""}}')
+) AS p(code, sort_order, rooms, bathrooms, translations)
+WHERE EXISTS (SELECT 1 FROM public."Countries" WHERE "IsoCode" = c.iso)
+  AND NOT EXISTS (
+    SELECT 1 FROM public."PropertySizePresets" ps
+    WHERE ps."Code" = c.iso || '_' || p.code
+  );
+
+-- Codes carry their market so they stay unique and readable in an admin list.
+UPDATE public."PropertySizePresets" ps
+SET "Code" = co."IsoCode" || '_' || ps."Code"
+FROM public."Countries" co
+WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
+
+
 -- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED
 
 COMMIT;

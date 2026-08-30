@@ -21,10 +21,23 @@
             </div>
             <button type="submit" pButton class="cl-btn-primary">{{ 'pages.home.footer.newsletter_button' | translate }}</button>
           </form>
-          <small class="cl-newsletter__note">
-            {{ 'pages.home.footer.unsubscribe_note' | translate }}
-            <a routerLink="/privacy">{{ 'pages.home.footer.privacy_link_text' | translate }}</a>
-          </small>
+          <label class="cl-newsletter__consent">
+            <input type="checkbox" [checked]="consented()" (change)="toggleConsent()" />
+            <span>{{ 'pages.home.footer.consent' | translate }}</span>
+          </label>
+          @if (promo.isSending()) {
+            <small class="cl-newsletter__note">{{ 'pages.home.footer.promo_sending' | translate }}</small>
+          } @else if (promo.isUnavailable()) {
+            <small class="cl-newsletter__note cl-newsletter__note--warn">
+              {{ 'pages.home.footer.promo_unavailable' | translate }}
+              <a href="mailto:info&#64;cleansia.cz">info&#64;cleansia.cz</a>
+            </small>
+          } @else {
+            <small class="cl-newsletter__note">
+              {{ 'pages.home.footer.unsubscribe_note' | translate }}
+              <a routerLink="/privacy">{{ 'pages.home.footer.privacy_link_text' | translate }}</a>
+            </small>
+          }
         </div>
       </div>
     </div>
@@ -41,6 +54,15 @@
           <a href="https://instagram.com/cleansia.cz" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><i class="pi pi-instagram"></i></a>
           <a href="https://facebook.com/cleansia" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><i class="pi pi-facebook"></i></a>
         </div>
+      </div>
+      <div class="cl-footer__col">
+        <h3 class="cl-footer__col-title">{{ 'pages.home.footer.services_col' | translate }}</h3>
+        <ul>
+          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s1.name' | translate }}</a></li>
+          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s2.name' | translate }}</a></li>
+          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s3.name' | translate }}</a></li>
+          <li><a routerLink="/membership">Cleansia Plus</a></li>
+        </ul>
       </div>
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.company' | translate }}</h3>
@@ -73,8 +95,13 @@
           </div>
           <div class="cl-footer__contact">
             <i class="pi pi-map-marker"></i>
-            <span>{{ 'pages.home.footer.address' | translate }}</span>
+            <span>{{ 'pages.home.footer.coverage' | translate }}</span>
           </div>
+          <div class="cl-footer__contact">
+            <i class="pi pi-clock"></i>
+            <span>{{ 'pages.home.footer.hours_label' | translate }} {{ 'pages.home.footer.hours_value' | translate }}</span>
+          </div>
+          <p class="cl-footer__registration">{{ 'pages.home.footer.registration' | translate }}</p>
         </div>
       </div>
     </div>

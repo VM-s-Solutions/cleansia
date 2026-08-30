@@ -566,7 +566,17 @@
         "gdpr_link": "Privacy & GDPR",
         "terms_link": "Terms of Service",
         "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
-        "address": "Prague, Czech Republic"
+        "address": "Prague, Czech Republic",
+        "services_col": "Services",
+        "hours_label": "Open daily",
+        "hours_value": "08:00-20:00",
+        "coverage": "Prague and up to 30 km around",
+        "registration": "Reg. no. [ICO] · VAT [DIC]",
+        "apps": "Get the app",
+        "consent": "I agree to my e-mail being processed so the code can be sent.",
+        "promo_unavailable": "Codes are not being issued yet. Write to us and we will sort it out.",
+        "promo_sending": "Sending...",
+        "promo_consent_required": "Please confirm the consent first."
       },
       "rules": {
         "badge": "Our rules",

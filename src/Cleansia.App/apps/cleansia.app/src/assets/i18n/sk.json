@@ -566,7 +566,17 @@
         "gdpr_link": "Súkromie a GDPR",
         "terms_link": "Obchodné podmienky",
         "description": "Profesionálne mobilné čistiace služby. Nábytok, koberce, matrace — prídeme k vám.",
-        "address": "Praha, Česká republika"
+        "address": "Praha, Česká republika",
+        "services_col": "Služby",
+        "hours_label": "Otvorené denne",
+        "hours_value": "08:00–20:00",
+        "coverage": "Praha a okolie do 30 km",
+        "registration": "IČO [IČO] · DIČ [DIČ]",
+        "apps": "Stiahnuť aplikáciu",
+        "consent": "Súhlasím so spracovaním e-mailu na účel zaslania kódu.",
+        "promo_unavailable": "Kódy zatiaľ nerozposielame. Napíšte nám a dohodneme sa.",
+        "promo_sending": "Odosielame…",
+        "promo_consent_required": "Najprv prosím potvrďte súhlas."
       },
       "rules": {
         "badge": "Naše pravidlá",

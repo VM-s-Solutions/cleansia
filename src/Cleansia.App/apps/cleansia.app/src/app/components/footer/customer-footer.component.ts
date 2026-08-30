@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
@@ -6,12 +6,14 @@ import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CleansiaBrandNameComponent } from '@cleansia/components';
+import { PromoRequestFacade } from './promo-request.facade';
 
 @Component({
   selector: 'cleansia-customer-footer',
   templateUrl: './customer-footer.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [PromoRequestFacade],
   imports: [
     FormsModule,
     RouterModule,
@@ -32,8 +34,25 @@ export class CleansiaCustomerFooterComponent {
   // sign-in/sign-out without remount.
   readonly isAnonymous = computed(() => !this.authService.isLoggedIn());
 
+  readonly promo = inject(PromoRequestFacade);
+  readonly consented = signal(false);
+
+  toggleConsent(): void {
+    this.consented.update((v) => !v);
+    this.promo.reset();
+  }
+
+  /**
+   * Ask for a first-order promo code.
+   *
+   * This used to show a success toast and reset the form without sending
+   * anything anywhere. The facade now reports the real state.
+   */
   submitRequest(form: NgForm): void {
-    this.snackbarService.showSuccessTranslated('global.messages.form.request_sent');
-    form.reset();
+    if (!this.consented()) {
+      this.snackbarService.showErrorTranslated('pages.home.footer.promo_consent_required');
+      return;
+    }
+    this.promo.request((form.value as { email?: string })?.email ?? '', this.consented());
   }
 }

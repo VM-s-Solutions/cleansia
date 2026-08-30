@@ -504,12 +504,13 @@
       "before_after": {
         "title": "See the Difference",
         "badge": "Real Results",
-        "subtitle": "Drag the slider to see real before and after results from our cleanings.",
+        "subtitle": "Every clean ends with before and after photos taken by your cleaner. Below is what a result looks like.",
         "before": "Before",
         "after": "After",
         "label_sofa": "Sofa Deep Cleaning",
         "label_carpet": "Carpet Restoration",
-        "label_mattress": "Mattress Cleaning"
+        "label_mattress": "Mattress Cleaning",
+        "label_oven": "Oven"
       },
       "faq": {
         "title": "Frequently Asked Questions",

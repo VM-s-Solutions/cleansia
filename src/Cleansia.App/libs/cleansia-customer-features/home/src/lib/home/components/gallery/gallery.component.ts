@@ -23,6 +23,7 @@ export class GalleryComponent {
     { id: 'sofa', before: 'assets/images/gallery/before-sofa.webp', after: 'assets/images/gallery/after-sofa.webp', label: 'pages.home.before_after.label_sofa' },
     { id: 'carpet', before: 'assets/images/gallery/before-carpet.webp', after: 'assets/images/gallery/after-carpet.webp', label: 'pages.home.before_after.label_carpet' },
     { id: 'mattress', before: 'assets/images/gallery/before-mattress.webp', after: 'assets/images/gallery/after-mattress.webp', label: 'pages.home.before_after.label_mattress' },
+    { id: 'oven', before: 'assets/images/gallery/before-oven.webp', after: 'assets/images/gallery/after-oven.webp', label: 'pages.home.before_after.label_oven' },
   ];
 
   private sliderPositions = new Map<string, number>();
@@ -98,5 +99,17 @@ export class GalleryComponent {
     const pct = Math.max(5, Math.min(95, (x / rect.width) * 100));
     this.sliderPositions.set(this.activeSlider, pct);
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Responsive sources for a gallery image.
+   *
+   * The pairs are 1200x900 and the slider renders at roughly 620 CSS px, so a
+   * phone was downloading about four times the pixels it could show. The carpet
+   * pair alone is 232 KB + 188 KB at full size because of its texture.
+   */
+  srcsetFor(path: string): string {
+    const stem = path.replace('.webp', '');
+    return `${stem}-600.webp 600w, ${stem}-900.webp 900w, ${path} 1200w`;
   }
 }

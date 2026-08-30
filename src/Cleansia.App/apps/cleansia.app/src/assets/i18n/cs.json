@@ -504,12 +504,13 @@
       "before_after": {
         "title": "Podívejte se na rozdíl",
         "badge": "Skutečné výsledky",
-        "subtitle": "Přetáhněte posuvník a podívejte se na skutečné výsledky našeho čištění.",
+        "subtitle": "Z každé zakázky dostanete fotky před a po — uklízeč je pořizuje přímo u vás. Níže je ukázka toho, jak výsledek vypadá.",
         "before": "Před",
         "after": "Po",
         "label_sofa": "Hloubkové čištění pohovky",
         "label_carpet": "Renovace koberce",
-        "label_mattress": "Čištění matrací"
+        "label_mattress": "Čištění matrací",
+        "label_oven": "Trouba"
       },
       "faq": {
         "title": "Často kladené otázky",

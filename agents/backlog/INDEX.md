@@ -98,4 +98,12 @@
 | T-0667 | Angular **20.3.30** — the only fix for the advisories 19.x will never get, all of which read *affected ≤ 19.2.25, patched none*. Peer chain moved as one set (CLI 20.3.35, CDK 20.2.14, PrimeNG 20.4.0, NgRx 20.1.0, TypeScript 5.9.3, every `@nx/*` aligned to 21.6.11); `jest-preset-angular` deliberately held at 14.6 because its peer already admits Angular <21, which kept a Jest 30 migration out of scope. 17 breakages in four mechanical shapes — PrimeNG module renames, a nullable `DialogService.open()`, `[severity]` narrowed to a union, and `p-tabs` `valueChange` emitting `undefined`. `withNoHttpTransferCache()` removed: the advisories it worked around are fixed here. Typecheck clean, 68 test projects pass, three builds, SSR renders | L | `done` | — | #239 |
 | T-0668 | Nx **23.1.2** and Jest **30**, landed by repairing what #246 left behind rather than by a clean migration — that PR was merged with red CI and master could not `npm ci` at all: it moved `nx` and eight `@nx/*` to 23.1.2 while leaving `@nx/devkit` on 21.6.11, whose peer is `nx ">= 20 <= 22"`. Four families were inconsistent, not one (nx, swc, the jest 30 set, and `angular-eslint` still on ^19 — missed by the T-0667 pass because eslint is not in the build path). Seven lib `test-setup.ts` files moved to `setupZoneTestEnv`, which jest-preset-angular 17 requires. Two overrides for optional peers nothing invokes. Dependabot gains an `nx` group so the family cannot split again | L | `done` | — | #250 |
 
-*Next id: **T-0669**.*
+| T-0669 | Home: one title system (headings `Sky700`), neutral shadows, hero bubbles + wave + uniform scroll-fade removed | M | `ready` | — | — |
+| T-0670 | Home: unprovable claims out (4.9 rating, 2 000+ customers, three invented testimonials), rules section in from `business-rules.md`, Plus corrected to 5 % / +4 h / 1x month / 14 d | M | `ready` | — | — |
+| T-0671 | Home: foam hero with grounded mascot, reusable foam-edge divider, promise cards replacing the icon grid, service mascots normalised to one baseline | L | `ready` | — | — |
+| T-0672 | Home: inline price calculator over the existing `QuoteOrder` endpoint — no NSwag regen, the generated client already exposes `orderClient.quote()` | M | `ready` | — | — |
+| T-0673 | Home: five-column footer, theme + language switchers reachable from the customer header, e-mail promo capture behind a stubbed facade | M | `ready` | — | — |
+| T-0674 | Home: wire the oven before/after pair (`label_oven` in five locales) and add `srcset` — the eight new photos total 968 KB | S | `ready` | — | — |
+| T-0675 | Country-configurable property-size presets — ADR first; the domain already stores `Rooms`/`Bathrooms` ints, only the labels are Czech | L | `ready` | — | — |
+
+*Next id: **T-0676**.*

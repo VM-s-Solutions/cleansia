@@ -38,6 +38,15 @@ updates:
       # Angular's framework and its build tooling are ONE release train and must move together, so
       # they are one group — and the two below EXCLUDE them rather than competing for them, which is
       # what makes the split safe rather than merely ordered.
+      # Nx is the same story as Angular below, and #246 proved it: that PR moved `nx` and eight
+      # `@nx/*` packages to 23.1.2 but left `@nx/devkit` at 21.6.11, which peers `nx ">= 20 <= 22"`.
+      # npm ci then died with ERESOLVE before anything built — so the frontend build AND e2e both
+      # failed without ever running. Every nx package must carry one version.
+      nx:
+        applies-to: security-updates
+        patterns:
+          - "nx"
+          - "@nx/*"
       angular:
         applies-to: security-updates
         patterns:
@@ -50,6 +59,8 @@ updates:
         applies-to: security-updates
         dependency-type: "production"
         exclude-patterns:
+          - "nx"
+          - "@nx/*"
           - "@angular/*"
           - "@angular-devkit/*"
           - "@ngtools/*"
@@ -59,6 +70,8 @@ updates:
         applies-to: security-updates
         dependency-type: "development"
         exclude-patterns:
+          - "nx"
+          - "@nx/*"
           - "@angular/*"
           - "@angular-devkit/*"
           - "@ngtools/*"

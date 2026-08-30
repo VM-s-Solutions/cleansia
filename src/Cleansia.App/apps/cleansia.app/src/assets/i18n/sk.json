@@ -431,7 +431,10 @@
         "item2_title": "Bezpečné produkty",
         "item2_desc": "Prípravky s nízkou vlhkosťou, bezpečné pre deti a alergikov.",
         "item3_title": "Precízna starostlivosť",
-        "item3_desc": "Každému materiálu dožičíme správny postup aj správne prípravky."
+        "item3_desc": "Každému materiálu dožičíme správny postup aj správne prípravky.",
+        "fact1": "Žiadne doplatky po upratovaní",
+        "fact2": "Najbližšie voľno za 4 hodiny",
+        "fact3": "Náskok až 12 hodín pre toho vášho"
       },
       "process": {
         "title": "Ako to funguje",

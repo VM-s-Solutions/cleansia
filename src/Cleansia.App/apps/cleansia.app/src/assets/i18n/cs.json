@@ -431,7 +431,10 @@
         "item2_title": "Bezpečná chemie",
         "item2_desc": "Šetrné přípravky, bezpečné pro děti i alergiky.",
         "item3_title": "Přesná péče",
-        "item3_desc": "Každému materiálu dopřejeme správný postup i správné přípravky."
+        "item3_desc": "Každému materiálu dopřejeme správný postup i správné přípravky.",
+        "fact1": "Žádné doplatky po úklidu",
+        "fact2": "Nejbližší volno za 4 hodiny",
+        "fact3": "Náskok až 12 hodin pro toho vašeho"
       },
       "process": {
         "title": "Jak to funguje",

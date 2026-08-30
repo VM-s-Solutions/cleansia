@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { FoamEdgeComponent } from '../foam-edge/foam-edge.component';
 import { ButtonModule } from 'primeng/button';
 
 const HERO_IMAGE = 'assets/images/mascot/mascot-mopping.webp';
@@ -12,7 +13,7 @@ const PRELOAD_ID = 'cl-hero-img-preload';
   templateUrl: './hero.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, ButtonModule],
+  imports: [FoamEdgeComponent, RouterModule, TranslatePipe, ButtonModule],
 })
 export class HeroComponent {
   private readonly document = inject(DOCUMENT);

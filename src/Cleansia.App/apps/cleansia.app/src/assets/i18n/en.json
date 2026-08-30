@@ -431,7 +431,10 @@
         "item2_title": "Safe Products",
         "item2_desc": "Low-moisture formulas, safe for children and allergy sufferers.",
         "item3_title": "Precision Care",
-        "item3_desc": "We give each material the right procedure and the right products."
+        "item3_desc": "We give each material the right procedure and the right products.",
+        "fact1": "No top-ups after the clean",
+        "fact2": "Earliest slot in 4 hours",
+        "fact3": "Up to a 12-hour head start for yours"
       },
       "process": {
         "title": "How it works",

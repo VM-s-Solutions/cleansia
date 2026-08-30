@@ -1,128 +1,105 @@
 @use './home-variables' as *;
 
-cleansia-features {
-  display: block;
-  background-color: var(--surface-card);
-}
+// =============================
+// Promises
+// =============================
+// Replaces the three-column icon-card grid. The asymmetric 1.16/.92/.92 split
+// and the fact strip exist for the same reason: an equal grid of equal cards
+// with a coloured icon chip is the single most reproduced block on the web, and
+// the cards read as empty without a closing line of substance.
+// -> agents/knowledge/design-language.md#33-what-ai-generated-looks-like
 
-// =============================
-// Feature Cards
-// =============================
-.cl-features {
+.cl-promises {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.92fr) minmax(0, 0.92fr);
+  gap: 1.25rem;
+  align-items: stretch;
 
   &__card {
-    background: var(--surface-card);
-    border-radius: $radius-lg;
-    padding: 2.25rem 1.75rem 2rem;
-    text-align: center;
-    border: 1px solid var(--surface-border);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    background: $primary-lighter;
+    border-radius: 2.5rem;
+    padding: 1.875rem 2rem;
 
-    &:hover {
-      border-color: rgba($primary, 0.35);
-      box-shadow: $shadow-lg;
-      transform: translateY(-2px);
+    &--lead {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.875rem;
+      align-items: end;
+      background: $primary-light;
     }
   }
 
-  &__icon-wrap {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+  &__label {
+    display: block;
+    font-family: $font-heading;
+    font-size: 1.4375rem;
+    font-weight: 600;
+    line-height: 1.24;
+    letter-spacing: -0.35px;
+    color: $primary-dark;
+  }
+
+  &__desc {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: $text-body;
+    margin: 0.625rem 0 0;
+  }
+
+  // pushes the fact to the card's foot so the cards close on a line, not on air
+  &__fact {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.5rem;
-    background: $primary-lighter;
+    gap: 0.5625rem;
+    margin: auto 0 0;
+    padding-top: 0.875rem;
+    border-top: 1px solid rgba(3, 105, 161, 0.16);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: $primary-dark;
+
     i {
-      font-size: 1.4rem;
-      color: $primary;
-    }
-
-    &--blue {
-      background: $primary-light;
-      i {
-        color: $primary-dark;
-      }
-    }
-
-    &--green {
-      background: $green-light;
-      i {
-        color: $green;
-      }
-    }
-
-    &--amber {
-      background: #fef3c7;
-      i {
-        color: #d97706;
-      }
+      font-size: 0.875rem;
     }
   }
 
-  &__card-title {
-    font-family: $font-heading;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0 0 0.75rem;
-  }
-
-  &__card-desc {
-    font-size: 0.95rem;
-    color: var(--cl-text-secondary);
-    line-height: 1.7;
-    margin: 0;
+  // one shared 340x280 canvas at a fixed character height — see the mascot
+  // tiles in assets/images/mascot/*-tile.webp
+  &__mascot {
+    height: 9.375rem;
+    width: auto;
+    display: block;
+    margin: 0 -0.25rem 0 0;
+    align-self: end;
   }
 }
 
-// =============================
-// Dark Mode — Features
-// =============================
-:root.dark-mode {
-  .cl-features__card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  }
+@media (max-width: 1024px) {
+  .cl-promises {
+    grid-template-columns: minmax(0, 1fr);
 
-  .cl-features__icon-wrap {
-    background: rgba(56, 189, 248, 0.1);
-    i {
-      color: #38bdf8;
-    }
-
-    &--blue {
-      background: rgba(56, 189, 248, 0.12);
-      i {
-        color: #7dd3fc;
-      }
-    }
-
-    &--green {
-      background: rgba(22, 163, 74, 0.15);
-      i {
-        color: #4ade80;
-      }
-    }
-
-    &--amber {
-      background: rgba(245, 158, 11, 0.15);
-      i {
-        color: #fbbf24;
-      }
+    &__card--lead {
+      grid-template-columns: minmax(0, 1fr) auto;
     }
   }
 }
 
-// =============================
-// Responsive — Features
-// =============================
-@media (max-width: 768px) {
-  .cl-features {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+@media (max-width: 600px) {
+  .cl-promises {
+    &__card {
+      padding: 1.5rem 1.375rem;
+      border-radius: 1.75rem;
+    }
+
+    &__card--lead {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__mascot {
+      height: 7.5rem;
+      justify-self: end;
+    }
   }
 }

@@ -56,4 +56,21 @@ export class ServicesComponent {
       minimumFractionDigits: 0,
     }).format(price);
   }
+
+  /**
+   * The three service cards each show a different mascot pose. The artwork is
+   * pre-normalised to one 340x280 canvas at an identical character height and a
+   * shared baseline, so equal CSS sizing renders equal characters - the raw
+   * drawings differ enough in content bounds (281x291 / 299x381 / 232x295) that
+   * `object-fit: contain` alone scales them unequally.
+   */
+  private readonly mascotTiles = [
+    'assets/images/mascot/mascot-vacuuming-tile.webp',
+    'assets/images/mascot/mascot-dusting-tile.webp',
+    'assets/images/mascot/mascot-spray-and-cloth-tile.webp',
+  ];
+
+  mascotTile(index: number): string {
+    return this.mascotTiles[index % this.mascotTiles.length];
+  }
 }

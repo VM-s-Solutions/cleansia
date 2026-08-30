@@ -15,7 +15,9 @@
           <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>
           }
           <div class="cl-services__nav-arrow"><i class="pi pi-arrow-up-right"></i></div>
-          <div class="cl-services__icon"><i class="pi pi-sparkles"></i></div>
+          <div class="cl-services__disc">
+            <img [src]="mascotTile(idx)" alt="" width="340" height="280" loading="lazy" />
+          </div>
           <div class="cl-services__name">{{ getTranslation(service, 'name') }}</div>
           <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(service.basePrice) }}</div>
           <div class="cl-services__desc">{{ getTranslation(service, 'description') }}</div>

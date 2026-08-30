@@ -9,11 +9,25 @@ cleansia-hero {
 // Hero
 // =============================
 .cl-hero {
-  background: linear-gradient(160deg, $primary-light 0%, $primary-lighter 55%, $white 100%);
-  padding: 6rem 2rem 8rem;
+  // Radial rather than linear so the light sits behind the mascot instead of
+  // sweeping across the whole band. -> agents/knowledge/design-language.md
+  background: radial-gradient(120% 92% at 76% 6%, #bae6fd 0%, $primary-light 44%, $primary-lighter 100%);
+  padding: 5rem 2rem 0;
   position: relative;
   overflow: hidden;
   z-index: 1;
+
+  &__sud {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 1;
+
+    &--1 { left: 5%; top: 24%; width: 4.875rem; height: 4.875rem; }
+    &--2 { left: 33%; top: 14%; width: 2.375rem; height: 2.375rem; background: rgba(255, 255, 255, 0.42); }
+    &--3 { right: 6%; bottom: 26%; width: 8.125rem; height: 8.125rem; background: rgba(255, 255, 255, 0.28); }
+  }
 
   &__inner {
     max-width: $max-width;
@@ -31,6 +45,8 @@ cleansia-hero {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    // the column runs to the foam line so the artwork below it is grounded
+    padding-bottom: 2rem;
   }
 
   &__tagline {

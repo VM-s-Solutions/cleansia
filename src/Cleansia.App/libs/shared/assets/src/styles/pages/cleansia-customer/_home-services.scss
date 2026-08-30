@@ -199,3 +199,36 @@
     max-height: 80px;
   }
 }
+
+// The disc sits BEHIND the character rather than clipping it: a round container
+// with overflow:hidden cut the feet and the vacuum off. The tiles are already
+// normalised to one canvas, so a single height renders all three at the same
+// size. -> agents/knowledge/design-language.md#27-the-mascot
+.cl-services__disc {
+  position: relative;
+  height: 11rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0.375rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 9.375rem;
+    height: 9.375rem;
+    border-radius: 999px;
+    background: $primary-light;
+  }
+
+  img {
+    position: relative;
+    z-index: 1;
+    height: 9.875rem;
+    width: auto;
+    display: block;
+  }
+}

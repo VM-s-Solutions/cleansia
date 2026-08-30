@@ -318,3 +318,19 @@ cleansia-cta {
     }
   }
 }
+
+// =============================
+// Foam edge
+// =============================
+// The scalloped section divider. One component draws it (cleansia-foam-edge);
+// this only sizes it and flips it. -> /product/features
+.cl-foam {
+  display: block;
+  width: 100%;
+  height: 5.625rem;
+  margin-bottom: -1px; // hairline seam between the SVG and the next section
+
+  &--flipped {
+    transform: scaleY(-1);
+  }
+}

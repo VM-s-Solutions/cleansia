@@ -15,7 +15,12 @@
       <div class="cl-benefits__content">
         <div class="cl-section__header cl-section__header--left">
           <span class="cl-section__badge">{{ 'pages.home.benefits.badge' | translate }}</span>
-          <h2 class="cl-title cl-title--left">{{ 'pages.home.benefits.title' | translate }}</h2>
+          <cleansia-title
+          [title]="'pages.home.benefits.title'"
+          size="big"
+          [level]="2"
+          className="cl-heading"
+        />
         </div>
         <div class="cl-benefits__grid">
           <div class="cl-benefits__card">

@@ -2,7 +2,12 @@
   <div class="cl-section__inner">
     <div class="cl-section__header animate-on-scroll">
       <span class="cl-section__badge">{{ 'pages.home.why_choose_us.badge' | translate }}</span>
-      <h2 class="cl-title">{{ 'pages.home.why_choose_us.title' | translate }}</h2>
+      <cleansia-title
+        [title]="'pages.home.why_choose_us.title'"
+        size="big"
+        [level]="2"
+        className="cl-heading cl-heading--center"
+      />
       <p class="cl-section__desc">{{ 'pages.home.why_choose_us.subtitle' | translate }}</p>
     </div>
 

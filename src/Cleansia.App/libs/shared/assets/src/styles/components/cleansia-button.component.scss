@@ -250,3 +250,126 @@
     }
   }
 }
+
+// =============================
+// Brand appearances
+// =============================
+// Moved here from the customer home page's `.cl-btn-primary` / `.cl-btn-outline`
+// in T-0678, unchanged in look. They lived on the page, which meant a page
+// defined its own button styling — and the same two treatments were being
+// re-derived per feature rather than named once.
+//
+// They are opt-in via `[appearance]`, so every partner and admin button, which
+// passes nothing, renders exactly as it did.
+//
+// CSS custom properties rather than the SCSS ramp, because this file is compiled
+// into more than one app's bundle and the tokens are what all of them share.
+.cleansia-button {
+  &--brand,
+  &--brand-outline {
+    border-radius: 999px;
+    padding-inline: 1.6rem;
+    font-weight: 600;
+    // These are always inline calls to action sitting beside other content, so
+    // they size to their label rather than inheriting the base `min-width: 100%`
+    // that a form button wants.
+    min-width: 0;
+    width: auto;
+  }
+
+  &--brand {
+    background: linear-gradient(
+      135deg,
+      var(--cleansia-primary-700) 0%,
+      var(--cleansia-primary-600) 100%
+    );
+    border: 1px solid transparent;
+    color: var(--cleansia-primary-0);
+    // Neutral, not a coloured halo. -> design-language.md#24-depth
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+
+    &:hover,
+    &:not(:disabled):hover {
+      background: linear-gradient(
+        135deg,
+        var(--cleansia-primary-800) 0%,
+        var(--cleansia-primary-700) 100%
+      );
+      border-color: transparent;
+      color: var(--cleansia-primary-0);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16);
+      transform: translateY(-1px);
+    }
+
+    &:active,
+    &:not(:disabled):active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    }
+  }
+
+  &--brand-outline {
+    background: var(--surface-card);
+    border: 1px solid rgba(2, 132, 199, 0.4);
+    color: var(--cleansia-primary-700);
+    box-shadow: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    &:hover,
+    &:not(:disabled):hover {
+      background: var(--cleansia-primary-50);
+      border-color: var(--cleansia-primary-600);
+      color: var(--cleansia-primary-800);
+    }
+
+    &:active,
+    &:not(:disabled):active {
+      background: var(--cleansia-primary-100);
+    }
+  }
+
+  &--brand:focus-visible,
+  &--brand-outline:focus-visible {
+    outline: 2px solid var(--cleansia-primary-600);
+    outline-offset: 2px;
+  }
+
+  // An anchor rendered as a button carries the text-decoration an <a> inherits.
+  a#{&}--brand,
+  a#{&}--brand-outline {
+    text-decoration: none;
+  }
+}
+
+// Dark mode for the two brand appearances, moved here with them. The gradient
+// keeps its hue and only deepens its shadow; the outline drops its card fill,
+// which reads as a grey slab on a dark ground.
+:root.dark-mode .cleansia-button {
+  &--brand {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+
+    &:hover,
+    &:not(:disabled):hover {
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  &--brand-outline {
+    background: transparent;
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #7dd3fc;
+
+    &:hover,
+    &:not(:disabled):hover {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: #7dd3fc;
+      color: #bae6fd;
+    }
+
+    &:active,
+    &:not(:disabled):active {
+      background: rgba(56, 189, 248, 0.18);
+    }
+  }
+}

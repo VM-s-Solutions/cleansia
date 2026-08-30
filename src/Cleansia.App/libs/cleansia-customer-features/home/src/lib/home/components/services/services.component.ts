@@ -10,13 +10,17 @@ import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
+import {
+  CleansiaButtonComponent,
+  CleansiaTitleComponent,
+} from '@cleansia/components';
 
 @Component({
   selector: 'cleansia-services',
   templateUrl: './services.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, TranslatePipe, ButtonModule],
+  imports: [CommonModule, RouterModule, TranslatePipe, ButtonModule, CleansiaButtonComponent, CleansiaTitleComponent],
 })
 export class ServicesComponent {
   private readonly store = inject(Store);

@@ -87,13 +87,13 @@
     margin-top: 1.5rem;
   }
 
-  // inverted CTA: white on the gradient, so it stays the one primary action
-  &__cta.p-button {
+  // Inverted CTA: white on the gradient, so it stays the one primary action.
+  // A GROUND adaptation only — shape, radius and weight come from
+  // `cleansia-button--brand`; this changes the fill and nothing else.
+  &__cta {
     background: $white;
     border-color: $white;
     color: $primary;
-    border-radius: 999px;
-    font-weight: 700;
     padding-inline: 2rem;
     box-shadow: none;
 
@@ -102,6 +102,7 @@
       background: $primary-light;
       border-color: $primary-light;
       color: $primary-darker;
+      box-shadow: none;
     }
   }
 

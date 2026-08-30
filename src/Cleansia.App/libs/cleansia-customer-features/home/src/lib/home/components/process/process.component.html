@@ -2,7 +2,12 @@
   <div class="cl-section__inner">
     <div class="cl-section__header">
       <span class="cl-section__badge">{{ 'pages.home.process.badge' | translate }}</span>
-      <h2 class="cl-title">{{ 'pages.home.process.title' | translate }}</h2>
+      <cleansia-title
+        [title]="'pages.home.process.title'"
+        size="big"
+        [level]="2"
+        className="cl-heading cl-heading--center"
+      />
       <p class="cl-section__desc">{{ 'pages.home.process.subtitle' | translate }}</p>
     </div>
 

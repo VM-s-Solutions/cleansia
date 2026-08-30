@@ -5,6 +5,9 @@ import { ButtonModule } from 'primeng/button';
 
 import { QuickQuoteFacade } from './quick-quote.facade';
 import { PropertySizePreset } from './property-size-presets';
+import {
+  CleansiaButtonComponent,
+} from '@cleansia/components';
 
 /** A service the visitor can price, as the home page already loads them. */
 export interface QuickQuoteService {
@@ -24,7 +27,7 @@ export interface QuickQuoteService {
   templateUrl: './quick-quote.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, ButtonModule],
+  imports: [RouterModule, TranslatePipe, ButtonModule, CleansiaButtonComponent],
   providers: [QuickQuoteFacade],
 })
 export class QuickQuoteComponent implements OnInit {

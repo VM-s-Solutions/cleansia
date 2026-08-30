@@ -133,18 +133,26 @@
     }
   }
 
-  // On the gradient band the primary button flips to a white fill
-  .p-button.cl-btn-primary {
+  // On the gradient band the primary action flips to a white fill — the brand
+  // gradient would disappear into the band behind it. This is a GROUND
+  // adaptation, not a second button: the shape, radius and weight still come
+  // from `cleansia-button--brand`.
+  //
+  // The shadow was `0 4px 12px rgba(7, 89, 133, 0.3)` — a coloured halo at 30%
+  // alpha on a RESTING control, against the 12% neutral cap. Neutral now, and
+  // deeper rather than tinted, because the band is dark. -> T-0669 AC2
+  .cleansia-button--brand {
     background: $white;
     border-color: $white;
     color: $primary-dark;
-    box-shadow: 0 4px 12px rgba(7, 89, 133, 0.3);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
 
     &:hover,
     &:not(:disabled):hover {
       background: $primary-lighter;
       border-color: $primary-lighter;
       color: $primary-darker;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.22);
     }
   }
 

@@ -7,13 +7,16 @@ import {
   inject,
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import {
+  CleansiaTitleComponent,
+} from '@cleansia/components';
 
 @Component({
   selector: 'cleansia-gallery',
   templateUrl: './gallery.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, CleansiaTitleComponent],
 })
 export class GalleryComponent {
   private readonly el = inject(ElementRef);

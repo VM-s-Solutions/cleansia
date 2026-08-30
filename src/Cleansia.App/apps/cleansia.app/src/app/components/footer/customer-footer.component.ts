@@ -5,7 +5,10 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
-import { CleansiaBrandNameComponent } from '@cleansia/components';
+import {
+  CleansiaBrandNameComponent,
+  CleansiaButtonComponent,
+} from '@cleansia/components';
 import { PromoRequestFacade } from './promo-request.facade';
 
 @Component({
@@ -14,13 +17,7 @@ import { PromoRequestFacade } from './promo-request.facade';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [PromoRequestFacade],
-  imports: [
-    FormsModule,
-    RouterModule,
-    TranslatePipe,
-    ButtonModule,
-    CleansiaBrandNameComponent,
-  ],
+  imports: [FormsModule, RouterModule, TranslatePipe, ButtonModule, CleansiaBrandNameComponent, CleansiaButtonComponent],
 })
 export class CleansiaCustomerFooterComponent {
   private readonly snackbarService = inject(SnackbarService);

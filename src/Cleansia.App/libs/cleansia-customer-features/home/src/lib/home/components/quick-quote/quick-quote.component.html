@@ -52,10 +52,11 @@
     <p class="cl-quote__status">{{ 'pages.home.quote.pick_service' | translate }}</p>
     }
 
-    <a routerLink="/order" class="text-decoration-none">
-      <button pButton type="button" class="p-button-lg cl-btn-primary">
-        {{ 'pages.home.quote.continue' | translate }}
-      </button>
-    </a>
+    <cleansia-button
+      routerLink="/order"
+      appearance="brand"
+      buttonSize="large"
+      [label]="'pages.home.quote.continue' | translate"
+    />
   </div>
 </div>

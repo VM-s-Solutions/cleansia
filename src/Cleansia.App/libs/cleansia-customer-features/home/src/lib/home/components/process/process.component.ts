@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import {
+  CleansiaTitleComponent,
+} from '@cleansia/components';
 
 interface ProcessStep {
   number: string;
@@ -12,7 +15,7 @@ interface ProcessStep {
   templateUrl: './process.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, CleansiaTitleComponent],
 })
 export class ProcessComponent {
   // Two horizontal tracks: steps the customer takes, then steps we take.

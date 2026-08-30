@@ -49,95 +49,25 @@ cleansia-cta {
 // =============================
 // Unified Title Component
 // =============================
-.cl-title {
-  display: block;
+// =============================
+// Section heading layout
+// =============================
+// LAYOUT ONLY. The type system — size, weight, colour — lives in
+// <cleansia-title>; `.cl-title` was deleted in T-0678 because two heading
+// systems meant the page rendered headings in two different blues.
+// -> libs/shared/assets/src/styles/components/cleansia-title.component.scss
+.cl-heading {
   width: 100%;
   font-family: $font-heading;
-  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
-  font-weight: 600;
-  // Sky700 — the colour Color.kt names 'brand secondary, top-bar title'.
-  // Headings are never neutral-black here. -> design-language.md#21-colour
-  color: $primary-dark;
-  text-align: center;
   margin: 0 0 1.25rem;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+
+  &--center {
+    text-align: center;
+  }
 
   &--hero {
-    font-size: clamp(2.25rem, 4.5vw, 3.25rem);
-    font-weight: 700;
-    line-height: 1.12;
-    letter-spacing: -0.025em;
     text-align: left;
     margin-bottom: 1.5rem;
-  }
-
-  &--left {
-    text-align: left;
-  }
-}
-
-// =============================
-// Buttons — filled primary, tinted outline
-// =============================
-// The primary action carries a brand gradient fill; the secondary sits on the
-// surface with a visible border. Hover lifts slightly and deepens the shade.
-.p-button.cl-btn-primary {
-  background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
-  border: 1px solid transparent;
-  color: $white;
-  border-radius: 999px;
-  padding-inline: 1.6rem;
-  font-weight: 600;
-  box-shadow: $shadow-action;
-  transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
-
-  &:hover,
-  &:not(:disabled):hover {
-    background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
-    border-color: transparent;
-    color: $white;
-    box-shadow: $shadow-action-hover;
-    transform: translateY(-1px);
-  }
-
-  &:active,
-  &:not(:disabled):active {
-    transform: translateY(0);
-    box-shadow: $shadow-action;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $primary;
-    outline-offset: 2px;
-  }
-}
-
-.p-button.cl-btn-outline {
-  background: var(--surface-card);
-  border: 1px solid rgba($primary, 0.4);
-  color: $primary-dark;
-  border-radius: 999px;
-  padding-inline: 1.6rem;
-  font-weight: 600;
-  box-shadow: none;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-
-  &:hover,
-  &:not(:disabled):hover {
-    background: $primary-lighter;
-    border-color: $primary;
-    color: $primary-darker;
-  }
-
-  &:active,
-  &:not(:disabled):active {
-    background: $primary-light;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $primary;
-    outline-offset: 2px;
   }
 }
 
@@ -273,7 +203,7 @@ cleansia-cta {
     padding: 4rem 1.5rem;
   }
 
-  .cl-title--hero {
+  .cl-heading--hero {
     text-align: center;
   }
 }
@@ -282,40 +212,9 @@ cleansia-cta {
 // Dark Mode — Common
 // =============================
 :root.dark-mode {
-  .cl-title {
-    color: #e2e8f0;
-  }
-
   .cl-section__badge {
     color: #7dd3fc;
     background: rgba(56, 189, 248, 0.12);
-  }
-
-  .p-button.cl-btn-primary {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-
-    &:hover,
-    &:not(:disabled):hover {
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-    }
-  }
-
-  .p-button.cl-btn-outline {
-    background: transparent;
-    border-color: rgba(56, 189, 248, 0.45);
-    color: #7dd3fc;
-
-    &:hover,
-    &:not(:disabled):hover {
-      background: rgba(56, 189, 248, 0.1);
-      border-color: #7dd3fc;
-      color: #bae6fd;
-    }
-
-    &:active,
-    &:not(:disabled):active {
-      background: rgba(56, 189, 248, 0.18);
-    }
   }
 }
 

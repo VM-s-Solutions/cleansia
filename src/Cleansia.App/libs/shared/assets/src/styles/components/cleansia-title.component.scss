@@ -1,27 +1,66 @@
+// ===== CLEANSIA TITLE COMPONENT =====
+// The one heading system. There is no second one — `.cl-title` was deleted in
+// T-0678 and every heading in every app now comes through <cleansia-title>.
+//
+// Two things moved here from the customer home page, on the owner's ruling of
+// 2026-08-30, because they were right and the component was wrong:
+//
+//   COLOUR — Sky700, which `Color.kt:13` names "brand secondary, top-bar title".
+//   The component used to render `var(--cleansia-primary)` (Sky600), so a page
+//   using the component and a page using `.cl-title` showed headings in two
+//   different blues. Headings are never neutral-black here either.
+//   -> agents/knowledge/design-language.md#21-colour
+//
+//   SCALE — fluid `clamp()` rather than the four fixed rem values. A fixed 3rem
+//   h1 on a 360px phone is not a design decision, it is an oversight that the
+//   mobile apps do not share.
+//
+// Partner and admin headings shift as a result: same hue family, fluid rather
+// than fixed. That was the ruling, not a side effect.
+
 %cleansia-title {
+  display: block;
   margin: 0;
-  font-weight: 700;
-  color: var(--cleansia-primary);
+  font-weight: 600;
+  color: var(--cleansia-primary-700);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .cleansia-title {
-  &--default {
-    @extend %cleansia-title;
-    font-size: 1.5rem;
-  }
-
   &--small {
     @extend %cleansia-title;
-    font-size: 1rem;
+    font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  }
+
+  &--default {
+    @extend %cleansia-title;
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
   }
 
   &--big {
     @extend %cleansia-title;
-    font-size: 2rem;
+    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
   }
 
+  // The page's own title. Heavier and tighter, because at this size the default
+  // tracking reads loose.
   &--large {
     @extend %cleansia-title;
-    font-size: 3rem;
+    font-size: clamp(2.25rem, 4.5vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+}
+
+// Sky700 has too little contrast against a dark surface, so headings lift to a
+// near-white in dark mode. Moved here with the rest of the heading system.
+:root.dark-mode .cleansia-title {
+  &--small,
+  &--default,
+  &--big,
+  &--large {
+    color: #e2e8f0;
   }
 }

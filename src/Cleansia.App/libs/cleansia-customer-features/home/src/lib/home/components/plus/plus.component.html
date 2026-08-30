@@ -13,11 +13,13 @@
         </ul>
 
         <div class="cl-plus__actions">
-          <a routerLink="/membership/subscribe" class="text-decoration-none">
-            <button pButton type="button" class="p-button-lg cl-plus__cta">
-              {{ 'pages.home.plus.cta' | translate }}
-            </button>
-          </a>
+          <cleansia-button
+            routerLink="/membership/subscribe"
+            appearance="brand"
+            buttonSize="large"
+            className="cl-plus__cta"
+            [label]="'pages.home.plus.cta' | translate"
+          />
           <span class="cl-plus__yearly">{{ 'pages.home.plus.yearly' | translate }}</span>
         </div>
       </div>

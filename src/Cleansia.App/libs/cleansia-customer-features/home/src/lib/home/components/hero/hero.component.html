@@ -8,23 +8,28 @@
         <i class="pi pi-sparkles"></i>
         {{ 'pages.home.hero.tagline' | translate }}
       </p>
-      <h1 class="cl-title cl-title--hero">
-        {{ 'pages.home.hero.title' | translate }}
-      </h1>
+      <cleansia-title
+        [title]="'pages.home.hero.title'"
+        size="large"
+        [level]="1"
+        className="cl-heading cl-heading--hero"
+      />
       <p class="cl-hero__subtitle">
         {{ 'pages.home.hero.subtitle' | translate }}
       </p>
       <div class="cl-hero__buttons">
-        <a routerLink="/order" class="text-decoration-none">
-          <button pButton type="button" class="p-button-lg cl-btn-primary">
-            {{ 'pages.home.hero.book_now' | translate }}
-          </button>
-        </a>
-        <a routerLink="/services" class="text-decoration-none">
-          <button pButton type="button" class="p-button-lg cl-btn-outline">
-            {{ 'pages.home.hero.view_services' | translate }}
-          </button>
-        </a>
+        <cleansia-button
+          routerLink="/order"
+          appearance="brand"
+          buttonSize="large"
+          [label]="'pages.home.hero.book_now' | translate"
+        />
+        <cleansia-button
+          routerLink="/services"
+          appearance="brand-outline"
+          buttonSize="large"
+          [label]="'pages.home.hero.view_services' | translate"
+        />
       </div>
       <div class="cl-hero__trust">
         <div class="cl-hero__trust-item">

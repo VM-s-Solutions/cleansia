@@ -1,11 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Params, RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule, ButtonSeverity } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputSize } from '../cleansia-base-form/cleansia-base-form.models';
 
 export type ButtonSize = 'small' | 'medium' | 'large';
+
+/**
+ * The brand appearances, owned here so a page never restates them.
+ *
+ * `default` is PrimeNG's severity-driven look and is what every partner and
+ * admin button already renders — it stays untouched. `brand` and `brand-outline`
+ * are the customer site's primary and secondary actions, moved off the page's
+ * own `.cl-btn-primary` / `.cl-btn-outline` in T-0678.
+ */
+export type ButtonAppearance = 'default' | 'brand' | 'brand-outline';
 
 /**
  * Cleansia Button Component
@@ -56,7 +67,7 @@ export type ButtonSize = 'small' | 'medium' | 'large';
 @Component({
   selector: 'cleansia-button',
   standalone: true,
-  imports: [CommonModule, ButtonModule, TranslateModule, TooltipModule],
+  imports: [CommonModule, ButtonModule, TranslateModule, TooltipModule, RouterModule],
   templateUrl: './cleansia-button.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -77,9 +88,25 @@ export class CleansiaButtonComponent {
   disabled = input<boolean>(false);
   loading = input<boolean>(false);
   className = input<string>('');
+  appearance = input<ButtonAppearance>('default');
+
+  /**
+   * Renders an anchor styled as a button instead of a <button>.
+   *
+   * Every custom button on the customer home page was a <button> nested inside
+   * an <a> — which is invalid HTML (interactive content inside a link) and gives
+   * a screen reader two controls where the page has one. Middle-click and
+   * open-in-new-tab worked only by accident of the outer anchor. Passing the
+   * destination here renders ONE element that is both.
+   */
+  routerLink = input<string | unknown[] | undefined>(undefined);
+  queryParams = input<Params | undefined>(undefined);
+  href = input<string | undefined>(undefined);
   tooltip = input<string>(''); // Tooltip text
   tooltipPosition = input<'top' | 'bottom' | 'left' | 'right'>('top');
   ariaLabel = input<string>('');
+
+  isLink = computed(() => this.routerLink() !== undefined || this.href() !== undefined);
 
   onClick = output<MouseEvent>(); // PrimeNG-compatible output name
   clickFn = output<MouseEvent>(); // Legacy output name
@@ -96,6 +123,24 @@ export class CleansiaButtonComponent {
   resolvedAriaLabel = computed(() =>
     this.isIconOnly() && this.ariaLabel() ? this.ariaLabel() : undefined,
   );
+
+  /**
+   * The class list shared by both renderings, so an anchor and a button styled
+   * `brand` are the same button.
+   */
+  cssClasses = computed(() => {
+    const appearance = this.appearance();
+    return [
+      this.size(),
+      'cleansia-button',
+      `cleansia-button--${this.buttonSize()}`,
+      this.isIconOnly() ? 'cleansia-button--icon-only' : '',
+      appearance === 'default' ? '' : `cleansia-button--${appearance}`,
+      this.className(),
+    ]
+      .filter(Boolean)
+      .join(' ');
+  });
 
   handleClick(event: MouseEvent): void {
     this.clickFn.emit(event);

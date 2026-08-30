@@ -9,6 +9,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { selectCustomerServices } from '@cleansia/customer-stores';
 import { ServiceListItem } from '@cleansia/customer-services';
 import { ButtonModule } from 'primeng/button';
+import {
+  CleansiaButtonComponent,
+  CleansiaTitleComponent,
+} from '@cleansia/components';
 
 const HERO_IMAGE = 'assets/images/mascot/mascot-mopping.webp';
 const PRELOAD_ID = 'cl-hero-img-preload';
@@ -18,7 +22,7 @@ const PRELOAD_ID = 'cl-hero-img-preload';
   templateUrl: './hero.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FoamEdgeComponent, QuickQuoteComponent, RouterModule, TranslatePipe, ButtonModule],
+  imports: [FoamEdgeComponent, QuickQuoteComponent, RouterModule, TranslatePipe, ButtonModule, CleansiaButtonComponent, CleansiaTitleComponent],
 })
 export class HeroComponent {
   private readonly document = inject(DOCUMENT);

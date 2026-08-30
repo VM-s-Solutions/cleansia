@@ -19,7 +19,11 @@
                 required
               />
             </div>
-            <button type="submit" pButton class="cl-btn-primary">{{ 'pages.home.footer.newsletter_button' | translate }}</button>
+            <cleansia-button
+              buttonType="submit"
+              appearance="brand"
+              [label]="'pages.home.footer.newsletter_button' | translate"
+            />
           </form>
           <label class="cl-newsletter__consent">
             <input type="checkbox" [checked]="consented()" (change)="toggleConsent()" />

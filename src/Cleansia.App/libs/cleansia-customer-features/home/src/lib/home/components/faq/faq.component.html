@@ -3,11 +3,20 @@
     <div class="cl-faq-layout">
       <div class="cl-faq-layout__left">
         <span class="cl-section__badge">{{ 'pages.home.faq.badge' | translate }}</span>
-        <h2 class="cl-title cl-title--left">{{ 'pages.home.faq.title' | translate }}</h2>
+        <cleansia-title
+          [title]="'pages.home.faq.title'"
+          size="big"
+          [level]="2"
+          className="cl-heading"
+        />
         <p class="cl-faq-layout__desc">{{ 'pages.home.faq.desc' | translate }}</p>
-        <a href="mailto:info&#64;cleansia.cz" class="text-decoration-none">
-          <button pButton type="button" icon="pi pi-envelope" class="cl-btn-primary cl-faq-layout__cta" [label]="'pages.home.faq.contact_button' | translate"></button>
-        </a>
+        <cleansia-button
+          href="mailto:info&#64;cleansia.cz"
+          appearance="brand"
+          icon="pi pi-envelope"
+          className="cl-faq-layout__cta"
+          [label]="'pages.home.faq.contact_button' | translate"
+        />
       </div>
       <div class="cl-faq-layout__right">
         <p-accordion>

@@ -172,14 +172,14 @@
 
     <!-- Mobile hamburger -->
     <div class="customer-navbar__hamburger md:hidden flex align-items-center">
-      <button
-        pButton
-        type="button"
+      <cleansia-button
         [icon]="mobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
-        class="p-button-rounded p-button-text p-button-secondary"
-        (click)="toggleMobileMenu()"
-        aria-label="Toggle menu"
-      ></button>
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        ariaLabel="Toggle menu"
+        (onClick)="toggleMobileMenu()"
+      />
     </div>
   </div>
 

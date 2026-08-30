@@ -37,6 +37,7 @@ import { Subject, takeUntil } from 'rxjs';
 
 import {
   CleansiaBrandNameComponent,
+  CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
 } from '@cleansia/components';
 
@@ -51,6 +52,7 @@ import {
     AvatarModule,
     ToggleSwitchModule,
     CleansiaBrandNameComponent,
+    CleansiaButtonComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './customer-navbar.component.html',

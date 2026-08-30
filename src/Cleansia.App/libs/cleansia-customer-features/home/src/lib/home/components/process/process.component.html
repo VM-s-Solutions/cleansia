@@ -1,13 +1,13 @@
 <section class="cl-section cl-section--process" id="process">
   <div class="cl-section__inner">
-    <div class="cl-section__header animate-on-scroll">
+    <div class="cl-section__header">
       <span class="cl-section__badge">{{ 'pages.home.process.badge' | translate }}</span>
       <h2 class="cl-title">{{ 'pages.home.process.title' | translate }}</h2>
       <p class="cl-section__desc">{{ 'pages.home.process.subtitle' | translate }}</p>
     </div>
 
     <div class="cl-process">
-      <div class="cl-process__track animate-on-scroll">
+      <div class="cl-process__track">
         <h3 class="cl-process__track-label">{{ 'pages.home.process.you_do' | translate }}</h3>
         <div class="cl-process__steps">
           @for (step of youSteps; track step.number) {
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="cl-process__track animate-on-scroll delay-1">
+      <div class="cl-process__track">
         <h3 class="cl-process__track-label">{{ 'pages.home.process.we_do' | translate }}</h3>
         <div class="cl-process__steps">
           @for (step of weSteps; track step.number) {

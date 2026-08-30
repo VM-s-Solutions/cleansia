@@ -705,13 +705,13 @@ $primary-light: #e0f2fe;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba($primary, 0.3);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
     transition: all 0.3s ease;
     z-index: 50;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba($primary, 0.4);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
     }
 
     i {

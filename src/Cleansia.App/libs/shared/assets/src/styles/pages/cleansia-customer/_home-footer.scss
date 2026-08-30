@@ -17,7 +17,7 @@
   margin: 0 auto;
   border-radius: $radius-lg;
   background: linear-gradient(120deg, $primary-dark 0%, $primary 100%);
-  box-shadow: 0 12px 32px rgba($primary, 0.24);
+  box-shadow: $shadow-lg;
   position: relative;
   overflow: hidden;
   padding: 1.5rem 2rem;

@@ -1,6 +1,6 @@
 <section class="cl-section cl-section--gallery" id="before-after">
   <div class="cl-section__inner">
-    <div class="cl-section__header animate-on-scroll">
+    <div class="cl-section__header">
       <span class="cl-section__badge">{{ 'pages.home.before_after.badge' | translate }}</span>
       <h2 class="cl-title">{{ 'pages.home.before_after.title' | translate }}</h2>
       <p class="cl-section__desc">{{ 'pages.home.before_after.subtitle' | translate }}</p>
@@ -8,7 +8,7 @@
 
     <div class="cl-gallery">
       @for (pair of beforeAfterPairs; track pair.id; let idx = $index) {
-      <div class="cl-gallery__item animate-on-scroll" [class]="'delay-' + (idx + 1)">
+      <div class="cl-gallery__item">
         <div
           class="cl-slider"
           [attr.data-slider-id]="pair.id"

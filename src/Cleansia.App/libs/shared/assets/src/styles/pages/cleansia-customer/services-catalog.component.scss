@@ -235,7 +235,7 @@ $max-width: 1200px;
     color: $white;
     padding: 0.35rem 1rem;
     border-radius: 999px;
-    box-shadow: 0 4px 10px rgba($primary, 0.3);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
     font-family: $font-heading;
     font-size: 0.7rem;
     font-weight: 600;
@@ -651,20 +651,20 @@ $max-width: 1200px;
     color: $white;
     border-radius: 999px;
     font-weight: 600;
-    box-shadow: 0 6px 16px rgba($primary, 0.3);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
     transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
 
     &:not(:disabled):hover {
       background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
       border-color: transparent;
       color: $white;
-      box-shadow: 0 8px 20px rgba($primary, 0.38);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
       transform: translateY(-1px);
     }
 
     &:not(:disabled):active {
       transform: translateY(0);
-      box-shadow: 0 4px 10px rgba($primary, 0.3);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
     }
   }
 

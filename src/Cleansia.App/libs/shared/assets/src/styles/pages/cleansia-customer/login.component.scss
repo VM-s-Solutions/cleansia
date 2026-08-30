@@ -53,11 +53,11 @@
     border-color: transparent;
     border-radius: 999px;
     font-weight: 600;
-    box-shadow: 0 6px 16px rgba($primary, 0.3);
+    box-shadow: $shadow-action;
 
     &:hover:not(:disabled) {
       background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
-      box-shadow: 0 8px 20px rgba($primary, 0.38);
+      box-shadow: $shadow-action-hover;
     }
   }
 

@@ -157,9 +157,6 @@ cleansia-hero {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cl-hero__bubble {
-    animation: none;
-  }
 }
 
 // =============================
@@ -182,11 +179,6 @@ cleansia-hero {
     i {
       color: #38bdf8;
     }
-  }
-
-  .cl-hero__bubble {
-    background: rgba(56, 189, 248, 0.06);
-    border-color: rgba(56, 189, 248, 0.1);
   }
 }
 

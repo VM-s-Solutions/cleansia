@@ -54,7 +54,9 @@ cleansia-cta {
   font-family: $font-heading;
   font-size: clamp(1.6rem, 3.5vw, 2.25rem);
   font-weight: 600;
-  color: $text-dark;
+  // Sky700 — the colour Color.kt names 'brand secondary, top-bar title'.
+  // Headings are never neutral-black here. -> design-language.md#21-colour
+  color: $primary-dark;
   text-align: center;
   margin: 0 0 1.25rem;
   letter-spacing: -0.02em;
@@ -86,7 +88,7 @@ cleansia-cta {
   border-radius: 999px;
   padding-inline: 1.6rem;
   font-weight: 600;
-  box-shadow: 0 6px 16px rgba($primary, 0.3);
+  box-shadow: $shadow-action;
   transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
 
   &:hover,
@@ -94,14 +96,14 @@ cleansia-cta {
     background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
     border-color: transparent;
     color: $white;
-    box-shadow: 0 8px 20px rgba($primary, 0.38);
+    box-shadow: $shadow-action-hover;
     transform: translateY(-1px);
   }
 
   &:active,
   &:not(:disabled):active {
     transform: translateY(0);
-    box-shadow: 0 4px 10px rgba($primary, 0.3);
+    box-shadow: $shadow-action;
   }
 
   &:focus-visible {
@@ -185,24 +187,6 @@ cleansia-cta {
 // =============================
 // Wave Divider
 // =============================
-.cl-wave {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  line-height: 0;
-
-  svg {
-    width: 100%;
-    height: 48px;
-    display: block;
-
-    path {
-      fill: var(--surface-card);
-    }
-  }
-}
-
 // =============================
 // Section shared
 // =============================

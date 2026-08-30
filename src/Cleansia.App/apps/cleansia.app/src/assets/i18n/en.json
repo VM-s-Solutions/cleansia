@@ -575,7 +575,8 @@
         "registration": "Reg. no. [ICO] · VAT [DIC]",
         "apps": "Get the app",
         "consent": "I agree to my e-mail being processed so the code can be sent.",
-        "promo_unavailable": "Codes are not being issued yet. Write to us and we will sort it out.",
+        "promo_sent": "Thanks — if we can issue a code for this address, it is on its way to your inbox.",
+        "promo_failed": "That did not go through. Try again in a moment, or write to us at",
         "promo_sending": "Sending...",
         "promo_consent_required": "Please confirm the consent first."
       },

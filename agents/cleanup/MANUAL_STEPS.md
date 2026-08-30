@@ -5,19 +5,6 @@ step, cleared when done.
 
 ## Open
 
-### MS-12 — Regenerate the customer web client for the promo-request endpoint — **owner**
-
-`POST /api/PromoCode/Request` is live on `Cleansia.Web.Customer` (anonymous, `auth` rate limiter).
-The home page's footer box calls `PromoRequestFacade`, which today reports the feature as
-unavailable because the generated client has no method for the route.
-
-**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
-running.
-
-Until it runs, the backend half is inert from the web: a visitor who types an address gets the
-honest "not available yet" state rather than a code. Nothing is broken by waiting — this is the
-last acceptance criterion of T-0676 and the only thing between it and done.
-
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
@@ -26,7 +13,8 @@ last acceptance criterion of T-0676 and the only thing between it and done.
 
 `MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
 document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
-`20260811192214` to `20260813085249` to `20260815094107` to **`20260825114012`**.
+`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to **`20260830221715`**
+(owner, 2026-08-31, for the `PropertySizePresets` table). The regenerated migration was proven against a real Postgres by the integration suite: 200/200.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
@@ -36,6 +24,13 @@ tables that already exist — failing the `migrate-database` job every other dep
 
 **Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
 seed repopulates it (`sql-scripts/insert_seed_data.sql`).
+
+**One script to run by hand alongside it:** `sql-scripts/seed/insert_email_template_translations_promo_code.sql`.
+Nothing under `seed/` is run by a workflow — the auto-seed reads only the root
+`insert_seed_data.sql` (`CleansiaStartupBase.cs:284`). Skip it and the promo e-mail still sends, but
+with every copy slot blank: the renderer strips placeholders it has no value for, so the failure is a
+near-empty e-mail rather than an error anyone sees. The six older e-mails have the same shape via
+`seed/insert_email_translations.sql`, so this is the existing convention, not a new one.
 
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
@@ -105,6 +100,18 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-12 — Regenerate the customer web client for the promo-request endpoint — **DONE 2026-08-31**
+
+Owner regenerated `customer-client.ts`. The regen is **purely additive** — 144 lines in, none out —
+and adds `PromoCodeClient.request()` plus `RequestPromoCodeCommand` / `RequestPromoCodeResponse`.
+
+`PromoRequestFacade` now calls it, so the footer box sends for real and T-0676 AC6 is closed. The
+lib barrel needed the two new DTOs adding by hand: `libs/core/customer-services/src/index.ts`
+re-exports the generated client **selectively**, so a regenerated type is invisible to the apps
+until it is named there. That is not obvious from a green regen — the client compiles, the app does
+not, and the error names the barrel rather than the regen.
+
 
 ### MS-8 — Regenerate the admin client for the country field labels — **DONE 2026-08-27**
 

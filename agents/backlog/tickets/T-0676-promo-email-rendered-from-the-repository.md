@@ -1,7 +1,7 @@
 ---
 id: T-0676
 title: Promo e-mail rendered from the repository, not a hosted template
-status: blocked
+status: done
 size: M
 owner: backend
 created: 2026-08-30
@@ -26,7 +26,7 @@ sprint: 16
 - [ ] **AC3** - SendPromoCodeEmailAsync renders locally and sends via MailHelper.CreateSingleEmail, sharing the transport, resilience handler and failure classification with the templated path. DONE
 - [ ] **AC4** - Copy comes from EmailTemplateTranslation as it does for the other six; seeded in five locales. DONE
 - [x] **AC5** - A command mints a PromoCode and sends it, exposed on the customer web host. DONE. Exposed on Cleansia.Web.Customer only, not the mobile customer host: the caller is the public site's footer box and a signed-in app user is not the audience for a first-order code. Adding the route to a host with no caller would be speculative.
-- [ ] **AC6** - The web facade calls the endpoint instead of reporting unavailable. BLOCKED on the owner-run NSwag regeneration.
+- [x] **AC6** - The web facade calls the endpoint instead of reporting unavailable. DONE.
 
 ## Out of scope
 - Migrating the six existing e-mails - T-0677.
@@ -45,6 +45,17 @@ sprint: 16
   hosts carries a bare [AllowAnonymous] and no [Permission]; the constant would have forced the
   ADR-0001 §D1.2 allow-list open from seven to eight and bought nothing, which three tests said
   plainly (AnonymousAllowListExhaustivenessTests x2, PolicyBuilderTests.AnonymousAllowList_Is_The_Frozen_Seven).
+- 2026-08-31 - done. Owner regenerated the customer client (MS-12, additive: 144 lines in, none out).
+  `PromoRequestFacade` now calls `promoCodeClient.request()`, extends `UnsubscribeControlDirective`
+  and sends the visitor's active locale so the e-mail arrives in the language they are reading the
+  site in. The `unavailable` state is gone; `sent` and `error` replace it, in five locales.
+  `sent` deliberately does not claim a code was minted — the endpoint answers identically for an
+  address it has seen before, because answering differently would make the footer of a public
+  website an account-existence probe.
+  Two things the regen did not do on its own: `libs/core/customer-services/src/index.ts` re-exports
+  the generated client selectively, so the two new DTOs had to be named there before the app could
+  see them; and `cl-newsletter__note--warn` had been referenced in the template since T-0673 without
+  ever being styled, so both state modifiers are defined now.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

@@ -4883,6 +4883,11 @@ export interface IPromoCodeClient {
      * @return OK
      */
     validate(body?: ValidatePromoCodeCommand | undefined): Observable<ValidatePromoCodeResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    request(body?: RequestPromoCodeCommand | undefined): Observable<RequestPromoCodeResponse>;
 }
 
 @Injectable({
@@ -4966,6 +4971,69 @@ export class PromoCodeClient implements IPromoCodeClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    request(body?: RequestPromoCodeCommand | undefined): Observable<RequestPromoCodeResponse> {
+        let url = this.baseUrl + "/api/PromoCode/Request";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequest(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRequest(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RequestPromoCodeResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RequestPromoCodeResponse>;
+        }));
+    }
+
+    protected processRequest(response: HttpResponseBase): Observable<RequestPromoCodeResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RequestPromoCodeResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -12720,6 +12788,82 @@ export class RequestPasswordChangeCommand implements IRequestPasswordChangeComma
 export interface IRequestPasswordChangeCommand {
     email: string | undefined;
     language: string | undefined;
+}
+
+export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
+    email!: string | undefined;
+    languageCode!: string | undefined;
+
+    constructor(data?: IRequestPromoCodeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.languageCode = Data["languageCode"];
+        }
+    }
+
+    static fromJS(data: any): RequestPromoCodeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestPromoCodeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["email"] = this.email;
+        data["languageCode"] = this.languageCode;
+        return data;
+    }
+}
+
+export interface IRequestPromoCodeCommand {
+    email: string | undefined;
+    languageCode: string | undefined;
+}
+
+export class RequestPromoCodeResponse implements IRequestPromoCodeResponse {
+    accepted!: boolean;
+
+    constructor(data?: IRequestPromoCodeResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.accepted = Data["accepted"];
+        }
+    }
+
+    static fromJS(data: any): RequestPromoCodeResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestPromoCodeResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["accepted"] = this.accepted;
+        return data;
+    }
+}
+
+export interface IRequestPromoCodeResponse {
+    accepted: boolean;
 }
 
 export class ResendConfirmationEmailCommand implements IResendConfirmationEmailCommand {

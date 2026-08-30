@@ -617,6 +617,37 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PropertySizePresets",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Code = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    Rooms = table.Column<int>(type: "integer", nullable: false),
+                    Bathrooms = table.Column<int>(type: "integer", nullable: false),
+                    Translations = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PropertySizePresets", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PropertySizePresets_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ServiceCities",
                 columns: table => new
                 {
@@ -3396,6 +3427,22 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: new[] { "ValidFrom", "ValidUntil" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PropertySizePresets_CountryId_Code",
+                table: "PropertySizePresets",
+                columns: new[] { "CountryId", "Code" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PropertySizePresets_CountryId_SortOrder",
+                table: "PropertySizePresets",
+                columns: new[] { "CountryId", "SortOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PropertySizePresets_TenantId",
+                table: "PropertySizePresets",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RecurringBookingTemplates_IsActive_StartsOn",
                 table: "RecurringBookingTemplates",
                 columns: new[] { "IsActive", "StartsOn" });
@@ -3828,6 +3875,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "PromoCodeRedemptions");
+
+            migrationBuilder.DropTable(
+                name: "PropertySizePresets");
 
             migrationBuilder.DropTable(
                 name: "RecurringBookingTemplates");

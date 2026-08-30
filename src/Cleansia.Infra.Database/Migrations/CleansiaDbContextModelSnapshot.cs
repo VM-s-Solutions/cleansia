@@ -532,6 +532,78 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("FeatureFlags");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Configuration.PropertySizePreset", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Bathrooms")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("CountryId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Rooms")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("Translations")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("CountryId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PropertySizePresets_CountryId_Code");
+
+                    b.HasIndex("CountryId", "SortOrder")
+                        .HasDatabaseName("IX_PropertySizePresets_CountryId_SortOrder");
+
+                    b.ToTable("PropertySizePresets");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Configuration.TenantConfiguration", b =>
                 {
                     b.Property<string>("Id")
@@ -5548,6 +5620,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
                         .WithOne()
                         .HasForeignKey("Cleansia.Core.Domain.Configuration.CountryConfiguration", "CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Configuration.PropertySizePreset", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

@@ -27,9 +27,13 @@
           </label>
           @if (promo.isSending()) {
             <small class="cl-newsletter__note">{{ 'pages.home.footer.promo_sending' | translate }}</small>
-          } @else if (promo.isUnavailable()) {
+          } @else if (promo.isSent()) {
+            <small class="cl-newsletter__note cl-newsletter__note--ok">
+              {{ 'pages.home.footer.promo_sent' | translate }}
+            </small>
+          } @else if (promo.hasFailed()) {
             <small class="cl-newsletter__note cl-newsletter__note--warn">
-              {{ 'pages.home.footer.promo_unavailable' | translate }}
+              {{ 'pages.home.footer.promo_failed' | translate }}
               <a href="mailto:info&#64;cleansia.cz">info&#64;cleansia.cz</a>
             </small>
           } @else {

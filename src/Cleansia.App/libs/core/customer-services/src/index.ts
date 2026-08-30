@@ -62,11 +62,15 @@ export {
   PromoCodeClient,
   ValidatePromoCodeCommand,
   ValidatePromoCodeResponse,
+  RequestPromoCodeCommand,
+  RequestPromoCodeResponse,
 } from './lib/client/customer-client';
 export type {
   IPromoCodeClient,
   IValidatePromoCodeCommand,
   IValidatePromoCodeResponse,
+  IRequestPromoCodeCommand,
+  IRequestPromoCodeResponse,
 } from './lib/client/customer-client';
 export {
   ReferralClient,

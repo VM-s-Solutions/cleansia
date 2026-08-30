@@ -575,7 +575,8 @@
         "registration": "IČO [IČO] · DIČ [DIČ]",
         "apps": "Stáhnout aplikaci",
         "consent": "Souhlasím se zpracováním e-mailu za účelem zaslání kódu.",
-        "promo_unavailable": "Kódy zatím nerozesíláme. Napište nám a domluvíme se.",
+        "promo_sent": "Děkujeme — pokud pro tuto adresu můžeme kód vystavit, už míří do vaší schránky.",
+        "promo_failed": "Odeslání se nezdařilo. Zkuste to prosím za chvíli znovu, nebo nám napište na",
         "promo_sending": "Odesíláme…",
         "promo_consent_required": "Nejprve prosím potvrďte souhlas."
       },

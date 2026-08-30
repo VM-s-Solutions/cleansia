@@ -158,6 +158,17 @@
       color: $white;
       text-decoration: underline;
     }
+
+    // State, not accent. $green / $amber are mixed toward white because the
+    // newsletter card sits on the dark gradient — the 600-weight tokens that
+    // read correctly on a white page fall below contrast here.
+    &--ok {
+      color: color-mix(in srgb, $green, white 55%);
+    }
+
+    &--warn {
+      color: color-mix(in srgb, $amber, white 35%);
+    }
   }
 }
 

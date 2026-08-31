@@ -111,7 +111,9 @@ public class Order : Auditable, ITenantEntity
 
     public int MaxEmployees { get; private set; } = 1;
 
-    private const int StandardWorkUnitMinutes = 120;
+    // One number, named on OrderDuration. It was 120 here and 120 in the quote,
+    // which is two copies of a rule that must not drift.
+    private const int StandardWorkUnitMinutes = OrderDuration.MinutesPerEmployee;
 
     /// <summary>
     /// Query floor for the overlap scan. <b>It may only ever be too GENEROUS</b> — too generous costs a

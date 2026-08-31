@@ -17,7 +17,8 @@
   // two rows rather than being cut to two — the photographs are real and there
   // is no reason to throw half of them away for a column count.
   grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
+  gap: 22px;
+  margin-top: 28px;
 
   // Each pair is a white card with the photograph inset, not a bare image: the
   // 14px frame is what separates two sliders sitting side by side.
@@ -185,4 +186,6 @@
   > .cl-section__inner {
     padding-top: 20px;
   }
+
+  padding-bottom: 56px;
 }

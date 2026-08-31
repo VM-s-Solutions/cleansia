@@ -48,9 +48,9 @@ cleansia-hero {
     z-index: 1;
     display: grid;
     grid-template-columns: 1fr 520px;
-    gap: 3rem;
+    gap: 48px;
     align-items: end;
-    padding: 3.25rem 4rem 0;
+    padding: 52px 64px 0;
     max-width: $home-width;
     margin: 0 auto;
   }

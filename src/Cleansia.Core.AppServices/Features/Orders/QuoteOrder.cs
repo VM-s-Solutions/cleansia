@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -55,6 +56,18 @@ public class QuoteOrder
         /// ambiguous between "waived" and "not an express slot at all", and the wizard cannot show the
         /// waiver in place of the surcharge.
         /// </summary>
+        /// <summary>
+        /// How long the selection is expected to take, and how many cleaners that
+        /// implies. Both are the SAME definitions the order uses —
+        /// <c>OrderDuration.EstimateMinutes</c> and <c>ceil(minutes / 120)</c> — so
+        /// a quote cannot promise a crew the booking will not send.
+        ///
+        /// Added because the home-page calculator states them under the price and
+        /// had nothing to state them from; a number derived on the client would be
+        /// a second implementation of a rule that already has one.
+        /// </summary>
+        int EstimatedDurationMinutes = 0,
+        int RequiredEmployees = 1,
         bool ExpressSurchargeWaivedByMembership = false,
         /// <summary>
         /// Free express upgrades left this calendar month BEFORE this booking — server-computed, never
@@ -127,6 +140,8 @@ public class QuoteOrder
 
     public class Handler(
         IOrderPricingCalculator pricingCalculator,
+        IServiceRepository serviceRepository,
+        IPackageRepository packageRepository,
         IUserSessionProvider userSessionProvider,
         ILoyaltyService loyaltyService,
         ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
@@ -210,6 +225,23 @@ public class QuoteOrder
                 _ => AppliedDiscountSource.None,
             };
 
+            // The same two definitions the order uses. Loaded here rather than
+            // derived on the client, so the number under the price on the home page
+            // and the crew the booking actually sends cannot disagree.
+            var services = await serviceRepository
+                .GetByIds(command.SelectedServiceIds)
+                .ToListAsync(cancellationToken);
+            var packages = await packageRepository
+                .GetByIds(command.SelectedPackageIds)
+                .Include(p => p.IncludedServices)
+                .ThenInclude(i => i.Service)
+                .ToListAsync(cancellationToken);
+
+            var estimatedMinutes = OrderDuration.EstimateMinutes(services, packages);
+            var requiredEmployees = estimatedMinutes <= 0
+                ? 1
+                : (int)Math.Ceiling(estimatedMinutes / (double)OrderDuration.MinutesPerEmployee);
+
             return BusinessResult.Success(new Response(
                 TotalPrice: grossSubtotal,
                 FinalPriceAfterDiscount: finalPrice,
@@ -226,6 +258,8 @@ public class QuoteOrder
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
                 ExchangeRate: result.ExchangeRate,
+                EstimatedDurationMinutes: estimatedMinutes,
+                RequiredEmployees: requiredEmployees,
                 ExpressSurchargeWaivedByMembership: result.ExpressSurchargeWaivedByMembership,
                 ExpressUpgradesRemaining: result.ExpressUpgradesRemaining));
         }

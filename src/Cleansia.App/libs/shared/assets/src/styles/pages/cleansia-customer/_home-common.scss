@@ -129,9 +129,10 @@ cleansia-cta {
 // Section shared
 // =============================
 .cl-section {
-  // 64px gutters, as the artboard is drawn. 2rem resolved to 32px against the
-  // 14px root and pulled every section in by another 32 a side.
-  padding: 64px 64px;
+  // 64px gutters everywhere; the VERTICAL padding is per-section, because the
+  // artboard does not use one rhythm — a section that follows a tinted band
+  // opens tighter than one that follows white. Each section states its own.
+  padding: 0 64px;
   position: relative;
   z-index: 1;
 

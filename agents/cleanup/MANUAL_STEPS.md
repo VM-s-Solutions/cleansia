@@ -49,6 +49,26 @@ empty list — which the calculator renders honestly as "no sizes", not as an er
 
 This is the last acceptance criterion of T-0675 and the only thing between it and done.
 
+### MS-15 — Regenerate the customer client for the quote's crew and duration — **owner**
+
+`QuoteOrder.Response` now carries `EstimatedDurationMinutes` and `RequiredEmployees`, computed from
+`OrderDuration.EstimateMinutes` and `ceil(minutes / OrderDuration.MinutesPerEmployee)` — the same two
+definitions the order itself uses, so a quote cannot promise a crew the booking will not send.
+
+The home-page calculator states them under the price in the approved artboard ("2 uklízeči · odhad
+4 hodiny"). It cannot until the generated client carries the fields.
+
+**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
+running. Then `QuickQuoteFacade` gains a `crewNote` computed from the two fields and the template
+renders it under the price — the facade already carries the comment saying so.
+
+Until then the price shows without that line, which is the honest state: the numbers exist on the
+server and not yet on the client.
+
+**Note on the backend build:** `dotnet build` on the full solution fails while the five API hosts are
+running — they hold the abstraction DLLs open. `Cleansia.Core.Domain` and `Cleansia.Core.AppServices`
+both build clean on their own; the backend test suites need the hosts stopped.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*

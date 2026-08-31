@@ -721,3 +721,11 @@ body:has(.cleansia-dev-banner) {
     color: #7dd3fc;
   }
 }
+
+// The pill's own inset. `!important` because PrimeFlex ships its utilities as
+// `!important` — `lg:px-6` was applying 3rem (42px) and no amount of specificity
+// speaks over that. The utility classes are off the template as well, so this is
+// belt and braces rather than a workaround for markup I do not control.
+.customer-navbar .customer-navbar__inner {
+  padding: 10px 12px 10px 30px !important;
+}

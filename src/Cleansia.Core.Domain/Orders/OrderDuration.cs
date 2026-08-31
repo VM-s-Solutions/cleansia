@@ -16,6 +16,16 @@ namespace Cleansia.Core.Domain.Orders;
 /// </summary>
 public static class OrderDuration
 {
+    /// <summary>
+    /// Minutes one cleaner is assumed to cover, the divisor behind
+    /// <c>RequiredEmployees = ceil(EstimatedTime / 120)</c>.
+    /// </summary>
+    /// <remarks>
+    /// Named here so the quote and the order divide by the same number rather than
+    /// by two copies of 120 that can drift apart.
+    /// </remarks>
+    public const int MinutesPerEmployee = 120;
+
     public static int EstimateMinutes(IEnumerable<Service> services, IEnumerable<Package> packages)
         => services.Sum(s => s.EstimatedTime)
          + packages.Sum(p => p.IncludedServices.Sum(i => i.Service!.EstimatedTime));

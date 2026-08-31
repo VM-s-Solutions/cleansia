@@ -1,5 +1,10 @@
 <!-- Top Navigation Bar -->
-<div class="customer-navbar surface-overlay shadow-2 fixed top-0 left-0 w-full" style="z-index: 100" [class.customer-navbar--hidden]="navbarHidden()">
+<!--
+  No `surface-overlay` and no `shadow-2`: those PrimeNG utilities paint a
+  full-width white bar with a drop shadow behind the pill. The artboard has
+  no bar at all — the pill floats on whatever the page is painted with.
+-->
+<div class="customer-navbar fixed top-0 left-0 w-full" style="z-index: 100" [class.customer-navbar--hidden]="navbarHidden()">
   <div
     class="customer-navbar__inner flex align-items-center justify-content-between px-4 lg:px-6 h-full"
   >
@@ -46,7 +51,7 @@
         <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
       </button>
 
-      <cleansia-language-switcher />
+      <cleansia-language-switcher variant="globe" />
 
       <!-- User menu — only once there is a user. Signed out, the artboard has a
            plain "Přihlásit" link and nothing else. -->
@@ -225,7 +230,7 @@
           <i class="pi pi-globe mr-2"></i>
           {{ 'nav.language' | translate }}
         </span>
-        <cleansia-language-switcher />
+        <cleansia-language-switcher variant="globe" />
       </div>
 
       @if (isLoggedIn()) {

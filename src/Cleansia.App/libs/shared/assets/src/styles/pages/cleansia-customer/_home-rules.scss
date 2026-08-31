@@ -33,7 +33,9 @@
   // wide cards plus one orphan at some widths, which is not a layout anyone
   // chose.
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  // The three cards were 18px apart and their labels sat straight on top of the
+  // value with nothing between. Both had no air.
+  gap: 24px;
 
   // On the filled third card everything is white; the label was a muted grey
   // inherited from .cl-lbl and scored 3.09 on that blue.
@@ -67,6 +69,8 @@
   }
 
   &__label {
+    display: block;
+    margin-bottom: 10px;
     display: block;
     font-size: 12px;
     font-weight: 800;

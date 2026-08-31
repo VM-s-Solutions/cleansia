@@ -42,12 +42,9 @@
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.company' | translate }}</h3>
         <ul>
-          <li><span class="cl-footer__soon">{{ 'pages.home.footer.about' | translate }}</span></li>
           <li><a routerLink="/" fragment="why-us">{{ 'nav.how_it_works' | translate }}</a></li>
           <li><a routerLink="/" fragment="services">{{ 'nav.pricing' | translate }}</a></li>
           <li><a routerLink="/membership">Cleansia Plus</a></li>
-          <li><span class="cl-footer__soon">{{ 'pages.home.footer.become_cleaner' | translate }}</span></li>
-          <li><span class="cl-footer__soon">{{ 'pages.home.footer.careers' | translate }}</span></li>
         </ul>
       </div>
 
@@ -81,12 +78,12 @@
             <a href="tel:+420739788108">+420 739 788 108</a>
           </div>
           <div class="cl-footer__contact">
-            <i class="pi pi-map-marker" aria-hidden="true"></i>
-            <span>{{ 'pages.home.footer.coverage' | translate }}</span>
-          </div>
-          <div class="cl-footer__contact">
             <i class="pi pi-clock" aria-hidden="true"></i>
             <span>{{ 'pages.home.footer.hours_label' | translate }} {{ 'pages.home.footer.hours_value' | translate }}</span>
+          </div>
+          <div class="cl-footer__contact">
+            <i class="pi pi-map-marker" aria-hidden="true"></i>
+            <span>{{ 'pages.home.footer.coverage' | translate }}</span>
           </div>
           <p class="cl-footer__registration">{{ 'pages.home.footer.registration' | translate }}</p>
         </div>
@@ -101,7 +98,7 @@
         are the same controls the header carries, so the two cannot disagree.
       -->
       <div class="cl-footer__prefs">
-        <cleansia-language-switcher />
+        <cleansia-language-switcher variant="globe" />
         <button
           type="button"
           class="cl-footer__theme-toggle"

@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
@@ -21,6 +21,16 @@ interface LanguageOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaLanguageSwitcherComponent implements OnInit {
+  /**
+   * `flag` shows a country flag beside the code; `globe` shows a single globe
+   * glyph instead.
+   *
+   * The customer artboard draws one globe, not five flags: a flag names a
+   * country, and the choice here is a language. Partner and admin keep the flag
+   * they were built with, so this is an input rather than a change of default.
+   */
+  readonly variant = input<'flag' | 'globe'>('flag');
+
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   languages: LanguageOption[] = [];
   selectedLanguage: string;

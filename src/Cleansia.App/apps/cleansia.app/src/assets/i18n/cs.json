@@ -600,7 +600,8 @@
         "loading": "Počítáme…",
         "error": "Cenu se teď nepodařilo spočítat. Zkuste to prosím znovu.",
         "size_note": "podle země",
-        "time_label": "Čas"
+        "time_label": "Čas",
+        "footnote": "Cenu počítá stejný výpočet jako objednávku. Nic se potom nepřipočítává."
       }
     },
     "profile": {

@@ -600,7 +600,8 @@
         "loading": "Working it out...",
         "error": "We could not price that just now. Please try again.",
         "size_note": "by country",
-        "time_label": "Time"
+        "time_label": "Time",
+        "footnote": "Priced by the same calculation the order uses. Nothing is added afterwards."
       }
     },
     "profile": {

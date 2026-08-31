@@ -1,4 +1,4 @@
-<div class="cleansia-language-switcher">
+<div class="cleansia-language-switcher" [class.cleansia-language-switcher--globe]="variant() === 'globe'">
   <p-select
     [options]="languages"
     [(ngModel)]="selectedLanguage"
@@ -8,20 +8,28 @@
   >
     <ng-template let-lang pTemplate="item">
       <span class="cleansia-language-switcher__language-item">
+        @if (variant() === 'globe') {
+        <i class="pi pi-globe cleansia-language-switcher__globe" aria-hidden="true"></i>
+        } @else {
         <span
           [ngClass]="['fi', 'fi-' + lang.icon]"
           class="cleansia-language-switcher__flag"
         ></span>
+        }
         {{ lang.short }}
       </span>
     </ng-template>
 
     <ng-template let-lang pTemplate="selectedItem">
       <span class="cleansia-language-switcher__language-item">
+        @if (variant() === 'globe') {
+        <i class="pi pi-globe cleansia-language-switcher__globe" aria-hidden="true"></i>
+        } @else {
         <span
           [ngClass]="['fi', 'fi-' + lang.icon]"
           class="cleansia-language-switcher__flag"
         ></span>
+        }
         {{ lang.short }}
       </span>
     </ng-template>

@@ -21,7 +21,10 @@
     "section_activity": "Aktivita",
     "email_verified": "E-mail overený",
     "email_not_verified": "E-mail neoverený",
-    "my_addresses": "Moje adresy"
+    "my_addresses": "Moje adresy",
+    "pricing": "Cenník",
+    "how_it_works": "Ako to chodí",
+    "plus": "Cleansia Plus"
   },
   "cookies": {
     "title": "Vaše súkromie je dôležité",
@@ -413,70 +416,26 @@
       "login": "Prihlásiť sa",
       "register": "Registrácia",
       "hero": {
-        "title": "Profesionálne čistiace služby priamo k vám domov",
-        "subtitle": "Objednajte si profesionálne čistenie jednoducho online. Hĺbkové čistenie nábytku, kobercov, matracov a oveľa viac.",
-        "tagline": "Čisto. Rýchlo. Bezpečne.",
-        "book_now": "Objednať čistenie",
-        "view_services": "Naše služby",
-        "trust1": "Pevná cena vopred",
-        "trust2": "Zrušenie zdarma do 24 hodín",
-        "trust3": "Vlastné vybavenie a eko prostriedky"
+        "title": "Domov, ktorý vonia čistotou",
+        "subtitle": "Objednáte online za dve minúty. Cenu vidíte vopred a už sa nezmení — ani keď to trvá dlhšie.",
+        "tagline": "Praha a okolie do 30 km · denne 8–20",
+        "book_now": "Objednať upratovanie",
+        "view_services": "Naše služby"
       },
-      "why_choose_us": {
-        "title": "Prečo si vybrať nás?",
-        "badge": "Naše výhody",
-        "subtitle": "Kombinujeme profesionálne vybavenie s ekologickými produktmi pre najlepšie výsledky.",
-        "item1_title": "Férové ceny",
-        "item1_desc": "Žiadne skryté poplatky — transparentné ceny od začiatku.",
-        "item2_title": "Bezpečné produkty",
-        "item2_desc": "Prípravky s nízkou vlhkosťou, bezpečné pre deti a alergikov.",
-        "item3_title": "Precízna starostlivosť",
-        "item3_desc": "Každému materiálu dožičíme správny postup aj správne prípravky.",
-        "fact1": "Žiadne doplatky po upratovaní",
-        "fact2": "Najbližšie voľno za 4 hodiny",
-        "fact3": "Náskok až 12 hodín pre toho vášho"
-      },
-      "process": {
-        "title": "Ako to funguje",
-        "badge": "Ako to funguje",
-        "subtitle": "Pár kliknutí, jasná cena a profesionálne upratovanie priamo u vás doma.",
-        "you_do": "Čo urobíte vy",
-        "we_do": "Čo zariadime my",
-        "step1": "Vyberte si službu",
-        "step1_desc": "Upratovanie domácnosti, čistenie čalúnenia alebo pravidelná starostlivosť. Presne podľa vašich potrieb.",
-        "step2": "Zadajte detaily",
-        "step2_desc": "Adresa, termín, rozsah. Žiadne telefonáty, žiadne čakanie na odpoveď.",
-        "step3": "Zaplaťte online",
-        "step3_desc": "Cena je pevná a vidíte ju vopred. Objednávku potvrdíte v priebehu pár sekúnd.",
-        "step4": "Pridelíme vám profesionála",
-        "step4_desc": "Akonáhle zákazku prijme overený upratovač, dostanete potvrdenie s jeho menom a hodnotením.",
-        "step5": "Prídeme k vám",
-        "step5_desc": "V dohodnutom čase, plne vybavení a pripravení pustiť sa do práce.",
-        "step6": "Výsledok, ktorý je vidieť",
-        "step6_desc": "Starostlivo, spoľahlivo a bez kompromisov."
-      },
-      "benefits": {
-        "title": "Čo získate s našou službou",
-        "badge": "Rozdiel",
-        "b1_title": "Menej starostí",
-        "b1_desc": "Objednávku zadáte online bez oneskorení, telefonátov a zbytočného vyjednávania.",
-        "b2_title": "Viac času pre seba",
-        "b2_desc": "O upratovanie sa postaráme za vás, zatiaľ čo sa môžete sústrediť na dôležitejšie veci.",
-        "b3_title": "Profesionálny prístup",
-        "b3_desc": "Skúsený tím, overené postupy a dôraz na detail.",
-        "b4_title": "Čistý a sviež domov",
-        "b4_desc": "Výsledky, ktoré sú vidieť a cítiť."
-      },
-      "extra_services": {
-        "s1": {
-          "name": "Čistenie interiéru auta"
-        },
-        "s2": {
-          "name": "Čistenie kancelárií"
-        },
-        "s3": {
-          "name": "Upratovanie po rekonštrukcii"
-        }
+      "promises": {
+        "title": "Tri veci, ktoré vám sľubujeme",
+        "item1_label": "Pevná cena",
+        "item1_heading": "Sumu vidíte skôr, než objednáte",
+        "item1_desc": "A po upratovaní sa nemení — ani keď to trvá o hodinu dlhšie, ani keď sa objaví škvrna navyše.",
+        "item1_fact": "Žiadne doplatky po upratovaní",
+        "item2_label": "Bez telefonátov",
+        "item2_heading": "Objednávka trvá dve minúty",
+        "item2_desc": "Vyberiete službu, zadáte termín, potvrdíte. Žiadny dopyt, žiadne čakanie na ponuku.",
+        "item2_fact": "Najbližšie voľno o 4 hodiny",
+        "item3_label": "Viete, kto príde",
+        "item3_heading": "Meno upratovača vopred",
+        "item3_desc": "Každý prešiel schválením, než smie prijať zákazku. Toho svojho si vyberiete aj nabudúce.",
+        "item3_fact": "Náskok až 12 hodín pre neho"
       },
       "fallback_services": {
         "s1": {
@@ -493,17 +452,17 @@
         }
       },
       "services": {
-        "title": "Služby a ceny",
-        "badge": "Čo ponúkame",
-        "subtitle": "Vyberte si službu, ktorá vám vyhovuje. Všetky ceny zahŕňajú profesionálne vybavenie a ekologické produkty.",
-        "view_all": "Zobraziť všetky služby",
+        "title": "Čo si u nás objednáte",
+        "subtitle": "Jedenásť služieb. Vlastné stroje a ekologické prostriedky v cene.",
+        "view_all": "Všetky služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstránenie odolných škvŕn",
-        "extra_odour": "Odstránenie zápachu (domáce zvieratá, cigarety)"
+        "extra_odour": "Odstránenie zápachu (domáce zvieratá, cigarety)",
+        "from": "od",
+        "eco_chip": "Ekologicky · v cene"
       },
       "before_after": {
-        "title": "Pozrite si rozdiel",
-        "badge": "Skutočné výsledky",
+        "title": "Ako to dopadá",
         "subtitle": "Z každej zákazky dostanete fotky pred a po — upratovač ich robí priamo u vás. Nižšie je ukážka toho, ako výsledok vyzerá.",
         "before": "Pred",
         "after": "Po",
@@ -513,9 +472,9 @@
         "label_oven": "Rúra"
       },
       "faq": {
-        "title": "Často kladené otázky",
+        "title": "Časté otázky",
         "badge": "FAQ",
-        "desc": "Nenašli ste odpoveď? Kontaktujte náš tím a radi vám pomôžeme.",
+        "desc": "Nenašli ste odpoveď? Kontaktujte nás a radi vám pomôžeme.",
         "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Chodíte aj mimo Prahy?",
@@ -534,18 +493,28 @@
           "answer": "Áno, vyberáme šetrné čistiace prostriedky a metódy vhodné pre každý typ látky: hodváb, vlnu, zamat, mikrovlákno a ďalšie. Pred čistením vždy testujeme na malom mieste, aby sme sa uistili, že látka nebude poškodená."
         },
         "q5": {
-          "question": "Odstránite všetky škvrny úplne?",
-          "answer": "Odstránime až 95 % škvŕn. Niektoré veľmi staré alebo chemicky fixované škvrny sa môžu výrazne zosvetliť, ale nemusia úplne zmiznúť — vždy vás úprimne informujeme o očakávanom výsledku."
+          "question": "Môžem chcieť toho istého upratovača?",
+          "answer": "Áno. Po upratovaní si upratovača môžete označiť ako preferovaného a vašu ďalšiu zákazku dostane prednostne, až 12 hodín dopredu."
         },
         "q6": {
-          "question": "Môžem si objednať čistenie večer alebo cez víkend?",
-          "answer": "Áno. Ponúkame flexibilné plánovanie vrátane večerov a víkendov, aby to vyhovovalo vášmu rozvrhu."
+          "question": "Čo ak nebudem spokojný?",
+          "answer": "Napíšte nám do 48 hodín od upratovania. Pošleme niekoho späť, aby to napravil, alebo vrátime sumu za to, čo nebolo urobené."
         }
       },
       "cta": {
-        "title": "Pripravení premeniť svoj priestor?",
-        "desc": "Objednajte si profesionálne čistenie ešte dnes a užívajte si zdravší, sviežejší domov.",
-        "button": "Objednať teraz"
+        "title": "Nech sa o upratovanie stará niekto iný",
+        "desc": "Objednáte za dve minúty, bez registrácie. Cenu vidíte ešte pred potvrdením.",
+        "button": "Objednať upratovanie",
+        "secondary": "Naše služby",
+        "promo_title": "Zľavový kód na prvé upratovanie",
+        "promo_badge": "Jednorazovo",
+        "promo_note": "Žiadne ďalšie správy, pokiaľ si ich nevyžiadate.",
+        "promo_placeholder": "vas@email.sk",
+        "promo_button": "Poslať kód",
+        "promo_consent": "Súhlasím so spracovaním e-mailu podľa zásad ochrany údajov.",
+        "promo_sending": "Odosielame…",
+        "promo_sent": "Ďakujeme — ak pre túto adresu môžeme kód vystaviť, už mieri k vám.",
+        "promo_failed": "Odoslanie sa nepodarilo. Skúste to o chvíľu znova, alebo nám napíšte na info@cleansia.cz."
       },
       "footer": {
         "contacts": "Kontaktujte nás",
@@ -554,11 +523,6 @@
         "your_phone": "Váš telefón",
         "social": "Sociálne siete",
         "privacy": "Zásady ochrany súkromia",
-        "newsletter_title": "Prihláste sa na odber noviniek a buďte informovaní",
-        "newsletter_subtitle": "Získajte 20% zľavu na vašu prvú objednávku len prihlásením sa na odber noviniek.",
-        "newsletter_placeholder": "Zadajte svoj e-mail",
-        "newsletter_button": "Prihlásiť sa",
-        "unsubscribe_note": "Odhlásiť sa môžete kedykoľvek.",
         "privacy_link_text": "Prečítajte si naše zásady ochrany súkromia",
         "company": "Spoločnosť",
         "support": "Podpora",
@@ -573,12 +537,7 @@
         "hours_value": "08:00–20:00",
         "coverage": "Praha a okolie do 30 km",
         "registration": "IČO [IČO] · DIČ [DIČ]",
-        "apps": "Stiahnuť aplikáciu",
-        "consent": "Súhlasím so spracovaním e-mailu na účel zaslania kódu.",
-        "promo_sent": "Ďakujeme — ak pre túto adresu môžeme kód vystaviť, už mieri do vašej schránky.",
-        "promo_failed": "Odoslanie sa nepodarilo. Skúste to prosím o chvíľu znova, alebo nám napíšte na",
-        "promo_sending": "Odosielame…",
-        "promo_consent_required": "Najprv prosím potvrďte súhlas."
+        "apps": "Stiahnuť aplikáciu"
       },
       "rules": {
         "badge": "Naše pravidlá",

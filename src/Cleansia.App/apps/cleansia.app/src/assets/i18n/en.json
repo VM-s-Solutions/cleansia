@@ -21,7 +21,10 @@
     "section_activity": "Activity",
     "email_verified": "Email verified",
     "email_not_verified": "Email not verified",
-    "my_addresses": "My addresses"
+    "my_addresses": "My addresses",
+    "pricing": "Pricing",
+    "how_it_works": "How it works",
+    "plus": "Cleansia Plus"
   },
   "cookies": {
     "title": "Your Privacy Matters",
@@ -413,70 +416,26 @@
       "login": "Log In",
       "register": "Sign Up",
       "hero": {
-        "title": "Professional Cleaning Services at Your Doorstep",
-        "subtitle": "Book professional cleaning easily online. Deep cleaning of furniture, carpets, mattresses, and much more.",
-        "tagline": "Clean. Fast. Safe.",
-        "book_now": "Book a Cleaning",
-        "view_services": "Our Services",
-        "trust1": "Fixed price up front",
-        "trust2": "Free cancellation up to 24 h",
-        "trust3": "Our own equipment and eco products"
+        "title": "A home that smells clean",
+        "subtitle": "Order online in two minutes. You see the price up front and it does not change — not even if it takes longer.",
+        "tagline": "Prague and up to 30 km around · daily 8–20",
+        "book_now": "Book a clean",
+        "view_services": "Our services"
       },
-      "why_choose_us": {
-        "title": "Why Choose Us?",
-        "badge": "Our Advantages",
-        "subtitle": "We combine professional equipment with eco-friendly products for the best results.",
-        "item1_title": "Fair Prices",
-        "item1_desc": "No hidden fees — transparent pricing from the start.",
-        "item2_title": "Safe Products",
-        "item2_desc": "Low-moisture formulas, safe for children and allergy sufferers.",
-        "item3_title": "Precision Care",
-        "item3_desc": "We give each material the right procedure and the right products.",
-        "fact1": "No top-ups after the clean",
-        "fact2": "Earliest slot in 4 hours",
-        "fact3": "Up to a 12-hour head start for yours"
-      },
-      "process": {
-        "title": "How it works",
-        "badge": "How It Works",
-        "subtitle": "A few clicks, a clear price and professional cleaning right at your home.",
-        "you_do": "What you do",
-        "we_do": "What we do",
-        "step1": "Choose a service",
-        "step1_desc": "Household cleaning, upholstery cleaning or regular care. Exactly according to your needs.",
-        "step2": "Enter details",
-        "step2_desc": "Address, date, scope. No phone calls, no waiting for a response.",
-        "step3": "Pay online",
-        "step3_desc": "The price is fixed and visible in advance. You will confirm the booking within seconds.",
-        "step4": "We will assign you a professional",
-        "step4_desc": "As soon as a verified cleaner accepts the order, you will receive a confirmation with their name and rating.",
-        "step5": "We will arrive at your place",
-        "step5_desc": "At the agreed time, fully equipped and ready to get to work.",
-        "step6": "A result that is visible",
-        "step6_desc": "Carefully, reliably and without compromise."
-      },
-      "benefits": {
-        "title": "What you get with our service",
-        "badge": "The Difference",
-        "b1_title": "Less worries",
-        "b1_desc": "You can place your order online without delays, calls and unnecessary negotiations.",
-        "b2_title": "More time for yourself",
-        "b2_desc": "We will take care of the cleaning for you, while you can focus on more important things.",
-        "b3_title": "Professional approach",
-        "b3_desc": "Experienced team, proven procedures and attention to detail.",
-        "b4_title": "Clean and fresh home",
-        "b4_desc": "Results that can be seen and felt."
-      },
-      "extra_services": {
-        "s1": {
-          "name": "Car Interior Cleaning"
-        },
-        "s2": {
-          "name": "Office Cleaning"
-        },
-        "s3": {
-          "name": "Post-Renovation Cleaning"
-        }
+      "promises": {
+        "title": "Three things we promise you",
+        "item1_label": "Fixed price",
+        "item1_heading": "You see the amount before you order",
+        "item1_desc": "And it does not change afterwards — not if it takes an hour longer, not if an extra stain turns up.",
+        "item1_fact": "No top-ups after the clean",
+        "item2_label": "No phone calls",
+        "item2_heading": "Ordering takes two minutes",
+        "item2_desc": "Pick a service, set a time, confirm. No enquiry, no waiting for a quote.",
+        "item2_fact": "Next opening in 4 hours",
+        "item3_label": "You know who is coming",
+        "item3_heading": "The cleaner's name up front",
+        "item3_desc": "Everyone is approved before they may take a job. You can pick the same one again.",
+        "item3_fact": "A 12-hour head start for them"
       },
       "fallback_services": {
         "s1": {
@@ -493,18 +452,18 @@
         }
       },
       "services": {
-        "title": "Services & Pricing",
-        "badge": "What We Offer",
-        "subtitle": "Choose the service that fits your needs. All prices include professional equipment and eco products.",
-        "view_all": "View All Services",
+        "title": "What you can order",
+        "subtitle": "Eleven services. Our own machines and eco products included.",
+        "view_all": "All services",
         "details": "Details",
         "extra_stain": "Tough stain removal",
-        "extra_odour": "Odour removal (pets, cigarettes)"
+        "extra_odour": "Odour removal (pets, cigarettes)",
+        "from": "from",
+        "eco_chip": "Eco-friendly · included"
       },
       "before_after": {
-        "title": "See the Difference",
-        "badge": "Real Results",
-        "subtitle": "Every clean ends with before and after photos taken by your cleaner. Below is what a result looks like.",
+        "title": "How it turns out",
+        "subtitle": "Every job comes with before and after photos — your cleaner takes them on site. Below is what a result looks like.",
         "before": "Before",
         "after": "After",
         "label_sofa": "Sofa Deep Cleaning",
@@ -513,9 +472,9 @@
         "label_oven": "Oven"
       },
       "faq": {
-        "title": "Frequently Asked Questions",
+        "title": "Frequently asked questions",
         "badge": "FAQ",
-        "desc": "Can't find the answer you're looking for? Get in touch with our team and we'll be happy to help.",
+        "desc": "Haven't found an answer? Get in touch and we will gladly help.",
         "contact_button": "Contact Us",
         "q1": {
           "question": "Do you also travel outside Prague?",
@@ -534,18 +493,28 @@
           "answer": "Yes, we select gentle cleaning agents and methods appropriate for each fabric type: silk, wool, velvet, microfibre and more. Before cleaning, we always test on a small area to make sure the fabric won't be damaged."
         },
         "q5": {
-          "question": "Do you remove all stains completely?",
-          "answer": "We remove up to 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully — we will always inform you honestly about the expected result."
+          "question": "Can I ask for the same cleaner?",
+          "answer": "Yes. After a clean you can mark a cleaner as preferred, and they get first refusal on your next order for up to 12 hours."
         },
         "q6": {
-          "question": "Can I book cleaning in the evening or on weekends?",
-          "answer": "Yes. We offer flexible scheduling including evenings and weekends to fit your schedule."
+          "question": "What if I am not satisfied?",
+          "answer": "Tell us within 48 hours of the clean. We will send someone back to put it right, or refund the part that was not done."
         }
       },
       "cta": {
-        "title": "Ready to Transform Your Space?",
-        "desc": "Book your professional cleaning today and enjoy a healthier, fresher home.",
-        "button": "Book Now"
+        "title": "Let someone else do the cleaning",
+        "desc": "Order in two minutes, no sign-up. You see the price before you confirm.",
+        "button": "Book a clean",
+        "secondary": "Our services",
+        "promo_title": "Discount code for your first clean",
+        "promo_badge": "One-off",
+        "promo_note": "No further messages unless you ask for them.",
+        "promo_placeholder": "you@email.com",
+        "promo_button": "Send the code",
+        "promo_consent": "I agree to my e-mail being processed under the privacy policy.",
+        "promo_sending": "Sending…",
+        "promo_sent": "Thanks — if we can issue a code for this address, it is on its way.",
+        "promo_failed": "That did not go through. Try again in a moment, or write to info@cleansia.cz."
       },
       "footer": {
         "contacts": "Contact Us",
@@ -554,11 +523,6 @@
         "your_phone": "Your Phone",
         "social": "Social Media",
         "privacy": "Privacy Policy",
-        "newsletter_title": "Subscribe to our newsletter to get the latest updates",
-        "newsletter_subtitle": "Get 20% off on your first order just by subscribing to our newsletter.",
-        "newsletter_placeholder": "Enter your email",
-        "newsletter_button": "Subscribe",
-        "unsubscribe_note": "You will be able to unsubscribe at any time.",
         "privacy_link_text": "Read our privacy policy here",
         "company": "Company",
         "support": "Support",
@@ -573,12 +537,7 @@
         "hours_value": "08:00-20:00",
         "coverage": "Prague and up to 30 km around",
         "registration": "Reg. no. [ICO] · VAT [DIC]",
-        "apps": "Get the app",
-        "consent": "I agree to my e-mail being processed so the code can be sent.",
-        "promo_sent": "Thanks — if we can issue a code for this address, it is on its way to your inbox.",
-        "promo_failed": "That did not go through. Try again in a moment, or write to us at",
-        "promo_sending": "Sending...",
-        "promo_consent_required": "Please confirm the consent first."
+        "apps": "Get the app"
       },
       "rules": {
         "badge": "Our rules",

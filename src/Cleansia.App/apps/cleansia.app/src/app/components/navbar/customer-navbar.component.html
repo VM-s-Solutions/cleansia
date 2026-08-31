@@ -8,63 +8,45 @@
       <cleansia-brand-name [defaultRoute]="''" />
     </div>
 
-    <!-- Desktop nav links -->
-    <nav class="customer-navbar__center hidden md:flex align-items-center justify-content-center gap-4">
-      <a class="customer-navbar__link" routerLink="/" routerLinkActive="customer-navbar__link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()">
-        {{ 'nav.home' | translate }}
-      </a>
+    <!--
+      The design's four links. Ceník and "Jak to chodí" have no pages of their
+      own, so they anchor to the sections that actually carry that content —
+      the services rail is the price list, and the three promises are how it
+      works. Linking them to invented routes would be worse than anchoring.
+    -->
+    <nav class="customer-navbar__center hidden md:flex align-items-center justify-content-center">
       <a class="customer-navbar__link" routerLink="/services" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.services' | translate }}
       </a>
-      @if (isLoggedIn()) {
-        <a class="customer-navbar__link" routerLink="/orders" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
-          {{ 'nav.my_orders' | translate }}
-        </a>
-      } @else {
-        <a class="customer-navbar__link" routerLink="/track-order" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
-          {{ 'nav.track_order' | translate }}
-        </a>
-      }
-      <a class="customer-navbar__link" routerLink="/order" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
-        {{ 'nav.book_now' | translate }}
+      <a class="customer-navbar__link" routerLink="/" fragment="services" (click)="closeMenus()">
+        {{ 'nav.pricing' | translate }}
+      </a>
+      <a class="customer-navbar__link" routerLink="/" fragment="why-us" (click)="closeMenus()">
+        {{ 'nav.how_it_works' | translate }}
+      </a>
+      <a class="customer-navbar__link" routerLink="/membership" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
+        {{ 'nav.plus' | translate }}
       </a>
     </nav>
 
     <!-- Desktop right section -->
     <div class="customer-navbar__right hidden md:flex align-items-center justify-content-end gap-2">
-      <!-- Settings -->
-      <div class="customer-navbar__menu-anchor relative">
-        <button
-          class="customer-navbar__icon-btn"
-          (click)="toggleSettingsMenu($event)"
-          aria-label="Settings"
-        >
-          <i class="pi pi-cog"></i>
-        </button>
+      <span class="customer-navbar__divider" aria-hidden="true"></span>
 
-        <div class="customer-navbar__dropdown customer-navbar__settings-dropdown"
-             [class.customer-navbar__dropdown--visible]="settingsMenuOpen()">
-          <div class="customer-navbar__settings-header">{{ 'nav.settings' | translate }}</div>
-          <div class="customer-navbar__settings-row">
-            <span class="customer-navbar__settings-label">
-              <i class="pi pi-palette"></i>
-              {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
-            </span>
-            <button class="customer-navbar__theme-toggle" (click)="toggleTheme()">
-              <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
-              {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
-            </button>
-          </div>
-          <div class="customer-navbar__dropdown-divider"></div>
-          <div class="customer-navbar__settings-row">
-            <span class="customer-navbar__settings-label">
-              <i class="pi pi-globe"></i>
-              {{ 'nav.language' | translate }}
-            </span>
-            <cleansia-language-switcher />
-          </div>
-        </div>
-      </div>
+      <!--
+        Theme and language sit ON the bar, as the design draws them, rather than
+        behind a settings cog. They are one tap each and a visitor should not
+        have to discover them.
+      -->
+      <button
+        class="customer-navbar__icon-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="(isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate"
+      >
+        <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+      </button>
+
+      <cleansia-language-switcher />
 
       <!-- User menu -->
       <div class="customer-navbar__menu-anchor relative">
@@ -168,6 +150,14 @@
           }
         </div>
       </div>
+      @if (!isLoggedIn()) {
+        <a class="customer-navbar__signin" routerLink="/login" (click)="closeMenus()">
+          {{ 'nav.login' | translate }}
+        </a>
+      }
+      <a class="cl-btn cl-btn--small customer-navbar__cta" routerLink="/order" (click)="closeMenus()">
+        {{ 'nav.book_now' | translate }}
+      </a>
     </div>
 
     <!-- Mobile hamburger -->

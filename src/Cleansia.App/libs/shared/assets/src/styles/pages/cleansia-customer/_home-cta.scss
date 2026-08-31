@@ -1,54 +1,241 @@
 @use './home-variables' as *;
 
 // =============================
-// CTA
+// Ať se o úklid stará někdo jiný
 // =============================
+// One white card on a radial ground, holding two rows: the closing claim, then
+// the promo capture under a hairline. Artboard values: card radius 40, padding
+// 40/44/36, mascot 132px grounded on the card's bottom edge.
+
 .cl-cta {
-  background: linear-gradient(180deg, $primary-lighter 0%, $primary-light 100%);
-  padding: 5.5rem 2rem;
-  text-align: center;
   position: relative;
-  z-index: 1;
+  margin-top: 4rem;
+  background: radial-gradient(110% 130% at 20% 10%, $primary-light 0%, $primary-lighter 60%, $white 100%);
+  overflow: hidden;
 
   &__inner {
-    max-width: 700px;
+    padding: 2.125rem 4rem 3.75rem;
+    max-width: $max-width;
     margin: 0 auto;
-    position: relative;
-    z-index: 2;
   }
 
-  // LAYOUT ONLY. This block used to set font-size, weight AND `color: $text-dark`
-  // (#0f172a), which is why the home page rendered headings in two colours -
-  // every other heading was Sky700 and this one was near-black. It is a
-  // <cleansia-title> now and contributes spacing alone. -> T-0669 AC1
+  &__card {
+    background: $white;
+    border-radius: 2.5rem;
+    padding: 2.5rem 2.75rem 2.25rem;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2rem;
+    align-items: center;
+
+    &--promo {
+      margin-top: 2rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid $border;
+      gap: 1.75rem;
+    }
+  }
+
+  // Grounded on the card's bottom edge rather than floating in the middle of
+  // its own cell — the mascot stands on the row, it does not hover over it.
+  &__mascot {
+    height: 132px;
+    width: auto;
+    display: block;
+    align-self: end;
+    margin-bottom: -4px;
+  }
+
   &__title {
-    font-family: $font-heading;
-    margin-bottom: 0.75rem;
+    font-size: 2.25rem; // 36px
+    letter-spacing: -0.9px;
   }
 
   &__desc {
-    color: var(--cl-text-secondary);
+    margin: 0.5rem 0 0;
+    max-width: 34em;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    white-space: nowrap;
+  }
+
+  // ---- promo capture --------------------------------------------------------
+  &__promo-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__promo-title {
+    font-size: 1.1875rem;
+  }
+
+  &__promo-badge {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: $primary-dark;
+    background: $primary-light;
+    padding: 6px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  &__promo-note {
+    margin: 0.3125rem 0 0;
+  }
+
+  &__promo-field {
+    display: flex;
+    gap: 0.625rem;
+    min-width: 0;
+  }
+
+  &__input {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 56px;
+    border: 1px solid $border;
+    border-radius: 999px;
+    padding: 0 1.5rem;
+    font: inherit;
     font-size: 1rem;
-    margin-bottom: 1.5rem !important;
-    line-height: 1.7;
+    color: $text-body;
+    background: $white;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.15);
+    }
+  }
+
+  &__send {
+    flex-shrink: 0;
+    padding: 0 1.75rem;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+  }
+
+  &__consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    max-width: 22em;
+    cursor: pointer;
+
+    input {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin: 2px 0 0;
+      accent-color: $primary;
+    }
+  }
+
+  &__status {
+    margin: 1rem 0 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: $text-muted;
+
+    // Semantic, and separate from the brand accent.
+    &--ok {
+      color: color-mix(in srgb, $green, black 6%);
+    }
+
+    &--warn {
+      color: color-mix(in srgb, $amber, black 14%);
+    }
   }
 }
 
 // =============================
-// Responsive — CTA
+// Responsive
 // =============================
+@media (max-width: 1200px) {
+  .cl-cta__row {
+    grid-template-columns: auto 1fr;
+
+    &--claim .cl-cta__actions {
+      grid-column: 1 / -1;
+    }
+
+    &--promo {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .cl-cta {
-    padding: 4rem 1.5rem;
+    &__inner {
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    &__card {
+      border-radius: 2rem;
+      padding: 1.75rem 1.5rem;
+    }
+
+    &__row {
+      grid-template-columns: 1fr;
+      text-align: center;
+      justify-items: center;
+    }
+
+    &__mascot {
+      height: 108px;
+      margin-bottom: 0;
+    }
+
+    &__actions {
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    &__promo-field {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    &__consent {
+      max-width: none;
+      text-align: left;
+    }
   }
 }
 
 // =============================
-// Dark Mode — CTA
+// Dark Mode
 // =============================
 :root.dark-mode {
   .cl-cta {
-    background: linear-gradient(180deg, #0f172a 0%, #082f49 100%);
+    background: radial-gradient(110% 130% at 20% 10%, rgba(56, 189, 248, 0.1) 0%, rgba(2, 132, 199, 0.05) 60%, transparent 100%);
 
+    &__card {
+      background: var(--surface-card);
+    }
+
+    &__input {
+      background: transparent;
+      color: #e2e8f0;
+      border-color: rgba(148, 163, 184, 0.35);
+    }
   }
 }

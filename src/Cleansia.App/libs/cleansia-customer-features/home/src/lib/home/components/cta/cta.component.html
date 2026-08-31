@@ -1,17 +1,81 @@
+<!--
+  "Ať se o úklid stará někdo jiný" — one card, two rows.
+
+  Row one is the closing claim: mascot, sentence, actions. Row two is the
+  first-order promo capture, separated by a hairline rather than by a second
+  card, because it is the same ask made a second way — leave now, or leave an
+  address and be nudged later.
+
+  The capture used to sit in the footer. It belongs here: the footer is
+  navigation, and an offer buried under it is an offer nobody reads.
+-->
 <section class="cl-cta" id="cta">
+  <cleansia-foam-edge class="cl-foam" [fill]="'#ffffff'" />
+
   <div class="cl-cta__inner">
-    <cleansia-title
-      [title]="'pages.home.cta.title'"
-      size="big"
-      [level]="2"
-      className="cl-cta__title"
-    />
-    <p class="cl-cta__desc">{{ 'pages.home.cta.desc' | translate }}</p>
-    <cleansia-button
-      routerLink="/order"
-      appearance="brand"
-      buttonSize="large"
-      [label]="'pages.home.cta.button' | translate"
-    />
+    <div class="cl-cta__card cl-lift animate-on-scroll">
+      <!-- row 1: mascot · claim · actions -->
+      <div class="cl-cta__row cl-cta__row--claim">
+        <img
+          class="cl-cta__mascot"
+          src="assets/images/mascot/mascot-ready.webp"
+          alt=""
+          width="300"
+          height="300"
+          loading="lazy"
+        />
+        <div class="cl-cta__copy">
+          <h2 class="cl-d2 cl-cta__title">{{ 'pages.home.cta.title' | translate }}</h2>
+          <p class="cl-body cl-cta__desc">{{ 'pages.home.cta.desc' | translate }}</p>
+        </div>
+        <div class="cl-cta__actions">
+          <a class="cl-btn" routerLink="/order">{{ 'pages.home.cta.button' | translate }}</a>
+          <a class="cl-link" routerLink="/services">{{ 'pages.home.cta.secondary' | translate }}</a>
+        </div>
+      </div>
+
+      <!-- row 2: promo code capture, full width -->
+      <form class="cl-cta__row cl-cta__row--promo" #promoForm="ngForm" (ngSubmit)="submitPromo(promoForm)">
+        <div class="cl-cta__promo-copy">
+          <div class="cl-cta__promo-head">
+            <span class="cl-h4 cl-cta__promo-title">{{ 'pages.home.cta.promo_title' | translate }}</span>
+            <span class="cl-cta__promo-badge">{{ 'pages.home.cta.promo_badge' | translate }}</span>
+          </div>
+          <p class="cl-muted cl-cta__promo-note">{{ 'pages.home.cta.promo_note' | translate }}</p>
+        </div>
+
+        <div class="cl-cta__promo-field">
+          <input
+            type="email"
+            name="email"
+            ngModel
+            required
+            class="cl-cta__input"
+            [placeholder]="'pages.home.cta.promo_placeholder' | translate"
+            [attr.aria-label]="'pages.home.cta.promo_title' | translate"
+          />
+          <button type="submit" class="cl-btn cl-cta__send" [disabled]="promo.isSending()">
+            {{ 'pages.home.cta.promo_button' | translate }}
+          </button>
+        </div>
+
+        <label class="cl-cta__consent">
+          <input type="checkbox" [checked]="consented()" (change)="toggleConsent()" />
+          <span class="cl-muted">{{ 'pages.home.cta.promo_consent' | translate }}</span>
+        </label>
+      </form>
+
+      @if (promo.isSending() || promo.isSent() || promo.hasFailed()) {
+      <p
+        class="cl-cta__status"
+        [class.cl-cta__status--ok]="promo.isSent()"
+        [class.cl-cta__status--warn]="promo.hasFailed()"
+        role="status"
+      >
+        @if (promo.isSending()) { {{ 'pages.home.cta.promo_sending' | translate }} } @else if (promo.isSent()) {
+        {{ 'pages.home.cta.promo_sent' | translate }} } @else { {{ 'pages.home.cta.promo_failed' | translate }} }
+      </p>
+      }
+    </div>
   </div>
 </section>

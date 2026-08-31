@@ -21,7 +21,10 @@
     "section_activity": "Aktivita",
     "email_verified": "E-mail ověřen",
     "email_not_verified": "E-mail neověřen",
-    "my_addresses": "Moje adresy"
+    "my_addresses": "Moje adresy",
+    "pricing": "Ceník",
+    "how_it_works": "Jak to chodí",
+    "plus": "Cleansia Plus"
   },
   "cookies": {
     "title": "Vaše soukromí je pro nás důležité",
@@ -413,70 +416,26 @@
       "login": "Přihlásit se",
       "register": "Registrace",
       "hero": {
-        "title": "Profesionální úklidové služby u vás doma",
-        "subtitle": "Objednejte si profesionální úklid jednoduše online. Hloubkové čištění nábytku, koberců, matrací a mnoho dalšího.",
-        "tagline": "Čisto. Rychle. Bezpečně.",
+        "title": "Domov, který voní čistotou",
+        "subtitle": "Objednáte online za dvě minuty. Cenu vidíte předem a už se nezmění — ani když to trvá déle.",
+        "tagline": "Praha a okolí do 30 km · denně 8–20",
         "book_now": "Objednat úklid",
-        "view_services": "Naše služby",
-        "trust1": "Pevná cena předem",
-        "trust2": "Zrušení zdarma do 24 hodin",
-        "trust3": "Vlastní vybavení a eko prostředky"
+        "view_services": "Naše služby"
       },
-      "why_choose_us": {
-        "title": "Proč si vybrat nás?",
-        "badge": "Naše výhody",
-        "subtitle": "Kombinujeme profesionální vybavení s ekologickými produkty pro nejlepší výsledky.",
-        "item1_title": "Férové ceny",
-        "item1_desc": "Bez skrytých poplatků — transparentní ceník od začátku.",
-        "item2_title": "Bezpečná chemie",
-        "item2_desc": "Šetrné přípravky, bezpečné pro děti i alergiky.",
-        "item3_title": "Přesná péče",
-        "item3_desc": "Každému materiálu dopřejeme správný postup i správné přípravky.",
-        "fact1": "Žádné doplatky po úklidu",
-        "fact2": "Nejbližší volno za 4 hodiny",
-        "fact3": "Náskok až 12 hodin pro toho vašeho"
-      },
-      "process": {
-        "title": "Jak to funguje",
-        "badge": "Jak to funguje",
-        "subtitle": "Pár kliknutí, jasná cena a profesionální úklid přímo u vás doma.",
-        "you_do": "Co uděláte vy",
-        "we_do": "Co zařídíme my",
-        "step1": "Vyberte službu",
-        "step1_desc": "Úklid domácnosti, čištění čalounění nebo pravidelná péče. Přesně podle vašich potřeb.",
-        "step2": "Zadejte detaily",
-        "step2_desc": "Adresa, termín, rozsah. Žádné telefonáty, žádné čekání na odpověď.",
-        "step3": "Zaplaťte online",
-        "step3_desc": "Cena je pevná a vidíte ji předem. Objednávku potvrdíte během pár sekund.",
-        "step4": "Přidělíme vám profesionála",
-        "step4_desc": "Jakmile zakázku přijme ověřený uklízeč, obdržíte potvrzení s jeho jménem a hodnocením.",
-        "step5": "Přijedeme k vám",
-        "step5_desc": "V domluvený čas, plně vybavení a připraveni pustit se do práce.",
-        "step6": "Výsledek, který je vidět",
-        "step6_desc": "Pečlivě, spolehlivě a bez kompromisů."
-      },
-      "benefits": {
-        "title": "Co získáte s naší službou",
-        "badge": "Rozdíl",
-        "b1_title": "Méně starostí",
-        "b1_desc": "Objednávku zadáte online bez prodlev, telefonátů a zbytečného vyjednávání.",
-        "b2_title": "Více času pro sebe",
-        "b2_desc": "O úklid se postaráme za vás, zatímco se můžete soustředit na důležitější věci.",
-        "b3_title": "Profesionální přístup",
-        "b3_desc": "Zkušený tým, ověřené postupy a důraz na detail.",
-        "b4_title": "Čistý a svěží domov",
-        "b4_desc": "Výsledky, které jsou vidět a cítit."
-      },
-      "extra_services": {
-        "s1": {
-          "name": "Čištění interiéru auta"
-        },
-        "s2": {
-          "name": "Úklid kanceláří"
-        },
-        "s3": {
-          "name": "Úklid po rekonstrukci"
-        }
+      "promises": {
+        "title": "Tři věci, které vám slibujeme",
+        "item1_label": "Pevná cena",
+        "item1_heading": "Částku vidíte dřív, než objednáte",
+        "item1_desc": "A po úklidu se nemění — ani když to trvá o hodinu déle, ani když se objeví skvrna navíc.",
+        "item1_fact": "Žádné doplatky po úklidu",
+        "item2_label": "Bez telefonátů",
+        "item2_heading": "Objednávka trvá dvě minuty",
+        "item2_desc": "Vyberete službu, zadáte termín, potvrdíte. Žádná poptávka, žádné čekání na nabídku.",
+        "item2_fact": "Nejbližší volno za 4 hodiny",
+        "item3_label": "Víte, kdo přijde",
+        "item3_heading": "Jméno uklízeče předem",
+        "item3_desc": "Každý prošel schválením, než smí přijmout zakázku. Toho svého si vyberete i příště.",
+        "item3_fact": "Náskok až 12 hodin pro něj"
       },
       "fallback_services": {
         "s1": {
@@ -493,17 +452,17 @@
         }
       },
       "services": {
-        "title": "Služby a ceník",
-        "badge": "Co nabízíme",
-        "subtitle": "Vyberte si službu podle vašich potřeb. Všechny ceny zahrnují profesionální vybavení a eko produkty.",
-        "view_all": "Zobrazit všechny služby",
+        "title": "Co u nás objednáte",
+        "subtitle": "Jedenáct služeb. Vlastní stroje a ekologické prostředky v ceně.",
+        "view_all": "Všechny služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstranění složitých skvrn",
-        "extra_odour": "Odstranění zápachu (domácí mazlíčci, cigarety)"
+        "extra_odour": "Odstranění zápachu (domácí mazlíčci, cigarety)",
+        "from": "od",
+        "eco_chip": "Ekologicky · v ceně"
       },
       "before_after": {
-        "title": "Podívejte se na rozdíl",
-        "badge": "Skutečné výsledky",
+        "title": "Jak to dopadá",
         "subtitle": "Z každé zakázky dostanete fotky před a po — uklízeč je pořizuje přímo u vás. Níže je ukázka toho, jak výsledek vypadá.",
         "before": "Před",
         "after": "Po",
@@ -513,7 +472,7 @@
         "label_oven": "Trouba"
       },
       "faq": {
-        "title": "Často kladené otázky",
+        "title": "Časté dotazy",
         "badge": "FAQ",
         "desc": "Nenašli jste odpověď? Kontaktujte nás a rádi vám pomůžeme.",
         "contact_button": "Kontaktujte nás",
@@ -534,18 +493,28 @@
           "answer": "Ano, vybíráme šetrné čisticí prostředky a metody vhodné pro každý typ látky: hedvábí, vlnu, velur, mikrovlákno a další. Před čištěním vždy provedeme test na malé ploše, abychom se ujistili, že látka nebude poškozena."
         },
         "q5": {
-          "question": "Odstraníte všechny skvrny úplně?",
-          "answer": "Odstraníme až 95 % skvrn. Některé velmi staré nebo chemicky fixované skvrny se mohou výrazně zesvětlit, ale nezmizí úplně — vždy vás poctivě informujeme o očekávaném výsledku."
+          "question": "Můžu chtít stejného uklízeče?",
+          "answer": "Ano. Po úklidu si uklízeče můžete označit jako preferovaného a vaši další zakázku dostane přednostně, až na 12 hodin dopředu."
         },
         "q6": {
-          "question": "Mohu si objednat čištění večer nebo o víkendu?",
-          "answer": "Ano. Nabízíme flexibilní plánování včetně večerů a víkendů, aby to vyhovovalo vašemu rozvrhu."
+          "question": "Co když nebudu spokojen?",
+          "answer": "Napište nám do 48 hodin od úklidu. Pošleme někoho zpět, aby to napravil, nebo vrátíme částku za to, co nebylo uděláno."
         }
       },
       "cta": {
-        "title": "Připraveni proměnit váš prostor?",
-        "desc": "Objednejte si profesionální čištění ještě dnes a užijte si zdravější, svěžejší domov.",
-        "button": "Objednat nyní"
+        "title": "Ať se o úklid stará někdo jiný",
+        "desc": "Objednáte za dvě minuty, bez registrace. Cenu vidíte ještě před potvrzením.",
+        "button": "Objednat úklid",
+        "secondary": "Naše služby",
+        "promo_title": "Slevový kód na první úklid",
+        "promo_badge": "Jednorázově",
+        "promo_note": "Žádné další zprávy, pokud si je nevyžádáte.",
+        "promo_placeholder": "vas@email.cz",
+        "promo_button": "Poslat kód",
+        "promo_consent": "Souhlasím se zpracováním e-mailu podle zásad ochrany údajů.",
+        "promo_sending": "Odesíláme…",
+        "promo_sent": "Děkujeme — pokud pro tuto adresu můžeme kód vystavit, už míří k vám.",
+        "promo_failed": "Odeslání se nezdařilo. Zkuste to za chvíli znovu, nebo nám napište na info@cleansia.cz."
       },
       "footer": {
         "contacts": "Kontaktujte nás",
@@ -554,11 +523,6 @@
         "your_phone": "Váš telefon",
         "social": "Sociální sítě",
         "privacy": "Ochrana osobních údajů",
-        "newsletter_title": "Přihlaste se k odběru novinek",
-        "newsletter_subtitle": "Získejte 20% slevu na první objednávku přihlášením k odběru.",
-        "newsletter_placeholder": "Zadejte svůj email",
-        "newsletter_button": "Odebírat",
-        "unsubscribe_note": "Odběr můžete kdykoli zrušit.",
         "privacy_link_text": "Přečtěte si naše zásady ochrany osobních údajů",
         "company": "Společnost",
         "support": "Podpora",
@@ -573,12 +537,7 @@
         "hours_value": "08:00–20:00",
         "coverage": "Praha a okolí do 30 km",
         "registration": "IČO [IČO] · DIČ [DIČ]",
-        "apps": "Stáhnout aplikaci",
-        "consent": "Souhlasím se zpracováním e-mailu za účelem zaslání kódu.",
-        "promo_sent": "Děkujeme — pokud pro tuto adresu můžeme kód vystavit, už míří do vaší schránky.",
-        "promo_failed": "Odeslání se nezdařilo. Zkuste to prosím za chvíli znovu, nebo nám napište na",
-        "promo_sending": "Odesíláme…",
-        "promo_consent_required": "Nejprve prosím potvrďte souhlas."
+        "apps": "Stáhnout aplikaci"
       },
       "rules": {
         "badge": "Naše pravidla",

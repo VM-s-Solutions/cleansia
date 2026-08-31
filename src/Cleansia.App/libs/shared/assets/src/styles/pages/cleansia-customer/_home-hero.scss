@@ -30,13 +30,15 @@ cleansia-hero {
   }
 
   &__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 3rem;
+    align-items: end;
+    padding: 3.25rem 4rem 0;
     max-width: $max-width;
     margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 4rem;
-    position: relative;
-    z-index: 2;
   }
 
   &__text {
@@ -336,6 +338,81 @@ cleansia-hero {
 
     &--error {
       color: #b91c1c;
+    }
+  }
+}
+
+// =============================
+// Hero — approved artboard values
+// =============================
+.cl-hero {
+  &__text {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__eyebrow {
+    color: $primary-dark;
+  }
+
+  &__title {
+    margin-top: 1rem;
+    text-align: left;
+  }
+
+  &__subtitle {
+    font-size: 1.1875rem; // 19px
+    line-height: 1.72;
+    color: $text-body;
+    margin: 1.125rem 0 0;
+    max-width: 25em;
+  }
+
+  &__buttons {
+    display: flex;
+    align-items: center;
+    gap: 1.625rem;
+    margin-top: 1.75rem;
+  }
+
+  // Pushes the mascot to the bottom of the column so it stands on the foam
+  // line rather than floating under the copy.
+  &__spacer {
+    flex-grow: 1;
+    min-height: 14px;
+  }
+
+  &__image img {
+    width: 330px;
+    height: auto;
+    margin-left: -18px;
+    display: block;
+  }
+}
+
+@media (max-width: 1100px) {
+  .cl-hero__inner {
+    grid-template-columns: 1fr;
+    padding: 2.5rem 2rem 0;
+  }
+
+  .cl-hero__image img {
+    width: 260px;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .cl-hero {
+    &__inner {
+      padding: 2rem 1.25rem 0;
+    }
+
+    &__buttons {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.125rem;
     }
   }
 }

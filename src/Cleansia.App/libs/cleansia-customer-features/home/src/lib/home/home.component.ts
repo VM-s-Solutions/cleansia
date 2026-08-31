@@ -19,8 +19,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeroComponent } from './components/hero/hero.component';
 import { FeaturesComponent } from './components/features/features.component';
-import { ProcessComponent } from './components/process/process.component';
-import { BenefitsComponent } from './components/benefits/benefits.component';
 import { ServicesComponent } from './components/services/services.component';
 import { GalleryComponent } from './components/gallery/gallery.component';
 import { RulesComponent } from './components/rules/rules.component';
@@ -32,20 +30,7 @@ import { CtaComponent } from './components/cta/cta.component';
   selector: 'cleansia-home',
   templateUrl: './home.component.html',
   standalone: true,
-  imports: [
-    HeroComponent,
-    FeaturesComponent,
-    ProcessComponent,
-    BenefitsComponent,
-    ServicesComponent,
-    GalleryComponent,
-    RulesComponent,
-    PlusComponent,
-    FaqComponent,
-    CtaComponent,
-    CleansiaScrollTopComponent,
-    TranslatePipe,
-  ],
+  imports: [HeroComponent, FeaturesComponent, ServicesComponent, GalleryComponent, RulesComponent, PlusComponent, FaqComponent, CtaComponent, CleansiaScrollTopComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {

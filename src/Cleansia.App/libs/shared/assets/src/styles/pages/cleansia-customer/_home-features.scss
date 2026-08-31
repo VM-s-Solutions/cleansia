@@ -1,105 +1,132 @@
 @use './home-variables' as *;
 
 // =============================
-// Promises
+// Tři věci, které vám slibujeme
 // =============================
-// Replaces the three-column icon-card grid. The asymmetric 1.16/.92/.92 split
-// and the fact strip exist for the same reason: an equal grid of equal cards
-// with a coloured icon chip is the single most reproduced block on the web, and
-// the cards read as empty without a closing line of substance.
-// -> agents/knowledge/design-language.md#33-what-ai-generated-looks-like
+// Three promise cards. The lead one is wider and carries the mascot; the other
+// two are equal and push their fact line to the bottom so all three rules sit
+// on one horizontal line however long the copy runs.
+//
+// Values are the approved artboard's: 1.16fr .92fr .92fr, gap 20, radius 40,
+// padding 30/32. -> _home-design.scss
+
+.cl-section--promises {
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
+}
 
 .cl-promises {
   display: grid;
-  grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.92fr) minmax(0, 0.92fr);
+  grid-template-columns: 1.16fr 0.92fr 0.92fr;
   gap: 1.25rem;
   align-items: stretch;
+  margin-top: 1.875rem;
+
+  &__title {
+    text-align: center;
+  }
 
   &__card {
-    display: flex;
-    flex-direction: column;
     background: $primary-lighter;
     border-radius: 2.5rem;
     padding: 1.875rem 2rem;
+    display: flex;
+    flex-direction: column;
 
+    // The lead card is a two-column grid so the mascot stands beside the copy
+    // rather than under it, both anchored to the same baseline.
     &--lead {
+      background: $primary-light;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: 1fr auto;
       gap: 0.875rem;
       align-items: end;
-      background: $primary-light;
     }
   }
 
+  &__body {
+    display: flex;
+    flex-direction: column;
+  }
+
   &__label {
-    display: block;
-    font-family: $font-heading;
-    font-size: 1.4375rem;
-    font-weight: 600;
-    line-height: 1.24;
-    letter-spacing: -0.35px;
     color: $primary-dark;
+  }
+
+  &__heading {
+    margin-top: 0.625rem;
+    font-size: 1.4375rem; // 23px
+
+    // The lead card carries the larger of the two heading sizes.
+    &--lead {
+      font-size: 1.6875rem; // 27px
+    }
   }
 
   &__desc {
     font-size: 1rem;
-    line-height: 1.7;
-    color: $text-body;
     margin: 0.625rem 0 0;
   }
 
-  // pushes the fact to the card's foot so the cards close on a line, not on air
-  &__fact {
-    display: flex;
-    align-items: center;
-    gap: 0.5625rem;
-    margin: auto 0 0;
-    padding-top: 0.875rem;
-    border-top: 1px solid rgba(3, 105, 161, 0.16);
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: $primary-dark;
-
-    i {
-      font-size: 0.875rem;
-    }
+  // Pushes the fact line down so the three hairlines align across the row.
+  &__spacer {
+    flex-grow: 1;
   }
 
-  // one shared 340x280 canvas at a fixed character height — see the mascot
-  // tiles in assets/images/mascot/*-tile.webp
   &__mascot {
-    height: 9.375rem;
+    height: 156px;
     width: auto;
     display: block;
-    margin: 0 -0.25rem 0 0;
+    margin: 0 -4px 0 0;
     align-self: end;
   }
 }
 
-@media (max-width: 1024px) {
+// =============================
+// Responsive
+// =============================
+@media (max-width: 1100px) {
   .cl-promises {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr 1fr;
 
     &__card--lead {
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-column: 1 / -1;
     }
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .cl-promises {
+    grid-template-columns: 1fr;
+
     &__card {
-      padding: 1.5rem 1.375rem;
-      border-radius: 1.75rem;
+      border-radius: 2rem;
+      padding: 1.5rem 1.5rem;
     }
 
+    // Below this width the mascot would squeeze the copy to a column of two
+    // words, so it steps out of the grid and sits under it.
     &__card--lead {
-      grid-template-columns: minmax(0, 1fr);
+      display: flex;
     }
 
     &__mascot {
-      height: 7.5rem;
-      justify-self: end;
+      height: 132px;
+      align-self: center;
+      margin-top: 1rem;
+    }
+  }
+}
+
+// =============================
+// Dark Mode
+// =============================
+:root.dark-mode {
+  .cl-promises__card {
+    background: rgba(56, 189, 248, 0.06);
+
+    &--lead {
+      background: rgba(56, 189, 248, 0.12);
     }
   }
 }

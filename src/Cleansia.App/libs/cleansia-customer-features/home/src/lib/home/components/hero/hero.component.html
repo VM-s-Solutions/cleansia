@@ -4,47 +4,17 @@
   <div class="cl-hero__sud cl-hero__sud--3" aria-hidden="true"></div>
   <div class="cl-hero__inner">
     <div class="cl-hero__text animate-on-scroll">
-      <p class="cl-hero__tagline">
-        <i class="pi pi-sparkles"></i>
-        {{ 'pages.home.hero.tagline' | translate }}
-      </p>
-      <cleansia-title
-        [title]="'pages.home.hero.title'"
-        size="large"
-        [level]="1"
-        className="cl-heading cl-heading--hero"
-      />
+      <span class="cl-lbl cl-hero__eyebrow">{{ 'pages.home.hero.tagline' | translate }}</span>
+      <h1 class="cl-d1 cl-hero__title">{{ 'pages.home.hero.title' | translate }}</h1>
       <p class="cl-hero__subtitle">
         {{ 'pages.home.hero.subtitle' | translate }}
       </p>
       <div class="cl-hero__buttons">
-        <cleansia-button
-          routerLink="/order"
-          appearance="brand"
-          buttonSize="large"
-          [label]="'pages.home.hero.book_now' | translate"
-        />
-        <cleansia-button
-          routerLink="/services"
-          appearance="brand-outline"
-          buttonSize="large"
-          [label]="'pages.home.hero.view_services' | translate"
-        />
+        <a class="cl-btn" routerLink="/order">{{ 'pages.home.hero.book_now' | translate }}</a>
+        <a class="cl-link" routerLink="/services">{{ 'pages.home.hero.view_services' | translate }}</a>
       </div>
-      <div class="cl-hero__trust">
-        <div class="cl-hero__trust-item">
-          <i class="pi pi-verified"></i>
-          <span>{{ 'pages.home.hero.trust1' | translate }}</span>
-        </div>
-        <div class="cl-hero__trust-item">
-          <i class="pi pi-shield"></i>
-          <span>{{ 'pages.home.hero.trust2' | translate }}</span>
-        </div>
-        <div class="cl-hero__trust-item">
-          <i class="pi pi-box"></i>
-          <span>{{ 'pages.home.hero.trust3' | translate }}</span>
-        </div>
-      </div>
+
+      <div class="cl-hero__spacer"></div>
 
       <div class="cl-hero__image animate-on-scroll delay-1">
         <img

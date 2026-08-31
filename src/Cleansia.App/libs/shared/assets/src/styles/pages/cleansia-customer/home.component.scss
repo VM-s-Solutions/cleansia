@@ -2,10 +2,9 @@
 // All styles are organized into partials by section.
 
 @use './home-common';
+@use './home-design';
 @use './home-hero';
 @use './home-features';
-@use './home-process';
-@use './home-benefits';
 @use './home-services';
 @use './home-gallery';
 @use './home-rules';

@@ -5,7 +5,10 @@
 // =============================
 .cl-gallery {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  // Two columns, as the approved artboard draws it. Four pairs therefore run as
+  // two rows rather than being cut to two — the photographs are real and there
+  // is no reason to throw half of them away for a column count.
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
 
   &__item {
@@ -23,7 +26,7 @@
 
 .cl-slider {
   position: relative;
-  border-radius: $radius-lg;
+  border-radius: 2.25rem; // 36px, artboard value
   overflow: hidden;
   border: 1px solid var(--surface-border);
   cursor: ew-resize;
@@ -78,8 +81,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: $white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -130,5 +133,19 @@
   .cl-gallery {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+}
+
+// The section header, artboard values: centred d2 with the lead constrained so
+// the sentence breaks where the design breaks it.
+.cl-gallery {
+  &__title {
+    text-align: center;
+  }
+
+  &__lead {
+    text-align: center;
+    margin: 0.625rem auto 0;
+    max-width: 46em;
   }
 }

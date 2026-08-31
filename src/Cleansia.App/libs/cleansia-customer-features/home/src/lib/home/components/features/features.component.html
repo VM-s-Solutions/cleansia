@@ -1,23 +1,28 @@
-<section class="cl-section cl-section--features" id="why-us">
+<!--
+  "Tři věci, které vám slibujeme" — three promises, not a benefits grid.
+
+  The lead card is wider (1.16fr) and carries the mascot; the other two are
+  equal. Each card is label → heading → body → one fact on a hairline rule.
+  There is no badge and no section subtitle here: the heading is the whole
+  introduction, which is what makes the section read as three claims rather
+  than as marketing.
+-->
+<section class="cl-section cl-section--promises" id="why-us">
   <div class="cl-section__inner">
-    <div class="cl-section__header animate-on-scroll">
-      <span class="cl-section__badge">{{ 'pages.home.why_choose_us.badge' | translate }}</span>
-      <cleansia-title
-        [title]="'pages.home.why_choose_us.title'"
-        size="big"
-        [level]="2"
-        className="cl-heading cl-heading--center"
-      />
-      <p class="cl-section__desc">{{ 'pages.home.why_choose_us.subtitle' | translate }}</p>
-    </div>
+    <h2 class="cl-d2 cl-promises__title animate-on-scroll">
+      {{ 'pages.home.promises.title' | translate }}
+    </h2>
 
     <div class="cl-promises">
-      <div class="cl-promises__card cl-promises__card--lead">
+      <article class="cl-promises__card cl-promises__card--lead cl-soft">
         <div class="cl-promises__body">
-          <span class="cl-promises__label">{{ 'pages.home.why_choose_us.item1_title' | translate }}</span>
-          <p class="cl-promises__desc">{{ 'pages.home.why_choose_us.item1_desc' | translate }}</p>
-          <p class="cl-promises__fact">
-            <i class="pi pi-check"></i>{{ 'pages.home.why_choose_us.fact1' | translate }}
+          <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item1_label' | translate }}</span>
+          <h3 class="cl-h3 cl-promises__heading cl-promises__heading--lead">
+            {{ 'pages.home.promises.item1_heading' | translate }}
+          </h3>
+          <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item1_desc' | translate }}</p>
+          <p class="cl-fact">
+            <i class="pi pi-check" aria-hidden="true"></i>{{ 'pages.home.promises.item1_fact' | translate }}
           </p>
         </div>
         <img
@@ -28,23 +33,29 @@
           height="280"
           loading="lazy"
         />
-      </div>
+      </article>
 
-      <div class="cl-promises__card">
-        <span class="cl-promises__label">{{ 'pages.home.why_choose_us.item2_title' | translate }}</span>
-        <p class="cl-promises__desc">{{ 'pages.home.why_choose_us.item2_desc' | translate }}</p>
-        <p class="cl-promises__fact">
-          <i class="pi pi-clock"></i>{{ 'pages.home.why_choose_us.fact2' | translate }}
+      <article class="cl-promises__card cl-soft">
+        <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item2_label' | translate }}</span>
+        <h3 class="cl-h3 cl-promises__heading">{{ 'pages.home.promises.item2_heading' | translate }}</h3>
+        <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item2_desc' | translate }}</p>
+        <div class="cl-promises__spacer"></div>
+        <p class="cl-fact">
+          <i class="pi pi-clock" aria-hidden="true"></i>
+          <span class="cl-num">{{ 'pages.home.promises.item2_fact' | translate }}</span>
         </p>
-      </div>
+      </article>
 
-      <div class="cl-promises__card">
-        <span class="cl-promises__label">{{ 'pages.home.why_choose_us.item3_title' | translate }}</span>
-        <p class="cl-promises__desc">{{ 'pages.home.why_choose_us.item3_desc' | translate }}</p>
-        <p class="cl-promises__fact">
-          <i class="pi pi-user"></i>{{ 'pages.home.why_choose_us.fact3' | translate }}
+      <article class="cl-promises__card cl-soft">
+        <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item3_label' | translate }}</span>
+        <h3 class="cl-h3 cl-promises__heading">{{ 'pages.home.promises.item3_heading' | translate }}</h3>
+        <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item3_desc' | translate }}</p>
+        <div class="cl-promises__spacer"></div>
+        <p class="cl-fact">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span class="cl-num">{{ 'pages.home.promises.item3_fact' | translate }}</span>
         </p>
-      </div>
+      </article>
     </div>
   </div>
 </section>

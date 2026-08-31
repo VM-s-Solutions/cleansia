@@ -8,9 +8,31 @@
 // near-black would have been decoration pretending to be information.
 // -> agents/knowledge/design-language.md#21-colour
 
+// The section was cramped: the heading, the three cards and the fact rail all
+// sat within a few pixels of each other, so the numbers read as one block
+// instead of three claims and a footnote. The artboard gives the grid 28px of
+// air under the lead and the rail another 20px under the cards.
+.cl-section--rules {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+
+  .cl-section__header {
+    margin-bottom: 1.75rem;
+  }
+
+  .cl-section__desc {
+    max-width: 46em;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .cl-rules {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  // Three fixed tracks, as the artboard draws them. `auto-fit` collapsed to two
+  // wide cards plus one orphan at some widths, which is not a layout anyone
+  // chose.
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.125rem;
 
   &__card {
@@ -71,7 +93,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.75rem;
-    margin: 1rem 0 0;
+    margin: 1.25rem 0 0;
     padding: 0;
     list-style: none;
 
@@ -93,5 +115,17 @@
       color: $text-dark;
       font-variant-numeric: tabular-nums;
     }
+  }
+}
+
+@media (max-width: 1024px) {
+  .cl-rules {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .cl-rules {
+    grid-template-columns: 1fr;
   }
 }

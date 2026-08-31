@@ -116,3 +116,63 @@
     }
   }
 }
+
+// =============================
+// Accordion — the artboard's bordered card
+// =============================
+// The design draws the questions as ONE bordered, rounded surface with hairline
+// dividers, and the open panel's header tinted so the current question is
+// obvious. PrimeNG's default is a stack of separate cards, which reads as six
+// things rather than one list.
+.cl-faq-layout__right {
+  .p-accordion {
+    border: 1px solid $border;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    background: $white;
+    display: block;
+  }
+
+  .p-accordionpanel {
+    border: 0;
+    border-bottom: 1px solid $border;
+    border-radius: 0;
+    background: transparent;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .p-accordionheader {
+    padding: 1.375rem 1.625rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-family: $font-heading;
+    font-weight: 600;
+    font-size: 1.125rem;
+    line-height: 1.3;
+    letter-spacing: -0.1px;
+    color: $primary-dark;
+
+    &:hover {
+      background: $primary-lighter;
+    }
+  }
+
+  // The open question keeps its tint so the eye can find it again.
+  .p-accordionpanel-active > .p-accordionheader {
+    background: $primary-lighter;
+  }
+
+  .p-accordioncontent-content {
+    padding: 1.25rem 1.625rem 1.5rem;
+    background: transparent;
+    border: 0;
+  }
+}
+
+.cl-faq-layout__title {
+  margin-top: 1rem;
+}

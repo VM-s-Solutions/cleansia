@@ -33,17 +33,27 @@
 // Below-fold sections skip style/layout/paint work until scrolled near —
 // first paint only pays for the hero. The intrinsic size keeps the
 // scrollbar stable before the real content is laid out.
+// `content-visibility: auto` used to sit here, skipping the render of every
+// off-screen section. It was removed rather than tuned:
+//
+//   - The navbar now links to `#services` and `#why-us`. A skipped section has
+//     no laid-out contents, so the browser cannot resolve the anchor reliably
+//     and the jump lands short.
+//   - `contain-intrinsic-size: auto 700px` is a guess. Every section whose real
+//     height differs from 700px made the scrollbar jump as it was reached.
+//   - It hid the sections from full-page capture, which is how a whole band of
+//     the page went unreviewed.
+//
+// The page is nine sections of static markup; there was no rendering cost here
+// worth those three.
 cleansia-features,
-cleansia-process,
-cleansia-benefits,
 cleansia-services,
 cleansia-gallery,
 cleansia-rules,
 cleansia-plus,
 cleansia-faq,
 cleansia-cta {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 700px;
+  display: block;
 }
 
 // =============================

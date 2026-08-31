@@ -3,12 +3,7 @@
     <div class="cl-faq-layout">
       <div class="cl-faq-layout__left">
         <span class="cl-section__badge">{{ 'pages.home.faq.badge' | translate }}</span>
-        <cleansia-title
-          [title]="'pages.home.faq.title'"
-          size="big"
-          [level]="2"
-          className="cl-heading"
-        />
+        <h2 class="cl-d2 cl-faq-layout__title">{{ 'pages.home.faq.title' | translate }}</h2>
         <p class="cl-faq-layout__desc">{{ 'pages.home.faq.desc' | translate }}</p>
         <cleansia-button
           href="mailto:info&#64;cleansia.cz"
@@ -19,7 +14,7 @@
         />
       </div>
       <div class="cl-faq-layout__right">
-        <p-accordion>
+        <p-accordion [value]="0">
           @for (faq of faqs; track faq.question; let i = $index) {
           <p-accordion-panel [value]="i">
             <p-accordion-header>{{ faq.question | translate }}</p-accordion-header>

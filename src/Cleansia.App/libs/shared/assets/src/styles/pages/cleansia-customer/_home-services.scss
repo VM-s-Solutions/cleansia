@@ -1,234 +1,130 @@
 @use './home-variables' as *;
 
 // =============================
-// Services
+// Co u nás objednáte
 // =============================
+// Three cards over a chip rail. The header is left-aligned with the catalogue
+// link on the right edge — a menu announces itself once and then lists.
+//
+// Values from the approved artboard: card radius 40, 1px #E0F2FE border on
+// white, padding 30/32, price 26px Poppins. -> _home-design.scss
+
+.cl-section--services {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
 .cl-services {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.625rem;
 
-  &__card-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.875rem;
+  }
+
+  &__lead {
+    margin: 0.625rem 0 0;
   }
 
   &__card {
-    background: var(--surface-card);
-    border-radius: $radius-lg;
-    padding: 2.25rem 1.75rem 1.75rem;
+    background: $white;
+    border: 1px solid $primary-light;
+    border-radius: 2.5rem;
+    padding: 1.875rem 2rem;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--surface-border);
-    position: relative;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-    height: 100%;
+    text-decoration: none;
+    display: block;
+    transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 
     &:hover {
-      border-color: rgba($primary, 0.35);
-      transform: translateY(-3px);
-      box-shadow: $shadow-lg;
-
-      .cl-services__nav-arrow {
-        opacity: 1;
-      }
+      border-color: $primary-accent;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
     }
-  }
 
-  &__nav-arrow {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    i {
-      font-size: 0.85rem;
-      color: $primary;
-    }
-  }
-
-  &__ribbon {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    color: $primary;
-    background: $primary-lighter;
-    border: 1px solid rgba($primary, 0.2);
-    border-radius: 2rem;
-    font-family: $font-heading;
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0.25rem 0.7rem;
-  }
-
-  // Rounded-square icon tile — same shape/size as the services-catalog and
-  // order-wizard cards so all card surfaces read as one family.
-  &__icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 0.75rem;
-    background: $primary-lighter;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.25rem;
-    i {
-      font-size: 1.4rem;
-      color: $primary;
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 3px;
     }
   }
 
   &__name {
-    font-family: $font-heading;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
+    margin-top: 1.125rem;
+  }
+
+  &__desc {
+    font-size: 1rem;
+    margin: 0.5rem 0 0;
   }
 
   &__price {
     font-family: $font-heading;
-    font-size: 1.05rem;
     font-weight: 700;
+    font-size: 1.625rem;
     color: $primary;
-    margin-bottom: 0.9rem;
+    margin-top: 0.875rem;
   }
 
-  &__desc {
-    font-size: 0.9rem;
-    color: var(--cl-text-secondary);
-    line-height: 1.7;
-    flex: 1;
-    margin-bottom: 0;
-  }
-
-  // 3 Faded teaser cards — partially visible, fading to transparent
-  &__teasers {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    max-height: 110px;
-    overflow: hidden;
-    position: relative;
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 100%;
-      background: linear-gradient(180deg, transparent 0%, var(--surface-ground) 90%);
-      pointer-events: none;
-      z-index: 1;
-    }
-  }
-
-  &__teaser {
-    background: var(--surface-card);
-    border-radius: $radius-lg;
-    border: 1px solid var(--surface-border);
-    overflow: hidden;
-  }
-
-  &__teaser-inner {
-    padding: 2.25rem 1.75rem 1.75rem;
-    text-align: center;
-  }
-
-  &__actions {
+  // The rest of the catalogue, as a rail rather than more cards: they are
+  // choices, not headline offers, and eleven cards would bury the three.
+  &__rail {
     display: flex;
-    gap: 0.75rem;
-    justify-content: center;
     flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+
+  &__eco {
+    background: $primary-light;
+    border-color: #bae6fd;
+    color: $primary-dark;
   }
 }
 
 // =============================
-// Dark Mode — Services
+// Responsive
 // =============================
-:root.dark-mode {
-  .cl-services__icon {
-    background: rgba(56, 189, 248, 0.1);
-    i {
-      color: #38bdf8;
-    }
-  }
-
-  .cl-services__ribbon {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.08);
-    border-color: rgba(56, 189, 248, 0.25);
-  }
-
-  .cl-services__nav-arrow i {
-    color: #38bdf8;
-  }
-
-  .cl-services__card:hover {
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
-  }
-
-  .cl-services__teasers::after {
-    background: linear-gradient(180deg, transparent 0%, var(--surface-ground) 90%);
+@media (max-width: 1024px) {
+  .cl-services {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-// =============================
-// Responsive — Services
-// =============================
 @media (max-width: 768px) {
   .cl-services {
     grid-template-columns: 1fr;
-  }
-  .cl-services__teasers {
-    grid-template-columns: 1fr;
-    max-height: 80px;
+
+    &__head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    &__card {
+      border-radius: 2rem;
+      padding: 1.5rem;
+    }
   }
 }
 
-// The disc sits BEHIND the character rather than clipping it: a round container
-// with overflow:hidden cut the feet and the vacuum off. The tiles are already
-// normalised to one canvas, so a single height renders all three at the same
-// size. -> agents/knowledge/design-language.md#27-the-mascot
-.cl-services__disc {
-  position: relative;
-  height: 11rem;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0.375rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 9.375rem;
-    height: 9.375rem;
-    border-radius: 999px;
-    background: $primary-light;
+// =============================
+// Dark Mode
+// =============================
+:root.dark-mode {
+  .cl-services__card {
+    background: rgba(56, 189, 248, 0.04);
+    border-color: rgba(56, 189, 248, 0.2);
   }
 
-  img {
-    position: relative;
-    z-index: 1;
-    height: 9.875rem;
-    width: auto;
-    display: block;
+  .cl-services__eco {
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #bae6fd;
   }
 }

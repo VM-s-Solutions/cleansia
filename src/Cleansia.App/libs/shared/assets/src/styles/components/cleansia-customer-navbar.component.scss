@@ -605,3 +605,117 @@ body:has(.cleansia-dev-banner) {
     }
   }
 }
+
+// =============================================================================
+// The approved artboard's floating pill
+// =============================================================================
+// The design draws the bar as a white pill inset from the page edges, not a
+// full-bleed band: it sits ON the hero's gradient rather than cutting a white
+// stripe across it. Values from the artboard — margin 0 40px, radius 999,
+// padding 10px 12px 10px 30px.
+.customer-navbar {
+  background: transparent;
+  box-shadow: none;
+  height: auto;
+  padding: 14px 0;
+
+  &__inner {
+    margin: 0 40px;
+    max-width: none;
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 10px 12px 10px 30px;
+    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+    height: auto;
+  }
+
+  &__center {
+    gap: 22px;
+    flex: 0 1 auto;
+  }
+
+  &__link {
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    padding: 0;
+    border: 0;
+
+    &:hover,
+    &--active {
+      color: #0284c7;
+    }
+  }
+
+  &__right {
+    gap: 14px;
+  }
+
+  &__divider {
+    width: 1px;
+    height: 26px;
+    background: #e2e8f0;
+    display: block;
+  }
+
+  &__signin {
+    font-size: 15px;
+    font-weight: 700;
+    color: #64748b;
+    text-decoration: none;
+
+    &:hover {
+      color: #0284c7;
+    }
+  }
+
+  // The one primary action on the bar, at the design's small size.
+  &__cta {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  // Icon buttons match the artboard's 44px circles.
+  &__icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #0369a1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease;
+
+    &:hover {
+      border-color: #7dd3fc;
+      background: #f0f9ff;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .customer-navbar__inner {
+    margin: 0 16px;
+    padding: 8px 10px 8px 18px;
+  }
+}
+
+:root.dark-mode .customer-navbar {
+  &__inner {
+    background: var(--surface-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  &__link {
+    color: #cbd5e1;
+  }
+
+  &__icon-btn {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.3);
+    color: #7dd3fc;
+  }
+}

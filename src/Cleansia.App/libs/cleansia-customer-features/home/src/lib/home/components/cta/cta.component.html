@@ -10,7 +10,7 @@
   navigation, and an offer buried under it is an offer nobody reads.
 -->
 <section class="cl-cta" id="cta">
-  <cleansia-foam-edge class="cl-foam" [fill]="'#ffffff'" />
+  <cleansia-foam-edge class="cl-foam" [fill]="'var(--cl-foam)'" />
 
   <div class="cl-cta__inner">
     <div class="cl-cta__card cl-lift animate-on-scroll">
@@ -54,7 +54,7 @@
             [placeholder]="'pages.home.cta.promo_placeholder' | translate"
             [attr.aria-label]="'pages.home.cta.promo_title' | translate"
           />
-          <button type="submit" class="cl-btn cl-cta__send" [disabled]="promo.isSending()">
+          <button type="submit" class="cl-btn cl-btn--compact cl-cta__send" [disabled]="promo.isSending()">
             {{ 'pages.home.cta.promo_button' | translate }}
           </button>
         </div>

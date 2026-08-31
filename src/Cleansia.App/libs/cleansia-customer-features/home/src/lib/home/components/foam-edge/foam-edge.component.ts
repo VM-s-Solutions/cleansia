@@ -19,7 +19,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class FoamEdgeComponent {
   /** Colour the scallops are cut out of — the section the edge leads into. */
-  readonly fill = input<string>('var(--surface-card)');
+  readonly fill = input<string>('var(--cl-foam, var(--surface-card))');
 
   /** Scallops point up rather than down. */
   readonly flipped = input<boolean>(false);

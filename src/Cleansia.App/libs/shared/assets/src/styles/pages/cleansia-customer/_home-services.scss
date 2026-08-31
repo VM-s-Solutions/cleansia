@@ -10,32 +10,32 @@
 // white, padding 30/32, price 26px Poppins. -> _home-design.scss
 
 .cl-section--services {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 64px;
+  padding-bottom: 64px;
 }
 
 .cl-services {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-  margin-top: 1.625rem;
+  gap: 20px;
+  margin-top: 26px;
 
   &__head {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1.875rem;
+    gap: 30px;
   }
 
   &__lead {
-    margin: 0.625rem 0 0;
+    margin: 10px 0 0;
   }
 
   &__card {
-    background: $white;
-    border: 1px solid $primary-light;
-    border-radius: 2.5rem;
-    padding: 1.875rem 2rem;
+    background: var(--cl-surface);
+    border: 1px solid var(--cl-border-tint);
+    border-radius: 40px;
+    padding: 30px 32px;
     text-align: center;
     text-decoration: none;
     display: block;
@@ -54,20 +54,20 @@
   }
 
   &__name {
-    margin-top: 1.125rem;
+    margin-top: 18px;
   }
 
   &__desc {
-    font-size: 1rem;
-    margin: 0.5rem 0 0;
+    font-size: 16px;
+    margin: 8px 0 0;
   }
 
   &__price {
     font-family: $font-heading;
     font-weight: 700;
-    font-size: 1.625rem;
+    font-size: 26px;
     color: $primary;
-    margin-top: 0.875rem;
+    margin-top: 14px;
   }
 
   // The rest of the catalogue, as a rail rather than more cards: they are
@@ -81,15 +81,15 @@
 
     display: flex;
     flex-wrap: wrap;
-    gap: 0.625rem;
-    margin-top: 1rem;
+    gap: 10px;
+    margin-top: 16px;
     justify-content: center;
   }
 
   &__eco {
-    background: $primary-light;
+    background: var(--cl-tint-strong);
     border-color: #bae6fd;
-    color: $primary-dark;
+    color: var(--cl-heading);
   }
 }
 
@@ -109,28 +109,13 @@
     &__head {
       flex-direction: column;
       align-items: flex-start;
-      gap: 1rem;
+      gap: 16px;
     }
 
     &__card {
-      border-radius: 2rem;
-      padding: 1.5rem;
+      border-radius: 32px;
+      padding: 24px;
     }
   }
 }
 
-// =============================
-// Dark Mode
-// =============================
-:root.dark-mode {
-  .cl-services__card {
-    background: rgba(56, 189, 248, 0.04);
-    border-color: rgba(56, 189, 248, 0.2);
-  }
-
-  .cl-services__eco {
-    background: rgba(56, 189, 248, 0.14);
-    border-color: rgba(56, 189, 248, 0.35);
-    color: #bae6fd;
-  }
-}

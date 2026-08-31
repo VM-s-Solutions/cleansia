@@ -42,6 +42,14 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   readonly totalPrice = computed(() => this._quote()?.totalPrice ?? null);
 
   /**
+   * The artboard shows "2 uklízeči · odhad 4 hodiny" under the price. We cannot:
+   * `QuoteOrderResponse` carries neither a crew size nor a duration — those live
+   * on the order DTO, not the quote — and a number invented here would be the
+   * kind of unprovable claim T-0670 stripped off this page. Omitted until the
+   * quote endpoint returns them.
+   */
+
+  /**
    * Everything the visitor chose here, in the shape the order wizard reads.
    *
    * Without this the Continue button was a bare `routerLink="/order"`: the

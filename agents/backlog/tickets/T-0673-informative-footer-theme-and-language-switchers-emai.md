@@ -90,5 +90,42 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   cleaner, Careers and Cookie settings. They render at the right position in the right column, in a
   muted tone, rather than linking to a 404. Creating those pages is product work, not this ticket.
 
+- 2026-08-31 - REOPENED again, then measured rather than eyeballed. A geometry
+  extractor now dumps every element's box and computed styles from both the
+  artboard render and the live page, and the two are diffed numerically. That
+  found what looking could not:
+
+  **`html { font-size: 14px }`.** Every token I had written in `rem` rendered at
+  87.5 % of the artboard: a 58px display heading came out at 51, 38px at 33, 17px
+  at 15. The whole page was one eighth too small, in every dimension that used a
+  rem. All home tokens and partials are px now, because the artboard is px.
+
+  **The content column was 1200, not 1312.** `$max-width` is 1200; the artboard
+  is drawn on 1440 with 64px gutters. Every section was 112px narrower than the
+  design, which is what read as "misaligned" — the grids were right, the frame
+  was not. A `$home-width: 1312px` now carries it, kept separate so the wizard,
+  catalogue, legal and tracking pages stay where they were designed.
+
+  **`.cl-section` gutters were `2rem`** — 28px against the 14px root, not the
+  artboard's 64.
+
+  Also fixed: the navbar sat on white because the shell's 64px spacer no longer
+  matched the 96px bar, so the hero could not run under it; the FAQ action was a
+  full-width `cleansia-button` where the artboard has a compact pill; the Plus
+  perks reflowed to 3+1 once the card reached its real width; the gallery had no
+  top foam edge; `text-wrap: balance` was turning two-line card headings into
+  three, so it is limited to the display sizes the artboard hand-breaks.
+
+- 2026-08-31 - owner asks, done: the cookie row in the footer is a real control
+  that reopens the consent panel on its settings tab (a `CookieConsentService`
+  the banner watches, since the banner hides itself once a choice is stored);
+  the FAQ contact and promo send actions are 40px rather than 56px. The hero,
+  CTA, quote and Plus actions stay at the artboard's 56px — "a few buttons" was
+  read as the ones sitting beside a field or inside a column, and the four that
+  carry the page are the artboard's own size. Say if that reading is wrong.
+
+  Cursor audit: every interactive element reports `pointer`. The two that do not
+  are correct — a static price chip and a text input.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

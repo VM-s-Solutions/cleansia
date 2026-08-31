@@ -13,11 +13,11 @@
 // instead of three claims and a footnote. The artboard gives the grid 28px of
 // air under the lead and the rail another 20px under the cards.
 .cl-section--rules {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 64px;
+  padding-bottom: 64px;
 
   .cl-section__header {
-    margin-bottom: 1.75rem;
+    margin-bottom: 28px;
   }
 
   .cl-section__desc {
@@ -33,25 +33,30 @@
   // wide cards plus one orphan at some widths, which is not a layout anyone
   // chose.
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.125rem;
+  gap: 18px;
 
+  // On the filled third card everything is white; the label was a muted grey
+  // inherited from .cl-lbl and scored 3.09 on that blue.
   &__card {
-    background: $primary-lighter;
-    border: 1px solid $primary-light;
-    border-radius: 2.25rem;
-    padding: 1.875rem 2rem;
+    background: var(--cl-tint);
+    border: 1px solid var(--cl-border-tint);
+    border-radius: 36px;
+    padding: 30px 32px;
 
     &--tinted {
-      background: $primary-light;
+      background: var(--cl-tint-strong);
       border-color: #bae6fd;
     }
 
+    // Sky700 rather than Sky600: the 12px label above the value is small text,
+    // and white on Sky600 is 4.0 against a 4.5 floor. Same hue family, one step
+    // deeper, and the card still reads as the filled one of the three.
     &--solid {
-      background: $primary;
-      border-color: $primary;
+      background: $primary-dark;
+      border-color: $primary-dark;
 
       .cl-rules__label {
-        color: #bae6fd;
+        color: #ffffff;
       }
 
       .cl-rules__value,
@@ -63,28 +68,28 @@
 
   &__label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: $text-muted;
+    color: var(--cl-heading);
   }
 
   &__value {
     font-family: $font-heading;
-    font-size: 1.875rem;
+    font-size: 30px;
     font-weight: 700;
     line-height: 1.14;
     letter-spacing: -0.7px;
-    color: $primary-dark;
-    margin: 0.5rem 0 0;
+    color: var(--cl-heading);
+    margin: 8px 0 0;
   }
 
   &__desc {
-    font-size: 1rem;
+    font-size: 16px;
     line-height: 1.65;
-    color: $text-body;
-    margin: 0.625rem 0 0;
+    color: var(--cl-body);
+    margin: 10px 0 0;
   }
 
   // the three flat facts under the cards
@@ -92,8 +97,8 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1.25rem;
-    margin: 1.25rem 0 0;
+    gap: 20px;
+    margin: 20px 0 0;
     padding: 0;
     list-style: none;
 
@@ -102,22 +107,22 @@
     li {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.9375rem;
-      color: $text-body;
+      gap: 6px;
+      font-size: 15px;
+      color: var(--cl-body);
 
       & + li::before {
         content: '';
         width: 1px;
         height: 14px;
         background: $border;
-        margin-right: 0.75rem;
+        margin-right: 12px;
       }
     }
 
     strong {
       font-weight: 700;
-      color: $text-dark;
+      color: var(--cl-body);
       font-variant-numeric: tabular-nums;
     }
   }

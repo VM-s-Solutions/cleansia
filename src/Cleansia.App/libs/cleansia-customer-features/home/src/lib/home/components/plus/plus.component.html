@@ -13,13 +13,9 @@
         </ul>
 
         <div class="cl-plus__actions">
-          <cleansia-button
-            routerLink="/membership/subscribe"
-            appearance="brand"
-            buttonSize="large"
-            className="cl-plus__cta"
-            [label]="'pages.home.plus.cta' | translate"
-          />
+          <a class="cl-btn cl-btn--inverse cl-plus__cta" routerLink="/membership/subscribe">
+            {{ 'pages.home.plus.cta' | translate }}
+          </a>
           <span class="cl-plus__yearly">{{ 'pages.home.plus.yearly' | translate }}</span>
         </div>
       </div>

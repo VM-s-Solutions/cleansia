@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { QuickQuoteFacade } from './quick-quote.facade';
 import { PropertySizePreset } from './property-size-presets';
-import {
-  CleansiaButtonComponent,
-  CleansiaTitleComponent,
-} from '@cleansia/components';
 
 /** A service the visitor can price, as the home page already loads them. */
 export interface QuickQuoteService {
@@ -26,7 +23,7 @@ export interface QuickQuoteService {
   templateUrl: './quick-quote.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, CleansiaButtonComponent, CleansiaTitleComponent],
+  imports: [TranslatePipe, RouterModule],
   providers: [QuickQuoteFacade],
 })
 export class QuickQuoteComponent implements OnInit {

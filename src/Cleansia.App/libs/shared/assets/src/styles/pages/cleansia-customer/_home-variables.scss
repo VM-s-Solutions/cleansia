@@ -32,3 +32,10 @@ $radius: 0.75rem;
 $radius-lg: 1rem;
 $radius-xl: 1rem;
 $max-width: 1200px;
+
+// The home page is drawn on a 1440 canvas with 64px gutters, so its content is
+// 1312 wide — not 1200. Every section was 112px narrower than the artboard,
+// which is what read as "misaligned": the grids were right, the frame was not.
+// Kept separate from $max-width so the order wizard, catalogue, legal pages and
+// tracking page stay at the width they were designed against.
+$home-width: 1312px;

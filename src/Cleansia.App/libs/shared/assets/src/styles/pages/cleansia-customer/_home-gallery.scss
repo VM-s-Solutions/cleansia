@@ -6,9 +6,9 @@
 // The artboard gives this section a tinted ground with a foam edge above and
 // below, so the photographs sit on colour rather than floating on the page.
 .cl-section--gallery {
-  background: $primary-lighter;
-  padding-top: 1.25rem;
-  padding-bottom: 3.5rem;
+  background: var(--cl-tint);
+  padding-top: 20px;
+  padding-bottom: 56px;
 }
 
 .cl-gallery {
@@ -17,14 +17,14 @@
   // two rows rather than being cut to two — the photographs are real and there
   // is no reason to throw half of them away for a column count.
   grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  gap: 32px;
 
   // Each pair is a white card with the photograph inset, not a bare image: the
   // 14px frame is what separates two sliders sitting side by side.
   &__item {
-    background: $white;
-    border-radius: 2.25rem;
-    padding: 0.875rem;
+    background: var(--cl-surface);
+    border-radius: 36px;
+    padding: 14px;
     box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
   }
 
@@ -32,18 +32,18 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 1rem;
-    margin: 0.875rem 0.5rem 0.25rem;
+    gap: 16px;
+    margin: 14px 8px 4px;
     font-family: $font-heading;
-    font-size: 0.95rem;
+    font-size: 15px;
     font-weight: 600;
-    color: $primary-dark;
+    color: var(--cl-heading);
   }
 }
 
 .cl-slider {
   position: relative;
-  border-radius: 1.5rem; // the photograph's own radius inside the card
+  border-radius: 24px; // the photograph's own radius inside the card
   overflow: hidden;
   border: 1px solid var(--surface-border);
   cursor: ew-resize;
@@ -87,7 +87,7 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: $white;
+    background: var(--cl-surface);
     z-index: 3;
     transform: translateX(-50%);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
@@ -109,7 +109,7 @@
     justify-content: center;
     cursor: ew-resize;
     i {
-      font-size: 1rem;
+      font-size: 16px;
       color: $white;
     }
   }
@@ -119,24 +119,24 @@
   // artboard's navy and blue — rather than red and green.
   &__label {
     position: absolute;
-    top: 0.875rem;
+    top: 14px;
     z-index: 4;
-    padding: 0.25rem 0.7rem;
-    border-radius: 2rem;
+    padding: 4px 11px;
+    border-radius: 32px;
     font-family: $font-heading;
-    font-size: 0.65rem;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: $white;
 
     &--before {
-      left: 0.875rem;
+      left: 14px;
       background: rgba(12, 74, 110, 0.8);
     }
     &--after {
-      right: 0.875rem;
-      background: $primary;
+      right: 14px;
+      background: $primary-dark;
     }
   }
 }
@@ -153,7 +153,7 @@
 @media (max-width: 768px) {
   .cl-gallery {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 32px;
   }
 }
 
@@ -166,7 +166,23 @@
 
   &__lead {
     text-align: center;
-    margin: 0.625rem auto 0;
+    margin: 10px auto 0;
     max-width: 46em;
+  }
+}
+
+// The top edge is drawn above the section's own padding, so it must escape it.
+.cl-section--gallery {
+  padding-top: 0;
+
+  > .cl-foam--top {
+    display: block;
+    width: 100%;
+    margin: 0 -64px;
+    width: calc(100% + 128px);
+  }
+
+  > .cl-section__inner {
+    padding-top: 20px;
   }
 }

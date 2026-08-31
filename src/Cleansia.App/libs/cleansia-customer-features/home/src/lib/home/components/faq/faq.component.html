@@ -5,13 +5,10 @@
         <span class="cl-section__badge">{{ 'pages.home.faq.badge' | translate }}</span>
         <h2 class="cl-d2 cl-faq-layout__title">{{ 'pages.home.faq.title' | translate }}</h2>
         <p class="cl-faq-layout__desc">{{ 'pages.home.faq.desc' | translate }}</p>
-        <cleansia-button
-          href="mailto:info&#64;cleansia.cz"
-          appearance="brand"
-          icon="pi pi-envelope"
-          className="cl-faq-layout__cta"
-          [label]="'pages.home.faq.contact_button' | translate"
-        />
+        <a class="cl-btn cl-btn--compact cl-faq-layout__cta" href="mailto:info&#64;cleansia.cz">
+          <i class="pi pi-envelope" aria-hidden="true"></i>
+          {{ 'pages.home.faq.contact_button' | translate }}
+        </a>
       </div>
       <div class="cl-faq-layout__right">
         <p-accordion [value]="0">

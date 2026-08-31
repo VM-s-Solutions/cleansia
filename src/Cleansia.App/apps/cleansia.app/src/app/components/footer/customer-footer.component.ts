@@ -6,6 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
+  CookieConsentService,
 } from '@cleansia/components';
 
 @Component({
@@ -18,6 +19,7 @@ import {
 export class CleansiaCustomerFooterComponent {
   private readonly authService = inject(CustomerAuthService);
   private readonly themeService = inject(ThemeService);
+  private readonly cookieConsent = inject(CookieConsentService);
 
   // Same source of truth as the header control, so the two never disagree.
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
@@ -42,6 +44,11 @@ export class CleansiaCustomerFooterComponent {
   // Reactive on the service signal so the footer updates immediately on
   // sign-in/sign-out without remount.
   readonly isAnonymous = computed(() => !this.authService.isLoggedIn());
+
+  /** Reopens the cookie banner on its settings panel. */
+  openCookieSettings(): void {
+    this.cookieConsent.openSettings();
+  }
 
   toggleTheme(): void {
     this.themeService.toggleTheme();

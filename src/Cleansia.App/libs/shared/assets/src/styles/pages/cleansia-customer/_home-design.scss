@@ -11,31 +11,96 @@
 //
 // Type is Poppins for display and Nunito for prose, which is what the mobile
 // apps ship as byte-identical TTFs. Headings are Sky700 #0369A1 throughout.
+//
+// EVERY SIZE HERE IS IN PX, DELIBERATELY. `html { font-size: 14px }` in
+// common/font.scss, so a rem here renders at 87.5 % of the artboard's value —
+// a 58px display heading came out at 51px, and every size on the page was
+// quietly one eighth too small. The artboard is specified in px; matching it
+// means using px.
+
+
+// ---- The palette, as tokens that flip ---------------------------------------
+// Dark mode was broken because every colour below used to be a SCSS variable
+// baked at build time: Sky700 headings scored 2.5:1 on a dark ground, and text
+// whose colour matched its card scored 1.0 — invisible. A SCSS variable cannot
+// respond to a theme; a custom property can, so the palette is declared once
+// here and only the values are restated for dark.
+:root {
+  --cl-heading: #{$primary-dark};
+  --cl-body: #{$text-body};
+  --cl-muted: #{$text-muted};
+  --cl-faint: #{$text-light};
+
+  --cl-surface: #{$white};
+  --cl-tint: #{$primary-lighter};
+  --cl-tint-strong: #{$primary-light};
+
+  --cl-border: #{$border};
+  --cl-border-tint: #{$primary-light};
+  --cl-rule: rgba(3, 105, 161, 0.16);
+
+  --cl-accent: #{$primary};
+  --cl-accent-soft: #{$primary-accent};
+
+  // The hero's radial ground, and the fill the foam edge cuts INTO the section
+  // below it. The foam is a shape, so its fill must equal whatever the next
+  // section is painted with or a hard band appears between them.
+  --cl-hero-1: #bae6fd;
+  --cl-hero-2: #{$primary-light};
+  --cl-hero-3: #{$primary-lighter};
+  --cl-foam: #{$white};
+}
+
+:root.dark-mode {
+  // Sky300 rather than Sky700: the same hue family, moved to where it can be
+  // read on a dark ground.
+  --cl-heading: #7dd3fc;
+  --cl-body: #cbd5e1;
+  --cl-muted: #94a3b8;
+  --cl-faint: #7c8899;
+
+  --cl-surface: #0f1b2d;
+  --cl-tint: rgba(56, 189, 248, 0.06);
+  --cl-tint-strong: rgba(56, 189, 248, 0.12);
+
+  --cl-border: rgba(148, 163, 184, 0.22);
+  --cl-border-tint: rgba(56, 189, 248, 0.24);
+  --cl-rule: rgba(125, 211, 252, 0.22);
+
+  --cl-accent: #38bdf8;
+  --cl-accent-soft: #7dd3fc;
+
+  --cl-hero-1: #12304d;
+  --cl-hero-2: #0e2439;
+  --cl-hero-3: #0b1626;
+  --cl-foam: #0b1220;
+}
 
 // ---- Type scale -------------------------------------------------------------
 %cl-display {
   font-family: $font-heading;
-  color: $primary-dark; // Sky700
+  color: var(--cl-heading);
   margin: 0;
-  // The artboard breaks its headings by hand ("Domov, který / voní čistotou").
-  // `balance` reproduces that without a hard <br> in a translated string, and it
-  // keeps doing the right thing in the other four locales, where the same break
-  // point would be wrong.
-  text-wrap: balance;
 }
 
+// `balance` only on the display sizes: the artboard hand-breaks those, and it
+// reproduces the break without a <br> inside a translated string. On the card
+// headings it makes a two-line heading into three, because it evens lines that
+// were already the right length.
 .cl-d1 {
   @extend %cl-display;
+  text-wrap: balance;
   font-weight: 700;
-  font-size: clamp(2.4rem, 4vw, 3.625rem); // 58px at 1440
+  font-size: clamp(34px, 4.03vw, 58px); // 58px at 1440
   line-height: 1.08;
   letter-spacing: -1.6px;
 }
 
 .cl-d2 {
   @extend %cl-display;
+  text-wrap: balance;
   font-weight: 700;
-  font-size: clamp(1.9rem, 2.65vw, 2.375rem); // 38px
+  font-size: clamp(28px, 2.64vw, 38px); // 38px at 1440
   line-height: 1.16;
   letter-spacing: -0.9px;
 }
@@ -43,7 +108,7 @@
 .cl-h3 {
   @extend %cl-display;
   font-weight: 600;
-  font-size: 1.5rem; // 24px
+  font-size: 24px;
   line-height: 1.24;
   letter-spacing: -0.35px;
 }
@@ -51,29 +116,29 @@
 .cl-h4 {
   @extend %cl-display;
   font-weight: 600;
-  font-size: 1.125rem; // 18px
+  font-size: 18px;
   line-height: 1.3;
   letter-spacing: -0.1px;
 }
 
 .cl-body {
-  font-size: 1.0625rem; // 17px
+  font-size: 17px;
   line-height: 1.72;
-  color: $text-body;
+  color: var(--cl-body);
 }
 
 .cl-muted {
-  font-size: 0.875rem; // 14px
+  font-size: 14px;
   line-height: 1.6;
-  color: $text-muted;
+  color: var(--cl-muted);
 }
 
 .cl-lbl {
-  font-size: 0.75rem; // 12px
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: $text-muted;
+  color: var(--cl-muted);
 }
 
 .cl-num {
@@ -94,7 +159,7 @@
   color: $white;
   font-family: $font-body;
   font-weight: 800;
-  font-size: 1.0625rem;
+  font-size: 17px;
   text-decoration: none;
   border: 0;
   cursor: pointer;
@@ -121,7 +186,15 @@
   &--small {
     min-height: 48px;
     padding: 0 24px;
-    font-size: 1rem;
+    font-size: 16px;
+  }
+
+  // Owner ruling 2026-08-31: 56px is too tall where the action sits beside a
+  // field or inside a column rather than under a headline.
+  &--compact {
+    min-height: 40px;
+    padding: 0 22px;
+    font-size: 15px;
   }
 
   // On the two gradient bands the fill inverts, or it vanishes into the band.
@@ -139,21 +212,22 @@
 // The secondary action is a weighted underline, not an outlined pill.
 .cl-link {
   display: inline-block;
-  font-size: 1.0625rem;
+  cursor: pointer;
+  font-size: 17px;
   font-weight: 800;
-  color: $primary-dark;
+  color: var(--cl-heading);
   text-decoration: none;
-  border-bottom: 2px solid $primary-accent;
+  border-bottom: 2px solid var(--cl-accent-soft);
   padding-bottom: 2px;
   transition: border-color 0.16s ease, color 0.16s ease;
 
   &:hover {
-    border-color: $primary;
-    color: $primary-darker;
+    border-color: var(--cl-accent);
+    color: var(--cl-heading);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--cl-accent);
     outline-offset: 3px;
   }
 }
@@ -165,29 +239,31 @@
   min-height: 44px;
   padding: 0 18px;
   border-radius: 999px;
-  background: $white;
-  border: 1px solid $border;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
   font-family: $font-body;
-  font-size: 0.9375rem;
+  font-size: 15px;
   font-weight: 700;
-  color: $text-body;
+  color: var(--cl-body);
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease;
 
   &:hover {
-    border-color: $primary-accent;
-    background: $primary-lighter;
+    border-color: var(--cl-accent-soft);
+    background: var(--cl-tint);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--cl-accent);
     outline-offset: 2px;
   }
 
+  // Sky700 rather than Sky600 behind white: at 15px the lighter blue scored
+  // 4.1 against white, under the 4.5 a label of this size needs.
   &--on,
   &--on:hover {
-    background: $primary;
-    border-color: $primary;
+    background: $primary-dark;
+    border-color: $primary-dark;
     color: $white;
   }
 
@@ -201,8 +277,8 @@
     cursor: default;
 
     &:hover {
-      border-color: $border;
-      background: $white;
+      border-color: var(--cl-border);
+      background: var(--cl-surface);
     }
   }
 }
@@ -223,10 +299,10 @@
   gap: 9px;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid rgba(3, 105, 161, 0.16);
-  font-size: 0.9375rem;
+  border-top: 1px solid var(--cl-rule);
+  font-size: 15px;
   font-weight: 700;
-  color: $primary-dark;
+  color: var(--cl-heading);
 }
 
 // ---- Mascot plate -----------------------------------------------------------
@@ -250,7 +326,7 @@
     width: 150px;
     height: 150px;
     border-radius: 999px;
-    background: $primary-light;
+    background: var(--cl-tint-strong);
   }
 }
 

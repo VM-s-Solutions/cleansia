@@ -6,6 +6,7 @@ import {
   HostListener,
   inject,
 } from '@angular/core';
+import { FoamEdgeComponent } from '../foam-edge/foam-edge.component';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -13,7 +14,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   templateUrl: './gallery.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, FoamEdgeComponent],
 })
 export class GalleryComponent {
   private readonly el = inject(ElementRef);

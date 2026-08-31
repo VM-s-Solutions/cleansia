@@ -1,4 +1,10 @@
 <section class="cl-section cl-section--gallery" id="before-after">
+  <!--
+    The artboard cuts a scalloped edge into the TOP of this band, so the tinted
+    section reads as water the page steps down into. Flipped, because the
+    component draws the curve for a bottom edge.
+  -->
+  <cleansia-foam-edge class="cl-foam cl-foam--top" [flipped]="true" [fill]="'var(--cl-foam)'" />
   <div class="cl-section__inner">
     <div class="cl-section__header animate-on-scroll">
       <h2 class="cl-d2 cl-gallery__title">{{ 'pages.home.before_after.title' | translate }}</h2>

@@ -95,5 +95,47 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   line separated by hairlines rather than pills, and the Plus perks use mid-dots. Checked against
   `ref-shots/05-rules.png` and `06-plus.png` rendered from the artboard itself.
 
+- 2026-08-31 - REOPENED again, then measured rather than eyeballed. A geometry
+  extractor now dumps every element's box and computed styles from both the
+  artboard render and the live page, and the two are diffed numerically. That
+  found what looking could not:
+
+  **`html { font-size: 14px }`.** Every token I had written in `rem` rendered at
+  87.5 % of the artboard: a 58px display heading came out at 51, 38px at 33, 17px
+  at 15. The whole page was one eighth too small, in every dimension that used a
+  rem. All home tokens and partials are px now, because the artboard is px.
+
+  **The content column was 1200, not 1312.** `$max-width` is 1200; the artboard
+  is drawn on 1440 with 64px gutters. Every section was 112px narrower than the
+  design, which is what read as "misaligned" — the grids were right, the frame
+  was not. A `$home-width: 1312px` now carries it, kept separate so the wizard,
+  catalogue, legal and tracking pages stay where they were designed.
+
+  **`.cl-section` gutters were `2rem`** — 28px against the 14px root, not the
+  artboard's 64.
+
+  Also fixed: the navbar sat on white because the shell's 64px spacer no longer
+  matched the 96px bar, so the hero could not run under it; the FAQ action was a
+  full-width `cleansia-button` where the artboard has a compact pill; the Plus
+  perks reflowed to 3+1 once the card reached its real width; the gallery had no
+  top foam edge; `text-wrap: balance` was turning two-line card headings into
+  three, so it is limited to the display sizes the artboard hand-breaks.
+
+- 2026-08-31 - dark mode analysed before being touched, on the owner's
+  instruction. It was broken structurally, not cosmetically: every colour in the
+  home tokens was a SCSS variable baked at build time, so Sky700 headings scored
+  2.5:1 on a dark ground and several nodes scored 1.0 — text the same colour as
+  its own card. The hero's gradient and both foam edges stayed light, leaving
+  bright slabs mid-page.
+
+  The palette is now CSS custom properties declared once and restated for dark,
+  so a theme can actually move them. A contrast probe that composites alpha and
+  skips gradients (an earlier version read translucent tints as opaque and lied)
+  reports **0 nodes below their WCAG floor in either theme**, down from 30.
+
+  One deliberate change of value: the filled rules card is Sky700 rather than
+  Sky600. Its 12px label is small text, and white on Sky600 is 4.0 against a 4.5
+  floor. Same hue family, one step deeper.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

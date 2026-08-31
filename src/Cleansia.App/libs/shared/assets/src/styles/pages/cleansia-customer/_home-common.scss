@@ -129,12 +129,14 @@ cleansia-cta {
 // Section shared
 // =============================
 .cl-section {
-  padding: 5.5rem 2rem;
+  // 64px gutters, as the artboard is drawn. 2rem resolved to 32px against the
+  // 14px root and pulled every section in by another 32 a side.
+  padding: 64px 64px;
   position: relative;
   z-index: 1;
 
   &__inner {
-    max-width: $max-width;
+    max-width: $home-width;
     margin: 0 auto;
     width: 100%;
   }

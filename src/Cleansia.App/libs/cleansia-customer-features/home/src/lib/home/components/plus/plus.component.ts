@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { CleansiaButtonComponent } from '@cleansia/components';
 
 /**
  * Cleansia Plus, stated with the figures the seed actually pins:
@@ -15,6 +15,6 @@ import { CleansiaButtonComponent } from '@cleansia/components';
   templateUrl: './plus.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, CleansiaButtonComponent],
+  imports: [TranslatePipe, RouterModule],
 })
 export class PlusComponent {}

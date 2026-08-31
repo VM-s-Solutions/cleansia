@@ -11,35 +11,35 @@
 // padding 30/32. -> _home-design.scss
 
 .cl-section--promises {
-  padding-top: 3.5rem;
-  padding-bottom: 3.5rem;
+  padding-top: 56px;
+  padding-bottom: 56px;
 }
 
 .cl-promises {
   display: grid;
   grid-template-columns: 1.16fr 0.92fr 0.92fr;
-  gap: 1.25rem;
+  gap: 20px;
   align-items: stretch;
-  margin-top: 1.875rem;
+  margin-top: 30px;
 
   &__title {
     text-align: center;
   }
 
   &__card {
-    background: $primary-lighter;
-    border-radius: 2.5rem;
-    padding: 1.875rem 2rem;
+    background: var(--cl-tint);
+    border-radius: 40px;
+    padding: 30px 32px;
     display: flex;
     flex-direction: column;
 
     // The lead card is a two-column grid so the mascot stands beside the copy
     // rather than under it, both anchored to the same baseline.
     &--lead {
-      background: $primary-light;
+      background: var(--cl-tint-strong);
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 0.875rem;
+      gap: 14px;
       align-items: end;
     }
   }
@@ -50,22 +50,22 @@
   }
 
   &__label {
-    color: $primary-dark;
+    color: var(--cl-heading);
   }
 
   &__heading {
-    margin-top: 0.625rem;
-    font-size: 1.4375rem; // 23px
+    margin-top: 10px;
+    font-size: 23px; // 23px
 
     // The lead card carries the larger of the two heading sizes.
     &--lead {
-      font-size: 1.6875rem; // 27px
+      font-size: 27px; // 27px
     }
   }
 
   &__desc {
-    font-size: 1rem;
-    margin: 0.625rem 0 0;
+    font-size: 16px;
+    margin: 10px 0 0;
   }
 
   // Pushes the fact line down so the three hairlines align across the row.
@@ -100,8 +100,8 @@
     grid-template-columns: 1fr;
 
     &__card {
-      border-radius: 2rem;
-      padding: 1.5rem 1.5rem;
+      border-radius: 32px;
+      padding: 24px 24px;
     }
 
     // Below this width the mascot would squeeze the copy to a column of two
@@ -113,20 +113,8 @@
     &__mascot {
       height: 132px;
       align-self: center;
-      margin-top: 1rem;
+      margin-top: 16px;
     }
   }
 }
 
-// =============================
-// Dark Mode
-// =============================
-:root.dark-mode {
-  .cl-promises__card {
-    background: rgba(56, 189, 248, 0.06);
-
-    &--lead {
-      background: rgba(56, 189, 248, 0.12);
-    }
-  }
-}

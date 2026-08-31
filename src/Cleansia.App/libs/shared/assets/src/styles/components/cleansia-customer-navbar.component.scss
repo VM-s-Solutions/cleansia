@@ -492,9 +492,11 @@ $primary: #0284c7;
   }
 }
 
-// Spacer to offset fixed navbar
+// Spacer to offset the fixed navbar. 96px, not 64: the bar is now 14px of
+// padding above and below a 68px pill, and a spacer that disagrees with it
+// either overlaps the first section or leaves a gap under it.
 .customer-navbar-spacer {
-  height: 64px;
+  height: 96px;
 }
 
 // =============================

@@ -61,7 +61,11 @@
           }
           <li><a routerLink="/terms">{{ 'pages.home.footer.terms_link' | translate }}</a></li>
           <li><a routerLink="/privacy">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
-          <li><span class="cl-footer__soon">{{ 'pages.home.footer.cookie_settings' | translate }}</span></li>
+          <li>
+            <button type="button" class="cl-footer__linkbtn" (click)="openCookieSettings()">
+              {{ 'pages.home.footer.cookie_settings' | translate }}
+            </button>
+          </li>
         </ul>
       </div>
 

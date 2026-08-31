@@ -58,9 +58,13 @@
 
   &__perks {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 0.5625rem 1.625rem;
-    margin: 1.125rem 0 0;
+    // Two fixed columns. `auto-fit` reflowed to three-plus-one once the card
+    // widened to the artboard's 1312, which reads as a ragged list rather than
+    // as two pairs.
+    grid-template-columns: 1fr 1fr;
+    gap: 9px 26px;
+    margin: 18px 0 0;
+    max-width: 780px;
     padding: 0;
     list-style: none;
 

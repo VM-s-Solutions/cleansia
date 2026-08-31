@@ -71,51 +71,6 @@
 // =============================
 // Dark Mode — FAQ
 // =============================
-:root.dark-mode {
-  .cl-faq-layout {
-    &__desc {
-      color: #94a3b8;
-    }
-  }
-
-  .cl-faq__answer {
-    color: #94a3b8;
-  }
-
-  // Same flat divider list as light mode — no card boxes, text stays on one
-  // left edge (header and answer share PrimeNG's panel padding).
-  .cl-section--faq {
-    .p-accordion {
-      .p-accordionpanel {
-        background: transparent;
-        border: 0;
-        border-bottom: 1px solid #334155;
-        border-radius: 0;
-        margin-bottom: 0;
-
-        &:last-child {
-          border-bottom: 0;
-        }
-      }
-
-      .p-accordionheader {
-        background: transparent;
-        color: #e2e8f0;
-        text-align: left;
-
-        &:hover {
-          background: transparent;
-          color: #7dd3fc;
-        }
-      }
-
-      .p-accordioncontent-content {
-        background: transparent;
-        border: 0;
-      }
-    }
-  }
-}
 
 // =============================
 // Accordion — the artboard's bordered card
@@ -126,16 +81,16 @@
 // things rather than one list.
 .cl-faq-layout__right {
   .p-accordion {
-    border: 1px solid $border;
-    border-radius: 1.5rem;
+    border: 1px solid var(--cl-border);
+    border-radius: 24px;
     overflow: hidden;
-    background: $white;
+    background: var(--cl-surface);
     display: block;
   }
 
   .p-accordionpanel {
     border: 0;
-    border-bottom: 1px solid $border;
+    border-bottom: 1px solid var(--cl-border);
     border-radius: 0;
     background: transparent;
 
@@ -145,34 +100,43 @@
   }
 
   .p-accordionheader {
-    padding: 1.375rem 1.625rem;
+    cursor: pointer;
+    padding: 22px 26px;
     background: transparent;
     border: 0;
     border-radius: 0;
     font-family: $font-heading;
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: 18px;
     line-height: 1.3;
     letter-spacing: -0.1px;
-    color: $primary-dark;
+    color: var(--cl-heading);
 
     &:hover {
-      background: $primary-lighter;
+      background: var(--cl-tint);
     }
   }
 
   // The open question keeps its tint so the eye can find it again.
   .p-accordionpanel-active > .p-accordionheader {
-    background: $primary-lighter;
+    background: var(--cl-tint);
   }
 
   .p-accordioncontent-content {
-    padding: 1.25rem 1.625rem 1.5rem;
+    padding: 20px 26px 24px;
     background: transparent;
     border: 0;
   }
 }
 
 .cl-faq-layout__title {
-  margin-top: 1rem;
+  margin-top: 16px;
+}
+
+// The artboard's contact pill: an envelope beside the label, sized to its text
+// rather than to the column. It was a full-width button, which made the left
+// column read as a form.
+.cl-faq-layout__cta {
+  gap: 10px;
+  margin-top: 22px;
 }

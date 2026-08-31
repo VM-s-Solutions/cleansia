@@ -373,3 +373,17 @@
     }
   }
 }
+
+// A button rendered as an anchor inherits the app's link underline, which made
+// every linked call to action read as body copy with a rule under it. The
+// element is a button; it should not be underlined in any of its renderings.
+a.cleansia-button,
+.cleansia-button > a,
+a.p-button {
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: none;
+  }
+}

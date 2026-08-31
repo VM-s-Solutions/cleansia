@@ -66,5 +66,14 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
   `date_label` and `date_hint` are seeded in all five locales; leaf parity re-verified at 1489 keys
   each, identical sets.
+- 2026-08-31 - REOPENED. The calculator is missing two things the artboard draws:
+  - "Kdy" is one full-width date input; the artboard has TWO boxes side by side, a date and a time
+    window.
+  - The size row has no right-aligned "podle země" note, which is what tells a visitor the options
+    are per-market.
+- 2026-08-31 - done, verified by screenshot. "Kdy" is two boxes, a day and a time, and the time
+  feeds the same `QuoteOrder` call so the express surcharge is judged on the real hour rather than
+  an assumed one. The size row carries the artboard's per-country note.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

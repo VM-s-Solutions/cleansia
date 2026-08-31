@@ -136,3 +136,13 @@
     }
   }
 }
+
+// The artboard marks each perk with a mid-dot, not a check. Four ticks in a row
+// read as a feature comparison; the dots read as a list, which is what it is.
+.cl-plus__perks li {
+  &::before {
+    content: '·';
+    margin-right: 0.4rem;
+    font-weight: 800;
+  }
+}

@@ -17,6 +17,11 @@
   font-family: $font-heading;
   color: $primary-dark; // Sky700
   margin: 0;
+  // The artboard breaks its headings by hand ("Domov, který / voní čistotou").
+  // `balance` reproduces that without a hard <br> in a translated string, and it
+  // keeps doing the right thing in the other four locales, where the same break
+  // point would be wrong.
+  text-wrap: balance;
 }
 
 .cl-d1 {

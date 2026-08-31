@@ -1,88 +1,112 @@
+<!--
+  The informative footer: navy ground, five columns, app badges under the brand.
+
+  Every label the artboard lists is here. Where a destination does not exist yet
+  (there is no About, Careers, Become a cleaner or Cookie-settings page) the row
+  renders as text rather than as a link, so the footer reads as designed without
+  a single entry promising a page that 404s. Those are listed in T-0673.
+-->
 <footer class="cl-footer">
   <div class="cl-footer__body">
     <div class="cl-footer__columns">
       <div class="cl-footer__brand">
-        <div class="cl-footer__brand-logo">
-          <cleansia-brand-name />
-        </div>
+        <!--
+          A wordmark in text, not the logo image: the mark is a blue PNG and
+          cannot be recoloured for the navy ground, and the artboard sets the
+          footer brand as Poppins 700 in white anyway.
+        -->
+        <a class="cl-footer__brand-logo" routerLink="/">Cleansia</a>
         <p class="cl-footer__brand-desc">{{ 'pages.home.footer.description' | translate }}</p>
-        <div class="cl-footer__socials">
-          <a href="https://instagram.com/cleansia.cz" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><i class="pi pi-instagram"></i></a>
-          <a href="https://facebook.com/cleansia" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><i class="pi pi-facebook"></i></a>
+
+        <div class="cl-footer__apps">
+          <span class="cl-footer__app">
+            <i class="pi pi-apple" aria-hidden="true"></i>
+            App Store
+          </span>
+          <span class="cl-footer__app">
+            <i class="pi pi-google" aria-hidden="true"></i>
+            Google Play
+          </span>
         </div>
       </div>
+
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.services_col' | translate }}</h3>
         <ul>
-          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s1.name' | translate }}</a></li>
-          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s2.name' | translate }}</a></li>
-          <li><a routerLink="/services">{{ 'pages.home.fallback_services.s3.name' | translate }}</a></li>
-          <li><a routerLink="/membership">Cleansia Plus</a></li>
+          @for (item of serviceLinks; track item) {
+          <li><a routerLink="/services">{{ item | translate }}</a></li>
+          }
         </ul>
       </div>
+
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.company' | translate }}</h3>
         <ul>
-          <li><a routerLink="/">{{ 'nav.home' | translate }}</a></li>
-          <li><a routerLink="/services">{{ 'nav.services' | translate }}</a></li>
-          <li><a routerLink="/order">{{ 'nav.book_now' | translate }}</a></li>
+          <li><span class="cl-footer__soon">{{ 'pages.home.footer.about' | translate }}</span></li>
+          <li><a routerLink="/" fragment="why-us">{{ 'nav.how_it_works' | translate }}</a></li>
+          <li><a routerLink="/" fragment="services">{{ 'nav.pricing' | translate }}</a></li>
+          <li><a routerLink="/membership">Cleansia Plus</a></li>
+          <li><span class="cl-footer__soon">{{ 'pages.home.footer.become_cleaner' | translate }}</span></li>
+          <li><span class="cl-footer__soon">{{ 'pages.home.footer.careers' | translate }}</span></li>
         </ul>
       </div>
+
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.support' | translate }}</h3>
         <ul>
+          <li><a routerLink="/" fragment="faq">{{ 'pages.home.faq.title' | translate }}</a></li>
+          <li><a routerLink="/disputes">{{ 'pages.home.footer.complaints' | translate }}</a></li>
           @if (isAnonymous()) {
-            <li><a routerLink="/orders/lookup">{{ 'pages.order_lookup.entry_link' | translate }}</a></li>
+          <li><a routerLink="/orders/lookup">{{ 'pages.order_lookup.entry_link' | translate }}</a></li>
           }
-          <li><a routerLink="/gdpr">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
           <li><a routerLink="/terms">{{ 'pages.home.footer.terms_link' | translate }}</a></li>
+          <li><a routerLink="/privacy">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
+          <li><span class="cl-footer__soon">{{ 'pages.home.footer.cookie_settings' | translate }}</span></li>
         </ul>
       </div>
+
       <div class="cl-footer__col">
         <h3 class="cl-footer__col-title">{{ 'pages.home.footer.contacts' | translate }}</h3>
         <div class="cl-footer__col__actions">
           <div class="cl-footer__contact">
-            <i class="pi pi-phone"></i>
-            <a href="tel:+420739788108">+420 739 788 108</a>
-          </div>
-          <div class="cl-footer__contact">
-            <i class="pi pi-envelope"></i>
+            <i class="pi pi-envelope" aria-hidden="true"></i>
             <a href="mailto:info@cleansia.cz">info&#64;cleansia.cz</a>
           </div>
           <div class="cl-footer__contact">
-            <i class="pi pi-map-marker"></i>
+            <i class="pi pi-phone" aria-hidden="true"></i>
+            <a href="tel:+420739788108">+420 739 788 108</a>
+          </div>
+          <div class="cl-footer__contact">
+            <i class="pi pi-map-marker" aria-hidden="true"></i>
             <span>{{ 'pages.home.footer.coverage' | translate }}</span>
           </div>
           <div class="cl-footer__contact">
-            <i class="pi pi-clock"></i>
+            <i class="pi pi-clock" aria-hidden="true"></i>
             <span>{{ 'pages.home.footer.hours_label' | translate }} {{ 'pages.home.footer.hours_value' | translate }}</span>
           </div>
           <p class="cl-footer__registration">{{ 'pages.home.footer.registration' | translate }}</p>
         </div>
       </div>
     </div>
+
     <div class="cl-footer__bottom">
       <span>&copy; {{ currentYear }} Cleansia s.r.o. {{ 'footer.rights' | translate }}</span>
-      <div class="cl-footer__bottom-links">
-        <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
-        <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
-      </div>
+
       <!--
-        The same two controls the header carries behind its settings cog. Both
-        persist to localStorage, so switching here is switching everywhere — a
-        visitor who has scrolled to the bottom should not have to go back up.
+        Language and theme, as chips in the bottom bar. Both persist, and both
+        are the same controls the header carries, so the two cannot disagree.
       -->
       <div class="cl-footer__prefs">
+        <cleansia-language-switcher />
         <button
           type="button"
           class="cl-footer__theme-toggle"
           (click)="toggleTheme()"
           [attr.aria-label]="(isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate"
         >
-          <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+          <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
           {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
         </button>
-        <cleansia-language-switcher />
       </div>
     </div>
   </div>

@@ -70,5 +70,25 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   calls it live, so the condition it was protecting against is gone. The 'no fake success' half does
   hold - success renders only on `result.accepted`. No interface was built to satisfy wording that
   has outlived its reason.
+- 2026-08-31 - REOPENED. The footer is the largest single divergence on the page:
+  - Background is white. The artboard's footer is `#0C4A6E` navy with `#BAE6FD` links.
+  - Four columns, not the artboard's five (`1.5fr 1fr 1fr 1fr 1.1fr`).
+  - No App Store / Google Play badges; the artboard has both under the brand blurb.
+  - The language switcher floats at the top-right of the footer body instead of sitting in the
+    bottom bar beside the theme control, as the artboard draws it.
+  Navbar, also this ticket's territory: the sign-in link reads "Přihlásit se" (artboard: "Přihlásit"),
+  the action reads "Objednat" (artboard: "Objednat úklid"), and there is a person icon the artboard
+  does not have.
+- 2026-08-31 - done, verified by screenshot. The footer is `#0C4A6E` navy with the artboard's five
+  columns, the App Store and Google Play badges, and language plus theme as chips in the bottom bar.
+  The brand is a white wordmark: the logo is a blue raster and cannot be recoloured for a navy
+  ground, which is also why the artboard sets it as type.
+  Navbar: "Přihlásit", "Objednat úklid", and the account control appears only once there is an
+  account.
+
+  REPORTED, not built: the artboard lists four destinations that have no page — About us, Become a
+  cleaner, Careers and Cookie settings. They render at the right position in the right column, in a
+  muted tone, rather than linking to a 404. Creating those pages is product work, not this ticket.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

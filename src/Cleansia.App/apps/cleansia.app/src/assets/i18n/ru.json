@@ -4,7 +4,7 @@
     "services": "Услуги",
     "my_orders": "Мои заказы",
     "orders": "Мои заказы",
-    "book_now": "Заказать",
+    "book_now": "Заказать уборку",
     "login": "Войти",
     "register": "Регистрация",
     "profile": "Профиль",
@@ -24,7 +24,8 @@
     "my_addresses": "Мои адреса",
     "pricing": "Цены",
     "how_it_works": "Как это работает",
-    "plus": "Cleansia Plus"
+    "plus": "Cleansia Plus",
+    "login_short": "Войти"
   },
   "cookies": {
     "title": "Ваша конфиденциальность важна",
@@ -537,7 +538,19 @@
         "hours_value": "08:00–20:00",
         "coverage": "Прага и окрестности до 30 км",
         "registration": "IČO [IČO] · DIČ [DIČ]",
-        "apps": "Скачать приложение"
+        "apps": "Скачать приложение",
+        "svc_home": "Уборка дома",
+        "svc_deep": "Глубокая уборка",
+        "svc_carpet": "Чистка ковров",
+        "svc_upholstery": "Чистка обивки",
+        "svc_bathroom": "Уборка ванной",
+        "svc_windows": "Внутренние окна",
+        "svc_renovation": "После ремонта",
+        "about": "О нас",
+        "become_cleaner": "Стать уборщиком",
+        "careers": "Карьера",
+        "complaints": "Рекламации",
+        "cookie_settings": "Настройки cookies"
       },
       "rules": {
         "badge": "Наши правила",
@@ -585,7 +598,9 @@
         "continue": "Продолжить",
         "pick_service": "Выберите услугу, чтобы увидеть цену",
         "loading": "Считаем…",
-        "error": "Сейчас не удалось рассчитать цену. Попробуйте ещё раз."
+        "error": "Сейчас не удалось рассчитать цену. Попробуйте ещё раз.",
+        "size_note": "по стране",
+        "time_label": "Время"
       }
     },
     "profile": {

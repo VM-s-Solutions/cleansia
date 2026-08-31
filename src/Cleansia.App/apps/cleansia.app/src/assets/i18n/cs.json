@@ -4,7 +4,7 @@
     "services": "Služby",
     "my_orders": "Moje objednávky",
     "orders": "Moje objednávky",
-    "book_now": "Objednat",
+    "book_now": "Objednat úklid",
     "track_order": "Sledovat objednávku",
     "login": "Přihlásit se",
     "register": "Registrace",
@@ -24,7 +24,8 @@
     "my_addresses": "Moje adresy",
     "pricing": "Ceník",
     "how_it_works": "Jak to chodí",
-    "plus": "Cleansia Plus"
+    "plus": "Cleansia Plus",
+    "login_short": "Přihlásit"
   },
   "cookies": {
     "title": "Vaše soukromí je pro nás důležité",
@@ -537,7 +538,19 @@
         "hours_value": "08:00–20:00",
         "coverage": "Praha a okolí do 30 km",
         "registration": "IČO [IČO] · DIČ [DIČ]",
-        "apps": "Stáhnout aplikaci"
+        "apps": "Stáhnout aplikaci",
+        "svc_home": "Úklid domácnosti",
+        "svc_deep": "Hloubkový úklid",
+        "svc_carpet": "Čištění koberců",
+        "svc_upholstery": "Čištění čalounění",
+        "svc_bathroom": "Úklid koupelny",
+        "svc_windows": "Vnitřní okna",
+        "svc_renovation": "Po rekonstrukci",
+        "about": "O nás",
+        "become_cleaner": "Staňte se uklízečem",
+        "careers": "Kariéra",
+        "complaints": "Reklamace",
+        "cookie_settings": "Nastavení cookies"
       },
       "rules": {
         "badge": "Naše pravidla",
@@ -585,7 +598,9 @@
         "continue": "Pokračovat",
         "pick_service": "Vyberte službu a uvidíte cenu",
         "loading": "Počítáme…",
-        "error": "Cenu se teď nepodařilo spočítat. Zkuste to prosím znovu."
+        "error": "Cenu se teď nepodařilo spočítat. Zkuste to prosím znovu.",
+        "size_note": "podle země",
+        "time_label": "Čas"
       }
     },
     "profile": {

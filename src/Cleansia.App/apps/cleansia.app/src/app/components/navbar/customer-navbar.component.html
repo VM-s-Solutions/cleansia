@@ -48,8 +48,9 @@
 
       <cleansia-language-switcher />
 
-      <!-- User menu -->
-      <div class="customer-navbar__menu-anchor relative">
+      <!-- User menu — only once there is a user. Signed out, the artboard has a
+           plain "Přihlásit" link and nothing else. -->
+      <div class="customer-navbar__menu-anchor relative" [class.hidden]="!isLoggedIn()">
         <button
           class="customer-navbar__icon-btn"
           (click)="toggleUserMenu($event)"
@@ -141,7 +142,7 @@
           } @else {
             <a class="customer-navbar__dropdown-item" routerLink="/login" (click)="closeMenus()">
               <span class="customer-navbar__dropdown-icon"><i class="pi pi-sign-in"></i></span>
-              {{ 'nav.login' | translate }}
+              {{ 'nav.login_short' | translate }}
             </a>
             <a class="customer-navbar__dropdown-item" routerLink="/register" (click)="closeMenus()">
               <span class="customer-navbar__dropdown-icon"><i class="pi pi-user-plus"></i></span>
@@ -152,7 +153,7 @@
       </div>
       @if (!isLoggedIn()) {
         <a class="customer-navbar__signin" routerLink="/login" (click)="closeMenus()">
-          {{ 'nav.login' | translate }}
+          {{ 'nav.login_short' | translate }}
         </a>
       }
       <a class="cl-btn cl-btn--small customer-navbar__cta" routerLink="/order" (click)="closeMenus()">
@@ -261,7 +262,7 @@
       } @else {
         <a class="customer-navbar__mobile-link" routerLink="/login" (click)="closeMenus()">
           <i class="pi pi-sign-in mr-2"></i>
-          {{ 'nav.login' | translate }}
+          {{ 'nav.login_short' | translate }}
         </a>
         <a class="customer-navbar__mobile-link" routerLink="/register" (click)="closeMenus()">
           <i class="pi pi-user-plus mr-2"></i>

@@ -92,22 +92,27 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.75rem;
+    gap: 1.25rem;
     margin: 1.25rem 0 0;
     padding: 0;
     list-style: none;
 
+    // Plain text with a hairline separator, as the artboard states them. They
+    // were pills, which made three footnotes look like three more controls.
     li {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      min-height: 2.75rem;
-      padding: 0 1.125rem;
-      border: 1px solid $border;
-      border-radius: 999px;
-      background: $white;
+      gap: 0.4rem;
       font-size: 0.9375rem;
       color: $text-body;
+
+      & + li::before {
+        content: '';
+        width: 1px;
+        height: 14px;
+        background: $border;
+        margin-right: 0.75rem;
+      }
     }
 
     strong {

@@ -416,3 +416,25 @@ cleansia-hero {
     }
   }
 }
+
+// The artboard's calculator details: the size row carries a muted per-country
+// note on its right, and "when" is two boxes rather than one wide input.
+.cl-quote {
+  &__label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  &__note {
+    font-size: 0.75rem;
+    color: $text-light;
+  }
+
+  &__when {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+}

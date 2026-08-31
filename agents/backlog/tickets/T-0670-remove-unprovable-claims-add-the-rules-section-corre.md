@@ -46,6 +46,12 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   testimonial component or partial exists, the rules section states the real cancellation ladder from
   `/product/business-rules`, and Plus reads 5 % / +4 h / 1x month / 14 d / 199 CZK. Five-locale leaf
   parity re-computed independently: 1487 leaves each, no missing or extra keys.
+- 2026-08-31 - REOPENED. The copy claims are right, but the sections carrying them do not match
+  the artboard:
+  - `.cl-section--rules` has a badge the design does not have.
+  - The three facts are pills; the design states them as a plain line.
+- 2026-08-31 - done, verified by screenshot. The section now carries no badge and states its three
+  facts as the artboard does.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

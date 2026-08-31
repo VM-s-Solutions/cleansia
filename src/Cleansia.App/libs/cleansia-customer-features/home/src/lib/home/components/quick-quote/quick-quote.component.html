@@ -28,7 +28,10 @@
   }
 
   <div class="cl-quote__field">
-    <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
+    <div class="cl-quote__label-row">
+      <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
+      <span class="cl-quote__note">{{ 'pages.home.quote.size_note' | translate }}</span>
+    </div>
     <div class="cl-quote__chips">
       @for (size of facade.sizes; track size.code) {
       <button
@@ -45,14 +48,24 @@
 
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.date_label' | translate }}</span>
-    <input
-      type="date"
-      class="cl-quote__date"
-      [min]="today"
-      [value]="facade.cleaningDate() ?? ''"
-      (change)="onDate($event)"
-      [attr.aria-label]="'pages.home.quote.date_label' | translate"
-    />
+    <div class="cl-quote__when">
+      <input
+        type="date"
+        class="cl-quote__date"
+        [min]="today"
+        [value]="facade.cleaningDate() ?? ''"
+        (change)="onDate($event)"
+        [attr.aria-label]="'pages.home.quote.date_label' | translate"
+      />
+      <input
+        type="time"
+        class="cl-quote__date"
+        step="1800"
+        [value]="facade.cleaningTime() ?? ''"
+        (change)="onTime($event)"
+        [attr.aria-label]="'pages.home.quote.time_label' | translate"
+      />
+    </div>
     <small class="cl-quote__hint">{{ 'pages.home.quote.date_hint' | translate }}</small>
   </div>
 

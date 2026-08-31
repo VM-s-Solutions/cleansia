@@ -28,12 +28,14 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   private readonly _serviceId = signal<string | null>(null);
   private readonly _size = signal<PropertySizePreset>(this.sizes[2] ?? this.sizes[0]);
   private readonly _cleaningDate = signal<string | null>(null);
+  private readonly _cleaningTime = signal<string | null>(null);
   private readonly _state = signal<QuoteState>('idle');
   private readonly _quote = signal<QuoteOrderResponse | null>(null);
 
   readonly selectedServiceId = this._serviceId.asReadonly();
   readonly selectedSize = this._size.asReadonly();
   readonly cleaningDate = this._cleaningDate.asReadonly();
+  readonly cleaningTime = this._cleaningTime.asReadonly();
   readonly state = this._state.asReadonly();
   readonly quote = this._quote.asReadonly();
 
@@ -61,6 +63,11 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     const date = this._cleaningDate();
     if (date) {
       params['cleaningDate'] = date;
+    }
+
+    const time = this._cleaningTime();
+    if (time) {
+      params['cleaningTime'] = time;
     }
 
     return params;
@@ -97,6 +104,24 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     this.refresh();
   }
 
+  /**
+   * The hour the clean should start.
+   *
+   * Only meaningful with a date, and only affects the quote through the express
+   * surcharge, which is calculated from how soon the booking is. Without a date
+   * it is remembered and applied as soon as one is picked.
+   */
+  selectTime(value: string | null): void {
+    const next = value && value.length > 0 ? value : null;
+    if (this._cleaningTime() === next) {
+      return;
+    }
+    this._cleaningTime.set(next);
+    if (this._cleaningDate()) {
+      this.refresh();
+    }
+  }
+
   selectSize(size: PropertySizePreset): void {
     if (this._size().code === size.code) {
       return;
@@ -128,7 +153,10 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
     const date = this._cleaningDate();
     if (date) {
-      command.cleaningDate = new Date(date);
+      // Local time on purpose: the express surcharge is judged against the
+      // customer's clock, and appending "Z" would shift a morning booking into
+      // the previous day for anyone west of UTC.
+      command.cleaningDate = new Date(`${date}T${this._cleaningTime() ?? '09:00'}`);
     }
 
     this._state.set('loading');

@@ -41,6 +41,21 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 - 2026-08-31 - done. Ground-truthed and challenged: every AC holds. The oven pair is wired in
   `gallery.component.ts:26`, `srcsetFor()` emits the 600/900/1200 w set bound on both images, and the
   gallery subtitle no longer claims the photos are from real cleanings.
+- 2026-08-31 - REOPENED. The pairs are wired, but the slider chrome is not the artboard's:
+  - PŘED is red and PO is green, both at the BOTTOM. The artboard uses a dark navy PŘED at the top
+    left and a blue PO at the top right.
+  - The handle is a white circle with a two-headed arrow. The artboard uses a blue circle with a
+    3px white ring and white chevrons.
+  - `.cl-gallery__item` has no card: transparent, no radius, no padding. The artboard wraps each
+    slider in a white card, radius 36, 14px padding, so a white frame shows around the photograph.
+  - The caption is centred with no duration; the artboard puts the label left and a duration right.
+- 2026-08-31 - done, verified by screenshot. PŘED is navy at the top left and PO is blue at the top
+  right — the brand's own two tones, because before and after are two halves of one photograph and
+  not a failure and a success. The handle is a blue disc with a 3px white ring, and each pair sits in
+  a white card with the artboard's 14px frame.
+
+  NOT copied: the artboard's per-pair durations ("2 h 10 min"). We hold no such measurement, and
+  inventing one is exactly what T-0670 removed from this page.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

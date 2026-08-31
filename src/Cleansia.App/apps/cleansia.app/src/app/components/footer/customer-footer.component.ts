@@ -4,7 +4,6 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import { ThemeService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
-  CleansiaBrandNameComponent,
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
 } from '@cleansia/components';
@@ -14,7 +13,7 @@ import {
   templateUrl: './customer-footer.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, CleansiaBrandNameComponent, CleansiaButtonComponent, CleansiaLanguageSwitcherComponent],
+  imports: [RouterModule, TranslatePipe, CleansiaButtonComponent, CleansiaLanguageSwitcherComponent],
 })
 export class CleansiaCustomerFooterComponent {
   private readonly authService = inject(CustomerAuthService);
@@ -24,6 +23,20 @@ export class CleansiaCustomerFooterComponent {
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
 
   currentYear = new Date().getFullYear();
+
+  /**
+   * The service column, as the artboard lists it. Every row points at the
+   * catalogue: these are service names, and the catalogue is where they live.
+   */
+  readonly serviceLinks = [
+    'pages.home.footer.svc_home',
+    'pages.home.footer.svc_deep',
+    'pages.home.footer.svc_carpet',
+    'pages.home.footer.svc_upholstery',
+    'pages.home.footer.svc_bathroom',
+    'pages.home.footer.svc_windows',
+    'pages.home.footer.svc_renovation',
+  ];
 
   // Hide the guest lookup link for logged-in users — they have /orders.
   // Reactive on the service signal so the footer updates immediately on

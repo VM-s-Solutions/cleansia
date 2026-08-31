@@ -44,6 +44,10 @@ export class QuickQuoteComponent implements OnInit {
   /** No cleaning can be booked for yesterday. */
   readonly today = new Date().toISOString().slice(0, 10);
 
+  onTime(event: Event): void {
+    this.facade.selectTime((event.target as HTMLInputElement).value);
+  }
+
   onDate(event: Event): void {
     this.facade.selectDate((event.target as HTMLInputElement).value);
   }

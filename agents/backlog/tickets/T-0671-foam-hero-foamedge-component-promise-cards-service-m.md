@@ -44,6 +44,14 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   reusable component with inputs, the hero ground is the radial gradient with the mascot on the foam
   line, `cl-features` / `cl-feature__` are gone in favour of `cl-promises`, and the three service
   tiles measure 340x280 with content heights within 3 px of each other on a shared baseline.
+- 2026-08-31 - REOPENED. The foam and mascot work is partly wrong against the artboard:
+  - The gallery section is white with no foam edge. The artboard gives it `#F0F9FF` and a foam edge
+    top AND bottom.
+  - The CTA mascot is `mascot-ready.webp`; the artboard uses `mascot-waving.webp`.
+  - The Plus mascot is `mascot-ready.webp`; the artboard uses `mascot-thumbs-up.webp`.
+- 2026-08-31 - done, verified by screenshot. The gallery has the artboard's `#F0F9FF` ground, the
+  CTA mascot is `mascot-waving.webp` and the Plus mascot is `mascot-thumbs-up.webp`. Both files were
+  extracted from the approved artifact rather than substituted from the existing set.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

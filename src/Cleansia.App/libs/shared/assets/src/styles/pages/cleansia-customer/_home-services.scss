@@ -73,6 +73,12 @@
   // The rest of the catalogue, as a rail rather than more cards: they are
   // choices, not headline offers, and eleven cards would bury the three.
   &__rail {
+    // The chips are links, and a link's default underline made a price rail
+    // look like a paragraph of hyperlinks.
+    a {
+      text-decoration: none;
+    }
+
     display: flex;
     flex-wrap: wrap;
     gap: 0.625rem;

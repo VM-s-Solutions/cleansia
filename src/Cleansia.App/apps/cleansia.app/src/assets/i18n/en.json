@@ -4,7 +4,7 @@
     "services": "Services",
     "my_orders": "My Orders",
     "orders": "My Orders",
-    "book_now": "Book Now",
+    "book_now": "Book a clean",
     "track_order": "Track Order",
     "login": "Log In",
     "register": "Sign Up",
@@ -24,7 +24,8 @@
     "my_addresses": "My addresses",
     "pricing": "Pricing",
     "how_it_works": "How it works",
-    "plus": "Cleansia Plus"
+    "plus": "Cleansia Plus",
+    "login_short": "Log in"
   },
   "cookies": {
     "title": "Your Privacy Matters",
@@ -537,7 +538,19 @@
         "hours_value": "08:00-20:00",
         "coverage": "Prague and up to 30 km around",
         "registration": "Reg. no. [ICO] · VAT [DIC]",
-        "apps": "Get the app"
+        "apps": "Get the app",
+        "svc_home": "Home cleaning",
+        "svc_deep": "Deep cleaning",
+        "svc_carpet": "Carpet cleaning",
+        "svc_upholstery": "Upholstery cleaning",
+        "svc_bathroom": "Bathroom cleaning",
+        "svc_windows": "Interior windows",
+        "svc_renovation": "After renovation",
+        "about": "About us",
+        "become_cleaner": "Become a cleaner",
+        "careers": "Careers",
+        "complaints": "Complaints",
+        "cookie_settings": "Cookie settings"
       },
       "rules": {
         "badge": "Our rules",
@@ -585,7 +598,9 @@
         "continue": "Continue",
         "pick_service": "Pick a service to see the price",
         "loading": "Working it out...",
-        "error": "We could not price that just now. Please try again."
+        "error": "We could not price that just now. Please try again.",
+        "size_note": "by country",
+        "time_label": "Time"
       }
     },
     "profile": {

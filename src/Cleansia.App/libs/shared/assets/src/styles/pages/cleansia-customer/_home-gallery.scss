@@ -3,6 +3,14 @@
 // =============================
 // Before/After Gallery
 // =============================
+// The artboard gives this section a tinted ground with a foam edge above and
+// below, so the photographs sit on colour rather than floating on the page.
+.cl-section--gallery {
+  background: $primary-lighter;
+  padding-top: 1.25rem;
+  padding-bottom: 3.5rem;
+}
+
 .cl-gallery {
   display: grid;
   // Two columns, as the approved artboard draws it. Four pairs therefore run as
@@ -11,22 +19,31 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
 
+  // Each pair is a white card with the photograph inset, not a bare image: the
+  // 14px frame is what separates two sliders sitting side by side.
   &__item {
-    text-align: center;
+    background: $white;
+    border-radius: 2.25rem;
+    padding: 0.875rem;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
   }
 
   &__caption {
-    margin-top: 1rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.875rem 0.5rem 0.25rem;
     font-family: $font-heading;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: $primary-dark;
   }
 }
 
 .cl-slider {
   position: relative;
-  border-radius: 2.25rem; // 36px, artboard value
+  border-radius: 1.5rem; // the photograph's own radius inside the card
   overflow: hidden;
   border: 1px solid var(--surface-border);
   cursor: ew-resize;
@@ -84,21 +101,25 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: $white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    background: $primary;
+    border: 3px solid $white;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: ew-resize;
     i {
       font-size: 1rem;
-      color: $primary;
+      color: $white;
     }
   }
 
+  // Not a traffic light. "Before" and "after" are two halves of one photograph,
+  // not a failure and a success, so they take the brand's own two tones — the
+  // artboard's navy and blue — rather than red and green.
   &__label {
     position: absolute;
-    bottom: 0.6rem;
+    top: 0.875rem;
     z-index: 4;
     padding: 0.25rem 0.7rem;
     border-radius: 2rem;
@@ -110,12 +131,12 @@
     color: $white;
 
     &--before {
-      left: 0.6rem;
-      background: rgba(220, 38, 38, 0.85);
+      left: 0.875rem;
+      background: rgba(12, 74, 110, 0.8);
     }
     &--after {
-      right: 0.6rem;
-      background: rgba($green, 0.85);
+      right: 0.875rem;
+      background: $primary;
     }
   }
 }

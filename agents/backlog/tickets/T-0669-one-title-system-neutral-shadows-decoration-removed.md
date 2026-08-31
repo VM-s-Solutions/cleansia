@@ -85,6 +85,15 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
 
   Three CI build gates pass, 68 test projects pass, lint has exactly the six pre-existing problems a
   clean tree has.
+- 2026-08-31 - REOPENED. Closed on greps, not on the rendered page. A screenshot audit against
+  the approved artboard found this ticket's own concerns still unmet:
+  - The rules section carries a badge ("Naše pravidla"). The artboard has no badge on that section.
+  - The rules fact rail renders as white bordered pills; the artboard is plain text separated by `·`.
+  - Plus perks use check icons; the artboard uses `·` bullets.
+  Verification for this ticket is now a screenshot diff, not a grep.
+- 2026-08-31 - done, verified by screenshot. The rules badge is gone, the three facts are a plain
+  line separated by hairlines rather than pills, and the Plus perks use mid-dots. Checked against
+  `ref-shots/05-rules.png` and `06-plus.png` rendered from the artboard itself.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

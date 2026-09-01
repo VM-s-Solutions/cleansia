@@ -1,74 +1,43 @@
-<!-- Hero Header — full-bleed band, matches the track-order page -->
-<div class="order-wizard__hero">
-  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--1" aria-hidden="true"></div>
-  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--2" aria-hidden="true"></div>
-  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--3" aria-hidden="true"></div>
-  <div class="order-wizard__hero-inner">
-    <h1 class="order-wizard__hero-title">
-      {{ 'pages.order.hero_title' | translate }}
-    </h1>
-    <p class="order-wizard__hero-subtitle">
-      {{ 'pages.order.hero_subtitle' | translate }}
-    </p>
-    <div class="order-wizard__hero-badges">
-      <div class="order-wizard__hero-badge">
-        <i class="pi pi-verified"></i>
-        {{ 'pages.order.trust_certified' | translate }}
-      </div>
-      <div class="order-wizard__hero-badge">
-        <i class="pi pi-sparkles"></i>
-        {{ 'pages.order.trust_satisfaction' | translate }}
-      </div>
-      <div class="order-wizard__hero-badge">
-        <i class="pi pi-shield"></i>
-        {{ 'pages.order.trust_no_hidden' | translate }}
-      </div>
+<!--
+  The artboard's header: a title, one sentence, and the step rail. The old
+  full-bleed hero carried three trust badges and a wave, which put a marketing
+  band between someone who has already decided to book and the form they came
+  for.
+-->
+<div class="cl-wiz">
+  <div class="cl-wiz__inner">
+    <div class="cl-wiz__head">
+      <h1 class="cl-d2">{{ 'pages.order.hero_title' | translate }}</h1>
+      <p class="cl-body cl-wiz__lead">{{ 'pages.order.hero_subtitle' | translate }}</p>
     </div>
-  </div>
-  <div class="order-wizard__hero-wave" aria-hidden="true">
-    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
-    </svg>
-  </div>
-</div>
 
-<div class="order-wizard">
-  <!-- Custom Stepper -->
-  <div class="order-wizard__stepper">
-    @for (step of facade.steps; track step; let i = $index) {
-    <button
-      type="button"
-      class="order-wizard__stepper-item"
-      [class.order-wizard__stepper-item--active]="i === facade.activeStep()"
-      [class.order-wizard__stepper-item--completed]="i < facade.activeStep()"
-      [disabled]="i >= facade.activeStep()"
-      [attr.aria-current]="i === facade.activeStep() ? 'step' : null"
-      [attr.aria-label]="'aria.step' | translate: { number: i + 1, label: step | translate }"
-      (click)="i < facade.activeStep() ? facade.goToStep(i) : null"
-    >
-      <div class="order-wizard__stepper-icon">
-        @if (i < facade.activeStep()) {
-        <i class="pi pi-check"></i>
-        } @else {
-        <i [class]="facade.stepIcons[i]"></i>
-        }
-      </div>
-      <span class="order-wizard__stepper-label">
-        {{ step | translate }}
-      </span>
-    </button>
-    @if (i < facade.steps.length - 1) {
-    <div
-      class="order-wizard__stepper-line"
-      [class.order-wizard__stepper-line--completed]="i < facade.activeStep()"
-    ></div>
-    }
-    }
-  </div>
+    <div class="cl-wiz__rail" role="list">
+      @for (step of facade.steps; track step; let i = $index) {
+      <button
+        type="button"
+        role="listitem"
+        class="cl-wiz__step"
+        [class.cl-wiz__step--active]="i === facade.activeStep()"
+        [class.cl-wiz__step--done]="i < facade.activeStep()"
+        [disabled]="i >= facade.activeStep()"
+        [attr.aria-current]="i === facade.activeStep() ? 'step' : null"
+        [attr.aria-label]="'aria.step' | translate: { number: i + 1, label: step | translate }"
+        (click)="i < facade.activeStep() ? facade.goToStep(i) : null"
+      >
+        <span class="cl-wiz__step-icon">
+          <i [class]="i < facade.activeStep() ? 'pi pi-check' : facade.stepIcons[i]"></i>
+        </span>
+        <span class="cl-wiz__step-label">{{ step | translate }}</span>
+      </button>
+      @if (i < facade.steps.length - 1) {
+      <span class="cl-wiz__step-line" [class.cl-wiz__step-line--done]="i < facade.activeStep()"></span>
+      }
+      }
+    </div>
 
-  <!-- Layout: Main + Sidebar -->
-  <div class="order-wizard__layout">
-    <div class="order-wizard__main">
+    <!-- The step, and the summary that answers "what am I paying" beside it. -->
+    <div class="cl-wiz__body">
+      <div class="cl-wiz__panel">
       <!-- Step 0: Services -->
       @if (facade.activeStep() === 0) {
       <div class="order-wizard__step">
@@ -734,8 +703,8 @@
     </div>
 
     <!-- Price Sidebar (Desktop) -->
-    <aside class="order-wizard__sidebar">
-      <div class="order-wizard__sidebar-card">
+      <aside class="cl-wiz__summary">
+        <div class="order-wizard__sidebar-card">
         <h3 class="order-wizard__sidebar-title">
           {{ 'pages.order.price_total' | translate }}
         </h3>
@@ -823,91 +792,6 @@
     </aside>
   </div>
 
-  <!-- Mobile Price Bar -->
-  <div class="order-wizard__mobile-price" [class.order-wizard__mobile-price--expanded]="mobileBreakdownExpanded()">
-    <button
-      type="button"
-      class="order-wizard__mobile-price-header"
-      [attr.aria-expanded]="mobileBreakdownExpanded()"
-      [attr.aria-label]="'aria.toggle_price_breakdown' | translate"
-      (click)="mobileBreakdownExpanded.set(!mobileBreakdownExpanded())"
-    >
-      <div class="order-wizard__mobile-price-label">
-        {{ 'pages.order.price_total' | translate }}
-      </div>
-      <div class="order-wizard__mobile-price-right">
-        <div class="order-wizard__mobile-price-value">
-          {{ formatPrice(facade.displayedTotalPrice()) }}
-        </div>
-        <i class="pi order-wizard__mobile-price-chevron"
-          [class.pi-chevron-up]="!mobileBreakdownExpanded()"
-          [class.pi-chevron-down]="mobileBreakdownExpanded()"
-        ></i>
-      </div>
-    </button>
-    <div class="order-wizard__mobile-price-breakdown"
-      [class.order-wizard__mobile-price-breakdown--expanded]="mobileBreakdownExpanded()">
-      @for (pkg of selectedPackages(); track pkg.id) {
-      <div class="order-wizard__mobile-price-item">
-        <span>{{ getTranslation(pkg, 'name') }}</span>
-        <span>{{ formatPrice(pkg.price) }}</span>
-      </div>
-      }
-      @for (service of selectedServices(); track service.id) {
-      <div class="order-wizard__mobile-price-item">
-        <span>{{ getTranslation(service, 'name') }}</span>
-        <span>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</span>
-      </div>
-      @if (service.perRoomPrice > 0) {
-      <div class="order-wizard__mobile-price-detail">
-        {{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}
-      </div>
-      }
-      }
-      @switch (facade.appliedDiscountKind()) {
-        @case ('membership') {
-          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
-            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
-          </div>
-        }
-        @case ('tier') {
-          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
-            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
-          </div>
-        }
-        @case ('combined') {
-          <!-- LOY-003 — Plus + tier additive, render both rows. -->
-          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
-            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
-          </div>
-          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
-            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
-          </div>
-        }
-        @case ('promo') {
-          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-            <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
-            <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
-          </div>
-        }
-      }
-      @if (facade.expressSurchargeApplied()) {
-      <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--express">
-        <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
-        <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
-      </div>
-      }
-      @if (facade.expressSurchargeWaived()) {
-      <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
-        <span>{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
-        <span>{{ formatPrice(0) }}</span>
-      </div>
-      }
-    </div>
   </div>
 </div>
 <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

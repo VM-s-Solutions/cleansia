@@ -1,0 +1,277 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Booking wizard — the approved artboard's shell
+// =============================================================================
+// A `cl-wiz-*` namespace beside the 2 500 lines of `order-wizard__*` rather than
+// inside them: the two layouts disagree about nearly everything (the old one is
+// a full-bleed hero over a single centred column, this one is a step rail over
+// two columns with a sticky summary), so converting in place would mean every
+// step fighting rules meant for the other shell. The legacy block shrinks as
+// each step moves across.
+//
+// Type, buttons and chips are NOT redefined here — `.cl-d2`, `.cl-btn`,
+// `.cl-chip` and the rest come from _home-design.scss, which is the approved
+// system. This file is layout only.
+
+.cl-wiz {
+  background: var(--cl-wiz-ground);
+  min-height: 100vh;
+  padding-bottom: calc(3 * var(--cl-u));
+}
+
+:root {
+  --cl-wiz-ground: #f8fbfe;
+}
+
+:root.dark-mode {
+  --cl-wiz-ground: #0b1626;
+}
+
+.cl-wiz__inner {
+  max-width: $home-width;
+  margin: 0 auto;
+  padding: 0 var(--cl-gutter);
+}
+
+// ---- the step rail ----------------------------------------------------------
+.cl-wiz__rail {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--cl-surface);
+  border-radius: 999px;
+  padding: 13px 24px;
+  margin-top: calc(1.875 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-wiz__step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+
+  // A step behind the current one is a way back; one ahead is not a control yet.
+  &[disabled] {
+    cursor: default;
+  }
+}
+
+.cl-wiz__step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  border: 1px solid var(--cl-border);
+  color: #94a3b8;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+
+  .cl-wiz__step--done & {
+    background: var(--cl-surface);
+    border-color: var(--cl-accent-soft);
+    color: var(--cl-heading);
+  }
+
+  .cl-wiz__step--active & {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+  }
+}
+
+.cl-wiz__step-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+  white-space: nowrap;
+
+  .cl-wiz__step--done &,
+  .cl-wiz__step--active & {
+    color: var(--cl-heading);
+  }
+
+  .cl-wiz__step--active & {
+    font-weight: 800;
+  }
+}
+
+.cl-wiz__step-line {
+  flex: 1;
+  min-width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--cl-border);
+
+  &--done {
+    background: var(--cl-accent-soft);
+  }
+}
+
+// ---- body: the step, and the summary that follows it ------------------------
+.cl-wiz__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 32px;
+  align-items: start;
+  margin-top: calc(1.625 * var(--cl-u));
+}
+
+.cl-wiz__panel {
+  background: var(--cl-surface);
+  border-radius: 32px;
+  padding: 34px 38px 32px;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  min-width: 0;
+}
+
+.cl-wiz__lead {
+  margin: 8px 0 0;
+  max-width: 44em;
+}
+
+.cl-wiz__back {
+  display: inline-flex;
+  align-items: center;
+  margin-top: calc(1.875 * var(--cl-u));
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+// ---- the summary rail -------------------------------------------------------
+// Sticky, because it is the answer to "what am I paying" and that question is
+// live on every step. It replaced a bar pinned to the bottom of the viewport,
+// which put the number furthest from the choices that change it.
+.cl-wiz__summary {
+  position: sticky;
+  top: 24px;
+  background: var(--cl-surface);
+  border-radius: 28px;
+  padding: 24px 26px;
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  min-width: 0;
+}
+
+.cl-wiz__summary-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--cl-body);
+}
+
+.cl-wiz__summary-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  strong {
+    font-weight: 700;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.cl-wiz__summary-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--cl-muted);
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+}
+
+.cl-wiz__summary-discount {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+.cl-wiz__total {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.08;
+  color: $primary;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cl-wiz__summary-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cl-rule);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+.cl-wiz__rule {
+  height: 1px;
+  background: var(--cl-border);
+  margin: 16px 0;
+}
+
+// =============================================================================
+// Responsive
+// =============================================================================
+@media (max-width: 1100px) {
+  // The summary stops being a rail and becomes the last card in the column. It
+  // keeps its place in the reading order either way — after the choices, before
+  // the action.
+  .cl-wiz__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__summary {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .cl-wiz__panel {
+    padding: 26px 22px 24px;
+    border-radius: 26px;
+  }
+
+  // The full rail does not fit; it scrolls, and the labels go with it rather
+  // than being dropped — a numbered dot with no word is not a step.
+  .cl-wiz__rail {
+    overflow-x: auto;
+    border-radius: 26px;
+    padding: 12px 16px;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .cl-wiz__step-line {
+    min-width: 20px;
+  }
+}

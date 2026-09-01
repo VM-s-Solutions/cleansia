@@ -85,12 +85,23 @@ const report = await page.evaluate((vw) => {
 
   const all = [...document.querySelectorAll('body *')].filter(visible);
 
+  // A strip the user can scroll sideways on purpose - a step rail, a chip row -
+  // holds children past the viewport BY DESIGN. They are only a defect if the
+  // PAGE scrolls, which is measured separately.
+  const inScroller = (el) => {
+    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+      const ov = getComputedStyle(e).overflowX;
+      if (ov === 'auto' || ov === 'scroll') return true;
+    }
+    return false;
+  };
+
   // 1. Anything wider than the viewport, or starting left of it.
   const overflowNodes = [];
   for (const el of all) {
     const r = el.getBoundingClientRect();
     const right = r.left + r.width;
-    if (right > vw + 1.5 || r.left < -1.5) {
+    if ((right > vw + 1.5 || r.left < -1.5) && !inScroller(el)) {
       // Only the OUTERMOST offender; a child of an overflowing box adds nothing.
       if (!overflowNodes.some((o) => o.el.contains(el))) {
         overflowNodes.push({

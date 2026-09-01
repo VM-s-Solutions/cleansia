@@ -1,0 +1,90 @@
+{
+  "_comment": "Same two sections as the wizard step maps. `_ignore` is text the artboard shows as SAMPLE — a price, a package, a service, a description — which the running page renders from the catalogue. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard.",
+  "_packages_lead_note": "The artboard's lead under `Balíčky` reads \"Tři nejčastější kombinace. Vyjdou levněji než stejné služby zvlášť.\" — three most common combinations, cheaper than the same services bought separately. The second sentence is not true of the catalogue: against the seeded rows a package costs MORE than the sum of its services' base prices in seven cases out of eight (Kitchen & Bathroom Focus is 999 against 700, Complete Home Clean 1299 against 1000, Luxury Full Service 3499 against 1800), and the platform has nothing that could make the claim true per basket, because the individual route also carries per-room rates the package does not. Shipped as `packages_lead` = \"Hotové kombinace služeb za jednu pevnou cenu.\" — which is what a package actually is. Same call, and the same reason, as the home page's claim pass.",
+  "_units_note": "The artboard gives each service card its own unit — \"za pokoj\", \"za okno\", \"za kus\", \"na míru\". A ServiceListItem carries a base price and a per-room rate and nothing that could produce them; a unit column would be a schema change, a migration and five locales bought for one label on one card. The card states what the data knows instead: a flat service shows its price and \"za úklid\", a per-room service shows the base as a floor (\"od\") with \"+ 150 Kč za pokoj\" beside it. The artboard's own numbers agree with the seed on six services of eight, so its units were drawn as sample copy rather than derived.",
+  "_button_height_note": "Every action here is 40px, not the artboard's 48px `.btn-s`. Owner ruling 2026-08-31, which applies to every action on the customer surface and is already what `.cl-btn` ships.",
+  "_mascot_plate_note": "The service cards use the shared `.cl-mascot-disc` at 148/132 rather than this artboard's 140/126. The owner shrank the shared plate on 2026-08-31 and one mascot size across the customer surface outranks this artboard's local value. The disc's own box is not mapped for that reason.",
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Tři nejčastější kombinace",
+    "^Pro udržovaný byt$",
+    "^Nejčastější volba$",
+    "^Předání bytu$",
+    "^Základní$",
+    "^Kompletní$",
+    "^Stěhování$",
+    "^· ",
+    "^Úklid domácnosti$",
+    "^Hloubkový úklid$",
+    "^Čištění koberců$",
+    "^Čištění čalounění$",
+    "^Mytí oken$",
+    "^Úklid koupelny$",
+    "^Hloubkový úklid kuchyně$",
+    "^Úklid po rekonstrukci$",
+    "^Pravidelný nebo jednorázový",
+    "^Do detailu: spáry",
+    "^Extrakční stroj",
+    "^Test na malé ploše",
+    "^Vnitřní i vnější strana",
+    "^Vodní kámen",
+    "^Trouba, digestoř",
+    "^Prach a zbytky",
+    "^za pokoj$",
+    "^za kus$",
+    "^za okno$",
+    "^na míru$"
+  ],
+  ".cl-cat-hero__row": {
+    "sel": "[style*='padding:52px 64px 0']",
+    "skip": [
+      "gridTemplateColumns"
+    ],
+    "why": "See _hero_mascot_note: the outer tracks measure the mascot artwork, whose canvas differs from the artboard's."
+  },
+  ".cl-cat-hero__trust": "[style*='justify-content:center; gap:12px; margin-top:24px']",
+  ".cl-cat__inner": "[style*='padding:44px 64px 0']",
+  ".cl-cat-packages": "[style*='repeat(3, minmax(0,1fr)); gap:20px; margin-top:30px']",
+  ".cl-cat-pkg:not(.cl-cat-pkg--best)": {
+    "sel": ".soft[style*='border-radius:36px; padding:32px 30px 28px']",
+    "why": "The artboard's plain package card against the app's — matching the unfeatured one on both sides, since the featured treatment is what deliberately differs."
+  },
+  ".cl-cat-pkg--best": {
+    "sel": ".lift[style*='background:#0284C7; border:1px solid #0284C7']",
+    "skip": [
+      "backgroundColor",
+      "borderTopColor",
+      "borderTopWidth",
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft"
+    ],
+    "why": "Two departures, both already made on the wizard's featured package card. The fill is Sky800 rather than the artboard's Sky600, because the card's 12px tagline measures 3.09 on Sky600 and pure white only reaches 4.08 there — no text colour could have carried it, so the ground had to move. And the border goes to 2px with the padding reduced to match, so the two cards' contents sit on the same lines."
+  },
+  ".cl-cat-pkg__badge": {
+    "sel": "[style*='top:-13px; left:30px']",
+    "typography": true
+  },
+  ".cl-cat-pkg__head": "[style*='align-items:flex-end; justify-content:space-between; gap:12px']",
+  ".cl-cat-services": "[style*='repeat(4, minmax(0,1fr)); gap:20px; margin-top:26px']",
+  ".cl-cat-svc": ".soft[style*='border-radius:32px; padding:26px 28px 24px']",
+  ".cl-cat-svc__foot": "[style*='justify-content:space-between; margin-top:18px; padding-top:14px']",
+  ".cl-cat-closing__inner": "[style*='padding:24px 64px 60px']",
+  ".cl-cat-closing__card": {
+    "sel": ".lift[style*='border-radius:40px; padding:40px 44px 36px']",
+    "skip": [
+      "gridTemplateColumns"
+    ],
+    "why": "Two of the three tracks are `auto`, so their pixel widths are the measured widths of the mascot tile and of the translated action labels. Same artifact as the hero row and as step 1's service row."
+  },
+  ".cl-cat-closing__actions": "[style*='align-items:center; gap:24px; white-space:nowrap']",
+  "_hero_mascot_note": "`.cl-cat-hero__row` skips gridTemplateColumns. Its outer tracks are `auto`, so their width is the width of the image in them: the app renders the normalised 340x280 mascot tile at 180px tall, which is 218.6 wide, where the artboard's square source art was 180. The character itself is the same size on both — the tile canvas carries transparent margin so that one CSS height renders every pose identically. Same class of artifact, and same exemption, as the wizard's font-metric column widths."
+}

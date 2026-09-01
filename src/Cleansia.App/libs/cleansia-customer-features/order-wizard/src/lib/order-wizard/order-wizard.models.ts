@@ -279,16 +279,66 @@ export function filterTimeOptionsForToday(
   });
 }
 
+/**
+ * The actual slot moment, from the date and the time the customer chose.
+ *
+ * One definition, because everything that prices this booking has to agree on
+ * it: the quote, the Plus-savings preview and the submit. A caller that sends
+ * the date alone sends midnight, and midnight sits in a different express band
+ * from the slot — the quote then sees no surcharge where the create sees one,
+ * and PriceMatchesAsync rejects with order.total_price.not_match.
+ *
+ * Null when either half is missing, which is the "no slot chosen yet" state the
+ * backend treats as "do not apply a surcharge at all".
+ */
+export function composeSlotMoment(
+  cleaningDate: Date | null,
+  cleaningTime: string
+): Date | null {
+  if (!cleaningDate || !cleaningTime) return null;
+  const [hours, minutes] = cleaningTime.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return new Date(
+    cleaningDate.getFullYear(),
+    cleaningDate.getMonth(),
+    cleaningDate.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
+}
+
 // ── Price formatting ────────────────────────────────────────
 
-const CZK_FORMATTER = new Intl.NumberFormat('cs-CZ', {
+const CZK_WHOLE = new Intl.NumberFormat('cs-CZ', {
   style: 'currency',
   currency: 'CZK',
   minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
 });
 
+const CZK_WITH_HALERE = new Intl.NumberFormat('cs-CZ', {
+  style: 'currency',
+  currency: 'CZK',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * A price, in whole crowns where it is whole and to the haler where it is not.
+ *
+ * Catalogue prices are whole, so every figure in the wizard was whole until a
+ * percentage discount produced one that is not — and a single `minimumFractionDigits: 0`
+ * rendered 57.6 as "57,6 Kč", which is a currency amount with one decimal and
+ * reads as unfinished. Rounding the display to whole crowns instead would be
+ * worse: charges settle in haleře, so it would print a number the customer is
+ * not billed.
+ */
 export function formatPrice(price: number): string {
-  return CZK_FORMATTER.format(price);
+  const value = Number(price) || 0;
+  const isWhole = Math.abs(value - Math.round(value)) < 0.005;
+  return isWhole ? CZK_WHOLE.format(Math.round(value)) : CZK_WITH_HALERE.format(value);
 }
 
 /**

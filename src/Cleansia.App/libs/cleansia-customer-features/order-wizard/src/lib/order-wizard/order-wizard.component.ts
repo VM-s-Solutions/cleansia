@@ -3,12 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, injec
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, PackageListItem, QuoteOrderQuoteLine, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
+import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -18,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { OrderMembershipFacade } from './order-membership.facade';
+import { OrderDraftService } from './order-draft.service';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
@@ -28,6 +29,7 @@ import {
   TimeOption,
   createAddressDto,
   filterTimeOptionsForToday,
+  composeSlotMoment,
   formatPrice,
   generateTimeOptions,
   PROMO_ERROR_FALLBACK,
@@ -71,6 +73,7 @@ function startOfMonth(date: Date): Date {
     CleansiaScrollTopComponent,
     CleansiaTelephoneComponent,
     WizardPreferredCleanerComponent,
+    RouterModule,
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
@@ -89,6 +92,8 @@ export class OrderWizardComponent implements OnInit {
   protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly signupConsent = inject(SignupConsentService);
+  private readonly draft = inject(OrderDraftService);
+  private readonly router = inject(Router);
   private readonly apiBaseUrl = inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? '';
   private readonly route = inject(ActivatedRoute);
   private readonly snackbar = inject(SnackbarService);
@@ -232,6 +237,15 @@ export class OrderWizardComponent implements OnInit {
     this.translate.onLangChange
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((e) => this.lang.set(e.lang));
+
+    // The plans drive every number the Plus step prints, so they are wanted
+    // before the customer reaches it rather than on arrival.
+    this.facade.loadPlans();
+
+    // A basket parked before a trip to sign-in comes back here. After
+    // initialize(), because the restore checks what it holds against the
+    // catalogue that call fetches.
+    this.restoreDraft();
 
     // Pre-select service or package from query params (e.g., from services catalog)
     const serviceId = this.route.snapshot.queryParamMap.get('serviceId');
@@ -595,6 +609,155 @@ export class OrderWizardComponent implements OnInit {
     this.onDateChange(date);
   }
 
+  // ── step 5: Cleansia Plus ───────────────────────────────────────────────────
+
+  readonly plusSavings = computed(() => this.facade.plusSavings());
+  readonly servicesCatalogRoute = CleansiaCustomerRoute.SERVICES;
+
+  /**
+   * The mascot on the decline card. The artboard names mascot-arms-crossed,
+   * which the project does not have — this is the nearest pose that exists, and
+   * a missing image is a broken card.
+   */
+  readonly declineMascot = 'assets/images/mascot/mascot-ready.webp';
+
+  /** The trial the plans actually grant, not a number typed into the copy. */
+  readonly trialDays = computed(() => this.facade.plans()[0]?.trialPeriodDays ?? 0);
+
+  /**
+   * Services not already in the basket, three at most.
+   *
+   * The point of offering them HERE is that one visit covers them — so the list
+   * is what this cleaner could also do on the trip already being booked, not a
+   * catalogue.
+   */
+  readonly crossSellServices = computed(() => {
+    const chosen = new Set(this.facade.formData().selectedServiceIds);
+    return this.facade
+      .services()
+      .filter((service) => service.id && !chosen.has(service.id))
+      .slice(0, 3);
+  });
+
+  /**
+   * Ask the server what Plus is worth on the basket as it stands. Re-asked when
+   * the basket changes, because the answer is a percentage OF it.
+   */
+  /**
+   * Re-ask what Plus is worth whenever the basket that determines it changes,
+   * and only while the step that shows the answer is on screen.
+   */
+  private readonly plusSavingsSync = effect(() => {
+    const data = this.facade.formData();
+    const onPlusStep = this.facade.activeStep() === 4;
+    const havePlans = this.facade.plans().length > 0;
+    // Read so the effect re-runs on a change to any of them.
+    void data.selectedServiceIds;
+    void data.selectedPackageIds;
+    void data.rooms;
+    void data.bathrooms;
+    if (onPlusStep && havePlans) {
+      this.refreshPlusSavings();
+    }
+  });
+
+  private refreshPlusSavings(): void {
+    const plan = this.facade.plans()[0];
+    if (!plan?.code) return;
+
+    const data = this.facade.formData();
+    const query = new QuotePlusSavingsQuery();
+    query.selectedServiceIds = data.selectedServiceIds;
+    query.selectedPackageIds = data.selectedPackageIds;
+    query.rooms = data.rooms;
+    query.bathrooms = data.bathrooms;
+    query.planCode = plan.code;
+    // The SLOT, not the date: midnight is a different express band.
+    query.cleaningDate = composeSlotMoment(data.cleaningDate, data.cleaningTime) ?? undefined;
+    this.facade.loadPlusSavings(query);
+  }
+
+  /**
+   * Take a plan.
+   *
+   * Signed in, this is the subscribe flow's job and it lives on the membership
+   * screen — the wizard hands over rather than growing a second Stripe
+   * integration. Signed out it cannot happen at all, so the customer is sent to
+   * sign in with their basket parked.
+   */
+  choosePlan(plan: GetMembershipPlansResponse): void {
+    if (!this.facade.isAuthenticated()) {
+      this.goToAuth('login');
+      return;
+    }
+    this.parkDraft();
+    this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe'], {
+      queryParams: { plan: plan.code },
+    });
+  }
+
+  /**
+   * Off to sign in or register, with the basket parked first.
+   *
+   * The step tells the customer their unfinished order will still be here. This
+   * is the half of that sentence that is code — and it happens BEFORE the
+   * navigation, because a draft saved on the way out is a draft lost to a slow
+   * route.
+   */
+  goToAuth(target: 'login' | 'register'): void {
+    this.parkDraft();
+    this.router.navigate([
+      target === 'login' ? CleansiaCustomerRoute.LOGIN : CleansiaCustomerRoute.REGISTER,
+    ]);
+  }
+
+  private parkDraft(): void {
+    this.draft.park(this.facade.activeStep(), this.facade.formData());
+  }
+
+  /**
+   * Put a parked basket back, if there is one.
+   *
+   * The catalogue is NOT trusted to be the same: a service can be withdrawn
+   * while the customer is signing in, and a basket restored with a price that no
+   * longer exists is worse than one restored without it. Anything no longer on
+   * offer is dropped and named, the same way a rebook does it.
+   */
+  private restoreDraft(): void {
+    const parked = this.draft.take();
+    if (!parked) return;
+
+    const availableServices = new Set(
+      this.facade.services().map((service) => service.id)
+    );
+    const availablePackages = new Set(
+      this.facade.packages().map((pkg) => pkg.id)
+    );
+
+    const keptServices = parked.data.selectedServiceIds.filter((id) =>
+      availableServices.has(id)
+    );
+    const keptPackages = parked.data.selectedPackageIds.filter((id) =>
+      availablePackages.has(id)
+    );
+    const dropped =
+      keptServices.length !== parked.data.selectedServiceIds.length ||
+      keptPackages.length !== parked.data.selectedPackageIds.length;
+
+    this.facade.updateFormData({
+      ...parked.data,
+      selectedServiceIds: keptServices,
+      selectedPackageIds: keptPackages,
+    });
+    this.facade.goToStep(parked.step);
+
+    if (dropped) {
+      this.snackbar.showError(
+        this.translate.instant('pages.order.draft_partially_restored')
+      );
+    }
+  }
+
   // ── the review step ─────────────────────────────────────────────────────────
 
   /** Ticked before the order can be placed. Not a default — it is a consent. */
@@ -661,11 +824,20 @@ export class OrderWizardComponent implements OnInit {
       );
     }
 
+    // The membership, if there is one by the time the order is reviewed — the
+    // Plus step may have just added it. Named from the plan the server reports,
+    // never from what the step offered: subscribing happens on Stripe's page and
+    // can be abandoned there.
+    const membership = this.facade.activeMembership();
+    if (membership?.hasMembership && membership.planName) {
+      pay.push(membership.planName);
+    }
+
     return [
       { step: 0, icon: 'pi pi-list', titleKey: 'pages.order.steps.services', lines: services },
       { step: 1, icon: 'pi pi-map-marker', titleKey: 'pages.order.steps.address', lines: address },
       { step: 2, icon: 'pi pi-calendar', titleKey: 'pages.order.steps.datetime', lines: when },
-      { step: 3, icon: 'pi pi-credit-card', titleKey: 'pages.order.steps.payment', lines: pay },
+      { step: 3, icon: 'pi pi-credit-card', titleKey: 'pages.order.review_payment_card', lines: pay },
     ];
   });
 
@@ -801,7 +973,7 @@ export class OrderWizardComponent implements OnInit {
     // The consent is the review step's own condition, and the place-order
     // button reads the same list as every other step so it cannot refuse
     // silently either.
-    if (this.facade.activeStep() === 4 && !this.acceptedTerms()) {
+    if (this.facade.activeStep() === 5 && !this.acceptedTerms()) {
       reasons.push('pages.order.missing.terms');
     }
     return reasons;

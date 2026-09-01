@@ -845,7 +845,8 @@
         "address": "Address",
         "datetime": "Date & Time",
         "payment": "Payment",
-        "summary": "Summary"
+        "summary": "Summary",
+        "plus": "Cleansia Plus"
       },
       "saved_address_default": "Default",
       "new_address": "Enter a new address",
@@ -958,7 +959,35 @@
       "step_review_lead": "Fix any section right here, without walking through the whole wizard again.",
       "review_edit": "Edit",
       "accept_terms": "I agree to the terms of service and the processing of my personal data",
-      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing."
+      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing.",
+      "step_plus_title": "Add Cleansia Plus?",
+      "plus_lead_before": "On this order you would save",
+      "plus_lead_after": ". The first {{days}} days are free, so you pay nothing extra today.",
+      "plus_lead_plain": "The first {{days}} days are free, so you pay nothing extra today.",
+      "plus_best_value": "Best value",
+      "plus_choose": "Choose plan",
+      "plus_saves_vs_monthly": "Saves {{percent}}% against monthly",
+      "plus_trial_free": "First {{days}} days free",
+      "plus_perk_discount": "{{percent}}% off every order",
+      "plus_perk_cancel": "Free cancellation up to {{hours}} hours before",
+      "plus_perk_express": "{{count}} express clean a month with no surcharge",
+      "plus_perk_recurring": "Recurring slots with your cleaner",
+      "plus_needs_account": "Membership is tied to an account, so sign in or register first. Your unfinished order will be kept.",
+      "plus_sign_in": "Sign in",
+      "plus_register": "Register",
+      "plus_decline_title": "Not right now, thanks",
+      "plus_decline_note": "You will finish at the full price of {{total}}. You can add Plus any time later.",
+      "plus_decline_action": "Continue without Plus",
+      "cross_sell_title": "Anything else?",
+      "cross_sell_lead": "Picked from what is not in your order yet. The cleaner comes once and does it all.",
+      "cross_sell_all": "Full price list",
+      "draft_partially_restored": "Your order is back. Something in it is no longer offered, so it was removed.",
+      "summary_with_plus": "With Plus you would pay",
+      "plus_interval": {
+        "1": "Monthly",
+        "2": "Yearly"
+      },
+      "review_payment_card": "Payment and membership"
     },
     "orders": {
       "title": "My Orders",
@@ -1879,7 +1908,8 @@
     "set_bathrooms": "Set number of bathrooms: {{count}}",
     "previous_month": "Previous month",
     "next_month": "Next month",
-    "edit_step": "Edit: {{step}}"
+    "edit_step": "Edit: {{step}}",
+    "choose_plan": "Choose plan {{name}}"
   },
   "help": {
     "dismiss": "Got it, don't show again",

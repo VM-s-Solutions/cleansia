@@ -59,6 +59,25 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     }
 
     /// <summary>
+    /// What this basket would cost with a Cleansia Plus plan the caller does not have —
+    /// the "you would save X" line on the wizard's Plus step.
+    ///
+    /// Anonymous like the quote it sits beside: the whole point is to answer for someone
+    /// who has neither a membership nor, necessarily, an account.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting("interactive")]
+    [HttpPost("QuotePlusSavings")]
+    [ProducesResponseType(typeof(QuotePlusSavings.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PlusSavings(
+        [FromBody] QuotePlusSavings.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<QuotePlusSavings.Response>(result);
+    }
+
+    /// <summary>
     /// Customer-driven confirmation of a Pending recurring-template Order.
     /// Cash returns success immediately (order flips to Confirmed + Paid).
     /// Card returns a Stripe PaymentIntent + ephemeral key so the mobile

@@ -845,7 +845,8 @@
         "address": "Adresa",
         "datetime": "Dátum a čas",
         "payment": "Platba",
-        "summary": "Zhrnutie"
+        "summary": "Zhrnutie",
+        "plus": "Cleansia Plus"
       },
       "saved_address_default": "Predvolená",
       "new_address": "Zadať novú adresu",
@@ -958,7 +959,35 @@
       "step_review_lead": "Každú sekciu opravíte priamo tu, bez prechádzania celého sprievodcu znova.",
       "review_edit": "Upraviť",
       "accept_terms": "Súhlasím s obchodnými podmienkami a spracovaním osobných údajov",
-      "cancel_policy_note": "Zrušenie zdarma do 24 hodín. Do 15 minút od objednania neplatíte nič."
+      "cancel_policy_note": "Zrušenie zdarma do 24 hodín. Do 15 minút od objednania neplatíte nič.",
+      "step_plus_title": "Pridať Cleansia Plus?",
+      "plus_lead_before": "Na dnešnej objednávke by ste ušetrili",
+      "plus_lead_after": ". Prvých {{days}} dní je členstvo zdarma, takže dnes neplatíte nič navyše.",
+      "plus_lead_plain": "Prvých {{days}} dní je členstvo zdarma, takže dnes neplatíte nič navyše.",
+      "plus_best_value": "Najvýhodnejšie",
+      "plus_choose": "Vybrať plán",
+      "plus_saves_vs_monthly": "Ušetríte {{percent}} % oproti mesačnému",
+      "plus_trial_free": "Prvých {{days}} dní zdarma",
+      "plus_perk_discount": "{{percent}} % zľava na každú objednávku",
+      "plus_perk_cancel": "Zrušenie zdarma až {{hours}} hodiny pred upratovaním",
+      "plus_perk_express": "{{count}} expresné upratovanie mesačne bez príplatku",
+      "plus_perk_recurring": "Opakované termíny s vaším upratovačom",
+      "plus_needs_account": "Členstvo sa viaže na účet, takže sa najprv prihláste alebo zaregistrujte. Rozrobená objednávka vám zostane.",
+      "plus_sign_in": "Prihlásiť sa",
+      "plus_register": "Registrovať",
+      "plus_decline_title": "Zatiaľ nie, ďakujem",
+      "plus_decline_note": "Objednávku dokončíte za plnú cenu {{total}}. Plus si môžete pridať kedykoľvek neskôr.",
+      "plus_decline_action": "Pokračovať bez Plus",
+      "cross_sell_title": "Pridať ešte niečo?",
+      "cross_sell_lead": "Vybrané podľa toho, čo už v objednávke máte. Upratovač príde raz a urobí všetko.",
+      "cross_sell_all": "Celý cenník",
+      "draft_partially_restored": "Vrátili sme vašu objednávku. Niečo z nej už bohužiaľ neponúkame.",
+      "summary_with_plus": "S Plus by ste platili",
+      "plus_interval": {
+        "1": "Mesačne",
+        "2": "Ročne"
+      },
+      "review_payment_card": "Platba a členstvo"
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1879,7 +1908,8 @@
     "set_bathrooms": "Nastaviť počet kúpeľní: {{count}}",
     "previous_month": "Predchádzajúci mesiac",
     "next_month": "Ďalší mesiac",
-    "edit_step": "Upraviť: {{step}}"
+    "edit_step": "Upraviť: {{step}}",
+    "choose_plan": "Vybrať plán {{name}}"
   },
   "help": {
     "dismiss": "Rozumiem, nezobrazovať znova",

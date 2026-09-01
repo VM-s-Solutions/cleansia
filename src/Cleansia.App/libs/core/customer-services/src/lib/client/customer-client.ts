@@ -3336,6 +3336,11 @@ export interface IOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    quotePlusSavings(body?: QuotePlusSavingsQuery | undefined): Observable<QuotePlusSavingsResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     confirmRecurring(body?: ConfirmRecurringOrderCommand | undefined): Observable<ConfirmRecurringOrderResponse>;
     /**
      * @param id (optional) 
@@ -3680,6 +3685,69 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = QuoteOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    quotePlusSavings(body?: QuotePlusSavingsQuery | undefined): Observable<QuotePlusSavingsResponse> {
+        let url = this.baseUrl + "/api/Order/QuotePlusSavings";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processQuotePlusSavings(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processQuotePlusSavings(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<QuotePlusSavingsResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<QuotePlusSavingsResponse>;
+        }));
+    }
+
+    protected processQuotePlusSavings(response: HttpResponseBase): Observable<QuotePlusSavingsResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = QuotePlusSavingsResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -9741,6 +9809,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
     discountPercentage!: number;
     freeCancellationWindowHours!: number;
     allowsExpressUpgrade!: boolean;
+    expressUpgradesPerMonth!: number;
     trialPeriodDays!: number;
     savingsPercentVsMonthly!: number;
 
@@ -9763,6 +9832,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
             this.discountPercentage = Data["discountPercentage"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.savingsPercentVsMonthly = Data["savingsPercentVsMonthly"];
         }
@@ -9785,6 +9855,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
         data["discountPercentage"] = this.discountPercentage;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["savingsPercentVsMonthly"] = this.savingsPercentVsMonthly;
         return data;
@@ -9800,6 +9871,7 @@ export interface IGetMembershipPlansResponse {
     discountPercentage: number;
     freeCancellationWindowHours: number;
     allowsExpressUpgrade: boolean;
+    expressUpgradesPerMonth: number;
     trialPeriodDays: number;
     savingsPercentVsMonthly: number;
 }
@@ -12797,6 +12869,146 @@ export interface IQuoteOrderResponse {
     expressSurchargeWaivedByMembership: boolean;
     expressUpgradesRemaining: number | undefined;
     lines: QuoteOrderQuoteLine[] | undefined;
+}
+
+export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
+    selectedServiceIds!: string[] | undefined;
+    selectedPackageIds!: string[] | undefined;
+    rooms!: number;
+    bathrooms!: number;
+    planCode!: string | undefined;
+    currencyId!: string | undefined;
+    selectedExtraSlugs!: string[] | undefined;
+    cleaningDate!: Date | undefined;
+
+    constructor(data?: IQuotePlusSavingsQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["selectedServiceIds"])) {
+                this.selectedServiceIds = [] as any;
+                for (let item of Data["selectedServiceIds"])
+                    this.selectedServiceIds!.push(item);
+            }
+            if (Array.isArray(Data["selectedPackageIds"])) {
+                this.selectedPackageIds = [] as any;
+                for (let item of Data["selectedPackageIds"])
+                    this.selectedPackageIds!.push(item);
+            }
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+            this.planCode = Data["planCode"];
+            this.currencyId = Data["currencyId"];
+            if (Array.isArray(Data["selectedExtraSlugs"])) {
+                this.selectedExtraSlugs = [] as any;
+                for (let item of Data["selectedExtraSlugs"])
+                    this.selectedExtraSlugs!.push(item);
+            }
+            this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): QuotePlusSavingsQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new QuotePlusSavingsQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.selectedServiceIds)) {
+            data["selectedServiceIds"] = [];
+            for (let item of this.selectedServiceIds)
+                data["selectedServiceIds"].push(item);
+        }
+        if (Array.isArray(this.selectedPackageIds)) {
+            data["selectedPackageIds"] = [];
+            for (let item of this.selectedPackageIds)
+                data["selectedPackageIds"].push(item);
+        }
+        data["rooms"] = this.rooms;
+        data["bathrooms"] = this.bathrooms;
+        data["planCode"] = this.planCode;
+        data["currencyId"] = this.currencyId;
+        if (Array.isArray(this.selectedExtraSlugs)) {
+            data["selectedExtraSlugs"] = [];
+            for (let item of this.selectedExtraSlugs)
+                data["selectedExtraSlugs"].push(item);
+        }
+        data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IQuotePlusSavingsQuery {
+    selectedServiceIds: string[] | undefined;
+    selectedPackageIds: string[] | undefined;
+    rooms: number;
+    bathrooms: number;
+    planCode: string | undefined;
+    currencyId: string | undefined;
+    selectedExtraSlugs: string[] | undefined;
+    cleaningDate: Date | undefined;
+}
+
+export class QuotePlusSavingsResponse implements IQuotePlusSavingsResponse {
+    wouldSaveAmount!: number;
+    wouldPayTotal!: number;
+    currentTotal!: number;
+    currencyCode!: string | undefined;
+    planCode!: string | undefined;
+
+    constructor(data?: IQuotePlusSavingsResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.wouldSaveAmount = Data["wouldSaveAmount"];
+            this.wouldPayTotal = Data["wouldPayTotal"];
+            this.currentTotal = Data["currentTotal"];
+            this.currencyCode = Data["currencyCode"];
+            this.planCode = Data["planCode"];
+        }
+    }
+
+    static fromJS(data: any): QuotePlusSavingsResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new QuotePlusSavingsResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["wouldSaveAmount"] = this.wouldSaveAmount;
+        data["wouldPayTotal"] = this.wouldPayTotal;
+        data["currentTotal"] = this.currentTotal;
+        data["currencyCode"] = this.currencyCode;
+        data["planCode"] = this.planCode;
+        return data;
+    }
+}
+
+export interface IQuotePlusSavingsResponse {
+    wouldSaveAmount: number;
+    wouldPayTotal: number;
+    currentTotal: number;
+    currencyCode: string | undefined;
+    planCode: string | undefined;
 }
 
 export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto {

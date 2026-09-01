@@ -4,7 +4,17 @@ import { computed, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SnackbarService } from '@cleansia/services';
-import { AddressDto, PackageListItem, PaymentType, QuoteOrderResponse, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import {
+  AddressDto,
+  GetMembershipPlansResponse,
+  GetMyMembershipResponse,
+  PackageListItem,
+  PaymentType,
+  QuoteOrderResponse,
+  QuotePlusSavingsResponse,
+  SavedAddressDto,
+  ServiceListItem,
+} from '@cleansia/customer-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
@@ -81,6 +91,13 @@ class FakeOrderWizardFacade {
   promoCode = signal('');
 
   initialize = jest.fn();
+  // The Plus step reads the plan catalogue and the savings preview; the double
+  // supplies both so the component can render without either.
+  plans = signal<GetMembershipPlansResponse[]>([]);
+  plusSavings = signal<QuotePlusSavingsResponse | null>(null);
+  activeMembership = signal<GetMyMembershipResponse | null>(null);
+  loadPlans = jest.fn();
+  loadPlusSavings = jest.fn();
   goToStep = jest.fn((step: number) => this.activeStep.set(step));
   setCategory = jest.fn((slug: string | null) => this.selectedCategorySlug.set(slug));
   selectSavedAddress = jest.fn();

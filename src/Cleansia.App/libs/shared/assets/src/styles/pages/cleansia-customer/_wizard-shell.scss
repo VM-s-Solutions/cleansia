@@ -22,13 +22,15 @@
 
 :root {
   --cl-wiz-ground: #f8fbfe;
-  --cl-pack-tag: #0369a1;
+  --cl-accent-text: #0369a1;
   --cl-panel-border: #e0f2fe;
+  --cl-panel-border-strong: #bae6fd;
   --cl-blocked-bg: #fffbeb;
   --cl-blocked-border: #fde68a;
   // Amber-800, not the 600 the border is: the lighter one measures 2.5 on this
   // ground, and this is the text a stuck customer has to read.
   --cl-blocked-text: #92400e;
+  --cl-border-strong: #cbd5e1;
   // Slate-400, where the artboard draws slate-300. WCAG exempts an inactive
   // control from the contrast floor, but 1.48 is not "dimmed", it is gone — and
   // a customer still has to read which days the month has.
@@ -45,12 +47,14 @@
 
 :root.dark-mode {
   --cl-wiz-ground: #0b1626;
-  --cl-pack-tag: #7dd3fc;
+  --cl-accent-text: #7dd3fc;
   // The light theme's Sky100 hairline is a glare on a near-black panel.
   --cl-panel-border: rgba(56, 189, 248, 0.24);
+  --cl-panel-border-strong: rgba(56, 189, 248, 0.36);
   --cl-blocked-bg: rgba(251, 191, 36, 0.1);
   --cl-blocked-border: rgba(251, 191, 36, 0.32);
   --cl-blocked-text: #fcd34d;
+  --cl-border-strong: #334155;
   --cl-day-off: #64748b;
   // The dark theme's tint is a 6% wash over a near-black card, where slate-400
   // already clears the floor.
@@ -415,9 +419,8 @@
 
 .cl-wiz__pack-tag {
   // Sky700 on a white card; the dark theme's card is near-black, where Sky700
-  // measures 2.91 against the 4.5 a 12px label needs, so it rides the heading
-  // token instead of a literal.
-  color: var(--cl-pack-tag);
+  // measures under the floor, so it rides a token rather than a literal.
+  color: var(--cl-accent-text);
   text-align: left;
 }
 
@@ -948,7 +951,7 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: $primary-dark;
+  color: var(--cl-accent-text);
   background: var(--cl-tint-strong);
   padding: 6px 12px;
   border-radius: 999px;
@@ -1165,7 +1168,7 @@
   }
 
   &--waived {
-    color: $primary-dark;
+    color: var(--cl-accent-text);
   }
 }
 
@@ -1322,7 +1325,7 @@
   color: var(--cl-muted);
 
   &--ok {
-    color: $primary-dark;
+    color: var(--cl-accent-text);
   }
 
   &--bad {
@@ -1416,6 +1419,308 @@
 @media (max-width: 720px) {
   .cl-wiz__review {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// =============================================================================
+// Step 5 — Cleansia Plus
+// =============================================================================
+
+.cl-wiz__plus-amount {
+  color: var(--cl-accent-text);
+}
+
+.cl-wiz__plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.cl-wiz__plan {
+  position: relative;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: 26px;
+  padding: 24px 26px;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+
+  // The better-value plan, inverted. Sky800 rather than the artboard's Sky600
+  // for the same reason the featured package card is: its dimmed period label
+  // is a 12px token, and Sky600 cannot carry one at the 4.5 floor — pure white
+  // only reaches 4.08 there.
+  &--best {
+    background: $primary-darker;
+    border: 2px solid $primary-darker;
+    padding: 23px 25px;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+
+    .cl-wiz__plan-period {
+      color: #bae6fd;
+    }
+
+    // The artboard writes the period twice: once as the card's label, once under the
+// price in lower case. Same word, so it is the same key with a transform rather
+// than a second string to keep in step across five locales.
+.cl-wiz__plan-per {
+  text-transform: lowercase;
+}
+
+.cl-wiz__plan-price {
+      color: $white;
+    }
+
+    .cl-wiz__plan-per,
+    .cl-wiz__plan-note {
+      color: #e0f2fe;
+    }
+
+    .cl-wiz__plan-cta {
+      background: $white;
+      color: $primary-dark;
+    }
+  }
+}
+
+// Sits on the card's top edge, so the card cannot clip it.
+.cl-wiz__plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 24px;
+  background: $text-heading;
+  color: $white;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 13px;
+  border-radius: 999px;
+}
+
+// The artboard writes the period twice: once as the card's label, once under the
+// price in lower case. Same word, so it is the same key with a transform rather
+// than a second string to keep in step across five locales.
+.cl-wiz__plan-per {
+  text-transform: lowercase;
+}
+
+.cl-wiz__plan-price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2 * var(--cl-u));
+  letter-spacing: -0.9px;
+  color: var(--cl-accent-text);
+  margin-top: 6px;
+}
+
+.cl-wiz__plan-note {
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+  margin: 12px 0 0;
+}
+
+.cl-wiz__plan-cta {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: var(--cl-u);
+  margin-top: 16px;
+  box-sizing: border-box;
+  text-align: left;
+  cursor: pointer;
+}
+
+// ---- what the membership is worth -------------------------------------------
+.cl-wiz__perks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cl-wiz__perk {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  background: var(--cl-tint);
+  border-radius: 18px;
+
+  i {
+    flex-shrink: 0;
+    color: $primary-dark;
+  }
+
+  span {
+    font-size: calc(0.9375 * var(--cl-u));
+    color: var(--cl-body);
+  }
+}
+
+// ---- the account it has to be bought against --------------------------------
+.cl-wiz__plus-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-panel-border-strong);
+  border-radius: 18px;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+
+  > i {
+    flex-shrink: 0;
+    color: $primary-dark;
+  }
+}
+
+.cl-wiz__plus-account-text {
+  flex-grow: 1;
+}
+
+.cl-wiz__plus-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cl-wiz__plus-auth {
+  min-height: 40px;
+  padding: 0 20px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+// ---- and the way past, weighted the same ------------------------------------
+// Dashed, and without the card shadow the plans carry: it is an equal choice,
+// not a competing offer.
+.cl-wiz__decline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 18px 22px;
+  border: 1px dashed var(--cl-border-strong);
+  border-radius: 20px;
+}
+
+.cl-wiz__decline-art {
+  height: 68px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+.cl-wiz__decline-body {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cl-wiz__decline-title {
+  font-size: var(--cl-u);
+  color: var(--cl-body);
+}
+
+.cl-wiz__decline-cta {
+  flex-shrink: 0;
+  padding: 0 22px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+// ---- one more thing while the cleaner is coming anyway ----------------------
+.cl-wiz__cross-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cl-wiz__cross-title {
+  font-size: calc(1.3125 * var(--cl-u));
+}
+
+.cl-wiz__cross-lead {
+  margin: 4px 0 0;
+}
+
+.cl-wiz__cross-all {
+  flex-shrink: 0;
+  font-size: calc(0.9375 * var(--cl-u));
+}
+
+.cl-wiz__cross {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cl-wiz__cross-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: 18px;
+}
+
+.cl-wiz__cross-name {
+  font-size: var(--cl-u);
+}
+
+.cl-wiz__cross-desc {
+  margin-top: 2px;
+  font-size: calc(0.8125 * var(--cl-u));
+}
+
+.cl-wiz__cross-price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.0625 * var(--cl-u));
+  color: var(--cl-accent-text);
+  white-space: nowrap;
+}
+
+.cl-wiz__cross-add {
+  min-height: 38px;
+  padding: 0 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+// ---- the rail's Plus line ---------------------------------------------------
+.cl-wiz__summary-plus {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.cl-wiz__summary-plus-value {
+  font-weight: 700;
+  // Same pair, same reason as the package tagline: Sky700 measures 2.91 on the
+  // dark theme's card, against the 3 a 14px bold figure needs.
+  color: var(--cl-accent-text);
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .cl-wiz__plans,
+  .cl-wiz__perks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__plus-account,
+  .cl-wiz__decline {
+    flex-wrap: wrap;
   }
 }
 

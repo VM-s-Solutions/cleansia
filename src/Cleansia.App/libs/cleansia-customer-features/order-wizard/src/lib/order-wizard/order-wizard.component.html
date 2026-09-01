@@ -742,7 +742,158 @@
         chosen, each with a way back to the step that owns it — so a correction
         costs one click, not a walk through the whole wizard again.
       -->
+      <!--
+        Step 5, to the approved artboard: what Plus is worth on THIS basket, the
+        two plans, and an equally plain way past it. Every number here is the
+        server's — the plans come from the catalogue and the saving from a query
+        that applies the same 12% cap and express rules the order would.
+      -->
       @if (facade.activeStep() === 4) {
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_plus_title' | translate }}</h1>
+        @if (plusSavings(); as savings) {
+        <p class="cl-body cl-wiz__lead">
+          {{ 'pages.order.plus_lead_before' | translate }}
+          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount) }}</strong
+          >{{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
+        </p>
+        } @else {
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}</p>
+        }
+
+        <div class="cl-wiz__plans">
+          @for (plan of facade.plans(); track plan.code) {
+          <div class="cl-wiz__plan" [class.cl-wiz__plan--best]="plan.savingsPercentVsMonthly > 0">
+            @if (plan.savingsPercentVsMonthly > 0) {
+            <span class="cl-wiz__plan-badge">{{ 'pages.order.plus_best_value' | translate }}</span>
+            }
+            <div class="cl-lbl cl-wiz__plan-period">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
+            <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price) }}</div>
+            <div class="cl-muted cl-wiz__plan-per">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
+            <p class="cl-wiz__plan-note">
+              @if (plan.savingsPercentVsMonthly > 0) {
+              {{ 'pages.order.plus_saves_vs_monthly' | translate: { percent: plan.savingsPercentVsMonthly } }}
+              } @else {
+              {{ 'pages.order.plus_trial_free' | translate: { days: plan.trialPeriodDays } }}
+              }
+            </p>
+            <button
+              type="button"
+              class="cl-btn cl-wiz__plan-cta"
+              [attr.aria-label]="'aria.choose_plan' | translate: { name: plan.name }"
+              (click)="choosePlan(plan)"
+            >{{ 'pages.order.plus_choose' | translate }}</button>
+          </div>
+          }
+        </div>
+
+        <!--
+          The perks, stated from the plan the catalogue returns rather than from
+          a list typed here: the discount, the cancellation window and the
+          express quota are all per-plan columns, and a hardcoded number is one
+          an admin can change out from under.
+        -->
+        @if (facade.plans()[0]; as plan) {
+        <div class="cl-wiz__perks">
+          <div class="cl-wiz__perk">
+            <i class="pi pi-star" aria-hidden="true"></i>
+            <span>{{ 'pages.order.plus_perk_discount' | translate: { percent: plan.discountPercentage } }}</span>
+          </div>
+          <div class="cl-wiz__perk">
+            <i class="pi pi-clock" aria-hidden="true"></i>
+            <span>{{ 'pages.order.plus_perk_cancel' | translate: { hours: plan.freeCancellationWindowHours } }}</span>
+          </div>
+          @if (plan.expressUpgradesPerMonth > 0) {
+          <div class="cl-wiz__perk">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            <span>{{ 'pages.order.plus_perk_express' | translate: { count: plan.expressUpgradesPerMonth } }}</span>
+          </div>
+          }
+          <div class="cl-wiz__perk">
+            <i class="pi pi-calendar" aria-hidden="true"></i>
+            <span>{{ 'pages.order.plus_perk_recurring' | translate }}</span>
+          </div>
+        </div>
+        }
+
+        <!--
+          Plus is bought against an account — the subscribe endpoint is
+          authenticated and Stripe needs a customer to bill. The basket is parked
+          before the customer leaves, so the sentence saying it will still be
+          here is one the code keeps.
+        -->
+        @if (!facade.isAuthenticated()) {
+        <div class="cl-wiz__plus-account">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span class="cl-wiz__plus-account-text">{{ 'pages.order.plus_needs_account' | translate }}</span>
+          <span class="cl-wiz__plus-account-actions">
+            <button type="button" class="cl-chip cl-wiz__plus-auth" (click)="goToAuth('login')">
+              {{ 'pages.order.plus_sign_in' | translate }}
+            </button>
+            <button type="button" class="cl-chip cl-wiz__plus-auth" (click)="goToAuth('register')">
+              {{ 'pages.order.plus_register' | translate }}
+            </button>
+          </span>
+        </div>
+        }
+
+        <!--
+          The way past, given the same weight as the way in. A step that only
+          offers one exit is not offering a choice.
+        -->
+        <div class="cl-wiz__decline">
+          <img [src]="declineMascot" alt="" class="cl-wiz__decline-art" />
+          <div class="cl-wiz__decline-body">
+            <div class="cl-h4 cl-wiz__decline-title">{{ 'pages.order.plus_decline_title' | translate }}</div>
+            <div class="cl-muted">
+              {{ 'pages.order.plus_decline_note' | translate: { total: formatPrice(facade.displayedTotalPrice()) } }}
+            </div>
+          </div>
+          <button type="button" class="cl-chip cl-wiz__decline-cta" (click)="onNextStep()">
+            {{ 'pages.order.plus_decline_action' | translate }}
+          </button>
+        </div>
+
+        <div class="cl-wiz__rule"></div>
+
+        <!--
+          The services not already in the basket. One visit, one cleaner — which
+          is the actual reason to add them now rather than book again later.
+        -->
+        @if (crossSellServices().length > 0) {
+        <div class="cl-wiz__cross-head">
+          <div>
+            <div class="cl-h3 cl-wiz__cross-title">{{ 'pages.order.cross_sell_title' | translate }}</div>
+            <p class="cl-muted cl-wiz__cross-lead">{{ 'pages.order.cross_sell_lead' | translate }}</p>
+          </div>
+          <a class="cl-link cl-wiz__cross-all" [routerLink]="servicesCatalogRoute">
+            {{ 'pages.order.cross_sell_all' | translate }}
+          </a>
+        </div>
+        <div class="cl-wiz__cross">
+          @for (service of crossSellServices(); track service.id) {
+          <div class="cl-wiz__cross-row">
+            <div>
+              <div class="cl-h4 cl-wiz__cross-name">{{ getTranslation(service, 'name') }}</div>
+              @if (getTranslation(service, 'description'); as desc) {
+              <div class="cl-muted cl-wiz__cross-desc">{{ desc }}</div>
+              }
+            </div>
+            <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice) }}</div>
+            <button
+              type="button"
+              class="cl-chip cl-wiz__cross-add"
+              [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
+              (click)="toggleService(service.id!)"
+            >{{ 'pages.order.service_add' | translate }}</button>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      }
+
+      @if (facade.activeStep() === 5) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_review_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_review_lead' | translate }}</p>
@@ -903,6 +1054,20 @@
             <span class="cl-num">− {{ formatPrice(facade.tierDiscount()) }}</span>
           </div>
           }
+        }
+
+        <!--
+          What Plus would make of this basket, shown where the price it changes
+          is — and only on the step that offers it, so the rest of the wizard is
+          not carrying an advert.
+        -->
+        @if (facade.activeStep() === 4 && plusSavings(); as savings) {
+        @if (savings.wouldSaveAmount > 0) {
+        <div class="cl-wiz__summary-plus">
+          <span>{{ 'pages.order.summary_with_plus' | translate }}</span>
+          <span class="cl-num cl-wiz__summary-plus-value">{{ formatPrice(savings.wouldPayTotal) }}</span>
+        </div>
+        }
         }
 
         <div class="cl-wiz__rule"></div>

@@ -15,6 +15,7 @@ import {
   PaymentType,
   QuoteOrderResponse,
   ServiceListItem,
+  QuotePlusSavingsQuery,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -128,6 +129,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     'pages.order.steps.address',
     'pages.order.steps.datetime',
     'pages.order.steps.payment',
+    'pages.order.steps.plus',
     'pages.order.steps.summary',
   ];
 
@@ -136,6 +138,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     'pi pi-map-marker',
     'pi pi-calendar',
     'pi pi-credit-card',
+    'pi pi-star',
     'pi pi-check-circle',
   ];
 
@@ -162,6 +165,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // re-exposed here so the slot grid and the summary step both read the wizard facade.
   readonly plusFreeCancellationHours = this.membership.freeCancellationWindowHours;
   readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
+  readonly activeMembership = this.membership.membership;
+  readonly plans = this.membership.plans;
+  readonly plusSavings = this.membership.plusSavings;
   readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
@@ -180,6 +186,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // provided alongside this facade on the component. We re-expose its signal
   // so the template keeps reading the wizard facade.
   readonly cityServiced = this.serviceArea.cityServiced;
+
+  loadPlans(): void {
+    this.membership.loadPlans();
+  }
+
+  loadPlusSavings(query: QuotePlusSavingsQuery): void {
+    this.membership.loadPlusSavings(query);
+  }
 
   constructor() {
     super();

@@ -845,7 +845,8 @@
         "address": "Adresa",
         "datetime": "Datum a čas",
         "payment": "Platba",
-        "summary": "Souhrn"
+        "summary": "Souhrn",
+        "plus": "Cleansia Plus"
       },
       "saved_address_default": "Výchozí",
       "new_address": "Zadat novou adresu",
@@ -958,7 +959,35 @@
       "step_review_lead": "Každou sekci opravíte přímo tady, bez procházení celého průvodce znovu.",
       "review_edit": "Upravit",
       "accept_terms": "Souhlasím s obchodními podmínkami a zpracováním osobních údajů",
-      "cancel_policy_note": "Zrušení zdarma do 24 hodin. Do 15 minut od objednání neplatíte nic."
+      "cancel_policy_note": "Zrušení zdarma do 24 hodin. Do 15 minut od objednání neplatíte nic.",
+      "step_plus_title": "Přidat Cleansia Plus?",
+      "plus_lead_before": "Na dnešní objednávce byste ušetřili",
+      "plus_lead_after": ". Prvních {{days}} dní je členství zdarma, takže dnes neplatíte nic navíc.",
+      "plus_lead_plain": "Prvních {{days}} dní je členství zdarma, takže dnes neplatíte nic navíc.",
+      "plus_best_value": "Nejvýhodnější",
+      "plus_choose": "Vybrat plán",
+      "plus_saves_vs_monthly": "Ušetříte {{percent}} % oproti měsíčnímu",
+      "plus_trial_free": "Prvních {{days}} dní zdarma",
+      "plus_perk_discount": "{{percent}} % sleva na každou objednávku",
+      "plus_perk_cancel": "Zrušení zdarma až {{hours}} hodiny před úklidem",
+      "plus_perk_express": "{{count}} expresní úklid měsíčně bez příplatku",
+      "plus_perk_recurring": "Opakované termíny s vaším uklízečem",
+      "plus_needs_account": "Členství se váže na účet, takže se nejdřív přihlaste nebo zaregistrujte. Rozdělaná objednávka vám zůstane.",
+      "plus_sign_in": "Přihlásit se",
+      "plus_register": "Registrovat",
+      "plus_decline_title": "Zatím ne, děkuji",
+      "plus_decline_note": "Objednávku dokončíte za plnou cenu {{total}}. Plus si můžete přidat kdykoli později.",
+      "plus_decline_action": "Pokračovat bez Plus",
+      "cross_sell_title": "Přidat ještě něco?",
+      "cross_sell_lead": "Vybráno podle toho, co už v objednávce máte. Uklízeč přijede jednou a udělá všechno.",
+      "cross_sell_all": "Celý ceník",
+      "draft_partially_restored": "Vrátili jsme vaši objednávku. Něco z ní už bohužel nenabízíme.",
+      "summary_with_plus": "S Plus byste platili",
+      "plus_interval": {
+        "1": "Měsíčně",
+        "2": "Ročně"
+      },
+      "review_payment_card": "Platba a členství"
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1879,7 +1908,8 @@
     "set_bathrooms": "Nastavit počet koupelen: {{count}}",
     "previous_month": "Předchozí měsíc",
     "next_month": "Další měsíc",
-    "edit_step": "Upravit: {{step}}"
+    "edit_step": "Upravit: {{step}}",
+    "choose_plan": "Vybrat plán {{name}}"
   },
   "help": {
     "dismiss": "Rozumím, nezobrazovat znovu",

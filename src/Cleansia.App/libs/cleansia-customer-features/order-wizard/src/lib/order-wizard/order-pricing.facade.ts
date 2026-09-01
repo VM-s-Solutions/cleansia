@@ -21,6 +21,7 @@ import {
 } from 'rxjs';
 import {
   composeFinalPriceForUnquotedDiscount,
+  composeSlotMoment,
   OrderWizardFormData,
 } from './order-wizard.models';
 
@@ -164,27 +165,10 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       .filter(([, on]) => on)
       .map(([slug]) => slug)
       .sort();
-    // Compose the actual slot moment for the quote, the same way submit() does,
-    // so the backend's express-surcharge check stays consistent between /Quote
-    // and /Create — otherwise the quote sees midnight (no surcharge) but Create
-    // sees the real slot (surcharge applies) and PriceMatchesAsync rejects with
-    // order.total_price.not_match.
-    let cleaningDateIso: string | null = null;
-    if (data.cleaningDate && data.cleaningTime) {
-      const [h, m] = data.cleaningTime.split(':').map(Number);
-      if (!Number.isNaN(h) && !Number.isNaN(m)) {
-        const slot = new Date(
-          data.cleaningDate.getFullYear(),
-          data.cleaningDate.getMonth(),
-          data.cleaningDate.getDate(),
-          h,
-          m,
-          0,
-          0,
-        );
-        cleaningDateIso = slot.toISOString();
-      }
-    }
+    // → composeSlotMoment: the date alone is midnight, which sits in a
+    // different express band from the slot.
+    const cleaningDateIso = composeSlotMoment(data.cleaningDate, data.cleaningTime)?.toISOString() ?? null;
+
     return {
       selectedServiceIds: [...data.selectedServiceIds].sort(),
       selectedPackageIds: [...data.selectedPackageIds].sort(),

@@ -20,8 +20,8 @@ export function customerAddressSearchPort(): AddressSearchPort {
   const client = inject(CustomerClient);
 
   return {
-    search: (query, countries, language, limit) =>
-      client.addressSearchClient.search(query, countries, language, limit).pipe(
+    search: (query, countries, limit) =>
+      client.addressSearchClient.search(query, countries, limit).pipe(
         map((response): MapboxAddressSuggestion[] =>
           (response.suggestions ?? []).map((s) => ({
             placeName: s.placeName ?? '',

@@ -53,6 +53,12 @@ export interface OrderWizardFormData {
    */
   customerFloor: string;
   customerApartment: string;
+  /**
+   * How the cleaner gets in: the shape of the answer, where
+   * `entryInstructions` is the detail. Redacted together for a cleaner the
+   * order does not belong to. → src/Cleansia.Core.Domain/Orders/Order.cs
+   */
+  accessMode: string;
   cleaningDate: Date | null;
   cleaningTime: string;
   paymentType: PaymentType;
@@ -119,6 +125,7 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   propertyType: 'flat',
   customerFloor: '',
   customerApartment: '',
+  accessMode: '',
   promoCode: '',
   preferredEmployeeId: null,
 };

@@ -40,7 +40,7 @@ public class MapboxSuggestionParsingTests
     {
         var service = Build(PragueFeature);
 
-        var results = await service.SearchAsync("Vinohradská 12", "cz", "cs", 5, CancellationToken.None);
+        var results = await service.SearchAsync("Vinohradská 12", "cz", 5, CancellationToken.None);
 
         var suggestion = Assert.Single(results);
         Assert.Equal("Vinohradská 12, 120 00 Praha, Česko", suggestion.PlaceName);
@@ -59,7 +59,7 @@ public class MapboxSuggestionParsingTests
         // an address the platform does in fact serve.
         var service = Build(PragueFeature);
 
-        var results = await service.SearchAsync("Vinohradská 12", "cz", "cs", 5, CancellationToken.None);
+        var results = await service.SearchAsync("Vinohradská 12", "cz", 5, CancellationToken.None);
 
         Assert.Equal("Praha", Assert.Single(results).City);
     }
@@ -81,7 +81,7 @@ public class MapboxSuggestionParsingTests
         }
         """);
 
-        var results = await service.SearchAsync("Náměstí 1", "cz", "cs", 5, CancellationToken.None);
+        var results = await service.SearchAsync("Náměstí 1", "cz", 5, CancellationToken.None);
 
         Assert.Equal("Jinde", Assert.Single(results).City);
     }
@@ -102,7 +102,7 @@ public class MapboxSuggestionParsingTests
         }
         """);
 
-        Assert.Equal("Zenklova", Assert.Single(await service.SearchAsync("Zenklova", "cz", "cs", 5, CancellationToken.None)).Street);
+        Assert.Equal("Zenklova", Assert.Single(await service.SearchAsync("Zenklova", "cz", 5, CancellationToken.None)).Street);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class MapboxSuggestionParsingTests
         }
         """);
 
-        Assert.Equal("180 00", Assert.Single(await service.SearchAsync("180 00", "cz", "cs", 5, CancellationToken.None)).Street);
+        Assert.Equal("180 00", Assert.Single(await service.SearchAsync("180 00", "cz", 5, CancellationToken.None)).Street);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class MapboxSuggestionParsingTests
         { "features": [ { "place_name": "Nowhere", "text": "Nowhere", "center": [14.0] } ] }
         """);
 
-        Assert.Empty(await service.SearchAsync("Nowhere", "cz", "cs", 5, CancellationToken.None));
+        Assert.Empty(await service.SearchAsync("Nowhere", "cz", 5, CancellationToken.None));
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class MapboxSuggestionParsingTests
         var handler = new RecordingHandler(PragueFeature, HttpStatusCode.OK);
         var service = Build(handler);
 
-        Assert.Empty(await service.SearchAsync("ab", "cz", "cs", 5, CancellationToken.None));
+        Assert.Empty(await service.SearchAsync("ab", "cz", 5, CancellationToken.None));
         Assert.Equal(0, handler.Calls);
     }
 
@@ -153,7 +153,7 @@ public class MapboxSuggestionParsingTests
         var handler = new RecordingHandler(PragueFeature, HttpStatusCode.OK);
         var service = Build(handler, token: string.Empty);
 
-        Assert.Empty(await service.SearchAsync("Vinohradská 12", "cz", "cs", 5, CancellationToken.None));
+        Assert.Empty(await service.SearchAsync("Vinohradská 12", "cz", 5, CancellationToken.None));
         Assert.Equal(0, handler.Calls);
     }
 
@@ -162,7 +162,7 @@ public class MapboxSuggestionParsingTests
     {
         var service = Build(new RecordingHandler("upstream is down", HttpStatusCode.ServiceUnavailable));
 
-        Assert.Empty(await service.SearchAsync("Vinohradská 12", "cz", "cs", 5, CancellationToken.None));
+        Assert.Empty(await service.SearchAsync("Vinohradská 12", "cz", 5, CancellationToken.None));
     }
 
     [Fact]
@@ -173,14 +173,16 @@ public class MapboxSuggestionParsingTests
         var handler = new RecordingHandler(PragueFeature, HttpStatusCode.OK);
         var service = Build(handler);
 
-        await service.SearchAsync("Vinohradská 12", "cz", "cs", 5, CancellationToken.None);
+        await service.SearchAsync("Vinohradská 12", "cz", 5, CancellationToken.None);
 
         Assert.Contains("access_token=test-token", handler.LastUrl);
         Assert.Contains("autocomplete=true", handler.LastUrl);
         Assert.Contains("types=address,postcode", handler.LastUrl);
         Assert.Contains("limit=5", handler.LastUrl);
         Assert.Contains("country=cz", handler.LastUrl);
-        Assert.Contains("language=cs", handler.LastUrl);
+        // NOT localised: asking the provider for the visitor's language translates the
+        // city too, and "Прага" fails the serviced-city check that stores "Praha".
+        Assert.DoesNotContain("language=", handler.LastUrl);
     }
 
     [Theory]
@@ -191,7 +193,7 @@ public class MapboxSuggestionParsingTests
         var handler = new RecordingHandler(PragueFeature, HttpStatusCode.OK);
         var service = Build(handler);
 
-        await service.SearchAsync("Vinohradská 12", "cz", "cs", requested, CancellationToken.None);
+        await service.SearchAsync("Vinohradská 12", "cz", requested, CancellationToken.None);
 
         var limit = int.Parse(handler.LastUrl.Split("limit=")[1].Split('&')[0]);
         Assert.InRange(limit, 1, 10);

@@ -39,6 +39,9 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.CustomerApartment)
             .HasMaxLength(20);
 
+        builder.Property(o => o.AccessMode)
+            .HasMaxLength(20);
+
         builder.Property(o => o.TotalPrice)
             .IsRequired()
             .HasPrecision(18, 2);

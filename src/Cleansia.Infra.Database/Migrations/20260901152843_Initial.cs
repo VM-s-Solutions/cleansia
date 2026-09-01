@@ -1112,6 +1112,7 @@ namespace Cleansia.Infra.Database.Migrations
                     AccessInstructions = table.Column<string>(type: "text", nullable: true),
                     CustomerFloor = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CustomerApartment = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    AccessMode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: true),
                     ReceiptId = table.Column<string>(type: "text", nullable: true),

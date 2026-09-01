@@ -32,7 +32,24 @@ import {
   getFieldError,
   getItemTranslation,
 } from './order-wizard.models';
+import {
+  EXPRESS_LEAD_TIME_HOURS,
+  EXPRESS_SURCHARGE_RATE,
+  FIRST_WINDOW_HOUR,
+  LAST_WINDOW_HOUR,
+  STANDARD_LEAD_TIME_HOURS,
+} from '@cleansia/models';
 import { WizardSummaryStepComponent } from './components/wizard-summary-step.component';
+
+/** Midnight of a date, so two dates compare as days and not as instants. */
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** The first of a date's month. */
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
 
 @Component({
   selector: 'cleansia-customer-order-wizard',
@@ -99,12 +116,21 @@ export class OrderWizardComponent implements OnInit {
 
   allTimeOptions: TimeOption[] = generateTimeOptions();
 
+  /**
+   * Today still has a slot someone could actually book.
+   *
+   * The lead time is part of that question. Without it this said yes to any hour
+   * later than now, so the calendar offered today while every one of today's
+   * slots was already inside the two-hour minimum — a date you can pick and then
+   * cannot pair with a time.
+   */
   private todayHasSlots(): boolean {
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const earliestMinutes =
+      now.getHours() * 60 + now.getMinutes() + EXPRESS_LEAD_TIME_HOURS * 60;
     return this.allTimeOptions.some((opt) => {
       const [h, m] = opt.value.split(':').map(Number);
-      return h * 60 + m > currentMinutes;
+      return h * 60 + m >= earliestMinutes;
     });
   }
 
@@ -368,19 +394,128 @@ export class OrderWizardComponent implements OnInit {
   onDateChange(date: Date | null): void {
     this.facade.updateFormData({ cleaningDate: date });
 
-    // Reset time if currently selected time is no longer available
-    const available = this.timeOptions();
+    // Snap to the first BOOKABLE slot when the chosen one is not one on the new
+    // date — the previous check accepted any slot in the list, which includes
+    // the ones marked unavailable.
+    const bookable = this.timeOptions().filter((o) => o.availability !== 'unavailable');
     const currentTime = this.facade.formData().cleaningTime;
-    if (available.length && !available.some((o) => o.value === currentTime)) {
-      this.facade.updateFormData({ cleaningTime: available[0].value });
+    if (bookable.length && !bookable.some((o) => o.value === currentTime)) {
+      this.facade.updateFormData({ cleaningTime: bookable[0].value });
     }
   }
 
+  /**
+   * The chosen slot is still bookable. `timeOptions()` MARKS availability rather
+   * than filtering, so every slot is a member of it — including the ones already
+   * inside the lead time. Membership alone let a customer advance on a slot the
+   * backend would refuse.
+   */
   hasValidTime = computed(() => {
-    const available = this.timeOptions();
     const currentTime = this.facade.formData().cleaningTime;
-    return available.some((o) => o.value === currentTime);
+    return this.timeOptions().some(
+      (o) => o.value === currentTime && o.availability !== 'unavailable'
+    );
   });
+
+  // ── step 3: when ────────────────────────────────────────────────────────────
+
+  /**
+   * The lead-time and surcharge rules, stated where the customer picks the time
+   * that triggers them. All three mirror `BookingPolicy` and live in the shared
+   * booking-window model, which the home calculator reads too — a second copy of
+   * "2 to 4 hours is express" drifts the first time one of them changes.
+   */
+  readonly standardLeadHours = STANDARD_LEAD_TIME_HOURS;
+  readonly expressLeadHours = EXPRESS_LEAD_TIME_HOURS;
+  readonly expressRatePercent = Math.round(EXPRESS_SURCHARGE_RATE * 100);
+  // Padded: the sentence sits under a grid of "08:00" chips, and "8:00–20:00"
+  // beside them reads as a different kind of value.
+  readonly firstWindowHour = String(FIRST_WINDOW_HOUR).padStart(2, '0');
+  readonly lastWindowHour = String(LAST_WINDOW_HOUR).padStart(2, '0');
+
+  /** The four ways in the artboard offers. Persisted on the order as a slug. */
+  readonly accessModes = ['at_home', 'keys_handover', 'door_code', 'reception'] as const;
+
+  setAccessMode(mode: string): void {
+    this.facade.updateFormData({ accessMode: mode });
+  }
+
+  /** First of the month currently drawn. Not the selection — you can look ahead. */
+  private readonly visibleMonth = signal(startOfMonth(new Date()));
+
+  readonly visibleMonthLabel = computed(() => {
+    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const label = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' })
+      .format(this.visibleMonth());
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  });
+
+  /**
+   * Weekday initials for the active locale, Monday first. Built from real dates
+   * rather than a hardcoded list so a locale that abbreviates differently gets
+   * its own — and so the order matches the grid, which is the part that breaks
+   * silently if they disagree.
+   */
+  readonly weekdayNames = computed(() => {
+    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const format = new Intl.DateTimeFormat(tag, { weekday: 'short' });
+    // 2026-01-05 is a Monday.
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(2026, 0, 5 + i);
+      const name = format.format(day).replace('.', '');
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    });
+  });
+
+  /**
+   * The visible month as 7-column cells, with leading blanks so the first day
+   * lands under its weekday. `bookable` is the same question the time grid asks
+   * — a day with no slot left is not a day you can pick.
+   */
+  readonly calendarCells = computed(() => {
+    const month = this.visibleMonth();
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    // getDay() is Sunday-first; the grid is Monday-first.
+    const leading = (month.getDay() + 6) % 7;
+
+    const earliest = startOfDay(this.minDate());
+    const cells: { key: string; day: number | null; date: Date | null; bookable: boolean }[] = [];
+
+    for (let i = 0; i < leading; i += 1) {
+      cells.push({ key: `blank-${i}`, day: null, date: null, bookable: false });
+    }
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(year, monthIndex, day);
+      cells.push({
+        key: `${year}-${monthIndex}-${day}`,
+        day,
+        date,
+        bookable: startOfDay(date).getTime() >= earliest.getTime(),
+      });
+    }
+    return cells;
+  });
+
+  /** No month is offered that is entirely behind the earliest bookable day. */
+  readonly canGoPreviousMonth = computed(
+    () => this.visibleMonth().getTime() > startOfMonth(this.minDate()).getTime()
+  );
+
+  shiftMonth(delta: number): void {
+    const current = this.visibleMonth();
+    this.visibleMonth.set(new Date(current.getFullYear(), current.getMonth() + delta, 1));
+  }
+
+  isSelectedDate(date: Date): boolean {
+    const selected = this.facade.formData().cleaningDate;
+    return !!selected && startOfDay(selected).getTime() === startOfDay(date).getTime();
+  }
+
+  selectDate(date: Date): void {
+    this.onDateChange(date);
+  }
 
   readonly propertyTypes = ['flat', 'house'] as const;
 
@@ -432,7 +567,7 @@ export class OrderWizardComponent implements OnInit {
    * property, so a computed that reads it never re-runs and the plural form
    * would freeze in whatever language the page first loaded in.
    */
-  private readonly lang = signal(this.translate.currentLang);
+  readonly lang = signal(this.translate.currentLang);
 
   /**
    * Czech, Slovak, Russian and Ukrainian each take three plural forms and the

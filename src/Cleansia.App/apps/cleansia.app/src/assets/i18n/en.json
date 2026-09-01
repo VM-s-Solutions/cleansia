@@ -934,6 +934,18 @@
         "phone": "Enter a valid phone number.",
         "date": "Pick a cleaning date.",
         "time": "Pick a time that is still available."
+      },
+      "step_when_title": "When should we come?",
+      "step_when_lead": "The earliest slot is in {{lead}} hours. An earlier one, from {{express}} hours, carries a +{{rate}}% express surcharge.",
+      "arrival_time_label": "Arrival time",
+      "time_note": "Greyed times are already inside today’s lead time. Daily windows {{first}}:00–{{last}}:00.",
+      "express_surcharge_note": "This slot is express — +{{rate}}% is added to the price.",
+      "access_mode_label": "Getting in",
+      "access_mode": {
+        "at_home": "I will be home",
+        "keys_handover": "I will hand over keys",
+        "door_code": "Door code",
+        "reception": "Reception"
       }
     },
     "orders": {
@@ -1852,7 +1864,9 @@
     "decrease_bathrooms": "Decrease bathrooms",
     "increase_bathrooms": "Increase bathrooms",
     "set_rooms": "Set number of rooms: {{count}}",
-    "set_bathrooms": "Set number of bathrooms: {{count}}"
+    "set_bathrooms": "Set number of bathrooms: {{count}}",
+    "previous_month": "Previous month",
+    "next_month": "Next month"
   },
   "help": {
     "dismiss": "Got it, don't show again",

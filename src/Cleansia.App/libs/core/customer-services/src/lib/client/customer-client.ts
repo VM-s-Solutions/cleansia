@@ -18,11 +18,10 @@ export interface IAddressSearchClient {
     /**
      * @param q (optional) 
      * @param country (optional) 
-     * @param language (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    search(q?: string | undefined, country?: string | undefined, language?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse>;
+    search(q?: string | undefined, country?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse>;
     /**
      * @param lat (optional) 
      * @param lng (optional) 
@@ -47,11 +46,10 @@ export class AddressSearchClient implements IAddressSearchClient {
     /**
      * @param q (optional) 
      * @param country (optional) 
-     * @param language (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    search(q?: string | undefined, country?: string | undefined, language?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse> {
+    search(q?: string | undefined, country?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse> {
         let url = this.baseUrl + "/api/AddressSearch/search?";
         if (q === null)
             throw new globalThis.Error("The parameter 'q' cannot be null.");
@@ -61,10 +59,6 @@ export class AddressSearchClient implements IAddressSearchClient {
             throw new globalThis.Error("The parameter 'country' cannot be null.");
         else if (country !== undefined)
             url += "country=" + encodeURIComponent("" + country) + "&";
-        if (language === null)
-            throw new globalThis.Error("The parameter 'language' cannot be null.");
-        else if (language !== undefined)
-            url += "language=" + encodeURIComponent("" + language) + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -7854,6 +7848,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     accessInstructions!: string | undefined;
     customerFloor!: string | undefined;
     customerApartment!: string | undefined;
+    accessMode!: string | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -7902,6 +7897,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.accessInstructions = Data["accessInstructions"];
             this.customerFloor = Data["customerFloor"];
             this.customerApartment = Data["customerApartment"];
+            this.accessMode = Data["accessMode"];
         }
     }
 
@@ -7950,6 +7946,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["accessInstructions"] = this.accessInstructions;
         data["customerFloor"] = this.customerFloor;
         data["customerApartment"] = this.customerApartment;
+        data["accessMode"] = this.accessMode;
         return data;
     }
 }
@@ -7977,6 +7974,7 @@ export interface ICreateOrderCommand {
     accessInstructions: string | undefined;
     customerFloor: string | undefined;
     customerApartment: string | undefined;
+    accessMode: string | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -11229,6 +11227,7 @@ export class OrderItem implements IOrderItem {
     accessInstructions!: string | undefined;
     customerFloor!: string | undefined;
     customerApartment!: string | undefined;
+    accessMode!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -11301,6 +11300,7 @@ export class OrderItem implements IOrderItem {
             this.accessInstructions = Data["accessInstructions"];
             this.customerFloor = Data["customerFloor"];
             this.customerApartment = Data["customerApartment"];
+            this.accessMode = Data["accessMode"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -11397,6 +11397,7 @@ export class OrderItem implements IOrderItem {
         data["accessInstructions"] = this.accessInstructions;
         data["customerFloor"] = this.customerFloor;
         data["customerApartment"] = this.customerApartment;
+        data["accessMode"] = this.accessMode;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -11480,6 +11481,7 @@ export interface IOrderItem {
     accessInstructions: string | undefined;
     customerFloor: string | undefined;
     customerApartment: string | undefined;
+    accessMode: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;

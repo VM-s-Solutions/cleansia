@@ -934,6 +934,18 @@
         "phone": "Zadajte platné telefónne číslo.",
         "date": "Vyberte dátum upratovania.",
         "time": "Vyberte čas, ktorý je ešte voľný."
+      },
+      "step_when_title": "Kedy máme prísť?",
+      "step_when_lead": "Najbližší voľný termín je o {{lead}} hodiny. Skorší termín, najskôr o {{express}} hodiny, má expresný príplatok +{{rate}} %.",
+      "arrival_time_label": "Čas príchodu",
+      "time_note": "Sivé časy sú dnes už mimo dojazd. Denné okná {{first}}:00–{{last}}:00.",
+      "express_surcharge_note": "Tento čas je expresný — k cene sa pripočíta +{{rate}} %.",
+      "access_mode_label": "Vstup do bytu",
+      "access_mode": {
+        "at_home": "Budem doma",
+        "keys_handover": "Odovzdám kľúče",
+        "door_code": "Kód od dverí",
+        "reception": "Recepcia"
       }
     },
     "orders": {
@@ -1852,7 +1864,9 @@
     "decrease_bathrooms": "Znížiť počet kúpeľní",
     "increase_bathrooms": "Zvýšiť počet kúpeľní",
     "set_rooms": "Nastaviť počet izieb: {{count}}",
-    "set_bathrooms": "Nastaviť počet kúpeľní: {{count}}"
+    "set_bathrooms": "Nastaviť počet kúpeľní: {{count}}",
+    "previous_month": "Predchádzajúci mesiac",
+    "next_month": "Ďalší mesiac"
   },
   "help": {
     "dismiss": "Rozumiem, nezobrazovať znova",

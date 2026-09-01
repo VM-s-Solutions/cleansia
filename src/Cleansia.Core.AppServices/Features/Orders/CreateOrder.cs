@@ -180,6 +180,13 @@ public class CreateOrder
                 .MaximumLength(20)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
+            // The four the wizard offers. Order.AccessMode is a plain string so
+            // nothing on this side has to know an enum it never compares — which
+            // makes this the one place a wrong value would otherwise get in.
+            RuleFor(x => x.AccessMode)
+                .Must(mode => mode is null or "at_home" or "keys_handover" or "door_code" or "reception")
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
             // ONE ordered chain, never a second RuleFor: the class-level default is Continue, so a
             // parallel chain would report both refusals and the client renders whichever it reads first.
             // Entitlement leads because it is the answer that reveals least — it does not depend on the
@@ -361,7 +368,8 @@ public class CreateOrder
         /// street — see <c>Order.CustomerFloor</c>.
         /// </summary>
         string? CustomerFloor = null,
-        string? CustomerApartment = null) : ICommand<Response>;
+        string? CustomerApartment = null,
+        string? AccessMode = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -483,7 +491,8 @@ public class CreateOrder
                 SpecialInstructions: command.SpecialInstructions,
                 AccessInstructions: command.AccessInstructions,
                 CustomerFloor: command.CustomerFloor,
-                CustomerApartment: command.CustomerApartment), cancellationToken);
+                CustomerApartment: command.CustomerApartment,
+                AccessMode: command.AccessMode), cancellationToken);
 
             if (reservation != null)
             {

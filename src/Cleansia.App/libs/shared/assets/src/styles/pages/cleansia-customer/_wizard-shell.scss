@@ -29,6 +29,15 @@
   // Amber-800, not the 600 the border is: the lighter one measures 2.5 on this
   // ground, and this is the text a stuck customer has to read.
   --cl-blocked-text: #92400e;
+  // Slate-400, where the artboard draws slate-300. WCAG exempts an inactive
+  // control from the contrast floor, but 1.48 is not "dimmed", it is gone — and
+  // a customer still has to read which days the month has.
+  --cl-day-off: #94a3b8;
+  // Muted text on a TINTED panel, not on white. --cl-muted is slate-500, which
+  // measures 4.46 on --cl-tint against a 4.5 floor — under it everywhere, on
+  // every tinted panel this shell has. One token, because three call sites
+  // failed the same way for the same reason.
+  --cl-muted-on-tint: #475569;
 }
 
 :root.dark-mode {
@@ -39,6 +48,10 @@
   --cl-blocked-bg: rgba(251, 191, 36, 0.1);
   --cl-blocked-border: rgba(251, 191, 36, 0.32);
   --cl-blocked-text: #fcd34d;
+  --cl-day-off: #64748b;
+  // The dark theme's tint is a 6% wash over a near-black card, where slate-400
+  // already clears the floor.
+  --cl-muted-on-tint: #94a3b8;
 }
 
 %cl-wiz-measure {
@@ -754,7 +767,7 @@
 
   span {
     font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-muted);
+    color: var(--cl-muted-on-tint);
   }
 }
 
@@ -805,9 +818,7 @@
     // The ground belongs to the empty state, not the panel: with a tile in it
     // the panel is covered anyway, and a colour there would be a second box.
     background: var(--cl-tint);
-    // Body, not muted: slate-500 on this tint measures 4.46 against a 4.5 floor,
-    // and this is the only sentence in the panel.
-    color: var(--cl-body);
+    color: var(--cl-muted-on-tint);
   }
 }
 
@@ -837,6 +848,7 @@
   margin-top: 2px;
   font-size: calc(0.8125 * var(--cl-u));
   line-height: 1.6;
+  color: var(--cl-muted-on-tint);
 }
 
 // ---- flat or house ----------------------------------------------------------
@@ -970,6 +982,167 @@
 
   .cl-wiz__contact,
   .cl-wiz__unit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// =============================================================================
+// Step 3 — when
+// =============================================================================
+
+// The month and the hours side by side, equal halves: neither is the primary
+// choice, and a date without a time is not a booking.
+.cl-wiz__when {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 34px;
+  margin-top: 26px;
+  align-items: start;
+}
+
+.cl-wiz__cal-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cl-wiz__cal-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--cl-border);
+  border-radius: 999px;
+  background: var(--cl-surface);
+  color: var(--cl-heading);
+  cursor: pointer;
+
+  &[disabled] {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-wiz__cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cl-wiz__cal-head {
+  text-align: center;
+  padding: 6px 0;
+}
+
+.cl-wiz__cal-day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+  background: transparent;
+  font-family: $font-body;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 600;
+  color: var(--cl-body);
+  cursor: pointer;
+
+  &:hover:not([disabled]) {
+    background: var(--cl-tint);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+
+  // A day already inside the lead time. Not hidden — a month with holes in it is
+  // harder to read than a month with days you cannot pick.
+  &--off {
+    color: var(--cl-day-off);
+    cursor: default;
+  }
+
+  &--on {
+    background: $primary-dark;
+    color: $white;
+    font-weight: 800;
+  }
+
+  &--blank {
+    cursor: default;
+  }
+}
+
+.cl-wiz__time-label {
+  margin-bottom: 12px;
+}
+
+.cl-wiz__times {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cl-wiz__time {
+  justify-content: center;
+  text-align: left;
+  cursor: pointer;
+
+  &--off {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.cl-wiz__time-note {
+  margin: 12px 0 0;
+}
+
+// The surcharge, said where the slot that causes it is chosen.
+.cl-wiz__time-express {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.5;
+  color: var(--cl-blocked-text);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  &--waived {
+    color: $primary-dark;
+  }
+}
+
+.cl-wiz__access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cl-wiz__access-chip {
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .cl-wiz__when {
     grid-template-columns: minmax(0, 1fr);
   }
 }

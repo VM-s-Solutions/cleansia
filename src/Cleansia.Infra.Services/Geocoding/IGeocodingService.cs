@@ -37,7 +37,6 @@ public interface IGeocodingService
     Task<IReadOnlyList<GeoSuggestion>> SearchAsync(
         string query,
         string? countryIsoCodes,
-        string? language,
         int limit,
         CancellationToken cancellationToken);
 

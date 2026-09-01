@@ -50,6 +50,7 @@ public record OrderItem(
     /// </summary>
     string? CustomerFloor,
     string? CustomerApartment,
+    string? AccessMode,
     /// <summary>
     /// FK back to the recurring booking template that spawned this order.
     /// Null for one-off orders. Mobile uses this + <c>PaymentStatus.Pending</c>

@@ -46,6 +46,9 @@ public class OrderRedactionSurfaceTests
         // and street + floor + door is the whole key.
         nameof(OrderItem.CustomerFloor),
         nameof(OrderItem.CustomerApartment),
+        // Blanked with the access instructions it describes: knowing there IS a
+        // door code is most of knowing the code is worth asking for.
+        nameof(OrderItem.AccessMode),
         nameof(OrderItem.HasAccessInstructions),
         nameof(OrderItem.CompletionNotes),
         nameof(OrderItem.RecurringTemplateId),
@@ -343,6 +346,7 @@ public class OrderRedactionSurfaceTests
             AccessInstructions: "Code 1234 at the gate.",
             CustomerFloor: "3",
             CustomerApartment: "12",
+            AccessMode: "door_code",
             HasAccessInstructions: true,
             RecurringTemplateId: "tmpl-weekly",
             SelectedPackages: [],

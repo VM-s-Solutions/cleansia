@@ -139,7 +139,8 @@ public sealed class OrderFactory(
             specialInstructions: input.SpecialInstructions,
             accessInstructions: input.AccessInstructions,
             customerFloor: input.CustomerFloor,
-            customerApartment: input.CustomerApartment);
+            customerApartment: input.CustomerApartment,
+            accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
 

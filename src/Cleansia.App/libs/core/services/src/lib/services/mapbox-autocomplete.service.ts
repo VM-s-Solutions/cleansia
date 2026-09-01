@@ -1,5 +1,4 @@
 import { inject, Injectable, InjectionToken } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
 import {
   catchError,
   debounceTime,
@@ -41,7 +40,6 @@ export interface AddressSearchPort {
   search(
     query: string,
     countries: string,
-    language: string,
     limit: number
   ): Observable<MapboxAddressSuggestion[]>;
 }
@@ -116,7 +114,6 @@ export interface MapboxAddressSuggestion {
  */
 @Injectable({ providedIn: 'root' })
 export class MapboxAutocompleteService {
-  private readonly translate = inject(TranslateService);
   private readonly port = inject(ADDRESS_SEARCH_PORT);
   private readonly enabled = inject(MAPBOX_AUTOCOMPLETE_ENABLED);
   private readonly countryWhitelist = inject(MAPBOX_COUNTRY_WHITELIST);
@@ -147,10 +144,13 @@ export class MapboxAutocompleteService {
 
     const q = trimmed.slice(0, MapboxAutocompleteService.MAX_QUERY_LENGTH);
 
+    // NOT localised. Asking the provider for the visitor's language translates
+    // the place names, so a Prague address comes back with its city as "Прага"
+    // — which the serviced-city list, holding "Praha", then rejects. An address
+    // is written the way the local post office reads it.
     return this.port.search(
       q,
       this.countryWhitelist.join(','),
-      this.languageForRequest(),
       MapboxAutocompleteService.RESULT_LIMIT
     );
   }
@@ -169,9 +169,4 @@ export class MapboxAutocompleteService {
 
 
 
-  /** Mapbox supports cs/sk/uk/ru/en — pass through the active app language. */
-  private languageForRequest(): string {
-    const lang = (this.translate.currentLang || this.translate.getDefaultLang() || 'cs').toLowerCase();
-    return ['cs', 'sk', 'uk', 'ru', 'en'].includes(lang) ? lang : 'cs';
-  }
 }

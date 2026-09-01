@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 const require = createRequire(`${process.cwd()}/`);
 const { chromium } = require('playwright');
+import { walkWizard } from './wizard-walk.mjs';
 
 const THEME = process.env.THEME ?? 'dark';
 // Honour TARGET like the other checkers: this was pinned to the home page, so a
@@ -21,15 +22,9 @@ await p.waitForTimeout(2500);
 // past the first cannot be measured for contrast without walking there first.
 const ADVANCE = Number(process.env.ADVANCE ?? 0);
 if (ADVANCE > 0) {
-  const pick = p.locator('[data-spec-select]').first();
-  if (await pick.count()) await pick.click().catch(() => {});
-  for (let i = 0; i < ADVANCE; i += 1) {
-    await p.waitForTimeout(500);
-    const next = p.locator('[data-spec-advance]').first();
-    if (!(await next.count())) break;
-    await next.click().catch(() => {});
-  }
-  await p.waitForTimeout(900);
+  const stopped = await walkWizard(p, ADVANCE, { log: (line) => console.log(line) });
+  if (stopped) console.log(`WALK STOPPED EARLY: ${stopped}`);
+  await p.waitForTimeout(600);
 }
 
 await p.evaluate(async () => { for (let y=0;y<document.body.scrollHeight;y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,60));} window.scrollTo(0,0); });
@@ -62,6 +57,13 @@ const rows = await p.evaluate(() => {
   document.querySelectorAll('h1,h2,h3,h4,p,span,a,li,button,small,strong,div,label').forEach((el) => {
     const t = (el.textContent||'').trim();
     if (!t || t.length > 60 || el.children.length) return;
+    // WCAG 1.4.3 exempts an INACTIVE user interface component from the contrast
+    // minimum. A disabled control is exactly that, and the exemption exists
+    // because dimming is how "you cannot use this" is communicated — reporting
+    // it as a failure asks for a disabled control that does not look disabled.
+    // Narrow on purpose: it keys off the real disabled state, not off looking
+    // faint, so nothing that a visitor can actually use is skipped.
+    if (el.disabled === true || el.closest('[disabled], [aria-disabled="true"]')) return;
     const fg = parse(getComputedStyle(el).color); if (!fg || fg.a === 0) return;
     const { bg, gradient } = painted(el);
     if (gradient) return; // cannot sample a gradient; judged by eye instead

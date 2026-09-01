@@ -30,6 +30,7 @@
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { walkWizard } from './wizard-walk.mjs';
 
 const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
 
@@ -140,18 +141,14 @@ async function openApp(browser, url, { width, lang, theme, advance = 0 }) {
   // A selected state is part of the design: the artboard draws one chip reading
   // "Přidáno", and a page measured with nothing chosen can never show it. One
   // click covers both labels.
-  const first = page.locator('[data-spec-select]').first();
-  if (await first.count()) await first.click().catch(() => {});
-
-  // A later step of a wizard is only reachable through the earlier ones, so the
-  // checker walks forward the same way a visitor does rather than deep-linking
-  // into a state the app would never be in.
-  for (let i = 0; i < advance; i += 1) {
-    await page.waitForTimeout(500);
-    const next = page.locator('[data-spec-advance]').first();
-    if (!(await next.count())) break;
-    await next.click().catch(() => {});
+  // A selected state is part of the design: the artboard draws one chip reading
+  // "Přidáno", and a page measured with nothing chosen can never show it.
+  if (advance === 0) {
+    const first = page.locator('[data-spec-select]').first();
+    if (await first.count()) await first.click().catch(() => {});
   }
+
+  await walkWizard(page, advance, { log: (line) => console.log(line) });
 
   await page.evaluate(() => document.fonts?.ready);
   await page.waitForTimeout(900);

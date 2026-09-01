@@ -92,4 +92,5 @@ public record CreateOrderInput(
     /// the same street — see <c>Order.CustomerFloor</c>.
     /// </summary>
     string? CustomerFloor = null,
-    string? CustomerApartment = null);
+    string? CustomerApartment = null,
+    string? AccessMode = null);

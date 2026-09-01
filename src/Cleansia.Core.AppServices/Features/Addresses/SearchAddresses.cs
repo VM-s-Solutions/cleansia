@@ -24,7 +24,6 @@ public static class SearchAddresses
     public record Query(
         string Q,
         string? Country = null,
-        string? Language = null,
         int Limit = 5) : IQuery<Response>;
 
     public record Response(IReadOnlyList<AddressSuggestion> Suggestions);
@@ -61,7 +60,6 @@ public static class SearchAddresses
             var suggestions = await geocodingService.SearchAsync(
                 request.Q,
                 request.Country,
-                request.Language,
                 request.Limit,
                 cancellationToken);
 

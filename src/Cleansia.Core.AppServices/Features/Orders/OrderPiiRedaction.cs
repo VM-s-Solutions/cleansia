@@ -51,6 +51,9 @@ public static class OrderPiiRedaction
             AccessInstructions = null,
             CustomerFloor = null,
             CustomerApartment = null,
+            // Knowing there IS a door code is most of knowing the code is worth
+            // asking for, so the shape of the answer is redacted with the answer.
+            AccessMode = null,
             HasAccessInstructions = null,
             CompletionNotes = null,
             RecurringTemplateId = null,

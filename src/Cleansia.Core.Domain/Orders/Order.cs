@@ -166,6 +166,26 @@ public class Order : Auditable, ITenantEntity
     [MaxLength(20)]
     public string? CustomerApartment { get; private set; }
 
+    /// <summary>
+    /// How the cleaner gets in: "at_home", "keys_handover", "door_code" or
+    /// "reception". It is the shape of the answer; <see cref="AccessInstructions"/>
+    /// is the detail, and the two are read together.
+    ///
+    /// <para>A string, not an enum, deliberately. Nothing on this side branches on
+    /// it — it is displayed to the assigned cleaner and that is all — so an enum
+    /// would buy type safety at the cost of a domain type, a converter and a
+    /// generated client enum, for a value no server code compares. The four
+    /// accepted slugs are enforced by CreateOrder's validator, which is where a
+    /// bad one would actually arrive. An enum is the right answer on the day
+    /// something branches on it.</para>
+    ///
+    /// <para>Redacted with the access instructions for a cleaner the order does
+    /// not belong to: knowing there is a door code is most of knowing the code
+    /// is worth asking for.</para>
+    /// </summary>
+    [MaxLength(20)]
+    public string? AccessMode { get; private set; }
+
     public string CurrencyId { get; private set; }
     public Currency Currency { get; private set; }
 
@@ -402,7 +422,8 @@ public class Order : Auditable, ITenantEntity
         // Floor and door, for a flat. Null for a house, which has neither. See
         // CustomerFloor for why these are on the order and not on the address.
         string? customerFloor = null,
-        string? customerApartment = null) => new()
+        string? customerApartment = null,
+        string? accessMode = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
@@ -429,6 +450,7 @@ public class Order : Auditable, ITenantEntity
             RecurringTemplateId = string.IsNullOrEmpty(recurringTemplateId) ? null : recurringTemplateId,
             SpecialInstructions = string.IsNullOrWhiteSpace(specialInstructions) ? null : specialInstructions.Trim(),
             AccessInstructions = string.IsNullOrWhiteSpace(accessInstructions) ? null : accessInstructions.Trim(),
+            AccessMode = string.IsNullOrWhiteSpace(accessMode) ? null : accessMode.Trim(),
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)

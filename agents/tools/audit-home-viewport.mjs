@@ -14,6 +14,7 @@
  */
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
+import { walkWizard } from './wizard-walk.mjs';
 
 const WIDTH = Number(process.env.WIDTH ?? 390);
 const HEIGHT = Number(process.env.HEIGHT ?? 844);
@@ -58,15 +59,9 @@ await page.goto(TARGET, { waitUntil: 'networkidle', timeout: 90000 });
 // at all — without it every run measures step one and reports it clean.
 const ADVANCE = Number(process.env.ADVANCE ?? 0);
 if (ADVANCE > 0) {
-  const pick = page.locator('[data-spec-select]').first();
-  if (await pick.count()) await pick.click().catch(() => {});
-  for (let i = 0; i < ADVANCE; i += 1) {
-    await page.waitForTimeout(500);
-    const next = page.locator('[data-spec-advance]').first();
-    if (!(await next.count())) break;
-    await next.click().catch(() => {});
-  }
-  await page.waitForTimeout(900);
+  const stopped = await walkWizard(page, ADVANCE, { log: (line) => console.log(line) });
+  if (stopped) console.log(`WALK STOPPED EARLY: ${stopped}`);
+  await page.waitForTimeout(600);
 }
 
 // Everything below the fold has to be laid out before it can be measured.

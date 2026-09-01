@@ -17,6 +17,16 @@ export const EXPRESS_LEAD_TIME_HOURS = 2;
 /** Minimum hours for a standard (non-surcharge) booking. Slots between 2-4h lead are "express". */
 export const STANDARD_LEAD_TIME_HOURS = 4;
 
+/**
+ * What an express slot adds, as a fraction. Mirrors `BookingPolicy.ExpressSurchargeRate`.
+ *
+ * Displayed only — the surcharge itself is always the server's arithmetic, and it
+ * arrives on the quote as `expressSurchargeAmount`. This constant exists so the
+ * step that offers an express slot can SAY what it costs, next to the lead-time
+ * rule it already states.
+ */
+export const EXPRESS_SURCHARGE_RATE = 0.2;
+
 export type SlotAvailability = 'available' | 'express' | 'unavailable';
 
 export interface TimeOption {

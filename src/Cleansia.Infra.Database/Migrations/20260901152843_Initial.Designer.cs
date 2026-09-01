@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260901130056_Initial")]
+    [Migration("20260901152843_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3304,6 +3304,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("AccessInstructions")
                         .HasColumnType("text");
+
+                    b.Property<string>("AccessMode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int?>("ActualCompletionTime")
                         .HasColumnType("integer");

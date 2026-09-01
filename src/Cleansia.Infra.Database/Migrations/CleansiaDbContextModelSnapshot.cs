@@ -3302,6 +3302,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("AccessInstructions")
                         .HasColumnType("text");
 
+                    b.Property<string>("AccessMode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int?>("ActualCompletionTime")
                         .HasColumnType("integer");
 

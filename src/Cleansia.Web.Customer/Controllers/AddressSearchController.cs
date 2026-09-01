@@ -29,12 +29,11 @@ public class AddressSearchController(IMediator mediator, IGeocodingService geoco
     public async Task<IActionResult> Search(
         [FromQuery] string q,
         [FromQuery] string? country,
-        [FromQuery] string? language,
         [FromQuery] int limit,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(
-            new SearchAddresses.Query(q, country, language, limit <= 0 ? 5 : limit),
+            new SearchAddresses.Query(q, country, limit <= 0 ? 5 : limit),
             cancellationToken);
         return HandleResult<SearchAddresses.Response>(result);
     }

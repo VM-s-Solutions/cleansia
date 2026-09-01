@@ -33,7 +33,6 @@ describe('MapboxAutocompleteService (T-0159 credential-out-of-browser)', () => {
   type PortCall = {
     query: string;
     countries: string;
-    language: string;
     limit: number;
   };
 
@@ -54,8 +53,8 @@ describe('MapboxAutocompleteService (T-0159 credential-out-of-browser)', () => {
 
     const calls: PortCall[] = [];
     const port: AddressSearchPort = {
-      search: (query, countries, language, limit) => {
-        calls.push({ query, countries, language, limit });
+      search: (query, countries, limit) => {
+        calls.push({ query, countries, limit });
         return of(options?.result ?? []);
       },
     };
@@ -129,23 +128,26 @@ describe('MapboxAutocompleteService (T-0159 credential-out-of-browser)', () => {
     }
   });
 
-  it('AC5: passes the country whitelist, the active language and the result limit', () => {
+  it('AC5: passes the country whitelist and the result limit', () => {
     const { service, calls } = setup({ countries: ['cz', 'sk'], lang: 'sk' });
 
     service.search('Bratislava').subscribe();
 
     expect(calls[0].countries).toBe('cz,sk');
-    expect(calls[0].language).toBe('sk');
     expect(calls[0].limit).toBe(5);
   });
 
-  it('AC5: falls back to cs for a language the provider does not serve', () => {
-    const { service, calls } = setup({ lang: 'de' });
+  it('AC5: does NOT localise the lookup, whatever the app language is', () => {
+    // Asking the provider for the visitor's language translates the place names
+    // with everything else: a Prague address comes back with its city as
+    // "Прага", and the serviced-city list holds "Praha", so the service-area
+    // check rejected it and uk/ru customers could not book in Prague at all.
+    const { service, calls } = setup({ lang: 'uk' });
 
-    service.search('Berlin');
-    service.search('Berlin').subscribe();
+    service.search('Zenklova').subscribe();
 
-    expect(calls[calls.length - 1].language).toBe('cs');
+    expect(JSON.stringify(calls[0])).not.toContain('uk');
+    expect(Object.keys(calls[0])).toEqual(['query', 'countries', 'limit']);
   });
 
   it('AC5: passes the query through unchanged', () => {

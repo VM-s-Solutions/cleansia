@@ -130,6 +130,14 @@ public class MapboxGeocodingService : IGeocodingService
     /// <summary>
     /// Forward geocoding with autocomplete, on the v5 `mapbox.places` endpoint.
     ///
+    /// <para>NOT localised, deliberately. Asking the provider for results in the
+    /// visitor's language translates the place names too — a Prague address comes
+    /// back with the city as "Прага" for a Ukrainian or Russian speaker. The
+    /// serviced-city list stores "Praha", so the service-area check rejected it
+    /// and those customers could not book in Prague at all. An address is a
+    /// routing instruction: it is written the way the local post office reads
+    /// it, and a cleaner cannot navigate to a translated city.</para>
+    ///
     /// v5, where <see cref="GeocodeAsync"/> is on v6, and deliberately so: v6 returns a
     /// different geometry/properties shape and, more to the point, does not carry the
     /// `context[]` rows this method reads the city and postcode out of. The two calls
@@ -138,7 +146,6 @@ public class MapboxGeocodingService : IGeocodingService
     public async Task<IReadOnlyList<GeoSuggestion>> SearchAsync(
         string query,
         string? countryIsoCodes,
-        string? language,
         int limit,
         CancellationToken cancellationToken)
     {
@@ -166,10 +173,6 @@ public class MapboxGeocodingService : IGeocodingService
         if (!string.IsNullOrWhiteSpace(countryIsoCodes))
         {
             url += $"&country={HttpUtility.UrlEncode(countryIsoCodes.ToLowerInvariant())}";
-        }
-        if (!string.IsNullOrWhiteSpace(language))
-        {
-            url += $"&language={HttpUtility.UrlEncode(language)}";
         }
 
         try

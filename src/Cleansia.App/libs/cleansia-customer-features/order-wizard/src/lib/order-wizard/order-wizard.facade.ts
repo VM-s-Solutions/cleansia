@@ -641,6 +641,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     const isFlat = data.propertyType === 'flat';
     command.customerFloor = (isFlat && data.customerFloor.trim()) || undefined;
     command.customerApartment = (isFlat && data.customerApartment.trim()) || undefined;
+    command.accessMode = data.accessMode || undefined;
     // The picker only ever offers cleaners the roster returned, but the entitlement, the eligibility
     // and the seat are all re-decided server-side; an id here asks, it does not reserve.
     command.preferredEmployeeId = data.preferredEmployeeId ?? undefined;

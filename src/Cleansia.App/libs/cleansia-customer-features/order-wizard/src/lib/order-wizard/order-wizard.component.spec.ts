@@ -128,7 +128,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.activeStep.set(2);
       fixture.detectChanges();
 
-      const items = el.querySelectorAll('.order-wizard__stepper-item');
+      const items = el.querySelectorAll('.cl-wiz__step');
       const completed = items[0] as HTMLElement;
       expect(completed.tagName).toBe('BUTTON');
       expect(completed.hasAttribute('disabled')).toBe(false);
@@ -139,7 +139,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.activeStep.set(1);
       fixture.detectChanges();
 
-      const items = el.querySelectorAll('.order-wizard__stepper-item');
+      const items = el.querySelectorAll('.cl-wiz__step');
       expect(items[1].getAttribute('aria-current')).toBe('step');
       expect(items[0].getAttribute('aria-current')).toBeNull();
     });
@@ -149,7 +149,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.activeStep.set(2);
       fixture.detectChanges();
 
-      const completed = el.querySelector('.order-wizard__stepper-item') as HTMLButtonElement;
+      const completed = el.querySelector('.cl-wiz__step') as HTMLButtonElement;
       completed.click();
       expect(facade.goToStep).toHaveBeenCalledWith(0);
     });
@@ -263,16 +263,19 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  describe('mobile price header (AC1)', () => {
-    it('renders the mobile price header as a focusable button with aria-expanded', async () => {
+  describe('running total (AC1)', () => {
+    it('keeps the summary in the document and after the step in reading order', async () => {
       await setup();
-      const header = el.querySelector('.order-wizard__mobile-price-header') as HTMLElement;
-      expect(header.tagName).toBe('BUTTON');
-      expect(header.getAttribute('aria-expanded')).toBe('false');
-
-      header.click();
-      fixture.detectChanges();
-      expect(header.getAttribute('aria-expanded')).toBe('true');
+      // The bottom price bar is gone. It was a second copy of the summary,
+      // pinned over the form on the widths where the summary rail already
+      // stacks into the column. The guarantee that matters is unchanged: the
+      // total is on the page without a toggle, and a screen reader meets it
+      // after the choices that produce it rather than before them.
+      const panel = el.querySelector('.cl-wiz__panel');
+      const summary = el.querySelector('.cl-wiz__summary');
+      expect(summary).toBeTruthy();
+      expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
+      expect(panel!.compareDocumentPosition(summary!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 });

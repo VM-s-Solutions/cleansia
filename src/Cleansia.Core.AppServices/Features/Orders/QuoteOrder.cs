@@ -74,7 +74,30 @@ public class QuoteOrder
         /// client-counted (a client that counts its own orders disagrees with the server the first time a
         /// cancellation releases a slot). Null when the caller has no membership.
         /// </summary>
-        int? ExpressUpgradesRemaining = null);
+        int? ExpressUpgradesRemaining = null,
+        /// <summary>
+        /// The rows the subtotals are made of, in the charge currency, so the wizard can
+        /// show WHERE a number came from. A service listed at 500 in a four-room, three-
+        /// bathroom flat charges 1550, and a summary that shows only the 1550 reads as a
+        /// mistake.
+        ///
+        /// Server-side because the catalogue's per-room price reaches the client
+        /// unscaled, in the BASE currency, while every figure here is in the charge
+        /// currency — so the same arithmetic done in a browser is silently wrong at any
+        /// exchange rate but 1.
+        /// </summary>
+        IReadOnlyList<QuoteLine>? Lines = null);
+
+    /// <param name="Kind">"package", "service" or "extra".</param>
+    /// <param name="ItemId">Package/Service id, or an Extra's slug. The client holds the
+    /// catalogue already and resolves the name from it, in the customer's language.</param>
+    public record QuoteLine(
+        string Kind,
+        string ItemId,
+        decimal BaseAmount,
+        decimal UnitAmount,
+        int Units,
+        decimal Amount);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -260,6 +283,9 @@ public class QuoteOrder
                 ExchangeRate: result.ExchangeRate,
                 EstimatedDurationMinutes: estimatedMinutes,
                 RequiredEmployees: requiredEmployees,
+                Lines: (result.Lines ?? [])
+                    .Select(l => new QuoteLine(l.Kind, l.ItemId, l.BaseAmount, l.UnitAmount, l.Units, l.Amount))
+                    .ToList(),
                 ExpressSurchargeWaivedByMembership: result.ExpressSurchargeWaivedByMembership,
                 ExpressUpgradesRemaining: result.ExpressUpgradesRemaining));
         }

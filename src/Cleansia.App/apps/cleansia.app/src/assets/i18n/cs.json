@@ -885,12 +885,11 @@
       "package_selected": "Vybráno",
       "service_add": "Přidat",
       "service_added": "Přidáno",
-      "counts_note": "Cena se počítá z počtu pokojů a koupelen — proto tu není „4+“, ale konkrétní číslo.",
       "summary_heading": "Souhrn",
       "summary_empty": "Vyberte službu nebo balíček a uvidíte cenu.",
       "summary_no_surcharge": "bez příplatku",
       "summary_express": "expresní příplatek",
-      "summary_estimate": "Odhadem {{hours}} h · {{crew}} uklízeči",
+      "summary_estimate": "Odhadem {{hours}} h",
       "summary_free_cancel": "Zrušení zdarma do 24 h",
       "per_cleaning": "za úklid",
       "price_fixed": "Pevná cena",
@@ -923,7 +922,19 @@
       "entry_lead": "Nepovinné. Například kód od vchodu, kde jsou klíče, nebo že otevře soused.",
       "entry_privacy_note": "Uklízeč, kterému objednávka nepatří, tohle nevidí — stejně jako adresu, telefon a potvrzovací kód.",
       "contact_details_label": "Kontaktní údaje",
-      "map_unavailable": "Mapa se zobrazí po výběru adresy."
+      "map_unavailable": "Mapa se zobrazí po výběru adresy.",
+      "summary_line_calc": "{{base}} + {{units}} × {{unit}}",
+      "missing": {
+        "heading": "Ještě chybí:",
+        "services": "Vyberte alespoň jednu službu nebo balíček.",
+        "address": "Vyberte adresu z našeptávače.",
+        "first_name": "Vyplňte jméno.",
+        "last_name": "Vyplňte příjmení.",
+        "email": "Zadejte platný e-mail.",
+        "phone": "Zadejte platné telefonní číslo.",
+        "date": "Vyberte datum úklidu.",
+        "time": "Vyberte čas, který je ještě volný."
+      }
     },
     "orders": {
       "title": "Moje objednávky",

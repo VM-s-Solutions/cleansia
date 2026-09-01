@@ -161,7 +161,6 @@
             </div>
           </div>
         </div>
-        <p class="cl-muted cl-wiz__count-note">{{ 'pages.order.counts_note' | translate }}</p>
       </div>
       }
 
@@ -652,18 +651,34 @@
       <aside class="cl-wiz__summary">
         <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
-        @if (selectedServices().length > 0 || selectedPackages().length > 0) {
+        <!--
+          The rows come from the quote, not from the catalogue. A service listed
+          at 500 Kč charges 1 550 in a four-room, three-bathroom flat, and a
+          summary showing only the 1 550 reads as a mistake — so each row states
+          the arithmetic that produced it. The numbers are the server's: the
+          catalogue's per-room price reaches this app UNSCALED, in the base
+          currency, so computing the same rows here is wrong at any exchange
+          rate but 1.
+        -->
+        @if (priceLines().length > 0) {
         <div class="cl-wiz__summary-lines">
-          @for (pkg of selectedPackages(); track pkg.id) {
+          @for (line of priceLines(); track line.itemId) {
           <div class="cl-wiz__summary-line">
-            <span>{{ getTranslation(pkg, 'name') }}</span>
-            <strong>{{ formatPrice(pkg.price) }}</strong>
-          </div>
-          }
-          @for (service of selectedServices(); track service.id) {
-          <div class="cl-wiz__summary-line">
-            <span>{{ getTranslation(service, 'name') }}</span>
-            <strong>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</strong>
+            <span class="cl-wiz__summary-line-label">
+              {{ lineName(line) }}
+              @if (line.units > 0 && line.unitAmount > 0) {
+              <small class="cl-wiz__summary-calc">{{
+                'pages.order.summary_line_calc'
+                  | translate
+                    : {
+                        base: formatPrice(line.baseAmount),
+                        units: line.units,
+                        unit: formatPrice(line.unitAmount)
+                      }
+              }}</small>
+              }
+            </span>
+            <strong>{{ formatPrice(line.amount) }}</strong>
           </div>
           }
         </div>
@@ -722,7 +737,7 @@
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
         @if (facade.quote()?.estimatedDurationMinutes; as minutes) {
         <div class="cl-muted cl-wiz__summary-estimate">
-          {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours(), crew: facade.quote()?.requiredEmployees } }}
+          {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours() } }}
         </div>
         }
 
@@ -730,12 +745,32 @@
           The forward action lives with the price it commits to. Back is a link
           inside the step: one primary action per screen, and it is this one.
         -->
+        <!--
+          Named, not guessed. A disabled button with nothing beside it makes the
+          customer hunt the form for whatever is wrong; this states it, and it
+          reads the SAME list the button's disabled state does, so the two can
+          never disagree.
+        -->
+        @if (blockingReasons().length > 0) {
+        <div class="cl-wiz__blocked" role="status">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          <div>
+            <strong>{{ 'pages.order.missing.heading' | translate }}</strong>
+            <ul>
+              @for (reason of blockingReasons(); track reason) {
+              <li>{{ reason | translate }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+        }
+
         @if (facade.activeStep() < facade.steps.length - 1) {
         <button
           type="button"
           class="cl-btn cl-wiz__advance"
           data-spec-advance
-          [disabled]="!facade.canProceed() || (facade.activeStep() === 2 && !hasValidTime())"
+          [disabled]="blockingReasons().length > 0"
           (click)="onNextStep()"
         >
           {{ 'pages.order.continue_action' | translate }}

@@ -24,6 +24,11 @@
   --cl-wiz-ground: #f8fbfe;
   --cl-pack-tag: #0369a1;
   --cl-panel-border: #e0f2fe;
+  --cl-blocked-bg: #fffbeb;
+  --cl-blocked-border: #fde68a;
+  // Amber-800, not the 600 the border is: the lighter one measures 2.5 on this
+  // ground, and this is the text a stuck customer has to read.
+  --cl-blocked-text: #92400e;
 }
 
 :root.dark-mode {
@@ -31,6 +36,9 @@
   --cl-pack-tag: #7dd3fc;
   // The light theme's Sky100 hairline is a glare on a near-black panel.
   --cl-panel-border: rgba(56, 189, 248, 0.24);
+  --cl-blocked-bg: rgba(251, 191, 36, 0.1);
+  --cl-blocked-border: rgba(251, 191, 36, 0.32);
+  --cl-blocked-text: #fcd34d;
 }
 
 %cl-wiz-measure {
@@ -167,7 +175,9 @@
 // which put the number furthest from the choices that change it.
 .cl-wiz__summary {
   position: sticky;
-  top: 24px;
+  // Below the fixed navbar, not below the viewport top: the bar reappears on
+  // scroll-up and would otherwise cover the total and the button under it.
+  top: calc(var(--cl-nav-h, 64px) + 24px);
   background: var(--cl-surface);
   border-radius: 28px;
   padding: 24px 26px;
@@ -181,6 +191,20 @@
   margin-top: 16px;
   font-size: 15px;
   color: var(--cl-body);
+}
+
+// The row's label and, under it, where its number came from.
+.cl-wiz__summary-line-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cl-wiz__summary-calc {
+  font-size: calc(0.75 * var(--cl-u));
+  line-height: 1.5;
+  color: var(--cl-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .cl-wiz__summary-line {
@@ -572,6 +596,42 @@
   cursor: pointer;
 }
 
+// What is still missing, right where the button that is waiting on it sits.
+// Amber rather than red: nothing has gone wrong, the form is simply not finished
+// — red here would report an error the customer has not made yet.
+.cl-wiz__blocked {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: 14px 16px;
+  border: 1px solid var(--cl-blocked-border);
+  border-radius: 16px;
+  background: var(--cl-blocked-bg);
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.5;
+  color: var(--cl-blocked-text);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  strong {
+    display: block;
+    font-weight: 800;
+  }
+
+  ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+  }
+
+  li + li {
+    margin-top: 2px;
+  }
+}
+
 // The label box is centred by flex; the text inside it is not re-aligned, which
 // is what the artboard does and what the checker compares.
 .cl-wiz__advance {
@@ -581,9 +641,6 @@
   box-sizing: border-box;
 }
 
-.cl-wiz__count-note {
-  margin: 14px 0 0;
-}
 
 @media (max-width: 900px) {
   .cl-wiz__packages {

@@ -31,7 +31,6 @@ import {
   initializeTranslations,
   JsonTranslationLoader,
   MAPBOX_AUTOCOMPLETE_ENABLED,
-  MAPBOX_PROXY_PATH,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -87,17 +86,15 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: APIBASEURL, useValue: environment.apiBaseUrl },
-    // The Mapbox token is NOT shipped to the browser. The
-    // partner app is a SPA, so its same-origin proxy lives on the partner API
-    // (MANUAL_STEP: add the `/api/mapbox/geocode` proxy endpoint server-side —
-    // see ticket). We only advertise (token-free) that geocoding is configured.
+    // The Mapbox token is NOT shipped to the browser. Address lookup now goes
+    // through ADDRESS_SEARCH_PORT, and the Customer API is the only host that
+    // has the endpoint so far — the partner one still needs the same controller
+    // (the standing MANUAL_STEP). Until it does, this app provides no port and
+    // gets the library's empty default, which is what the never-proxied
+    // /api/mapbox/geocode path already returned in practice.
     {
       provide: MAPBOX_AUTOCOMPLETE_ENABLED,
       useValue: !!(environment.mapboxToken ?? '').trim(),
-    },
-    {
-      provide: MAPBOX_PROXY_PATH,
-      useValue: `${environment.apiBaseUrl}/api/mapbox/geocode`,
     },
     {
       provide: AUTH_COOKIE_KEYS,

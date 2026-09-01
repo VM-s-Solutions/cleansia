@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
 import {
+  AddressSearchClient,
   ApiClient,
   AuthClient as CustomerAuthClient,
   ConsentsClient,
@@ -8,6 +9,7 @@ import {
   DisputeClient,
   ExtraClient,
   GdprClient,
+  IAddressSearchClient,
   IApiClient,
   IAuthClient as ICustomerAuthClient,
   IConsentsClient,
@@ -48,6 +50,7 @@ export const CUSTOMER_API_BASE_URL = new InjectionToken<string>(
 );
 
 interface ICustomerClient {
+  addressSearchClient: IAddressSearchClient;
   authClient: ICustomerAuthClient;
   userClient: IUserClient;
   orderClient: ICustomerOrderClient;
@@ -91,6 +94,10 @@ export class CustomerClient implements ICustomerClient {
   );
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
   orderClient: ICustomerOrderClient = new CustomerOrderClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  addressSearchClient: IAddressSearchClient = new AddressSearchClient(
     this.httpClient,
     this.apiBaseUrl
   );

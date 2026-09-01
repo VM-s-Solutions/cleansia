@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, CategoryDto, PackageListItem, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, PackageListItem, QuoteOrderQuoteLine, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -69,6 +69,7 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly apiBaseUrl = inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? '';
   private readonly route = inject(ActivatedRoute);
   private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -400,7 +401,10 @@ export class OrderWizardComponent implements OnInit {
     if (this.mapFailed()) return null;
     const { addressLatitude: lat, addressLongitude: lng } = this.facade.formData();
     if (lat == null || lng == null) return null;
-    return `/api/mapbox/static?lat=${lat}&lng=${lng}`;
+    // The API, like every other call this app makes. It answers with bytes, so
+    // it is an <img src> rather than a generated-client call — but it is the
+    // same host, the same rate limiter and the same credential as the search.
+    return `${this.apiBaseUrl}/api/AddressSearch/map?lat=${lat}&lng=${lng}`;
   });
 
   onMapFailed(): void {
@@ -448,11 +452,58 @@ export class OrderWizardComponent implements OnInit {
     this.pluralKey('summary_bathrooms', this.facade.formData().bathrooms)
   );
 
-  /** The quote's minute estimate, in hours, to the nearest half. */
+  /**
+   * Everything standing between this step and the next one, as translation keys.
+   *
+   * The facade owns the per-step conditions; the time slot is added here because
+   * the valid slots depend on `timeOptions()`, which is the component's. The
+   * advance button's disabled state reads THIS, so it can never be inert for a
+   * reason the customer is not told.
+   */
+  readonly blockingReasons = computed(() => {
+    const reasons = [...this.facade.missingReasons()];
+    if (this.facade.activeStep() === 2 && !this.hasValidTime()) {
+      reasons.push('pages.order.missing.time');
+    }
+    return reasons;
+  });
+
+  /**
+   * The quote's priced rows. Empty until the first quote comes back, which is
+   * also when there is nothing selected to price.
+   */
+  readonly priceLines = computed(() => this.facade.quote()?.lines ?? []);
+
+  /**
+   * A row's display name, resolved from the catalogue this app already holds so
+   * the name arrives translated. The quote carries ids, not names — a name on
+   * the wire would be one the server had to translate, in a language it only
+   * knows because the client told it.
+   */
+  lineName(line: QuoteOrderQuoteLine): string {
+    if (line.kind === 'package') {
+      const pkg = this.facade.packages().find((p) => p.id === line.itemId);
+      return pkg ? this.getTranslation(pkg, 'name') : '';
+    }
+    if (line.kind === 'service') {
+      const service = this.facade.services().find((s) => s.id === line.itemId);
+      return service ? this.getTranslation(service, 'name') : '';
+    }
+    const extra = this.facade.extras().find((e) => e.slug === line.itemId);
+    return extra?.name ?? line.itemId ?? '';
+  }
+
+  /**
+   * The quote's minute estimate, in hours to the nearest half, formatted for the
+   * active locale — Czech writes a half hour as "2,5", and the raw number went
+   * straight into the sentence as "2.5".
+   */
   readonly estimateHours = computed(() => {
     const minutes = this.facade.quote()?.estimatedDurationMinutes ?? 0;
     if (!minutes) return null;
-    return Math.round((minutes / 60) * 2) / 2;
+    const hours = Math.round((minutes / 60) * 2) / 2;
+    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    return new Intl.NumberFormat(tag, { maximumFractionDigits: 1 }).format(hours);
   });
 
   setRooms(rooms: number): void {

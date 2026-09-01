@@ -43,61 +43,94 @@
     "^Termín$",
     "^Platba$",
     "^Souhrn$",
-    "^Zpět na služby$"
+    "^Zpět na služby$",
+    "^Cena se počítá z počtu pokojů a koupelen"
   ],
-
   ".cl-wiz__rail": "[style*='border-radius:999px; padding:13px 24px']",
-
   ".cl-wiz__body": "[style*='1fr 372px']",
   ".cl-wiz__panel": {
     "sel": ".card.soft",
-    "skip": ["minWidth"],
+    "skip": [
+      "minWidth"
+    ],
     "why": "min-width:0 is what lets a grid child shrink below its content. The artboard is a fixed 1440 frame that never has to, so it declares none; without it here the panel refuses to narrow and pushes the summary off-screen."
   },
-
   ".cl-wiz__packages": "[style*='repeat(3, minmax(0,1fr))']",
   ".cl-wiz__pack": "[style*='border-radius:26px']",
   ".cl-wiz__pack-includes": "[style*='rgba(3,105,161,.14)']",
-  ".cl-wiz__pack-include": { "sel": "[style*='rgba(3,105,161,.14)'] > div", "typography": true },
-  ".cl-wiz__pack-name": { "sel": "[style*='border-radius:26px'] [style*='font-size:20px']", "typography": true },
-  ".cl-wiz__pack-tag": { "sel": "[style*='border-radius:26px'] .lbl", "typography": true },
-  ".cl-wiz__pack-badge": { "sel": "[style*='top:-12px']", "typography": true },
+  ".cl-wiz__pack-include": {
+    "sel": "[style*='rgba(3,105,161,.14)'] > div",
+    "typography": true
+  },
+  ".cl-wiz__pack-name": {
+    "sel": "[style*='border-radius:26px'] [style*='font-size:20px']",
+    "typography": true
+  },
+  ".cl-wiz__pack-tag": {
+    "sel": "[style*='border-radius:26px'] .lbl",
+    "typography": true
+  },
+  ".cl-wiz__pack-badge": {
+    "sel": "[style*='top:-12px']",
+    "typography": true
+  },
   ".cl-wiz__pack--featured": {
     "sel": "[style*='border:2px solid #0284C7']",
-    "skip": ["backgroundColor", "borderTopColor"],
+    "skip": [
+      "backgroundColor",
+      "borderTopColor"
+    ],
     "why": "The artboard fills the featured card with Sky600 #0284C7. Its dimmed tagline measures 3.09 and its price caption 3.57 against the 4.5 a sub-18px label needs, and pure white scores only 4.08 on that ground - no text colour fixes it, so the card ships on Sky800 #075985. Everything else about the card is asserted."
   },
-  ".cl-wiz__pack-price": { "sel": "[style*='align-items:baseline'] .num", "typography": true },
+  ".cl-wiz__pack-price": {
+    "sel": "[style*='align-items:baseline'] .num",
+    "typography": true
+  },
   ".cl-wiz__pack-foot": "[style*='align-items:baseline; justify-content:space-between']",
   ".cl-wiz__pack-cta": "[style*='margin-top:12px; justify-content:center']",
-
   ".cl-wiz__services": "div[style='margin-top:8px;']",
   ".cl-wiz__svc": {
     "sel": "[style*='grid-template-columns:1fr auto auto']",
-    "skip": ["gridTemplateColumns"],
+    "skip": [
+      "gridTemplateColumns"
+    ],
     "why": "Two of these three tracks are `auto`, so their pixel widths are the measured width of the text inside them - the artboard renders offline against a fallback face, the app against Nunito. That is a font-metric artifact, not a design value. The declared half of the design is asserted instead, on .cl-wiz__svc-add's minWidth and the row's gap, padding and alignment."
   },
-  ".cl-wiz__svc-name": { "sel": "[style*='grid-template-columns:1fr auto auto'] .h4", "typography": true },
-  ".cl-wiz__svc-desc": { "sel": "[style*='grid-template-columns:1fr auto auto'] .muted", "typography": true },
-  ".cl-wiz__svc-price": { "sel": "[style*='grid-template-columns:1fr auto auto'] .num", "typography": true },
+  ".cl-wiz__svc-name": {
+    "sel": "[style*='grid-template-columns:1fr auto auto'] .h4",
+    "typography": true
+  },
+  ".cl-wiz__svc-desc": {
+    "sel": "[style*='grid-template-columns:1fr auto auto'] .muted",
+    "typography": true
+  },
+  ".cl-wiz__svc-price": {
+    "sel": "[style*='grid-template-columns:1fr auto auto'] .num",
+    "typography": true
+  },
   ".cl-wiz__svc-add": {
     "sel": "[style*='min-width:100px']",
-    "skip": ["backgroundColor", "borderTopColor"],
+    "skip": [
+      "backgroundColor",
+      "borderTopColor"
+    ],
     "why": "The artboard fills a selected chip with Sky600 #0284C7. White 15px/700 on it measures 4.1 against a 4.5 floor, so .cl-chip--on shipped as Sky700 #0369A1 after the home-page contrast pass. The accessibility floor is newer than the artboard and wins; check-home-contrast.mjs enforces it."
   },
-
   ".cl-wiz__rule": ".rule[style*='28px 0 24px']",
   ".cl-wiz__counts": "[style*='grid-template-columns:1fr 1fr; gap:34px']",
   ".cl-wiz__count-chips": "[style*='flex-wrap:wrap; gap:9px']",
   ".cl-wiz__count-chip:not(.cl-chip--on)": "[style*='min-width:52px']",
-
   ".cl-wiz__summary": ".lift[style*='border-radius:28px']",
   ".cl-wiz__total": "[style*='font-size:34px']",
   ".cl-wiz__summary-note": "[style*='rgba(3,105,161,.16)']",
-
   ".cl-wiz__advance": {
     "sel": ".btn[style*='width:100%']",
-    "skip": ["minHeight", "paddingLeft", "paddingRight"],
+    "skip": [
+      "minHeight",
+      "paddingLeft",
+      "paddingRight"
+    ],
     "why": "The artboard draws the shared .btn at its old 56px with 34px flanks. The owner ruled buttons to 40px after the home page shipped, and that ruling is newer than the artboard, so height and the padding that follows from it are deliberately not asserted here. Width, radius, colour, margin and alignment still are."
-  }
+  },
+  "_removed_note": "The artboard's line under the room and bathroom chips - \"Cena se pocita z poctu pokoju a koupelen...\" - was REMOVED on owner instruction (2026-09-01), not lost. It is listed in _ignore so the check does not report it forever; that list otherwise means sample data, so this is the one entry there for a different reason. The breakdown in the summary rail now says the same thing against real numbers, which is why the sentence was redundant."
 }

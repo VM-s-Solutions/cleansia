@@ -14,6 +14,187 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const CUSTOMERAPIBASEURL = new InjectionToken<string>('CUSTOMERAPIBASEURL');
 
+export interface IAddressSearchClient {
+    /**
+     * @param q (optional) 
+     * @param country (optional) 
+     * @param language (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    search(q?: string | undefined, country?: string | undefined, language?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse>;
+    /**
+     * @param lat (optional) 
+     * @param lng (optional) 
+     * @return OK
+     */
+    map(lat?: number | undefined, lng?: number | undefined): Observable<FileResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AddressSearchClient implements IAddressSearchClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param q (optional) 
+     * @param country (optional) 
+     * @param language (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    search(q?: string | undefined, country?: string | undefined, language?: string | undefined, limit?: number | undefined): Observable<SearchAddressesResponse> {
+        let url = this.baseUrl + "/api/AddressSearch/search?";
+        if (q === null)
+            throw new globalThis.Error("The parameter 'q' cannot be null.");
+        else if (q !== undefined)
+            url += "q=" + encodeURIComponent("" + q) + "&";
+        if (country === null)
+            throw new globalThis.Error("The parameter 'country' cannot be null.");
+        else if (country !== undefined)
+            url += "country=" + encodeURIComponent("" + country) + "&";
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "language=" + encodeURIComponent("" + language) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processSearch(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processSearch(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SearchAddressesResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SearchAddressesResponse>;
+        }));
+    }
+
+    protected processSearch(response: HttpResponseBase): Observable<SearchAddressesResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SearchAddressesResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param lat (optional) 
+     * @param lng (optional) 
+     * @return OK
+     */
+    map(lat?: number | undefined, lng?: number | undefined): Observable<FileResponse> {
+        let url = this.baseUrl + "/api/AddressSearch/map?";
+        if (lat === null)
+            throw new globalThis.Error("The parameter 'lat' cannot be null.");
+        else if (lat !== undefined)
+            url += "lat=" + encodeURIComponent("" + lat) + "&";
+        if (lng === null)
+            throw new globalThis.Error("The parameter 'lng' cannot be null.");
+        else if (lng !== undefined)
+            url += "lng=" + encodeURIComponent("" + lng) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processMap(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processMap(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processMap(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAuthClient {
     /**
      * @param body (optional) 
@@ -12440,6 +12621,62 @@ export interface IQuoteOrderCommand {
     cleaningDate: Date | undefined;
 }
 
+export class QuoteOrderQuoteLine implements IQuoteOrderQuoteLine {
+    kind!: string | undefined;
+    itemId!: string | undefined;
+    baseAmount!: number;
+    unitAmount!: number;
+    units!: number;
+    amount!: number;
+
+    constructor(data?: IQuoteOrderQuoteLine) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.kind = Data["kind"];
+            this.itemId = Data["itemId"];
+            this.baseAmount = Data["baseAmount"];
+            this.unitAmount = Data["unitAmount"];
+            this.units = Data["units"];
+            this.amount = Data["amount"];
+        }
+    }
+
+    static fromJS(data: any): QuoteOrderQuoteLine {
+        data = typeof data === 'object' ? data : {};
+        let result = new QuoteOrderQuoteLine();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["kind"] = this.kind;
+        data["itemId"] = this.itemId;
+        data["baseAmount"] = this.baseAmount;
+        data["unitAmount"] = this.unitAmount;
+        data["units"] = this.units;
+        data["amount"] = this.amount;
+        return data;
+    }
+}
+
+export interface IQuoteOrderQuoteLine {
+    kind: string | undefined;
+    itemId: string | undefined;
+    baseAmount: number;
+    unitAmount: number;
+    units: number;
+    amount: number;
+}
+
 export class QuoteOrderResponse implements IQuoteOrderResponse {
     totalPrice!: number;
     finalPriceAfterDiscount!: number;
@@ -12460,6 +12697,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     requiredEmployees!: number;
     expressSurchargeWaivedByMembership!: boolean;
     expressUpgradesRemaining!: number | undefined;
+    lines!: QuoteOrderQuoteLine[] | undefined;
 
     constructor(data?: IQuoteOrderResponse) {
         if (data) {
@@ -12491,6 +12729,11 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.requiredEmployees = Data["requiredEmployees"];
             this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(QuoteOrderQuoteLine.fromJS(item));
+            }
         }
     }
 
@@ -12522,6 +12765,11 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["requiredEmployees"] = this.requiredEmployees;
         data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -12546,6 +12794,7 @@ export interface IQuoteOrderResponse {
     requiredEmployees: number;
     expressSurchargeWaivedByMembership: boolean;
     expressUpgradesRemaining: number | undefined;
+    lines: QuoteOrderQuoteLine[] | undefined;
 }
 
 export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto {
@@ -13207,6 +13456,106 @@ export interface ISavedAddressDto {
     latitude: number | undefined;
     longitude: number | undefined;
     isDefault: boolean;
+}
+
+export class SearchAddressesAddressSuggestion implements ISearchAddressesAddressSuggestion {
+    placeName!: string | undefined;
+    street!: string | undefined;
+    city!: string | undefined;
+    zipCode!: string | undefined;
+    latitude!: number;
+    longitude!: number;
+
+    constructor(data?: ISearchAddressesAddressSuggestion) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.placeName = Data["placeName"];
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.latitude = Data["latitude"];
+            this.longitude = Data["longitude"];
+        }
+    }
+
+    static fromJS(data: any): SearchAddressesAddressSuggestion {
+        data = typeof data === 'object' ? data : {};
+        let result = new SearchAddressesAddressSuggestion();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["placeName"] = this.placeName;
+        data["street"] = this.street;
+        data["city"] = this.city;
+        data["zipCode"] = this.zipCode;
+        data["latitude"] = this.latitude;
+        data["longitude"] = this.longitude;
+        return data;
+    }
+}
+
+export interface ISearchAddressesAddressSuggestion {
+    placeName: string | undefined;
+    street: string | undefined;
+    city: string | undefined;
+    zipCode: string | undefined;
+    latitude: number;
+    longitude: number;
+}
+
+export class SearchAddressesResponse implements ISearchAddressesResponse {
+    suggestions!: SearchAddressesAddressSuggestion[] | undefined;
+
+    constructor(data?: ISearchAddressesResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["suggestions"])) {
+                this.suggestions = [] as any;
+                for (let item of Data["suggestions"])
+                    this.suggestions!.push(SearchAddressesAddressSuggestion.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): SearchAddressesResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SearchAddressesResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.suggestions)) {
+            data["suggestions"] = [];
+            for (let item of this.suggestions)
+                data["suggestions"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface ISearchAddressesResponse {
+    suggestions: SearchAddressesAddressSuggestion[] | undefined;
 }
 
 export class ServiceCityDto implements IServiceCityDto {

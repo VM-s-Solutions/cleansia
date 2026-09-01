@@ -885,12 +885,11 @@
       "package_selected": "Chosen",
       "service_add": "Add",
       "service_added": "Added",
-      "counts_note": "The price is computed from the number of rooms and bathrooms — which is why this is a specific number, not a \"4+\".",
       "summary_heading": "Summary",
       "summary_empty": "Choose a service or a package to see the price.",
       "summary_no_surcharge": "no surcharge",
       "summary_express": "express surcharge",
-      "summary_estimate": "About {{hours}} h · {{crew}} cleaners",
+      "summary_estimate": "About {{hours}} h",
       "summary_free_cancel": "Free cancellation up to 24 h",
       "per_cleaning": "per clean",
       "price_fixed": "Fixed price",
@@ -923,7 +922,19 @@
       "entry_lead": "Optional. For example the entrance code, where the keys are, or that a neighbour will open.",
       "entry_privacy_note": "A cleaner the order does not belong to cannot see this — nor the address, phone or confirmation code.",
       "contact_details_label": "Contact details",
-      "map_unavailable": "The map appears once you pick an address."
+      "map_unavailable": "The map appears once you pick an address.",
+      "summary_line_calc": "{{base}} + {{units}} × {{unit}}",
+      "missing": {
+        "heading": "Still needed:",
+        "services": "Choose at least one service or package.",
+        "address": "Pick an address from the suggestions.",
+        "first_name": "Enter your first name.",
+        "last_name": "Enter your last name.",
+        "email": "Enter a valid email.",
+        "phone": "Enter a valid phone number.",
+        "date": "Pick a cleaning date.",
+        "time": "Pick a time that is still available."
+      }
     },
     "orders": {
       "title": "My Orders",

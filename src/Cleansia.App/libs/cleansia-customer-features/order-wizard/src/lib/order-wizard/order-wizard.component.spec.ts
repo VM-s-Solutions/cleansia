@@ -86,7 +86,10 @@ class FakeOrderWizardFacade {
   selectSavedAddress = jest.fn();
   prevStep = jest.fn();
   nextStep = jest.fn();
-  canProceed = jest.fn(() => true);
+  // The component derives the advance button's disabled state and its
+  // explanation from this ONE list, so the double has to supply it too.
+  missingReasons = jest.fn((): string[] => []);
+  canProceed = jest.fn(() => this.missingReasons().length === 0);
 
   updateFormData = jest.fn((patch: Partial<OrderWizardFormData>) => {
     this.formData.update((d) => ({ ...d, ...patch }));

@@ -42,6 +42,9 @@ export {
   AddressDto,
   CustomerAddress,
   QuoteOrderCommand,
+  QuoteOrderQuoteLine,
+  SearchAddressesAddressSuggestion,
+  SearchAddressesResponse,
   QuoteOrderResponse,
   ExtraClient,
   ExtraListItem,
@@ -56,6 +59,9 @@ export type {
   IAddressDto,
   ICustomerAddress,
   IQuoteOrderCommand,
+  IQuoteOrderQuoteLine,
+  ISearchAddressesAddressSuggestion,
+  ISearchAddressesResponse,
   IQuoteOrderResponse,
 } from './lib/client/customer-client';
 export {

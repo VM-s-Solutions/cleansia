@@ -44,7 +44,8 @@
     "^Termín$",
     "^Platba$",
     "^Souhrn$",
-    "^Zpět na služby$"
+    "^Zpět na služby$",
+    "^Cena se počítá z počtu pokojů a koupelen"
   ],
   "texts": [
     {
@@ -198,19 +199,6 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "left"
-      }
-    },
-    {
-      "text": "Cena se počítá z počtu pokojů a koupelen — proto tu není „4+“, ale konkrétní číslo.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
         "textAlign": "left"
       }
     },

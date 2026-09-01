@@ -33,6 +33,7 @@ import {
   GOOGLE_CLIENT_ID,
   initializeTranslations,
   JsonTranslationLoader,
+  ADDRESS_SEARCH_PORT,
   MAPBOX_AUTOCOMPLETE_ENABLED,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
@@ -42,6 +43,7 @@ import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-transla
 import * as Sentry from '@sentry/angular';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
+import { customerAddressSearchPort } from './address-search.port';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 import { APP_INTERCEPTORS_FN } from './http-interceptors';
@@ -108,13 +110,14 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
-    // The Mapbox token is NOT shipped to the browser. We only
-    // advertise (token-free) whether geocoding is configured; the same-origin
-    // proxy (server.ts) injects the credential server-side.
+    // The Mapbox token is NOT shipped to the browser. We only advertise
+    // (token-free) whether geocoding is configured; the credential lives on the
+    // API, which is also what performs the lookup.
     {
       provide: MAPBOX_AUTOCOMPLETE_ENABLED,
       useValue: !!(environment.mapboxToken ?? '').trim(),
     },
+    { provide: ADDRESS_SEARCH_PORT, useFactory: customerAddressSearchPort },
     // The GSI client id is public by design (Google gates access on the page
     // origin, not on secrecy), but it is per-deployment: hard-coding one id in
     // the login/register components made every build advertise the local-dev

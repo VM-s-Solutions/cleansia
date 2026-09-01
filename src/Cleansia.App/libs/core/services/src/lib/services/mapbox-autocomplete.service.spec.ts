@@ -1,42 +1,64 @@
-import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
-  TestRequest,
 } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 
 import {
+  ADDRESS_SEARCH_PORT,
+  AddressSearchPort,
   MAPBOX_AUTOCOMPLETE_ENABLED,
   MAPBOX_COUNTRY_WHITELIST,
-  MAPBOX_PROXY_PATH,
-  MapboxAutocompleteService,
   MapboxAddressSuggestion,
+  MapboxAutocompleteService,
 } from './mapbox-autocomplete.service';
 
 /**
- * The Mapbox access token must never travel in the request URL/query string. The frontend calls a
- * same-origin proxy path that injects the token server-side; the token is never present on the wire
- * from the browser.
+ * The geocoding credential must never reach the browser (T-0159).
  *
- * Mechanism decision (documented in the ticket): the Mapbox Geocoding REST
- * endpoints (v5 mapbox.places and v6 search/geocode) authenticate ONLY via the
- * `access_token` query parameter — they do not honor an `Authorization` header.
- * The conforming fix is therefore a thin same-origin proxy, not a header.
+ * The mechanism changed and the guarantee got stronger. It used to be a
+ * same-origin SSR route that injected the token, and these tests checked that
+ * the browser's request to it carried nothing token-shaped. The lookup is now a
+ * platform API endpoint reached through {@link ADDRESS_SEARCH_PORT}, so this
+ * service issues NO http request of its own at all — which is what the first
+ * group asserts, and it is a stricter statement than "the request was clean".
+ *
+ * Parsing the provider's feature shape moved to the API with the call. Its test
+ * moved too: `src/Cleansia.Tests/Features/Addresses/MapboxSuggestionParsingTests.cs`.
  */
-describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
-  const PROXY_PATH = '/api/mapbox/geocode';
+describe('MapboxAutocompleteService (T-0159 credential-out-of-browser)', () => {
+  type PortCall = {
+    query: string;
+    countries: string;
+    language: string;
+    limit: number;
+  };
 
   function setup(options?: {
     enabled?: boolean;
     countries?: string[];
     lang?: string;
-  }): { service: MapboxAutocompleteService; httpMock: HttpTestingController } {
+    result?: MapboxAddressSuggestion[];
+  }): {
+    service: MapboxAutocompleteService;
+    calls: PortCall[];
+    httpMock: HttpTestingController;
+  } {
     const translate = {
       currentLang: options?.lang ?? 'cs',
       getDefaultLang: () => 'cs',
     } as unknown as TranslateService;
+
+    const calls: PortCall[] = [];
+    const port: AddressSearchPort = {
+      search: (query, countries, language, limit) => {
+        calls.push({ query, countries, language, limit });
+        return of(options?.result ?? []);
+      },
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -48,7 +70,7 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
           provide: MAPBOX_AUTOCOMPLETE_ENABLED,
           useValue: options?.enabled ?? true,
         },
-        { provide: MAPBOX_PROXY_PATH, useValue: PROXY_PATH },
+        { provide: ADDRESS_SEARCH_PORT, useValue: port },
         {
           provide: MAPBOX_COUNTRY_WHITELIST,
           useValue: options?.countries ?? ['cz', 'sk'],
@@ -58,6 +80,7 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
 
     return {
       service: TestBed.inject(MapboxAutocompleteService),
+      calls,
       httpMock: TestBed.inject(HttpTestingController),
     };
   }
@@ -66,169 +89,139 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     TestBed.inject(HttpTestingController).verify();
   });
 
-  function flushOneRequest(httpMock: HttpTestingController): TestRequest {
-    const requests = httpMock.match(() => true);
-    expect(requests.length).toBe(1);
-    return requests[0];
-  }
-
-  it('AC1: does not put access_token anywhere in the request URL or query', () => {
+  it('AC1: issues no http request of its own, so no request of its can carry a credential', () => {
     const { service, httpMock } = setup();
 
     service.search('Vinohradská 12').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    expect(req.request.url).not.toContain('access_token');
-    expect(req.request.urlWithParams).not.toContain('access_token');
-    expect(req.request.params.has('access_token')).toBe(false);
-    expect(req.request.urlWithParams.toLowerCase()).not.toContain(
-      'pk.ey' // any Mapbox token literal prefix must not appear in the URL
-    );
-
-    req.flush({ features: [] });
+    // Stronger than checking a request for a token: there is no request. The
+    // lookup is the API client's, behind the port.
+    httpMock.expectNone(() => true);
   });
 
-  it('AC1: never calls the third-party api.mapbox.com directly from the browser', () => {
-    const { service, httpMock } = setup();
+  it('AC1: never names the third-party host anywhere in what it sends', () => {
+    const { service, calls } = setup();
 
     service.search('Praha 1').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    expect(req.request.url).not.toContain('api.mapbox.com');
-    expect(req.request.url.startsWith(PROXY_PATH)).toBe(true);
-
-    req.flush({ features: [] });
+    expect(calls).toHaveLength(1);
+    const sent = JSON.stringify(calls[0]);
+    expect(sent).not.toContain('api.mapbox.com');
+    expect(sent).not.toContain('access_token');
   });
 
-  it('AC2: routes the call through the same-origin proxy path (no token in app code path)', () => {
-    const { service, httpMock } = setup();
+  it('AC2: routes the lookup through the address-search port', () => {
+    const { service, calls } = setup();
 
     service.search('Brno').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    // The proxy is responsible for injecting the token server-side; the
-    // browser request carries no credential at all.
-    expect(req.request.url.startsWith(PROXY_PATH)).toBe(true);
-    expect(req.request.params.has('access_token')).toBe(false);
-
-    req.flush({ features: [] });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].query).toBe('Brno');
   });
 
-  it('AC3: sends no Authorization header and no token-bearing header', () => {
-    const { service, httpMock } = setup();
+  it('AC3: hands the port nothing token-shaped', () => {
+    const { service, calls } = setup();
 
     service.search('Ostrava').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    expect(req.request.headers.has('Authorization')).toBe(false);
-    expect(req.request.headers.has('X-Mapbox-Token')).toBe(false);
-    // Nothing token-shaped in any header value.
-    for (const name of req.request.headers.keys()) {
-      const value = req.request.headers.get(name) ?? '';
-      expect(value.toLowerCase()).not.toContain('pk.ey');
+    for (const value of Object.values(calls[0])) {
+      expect(String(value).toLowerCase()).not.toContain('pk.ey');
     }
-
-    req.flush({ features: [] });
   });
 
-  it('AC3: the full loggable request surface (urlWithParams) is credential-free', () => {
-    const { service, httpMock } = setup();
-
-    service.search('Plzeň').subscribe();
-
-    const req = flushOneRequest(httpMock);
-    // urlWithParams is what an HTTP interceptor / Sentry span would record.
-    expect(req.request.urlWithParams).not.toMatch(/access_token/i);
-    expect(req.request.urlWithParams).not.toMatch(/pk\.ey/i);
-
-    req.flush({ features: [] });
-  });
-
-  it('AC5: preserves country / language / types / autocomplete / limit params', () => {
-    const { service, httpMock } = setup({ countries: ['cz', 'sk'], lang: 'sk' });
+  it('AC5: passes the country whitelist, the active language and the result limit', () => {
+    const { service, calls } = setup({ countries: ['cz', 'sk'], lang: 'sk' });
 
     service.search('Bratislava').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    expect(req.request.params.get('country')).toBe('cz,sk');
-    expect(req.request.params.get('language')).toBe('sk');
-    expect(req.request.params.get('types')).toBe('address,postcode');
-    expect(req.request.params.get('autocomplete')).toBe('true');
-    expect(req.request.params.get('limit')).toBe('5');
-
-    req.flush({ features: [] });
+    expect(calls[0].countries).toBe('cz,sk');
+    expect(calls[0].language).toBe('sk');
+    expect(calls[0].limit).toBe(5);
   });
 
-  it('AC5: passes the (encoded) query through to the proxy', () => {
-    const { service, httpMock } = setup();
+  it('AC5: falls back to cs for a language the provider does not serve', () => {
+    const { service, calls } = setup({ lang: 'de' });
+
+    service.search('Berlin');
+    service.search('Berlin').subscribe();
+
+    expect(calls[calls.length - 1].language).toBe('cs');
+  });
+
+  it('AC5: passes the query through unchanged', () => {
+    const { service, calls } = setup();
 
     service.search('Vinohradská 12').subscribe();
 
-    const req = flushOneRequest(httpMock);
-    expect(req.request.params.get('q')).toBe('Vinohradská 12');
-
-    req.flush({ features: [] });
+    expect(calls[0].query).toBe('Vinohradská 12');
   });
 
-  it('AC5: parses Mapbox features into normalized suggestions unchanged', () => {
-    const { service, httpMock } = setup();
-
-    let result: MapboxAddressSuggestion[] = [];
-    service.search('Vinohradská 12').subscribe((r) => (result = r));
-
-    const req = flushOneRequest(httpMock);
-    req.flush({
-      features: [
-        {
-          place_name: 'Vinohradská 12, 120 00 Praha, Česko',
-          text: 'Vinohradská',
-          address: '12',
-          center: [14.4378, 50.0755],
-          context: [
-            { id: 'postcode.1', text: '120 00' },
-            { id: 'locality.1', text: 'Holešovice' },
-            { id: 'place.1', text: 'Praha' },
-          ],
-        },
-      ],
-    });
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({
+  it('AC5: returns the API suggestions unchanged — the shape is the API contract now', () => {
+    const suggestion: MapboxAddressSuggestion = {
       placeName: 'Vinohradská 12, 120 00 Praha, Česko',
       street: 'Vinohradská 12',
       city: 'Praha',
       zipCode: '120 00',
       latitude: 50.0755,
       longitude: 14.4378,
-    });
+    };
+    const { service } = setup({ result: [suggestion] });
+
+    let result: MapboxAddressSuggestion[] = [];
+    service.search('Vinohradská 12').subscribe((r) => (result = r));
+
+    expect(result).toEqual([suggestion]);
   });
 
-  it('AC5: short-circuits with no request when below min query length', () => {
-    const { service, httpMock } = setup();
+  it('AC5: short-circuits without calling the port below the minimum query length', () => {
+    const { service, calls } = setup();
 
     let result: MapboxAddressSuggestion[] | undefined;
     service.search('ab').subscribe((r) => (result = r));
 
-    httpMock.expectNone(() => true);
+    expect(calls).toHaveLength(0);
     expect(result).toEqual([]);
   });
 
-  it('AC5: isConfigured reflects the enabled flag and issues no request when disabled', () => {
-    const { service, httpMock } = setup({ enabled: false });
+  it('AC5: isConfigured reflects the enabled flag and calls nothing when disabled', () => {
+    const { service, calls } = setup({ enabled: false });
 
     expect(service.isConfigured).toBe(false);
 
     let result: MapboxAddressSuggestion[] | undefined;
     service.search('Praha').subscribe((r) => (result = r));
 
-    httpMock.expectNone(() => true);
+    expect(calls).toHaveLength(0);
     expect(result).toEqual([]);
   });
 
   it('AC5: isConfigured is true when enabled', () => {
     const { service } = setup({ enabled: true });
     expect(service.isConfigured).toBe(true);
-    TestBed.inject(HttpTestingController).expectNone(() => true);
+  });
+
+  it('the port default is empty, so an app that provides none simply has no suggestions', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        MapboxAutocompleteService,
+        {
+          provide: TranslateService,
+          useValue: {
+            currentLang: 'cs',
+            getDefaultLang: () => 'cs',
+          } as unknown as TranslateService,
+        },
+        { provide: MAPBOX_AUTOCOMPLETE_ENABLED, useValue: true },
+      ],
+    });
+
+    let result: MapboxAddressSuggestion[] | undefined;
+    TestBed.inject(MapboxAutocompleteService)
+      .search('Praha')
+      .subscribe((r) => (result = r));
+
+    expect(result).toEqual([]);
   });
 });

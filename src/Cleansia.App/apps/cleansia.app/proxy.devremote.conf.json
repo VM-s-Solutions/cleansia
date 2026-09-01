@@ -1,5 +1,5 @@
 {
-  "^/api(?!/mapbox)": {
+  "^/api": {
     "target": "https://api-cleansia-customer-weu-dev.azurewebsites.net",
     "secure": true,
     "changeOrigin": true

@@ -133,12 +133,25 @@ const report = await page.evaluate((vw) => {
   }
 
   // 2. Text clipped by its own box.
+  //
+  // Not counting the sr-only pattern: a label that names an input for a screen
+  // reader while the caller prints its own heading is clipped ON PURPOSE, and
+  // its whole signature — a 1px box with clip/clip-path — is how that is done.
+  // Reporting it makes a real clip indistinguishable from a deliberate one, and
+  // a checker with a permanent known-false line stops being read.
+  const srOnly = (el, cs) => {
+    const r = el.getBoundingClientRect();
+    const clipsAway = cs.clipPath === 'inset(50%)' || /rect\(0px,? 0px,? 0px,? 0px\)/.test(cs.clip);
+    return clipsAway && r.width <= 2 && r.height <= 2;
+  };
+
   const clipped = [];
   for (const el of all) {
     if (!el.childNodes.length) continue;
     const hasText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
     if (!hasText) continue;
     const cs = getComputedStyle(el);
+    if (srOnly(el, cs)) continue;
     const hidden = /hidden|clip/.test(cs.overflow + cs.overflowX + cs.overflowY);
     if (!hidden) continue;
     if (el.scrollWidth > el.clientWidth + 2) {

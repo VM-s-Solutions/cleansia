@@ -463,21 +463,31 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return this.savedAddress.isSavedAddressSelected();
   }
 
-  canProceed(): boolean {
+  /**
+   * Why this step cannot be left yet, as translation keys, most important first.
+   * Empty means it can.
+   *
+   * `canProceed()` is derived from this rather than checking the same conditions
+   * a second time: a button whose disabled state and whose explanation are
+   * computed separately drift apart, and the drift is invisible until someone
+   * is staring at an inert button with nothing to fix.
+   */
+  missingReasons(): string[] {
     const data = this.formData();
+    const reasons: string[] = [];
+
     switch (this.activeStep()) {
       case 0:
-        return (
-          data.selectedServiceIds.length > 0 ||
-          data.selectedPackageIds.length > 0
-        );
-      case 1: {
-        const phoneValid = !!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')));
+        if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
+          reasons.push('pages.order.missing.services');
+        }
+        break;
 
-        // Saved address: server already validated the record; just ensure fields are non-empty.
-        // Saved addresses always carry lat/lng post backend hardening, so no extra geo check needed.
-        // Custom address: must come from a Mapbox pick — i.e. lat/lng are non-null. Editable
-        // street/city/zip inputs were removed; the only path to populate them is `applyAddressSuggestion`.
+      case 1: {
+        // Saved address: the server already validated the record, so only
+        // non-emptiness is checked. Custom address: it must have come from a
+        // suggestion pick, which is the only thing that sets lat/lng — typing
+        // into the field alone never produces a bookable address.
         const usingSaved = this.isAuthenticated() && this.isSavedAddressSelected();
         const addressValid = usingSaved
           ? !!(data.address.street && data.address.city && data.address.zipCode)
@@ -493,31 +503,47 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
               data.addressLatitude != null &&
               data.addressLongitude != null
             );
-        const contactValid = !!(
-          data.customerFirstName &&
-          data.customerFirstName.length >= 2 &&
-          data.customerFirstName.length <= 50 &&
-          data.customerLastName &&
-          data.customerLastName.length >= 2 &&
-          data.customerLastName.length <= 50 &&
-          data.customerEmail &&
-          this.emailRegex.test(data.customerEmail) &&
-          data.customerEmail.length <= 50
-        );
-        // Block Next when the city-serviced check explicitly rejected.
-        // 'pending' / 'error' / 'idle' all pass through — backend
-        // re-validates on submit; we just don't want to block on a
-        // network failure or a check that hasn't fired yet.
-        const cityOk = this.cityServiced() !== 'rejected';
-        return addressValid && contactValid && phoneValid && cityOk;
+        if (!addressValid) {
+          reasons.push('pages.order.missing.address');
+        }
+
+        // Only an explicit rejection blocks. 'pending' / 'error' / 'idle' pass
+        // through — the backend re-validates on submit, and a network failure or
+        // a check that has not fired yet is not the customer's problem.
+        if (this.cityServiced() === 'rejected') {
+          reasons.push('api.service_area.city_not_serviced');
+        }
+
+        if (!(data.customerFirstName && data.customerFirstName.length >= 2 && data.customerFirstName.length <= 50)) {
+          reasons.push('pages.order.missing.first_name');
+        }
+        if (!(data.customerLastName && data.customerLastName.length >= 2 && data.customerLastName.length <= 50)) {
+          reasons.push('pages.order.missing.last_name');
+        }
+        if (!(data.customerEmail && this.emailRegex.test(data.customerEmail) && data.customerEmail.length <= 50)) {
+          reasons.push('pages.order.missing.email');
+        }
+        if (!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')))) {
+          reasons.push('pages.order.missing.phone');
+        }
+        break;
       }
+
       case 2:
-        return !!data.cleaningDate;
-      case 3:
-        return true;
+        if (!data.cleaningDate) {
+          reasons.push('pages.order.missing.date');
+        }
+        break;
+
       default:
-        return true;
+        break;
     }
+
+    return reasons;
+  }
+
+  canProceed(): boolean {
+    return this.missingReasons().length === 0;
   }
 
   saveCurrentAddressAsSaved(label: string): Promise<boolean> {

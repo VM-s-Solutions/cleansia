@@ -38,13 +38,24 @@ public sealed class OrderPricingCalculator(
         // drops it instead of erroring (already committed orders preserve the
         // historical slug via Order.Extras).
         var extraSlugList = selectedExtraSlugs?.Distinct().ToList() ?? new List<string>();
+        var extraLines = new List<(string Slug, decimal Price)>();
         decimal extrasSubtotal = 0m;
         if (extraSlugList.Count > 0)
         {
-            extrasSubtotal = await extraRepository.GetAll()
+            // Materialised rather than summed in the database: the same rows are the
+            // quote's extra lines, and a second query to fetch what was just aggregated
+            // would be a second chance for the two to disagree.
+            var rows = await extraRepository.GetAll()
                 .Where(e => e.IsActive && extraSlugList.Contains(e.Slug))
-                .SumAsync(e => e.Price, cancellationToken);
+                .Select(e => new { e.Slug, e.Price })
+                .ToListAsync(cancellationToken);
+            extraLines = rows.Select(r => (r.Slug, r.Price)).ToList();
+            extrasSubtotal = extraLines.Sum(e => e.Price);
         }
+
+        // Built alongside the sums above, from the same values, so a row can never
+        // disagree with the subtotal it belongs to.
+        var unitCount = rooms + bathrooms;
 
         var currency = string.IsNullOrEmpty(currencyId)
             ? await currencyRepository.GetDefaultAsync(cancellationToken)
@@ -84,6 +95,47 @@ public sealed class OrderPricingCalculator(
 
         var totalPrice = chargeSubtotal + expressSurchargeAmount;
 
+        // Scaled by the same exchangeRate as every other money figure this method
+        // returns, and only after it is known.
+        var lines = new List<OrderPricingLine>();
+        foreach (var package in packages.Where(p => p != null))
+        {
+            lines.Add(new OrderPricingLine(
+                Kind: "package",
+                ItemId: package.Id,
+                BaseAmount: package.Price * exchangeRate,
+                UnitAmount: 0m,
+                Units: 0,
+                Amount: package.Price * exchangeRate));
+        }
+
+        foreach (var service in services.Where(s => s != null))
+        {
+            var perUnit = service.PerRoomPrice * exchangeRate;
+            var basePart = service.BasePrice * exchangeRate;
+            lines.Add(new OrderPricingLine(
+                Kind: "service",
+                ItemId: service.Id,
+                BaseAmount: basePart,
+                UnitAmount: perUnit,
+                Units: unitCount,
+                Amount: basePart + perUnit * unitCount));
+        }
+
+        if (extraLines.Count > 0)
+        {
+            foreach (var extra in extraLines)
+            {
+                lines.Add(new OrderPricingLine(
+                    Kind: "extra",
+                    ItemId: extra.Slug,
+                    BaseAmount: extra.Price * exchangeRate,
+                    UnitAmount: 0m,
+                    Units: 0,
+                    Amount: extra.Price * exchangeRate));
+            }
+        }
+
         return new OrderPricingResult(
             TotalPrice: totalPrice,
             CurrencyId: currency?.Id ?? string.Empty,
@@ -95,6 +147,7 @@ public sealed class OrderPricingCalculator(
             ExpressSurchargeAmount: expressSurchargeAmount,
             ExchangeRate: exchangeRate,
             ExpressSurchargeWaivedByMembership: waiver.Waived,
-            ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null);
+            ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
+            Lines: lines);
     }
 }

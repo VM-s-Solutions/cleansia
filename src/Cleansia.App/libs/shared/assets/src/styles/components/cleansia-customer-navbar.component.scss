@@ -1,5 +1,20 @@
 $primary: #0284c7;
 
+// The band the fixed navbar occupies from the top of the viewport, published so
+// anything that sticks underneath can clear it. The navbar hides on scroll-down
+// and comes back on scroll-up, so a sticky element that ignores this is fine
+// until the moment the customer scrolls back up and the bar lands on top of it.
+//
+// 96, not the `height: 64px` below — that declaration is dead, overridden to
+// `auto` by the floating-pill block further down this file. 96 is 14px of
+// padding above and below a 68px pill, and it is the number the spacer already
+// uses; both now read this one value so they cannot drift apart again.
+$nav-band: 96px;
+
+:root {
+  --cl-nav-h: #{$nav-band};
+}
+
 .customer-navbar {
   height: 64px;
   // Layout duplicated from the PrimeFlex utility classes on purpose:
@@ -496,7 +511,7 @@ $primary: #0284c7;
 // padding above and below a 68px pill, and a spacer that disagrees with it
 // either overlaps the first section or leaves a gap under it.
 .customer-navbar-spacer {
-  height: 96px;
+  height: $nav-band;
 }
 
 // =============================
@@ -521,14 +536,23 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 }
 
 body:has(.cleansia-dev-banner) {
+  // The banner sits above the navbar, so the occupied band grows by its height.
+  // The token and the spacer read $nav-band for the same reason the base case
+  // does: both were 64-based while the real bar is 96, so the spacer SHRANK by
+  // 2px when the banner appeared instead of growing by 30.
+  --cl-nav-h: #{$nav-band + $dev-banner-height};
+
   .customer-navbar {
     top: $dev-banner-height;
   }
 
   .customer-navbar-spacer {
-    height: 64px + $dev-banner-height;
+    height: $nav-band + $dev-banner-height;
   }
 
+  // Left on the base rule's 64 rather than $nav-band: the mobile menu opens
+  // below 900px, where the pill's padding tightens and the band is not 96. Its
+  // offset is wrong in both branches equally — reported, not folded in here.
   .customer-navbar__mobile-menu {
     top: 64px + $dev-banner-height;
   }

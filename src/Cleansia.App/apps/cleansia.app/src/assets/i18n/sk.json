@@ -885,12 +885,11 @@
       "package_selected": "Vybrané",
       "service_add": "Pridať",
       "service_added": "Pridané",
-      "counts_note": "Cena sa počíta z počtu izieb a kúpeľní — preto tu nie je „4+“, ale konkrétne číslo.",
       "summary_heading": "Súhrn",
       "summary_empty": "Vyberte službu alebo balík a uvidíte cenu.",
       "summary_no_surcharge": "bez príplatku",
       "summary_express": "expresný príplatok",
-      "summary_estimate": "Odhadom {{hours}} h · {{crew}} upratovači",
+      "summary_estimate": "Odhadom {{hours}} h",
       "summary_free_cancel": "Zrušenie zdarma do 24 h",
       "per_cleaning": "za upratovanie",
       "price_fixed": "Pevná cena",
@@ -923,7 +922,19 @@
       "entry_lead": "Nepovinné. Napríklad kód od vchodu, kde sú kľúče, alebo že otvorí sused.",
       "entry_privacy_note": "Upratovač, ktorému objednávka nepatrí, toto nevidí — rovnako ako adresu, telefón a potvrdzovací kód.",
       "contact_details_label": "Kontaktné údaje",
-      "map_unavailable": "Mapa sa zobrazí po výbere adresy."
+      "map_unavailable": "Mapa sa zobrazí po výbere adresy.",
+      "summary_line_calc": "{{base}} + {{units}} × {{unit}}",
+      "missing": {
+        "heading": "Ešte chýba:",
+        "services": "Vyberte aspoň jednu službu alebo balík.",
+        "address": "Vyberte adresu z našepkávača.",
+        "first_name": "Vyplňte meno.",
+        "last_name": "Vyplňte priezvisko.",
+        "email": "Zadajte platný e-mail.",
+        "phone": "Zadajte platné telefónne číslo.",
+        "date": "Vyberte dátum upratovania.",
+        "time": "Vyberte čas, ktorý je ešte voľný."
+      }
     },
     "orders": {
       "title": "Moje objednávky",

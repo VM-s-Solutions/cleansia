@@ -40,8 +40,11 @@ npx nx serve cleansia.app --configuration=devremote           # /api → api-cle
 ```
 
 Proxy targets live in `apps/<app>/proxy.conf.json` (local) and `apps/<app>/proxy.devremote.conf.json`
-(deployed dev — keep in sync with `environment.staging.ts`). The customer proxy deliberately excludes
-`/api/mapbox` — that endpoint is served by the SSR express server (`server.ts`), not the backend. The
+(deployed dev — keep in sync with `environment.staging.ts`). **Everything under `/api` is proxied,
+with no exceptions.** Address lookup and the address-step map used to be an exception, served by the
+SSR express server — which meant they 404'd under `nx serve`, had no equivalent on the partner API,
+and were the one outbound integration not behind the platform's rate limiter. They are now
+`/api/AddressSearch/*` on the Customer API like everything else. The
 customer SSR render resolves the relative base URL against the incoming request origin
 (`app.config.server.ts`), so server-side fetches also flow through the proxy. Note:
 `npm run start:cleansia-ssr` (built server.mjs on :4000) has no `/api` proxy — use `nx serve` for

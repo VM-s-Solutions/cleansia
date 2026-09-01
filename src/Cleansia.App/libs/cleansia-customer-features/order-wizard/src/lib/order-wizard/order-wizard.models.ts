@@ -168,45 +168,23 @@ export function getFieldError(
 export const WINDOW_DURATION_MINUTES = 60;
 
 /** Earliest and latest starting hours for bookable windows (inclusive start, exclusive end). */
-export const FIRST_WINDOW_HOUR = 8;
-export const LAST_WINDOW_HOUR = 20;
+import {
+  EXPRESS_LEAD_TIME_HOURS as SHARED_EXPRESS_LEAD_TIME_HOURS,
+  FIRST_WINDOW_HOUR as SHARED_FIRST_WINDOW_HOUR,
+  LAST_WINDOW_HOUR as SHARED_LAST_WINDOW_HOUR,
+  STANDARD_LEAD_TIME_HOURS as SHARED_STANDARD_LEAD_TIME_HOURS,
+} from '@cleansia/models';
+import type { SlotAvailability, TimeOption } from '@cleansia/models';
 
-/** Minimum hours between now and cleaning start for any booking to be accepted. */
-export const EXPRESS_LEAD_TIME_HOURS = 2;
-
-/** Minimum hours for a standard (non-surcharge) booking. Slots between 2–4h lead are "express". */
-export const STANDARD_LEAD_TIME_HOURS = 4;
-
-export type SlotAvailability = 'available' | 'express' | 'unavailable';
-
-export interface TimeOption {
-  /** Display label — start time only, e.g. "10:00". Matches mobile; hides the window. */
-  label: string;
-  /** Canonical value — start time as "HH:mm" (used for backend submission) */
-  value: string;
-  /** Whether the slot is bookable, requires express surcharge, or out of range. */
-  availability?: SlotAvailability;
-}
-
-/**
- * Produce one option per 1-hour window from FIRST_WINDOW_HOUR to LAST_WINDOW_HOUR.
- * Availability is computed elsewhere based on the selected date + current time.
- */
-export function generateTimeOptions(): TimeOption[] {
-  const options: TimeOption[] = [];
-  for (let h = FIRST_WINDOW_HOUR; h < LAST_WINDOW_HOUR; h++) {
-    const start = `${h.toString().padStart(2, '0')}:00`;
-    // Show only the arrival time (mobile parity). Orders can run longer than
-    // one hour — displaying "10:00 – 11:00" misleads users into thinking the
-    // cleaning ends at 11:00.
-    options.push({
-      label: start,
-      value: start,
-      availability: 'available',
-    });
-  }
-  return options;
-}
+// The window, its option type and the generator moved to @cleansia/models: the
+// home-page calculator offers the same choice and cannot import from this lib,
+// which is lazy-loaded. Re-exported so every existing import here still resolves.
+export { generateTimeOptions } from '@cleansia/models';
+export type { SlotAvailability, TimeOption } from '@cleansia/models';
+export const FIRST_WINDOW_HOUR = SHARED_FIRST_WINDOW_HOUR;
+export const LAST_WINDOW_HOUR = SHARED_LAST_WINDOW_HOUR;
+export const EXPRESS_LEAD_TIME_HOURS = SHARED_EXPRESS_LEAD_TIME_HOURS;
+export const STANDARD_LEAD_TIME_HOURS = SHARED_STANDARD_LEAD_TIME_HOURS;
 
 /**
  * Annotate time options with availability based on the selected date and lead-time rules.
@@ -240,8 +218,8 @@ export function filterTimeOptionsForToday(
     const hoursAhead = (slotDate.getTime() - nowMs) / (1000 * 60 * 60);
 
     let availability: SlotAvailability = 'available';
-    if (hoursAhead < EXPRESS_LEAD_TIME_HOURS) availability = 'unavailable';
-    else if (hoursAhead < STANDARD_LEAD_TIME_HOURS) availability = 'express';
+    if (hoursAhead < SHARED_EXPRESS_LEAD_TIME_HOURS) availability = 'unavailable';
+    else if (hoursAhead < SHARED_STANDARD_LEAD_TIME_HOURS) availability = 'express';
     return { ...opt, availability };
   });
 }

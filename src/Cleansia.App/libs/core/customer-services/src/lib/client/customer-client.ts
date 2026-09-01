@@ -607,6 +607,12 @@ export interface ICountryClient {
      * @return OK
      */
     getServiced(): Observable<CountryListItem[]>;
+    /**
+     * @param isoCode (optional) 
+     * @param languageCode (optional) 
+     * @return OK
+     */
+    getPropertySizes(isoCode?: string | undefined, languageCode?: string | undefined): Observable<GetPropertySizePresetsPropertySizePresetDto[]>;
 }
 
 @Injectable({
@@ -731,6 +737,81 @@ export class CountryClient implements ICountryClient {
                 result200 = [] as any;
                 for (let item of resultData200)
                     result200!.push(CountryListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param isoCode (optional) 
+     * @param languageCode (optional) 
+     * @return OK
+     */
+    getPropertySizes(isoCode?: string | undefined, languageCode?: string | undefined): Observable<GetPropertySizePresetsPropertySizePresetDto[]> {
+        let url = this.baseUrl + "/api/Country/GetPropertySizes?";
+        if (isoCode === null)
+            throw new globalThis.Error("The parameter 'isoCode' cannot be null.");
+        else if (isoCode !== undefined)
+            url += "isoCode=" + encodeURIComponent("" + isoCode) + "&";
+        if (languageCode === null)
+            throw new globalThis.Error("The parameter 'languageCode' cannot be null.");
+        else if (languageCode !== undefined)
+            url += "languageCode=" + encodeURIComponent("" + languageCode) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPropertySizes(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPropertySizes(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetPropertySizePresetsPropertySizePresetDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetPropertySizePresetsPropertySizePresetDto[]>;
+        }));
+    }
+
+    protected processGetPropertySizes(response: HttpResponseBase): Observable<GetPropertySizePresetsPropertySizePresetDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(GetPropertySizePresetsPropertySizePresetDto.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -10040,6 +10121,58 @@ export interface IGetOrderPhotosResponse {
     afterPhotoCount: number;
 }
 
+export class GetPropertySizePresetsPropertySizePresetDto implements IGetPropertySizePresetsPropertySizePresetDto {
+    code!: string | undefined;
+    label!: string | undefined;
+    sortOrder!: number;
+    rooms!: number;
+    bathrooms!: number;
+
+    constructor(data?: IGetPropertySizePresetsPropertySizePresetDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.code = Data["code"];
+            this.label = Data["label"];
+            this.sortOrder = Data["sortOrder"];
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+        }
+    }
+
+    static fromJS(data: any): GetPropertySizePresetsPropertySizePresetDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetPropertySizePresetsPropertySizePresetDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["code"] = this.code;
+        data["label"] = this.label;
+        data["sortOrder"] = this.sortOrder;
+        data["rooms"] = this.rooms;
+        data["bathrooms"] = this.bathrooms;
+        return data;
+    }
+}
+
+export interface IGetPropertySizePresetsPropertySizePresetDto {
+    code: string | undefined;
+    label: string | undefined;
+    sortOrder: number;
+    rooms: number;
+    bathrooms: number;
+}
+
 export class GoogleAuthCommand implements IGoogleAuthCommand {
     token!: string | undefined;
     googleId!: string | undefined;
@@ -12291,6 +12424,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     expressSurchargeApplied!: boolean;
     expressSurchargeAmount!: number;
     exchangeRate!: number;
+    estimatedDurationMinutes!: number;
+    requiredEmployees!: number;
     expressSurchargeWaivedByMembership!: boolean;
     expressUpgradesRemaining!: number | undefined;
 
@@ -12320,6 +12455,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.expressSurchargeApplied = Data["expressSurchargeApplied"];
             this.expressSurchargeAmount = Data["expressSurchargeAmount"];
             this.exchangeRate = Data["exchangeRate"];
+            this.estimatedDurationMinutes = Data["estimatedDurationMinutes"];
+            this.requiredEmployees = Data["requiredEmployees"];
             this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
         }
@@ -12349,6 +12486,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["expressSurchargeApplied"] = this.expressSurchargeApplied;
         data["expressSurchargeAmount"] = this.expressSurchargeAmount;
         data["exchangeRate"] = this.exchangeRate;
+        data["estimatedDurationMinutes"] = this.estimatedDurationMinutes;
+        data["requiredEmployees"] = this.requiredEmployees;
         data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
         return data;
@@ -12371,6 +12510,8 @@ export interface IQuoteOrderResponse {
     expressSurchargeApplied: boolean;
     expressSurchargeAmount: number;
     exchangeRate: number;
+    estimatedDurationMinutes: number;
+    requiredEmployees: number;
     expressSurchargeWaivedByMembership: boolean;
     expressUpgradesRemaining: number | undefined;
 }

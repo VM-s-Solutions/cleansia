@@ -32,6 +32,11 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   exchangeRate: 1,
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
+  // The 1000 basket is one standard clean: OrderDuration estimates 240 minutes,
+  // and crew is ceil(240 / 120) = 2. Same arithmetic the handler runs, so the
+  // fixture still describes what the server actually returns.
+  estimatedDurationMinutes: 240,
+  requiredEmployees: 2,
 };
 
 export function quoteFixture(overrides: Partial<QuoteFields> = {}): QuoteOrderResponse {

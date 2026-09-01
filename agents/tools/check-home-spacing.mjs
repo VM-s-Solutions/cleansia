@@ -8,7 +8,11 @@ const CHECKS = [
   ['nav pill',            '.customer-navbar__inner', { padding: '10px 12px 10px 30px' }],
   ['nav links',           '.customer-navbar__center', { gap: '22px' }],
   ['hero body',           '.cl-hero__inner', { padding: '52px 64px 0px', gap: '48px', alignItems: 'end' }],
-  ['hero title',          '.cl-hero__title', { marginTop: '16px' }],
+  // The artboard sets 16px, measured from the bottom of the eyebrow above it.
+  // The eyebrow ("Praha a okolí do 30 km · denně 8-20") was removed on owner
+  // ruling, so 30px is what now puts the h1 at the same distance from the top
+  // of the band that the artboard draws.
+  ['hero title',          '.cl-hero__title', { marginTop: '30px' }],
   ['hero sub',            '.cl-hero__subtitle', { margin: '18px 0px 0px' }],
   ['hero actions',        '.cl-hero__buttons', { gap: '26px', marginTop: '28px' }],
   ['quote card',          '.cl-quote', { padding: '28px 30px' }],
@@ -25,7 +29,10 @@ const CHECKS = [
   ['service name',        '.cl-services__name', { marginTop: '18px' }],
   ['service desc',        '.cl-services__desc', { margin: '8px 0px 0px' }],
   ['service price',       '.cl-services__price', { marginTop: '14px' }],
-  ['gallery section',     '.cl-section--gallery', { paddingBottom: '56px' }],
+  // The band carries no vertical padding of its own: the hood opens it, the cap
+  // closes it, and the inner column holds the spacing. -> the approved artboard.
+  ['gallery section',     '.cl-section--gallery', { paddingBottom: '0px', marginTop: '64px' }],
+  ['gallery inner',       '.cl-section--gallery > .cl-section__inner', { paddingTop: '20px', paddingBottom: '36px' }],
   ['gallery grid',        '.cl-gallery', { gap: '22px', marginTop: '28px' }],
   ['gallery card',        '.cl-gallery__item', { padding: '14px' }],
   ['rules section',       '.cl-section--rules', { padding: '24px 64px 0px' }],

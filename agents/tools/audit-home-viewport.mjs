@@ -1,0 +1,266 @@
+/**
+ * Measure one viewport x one locale of the customer home page and report every
+ * geometric defect a reader would see.
+ *
+ * Deterministic on purpose: "the mobile version is broken" is not actionable,
+ * and a screenshot at one scroll offset hides most of it. This reports what is
+ * true regardless of who is looking - horizontal overflow, a child escaping its
+ * parent, clipped text, overlapping controls, tap targets under the 40px floor,
+ * and images that never loaded.
+ *
+ *   WIDTH=390 HEIGHT=844 LANG_CODE=cs node agents/tools/audit-home-viewport.mjs
+ *
+ * Run it from src/Cleansia.App - that is where playwright is installed.
+ */
+import { createRequire } from 'node:module';
+const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
+
+const WIDTH = Number(process.env.WIDTH ?? 390);
+const HEIGHT = Number(process.env.HEIGHT ?? 844);
+const LANG = process.env.LANG_CODE ?? 'cs';
+const THEME = process.env.THEME ?? 'light';
+const TARGET = process.env.TARGET ?? 'http://localhost:4202/';
+const SHOT = process.env.SHOT ?? '';
+
+const browser = await chromium.launch();
+const page = await browser.newPage({
+  viewport: { width: WIDTH, height: HEIGHT },
+  deviceScaleFactor: 1,
+  isMobile: WIDTH < 800,
+  hasTouch: WIDTH < 800,
+});
+await page.addInitScript((cfg) => {
+  try {
+    localStorage.setItem('preferred_language', cfg.lang);
+    localStorage.setItem('cleansia-theme', cfg.theme);
+    // The banner is fixed to the bottom and would overlap whatever it sits
+    // over, drowning the real findings. Key and value shape come from
+    // apps/cleansia.app/src/app/app.html.
+    localStorage.setItem('cleansia-customer-cookie-consent', 'accepted');
+    localStorage.setItem(
+      'cleansia-customer-cookie-consent-preferences',
+      JSON.stringify({ necessary: true, analytics: true, marketing: true })
+    );
+  } catch {
+    /* private mode */
+  }
+}, { lang: LANG, theme: THEME });
+
+const consoleErrors = [];
+page.on('console', (m) => {
+  if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 200));
+});
+
+await page.goto(TARGET, { waitUntil: 'networkidle', timeout: 90000 });
+// Everything below the fold has to be laid out before it can be measured.
+await page.evaluate(async () => {
+  for (let y = 0; y < document.body.scrollHeight; y += 400) {
+    window.scrollTo(0, y);
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  window.scrollTo(0, 0);
+});
+await page.waitForTimeout(900);
+
+const report = await page.evaluate((vw) => {
+  const path = (el) => {
+    const bits = [];
+    for (let e = el; e && e.tagName && bits.length < 4; e = e.parentElement) {
+      const cls = (e.className || '')
+        .toString()
+        .split(/\s+/)
+        .filter((c) => /^(cl-|customer-|cleansia)/.test(c))
+        .slice(0, 2)
+        .join('.');
+      bits.unshift(e.tagName.toLowerCase() + (cls ? '.' + cls : ''));
+    }
+    return bits.join(' > ');
+  };
+  const visible = (el) => {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+
+  const all = [...document.querySelectorAll('body *')].filter(visible);
+
+  // 1. Anything wider than the viewport, or starting left of it.
+  const overflowNodes = [];
+  for (const el of all) {
+    const r = el.getBoundingClientRect();
+    const right = r.left + r.width;
+    if (right > vw + 1.5 || r.left < -1.5) {
+      // Only the OUTERMOST offender; a child of an overflowing box adds nothing.
+      if (!overflowNodes.some((o) => o.el.contains(el))) {
+        overflowNodes.push({
+          el,
+          sel: path(el),
+          left: Math.round(r.left),
+          right: Math.round(right),
+          w: Math.round(r.width),
+        });
+      }
+    }
+  }
+
+  // 2. Text clipped by its own box.
+  const clipped = [];
+  for (const el of all) {
+    if (!el.childNodes.length) continue;
+    const hasText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    if (!hasText) continue;
+    const cs = getComputedStyle(el);
+    const hidden = /hidden|clip/.test(cs.overflow + cs.overflowX + cs.overflowY);
+    if (!hidden) continue;
+    if (el.scrollWidth > el.clientWidth + 2) {
+      clipped.push({
+        sel: path(el),
+        text: el.textContent.trim().slice(0, 48),
+        axis: 'x',
+        scroll: el.scrollWidth,
+        client: el.clientWidth,
+      });
+    } else if (el.scrollHeight > el.clientHeight + 2 && cs.overflowY !== 'auto' && cs.overflowY !== 'scroll') {
+      clipped.push({
+        sel: path(el),
+        text: el.textContent.trim().slice(0, 48),
+        axis: 'y',
+        scroll: el.scrollHeight,
+        client: el.clientHeight,
+      });
+    }
+  }
+
+  // 3. Interactive targets under the 40px floor.
+  const small = [];
+  const controlSel = 'a[href], button, [role="button"], input, select, .cl-chip, .p-select';
+  const controls = document.querySelectorAll(controlSel);
+  for (const el of controls) {
+    if (!visible(el)) continue;
+    // A chevron inside a 52px picker, or a checkbox inside its own label, is
+    // not its own target - the thing wrapping it is. Only report a control
+    // that is not enclosed by a larger control, or by a label.
+    const wrapper = el.parentElement && el.parentElement.closest(controlSel + ', label');
+    if (wrapper && wrapper !== el) {
+      const wr = wrapper.getBoundingClientRect();
+      if (wr.height >= 40) continue;
+    }
+    const r = el.getBoundingClientRect();
+    if (r.height < 40 || r.width < 24) {
+      small.push({
+        sel: path(el),
+        text: (el.textContent || '').trim().slice(0, 30),
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+      });
+    }
+  }
+
+  // 4. Overlapping interactive elements - a real click-blocker.
+  const inter = [...document.querySelectorAll('a[href], button')]
+    .filter(visible)
+    .map((e) => ({ e, r: e.getBoundingClientRect() }));
+  const overlaps = [];
+  for (let i = 0; i < inter.length; i++) {
+    for (let j = i + 1; j < inter.length; j++) {
+      const a = inter[i];
+      const b = inter[j];
+      if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
+      const ox = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+      const oy = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+      if (ox > 4 && oy > 4) overlaps.push({ a: path(a.e), b: path(b.e), ox: Math.round(ox), oy: Math.round(oy) });
+    }
+  }
+
+  // 5. Images that did not load, or render at zero.
+  const badImgs = [];
+  for (const img of document.querySelectorAll('img')) {
+    const r = img.getBoundingClientRect();
+    const name = (img.currentSrc || img.src || '').split('/').pop();
+    if (!img.complete || img.naturalWidth === 0) badImgs.push({ sel: path(img), src: name, reason: 'not loaded' });
+    else if (r.width < 2 || r.height < 2)
+      badImgs.push({ sel: path(img), src: name, reason: `renders ${Math.round(r.width)}x${Math.round(r.height)}` });
+  }
+
+  // 6. A child escaping its parent's box horizontally.
+  const escapedNodes = [];
+  for (const el of all) {
+    const p = el.parentElement;
+    if (!p || p === document.body || p === document.documentElement) continue;
+    if (getComputedStyle(p).overflow !== 'visible') continue;
+    const ecs = getComputedStyle(el);
+    if (ecs.position === 'absolute' || ecs.position === 'fixed') continue;
+    // A NEGATIVE margin is a deliberate device, not an accident - the hero
+    // mascot is nudged 18px left of its column on purpose, as the artboard
+    // draws it. Only report an element that escapes by MORE than it was
+    // deliberately pulled.
+    const pull = Math.max(
+      -parseFloat(ecs.marginLeft) || 0,
+      -parseFloat(ecs.marginRight) || 0
+    );
+    const r = el.getBoundingClientRect();
+    const pr = p.getBoundingClientRect();
+    if (pr.width < 8) continue;
+    const by = Math.max(pr.left - r.left, r.right - pr.right);
+    if (by > 2 + pull) {
+      if (!escapedNodes.some((x) => x.el.contains(el))) {
+        escapedNodes.push({ el, sel: path(el), by: Math.round(by), deliberatePull: Math.round(pull) });
+      }
+    }
+  }
+
+  const sections = [...document.querySelectorAll('main > *')].map((s) => {
+    const r = s.getBoundingClientRect();
+    return { tag: s.tagName.toLowerCase(), h: Math.round(r.height) };
+  });
+
+  const displayOf = (sel) => {
+    const e = document.querySelector(sel);
+    return e ? getComputedStyle(e).display : 'missing';
+  };
+
+  return {
+    docScrollWidth: document.documentElement.scrollWidth,
+    pageHeight: document.body.scrollHeight,
+    overflowX: overflowNodes.map(({ sel, left, right, w }) => ({ sel, left, right, w })),
+    clipped: clipped.slice(0, 25),
+    small: small.slice(0, 30),
+    overlaps: overlaps.slice(0, 20),
+    badImgs,
+    escaped: escapedNodes.map(({ sel, by }) => ({ sel, by })).slice(0, 25),
+    sections,
+    navDesktop: displayOf('.customer-navbar__center'),
+    navRight: displayOf('.customer-navbar__right'),
+    navHamburger: displayOf('.customer-navbar__hamburger'),
+  };
+}, WIDTH);
+
+console.log(`=== ${WIDTH}x${HEIGHT} lang=${LANG} theme=${THEME} ===`);
+console.log(`page height ${report.pageHeight}px | doc scrollWidth ${report.docScrollWidth} (viewport ${WIDTH})`);
+const over = report.docScrollWidth - WIDTH;
+console.log(`HORIZONTAL SCROLL: ${over > 1 ? 'YES - ' + over + 'px' : 'no'}`);
+console.log(`nav: center=${report.navDesktop} right=${report.navRight} hamburger=${report.navHamburger}`);
+
+const dump = (name, arr) => {
+  console.log(`\n${name}: ${arr.length}`);
+  arr.forEach((x) => console.log('   ' + JSON.stringify(x)));
+};
+dump('OVERFLOWING VIEWPORT', report.overflowX);
+dump('ESCAPING PARENT', report.escaped);
+dump('CLIPPED TEXT', report.clipped);
+// The 40px floor is a TOUCH rule. On a desktop width these are mouse targets -
+// a 20px nav link is normal there - so they are listed for information and the
+// heading says which it is.
+dump(WIDTH < 900 ? 'TAP TARGETS UNDER 40px' : 'small targets (mouse context, informational)', report.small);
+dump('OVERLAPPING CONTROLS', report.overlaps);
+dump('BROKEN IMAGES', report.badImgs);
+console.log('\nsections: ' + report.sections.map((s) => `${s.tag}:${s.h}`).join(' '));
+console.log('console errors: ' + consoleErrors.length);
+consoleErrors.slice(0, 6).forEach((e) => console.log('   ' + e));
+
+if (SHOT) {
+  await page.screenshot({ path: SHOT, fullPage: true });
+  console.log('shot: ' + SHOT);
+}
+await browser.close();
